@@ -28,4 +28,5 @@ venv = ".venv"
 [tool.uv.workspace]
 members = [
     "packages/rn-forge-commons",
+    "packages/rn-forge-django",
 ]

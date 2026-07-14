@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "pykit",
     "rn-forge-commons",
+    "rn-forge-django",
 ]
 
 [[package]]
@@ -817,6 +818,11 @@ docs = [
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
     { name = "rn-forge-commons", extras = ["excel"], editable = "packages/rn-forge-commons" },
 ]
+
+[[package]]
+name = "rn-forge-django"
+version = "0.1.0"
+source = { editable = "packages/rn-forge-django" }
 
 [[package]]
 name = "ruff"
