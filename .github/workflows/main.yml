@@ -1,0 +1,58 @@
+name: CICD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  commons-ci:
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-commons
+      package-dir: packages/rn-forge-commons
+
+  django-ci:
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-django
+      package-dir: packages/rn-forge-django
+
+  docs:
+    needs: [commons-ci, django-ci]
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v8.3.2
+        with:
+          enable-cache: true
+
+      - name: Build docs
+        run: uv run --group docs mkdocs build
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: .out/site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

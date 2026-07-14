@@ -30,3 +30,11 @@ members = [
     "packages/rn-forge-commons",
     "packages/rn-forge-django",
 ]
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocs-monorepo-plugin>=1.1.2",
+    "mkdocstrings[python]>=1.0.6",
+]
