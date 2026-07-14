@@ -1,0 +1,52 @@
+[project]
+name = "rn-forge-commons"
+version = "0.1.0"
+description = "Shared, framework-agnostic utilities for Python programming"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+dependencies = ["pyyaml>=6.0.3", "verboselogs>=1.7"]
+
+[project.optional-dependencies]
+coloredlogs = ["coloredlogs>=15.0.1"]
+excel = ["openpyxl>=3.1.5", "pandas>=3.0.3"]
+otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
+pandas = ["pandas>=3.0.3"]
+testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+all = [
+  "coloredlogs>=15.0.1",
+  "openpyxl>=3.1.5",
+  "opentelemetry-instrumentation-logging>=0.64b0",
+  "pandas>=3.0.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.commons"
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-commons[excel]",
+  "ruff>=0.15.21",
+  "types-pyyaml>=6.0.12.20260518",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-commons[excel]",
+]
