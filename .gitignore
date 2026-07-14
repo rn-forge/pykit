@@ -16,3 +16,6 @@ wheels/
 .out
 .pytest_cache
 .ruff_cache
+
+# temp files
+.out
