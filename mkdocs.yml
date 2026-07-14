@@ -1,0 +1,38 @@
+site_name: pykit
+site_description: Development kit for python programming - the rn-forge-* package family
+site_dir: .out/site
+use_directory_urls: false
+
+theme:
+  name: material
+  highlightjs: true
+
+plugins:
+  - search
+  - monorepo
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - packages/rn-forge-commons/src
+            - packages/rn-forge-django/src
+          options:
+            docstring_style: auto
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            show_root_heading: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - rn-forge-commons: '!include packages/rn-forge-commons/mkdocs.yml'
+  - rn-forge-django: '!include packages/rn-forge-django/mkdocs.yml'
