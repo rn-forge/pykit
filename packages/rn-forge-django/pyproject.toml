@@ -5,7 +5,23 @@ description = "Opinionated Django/DRF integration layer built on rn-forge-common
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = ["django>=6.0.7", "rn-forge-commons"]
+
+[project.optional-dependencies]
+drf = ["djangorestframework>=3.17.1", "rn-forge-commons[excel]"]
+fixtures = ["rn-forge-commons[excel]"]
+jwt = ["djangorestframework>=3.17.1", "djangorestframework-simplejwt>=5.5.1"]
+saml = [
+  "djangorestframework>=3.17.1",
+  "djangorestframework-simplejwt>=5.5.1",
+  "python3-saml>=1.16.0",
+]
+all = [
+  "djangorestframework>=3.17.1",
+  "djangorestframework-simplejwt>=5.5.1",
+  "python3-saml>=1.16.0",
+  "rn-forge-commons[excel]",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]
@@ -14,9 +30,31 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "rn_forge.django"
 
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-django = { workspace = true }
+
 [tool.pytest.ini_options]
 addopts = "-ra"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
+]
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-django>=4.12.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-django[all]",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-django[all]",
 ]
