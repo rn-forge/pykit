@@ -998,7 +998,7 @@ wheels = [
 
 [[package]]
 name = "rn-forge-commons"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "packages/rn-forge-commons" }
 dependencies = [
     { name = "pyyaml" },
@@ -1088,7 +1088,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },

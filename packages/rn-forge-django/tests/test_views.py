@@ -19,7 +19,9 @@ pytestmark = pytest.mark.unit
 
 class TestHelperViews:
     def test_healthcheck_view(self) -> None:
-        response = healthcheck_view(HttpRequest())
+        request = HttpRequest()
+        request.method = "GET"
+        response = healthcheck_view(request)
         assert response.status_code == 200
         assert response.content == b"healthy"
 

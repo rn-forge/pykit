@@ -76,10 +76,12 @@ if TYPE_CHECKING:
 
     # ``Field[_ST, _GT]`` names the assignable type and the type read back off a
     # model instance.
-    StrField: TypeAlias = models.CharField[str, str]
-    TimestampField: TypeAlias = models.DateTimeField[datetime, datetime]
-    DateField: TypeAlias = models.DateField[date, date]
-    NullableDateField: TypeAlias = models.DateField[date | None, date | None]
+    type StrField = models.CharField[str, str]
+    type TimestampField = models.DateTimeField[datetime, datetime]
+    type DateField = models.DateField[date, date]
+    type NullableDateField = models.DateField[date | None, date | None]
+    # Used as an EnumField base class below, so it must stay a TypeAlias — a
+    # PEP 695 "type" statement alias cannot be subclassed.
     EnumFieldBase: TypeAlias = models.CharField[BaseEnum | str | None, BaseEnum | None]
 else:
     # Runtime fallbacks: the unsubscripted classes. Every alias gets one so that

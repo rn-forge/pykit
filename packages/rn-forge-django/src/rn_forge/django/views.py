@@ -8,6 +8,7 @@ from typing import Any
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.views.decorators.http import require_GET
 
 from rn_forge.django.utils import RequestUtils
 
@@ -23,6 +24,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 def index_view(request: HttpRequest) -> HttpResponse:
     """Render a minimal HTML diagnostics page for the current request.
 
@@ -52,11 +54,13 @@ def index_view(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_GET
 def healthcheck_view(request: HttpRequest) -> HttpResponse:
     """Return a lightweight liveness response."""
     return HttpResponse(b"healthy", status=200)
 
 
+@require_GET
 def debug_request_view(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """Return the structured request snapshot produced by :class:`RequestUtils`."""
     return JsonResponse(RequestUtils.debug_request(request), **kwargs)

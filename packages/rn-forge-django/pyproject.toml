@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-django"
-version = "0.2.0"
+version = "0.2.1"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]

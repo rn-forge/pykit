@@ -15,7 +15,7 @@ Helpers come in two shapes:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 import verboselogs
 
@@ -59,7 +59,7 @@ else:
 if TYPE_CHECKING:
     import pandas
 
-    SeriesRow: TypeAlias = pandas.Series
+    type SeriesRow = pandas.Series
 else:
     SeriesRow = Any
 

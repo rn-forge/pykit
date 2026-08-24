@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import timedelta
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from rest_framework import status
 from rest_framework.request import Request
@@ -16,8 +16,6 @@ from rn_forge.django.auth.drf.authentication import BaseLoginViewMixin
 from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.auth.jwt.utils import JWTUtils
 
-_UserT = TypeVar("_UserT")
-
 __all__ = [
     "LoginExchangeViewMixin",
     "JWTAuthenticationViewMixin",
@@ -26,10 +24,7 @@ __all__ = [
 _LOGGER = AppLogger.get_logger(__name__)
 
 
-class LoginExchangeViewMixin(
-    BaseLoginViewMixin[_UserT],
-    Generic[_UserT],
-):
+class LoginExchangeViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
     """Login view mixin that returns a short-lived exchange JWT."""
 
     login_exchange_token_type = "login_exchange"
@@ -64,10 +59,7 @@ class LoginExchangeViewMixin(
         )
 
 
-class JWTAuthenticationViewMixin(
-    BaseLoginViewMixin[_UserT],
-    Generic[_UserT],
-):
+class JWTAuthenticationViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
     """Authentication mixin that returns SimpleJWT access/refresh tokens."""
 
     def get_user_roles(self, login_payload: LoginPayload) -> tuple[str, ...]:

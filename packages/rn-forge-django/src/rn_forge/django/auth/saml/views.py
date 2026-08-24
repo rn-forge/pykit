@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from urllib.parse import quote, urldefrag
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from rest_framework.exceptions import ValidationError
@@ -19,8 +19,6 @@ from rn_forge.django.settings import rn_forge_django_settings
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseBase, HttpResponseRedirect
 
-_UserT = TypeVar("_UserT")
-
 __all__ = [
     "SAMLLoginAPIView",
     "SAMLLoginViewMixin",
@@ -29,7 +27,7 @@ __all__ = [
 _LOGGER = AppLogger.get_logger(__name__)
 
 
-class SAMLLoginViewMixin(LoginExchangeViewMixin[_UserT], Generic[_UserT]):
+class SAMLLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
     """Hook-driven SAML login flow for consuming apps."""
 
     # -----------------------------------------------------------------------
@@ -166,10 +164,9 @@ class SAMLLoginViewMixin(LoginExchangeViewMixin[_UserT], Generic[_UserT]):
         return LoginPayload(user=user)
 
 
-class SAMLLoginAPIView(
+class SAMLLoginAPIView[_UserT](
     SAMLLoginViewMixin[_UserT],
     BaseLoginAPIView,
-    Generic[_UserT],
 ):
     """Common SAML login API view that returns an exchange token."""
 

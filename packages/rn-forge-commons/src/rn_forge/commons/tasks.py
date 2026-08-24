@@ -30,7 +30,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from types import MappingProxyType, TracebackType
-from typing import Any, Generic, Self, TypeVar
+from typing import Any, Self
 
 from concurrent.futures import CancelledError
 
@@ -41,7 +41,6 @@ __all__ = ["Task", "TaskPool"]
 
 _LOGGER = AppLogger.get_logger(__name__)
 
-_TaskType = TypeVar("_TaskType", bound="Task")
 
 
 class Task(ABC):
@@ -154,7 +153,7 @@ class Task(ABC):
         """
 
 
-class TaskPool(Generic[_TaskType]):
+class TaskPool[_TaskType: Task]:
     """Thread pool that submits :class:`Task` instances and tracks their results.
 
     The type parameter ``_TaskType`` bounds the pool to a specific

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from rest_framework import status
 from rest_framework.authentication import BaseAuthentication
@@ -17,8 +17,6 @@ from rn_forge.django.auth.payload import LoginPayload
 
 from django.contrib import auth as django_auth
 from django.http import HttpResponseBase
-
-_UserT = TypeVar("_UserT")
 
 __all__ = [
     "BaseLoginAPIView",
@@ -35,7 +33,7 @@ _DJANGO_AUTH = cast(DjangoAuthProtocol, django_auth)
 # ---------------------------------------------------------------------------
 
 
-class BaseLoginViewMixin(Generic[_UserT]):
+class BaseLoginViewMixin[_UserT]:
     """Session-oriented login/logout helpers for DRF views.
 
     This mixin is intentionally token-agnostic. Subclasses can override

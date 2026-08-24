@@ -323,8 +323,8 @@ class AppLogger(VerboseLoggerBase):
 
     # All keyword-only, one per LoggingConfig.build() override.
     @staticmethod
-    def initialize(  # NOSONAR
-        *,
+    def initialize(
+        *,  # NOSONAR
         root_logger_name: str,
         level: int | None = None,
         file: str | None = None,
@@ -485,10 +485,10 @@ class AppLogger(VerboseLoggerBase):
 
     # -- trace -------------------------------------------------------------
 
-    # NOSONAR(python:S1845): these method names intentionally match the
-    # stdlib logging.Logger / verboselogs.VerboseLogger API (and the
-    # same-named level constants above) — that's the entire point of
-    # subclassing them. Renaming would break drop-in compatibility.
+    # These method names intentionally match the stdlib logging.Logger /
+    # verboselogs.VerboseLogger API (and the same-named level constants
+    # above) — that's the entire point of subclassing them. Renaming would
+    # break drop-in compatibility. Suppressed below (S1845) via NOSONAR.
 
     def critical(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``CRITICAL`` level."""

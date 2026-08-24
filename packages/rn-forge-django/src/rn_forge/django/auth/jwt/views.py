@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import ValidationError
@@ -17,17 +17,13 @@ from rn_forge.django.auth.jwt.utils import JWTUtils
 from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.drf import RequestUtils
 
-_UserT = TypeVar("_UserT")
-
 __all__ = ["UserTokenView"]
 
 _LOGGER = AppLogger.get_logger(__name__)
 
 
 @_LOGGER.audit_class(include_inherited=True)
-class UserTokenView(
-    JWTAuthenticationViewMixin[_UserT], BaseLoginAPIView, Generic[_UserT]
-):
+class UserTokenView[_UserT](JWTAuthenticationViewMixin[_UserT], BaseLoginAPIView):
     """Exchange a short-lived login token for the final JWT pair."""
 
     exchange_token_param = "exchange_token"

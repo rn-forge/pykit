@@ -9,7 +9,7 @@ suppression. A DRF upgrade has one file to revisit.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
-from typing import Any, Protocol, TypeAlias, cast
+from typing import Any, Protocol, cast
 
 from django.http import HttpRequest
 from rest_framework.decorators import (
@@ -33,7 +33,7 @@ __all__ = [
     "action",
 ]
 
-SerializerData: TypeAlias = dict[str, Any]
+type SerializerData = dict[str, Any]
 
 # ``rest_framework.decorators.action`` is an untyped module-level function.
 # Re-exported with a typed signature so view modules import it from here rather

@@ -11,7 +11,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, ClassVar, TypeAlias, cast
+from typing import Any, ClassVar, cast
 
 from django.http import HttpResponse
 from django.http.response import HttpResponseBase
@@ -66,7 +66,7 @@ __all__ = [
     "ViewResponse",
 ]
 
-ViewResponse: TypeAlias = HttpResponseBase | Response
+type ViewResponse = HttpResponseBase | Response
 view_action = cast(Any, action)
 _LOGGER = AppLogger.get_logger(__name__)
 

@@ -19,3 +19,5 @@ wheels/
 
 # temp files
 .out
+.coverage
+coverage.xml

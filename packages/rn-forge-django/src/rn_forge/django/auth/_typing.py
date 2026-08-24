@@ -24,6 +24,8 @@ __all__ = [
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser, Permission
 
+    # Both are used as admin base classes below, so they must stay TypeAlias —
+    # a PEP 695 "type" statement alias cannot be subclassed.
     PermissionAdminBase: TypeAlias = admin.ModelAdmin[Permission]
     UserAdminBase: TypeAlias = DjangoUserAdmin[AbstractUser]
 else:

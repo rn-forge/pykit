@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar, cast
+from typing import cast
 
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
@@ -15,8 +15,6 @@ from rn_forge.django.drf import RequestUtils
 
 from django.contrib import auth as django_auth
 
-_UserT = TypeVar("_UserT")
-
 __all__ = [
     "BasicLoginViewMixin",
     "BasicLoginAPIView",
@@ -26,7 +24,7 @@ _LOGGER = AppLogger.get_logger(__name__)
 _DJANGO_AUTH = cast(DjangoAuthProtocol, django_auth)
 
 
-class BasicLoginViewMixin(LoginExchangeViewMixin[_UserT], Generic[_UserT]):
+class BasicLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
     """Username/password login flow backed by Django authentication."""
 
     username_param = "username"
@@ -65,9 +63,8 @@ class BasicLoginViewMixin(LoginExchangeViewMixin[_UserT], Generic[_UserT]):
 
 
 @_LOGGER.audit_class(include_inherited=True)
-class BasicLoginAPIView(
+class BasicLoginAPIView[_UserT](
     BasicLoginViewMixin[_UserT],
     BaseLoginAPIView,
-    Generic[_UserT],
 ):
     """Username/password login API view that returns an exchange token."""

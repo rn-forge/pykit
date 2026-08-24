@@ -148,25 +148,19 @@ def test_trace_method() -> None:
 
 
 def test_initialize_idempotent() -> None:
-    AppLogger._configured = False
     logger1 = AppLogger.initialize(root_logger_name="test")
     logger2 = AppLogger.initialize(root_logger_name="test")
     assert logger1.name == logger2.name
-    AppLogger._configured = False
 
 
 def test_initialize_with_name() -> None:
-    AppLogger._configured = False
     logger = AppLogger.initialize(root_logger_name="myapp")
     assert logger.name == "myapp"
-    AppLogger._configured = False
 
 
 def test_initialize_force_reconfigure() -> None:
-    AppLogger._configured = False
     AppLogger.initialize(root_logger_name="test")
     AppLogger.initialize(root_logger_name="test", force_reconfigure=True)
-    AppLogger._configured = False
 
 
 # -- DEFAULT_FORMAT vs OTEL_FORMAT -----------------------------------------
@@ -348,7 +342,6 @@ def test_logging_config_build_derives_otel_format() -> None:
 
 def test_configure_logging_json_non_root(tmp_path: Path) -> None:
     pytest.importorskip("pythonjsonlogger", reason="pythonjsonlogger not installed")
-    AppLogger._configured = False
     log_path = str(tmp_path / "svc.log")
     logger = AppLogger.initialize(
         root_logger_name="svc",
@@ -362,7 +355,6 @@ def test_configure_logging_json_non_root(tmp_path: Path) -> None:
     assert logger.name == "svc"
     assert logging.getLogger().handlers == []
     assert logging.getLogger("svc").handlers  # console + file handlers present
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
@@ -633,7 +625,6 @@ def test_audit_class_can_include_inherited_methods() -> None:
 
 def test_initialize_creates_log_file(tmp_path: Path) -> None:
     log_path = str(tmp_path / "app.log")
-    AppLogger._configured = False
     AppLogger.initialize(
         root_logger_name="test",
         file=log_path,
@@ -641,17 +632,14 @@ def test_initialize_creates_log_file(tmp_path: Path) -> None:
         force_reconfigure=True,
     )
     assert AppLogger.LOG_FILE is not None
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
 def test_initialize_file_without_extension_adds_timestamp(tmp_path: Path) -> None:
     log_path = str(tmp_path / "app")
-    AppLogger._configured = False
     AppLogger.initialize(root_logger_name="test", file=log_path, force_reconfigure=True)
     assert AppLogger.LOG_FILE is not None
     assert AppLogger.LOG_FILE.suffix == ".log"
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
@@ -659,20 +647,17 @@ def test_initialize_file_without_extension_adds_timestamp(tmp_path: Path) -> Non
 
 
 def test_initialize_configure_root_false() -> None:
-    AppLogger._configured = False
     logger = AppLogger.initialize(
         root_logger_name="isolated", configure_root=False, force_reconfigure=True
     )
     assert logger.name == "isolated"
     assert logging.getLogger().handlers == []
-    AppLogger._configured = False
 
 
 # -- initialize with update_loggers ----------------------------------------
 
 
 def test_initialize_update_loggers(monkeypatch: pytest.MonkeyPatch) -> None:
-    AppLogger._configured = False
     AppLogger.initialize(
         root_logger_name="test",
         update_loggers={"urllib3": logging.ERROR, "boto3": logging.WARNING},
@@ -680,7 +665,6 @@ def test_initialize_update_loggers(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert logging.getLogger("urllib3").level == logging.ERROR
     assert logging.getLogger("boto3").level == logging.WARNING
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
@@ -698,7 +682,6 @@ def test_initialize_enables_optional_hooks(monkeypatch: pytest.MonkeyPatch) -> N
         lambda optional: seen.__setitem__("otel", True),
     )
 
-    AppLogger._configured = False
     AppLogger.initialize(
         root_logger_name="test.hooks",
         enable_color=True,
@@ -764,7 +747,6 @@ def test_enrich_filter_always_returns_true() -> None:
 
 
 def test_configure_logging_root_has_console_handler() -> None:
-    AppLogger._configured = False
     AppLogger.initialize(
         root_logger_name="myapp",
         level=logging.INFO,
@@ -774,7 +756,6 @@ def test_configure_logging_root_has_console_handler() -> None:
     assert (
         logging.getLogger().handlers
     )  # console handler present when configure_root=True
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
@@ -782,7 +763,6 @@ def test_configure_logging_root_has_console_handler() -> None:
 
 
 def test_initialize_with_use_json() -> None:
-    AppLogger._configured = False
     logger = AppLogger.initialize(
         root_logger_name="test.json",
         use_json=False,
@@ -790,11 +770,12 @@ def test_initialize_with_use_json() -> None:
         force_reconfigure=True,
     )
     assert logger.name == "test.json"
-    AppLogger._configured = False
     logging.getLogger().handlers.clear()
 
 
-def test_configure_logging_use_json_builds_json_formatter() -> None:
+def test_configure_logging_use_json_builds_json_formatter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, object] = {}
 
     def fake_dict_config(config):
@@ -803,12 +784,8 @@ def test_configure_logging_use_json_builds_json_formatter() -> None:
     config = LoggingConfig.build(
         root_logger_name="svc", use_json=True, configure_root=False
     )
-    original = logging.config.dictConfig
-    logging.config.dictConfig = fake_dict_config
-    try:
-        AppLogger._configure_logging(config, None)
-    finally:
-        logging.config.dictConfig = original
+    monkeypatch.setattr(logging.config, "dictConfig", fake_dict_config)
+    AppLogger._configure_logging(config, None)
 
     assert "json" in captured["formatters"]
 

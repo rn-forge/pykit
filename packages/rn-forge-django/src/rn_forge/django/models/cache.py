@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 from operator import attrgetter
-from typing import Any, Protocol, TypeVar, cast
+from typing import Any, Protocol, cast
 
 from rn_forge.commons.utils import AppUtils
 
 __all__ = ["ModelLookupCache"]
 
-_ModelT = TypeVar("_ModelT", bound="object")
-_ModelClassT_co = TypeVar("_ModelClassT_co", bound="object", covariant=True)
 
-
-class _ModelClassProtocol(Protocol[_ModelClassT_co]):
+class _ModelClassProtocol[_ModelClassT_co](Protocol):
     objects: Any
 
 
@@ -44,7 +41,7 @@ class ModelLookupCache:
     def __init__(self) -> None:
         self.__cache: dict[str, dict[str, object]] = {}
 
-    def load(self, model_class: type[_ModelT], *model_keys: str) -> None:
+    def load[_ModelT](self, model_class: type[_ModelT], *model_keys: str) -> None:
         """Bulk-load all instances of *model_class* and index by *model_keys*."""
         key_getter = attrgetter(*model_keys)
         typed_model_class = cast(_ModelClassProtocol[_ModelT], model_class)
@@ -53,7 +50,9 @@ class ModelLookupCache:
             for instance in typed_model_class.objects.select_related()
         }
 
-    def get(self, model_class: type[_ModelT], *model_key_values: str) -> _ModelT | None:
+    def get[_ModelT](
+        self, model_class: type[_ModelT], *model_key_values: str
+    ) -> _ModelT | None:
         """Return the cached instance matching *model_key_values*, or ``None``."""
         return cast(
             _ModelT | None,
@@ -62,7 +61,7 @@ class ModelLookupCache:
             ),
         )
 
-    def set(
+    def set[_ModelT](
         self, model_class: type[_ModelT], instance: _ModelT, *model_keys: str
     ) -> None:
         """Insert or update *instance* in the cache."""

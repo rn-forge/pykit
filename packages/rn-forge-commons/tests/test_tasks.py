@@ -246,11 +246,11 @@ class TestTaskPoolContextManager:
             pool.executor.submit(lambda: None)
 
     def test_context_manager_propagates_exceptions(self):
-        # NOSONAR: intentionally wraps the whole `with TaskPool()` block —
-        # this verifies that an exception raised inside the context manager's
-        # body propagates out through TaskPool.__exit__, not just that the
-        # final `raise` throws.
-        with pytest.raises(ValueError, match="outer"):
+        # Intentionally wraps the whole `with TaskPool()` block — this
+        # verifies that an exception raised inside the context manager's body
+        # propagates out through TaskPool.__exit__, not just that the final
+        # `raise` throws.
+        with pytest.raises(ValueError, match="outer"):  # NOSONAR
             with TaskPool() as pool:
                 pool.submit(SimpleTask("t"))
                 raise ValueError("outer")
@@ -279,7 +279,8 @@ class TestTaskPoolConcurrency:
         release.set()
         pool.shutdown(fail_on_error=False)
 
-        assert started_a.is_set() and started_b.is_set()
+        assert started_a.is_set()
+        assert started_b.is_set()
 
 
 class TestTaskPoolAdvancedShutdown:
