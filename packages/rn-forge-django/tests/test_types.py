@@ -144,4 +144,5 @@ class TestIsolation:
         class Extra(BaseEnum):
             X = "X"
 
+        assert Extra._lookup == {"X": "X"}
         assert "X" not in Color._lookup

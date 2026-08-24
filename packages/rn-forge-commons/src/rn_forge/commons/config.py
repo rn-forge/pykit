@@ -273,78 +273,96 @@ class Config:
                 "Check for circular references."
             )
 
+        resolved = self._expand_value_placeholders(value)
+
+        if not isinstance(resolved, str):
+            return resolved
+
+        for pattern, kind in (
+            (_REF_DICT_PATTERN, "dict"),
+            (_REF_LIST_PATTERN, "list"),
+        ):
+            whole_ref = self._resolve_whole_string_ref(resolved, pattern, kind)
+            if whole_ref is not _SENTINEL:
+                return whole_ref
+
+        return resolved
+
+    def _expand_value_placeholders(self, value: str) -> Any:
+        """Iteratively expand all ``${}`` placeholders in *value*.
+
+        Returns the fully substituted string, or the referenced value itself
+        (with its original type preserved) when *value* is a single
+        placeholder.
+        """
         resolved: Any = value
 
-        # iteratively expand ${} value references
         for _ in range(_MAX_RESOLVE_DEPTH):
             if not isinstance(resolved, str) or not _REF_VALUE_PATTERN.search(resolved):
-                break
+                return resolved
 
             made_progress = False
             ref_paths = _REF_VALUE_PATTERN.findall(resolved)
             _LOGGER.trace("Value References: {} | {}", resolved, ref_paths)
             for ref_path in ref_paths:
-                placeholder = f"${{{ref_path}}}"
-                ref_value = DictUtils.get(self._data, ref_path, default=_SENTINEL)
-                _LOGGER.trace("Referenced Value: {} | {}", ref_path, ref_value)
-                if ref_value is _SENTINEL:
-                    _LOGGER.warning(
-                        "Config._resolve_value | unresolved_placeholder={}",
-                        placeholder,
-                    )
-                    continue  # unresolvable placeholder — skip it
-                made_progress = True
-                if placeholder == resolved:
-                    # entire string is one reference — preserve the resolved type
-                    resolved = ref_value
-                    break
-                # partial substitution — coerce to string
-                replaced = resolved.replace(placeholder, str(ref_value))
-                _LOGGER.trace("Post Substitution: {} | {}", resolved, replaced)
-                resolved = replaced
+                resolved, made_progress = self._substitute_value_ref(
+                    resolved, ref_path, made_progress
+                )
+                if not isinstance(resolved, str):
+                    return resolved
 
             if not made_progress:
-                break  # no placeholder was resolvable — stop
-        else:
-            raise RecursionError(
-                f"Reference resolution exceeded max depth ({_MAX_RESOLVE_DEPTH}). "
-                "Check for circular references."
+                return resolved  # no placeholder was resolvable — stop
+
+        raise RecursionError(
+            f"Reference resolution exceeded max depth ({_MAX_RESOLVE_DEPTH}). "
+            "Check for circular references."
+        )
+
+    def _substitute_value_ref(
+        self, resolved: str, ref_path: str, made_progress: bool
+    ) -> tuple[Any, bool]:
+        """Substitute a single ``${ref_path}`` placeholder into *resolved*."""
+        placeholder = f"${{{ref_path}}}"
+        ref_value = DictUtils.get(self._data, ref_path, default=_SENTINEL)
+        _LOGGER.trace("Referenced Value: {} | {}", ref_path, ref_value)
+        if ref_value is _SENTINEL:
+            _LOGGER.warning(
+                "Config._resolve_value | unresolved_placeholder={}",
+                placeholder,
             )
+            return resolved, made_progress  # unresolvable placeholder — skip it
 
-        if not isinstance(resolved, str):
+        if placeholder == resolved:
+            # entire string is one reference — preserve the resolved type
+            return ref_value, True
+
+        # partial substitution — coerce to string
+        replaced = resolved.replace(placeholder, str(ref_value))
+        _LOGGER.trace("Post Substitution: {} | {}", resolved, replaced)
+        return replaced, True
+
+    def _resolve_whole_string_ref(
+        self, resolved: str, pattern: re.Pattern[str], kind: str
+    ) -> Any:
+        """Resolve a whole-string ``@{}``/``#{}`` reference.
+
+        Returns ``_SENTINEL`` when *resolved* does not match *pattern* at all
+        (caller should try the next reference kind); otherwise returns the
+        referenced value, or *resolved* unchanged if the reference path is
+        absent from the configuration.
+        """
+        m = pattern.match(resolved)
+        if not m:
+            return _SENTINEL
+        ref = DictUtils.get(self._data, m.group(1), default=_SENTINEL)
+        if ref is _SENTINEL:
+            _LOGGER.warning(
+                "Config._resolve_value | unresolved_{}_ref={}", kind, m.group(1)
+            )
             return resolved
-
-        # check for @{} dict reference
-        m = _REF_DICT_PATTERN.match(resolved)
-        if m:
-            ref = DictUtils.get(self._data, m.group(1), default=_SENTINEL)
-            if ref is _SENTINEL:
-                _LOGGER.warning(
-                    "Config._resolve_value | unresolved_dict_ref={}",
-                    m.group(1),
-                )
-            else:
-                _LOGGER.trace(
-                    "Config._resolve_value | resolved_dict_ref={}", m.group(1)
-                )
-            return ref if ref is not _SENTINEL else resolved
-
-        # check for #{} list reference
-        m = _REF_LIST_PATTERN.match(resolved)
-        if m:
-            ref = DictUtils.get(self._data, m.group(1), default=_SENTINEL)
-            if ref is _SENTINEL:
-                _LOGGER.warning(
-                    "Config._resolve_value | unresolved_list_ref={}",
-                    m.group(1),
-                )
-            else:
-                _LOGGER.trace(
-                    "Config._resolve_value | resolved_list_ref={}", m.group(1)
-                )
-            return ref if ref is not _SENTINEL else resolved
-
-        return resolved
+        _LOGGER.trace("Config._resolve_value | resolved_{}_ref={}", kind, m.group(1))
+        return ref
 
     # -- dunder protocols --------------------------------------------------
 
@@ -373,7 +391,7 @@ class Config:
         """
         return key in self._data
 
-    def __iter__(self) -> Iterator[str]:  # pyright: ignore[override]
+    def __iter__(self) -> Iterator[str]:
         """Iterate over top-level keys in the configuration.
 
         Returns:

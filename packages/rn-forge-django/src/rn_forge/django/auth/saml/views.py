@@ -159,7 +159,7 @@ class SAMLLoginViewMixin(LoginExchangeViewMixin[_UserT], Generic[_UserT]):
         user_lookup = self.get_saml_user_lookup(request, auth)
         try:
             user = self.get_user(user_lookup)
-        except get_user_model().DoesNotExist:  # pyright: ignore[reportUnknownMemberType]
+        except get_user_model().DoesNotExist:
             if not getattr(self, "auto_create_user", False):
                 raise
             user = self.create_user_for_login(request, user_lookup)

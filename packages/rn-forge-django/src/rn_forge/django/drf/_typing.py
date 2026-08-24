@@ -1,11 +1,20 @@
-"""Internal typing helpers for DRF integration boundaries."""
+"""Internal typing helpers for DRF integration boundaries.
+
+DRF ships no type information, so this module is the single place where those
+gaps are absorbed — structural ``Protocol`` stand-ins for the DRF classes this
+package touches, plus re-exports that localize an otherwise-repeated
+suppression. A DRF upgrade has one file to revisit.
+"""
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
-from typing import Any, Protocol, TypeAlias
+from collections.abc import Callable, Iterator, Mapping
+from typing import Any, Protocol, TypeAlias, cast
 
 from django.http import HttpRequest
+from rest_framework.decorators import (
+    action as _drf_action,  # pyright: ignore[reportUnknownVariableType]
+)
 from rest_framework.request import Request
 
 __all__ = [
@@ -21,9 +30,15 @@ __all__ = [
     "SerializerData",
     "SerializerProtocol",
     "UpdateModelMixinProtocol",
+    "action",
 ]
 
 SerializerData: TypeAlias = dict[str, Any]
+
+# ``rest_framework.decorators.action`` is an untyped module-level function.
+# Re-exported with a typed signature so view modules import it from here rather
+# than repeating a suppression on each ``from rest_framework.decorators`` line.
+action: Callable[..., Callable[[Any], Any]] = cast(Any, _drf_action)
 
 
 class RequestProtocol(Protocol):

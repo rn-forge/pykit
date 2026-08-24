@@ -20,6 +20,8 @@ from rn_forge.commons.excel import (
     WorkbookTemplate,
 )
 
+from conftest import raise_
+
 
 # ---------------------------------------------------------------------------
 # CellFormat
@@ -146,7 +148,7 @@ class TestWorkbookIO:
         monkeypatch.setattr(
             excel_module.openpyxl,
             "load_workbook",
-            lambda *a, **k: (_ for _ in ()).throw(OSError("bad workbook")),
+            lambda *a, **k: raise_(OSError("bad workbook")),
         )
         with pytest.raises(OSError, match="bad workbook"):
             ExcelUtils.load_workbook("bad.xlsx")
@@ -155,9 +157,7 @@ class TestWorkbookIO:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         wb = Workbook()
-        monkeypatch.setattr(
-            wb, "save", lambda *a, **k: (_ for _ in ()).throw(OSError("write failed"))
-        )
+        monkeypatch.setattr(wb, "save", lambda *a, **k: raise_(OSError("write failed")))
         with pytest.raises(OSError, match="write failed"):
             ExcelUtils.write_workbook(wb, tmp_path / "out.xlsx")
 
@@ -166,7 +166,7 @@ class TestWorkbookIO:
     ):
         wb = Workbook()
         monkeypatch.setattr(
-            wb, "save", lambda *a, **k: (_ for _ in ()).throw(OSError("buffer failed"))
+            wb, "save", lambda *a, **k: raise_(OSError("buffer failed"))
         )
         with pytest.raises(OSError, match="buffer failed"):
             ExcelUtils.write_workbook_bytes(wb)
@@ -255,7 +255,7 @@ class TestExcelAdapter:
         monkeypatch.setattr(
             excel_module.pandas,
             "read_excel",
-            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("read failed")),
+            lambda *a, **k: raise_(RuntimeError("read failed")),
         )
         with pytest.raises(RuntimeError, match="read failed"):
             ExcelAdapter.read_dataframe("book.xlsx")
@@ -264,10 +264,11 @@ class TestExcelAdapter:
         monkeypatch.setattr(
             excel_module.pandas,
             "read_excel",
-            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("load failed")),
+            lambda *a, **k: raise_(RuntimeError("load failed")),
         )
+        source = BytesIO()
         with pytest.raises(RuntimeError, match="load failed"):
-            ExcelAdapter.load_dataframe(BytesIO())
+            ExcelAdapter.load_dataframe(source)
 
     def test_from_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
         frame = pd.DataFrame({"x": [1]})

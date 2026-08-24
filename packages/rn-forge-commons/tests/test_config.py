@@ -91,7 +91,7 @@ service_a:
   name: service-a
 
 service_b:
-  url: "http://${defaults.hosts.0}:8080/${service_a.name}"
+  url: "https://${defaults.hosts.0}:8080/${service_a.name}"
 """
     )
     return p
@@ -162,7 +162,7 @@ class TestValueReferences:
 
     def test_partial_string_interpolation(self, refs_yaml: Path) -> None:
         cfg = Config(refs_yaml)
-        assert cfg.get("service_b.url") == "http://host-a:8080/service-a"
+        assert cfg.get("service_b.url") == "https://host-a:8080/service-a"
 
     def test_preserves_type_on_full_ref(self, tmp_path: Path) -> None:
         """A full ${} ref to a non-string preserves the original type."""

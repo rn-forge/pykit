@@ -77,7 +77,9 @@ class TestInspectMethodArguments:
         assert result == ["a=1", "b=2", "c=3"]
 
     def test_kwargs(self):
-        def fn(x, y=10):
+        def fn(
+            x, y=10
+        ):  # NOSONAR: test fixture — empty function body used to test arg inspection
             pass
 
         result = ReflectUtils.inspect_method_arguments(fn, (5,), {"y": 20})
@@ -85,7 +87,9 @@ class TestInspectMethodArguments:
         assert "y=20" in result
 
     def test_defaults_applied(self):
-        def fn(x, y=99):
+        def fn(
+            x, y=99
+        ):  # NOSONAR: test fixture — empty function body used to test arg inspection
             pass
 
         result = ReflectUtils.inspect_method_arguments(fn, (1,), {})
@@ -93,7 +97,9 @@ class TestInspectMethodArguments:
 
     def test_self_excluded_by_default(self):
         class MyClass:
-            def method(self, value):
+            def method(
+                self, value
+            ):  # NOSONAR: test fixture — empty function body used to test arg inspection
                 pass
 
         obj = MyClass()
@@ -116,7 +122,9 @@ class TestInspectMethodArguments:
         assert "value" in names
 
     def test_custom_exclude(self):
-        def fn(a, b, c):
+        def fn(
+            a, b, c
+        ):  # NOSONAR: test fixture — empty function body used to test arg inspection
             pass
 
         result = ReflectUtils.inspect_method_arguments(fn, (1, 2, 3), {}, exclude=["b"])
@@ -126,7 +134,9 @@ class TestInspectMethodArguments:
 
     def test_include_overrides_default_exclusion(self):
         class MyClass:
-            def method(self, value):
+            def method(
+                self, value
+            ):  # NOSONAR: test fixture — empty function body used to test arg inspection
                 pass
 
         obj = MyClass()
@@ -137,7 +147,9 @@ class TestInspectMethodArguments:
         assert "self" in names
 
     def test_no_mutable_default_side_effects(self):
-        def fn(a, b):
+        def fn(
+            a, b
+        ):  # NOSONAR: test fixture — empty function body used to test arg inspection
             pass
 
         ReflectUtils.inspect_method_arguments(fn, (1, 2), {}, exclude=["a"])
@@ -149,14 +161,14 @@ class TestInspectMethodArguments:
 
 class TestInspectVariables:
     def test_simple_variable(self):
-        x = 42  # noqa: F841
+        x = 42  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("x", source_frame=frame)
         assert result == ["x=42"]
 
     def test_multiple_variables(self):
-        alpha = "hello"  # noqa: F841
-        beta = 99  # noqa: F841
+        alpha = "hello"  # noqa: F841  # NOSONAR: read via frame introspection, not statically
+        beta = 99  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("alpha, beta", source_frame=frame)
         assert "alpha=hello" in result
@@ -166,7 +178,7 @@ class TestInspectVariables:
         class Obj:
             name = "world"
 
-        obj = Obj()  # noqa: F841
+        obj = Obj()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.name", source_frame=frame)
         assert result == ["obj.name=world"]
@@ -178,7 +190,7 @@ class TestInspectVariables:
         class Outer:
             inner = Inner()
 
-        obj = Outer()  # noqa: F841
+        obj = Outer()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.inner.value", source_frame=frame)
         assert result == ["obj.inner.value=deep"]
@@ -188,20 +200,20 @@ class TestInspectVariables:
             def label(self):
                 return "dynamic"
 
-        obj = Obj()  # noqa: F841
+        obj = Obj()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.label", source_frame=frame)
         assert result == ["obj.label=dynamic"]
 
     def test_falls_back_to_caller_frame(self):
-        my_var = "present"  # noqa: F841
+        my_var = "present"  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         # source_frame=None → falls back to this caller's frame
         result = ReflectUtils.inspect_variables("my_var", source_frame=None)
         assert result == ["my_var=present"]
 
     def test_spaces_in_var_names_stripped(self):
-        a = 1  # noqa: F841
-        b = 2  # noqa: F841
+        a = 1  # noqa: F841  # NOSONAR: read via frame introspection, not statically
+        b = 2  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("a , b", source_frame=frame)
         assert "a=1" in result

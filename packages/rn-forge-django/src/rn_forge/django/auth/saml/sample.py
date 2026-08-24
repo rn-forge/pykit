@@ -55,7 +55,7 @@ class SampleSAMLLoginAPIView(SAMLLoginAPIView[models.AbstractUser]):
     def get_user(self, user_lookup: dict[str, str]) -> models.AbstractUser:
         """Resolve the local user for the SAML assertion."""
         user_model = cast(type[models.AbstractUser], get_user_model())
-        return cast(models.AbstractUser, user_model.objects.get(**user_lookup))
+        return user_model.objects.get(**user_lookup)
 
     def create_user_for_login(
         self,
@@ -73,7 +73,7 @@ class SampleSAMLLoginAPIView(SAMLLoginAPIView[models.AbstractUser]):
         }
         if callable(create_user):
             return cast(models.AbstractUser, create_user(**user_kwargs))
-        return cast(models.AbstractUser, user_model.objects.create(**user_kwargs))
+        return user_model.objects.create(**user_kwargs)
 
     @staticmethod
     def _get_saml_attribute(

@@ -6,9 +6,12 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 import rn_forge.commons.collections as collections_module
 from rn_forge.commons.collections import DictUtils, JsonUtils, ListUtils, YamlUtils
+
+from conftest import raise_
 
 
 # -- DictUtils.get ---------------------------------------------------------
@@ -139,7 +142,9 @@ class TestDictSet:
 class TestDictMerge:
     def test_no_overrides_returns_target(self) -> None:
         target = {"a": 1}
-        assert DictUtils.merge(target) is target
+        assert (
+            DictUtils.merge(target) is target
+        )  # NOSONAR: deliberately asserting identity, not equality
 
     def test_simple_merge(self) -> None:
         target = {"a": 1}
@@ -323,7 +328,7 @@ class TestJsonSerialize:
         monkeypatch.setattr(
             collections_module.json,
             "dumps",
-            lambda *a, **k: (_ for _ in ()).throw(TypeError("boom")),
+            lambda *a, **k: raise_(TypeError("boom")),
         )
         with pytest.raises(TypeError, match="boom"):
             JsonUtils.serialize({"a": 1})
@@ -392,7 +397,7 @@ class TestYamlLoad:
         assert YamlUtils.load(text) == {"a": {"b": {"c": "deep"}}}
 
     def test_load_invalid_raises(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(yaml.YAMLError):
             YamlUtils.load("a: [1")
 
 
@@ -411,7 +416,7 @@ class TestYamlLoadAll:
         assert result == [{"a": 1}, {"b": 2}]
 
     def test_load_all_invalid_raises(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(yaml.YAMLError):
             YamlUtils.load_all("a: 1\n---\nb: [2")
 
 
@@ -438,7 +443,7 @@ class TestYamlSerialize:
         monkeypatch.setattr(
             collections_module.yaml,
             "dump",
-            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("bad dump")),
+            lambda *a, **k: raise_(RuntimeError("bad dump")),
         )
         with pytest.raises(RuntimeError, match="bad dump"):
             YamlUtils.serialize({"a": 1})
@@ -449,7 +454,7 @@ class TestYamlSerialize:
         monkeypatch.setattr(
             collections_module.yaml,
             "dump_all",
-            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("bad dump all")),
+            lambda *a, **k: raise_(RuntimeError("bad dump all")),
         )
         with pytest.raises(RuntimeError, match="bad dump all"):
             YamlUtils.serialize_all({"a": 1})
@@ -487,13 +492,13 @@ class TestYamlFileIO:
     def test_read_file_error_propagates(self, tmp_path: Path) -> None:
         p = tmp_path / "bad.yaml"
         p.write_text("a: [1")
-        with pytest.raises(Exception):
+        with pytest.raises(yaml.YAMLError):
             YamlUtils.read_file(p)
 
     def test_read_file_all_error_propagates(self, tmp_path: Path) -> None:
         p = tmp_path / "bad.yaml"
         p.write_text("a: 1\n---\nb: [2")
-        with pytest.raises(Exception):
+        with pytest.raises(yaml.YAMLError):
             YamlUtils.read_file_all(p)
 
     def test_write_file_error_propagates(

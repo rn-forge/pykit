@@ -97,7 +97,7 @@ def assert_that(val: Any, description: str = "") -> Any:
     _check_assertpy_available()
     from assertpy import assert_that as _assert_that
 
-    return _assert_that(val, description)
+    return _assert_that(val, description=description)
 
 
 def soft_assertions() -> Any:

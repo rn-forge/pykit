@@ -145,8 +145,9 @@ class TestAsDict:
         class NotDC(DataclassMixin):
             pass
 
+        instance = NotDC()
         with pytest.raises(TypeError, match="not a dataclass"):
-            NotDC().as_dict()
+            instance.as_dict()
 
 
 # ---------------------------------------------------------------------------

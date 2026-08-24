@@ -37,7 +37,8 @@ class TestAppException:
         assert "error_code=1" in r
 
     def test_is_exception(self):
-        with pytest.raises(Exception):
+        assert issubclass(AppException, Exception)
+        with pytest.raises(AppException):
             raise AppException("boom")
 
     def test_args_set_for_stdlib_compat(self):

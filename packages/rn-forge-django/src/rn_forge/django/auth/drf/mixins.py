@@ -77,7 +77,7 @@ class AuthorizationViewMixin(RequestAccessViewMixin):
 
     def is_request_authorized(self, request: Request) -> bool:
         """Return ``True`` to bypass standard permission checks."""
-
+        del request
         return False
 
     def get_permission_key(self) -> str | None:
@@ -130,6 +130,7 @@ class AuthorizationViewMixin(RequestAccessViewMixin):
         self, obj: BaseModel | dict[str, Any]
     ) -> str | None:
         """Return an error string to deny access, or ``None`` to allow it."""
+        del obj
         return None
 
 
@@ -142,7 +143,7 @@ class PermissionKeyViewMixin:
     @property
     def drf_request(self) -> Request:
         """Return ``self.request`` narrowed to a DRF request."""
-        return cast(Request, getattr(self, "request"))  # pyright: ignore[reportUnknownArgumentType]
+        return cast(Request, getattr(self, "request"))
 
     def get_permission_key(self) -> str | None:
         base_key = self.permission_key

@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, cast
 
-from django.db import models
+from rn_forge.django._typing import EnumFieldBase
 
 from .enums import BaseEnum
 
 __all__ = ["EnumField"]
 
 
-class EnumField(models.CharField):
+class EnumField(EnumFieldBase):
     """CharField that round-trips values through a ``BaseEnum`` subclass."""
 
     _enum_type: type[BaseEnum]
@@ -27,12 +28,15 @@ class EnumField(models.CharField):
         *,
         enum_type: type[BaseEnum],
         default: BaseEnum | None = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> "EnumField":
         """Build an enum-backed field with sensible defaults."""
         kwargs.setdefault("choices", enum_type)
         kwargs.setdefault("default", default.value if default else None)
-        kwargs.setdefault("max_length", max(len(item.value) for item in enum_type))
+        kwargs.setdefault(
+            "max_length",
+            max(len(member.value) for member in cast(Iterable[BaseEnum], enum_type)),
+        )
 
         instance = cls(**kwargs)
         instance._enum_type = enum_type

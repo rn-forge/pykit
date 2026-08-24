@@ -23,11 +23,18 @@ from operator import attrgetter
 from typing import Any, Iterable, cast, override
 
 from rn_forge.commons.logging import AppLogger
+from rn_forge.django._typing import (
+    DateField,
+    NullableDateField,
+    StrField,
+    TimestampField,
+)
 from rn_forge.django.models._meta import get_model_meta
 from rn_forge.django.models.enums import Status
 from rn_forge.django.models.fields import EnumField
 
 from django.db import connection, models
+from django.db.models.base import ModelBase
 
 __all__ = [
     "BaseModel",
@@ -46,7 +53,7 @@ _LOGGER = AppLogger.get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class NaturalKeyLookupManager(models.Manager):
+class NaturalKeyLookupManager(models.Manager["BaseModel"]):
     """Manager that supports natural-key deserialization in Django fixtures.
 
     The model must implement :meth:`FixtureModelMixin.natural_keys`.
@@ -143,10 +150,14 @@ class BaseModel(
         enum_type=Status,
         default=Status.Active,
     )
-    created_by = models.CharField(max_length=255, db_column="createdBy")
-    created_at = models.DateTimeField(auto_now_add=True, db_column="createdAt")
-    updated_by = models.CharField(max_length=255, db_column="updatedBy")
-    updated_at = models.DateTimeField(auto_now=True, db_column="updatedAt")
+    created_by: StrField = models.CharField(max_length=255, db_column="createdBy")
+    created_at: TimestampField = models.DateTimeField(
+        auto_now_add=True, db_column="createdAt"
+    )
+    updated_by: StrField = models.CharField(max_length=255, db_column="updatedBy")
+    updated_at: TimestampField = models.DateTimeField(
+        auto_now=True, db_column="updatedAt"
+    )
 
     objects = NaturalKeyLookupManager()
     validate_on_save = False
@@ -165,7 +176,7 @@ class BaseModel(
     def save(
         self,
         *,
-        force_insert: bool = False,
+        force_insert: bool | tuple[ModelBase, ...] = False,
         force_update: bool = False,
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
@@ -173,15 +184,12 @@ class BaseModel(
         """Optionally run model validation, then delegate to ``super().save()``.
 
         The explicit ``full_clean`` call is kept here because this library
-        allows models to opt into validation-on-save, and Django's current
-        stubs require a narrow Pyright suppression on that call boundary.
+        allows models to opt into validation-on-save.
         """
         if self.should_validate_on_save():
-            self.full_clean(  # pyright: ignore[reportUnknownMemberType]
-                exclude=self.get_full_clean_exclude(update_fields)
-            )
+            self.full_clean(exclude=self.get_full_clean_exclude(update_fields))
 
-        cast(Any, super()).save(
+        super().save(
             force_insert=force_insert,
             force_update=force_update,
             using=using,
@@ -219,7 +227,7 @@ class BaseModel(
 class DateModel(BaseModel):
     """Abstract model that adds a single ``date`` field to :class:`BaseModel`."""
 
-    date = models.DateField()
+    date: DateField = models.DateField()
 
     class Meta(BaseModel.Meta):
         abstract = True
@@ -234,8 +242,10 @@ class DateRangeModel(BaseModel):
 
     DATE_RANGE_ACTIVE_FIELD = "is_date_range_active"
 
-    start_date = models.DateField(db_column="startDate")
-    end_date = models.DateField(blank=True, null=True, db_column="endDate")
+    start_date: DateField = models.DateField(db_column="startDate")
+    end_date: NullableDateField = models.DateField(
+        blank=True, null=True, db_column="endDate"
+    )
 
     class Meta(BaseModel.Meta):
         abstract = True
@@ -244,5 +254,5 @@ class DateRangeModel(BaseModel):
     def is_date_range_active(self) -> bool:
         """Return ``True`` when today falls within ``[start_date, end_date]``."""
         today = date.today()
-        end_date = cast(date | None, self.end_date)
+        end_date = self.end_date
         return (self.start_date <= today) and (end_date is None or end_date >= today)

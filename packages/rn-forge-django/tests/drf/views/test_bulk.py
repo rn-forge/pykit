@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 
 import pytest
 
@@ -168,7 +168,7 @@ class _BulkLoadImportWidgetView(BulkLoadImportViewMixin, GenericViewSet):
 
 
 @pytest.fixture(autouse=True)
-def _bulk_widget_schema() -> None:
+def _bulk_widget_schema() -> Generator[None, None, None]:
     with connection.schema_editor() as schema_editor:
         schema_editor.create_model(_BulkWidget)
         schema_editor.create_model(_ImportWidget)

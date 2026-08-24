@@ -100,8 +100,9 @@ class TestAssertThat:
         assert_that({"a": 1, "b": 2}).contains_key("a").contains_value(2)
 
     def test_description_on_failure(self):
+        wrapped = assert_that(1, "my label")
         with pytest.raises(AssertionError, match="my label"):
-            assert_that(1, "my label").is_equal_to(2)
+            wrapped.is_equal_to(2)
 
     def test_path_exists(self, tmp_path: Path):
         assert_that(str(tmp_path)).exists().is_directory()
@@ -131,6 +132,9 @@ class TestSoftAssertions:
             assert_that("ok").is_not_empty()
 
     def test_collects_multiple_failures(self):
+        # NOSONAR: intentionally wraps multiple failing assertions — this
+        # verifies soft_assertions() collects them all into one combined
+        # error raised at context exit, not that a single call throws.
         with pytest.raises(AssertionError) as exc_info:
             with soft_assertions():
                 assert_that(1).is_equal_to(99)
@@ -162,6 +166,9 @@ class TestSoftAssertions:
         )
 
     def test_passes_through_non_assertion_exceptions(self):
+        # NOSONAR: intentionally wraps the whole `with soft_assertions()`
+        # block — this verifies a non-assertion exception propagates through
+        # the context manager unchanged, not just that `raise` throws.
         with pytest.raises(ValueError, match="boom"):
             with soft_assertions():
                 raise ValueError("boom")

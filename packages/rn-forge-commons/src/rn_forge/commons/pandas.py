@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import Any
 
 import pandas
+from rn_forge.commons._typing import series_columns, series_value
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
 
@@ -54,13 +55,9 @@ class PandasUtils:
                 :exc:`~rn_forge.commons.AppException` if the field is NaN / missing.
         """
         try:
-            field_value: Any = row[field_name]  # pyright: ignore[reportUnknownVariableType]  # pandas-stubs gap
+            field_value: Any = series_value(row, field_name)
         except Exception:
-            columns = (
-                list(row.index.tolist())  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]  # pandas-stubs gap
-                if hasattr(row, "index")
-                else "<unavailable>"
-            )
+            columns = series_columns(row) if hasattr(row, "index") else "<unavailable>"
             _LOGGER.exception(
                 "PandasUtils.get_field failed | field={} | required={} | columns={}",
                 field_name,
@@ -68,7 +65,7 @@ class PandasUtils:
                 columns,
             )
             raise
-        is_valid = not pandas.isna(field_value)  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+        is_valid = not PandasUtils.is_na(field_value)
         _LOGGER.trace(
             "PandasUtils.get_field | field={} | required={} | is_valid={} | value={}",
             field_name,
@@ -81,7 +78,7 @@ class PandasUtils:
             _LOGGER.warning(
                 "PandasUtils.get_field missing required value | field={} | columns={}",
                 field_name,
-                list(row.index.tolist()),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]  # pandas-stubs gap
+                series_columns(row),
             )
         AppException.check(
             not required or is_valid,
@@ -89,7 +86,7 @@ class PandasUtils:
             field_name,
         )
 
-        return field_value if is_valid else None  # pyright: ignore[reportUnknownVariableType]  # pandas-stubs gap
+        return field_value if is_valid else None
 
     @staticmethod
     def get_string_field(
@@ -152,6 +149,7 @@ class PandasUtils:
 
         Mirrors :func:`pandas.isna` but always returns a plain ``bool``.
         """
-        result = bool(pandas.isna(value))  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+        # pandas-stubs gap: the ``isna`` overload set leaks Unknown type vars.
+        result = bool(pandas.isna(value))  # pyright: ignore[reportUnknownArgumentType]
         _LOGGER.trace("PandasUtils.is_na | result={}", result)
         return result

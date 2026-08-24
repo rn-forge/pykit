@@ -5,17 +5,17 @@ from __future__ import annotations
 from typing import Any, cast
 
 from rest_framework import status
-from rest_framework.decorators import action  # pyright: ignore[reportUnknownVariableType]
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.commons.logging import AppLogger
-from rn_forge.django.drf.utils import RequestUtils
 from rn_forge.django.drf._typing import (
     ListSerializerProtocol,
     ModelViewSetProtocol,
     RequestProtocol,
     SerializerData,
+    action,
 )
+from rn_forge.django.drf.utils import RequestUtils
 from rn_forge.django.drf.views.mixins import AuditFieldsViewMixin
 
 from django.db import transaction
@@ -43,6 +43,7 @@ class BulkCreateViewMixin:
 
     def validate_bulk_create_item(self, item: SerializerData) -> str | None:
         """Return an error string for one validated item, or ``None``."""
+        del item
         return None
 
     @bulk_action(methods=["post"], detail=False, url_path="bulk-create")
@@ -112,6 +113,7 @@ class BulkDeleteViewMixin:
 
     def validate_bulk_delete_instance(self, instance: Any) -> str | None:
         """Return an error string for one delete target, or ``None``."""
+        del instance
         return None
 
     @bulk_action(methods=["delete"], detail=False, url_path="bulk-delete")

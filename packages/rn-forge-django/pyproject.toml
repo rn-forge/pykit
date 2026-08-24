@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-django"
-version = "0.1.0"
+version = "0.2.0"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -44,6 +44,7 @@ markers = [
 [dependency-groups]
 dev = [
   "assertpy>=1.1",
+  "django-stubs>=6.0.7",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

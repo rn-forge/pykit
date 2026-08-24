@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-commons"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared, framework-agnostic utilities for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -36,6 +36,7 @@ addopts = "-ra"
 [dependency-groups]
 dev = [
   "assertpy>=1.1",
+  "pandas-stubs>=3.0.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

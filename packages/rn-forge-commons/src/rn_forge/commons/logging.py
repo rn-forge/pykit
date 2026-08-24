@@ -24,9 +24,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from types import FrameType
-from typing import Any
+from typing import Any, cast
 
 import verboselogs
+from rn_forge.commons._typing import VerboseLoggerBase
 from rn_forge.commons.reflection import ReflectUtils
 
 # ---------------------------------------------------------------------------
@@ -149,11 +150,11 @@ class EnrichFilter(logging.Filter):
             Always ``True``.
         """
         if not hasattr(record, "service"):
-            record.service = self.service_name  # pyright: ignore[attr-defined]
+            record.service = self.service_name
         if not hasattr(record, "env"):
-            record.env = self.environment  # pyright: ignore[attr-defined]
+            record.env = self.environment
         if not hasattr(record, "caller"):
-            record.caller = f"{record.name}.{record.funcName}"  # pyright: ignore[attr-defined]
+            record.caller = f"{record.name}.{record.funcName}"
 
         if self.inject_otel_defaults:
             for attr, default in (
@@ -258,7 +259,7 @@ class LoggingConfig:
 # ---------------------------------------------------------------------------
 # AppLogger
 # ---------------------------------------------------------------------------
-class AppLogger(verboselogs.VerboseLogger):
+class AppLogger(VerboseLoggerBase):
     """Custom logger with TRACE level, runtime level switching, and audit decorators.
 
     Extends :class:`verboselogs.VerboseLogger` which already provides
@@ -311,7 +312,7 @@ class AppLogger(verboselogs.VerboseLogger):
                 :class:`verboselogs.VerboseLogger`.
             level: Initial log level. Defaults to :data:`logging.NOTSET`.
         """
-        super().__init__(name, level)  # pyright: ignore[reportUnknownMemberType]  # verboselogs lacks stubs
+        super().__init__(name, level)  # verboselogs lacks stubs
         self._init_level = self.level
         self._audit_level = getattr(
             self, os.environ.get("AUDIT_LOG_LEVEL", "SPAM").upper(), verboselogs.SPAM
@@ -320,8 +321,9 @@ class AppLogger(verboselogs.VerboseLogger):
 
     # -- configuration -----------------------------------------------------
 
+    # All keyword-only, one per LoggingConfig.build() override.
     @staticmethod
-    def initialize(
+    def initialize(  # NOSONAR
         *,
         root_logger_name: str,
         level: int | None = None,
@@ -430,7 +432,7 @@ class AppLogger(verboselogs.VerboseLogger):
             AppLogger._configured = True
 
             logger = AppLogger.get_logger(_config.root_logger_name)
-            logger.notice(  # pyright: ignore[reportUnknownMemberType]  # verboselogs lacks stubs
+            logger.notice(
                 "App Logger Configured -> {} | {}",
                 logging.getLevelName(_config.level),
                 file_path,
@@ -450,7 +452,7 @@ class AppLogger(verboselogs.VerboseLogger):
         ``wsgi.py``, ``AppConfig.ready()``).
         """
         cls._register_levels_and_class()
-        return logging.getLogger(name)  # pyright: ignore[reportReturnType]
+        return cast(AppLogger, logging.getLogger(name))
 
     # -- level management --------------------------------------------------
 
@@ -483,15 +485,20 @@ class AppLogger(verboselogs.VerboseLogger):
 
     # -- trace -------------------------------------------------------------
 
-    def critical(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    # NOSONAR(python:S1845): these method names intentionally match the
+    # stdlib logging.Logger / verboselogs.VerboseLogger API (and the
+    # same-named level constants above) — that's the entire point of
+    # subclassing them. Renaming would break drop-in compatibility.
+
+    def critical(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``CRITICAL`` level."""
         super().critical(msg, *args, **kwargs)
 
-    def fatal(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def fatal(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``FATAL`` level."""
         super().fatal(msg, *args, **kwargs)
 
-    def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``ERROR`` level."""
         super().error(msg, *args, **kwargs)
 
@@ -500,37 +507,37 @@ class AppLogger(verboselogs.VerboseLogger):
         kwargs.setdefault("exc_info", True)
         super().exception(msg, *args, **kwargs)
 
-    def success(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def success(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``SUCCESS`` level."""
-        super().success(msg, *args, **kwargs)  # pyright: ignore[reportUnknownMemberType]
+        super().success(msg, *args, **kwargs)
 
-    def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``WARNING`` level."""
         super().warning(msg, *args, **kwargs)
 
-    def notice(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def notice(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``NOTICE`` level."""
-        super().notice(msg, *args, **kwargs)  # pyright: ignore[reportUnknownMemberType]
+        super().notice(msg, *args, **kwargs)
 
-    def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``INFO`` level."""
         super().info(msg, *args, **kwargs)
 
-    def verbose(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def verbose(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``VERBOSE`` level."""
-        super().verbose(msg, *args, **kwargs)  # pyright: ignore[reportUnknownMemberType]
+        super().verbose(msg, *args, **kwargs)
 
-    def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``DEBUG`` level."""
         super().debug(msg, *args, **kwargs)
 
-    def spam(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def spam(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``SPAM`` level."""
-        super().spam(msg, *args, **kwargs)  # pyright: ignore[reportUnknownMemberType]
+        super().spam(msg, *args, **kwargs)
 
-    def trace(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+    def trace(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``TRACE`` level."""
-        self.log(TRACE, msg, *args, **kwargs)  # pyright: ignore[reportArgumentType]
+        self.log(TRACE, msg, *args, **kwargs)
 
     # -- audit decorators --------------------------------------------------
 
@@ -597,21 +604,9 @@ class AppLogger(verboselogs.VerboseLogger):
         _include = include or []
 
         def decorator(cls: type) -> type:
-            if include_inherited:
-                members = inspect.getmembers(cls, predicate=inspect.isfunction)
-            else:
-                members = [
-                    (attr_name, attr_value)
-                    for attr_name, attr_value in cls.__dict__.items()
-                    if inspect.isfunction(attr_value)
-                ]
-
+            members = AppLogger._collect_auditable_members(cls, include_inherited)
             for attr_name, attr_value in members:
-                if attr_name.startswith("_"):
-                    continue
-                if _include and attr_name not in _include:
-                    continue
-                if attr_name in _exclude:
+                if not self._should_audit_member(attr_name, _exclude, _include):
                     continue
                 setattr(
                     cls,
@@ -623,6 +618,28 @@ class AppLogger(verboselogs.VerboseLogger):
             return cls
 
         return decorator
+
+    @staticmethod
+    def _collect_auditable_members(
+        target_cls: type, include_inherited: bool
+    ) -> list[tuple[str, Any]]:
+        if include_inherited:
+            return inspect.getmembers(target_cls, predicate=inspect.isfunction)
+        return [
+            (attr_name, attr_value)
+            for attr_name, attr_value in target_cls.__dict__.items()
+            if inspect.isfunction(attr_value)
+        ]
+
+    @staticmethod
+    def _should_audit_member(
+        attr_name: str, exclude: list[str], include: list[str]
+    ) -> bool:
+        if attr_name.startswith("_"):
+            return False
+        if include and attr_name not in include:
+            return False
+        return attr_name not in exclude
 
     def _wrap_audited(
         self,
@@ -640,76 +657,122 @@ class AppLogger(verboselogs.VerboseLogger):
             func_name = ReflectUtils.get_fully_qualified_name(func)
             logger = AppLogger.get_logger(func.__module__)
 
-            if logger.isEnabledFor(audit_level):
-                try:
-                    formatted_args = _format_arguments(
-                        func, args, kwargs, exclude, include
-                    )
-                    logger.log(
-                        audit_level,
-                        "Enter -> {}",
-                        sep.join(formatted_args) if formatted_args else "<empty>",
-                        extra={"caller": func_name},
-                    )
-                except Exception as log_exc:
-                    logger.warning(
-                        "audit_entry_error: {} | {}",
-                        func_name,
-                        f"{type(log_exc).__qualname__}: {log_exc}",
-                    )
+            AppLogger._log_audit_enter(
+                logger,
+                func,
+                func_name,
+                args,
+                kwargs,
+                exclude,
+                include,
+                audit_level,
+                sep,
+            )
 
             start = time.perf_counter()
             try:
                 result = func(*args, **kwargs)
             except Exception as exc:
                 elapsed = time.perf_counter() - start
-                if not getattr(exc, "_audit_logged", False):
-                    setattr(exc, "_audit_logged", True)
-                    logger.log(
-                        audit_level,
-                        "Error -> {} | Time={:.6f} | {}",
-                        func_name,
-                        elapsed,
-                        f"{type(exc).__qualname__}: {exc}",
-                        extra={"caller": func_name},
-                        exc_info=True,
-                    )
-                else:
-                    logger.log(
-                        audit_level,
-                        "Error -> {} | Time={:.6f} | re-raised {}",
-                        func_name,
-                        elapsed,
-                        type(exc).__qualname__,
-                        extra={"caller": func_name},
-                    )
+                AppLogger._log_audit_error(logger, func_name, exc, elapsed, audit_level)
                 raise
 
             elapsed = time.perf_counter() - start
-
-            if log_return_value and logger.isEnabledFor(audit_level):
-                logger.log(
-                    audit_level,
-                    "ReturnValue -> {}",
-                    result,
-                    extra={"caller": func_name},
-                )
-
-            if logger.isEnabledFor(audit_level):
-                logger.log(
-                    audit_level,
-                    "Exit -> {}",
-                    sep.join(
-                        [
-                            f"Time={elapsed:.6f}",
-                            f"type={type(result).__qualname__}",
-                        ]
-                    ),
-                    extra={"caller": func_name},
-                )
+            AppLogger._log_audit_exit(
+                logger, func_name, result, elapsed, audit_level, sep, log_return_value
+            )
             return result
 
         return wrapper
+
+    @staticmethod
+    def _log_audit_enter(
+        logger: AppLogger,
+        func: Any,
+        func_name: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        exclude: list[str],
+        include: list[str],
+        audit_level: int,
+        sep: str,
+    ) -> None:
+        if not logger.isEnabledFor(audit_level):
+            return
+        try:
+            formatted_args = _format_arguments(func, args, kwargs, exclude, include)
+            logger.log(
+                audit_level,
+                "Enter -> {}",
+                sep.join(formatted_args) if formatted_args else "<empty>",
+                extra={"caller": func_name},
+            )
+        except Exception as log_exc:
+            logger.warning(
+                "audit_entry_error: {} | {}",
+                func_name,
+                f"{type(log_exc).__qualname__}: {log_exc}",
+            )
+
+    @staticmethod
+    def _log_audit_error(
+        logger: AppLogger,
+        func_name: str,
+        exc: Exception,
+        elapsed: float,
+        audit_level: int,
+    ) -> None:
+        if not getattr(exc, "_audit_logged", False):
+            setattr(exc, "_audit_logged", True)
+            logger.log(
+                audit_level,
+                "Error -> {} | Time={:.6f} | {}",
+                func_name,
+                elapsed,
+                f"{type(exc).__qualname__}: {exc}",
+                extra={"caller": func_name},
+                exc_info=True,
+            )
+        else:
+            logger.log(
+                audit_level,
+                "Error -> {} | Time={:.6f} | re-raised {}",
+                func_name,
+                elapsed,
+                type(exc).__qualname__,
+                extra={"caller": func_name},
+            )
+
+    @staticmethod
+    def _log_audit_exit(
+        logger: AppLogger,
+        func_name: str,
+        result: Any,
+        elapsed: float,
+        audit_level: int,
+        sep: str,
+        log_return_value: bool,
+    ) -> None:
+        if log_return_value and logger.isEnabledFor(audit_level):
+            logger.log(
+                audit_level,
+                "ReturnValue -> {}",
+                result,
+                extra={"caller": func_name},
+            )
+
+        if logger.isEnabledFor(audit_level):
+            logger.log(
+                audit_level,
+                "Exit -> {}",
+                sep.join(
+                    [
+                        f"Time={elapsed:.6f}",
+                        f"type={type(result).__qualname__}",
+                    ]
+                ),
+                extra={"caller": func_name},
+            )
 
     # -- variable inspection helpers ---------------------------------------
 
@@ -877,15 +940,15 @@ def _try_enable_coloredlogs(config: LoggingConfig) -> None:
     coloredlogs is a best-effort enhancement, never a hard requirement.
     """
     try:
-        import coloredlogs  # pyright: ignore[import-untyped]
+        import coloredlogs
     except ImportError:
         return
 
     try:
         coloredlogs.install(  # pyright: ignore[reportUnknownMemberType]  # coloredlogs lacks stubs
             level=config.level,
-            field_styles={**coloredlogs.DEFAULT_FIELD_STYLES, **config.field_styles},  # pyright: ignore[reportUnknownMemberType]
-            level_styles={**coloredlogs.DEFAULT_LEVEL_STYLES, **config.level_styles},  # pyright: ignore[reportUnknownMemberType]
+            field_styles={**coloredlogs.DEFAULT_FIELD_STYLES, **config.field_styles},
+            level_styles={**coloredlogs.DEFAULT_LEVEL_STYLES, **config.level_styles},
         )
     except Exception:
         return
@@ -895,14 +958,14 @@ def _enable_otel_log_correlation(*, optional: bool) -> None:
     """Inject OTel trace/span IDs into log records."""
     try:
         module = importlib.import_module("opentelemetry.instrumentation.logging")
-        LoggingInstrumentor = module.LoggingInstrumentor
+        instrumentor_cls = module.LoggingInstrumentor
     except Exception:
         if optional:
             return
         raise
 
     try:
-        LoggingInstrumentor().instrument(set_logging_format=False)
+        instrumentor_cls().instrument(set_logging_format=False)
     except Exception:
         if optional:
             return
@@ -952,21 +1015,7 @@ def _resolve_variables(var_names: str, frame: FrameType | None) -> list[str]:
     parts: list[str] = []
     for name in (n.strip() for n in var_names.split(",")):
         if "." in name:
-            root, _, rest = name.partition(".")
-            if root in local_vars:
-                root_val = local_vars[root]
-            elif root in global_vars:
-                root_val = global_vars[root]
-            else:
-                parts.append(f"{name}=<undefined>")
-                continue
-            try:
-                val = _attrgetter(rest)(root_val)
-                if callable(val):
-                    val = val()
-                parts.append(f"{name}={val!r}")
-            except AttributeError:
-                parts.append(f"{name}=<undefined>")
+            parts.append(_resolve_dotted_variable(name, local_vars, global_vars))
         elif name in local_vars:
             parts.append(f"{name}={local_vars[name]!r}")
         elif name in global_vars:
@@ -974,6 +1023,26 @@ def _resolve_variables(var_names: str, frame: FrameType | None) -> list[str]:
         else:
             parts.append(f"{name}=<undefined>")
     return parts
+
+
+def _resolve_dotted_variable(
+    name: str, local_vars: dict[str, Any], global_vars: dict[str, Any]
+) -> str:
+    root, _, rest = name.partition(".")
+    if root in local_vars:
+        root_val = local_vars[root]
+    elif root in global_vars:
+        root_val = global_vars[root]
+    else:
+        return f"{name}=<undefined>"
+
+    try:
+        val = _attrgetter(rest)(root_val)
+        if callable(val):
+            val = val()
+        return f"{name}={val!r}"
+    except AttributeError:
+        return f"{name}=<undefined>"
 
 
 __all__ = [

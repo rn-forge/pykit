@@ -26,6 +26,8 @@ from rn_forge.commons.logging import (
 )
 import rn_forge.commons.logging as logging_module
 
+from conftest import raise_
+
 GLOBAL_RESOLVE_VAR = "g"
 
 
@@ -297,7 +299,7 @@ class _ListHandler(logging.Handler):
 def test_debug_and_trace_variables() -> None:
     _configure(level=logging.DEBUG)
     logger = _logger("test.vars")
-    value = 42
+    value = 42  # NOSONAR: read via frame introspection by debug_variables/trace_variables, not statically
     handler = _ListHandler()
     logger.addHandler(handler)
     try:
@@ -572,10 +574,10 @@ def test_audit_class_include_and_exclude() -> None:
     _configure()
     logger = _logger("test.audit.cls.include")
     logger.setLevel(TRACE)
-    Decorated = logger.audit_class(include=["keep"], exclude=["skip"])(
+    decorated = logger.audit_class(include=["keep"], exclude=["skip"])(
         IncludeExcludeSample
     )
-    obj = Decorated()
+    obj = decorated()
     assert hasattr(obj.keep, "__wrapped__")
     assert not hasattr(obj.skip, "__wrapped__")
 
@@ -583,8 +585,8 @@ def test_audit_class_include_and_exclude() -> None:
 def test_audit_class_exclude_branch() -> None:
     _configure()
     logger = _logger("test.audit.cls.exclude")
-    Decorated = logger.audit_class(exclude=["skip"])(IncludeExcludeSample)
-    obj = Decorated()
+    decorated = logger.audit_class(exclude=["skip"])(IncludeExcludeSample)
+    obj = decorated()
     assert not hasattr(obj.skip, "__wrapped__")
 
 
@@ -600,8 +602,8 @@ def test_audit_class_defaults_to_class_only() -> None:
         def local(self) -> str:
             return "local"
 
-    Decorated = logger.audit_class()(_Child)
-    obj = Decorated()
+    decorated = logger.audit_class()(_Child)
+    obj = decorated()
 
     assert hasattr(obj.local, "__wrapped__")
     assert not hasattr(obj.inherited, "__wrapped__")
@@ -619,8 +621,8 @@ def test_audit_class_can_include_inherited_methods() -> None:
         def local(self) -> str:
             return "local"
 
-    Decorated = logger.audit_class(include_inherited=True)(_Child)
-    obj = Decorated()
+    decorated = logger.audit_class(include_inherited=True)(_Child)
+    obj = decorated()
 
     assert hasattr(obj.local, "__wrapped__")
     assert hasattr(obj.inherited, "__wrapped__")
@@ -838,7 +840,7 @@ def test_log_variables_noop_when_disabled() -> None:
     handler = _ListHandler()
     logger.addHandler(handler)
     try:
-        value = 1  # noqa: F841
+        value = 1  # noqa: F841  # NOSONAR: read via frame introspection by debug_variables, not statically
         logger.debug_variables("value")
         assert handler.records == []
     finally:
@@ -858,7 +860,7 @@ def test_try_enable_coloredlogs_install_failure_is_ignored(
     fake_coloredlogs = types.SimpleNamespace(
         DEFAULT_FIELD_STYLES={},
         DEFAULT_LEVEL_STYLES={},
-        install=lambda **kwargs: (_ for _ in ()).throw(RuntimeError("install failed")),
+        install=lambda **kwargs: raise_(RuntimeError("install failed")),
     )
     real_import = builtins.__import__
 
@@ -915,7 +917,7 @@ def test_audit_entry_error_is_logged(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         logging_module,
         "_format_arguments",
-        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("bad format")),
+        lambda *args, **kwargs: raise_(RuntimeError("bad format")),
     )
 
     @logger.audit_method()

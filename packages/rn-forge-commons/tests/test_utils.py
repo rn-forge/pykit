@@ -280,8 +280,8 @@ class TestImportString:
         assert join is os.path.join
 
     def test_import_class(self):
-        Path_ = AppUtils.import_string("pathlib.Path")
-        assert Path_ is Path
+        imported_path = AppUtils.import_string("pathlib.Path")
+        assert imported_path is Path
 
     def test_invalid_qualname_raises(self):
         with pytest.raises(ImportError):

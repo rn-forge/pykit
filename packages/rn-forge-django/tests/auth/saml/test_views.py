@@ -62,8 +62,9 @@ class _SAMLView(SAMLLoginViewMixin[_FakeUser]):
         return _FakeSAMLAuth()
 
     def get_saml_login_auth(self, request):
-        del request
-        return _FakeSAMLAuth()
+        # Same fake behavior as get_saml_auth; kept as a separate override
+        # because the base class defines two distinct hook methods.
+        return self.get_saml_auth(request)
 
 
 class _RedirectSAMLView(_SAMLView):

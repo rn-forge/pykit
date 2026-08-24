@@ -37,13 +37,13 @@ class TestCoerceProcessOutput:
 
 class TestProcessDataclass:
     def _make(self, **overrides):
-        defaults = dict(
-            name="test",
-            args=["echo", "hi"],
-            return_code=0,
-            stdout="hi\n",
-            stderr="",
-        )
+        defaults = {
+            "name": "test",
+            "args": ["echo", "hi"],
+            "return_code": 0,
+            "stdout": "hi\n",
+            "stderr": "",
+        }
         defaults.update(overrides)
         return Process(**defaults)
 

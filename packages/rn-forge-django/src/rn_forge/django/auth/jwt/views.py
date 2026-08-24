@@ -70,7 +70,7 @@ class UserTokenView(
             return cast(
                 _UserT, user_model._default_manager.get(**{user_id_field: user_id})
             )
-        except user_model.DoesNotExist:  # pyright: ignore[reportUnknownMemberType]
+        except user_model.DoesNotExist:
             raise ValidationError(
                 {self.exchange_token_param: ["Unknown user"]}
             ) from None

@@ -4,30 +4,31 @@ from typing import Any, cast
 
 from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.auth import get_user_model
 
-register_model = cast(Any, admin.register)  # pyright: ignore[reportUnknownMemberType]
+from rn_forge.django.auth._typing import PermissionAdminBase, UserAdminBase
+
+register_model = cast(Any, admin.register)
 
 User: type[AbstractUser] = cast(type[AbstractUser], get_user_model())
 
 
-@register_model(Permission)  # pyright: ignore[reportUntypedClassDecorator]
-class PermissionAdmin(admin.ModelAdmin):
+@register_model(Permission)
+class PermissionAdmin(PermissionAdminBase):
     list_display = ("name", "content_type", "codename")
     list_filter = ("content_type",)
     search_fields = ("name", "codename")
     ordering = ("content_type", "codename")
 
 
-@register_model(Group)  # pyright: ignore[reportUntypedClassDecorator]
+@register_model(Group)
 class GroupAdmin(DjangoGroupAdmin):
     pass
 
 
-@register_model(User)  # pyright: ignore[reportUntypedClassDecorator]
-class UserAdmin(DjangoUserAdmin):
+@register_model(User)
+class UserAdmin(UserAdminBase):
     list_display = (
         "username",
         "email",

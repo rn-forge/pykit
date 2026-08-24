@@ -311,16 +311,19 @@ class TestUserTokenView:
             ),
             parsers=[JSONParser()],
         )
+
+        def _raise_invalid_token(_token: str) -> None:
+            raise ValueError("Invalid login exchange token")
+
         monkeypatch.setattr(
             JWTUtils,
             "validate_login_exchange_token",
-            lambda _token: (_ for _ in ()).throw(
-                ValueError("Invalid login exchange token")
-            ),
+            _raise_invalid_token,
         )
 
+        view = _UserTokenView()
         with pytest.raises(ValidationError):
-            _UserTokenView().post(request)
+            view.post(request)
 
 
 class TestJWTCredentials:

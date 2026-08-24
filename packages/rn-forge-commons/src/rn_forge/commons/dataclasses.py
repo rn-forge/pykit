@@ -323,63 +323,83 @@ def _coerce_field_value(annotation: Any, value: Any) -> Any:
 
     origin = get_origin(annotation)
     if origin in (list, set, tuple):
-        item_types = get_args(annotation)
-        item_type = item_types[0] if item_types else Any
-        _LOGGER.trace(
-            "_coerce_field_value: sequence | origin={} | item_type={} | length={}",
-            getattr(origin, "__name__", origin),
-            item_type,
-            len(value),
-        )
-        items = [_coerce_field_value(item_type, item) for item in value]
-        if origin is list:
-            return items
-        if origin is set:
-            return set(items)
-        return tuple(items)
+        return _coerce_sequence(origin, annotation, value)
 
     if origin is dict:
-        args = get_args(annotation)
-        value_type = args[1] if len(args) > 1 else Any
-        _LOGGER.trace(
-            "_coerce_field_value: dict | value_type={} | keys={}",
-            value_type,
-            sorted(value),
-        )
-        return {k: _coerce_field_value(value_type, v) for k, v in value.items()}
+        return _coerce_dict(annotation, value)
 
     if origin in (UnionType, Union):
-        non_none = [a for a in get_args(annotation) if a is not type(None)]
-        # dict values are coerced into the first matching dataclass arm
-        if isinstance(value, dict):
-            for arg in non_none:
-                if dataclasses.is_dataclass(get_origin(arg) or arg):
-                    _LOGGER.trace(
-                        "_coerce_field_value: union dict matched dataclass arm | arg={}",
-                        arg,
-                    )
-                    return _coerce_field_value(arg, value)
-        # list/tuple values are coerced into the first matching sequence arm
-        elif isinstance(value, (list, tuple)):
-            for arg in non_none:
-                if get_origin(arg) in (list, set, tuple):
-                    _LOGGER.trace(
-                        "_coerce_field_value: union sequence matched arm | arg={}",
-                        arg,
-                    )
-                    return _coerce_field_value(arg, value)
-
-        return cast(Any, value)
+        return _coerce_union(annotation, value)
 
     if dataclasses.is_dataclass(annotation) and isinstance(value, dict):
-        _LOGGER.trace(
-            "_coerce_field_value: nested dataclass | annotation={} | keys={}",
-            getattr(annotation, "__name__", annotation),
-            sorted(cast(dict[Any, Any], value).keys()),
-        )
-        from_dict = getattr(annotation, "from_dict", None)
-        if callable(from_dict):
-            return from_dict(value)
-        return cast(type[Any], annotation)(**value)
+        return _coerce_nested_dataclass(annotation, value)
 
     return value
+
+
+def _coerce_sequence(origin: Any, annotation: Any, value: Any) -> Any:
+    """Coerce a ``list``/``set``/``tuple``-annotated field, recursing into item types."""
+    item_types = get_args(annotation)
+    item_type = item_types[0] if item_types else Any
+    _LOGGER.trace(
+        "_coerce_field_value: sequence | origin={} | item_type={} | length={}",
+        getattr(origin, "__name__", origin),
+        item_type,
+        len(value),
+    )
+    items = [_coerce_field_value(item_type, item) for item in value]
+    if origin is list:
+        return items
+    if origin is set:
+        return set(items)
+    return tuple(items)
+
+
+def _coerce_dict(annotation: Any, value: Any) -> Any:
+    """Coerce a ``dict``-annotated field, recursing into value types."""
+    args = get_args(annotation)
+    value_type = args[1] if len(args) > 1 else Any
+    _LOGGER.trace(
+        "_coerce_field_value: dict | value_type={} | keys={}",
+        value_type,
+        sorted(value),
+    )
+    return {k: _coerce_field_value(value_type, v) for k, v in value.items()}
+
+
+def _coerce_union(annotation: Any, value: Any) -> Any:
+    """Coerce a ``Union``/``X | Y``-annotated field into its first matching arm."""
+    non_none = [a for a in get_args(annotation) if a is not type(None)]
+    # dict values are coerced into the first matching dataclass arm
+    if isinstance(value, dict):
+        for arg in non_none:
+            if dataclasses.is_dataclass(get_origin(arg) or arg):
+                _LOGGER.trace(
+                    "_coerce_field_value: union dict matched dataclass arm | arg={}",
+                    arg,
+                )
+                return _coerce_field_value(arg, value)
+    # list/tuple values are coerced into the first matching sequence arm
+    elif isinstance(value, (list, tuple)):
+        for arg in non_none:
+            if get_origin(arg) in (list, set, tuple):
+                _LOGGER.trace(
+                    "_coerce_field_value: union sequence matched arm | arg={}",
+                    arg,
+                )
+                return _coerce_field_value(arg, value)
+
+    return cast(Any, value)
+
+
+def _coerce_nested_dataclass(annotation: Any, value: Any) -> Any:
+    """Coerce a dict into a nested dataclass instance via its ``from_dict``."""
+    _LOGGER.trace(
+        "_coerce_field_value: nested dataclass | annotation={} | keys={}",
+        getattr(annotation, "__name__", annotation),
+        sorted(cast(dict[Any, Any], value).keys()),
+    )
+    from_dict = getattr(annotation, "from_dict", None)
+    if callable(from_dict):
+        return from_dict(value)
+    return cast(type[Any], annotation)(**value)

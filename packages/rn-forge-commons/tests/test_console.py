@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 
 import pytest
 
@@ -53,8 +54,9 @@ class TestBooleanAction:
         assert args.flag is False
 
     def test_invalid_value_raises(self) -> None:
+        parser = self._parser()
         with pytest.raises(argparse.ArgumentTypeError, match="Invalid boolean value"):
-            self._parser().parse_args(["--flag", "maybe"])
+            parser.parse_args(["--flag", "maybe"])
 
 
 # -- KeyValueAction --------------------------------------------------------
@@ -82,8 +84,8 @@ class TestKeyValueAction:
     def test_value_with_equals(self) -> None:
         p = argparse.ArgumentParser()
         p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "url=http://host?a=1"])
-        assert args.config == {"url": "http://host?a=1"}
+        args = p.parse_args(["--config", "url=https://host?a=1"])
+        assert args.config == {"url": "https://host?a=1"}
 
     def test_empty_value(self) -> None:
         p = argparse.ArgumentParser()
@@ -144,10 +146,11 @@ class TestLogArguments:
         args = parser.parse_args([])
         assert args.log_file is None
 
-    def test_log_file_flag(self) -> None:
+    def test_log_file_flag(self, tmp_path: Path) -> None:
+        log_file = str(tmp_path / "test.log")
         parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args(["--log-file", "/tmp/test.log"])
-        assert args.log_file == "/tmp/test.log"
+        args = parser.parse_args(["--log-file", log_file])
+        assert args.log_file == log_file
 
     def test_no_log_args(self) -> None:
         parser = CLIArgumentParser(prog="test", add_log_args=False)

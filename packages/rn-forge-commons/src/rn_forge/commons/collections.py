@@ -29,7 +29,7 @@ import re
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 import yaml
 from rn_forge.commons.logging import AppLogger
@@ -37,6 +37,14 @@ from rn_forge.commons.logging import AppLogger
 _DOT_SPLITTER = re.compile(r"(?<!\\)\.")
 
 _LOGGER = AppLogger.get_logger(__name__)
+
+_NON_CONTAINER_SEGMENT_MSG = (
+    "DictUtils.set | non_container_segment={} | type={} | key_path={}"
+)
+
+
+class _PathNotFound(Exception):
+    """Internal control-flow signal: a `DictUtils.get` path segment could not be resolved."""
 
 
 # ---------------------------------------------------------------------------
@@ -89,38 +97,48 @@ class DictUtils:
             return default
 
         current: Any = data
-        for token in _split_key_path(key_path):
-            if current is None:
-                _LOGGER.trace("NO_KEY_VALUE: {} | {}", token, current)
-                return default
-
-            if isinstance(current, Mapping):
-                _dict = cast(Mapping[str, Any], current)
-                if token not in _dict:
-                    _LOGGER.trace("MISSING_KEY_PART: {} | {}", token, _dict.keys())
-                    return default
-                current = _dict[token]
-            elif isinstance(current, list):
-                _list = cast(list[Any], current)
-                if not token.isdigit():
-                    _LOGGER.warning(
-                        "DictUtils.get | non_numeric_list_index={} | key_path={}",
-                        token,
-                        key_path,
-                    )
-                    return default
-                idx = int(token)
-                if idx >= len(_list):
-                    _LOGGER.trace("INDEX_OUT_OF_BOUNDS: {} | {}", idx, _list)
-                    return default
-                current = _list[idx]
-            else:
-                _LOGGER.trace(
-                    "UNKNOWN_CONDITION: {} | {} | {}", token, type(current), current
-                )
-                return default
-
+        try:
+            for token in _split_key_path(key_path):
+                current = DictUtils._get_step(current, token, key_path)
+        except _PathNotFound:
+            return default
         return current
+
+    @staticmethod
+    def _get_step(current: Any, token: str, key_path: str) -> Any:
+        """Resolve a single segment during `DictUtils.get` traversal.
+
+        Raises:
+            _PathNotFound: If *token* cannot be resolved against *current*.
+        """
+        if current is None:
+            _LOGGER.trace("NO_KEY_VALUE: {} | {}", token, current)
+            raise _PathNotFound
+
+        if isinstance(current, Mapping):
+            _dict = cast(Mapping[str, Any], current)
+            if token not in _dict:
+                _LOGGER.trace("MISSING_KEY_PART: {} | {}", token, _dict.keys())
+                raise _PathNotFound
+            return _dict[token]
+
+        if isinstance(current, list):
+            _list = cast(list[Any], current)
+            if not token.isdigit():
+                _LOGGER.warning(
+                    "DictUtils.get | non_numeric_list_index={} | key_path={}",
+                    token,
+                    key_path,
+                )
+                raise _PathNotFound
+            idx = int(token)
+            if idx >= len(_list):
+                _LOGGER.trace("INDEX_OUT_OF_BOUNDS: {} | {}", idx, _list)
+                raise _PathNotFound
+            return _list[idx]
+
+        _LOGGER.trace("UNKNOWN_CONDITION: {} | {} | {}", token, type(current), current)
+        raise _PathNotFound
 
     @staticmethod
     def set(
@@ -160,121 +178,103 @@ class DictUtils:
 
         tokens = _split_key_path(key_path)
         last_token = tokens[-1]
-        current: Any = data
+        current = DictUtils._set_traverse(data, tokens, key_path)
+        DictUtils._set_final_segment(current, last_token, value, key_path)
 
+    @staticmethod
+    def _set_traverse(data: dict[str, Any], tokens: list[str], key_path: str) -> Any:
+        """Walk all but the last path segment, creating intermediate dicts as needed."""
+        last_token = tokens[-1]
+        current: Any = data
         for idx, token in enumerate(tokens[:-1]):
             _LOGGER.trace("KEY_PART: {} | {} | {}", idx, token, tokens[:-1])
             next_token = last_token if idx == len(tokens) - 2 else tokens[idx + 1]
             _LOGGER.trace("NEXT_VAL: {} | {}", idx, next_token)
             if isinstance(current, list):
                 ls = cast(list[Any], current)
-                if not token.isdigit():
-                    _LOGGER.warning(
-                        "DictUtils.set | non_numeric_list_index={} | key_path={}",
-                        token,
-                        key_path,
-                    )
-                    raise KeyError(
-                        f"Non-numeric index '{token}' for list in path '{key_path}'"
-                    )
-                index = int(token)
-                if index >= len(ls):
-                    _LOGGER.warning(
-                        "DictUtils.set | list_index_out_of_bounds={} | length={} | key_path={}",
-                        index,
-                        len(ls),
-                        key_path,
-                    )
-                    raise IndexError(
-                        f"Index {index} out of bounds (len={len(ls)}) in path '{key_path}'"
-                    )
-                current = ls[index]
+                list_index = DictUtils._resolve_list_index(ls, token, key_path)
+                current = ls[list_index]
                 continue
+            current = DictUtils._set_dict_step(current, token, idx, tokens, key_path)
+        return current
 
-            if not isinstance(current, dict):
-                segment = ".".join(tokens[:idx]) or "<root>"
-                _LOGGER.warning(
-                    "DictUtils.set | non_container_segment={} | type={} | key_path={}",
-                    segment,
-                    type(current).__name__,
-                    key_path,
-                )
-                raise TypeError(
-                    "Cannot traverse path '{path}': segment '{segment}' "
-                    "resolved to non-container type '{type_name}'".format(
-                        path=key_path,
-                        segment=segment,
-                        type_name=type(current).__name__,
-                    )
-                )
+    @staticmethod
+    def _set_dict_step(
+        current: Any, token: str, idx: int, tokens: list[str], key_path: str
+    ) -> Any:
+        """Resolve (creating if absent) one dict-valued intermediate segment."""
+        if not isinstance(current, dict):
+            segment = ".".join(tokens[:idx]) or "<root>"
+            DictUtils._raise_segment_type_error(
+                key_path, segment, type(current).__name__, "resolved to"
+            )
 
-            d = cast(dict[str, Any], current)
-            if token not in d:
-                next_value: Any = {}
-                d[token] = next_value
-            else:
-                next_value = d[token]
-                if not isinstance(next_value, (dict, list)):
-                    segment = ".".join(tokens[: idx + 1])
-                    _LOGGER.warning(
-                        "DictUtils.set | non_container_segment={} | type={} | key_path={}",
-                        segment,
-                        type(next_value).__name__,
-                        key_path,
-                    )
-                    raise TypeError(
-                        "Cannot traverse path '{path}': segment '{segment}' "
-                        "holds non-container type '{type_name}'".format(
-                            path=key_path,
-                            segment=segment,
-                            type_name=type(next_value).__name__,
-                        )
-                    )
-            current = cast(Any, next_value)
+        d = cast(dict[str, Any], current)
+        if token not in d:
+            next_value: Any = {}
+            d[token] = next_value
+            return next_value
 
+        next_value = d[token]
+        if not isinstance(next_value, (dict, list)):
+            segment = ".".join(tokens[: idx + 1])
+            DictUtils._raise_segment_type_error(
+                key_path, segment, type(next_value).__name__, "holds"
+            )
+        return cast(Any, next_value)
+
+    @staticmethod
+    def _set_final_segment(
+        current: Any, last_token: str, value: Any, key_path: str
+    ) -> None:
+        """Assign *value* onto the resolved container at the final path segment."""
         if isinstance(current, list):
             ls = cast(list[Any], current)
-            if not last_token.isdigit():
-                _LOGGER.warning(
-                    "DictUtils.set | non_numeric_list_index={} | key_path={}",
-                    last_token,
-                    key_path,
-                )
-                raise KeyError(
-                    f"Non-numeric index '{last_token}' for list in path '{key_path}'"
-                )
-            idx = int(last_token)
-            if idx >= len(ls):
-                _LOGGER.warning(
-                    "DictUtils.set | list_index_out_of_bounds={} | length={} | key_path={}",
-                    idx,
-                    len(ls),
-                    key_path,
-                )
-                raise IndexError(
-                    f"Index {idx} out of bounds (len={len(ls)}) in path '{key_path}'"
-                )
+            idx = DictUtils._resolve_list_index(ls, last_token, key_path)
             ls[idx] = value
             return
 
         if not isinstance(current, dict):
-            segment = ".".join(tokens[:-1]) or "<root>"
-            _LOGGER.warning(
-                "DictUtils.set | non_container_segment={} | type={} | key_path={}",
-                segment,
-                type(current).__name__,
-                key_path,
-            )
-            raise TypeError(
-                "Cannot traverse path '{path}': segment '{segment}' "
-                "resolved to non-container type '{type_name}'".format(
-                    path=key_path,
-                    segment=segment,
-                    type_name=type(current).__name__,
-                )
+            segment = "<root>"
+            DictUtils._raise_segment_type_error(
+                key_path, segment, type(current).__name__, "resolved to"
             )
         d = cast(dict[str, Any], current)
         d[last_token] = value
+
+    @staticmethod
+    def _resolve_list_index(items: list[Any], token: str, key_path: str) -> int:
+        """Validate *token* as an in-bounds numeric list index for `DictUtils.set`."""
+        if not token.isdigit():
+            _LOGGER.warning(
+                "DictUtils.set | non_numeric_list_index={} | key_path={}",
+                token,
+                key_path,
+            )
+            raise KeyError(f"Non-numeric index '{token}' for list in path '{key_path}'")
+        index = int(token)
+        if index >= len(items):
+            _LOGGER.warning(
+                "DictUtils.set | list_index_out_of_bounds={} | length={} | key_path={}",
+                index,
+                len(items),
+                key_path,
+            )
+            raise IndexError(
+                f"Index {index} out of bounds (len={len(items)}) in path '{key_path}'"
+            )
+        return index
+
+    @staticmethod
+    def _raise_segment_type_error(
+        key_path: str, segment: str, type_name: str, verb: str
+    ) -> NoReturn:
+        """Log and raise the `TypeError` for a non-container segment in `DictUtils.set`."""
+        _LOGGER.warning(_NON_CONTAINER_SEGMENT_MSG, segment, type_name, key_path)
+        raise TypeError(
+            f"Cannot traverse path '{key_path}': segment '{segment}' "
+            f"{verb} non-container type '{type_name}'"
+        )
 
     @staticmethod
     def merge(target: dict[str, Any], *overrides: dict[str, Any]) -> dict[str, Any]:
@@ -310,23 +310,33 @@ class DictUtils:
         for override in overrides:
             if not override:
                 continue
-            _LOGGER.debug(
-                "DictUtils.merge | override_keys={} | target_size={}",
-                sorted(override),
-                len(target),
-            )
-            for key, value in override.items():
-                new_value = copy.deepcopy(value)
-                existing = target.get(key)
-                if isinstance(existing, dict) and isinstance(new_value, dict):
-                    DictUtils.merge(
-                        cast(dict[str, Any], existing), cast(dict[str, Any], new_value)
-                    )
-                else:
-                    if key in target and existing != new_value:
-                        _LOGGER.trace("OVERRIDE: {}", [key])
-                    target[key] = new_value
+            DictUtils._merge_override(target, override)
         return target
+
+    @staticmethod
+    def _merge_override(target: dict[str, Any], override: dict[str, Any]) -> None:
+        """Merge a single *override* dict's keys into *target*."""
+        _LOGGER.debug(
+            "DictUtils.merge | override_keys={} | target_size={}",
+            sorted(override),
+            len(target),
+        )
+        for key, value in override.items():
+            DictUtils._merge_key(target, key, value)
+
+    @staticmethod
+    def _merge_key(target: dict[str, Any], key: str, value: Any) -> None:
+        """Merge a single *key*/*value* pair from an override into *target*."""
+        new_value = copy.deepcopy(value)
+        existing = target.get(key)
+        if isinstance(existing, dict) and isinstance(new_value, dict):
+            DictUtils.merge(
+                cast(dict[str, Any], existing), cast(dict[str, Any], new_value)
+            )
+            return
+        if key in target and existing != new_value:
+            _LOGGER.trace("OVERRIDE: {}", [key])
+        target[key] = new_value
 
     @staticmethod
     def compare(
@@ -372,22 +382,7 @@ class DictUtils:
             return {"only_in_b": copy.deepcopy(dict_b)}
 
         for key, value_a in dict_a.items():
-            if key not in dict_b:
-                result.setdefault("only_in_a", {})[key] = copy.deepcopy(value_a)
-                continue
-            value_b = dict_b[key]
-            if isinstance(value_a, Mapping) and isinstance(value_b, Mapping):
-                nested = DictUtils.compare(
-                    cast(Mapping[str, Any], value_a),
-                    cast(Mapping[str, Any], value_b),
-                )
-                if nested:
-                    result.setdefault("conflicts", {})[key] = nested
-            elif value_a != value_b:
-                result.setdefault("conflicts", {})[key] = [
-                    copy.deepcopy(cast(Any, value_a)),
-                    copy.deepcopy(value_b),
-                ]
+            DictUtils._compare_a_key(result, key, value_a, dict_b)
 
         for key, value_b in dict_b.items():
             if key not in dict_a:
@@ -400,6 +395,31 @@ class DictUtils:
             len(cast(dict[str, Any], result.get("conflicts", {}))),
         )
         return result
+
+    @staticmethod
+    def _compare_a_key(
+        result: dict[str, Any],
+        key: str,
+        value_a: Any,
+        dict_b: Mapping[str, Any],
+    ) -> None:
+        """Compare one `dict_a` key/value against `dict_b`, recording into *result*."""
+        if key not in dict_b:
+            result.setdefault("only_in_a", {})[key] = copy.deepcopy(value_a)
+            return
+        value_b = dict_b[key]
+        if isinstance(value_a, Mapping) and isinstance(value_b, Mapping):
+            nested = DictUtils.compare(
+                cast(Mapping[str, Any], value_a),
+                cast(Mapping[str, Any], value_b),
+            )
+            if nested:
+                result.setdefault("conflicts", {})[key] = nested
+        elif value_a != value_b:
+            result.setdefault("conflicts", {})[key] = [
+                copy.deepcopy(cast(Any, value_a)),
+                copy.deepcopy(value_b),
+            ]
 
 
 # ---------------------------------------------------------------------------

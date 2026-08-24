@@ -100,82 +100,97 @@ class JWTAuthenticationViewMixin(
             )
         )
 
+    def _claim_sub(self, user: object) -> str | None:
+        """Return the ``sub`` claim value derived from the user's id/pk."""
+        user_id = getattr(user, "id", getattr(user, "pk", None))
+        return str(user_id) if user_id not in {None, ""} else None
+
+    def _claim_name(self, user: object) -> str | None:
+        """Return the ``name`` claim, falling back through several sources."""
+        get_full_name = getattr(user, "get_full_name", None)
+        if callable(get_full_name):
+            full_name = get_full_name()
+            if full_name not in {None, ""}:
+                return str(full_name)
+
+        first_name = getattr(user, "first_name", None)
+        last_name = getattr(user, "last_name", None)
+        if first_name not in {None, ""} or last_name not in {None, ""}:
+            full_name = " ".join(
+                part for part in (str(first_name or ""), str(last_name or "")) if part
+            ).strip()
+            if full_name:
+                return full_name
+
+        username = getattr(user, "username", None)
+        return str(username) if username not in {None, ""} else None
+
+    def _claim_given_family_names(self, user: object) -> tuple[str | None, str | None]:
+        """Return the ``given_name``/``family_name`` claim values."""
+        first_name = getattr(user, "first_name", None)
+        last_name = getattr(user, "last_name", None)
+        given_name = str(first_name) if first_name not in {None, ""} else None
+        family_name = str(last_name) if last_name not in {None, ""} else None
+        return given_name, family_name
+
+    def _claim_email(self, user: object) -> str | None:
+        """Return the ``email`` claim value."""
+        email = getattr(user, "email", None)
+        return str(email) if email not in {None, ""} else None
+
+    def _claim_email_verified(self, user: object) -> bool | None:
+        """Return the ``email_verified`` claim value."""
+        email_verified = getattr(user, "email_verified", None)
+        return bool(email_verified) if email_verified is not None else None
+
+    def _resolve_sequence_claim(
+        self, resolved: tuple[str, ...], existing: object
+    ) -> tuple[str, ...]:
+        """Return *resolved* values, or a normalized *existing* claim as fallback."""
+        if resolved:
+            return resolved
+        if isinstance(existing, Sequence) and not isinstance(existing, str):
+            return tuple(
+                str(value) for value in cast(Sequence[object], existing) if value
+            )
+        return ()
+
     def build_jwt_claims(
         self,
         login_payload: LoginPayload,
     ) -> dict[str, object]:
         """Return flat JWT claims to apply to the refresh/access token pair."""
         claims: dict[str, object] = {}
-
         user = login_payload.user
-        user_id = getattr(user, "id", getattr(user, "pk", None))
-        if user_id not in {None, ""}:
-            claims.setdefault("sub", str(user_id))
 
-        get_full_name = getattr(user, "get_full_name", None)
-        if callable(get_full_name):
-            full_name = get_full_name()
-            if full_name not in {None, ""}:
-                claims.setdefault("name", str(full_name))
+        sub = self._claim_sub(user)
+        if sub is not None:
+            claims["sub"] = sub
 
-        if claims.get("name") in {None, ""}:
-            first_name = getattr(user, "first_name", None)
-            last_name = getattr(user, "last_name", None)
-            if first_name not in {None, ""} or last_name not in {None, ""}:
-                full_name = " ".join(
-                    part
-                    for part in (str(first_name or ""), str(last_name or ""))
-                    if part
-                ).strip()
-                if full_name:
-                    claims["name"] = full_name
+        name = self._claim_name(user)
+        if name is not None:
+            claims["name"] = name
 
-        if claims.get("name") in {None, ""}:
-            username = getattr(user, "username", None)
-            if username not in {None, ""}:
-                claims["name"] = str(username)
+        given_name, family_name = self._claim_given_family_names(user)
+        if given_name is not None:
+            claims["given_name"] = given_name
+        if family_name is not None:
+            claims["family_name"] = family_name
 
-        first_name = getattr(user, "first_name", None)
-        if first_name not in {None, ""}:
-            claims.setdefault("given_name", str(first_name))
+        email = self._claim_email(user)
+        if email is not None:
+            claims["email"] = email
 
-        last_name = getattr(user, "last_name", None)
-        if last_name not in {None, ""}:
-            claims.setdefault("family_name", str(last_name))
-
-        email = getattr(user, "email", None)
-        if email not in {None, ""}:
-            claims.setdefault("email", str(email))
-
-        email_verified = getattr(user, "email_verified", None)
+        email_verified = self._claim_email_verified(user)
         if email_verified is not None:
-            claims.setdefault("email_verified", bool(email_verified))
+            claims["email_verified"] = email_verified
 
-        user_roles = self.get_user_roles(login_payload)
-        if user_roles:
-            claims["roles"] = user_roles
-        else:
-            roles = claims.get("roles")
-            if isinstance(roles, Sequence) and not isinstance(roles, str):
-                claims["roles"] = tuple(
-                    str(role) for role in cast(Sequence[object], roles) if role
-                )
-            else:
-                claims.setdefault("roles", ())
-
-        user_permissions = self.get_user_permissions(login_payload)
-        if user_permissions:
-            claims["permissions"] = user_permissions
-        else:
-            permissions = claims.get("permissions")
-            if isinstance(permissions, Sequence) and not isinstance(permissions, str):
-                claims["permissions"] = tuple(
-                    str(permission)
-                    for permission in cast(Sequence[object], permissions)
-                    if permission
-                )
-            else:
-                claims.setdefault("permissions", ())
+        claims["roles"] = self._resolve_sequence_claim(
+            self.get_user_roles(login_payload), claims.get("roles")
+        )
+        claims["permissions"] = self._resolve_sequence_claim(
+            self.get_user_permissions(login_payload), claims.get("permissions")
+        )
         return claims
 
     def build_login_response(self, login_payload: LoginPayload) -> dict[str, Any]:

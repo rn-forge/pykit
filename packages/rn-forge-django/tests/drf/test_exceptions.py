@@ -55,7 +55,7 @@ class TestDjangoExceptionHandler:
 class TestDrfExceptionHandler:
     def test_uses_context_message(self) -> None:
         request = Request(APIRequestFactory().get("/widgets/"))  # pyright: ignore[reportArgumentType]
-        exc = Exception("boom")
+        exc = RuntimeError("boom")
 
         response = drf_exception_handler(
             exc,

@@ -235,14 +235,17 @@ class ExcelUtils:
         )
         for cell in row:
             if row_format:
-                for key, value in vars(row_format).items():
-                    if value is not None:
-                        setattr(cell, key, value)
+                ExcelUtils._apply_cell_format(cell, row_format)
             col_fmt = _column_formats.get(cell.column) if cell.column else None
             if col_fmt:
-                for key, value in vars(col_fmt).items():
-                    if value is not None:
-                        setattr(cell, key, value)
+                ExcelUtils._apply_cell_format(cell, col_fmt)
+
+    @staticmethod
+    def _apply_cell_format(cell: Any, cell_format: CellFormat) -> None:
+        """Apply each non-``None`` attribute of *cell_format* onto *cell*."""
+        for key, value in vars(cell_format).items():
+            if value is not None:
+                setattr(cell, key, value)
 
     # -- table management --------------------------------------------------
 
@@ -281,7 +284,7 @@ class ExcelUtils:
             cell_range,
             style,
         )
-        table = Table(displayName=table_name, ref=cell_range)
+        table: Table = Table(displayName=table_name, ref=cell_range)
         table.tableStyleInfo = TableStyleInfo(
             name=style,
             showFirstColumn=show_first_column,
@@ -427,7 +430,9 @@ class ExcelAdapter:
             list(sheets),
         )
         try:
-            with pandas.ExcelWriter(buf, engine="openpyxl") as writer:  # pyright: ignore[reportUnknownVariableType]  # pandas-stubs gap
+            with pandas.ExcelWriter(
+                buf, engine="openpyxl"
+            ) as writer:  # pandas-stubs gap
                 for sheet_name, frame in sheets.items():
                     _LOGGER.trace(
                         "ExcelAdapter.from_dataframe sheet | name={} | rows={} | columns={}",

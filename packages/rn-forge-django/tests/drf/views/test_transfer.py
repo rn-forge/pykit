@@ -289,9 +289,10 @@ class TestExportViewMixin:
 
     def test_export_rejects_queryset_over_row_limit(self) -> None:
         request = Request(APIRequestFactory().get("/export/?format=xlsx"))
+        view = _LargeExportView()
 
         with pytest.raises(ValidationError):
-            _LargeExportView().export(request)
+            view.export(request)
 
     def test_export_allows_request_row_limit_override(self) -> None:
         request = Request(

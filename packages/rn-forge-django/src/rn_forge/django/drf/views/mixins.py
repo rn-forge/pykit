@@ -48,7 +48,7 @@ class RequestAccessViewMixin:
     @property
     def drf_request(self) -> Request:
         """Return ``self.request`` narrowed to a DRF request."""
-        return cast(Request, self.request)  # pyright: ignore[reportUnknownMemberType]
+        return cast(Request, self.request)
 
     def get_request_param(self, key: str, default: str | None = None) -> str | None:
         """Return a query parameter or *default_value*."""

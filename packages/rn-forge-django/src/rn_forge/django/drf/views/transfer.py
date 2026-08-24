@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Any, ClassVar, TypeAlias, cast
 
 from django.http import HttpResponse
@@ -21,7 +21,7 @@ from rn_forge.commons.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.utils import AppUtils
 from rest_framework import status
-from rest_framework.decorators import action  # pyright: ignore[reportUnknownVariableType]
+from rn_forge.django.drf._typing import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -1103,7 +1103,15 @@ class SnapshotImportViewMixin(UpsertImportViewMixin, ABC):
             for key, instance in existing_cache.items()
             if key not in imported_keys
         ]
-        return replace(dataset, delete_instances=delete_instances)
+        return ImportDataset(
+            row_count=dataset.row_count,
+            create_instances=dataset.create_instances,
+            update_instances=dataset.update_instances,
+            errors=dataset.errors,
+            lookup_keys=dataset.lookup_keys,
+            delete_instances=delete_instances,
+            update_fields=dataset.update_fields,
+        )
 
     def delete_missing_import_instances(
         self,

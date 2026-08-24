@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import decimal
 from decimal import Decimal
 
 import pytest
@@ -138,7 +139,7 @@ class TestGetDecimalField:
 
     def test_invalid_decimal_raises(self):
         row = _row(amount="not-a-number")
-        with pytest.raises(Exception):
+        with pytest.raises(decimal.InvalidOperation):
             PandasUtils.get_decimal_field(row, "amount")
 
 

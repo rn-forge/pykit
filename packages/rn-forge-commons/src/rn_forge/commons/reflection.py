@@ -170,28 +170,10 @@ class ReflectUtils:
             )
             return []
 
-        values: list[str] = []
-        for var in var_names.replace(" ", "").split(","):
-            if "." in var:
-                parts = var.split(".")
-                if parts[0] not in frame.f_locals:
-                    _logger().debug(
-                        "ReflectUtils.inspect_variables: missing root variable | var={}",
-                        parts[0],
-                    )
-                    values.append(f"{var}=<undefined>")
-                    continue
-                val = attrgetter(".".join(parts[1:]))(frame.f_locals[parts[0]])
-                values.append(f"{var}={val() if callable(val) else val}")
-            else:
-                if var not in frame.f_locals:
-                    _logger().debug(
-                        "ReflectUtils.inspect_variables: missing variable | var={}",
-                        var,
-                    )
-                    values.append(f"{var}=<undefined>")
-                    continue
-                values.append(f"{var}={frame.f_locals[var]}")
+        values = [
+            ReflectUtils._resolve_variable(var, frame)
+            for var in var_names.replace(" ", "").split(",")
+        ]
 
         _logger().trace(
             "ReflectUtils.inspect_variables: resolved_count={} | var_names={}",
@@ -199,3 +181,30 @@ class ReflectUtils:
             var_names,
         )
         return values
+
+    @staticmethod
+    def _resolve_variable(var: str, frame: FrameType) -> str:
+        """Resolve one ``"name=value"`` entry for `inspect_variables`."""
+        if "." in var:
+            return ReflectUtils._resolve_dotted_variable(var, frame)
+
+        if var not in frame.f_locals:
+            _logger().debug(
+                "ReflectUtils.inspect_variables: missing variable | var={}",
+                var,
+            )
+            return f"{var}=<undefined>"
+        return f"{var}={frame.f_locals[var]}"
+
+    @staticmethod
+    def _resolve_dotted_variable(var: str, frame: FrameType) -> str:
+        """Resolve a dot-notation ``"obj.attr"`` entry for `inspect_variables`."""
+        parts = var.split(".")
+        if parts[0] not in frame.f_locals:
+            _logger().debug(
+                "ReflectUtils.inspect_variables: missing root variable | var={}",
+                parts[0],
+            )
+            return f"{var}=<undefined>"
+        val = attrgetter(".".join(parts[1:]))(frame.f_locals[parts[0]])
+        return f"{var}={val() if callable(val) else val}"

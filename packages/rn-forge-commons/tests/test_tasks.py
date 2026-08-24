@@ -178,15 +178,18 @@ class TestTaskPoolSubmit:
 
     def test_submit_rejects_duplicate_names_in_batch(self):
         pool = TaskPool()
+        task_a = SimpleTask("dup")
+        task_b = SimpleTask("dup")
         with pytest.raises(AppException, match="Duplicate task names"):
-            pool.submit(SimpleTask("dup"), SimpleTask("dup"))
+            pool.submit(task_a, task_b)
         pool.shutdown(fail_on_error=False)
 
     def test_submit_rejects_duplicate_name_from_prior_submit(self):
         pool = TaskPool()
         pool.submit(SimpleTask("dup"))
+        second_task = SimpleTask("dup")
         with pytest.raises(AppException, match="already submitted"):
-            pool.submit(SimpleTask("dup"))
+            pool.submit(second_task)
         pool.shutdown(fail_on_error=False)
 
 
@@ -243,6 +246,10 @@ class TestTaskPoolContextManager:
             pool.executor.submit(lambda: None)
 
     def test_context_manager_propagates_exceptions(self):
+        # NOSONAR: intentionally wraps the whole `with TaskPool()` block —
+        # this verifies that an exception raised inside the context manager's
+        # body propagates out through TaskPool.__exit__, not just that the
+        # final `raise` throws.
         with pytest.raises(ValueError, match="outer"):
             with TaskPool() as pool:
                 pool.submit(SimpleTask("t"))

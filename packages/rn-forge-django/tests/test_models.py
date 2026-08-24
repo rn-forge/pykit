@@ -198,9 +198,6 @@ class _FakeModel:
 
     __name__ = "FakeModel"
 
-    class _Meta:
-        pass
-
     def __init__(self, key: str, value: str) -> None:
         self.key = key
         self.value = value
