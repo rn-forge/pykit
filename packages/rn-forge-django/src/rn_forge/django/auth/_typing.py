@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 
     # Both are used as admin base classes below, so they must stay TypeAlias —
     # a PEP 695 "type" statement alias cannot be subclassed.
-    PermissionAdminBase: TypeAlias = admin.ModelAdmin[Permission]
-    UserAdminBase: TypeAlias = DjangoUserAdmin[AbstractUser]
+    PermissionAdminBase: TypeAlias = admin.ModelAdmin[Permission]  # NOSONAR(S6794)
+    UserAdminBase: TypeAlias = DjangoUserAdmin[AbstractUser]  # NOSONAR(S6794)
 else:
     PermissionAdminBase = admin.ModelAdmin
     UserAdminBase = DjangoUserAdmin

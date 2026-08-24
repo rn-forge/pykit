@@ -488,7 +488,8 @@ class AppLogger(VerboseLoggerBase):
     # These method names intentionally match the stdlib logging.Logger /
     # verboselogs.VerboseLogger API (and the same-named level constants
     # above) — that's the entire point of subclassing them. Renaming would
-    # break drop-in compatibility. Suppressed below (S1845) via NOSONAR.
+    # break drop-in compatibility. The suppression comments below (S1845)
+    # silence the resulting lint warnings.
 
     def critical(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``CRITICAL`` level."""

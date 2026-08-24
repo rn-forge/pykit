@@ -21,3 +21,6 @@ wheels/
 .out
 .coverage
 coverage.xml
+
+# sonar-cleanup
+.sonar-cleanup/

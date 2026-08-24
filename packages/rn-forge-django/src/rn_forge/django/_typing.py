@@ -82,7 +82,9 @@ if TYPE_CHECKING:
     type NullableDateField = models.DateField[date | None, date | None]
     # Used as an EnumField base class below, so it must stay a TypeAlias — a
     # PEP 695 "type" statement alias cannot be subclassed.
-    EnumFieldBase: TypeAlias = models.CharField[BaseEnum | str | None, BaseEnum | None]
+    EnumFieldBase: TypeAlias = models.CharField[
+        BaseEnum | str | None, BaseEnum | None
+    ]  # NOSONAR(S6794)
 else:
     # Runtime fallbacks: the unsubscripted classes. Every alias gets one so that
     # consumers can use a single plain import rather than repeating a
