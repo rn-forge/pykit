@@ -1,7 +1,6 @@
 # pykit
 
-Development kit for Python programming. A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/)
-containing the `rn-forge-*` package family.
+Development kit for Python programming. A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) containing the `rn-forge-*` package family.
 
 Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
@@ -13,6 +12,15 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 
 Both packages ship a `py.typed` marker and are type-checked in strict mode.
+
+## Design principles
+
+1. **Don't reimplement a proven library.** If a maintained, widely-used package already does the job, depend on it. Zero dependencies is not a goal here — a small, deliberate dependency set is.
+2. **Wrap for one design language.** Where a library's setup or call syntax is verbose or inconsistent with the rest of the kit, ship a thin wrapper: frozen-dataclass config, `AppException`-derived errors, injected logging, curated re-exports. The wrapper standardizes; it does not extend, fork, or vendor.
+3. **Package boundaries are non-negotiable.** Framework-free packages import no web framework; heavy or situational dependencies live behind optional extras; protocols live in the lowest package that can hold them, adapters beside the technology they adapt.
+4. **pykit is upstream.** Applications are built on these libraries rather than re-deriving them, so apps sharing pykit share logic and read alike.
+
+See [CLAUDE.md](CLAUDE.md) for the full statement of these.
 
 ## Requirements
 
@@ -34,5 +42,4 @@ uv run ruff format .          # format
 uv run pyright                # type check (strict mode, packages/ only)
 ```
 
-See [`packages/rn-forge-commons`](packages/rn-forge-commons) and [`packages/rn-forge-django`](packages/rn-forge-django)
-for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.
+See [`packages/rn-forge-commons`](packages/rn-forge-commons) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.
