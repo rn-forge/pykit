@@ -24,6 +24,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     djangorestframework-simplejwt + python3-saml), `fixtures` (`rn-forge-commons[excel]`), `all` (everything
     above).
 
+The CLI/console, local state, templates, directory lock, atomic symlink and archive helpers are
+temporarily in commons. Their relocation to `rn-forge-tooling` is blocked on owner-reviewed kiln
+golden repositories; see `docs/plans/README.md` before changing that boundary.
+
 Both packages use `uv_build` as the build backend with `module-name` mapped to their `rn_forge.*` namespace
 package, and both ship a `py.typed` marker (strict typing is a contract of these libraries).
 

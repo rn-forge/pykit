@@ -18,8 +18,7 @@ Provides:
 - :func:`parse_overrides` — dotted-path, JSON-or-TOML-scalar CLI override
   parsing, e.g. ``--set database.port=5432``.
 
-Typer's native ``bool`` handling (``--flag``/``--no-flag``) fully replaces the
-old ``BooleanAction`` argparse action — no wrapper is needed for it.
+Boolean flags use Typer's native ``--flag``/``--no-flag`` handling.
 """
 
 from __future__ import annotations

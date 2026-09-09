@@ -650,7 +650,8 @@ def _deep_merge_layer(
     """Merge one named *layer* into *target*, recording provenance for :meth:`DictUtils.merge_layers`."""
     for raw_key, value in incoming.items():
         key = str(raw_key)
-        path = f"{prefix}.{key}" if prefix else key
+        escaped_key = key.replace(".", "\\.")
+        path = f"{prefix}.{escaped_key}" if prefix else escaped_key
         if isinstance(value, Mapping) and isinstance(target.get(key), dict):
             _deep_merge_layer(
                 cast(dict[str, Any], target[key]),
@@ -682,18 +683,12 @@ def _deep_merge_layer(
             target[key] = copy.deepcopy(current) + copy.deepcopy(incoming_list)
             provenance[path] = layer
         else:
+            if isinstance(target.get(key), Mapping):
+                for descendant in list(provenance):
+                    if descendant.startswith(f"{path}."):
+                        del provenance[descendant]
             target[key] = copy.deepcopy(cast(Any, value))
-            _mark_provenance(value, path, layer, provenance)
-
-
-def _mark_provenance(
-    value: Any, path: str, layer: str, provenance: dict[str, str]
-) -> None:
-    """Record *layer* as the provenance of *path*, recursing into a wholesale-introduced mapping."""
-    provenance[path] = layer
-    if isinstance(value, Mapping):
-        for key, child in cast(Mapping[Any, Any], value).items():
-            _mark_provenance(child, f"{path}.{key}", layer, provenance)
+            provenance[path] = layer
 
 
 __all__ = [

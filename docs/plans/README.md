@@ -8,7 +8,7 @@ the whole graph.
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + extraction of local development APIs into `rn-forge-tooling` | Commons upgrade implemented (Part C uncommitted); tooling extraction and generator boundary planned |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + extraction of local development APIs into `rn-forge-tooling` | Commons implementation stabilized; tooling extraction and generator boundary blocked on owner-reviewed kiln golden repositories |
 | [`../../../STANDARDIZATION-PLAN.md`](../../../STANDARDIZATION-PLAN.md) (moves to `rn-forge/kiln/docs/plans/`) | Workspace-wide: when the tooling extraction runs, the kiln generator, the rebuilds of agentkit and intellibuild | Revision 7 — sequencing authority for everything cross-repo |
 | [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | Ready |

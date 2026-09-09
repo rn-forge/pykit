@@ -10,3 +10,7 @@
   views built on top of `rn-forge-commons`.
 
 Pick a package above for its guides and API reference.
+
+The planned `rn-forge-tooling` extraction will move CLI/console, local state, templates and
+installer mechanics out of commons. It remains blocked on owner-reviewed kiln golden repositories;
+see the [plan execution order](plans/README.md).

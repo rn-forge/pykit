@@ -66,6 +66,14 @@ class TestPlainIO:
         with pytest.raises(DocumentError):
             DocumentUtils.loads("[1, 2, 3]", ConfigFormat.JSON)
 
+    @pytest.mark.parametrize("text", ["false", "0", "[]", "[1]", '""'])
+    def test_non_mapping_root_raises_yaml(self, text):
+        with pytest.raises(DocumentError, match="root must be a mapping"):
+            DocumentUtils.loads(text, ConfigFormat.YAML)
+
+    def test_empty_yaml_is_empty_mapping(self):
+        assert DocumentUtils.loads("", ConfigFormat.YAML) == {}
+
     def test_read_missing_ok_returns_empty(self, tmp_path):
         assert DocumentUtils.read(tmp_path / "missing.toml", missing_ok=True) == {}
 
@@ -87,17 +95,35 @@ class TestRoundTripDocuments:
         document = DocumentUtils.read_document(path)
         DocumentUtils.write_document(path, document)
         result = path.read_text()
-        assert "# leading comment" in result
-        assert "# trailing comment" in result
-        assert result.index("a = 1") < result.index("b = 2")
+        assert result == original
 
     def test_yaml_comments_survive(self, tmp_path):
         path = tmp_path / "config.yaml"
-        original = "# a comment\na: 1\nb: 2\n"
+        original = "# a comment\na: \"hello\" # inline\nb: 'world'\n"
         path.write_text(original)
         document = DocumentUtils.read_document(path)
         DocumentUtils.write_document(path, document)
-        assert "# a comment" in path.read_text()
+        assert path.read_text() == original
+
+    @pytest.mark.parametrize("suffix", ["yaml", "json"])
+    @pytest.mark.parametrize("text", ["false", "0", "[]", "[1]", '""'])
+    def test_non_mapping_root_rejected_without_modifying_file(
+        self, tmp_path, suffix, text
+    ):
+        path = tmp_path / f"config.{suffix}"
+        path.write_text(text)
+        with pytest.raises(DocumentError, match="root must be a mapping"):
+            DocumentUtils.read_document(path)
+        with pytest.raises(DocumentError, match="root must be a mapping"):
+            DocumentUtils.update(path, {"a": 1})
+        assert path.read_text() == text
+
+    def test_empty_yaml_document_can_be_updated(self, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text("")
+        assert DocumentUtils.read_document(path) == {}
+        DocumentUtils.update(path, {"a": 1})
+        assert DocumentUtils.read(path) == {"a": 1}
 
     def test_update_deep_merges_and_preserves_comments(self, tmp_path):
         path = tmp_path / "config.toml"

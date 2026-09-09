@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import builtins
 import logging
+import subprocess
+import sys
 import types
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -383,12 +385,52 @@ def _make_fake_import(block_prefix: str) -> _ImportFn:
 
 
 def test_enable_otel_optional_handles_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(builtins, "__import__", _make_fake_import("opentelemetry"))
+    monkeypatch.setattr(
+        logging_module.importlib,
+        "import_module",
+        lambda name: raise_(ImportError("missing")),
+    )
     _enable_otel_log_correlation(optional=True)  # should not raise
 
 
+def test_otel_correlation_injects_context_without_adding_handlers() -> None:
+    pytest.importorskip("opentelemetry.instrumentation.logging")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import logging
+from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, use_span
+from rn_forge.commons.logging import _enable_otel_log_correlation
+
+handler = logging.NullHandler()
+logging.getLogger().addHandler(handler)
+_enable_otel_log_correlation(optional=False)
+assert logging.getLogger().handlers == [handler]
+span = NonRecordingSpan(SpanContext(0x123, 0x456, False, TraceFlags(1)))
+with use_span(span):
+    record = logging.getLogger("correlation").makeRecord(
+        "correlation", logging.INFO, "test", 1,
+        "message", (), None,
+    )
+assert record.otelTraceID == "00000000000000000000000000000123"
+assert record.otelSpanID == "0000000000000456"
+assert record.otelTraceSampled is True
+""",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_enable_otel_required_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(builtins, "__import__", _make_fake_import("opentelemetry"))
+    monkeypatch.setattr(
+        logging_module.importlib,
+        "import_module",
+        lambda name: raise_(ImportError("missing")),
+    )
     with pytest.raises(ImportError):
         _enable_otel_log_correlation(optional=False)
 

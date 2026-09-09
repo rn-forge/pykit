@@ -8,8 +8,12 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 | Package | Import path | Description |
 | --- | --- | --- |
-| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | General-purpose utilities: config loading, collections/dict/json/yaml helpers, structured logging, dataclass mixins, subprocess/task helpers, Excel/pandas helpers, CLI argument parsing. No Django dependency. |
+| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | General-purpose utilities: config loading, collections/dict/json/yaml helpers, structured logging, dataclass mixins, subprocess/task helpers, Excel/pandas helpers, round-trip documents, integration protocols, and temporary Typer CLI helpers. No Django dependency. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
+
+The planned `rn-forge-tooling` package will own CLI/console, local state, templates and installer
+mechanics. This breaking relocation is gated on owner-reviewed kiln fixtures; see the
+[plan execution order](docs/plans/README.md).
 
 Both packages ship a `py.typed` marker and are type-checked in strict mode.
 

@@ -487,7 +487,9 @@ class DocumentUtils:
                 case ConfigFormat.TOML:
                     value: Any = tomlkit.loads(text).unwrap()
                 case ConfigFormat.YAML:
-                    value = YamlUtils.load(text) or {}
+                    value = YamlUtils.load(text)
+                    if value is None:
+                        value = {}
                 case ConfigFormat.JSON:
                     value = JsonUtils.load(text)
         except Exception as exc:
@@ -542,7 +544,8 @@ class DocumentUtils:
         """Read *path* as a round-trip document, preserving comments and style.
 
         Raises:
-            DocumentError: The document is invalid for its resolved format.
+            DocumentError: The document is invalid for its resolved format or
+                its root is not a mapping.
         """
         p = Path(path)
         text = p.read_text(encoding="utf-8")
@@ -550,13 +553,18 @@ class DocumentUtils:
         try:
             match fmt:
                 case ConfigFormat.TOML:
-                    return tomlkit.loads(text)
+                    document: Any = tomlkit.loads(text)
                 case ConfigFormat.YAML:
-                    return _yaml_load(_round_trip_yaml(), text) or {}
+                    document = _yaml_load(_round_trip_yaml(), text)
+                    if document is None:
+                        document = {}
                 case ConfigFormat.JSON:
-                    return json.loads(text)
+                    document = json.loads(text)
         except Exception as exc:
             raise DocumentError(f"Invalid document {p}: {exc}") from exc
+        if not isinstance(document, Mapping):
+            raise DocumentError(f"Document root must be a mapping: {p}")
+        return cast(Mapping[str, Any], document)
 
     @staticmethod
     def write_document(path: str | Path, document: Any) -> None:
@@ -634,6 +642,7 @@ def _round_trip_yaml() -> YAML:
     """Build a round-trip ``YAML`` instance that preserves comments and style."""
     yaml = YAML(typ="rt")
     yaml.default_flow_style = False
+    yaml.preserve_quotes = True
     return yaml
 
 

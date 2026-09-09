@@ -242,6 +242,40 @@ class TestDictMergeLayers:
         assert result.provenance["new.y.z"] == "l2"
         assert result.provenance["new.y"] == "l2"
 
+    def test_escaped_append_paths_distinguish_literal_dots_from_nested_keys(
+        self,
+    ) -> None:
+        result = DictUtils.merge_layers(
+            {"a.b": [1], "a": {"b": [3], "c.d": [5]}},
+            {"a.b": [2], "a": {"b": [4], "c.d": [6]}},
+            append_paths={r"a\.b", r"a.c\.d"},
+        )
+        assert result.config == {"a.b": [1, 2], "a": {"b": [4], "c.d": [5, 6]}}
+        assert result.provenance == {
+            r"a\.b": "global",
+            "a": "global",
+            "a.b": "global",
+            r"a.c\.d": "global",
+        }
+        for path in result.provenance:
+            assert DictUtils.get(result.config, path) is not None
+
+    @pytest.mark.parametrize("replacement", [2, [2], None])
+    def test_replacing_subtree_removes_only_its_descendant_provenance(
+        self, replacement
+    ) -> None:
+        result = DictUtils.merge_layers(
+            {"a": {"b": {"c": 1}}, "a.b": 3, "ab": {"c": 4}},
+            {"a": replacement},
+        )
+        assert result.config == {"a": replacement, "a.b": 3, "ab": {"c": 4}}
+        assert result.provenance == {
+            "a": "global",
+            r"a\.b": "defaults",
+            "ab": "defaults",
+            "ab.c": "defaults",
+        }
+
     def test_deep_copy_isolation(self) -> None:
         inner = {"x": 1}
         result = DictUtils.merge_layers(("l1", {"a": inner}))

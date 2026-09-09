@@ -1037,7 +1037,11 @@ def _enable_otel_log_correlation(*, optional: bool) -> None:
         raise
 
     try:
-        instrumentor_cls().instrument(set_logging_format=False)
+        instrumentor_cls().instrument(
+            set_logging_format=False,
+            inject_trace_context=True,
+            enable_log_auto_instrumentation=False,
+        )
     except Exception:
         if optional:
             return

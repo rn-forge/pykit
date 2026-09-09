@@ -13,6 +13,11 @@ The re-export surface covers configuration, collections, dataclasses,
 logging, subprocesses, task execution, and general utility helpers.
 """
 
+# tooling-bound (Phase C): cli, console, state, templates; DirectoryLock,
+# PathUtils.atomic_symlink and PathUtils.extract_archive.
+# commons-owned (Part C): documents, ContentHash, atomic writes, backups,
+# path guards/root discovery, merge/flatten/diff helpers and EntryPointLoader.
+
 from rn_forge.commons.cli import (
     CliOptions,
     JsonOption,
@@ -26,17 +31,17 @@ from rn_forge.commons.cli import (
     parse_key_values,
     parse_overrides,
 )
-from rn_forge.commons.console import (
-    AppConsole,
-    OutputMode,
-    console,
-)
 from rn_forge.commons.collections import (
     DictUtils,
     ListUtils,
     MergeResult,
 )
 from rn_forge.commons.config import Config
+from rn_forge.commons.console import (
+    AppConsole,
+    OutputMode,
+    console,
+)
 from rn_forge.commons.dataclasses import DataclassMixin
 from rn_forge.commons.documents import (
     ConfigFormat,
@@ -46,6 +51,10 @@ from rn_forge.commons.documents import (
     YamlUtils,
 )
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.logging import (
+    AppLogger,
+    LoggingConfig,
+)
 from rn_forge.commons.messaging import (
     AsyncMessageBus,
     HandlerRegistry,
@@ -60,10 +69,6 @@ from rn_forge.commons.objects import (
 )
 from rn_forge.commons.plugins import EntryPointLoader, PluginError
 from rn_forge.commons.reflection import ReflectUtils
-from rn_forge.commons.logging import (
-    AppLogger,
-    LoggingConfig,
-)
 from rn_forge.commons.secrets import (
     AsyncSecretStore,
     EnvSecretStore,

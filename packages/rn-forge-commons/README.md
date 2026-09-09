@@ -17,6 +17,9 @@ Optional extras:
 | `pandas` | `pandas`-backed DataFrame/Series helpers |
 | `otel` | OpenTelemetry logging instrumentation |
 | `testing` | `assertpy` + `pytest` integration helpers |
+| `templates` | Strict Jinja template rendering |
+| `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
+| `structlog` | Structured logging over the existing stdlib handlers |
 | `all` | Everything above |
 
 Console log output is Rich-formatted by default (a hard dependency) when stdout is a TTY.
@@ -57,6 +60,9 @@ logger = AppLogger.initialize(root_logger_name="my-service")
 cfg = Config("config")
 logger.info("database.host={}", cfg.get("database.host"))
 ```
+
+CLI/console, local state, templates and installer mechanics remain here temporarily until the
+planned `rn-forge-tooling` extraction. See the [execution prerequisites](../../docs/plans/README.md).
 
 ## Docs
 
