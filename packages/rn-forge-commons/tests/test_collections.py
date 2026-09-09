@@ -2,16 +2,9 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pytest
-import yaml
 
-import rn_forge.commons.collections as collections_module
-from rn_forge.commons.collections import DictUtils, JsonUtils, ListUtils, YamlUtils
-
-from conftest import raise_
+from rn_forge.commons.collections import DictUtils, ListUtils
 
 
 # -- DictUtils.get ---------------------------------------------------------
@@ -186,6 +179,122 @@ class TestDictMerge:
         assert target["a"]["x"] == 1
 
 
+# -- DictUtils.merge_layers -------------------------------------------------
+
+
+class TestDictMergeLayers:
+    def test_deep_merge_list_strategies_and_provenance(self) -> None:
+        result = DictUtils.merge_layers(
+            (
+                "defaults",
+                {"nested": {"one": 1, "two": 2}, "replace": [1], "append": [1]},
+            ),
+            ("global", {"nested": {"two": 20}, "replace": [2], "append": [2]}),
+            ("local", {"nested": {"three": 3}}),
+            append_paths={"append"},
+        )
+        assert result.config == {
+            "nested": {"one": 1, "two": 20, "three": 3},
+            "replace": [2],
+            "append": [1, 2],
+        }
+        assert result.provenance["nested.one"] == "defaults"
+        assert result.provenance["nested.two"] == "global"
+        assert result.provenance["nested.three"] == "local"
+
+    def test_precedence_across_three_unnamed_layers(self) -> None:
+        result = DictUtils.merge_layers({"a": 1}, {"a": 2}, {"a": 3})
+        assert result.config == {"a": 3}
+        assert result.provenance["a"] == "local"
+
+    def test_unnamed_layers_get_conventional_names(self) -> None:
+        result = DictUtils.merge_layers(
+            {"a": 1}, {"b": 2}, {"c": 3}, {"d": 4}, {"e": 5}
+        )
+        assert result.provenance == {
+            "a": "defaults",
+            "b": "global",
+            "c": "local",
+            "d": "overrides",
+            "e": "layer-5",
+        }
+
+    def test_provenance_for_key_overridden_twice_reports_last_layer(self) -> None:
+        result = DictUtils.merge_layers(
+            ("l1", {"a": 1}), ("l2", {"a": 2}), ("l3", {"a": 3})
+        )
+        assert result.provenance["a"] == "l3"
+
+    def test_append_path_concatenates_normal_list_replaces(self) -> None:
+        result = DictUtils.merge_layers(
+            ("l1", {"append_me": [1], "replace_me": [1]}),
+            ("l2", {"append_me": [2], "replace_me": [2]}),
+            append_paths={"append_me"},
+        )
+        assert result.config["append_me"] == [1, 2]
+        assert result.config["replace_me"] == [2]
+
+    def test_subtree_introduced_wholesale_gets_provenance_on_every_leaf(self) -> None:
+        result = DictUtils.merge_layers(
+            ("l1", {}), ("l2", {"new": {"x": 1, "y": {"z": 2}}})
+        )
+        assert result.provenance["new.x"] == "l2"
+        assert result.provenance["new.y.z"] == "l2"
+        assert result.provenance["new.y"] == "l2"
+
+    def test_deep_copy_isolation(self) -> None:
+        inner = {"x": 1}
+        result = DictUtils.merge_layers(("l1", {"a": inner}))
+        inner["x"] = 999
+        assert result.config["a"]["x"] == 1
+
+    def test_layer_names_argument(self) -> None:
+        result = DictUtils.merge_layers(
+            {"a": 1}, {"a": 2}, layer_names=["base", "user"]
+        )
+        assert result.provenance["a"] == "user"
+
+    def test_explicit_name_tuple_overrides_layer_names(self) -> None:
+        result = DictUtils.merge_layers(
+            {"a": 1}, ("explicit", {"a": 2}), layer_names=["base", "user"]
+        )
+        assert result.provenance["a"] == "explicit"
+
+    def test_merge_existing_tests_still_pass_unchanged(self) -> None:
+        # DictUtils.merge itself is untouched by merge_layers.
+        target = {"a": {"x": 1}, "b": 2}
+        assert DictUtils.merge(target, {"a": {"y": 3}, "b": 99}) is target
+        assert target == {"a": {"x": 1, "y": 3}, "b": 99}
+
+
+# -- DictUtils.flatten -------------------------------------------------------
+
+
+class TestDictFlatten:
+    def test_flattens_nested_mapping(self) -> None:
+        assert DictUtils.flatten({"a": {"b": 1, "c": 2}, "d": 3}) == {
+            "a.b": 1,
+            "a.c": 2,
+            "d": 3,
+        }
+
+    def test_flat_mapping_unchanged(self) -> None:
+        assert DictUtils.flatten({"a": 1, "b": 2}) == {"a": 1, "b": 2}
+
+    def test_deeply_nested(self) -> None:
+        assert DictUtils.flatten({"a": {"b": {"c": 1}}}) == {"a.b.c": 1}
+
+    def test_is_inverse_of_get_dotted_path(self) -> None:
+        nested = {"a": {"b": {"c": 42}}}
+        flat = DictUtils.flatten(nested)
+        for key, value in flat.items():
+            assert DictUtils.get(nested, key) == value
+
+    def test_key_with_literal_dot_is_escaped(self) -> None:
+        flat = DictUtils.flatten({"a.b": {"c": 1}})
+        assert flat == {"a\\.b.c": 1}
+
+
 # -- DictUtils.compare -----------------------------------------------------
 
 
@@ -278,242 +387,3 @@ class TestListUtils:
 
     def test_group_by_empty_returns_empty_dict(self) -> None:
         assert ListUtils.group_by([], key_fn=str) == {}
-
-
-# -- JsonUtils.load --------------------------------------------------------
-
-
-class TestJsonLoad:
-    def test_load_dict(self) -> None:
-        result = JsonUtils.load('{"a": 1}')
-        assert result == {"a": 1}
-
-    def test_load_list(self) -> None:
-        result = JsonUtils.load("[1, 2, 3]")
-        assert result == [1, 2, 3]
-
-    def test_load_with_root_key(self) -> None:
-        result = JsonUtils.load('{"data": {"x": 1}, "meta": {}}', root_key="data")
-        assert result == {"x": 1}
-
-    def test_load_invalid_raises(self) -> None:
-        with pytest.raises(json.JSONDecodeError):
-            JsonUtils.load("not json")
-
-
-# -- JsonUtils.serialize ---------------------------------------------------
-
-
-class TestJsonSerialize:
-    def test_serialize_dict(self) -> None:
-        assert json.loads(JsonUtils.serialize({"a": 1})) == {"a": 1}
-
-    def test_serialize_non_serializable_uses_repr(self) -> None:
-        result = JsonUtils.serialize({"s": {1, 2}})
-        assert "repr" not in result or "{1, 2}" in result
-
-    def test_serialize_dataclass(self) -> None:
-        from dataclasses import dataclass
-
-        @dataclass
-        class Point:
-            x: int
-            y: int
-
-        result = JsonUtils.serialize(Point(1, 2))
-        parsed = json.loads(result)
-        assert parsed == {"x": 1, "y": 2}
-
-    def test_serialize_error_propagates(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            collections_module.json,
-            "dumps",
-            lambda *a, **k: raise_(TypeError("boom")),
-        )
-        with pytest.raises(TypeError, match="boom"):
-            JsonUtils.serialize({"a": 1})
-
-
-# -- JsonUtils file I/O ----------------------------------------------------
-
-
-class TestJsonFileIO:
-    def test_write_and_read(self, tmp_path: Path) -> None:
-        p = tmp_path / "test.json"
-        JsonUtils.write_file({"key": "value"}, p)
-        assert p.exists()
-        result = JsonUtils.read_file(p)
-        assert result == {"key": "value"}
-
-    def test_write_creates_parent_dirs(self, tmp_path: Path) -> None:
-        p = tmp_path / "sub" / "dir" / "test.json"
-        result_path = JsonUtils.write_file({"a": 1}, p)
-        assert result_path == p
-        assert p.exists()
-
-    def test_write_default_indent_is_tab(self, tmp_path: Path) -> None:
-        p = tmp_path / "test.json"
-        JsonUtils.write_file({"a": 1}, p)
-        content = p.read_text()
-        assert "\t" in content
-
-    def test_read_file_parse_error_propagates(self, tmp_path: Path) -> None:
-        p = tmp_path / "bad.json"
-        p.write_text("{bad")
-        with pytest.raises(json.JSONDecodeError):
-            JsonUtils.read_file(p)
-
-    def test_write_file_error_propagates(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        p = tmp_path / "test.json"
-
-        def fail(*args, **kwargs):
-            raise OSError("disk full")
-
-        monkeypatch.setattr(Path, "write_text", fail)
-        with pytest.raises(OSError, match="disk full"):
-            JsonUtils.write_file({"a": 1}, p)
-
-
-# -- YamlUtils.load --------------------------------------------------------
-
-
-class TestYamlLoad:
-    def test_load_dict(self) -> None:
-        result = YamlUtils.load("a: 1\nb: 2\n")
-        assert result == {"a": 1, "b": 2}
-
-    def test_load_list(self) -> None:
-        result = YamlUtils.load("- 1\n- 2\n- 3\n")
-        assert result == [1, 2, 3]
-
-    def test_load_with_root_key(self) -> None:
-        result = YamlUtils.load("data:\n  x: 1\nmeta: {}\n", root_key="data")
-        assert result == {"x": 1}
-
-    def test_load_nested(self) -> None:
-        text = "a:\n  b:\n    c: deep\n"
-        assert YamlUtils.load(text) == {"a": {"b": {"c": "deep"}}}
-
-    def test_load_invalid_raises(self) -> None:
-        with pytest.raises(yaml.YAMLError):
-            YamlUtils.load("a: [1")
-
-
-# -- YamlUtils.load_all ----------------------------------------------------
-
-
-class TestYamlLoadAll:
-    def test_multi_document(self) -> None:
-        text = "a: 1\n---\nb: 2\n"
-        result = YamlUtils.load_all(text)
-        assert result == [{"a": 1}, {"b": 2}]
-
-    def test_skips_empty_documents(self) -> None:
-        text = "a: 1\n---\n---\nb: 2\n"
-        result = YamlUtils.load_all(text)
-        assert result == [{"a": 1}, {"b": 2}]
-
-    def test_load_all_invalid_raises(self) -> None:
-        with pytest.raises(yaml.YAMLError):
-            YamlUtils.load_all("a: 1\n---\nb: [2")
-
-
-# -- YamlUtils.serialize ---------------------------------------------------
-
-
-class TestYamlSerialize:
-    def test_serialize_dict(self) -> None:
-        result = YamlUtils.serialize({"a": 1, "b": 2})
-        parsed = YamlUtils.load(result)
-        assert parsed == {"a": 1, "b": 2}
-
-    def test_serialize_no_sort_keys_by_default(self) -> None:
-        result = YamlUtils.serialize({"z": 1, "a": 2})
-        lines = result.strip().split("\n")
-        assert lines[0].startswith("z:")
-
-    def test_serialize_all(self) -> None:
-        result = YamlUtils.serialize_all({"a": 1}, {"b": 2})
-        docs = YamlUtils.load_all(result)
-        assert docs == [{"a": 1}, {"b": 2}]
-
-    def test_serialize_error_propagates(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            collections_module.yaml,
-            "dump",
-            lambda *a, **k: raise_(RuntimeError("bad dump")),
-        )
-        with pytest.raises(RuntimeError, match="bad dump"):
-            YamlUtils.serialize({"a": 1})
-
-    def test_serialize_all_error_propagates(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setattr(
-            collections_module.yaml,
-            "dump_all",
-            lambda *a, **k: raise_(RuntimeError("bad dump all")),
-        )
-        with pytest.raises(RuntimeError, match="bad dump all"):
-            YamlUtils.serialize_all({"a": 1})
-
-
-# -- YamlUtils file I/O ----------------------------------------------------
-
-
-class TestYamlFileIO:
-    def test_write_and_read(self, tmp_path: Path) -> None:
-        p = tmp_path / "test.yaml"
-        YamlUtils.write_file({"key": "value"}, p)
-        assert p.exists()
-        result = YamlUtils.read_file(p)
-        assert result == {"key": "value"}
-
-    def test_read_with_root_key(self, tmp_path: Path) -> None:
-        p = tmp_path / "test.yaml"
-        p.write_text("data:\n  x: 1\nmeta: {}\n")
-        result = YamlUtils.read_file(p, root_key="data")
-        assert result == {"x": 1}
-
-    def test_read_multi_document(self, tmp_path: Path) -> None:
-        p = tmp_path / "multi.yaml"
-        p.write_text("a: 1\n---\nb: 2\n")
-        result = YamlUtils.read_file_all(p)
-        assert result == [{"a": 1}, {"b": 2}]
-
-    def test_write_creates_parent_dirs(self, tmp_path: Path) -> None:
-        p = tmp_path / "sub" / "dir" / "test.yaml"
-        result_path = YamlUtils.write_file({"a": 1}, p)
-        assert result_path == p
-        assert p.exists()
-
-    def test_read_file_error_propagates(self, tmp_path: Path) -> None:
-        p = tmp_path / "bad.yaml"
-        p.write_text("a: [1")
-        with pytest.raises(yaml.YAMLError):
-            YamlUtils.read_file(p)
-
-    def test_read_file_all_error_propagates(self, tmp_path: Path) -> None:
-        p = tmp_path / "bad.yaml"
-        p.write_text("a: 1\n---\nb: [2")
-        with pytest.raises(yaml.YAMLError):
-            YamlUtils.read_file_all(p)
-
-    def test_write_file_error_propagates(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        p = tmp_path / "bad.yaml"
-
-        def fail(*args, **kwargs):
-            raise OSError("no space")
-
-        monkeypatch.setattr(Path, "write_text", fail)
-        with pytest.raises(OSError, match="no space"):
-            YamlUtils.write_file({"a": 1}, p)
-
-
-# Coverage ROI notes:
-# - Logger side effects inside collections helpers are exercised indirectly via
-#   success/error-path assertions but are not asserted record-by-record.

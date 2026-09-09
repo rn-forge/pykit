@@ -4,6 +4,8 @@ import inspect as stdlib_inspect
 
 from rn_forge.commons.reflection import ReflectUtils
 
+_GLOBAL_REFLECTION_VAR = "g"
+
 
 class TestGetFullyQualifiedName:
     def test_class(self):
@@ -158,6 +160,17 @@ class TestInspectMethodArguments:
         names = [r.split("=")[0] for r in result]
         assert "a" in names
 
+    def test_values_are_repr_formatted(self):
+        def fn(a):
+            pass
+
+        result = ReflectUtils.inspect_method_arguments(fn, ("hello",), {})
+        assert result == ["a='hello'"]
+
+    def test_bind_failure_falls_back_to_repr(self):
+        result = ReflectUtils.inspect_method_arguments(object(), (), {})
+        assert result == ["()", "{}"]
+
 
 class TestInspectVariables:
     def test_simple_variable(self):
@@ -171,7 +184,7 @@ class TestInspectVariables:
         beta = 99  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("alpha, beta", source_frame=frame)
-        assert "alpha=hello" in result
+        assert "alpha='hello'" in result
         assert "beta=99" in result
 
     def test_dot_notation_attribute(self):
@@ -181,7 +194,7 @@ class TestInspectVariables:
         obj = Obj()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.name", source_frame=frame)
-        assert result == ["obj.name=world"]
+        assert result == ["obj.name='world'"]
 
     def test_dot_notation_deep_attribute(self):
         class Inner:
@@ -193,7 +206,7 @@ class TestInspectVariables:
         obj = Outer()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.inner.value", source_frame=frame)
-        assert result == ["obj.inner.value=deep"]
+        assert result == ["obj.inner.value='deep'"]
 
     def test_dot_notation_callable(self):
         class Obj:
@@ -203,13 +216,29 @@ class TestInspectVariables:
         obj = Obj()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         frame = stdlib_inspect.currentframe()
         result = ReflectUtils.inspect_variables("obj.label", source_frame=frame)
-        assert result == ["obj.label=dynamic"]
+        assert result == ["obj.label='dynamic'"]
 
     def test_falls_back_to_caller_frame(self):
         my_var = "present"  # noqa: F841  # NOSONAR: read via frame introspection, not statically
         # source_frame=None → falls back to this caller's frame
         result = ReflectUtils.inspect_variables("my_var", source_frame=None)
-        assert result == ["my_var=present"]
+        assert result == ["my_var='present'"]
+
+    def test_reads_global_variable(self):
+        frame = stdlib_inspect.currentframe()
+        result = ReflectUtils.inspect_variables(
+            "_GLOBAL_REFLECTION_VAR", source_frame=frame
+        )
+        assert result == ["_GLOBAL_REFLECTION_VAR='g'"]
+
+    def test_dotted_attribute_error_returns_undefined(self):
+        class Obj:
+            name = "world"
+
+        obj = Obj()  # noqa: F841  # NOSONAR: read via frame introspection, not statically
+        frame = stdlib_inspect.currentframe()
+        result = ReflectUtils.inspect_variables("obj.missing_attr", source_frame=frame)
+        assert result == ["obj.missing_attr=<undefined>"]
 
     def test_spaces_in_var_names_stripped(self):
         a = 1  # noqa: F841  # NOSONAR: read via frame introspection, not statically

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import builtins
 import logging
-import inspect as stdlib_inspect
 import types
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import pytest
+from rich.logging import RichHandler
 
 from rn_forge.commons import (
     AppLogger,
@@ -20,15 +20,11 @@ from rn_forge.commons.logging import (
     BraceLogRecord,
     EnrichFilter,
     _enable_otel_log_correlation,
-    _format_arguments,
-    _resolve_variables,
-    _try_enable_coloredlogs,
 )
+from rn_forge.commons.reflection import ReflectUtils
 import rn_forge.commons.logging as logging_module
 
 from conftest import raise_
-
-GLOBAL_RESOLVE_VAR = "g"
 
 
 # -- configuration helpers -------------------------------------------------
@@ -341,7 +337,6 @@ def test_logging_config_build_derives_otel_format() -> None:
 
 
 def test_configure_logging_json_non_root(tmp_path: Path) -> None:
-    pytest.importorskip("pythonjsonlogger", reason="pythonjsonlogger not installed")
     log_path = str(tmp_path / "svc.log")
     logger = AppLogger.initialize(
         root_logger_name="svc",
@@ -669,13 +664,8 @@ def test_initialize_update_loggers(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_initialize_enables_optional_hooks(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: dict[str, bool] = {"color": False, "otel": False}
+    seen: dict[str, bool] = {"otel": False}
 
-    monkeypatch.setattr(
-        logging_module,
-        "_try_enable_coloredlogs",
-        lambda config: seen.__setitem__("color", True),
-    )
     monkeypatch.setattr(
         logging_module,
         "_enable_otel_log_correlation",
@@ -689,7 +679,9 @@ def test_initialize_enables_optional_hooks(monkeypatch: pytest.MonkeyPatch) -> N
         enable_otel_correlation=True,
         force_reconfigure=True,
     )
-    assert seen == {"color": True, "otel": True}
+    assert seen == {"otel": True}
+    root = logging.getLogger()
+    assert isinstance(root.handlers[0], RichHandler)
 
 
 # -- EnrichFilter environment variable fallback ----------------------------
@@ -824,63 +816,84 @@ def test_log_variables_noop_when_disabled() -> None:
         logger.removeHandler(handler)
 
 
-def test_try_enable_coloredlogs_missing_is_ignored(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("use_json", "enable_color", "isatty", "expected_type"),
+    [
+        (False, False, False, logging.StreamHandler),
+        (False, True, False, logging.StreamHandler),  # not a tty -> no Rich
+        (False, True, True, RichHandler),
+        (False, False, True, logging.StreamHandler),  # color disabled -> no Rich
+        (True, False, False, logging.StreamHandler),
+        (True, True, True, logging.StreamHandler),  # json beats color+tty
+    ],
+)
+def test_handler_selection_matrix(
+    use_json: bool, enable_color: bool, isatty: bool, expected_type: type
 ) -> None:
-    monkeypatch.setattr(builtins, "__import__", _make_fake_import("coloredlogs"))
-    _try_enable_coloredlogs(LoggingConfig.build(root_logger_name="x"))
-
-
-def test_try_enable_coloredlogs_install_failure_is_ignored(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fake_coloredlogs = types.SimpleNamespace(
-        DEFAULT_FIELD_STYLES={},
-        DEFAULT_LEVEL_STYLES={},
-        install=lambda **kwargs: raise_(RuntimeError("install failed")),
+    AppLogger.initialize(
+        root_logger_name="test.handler_matrix",
+        use_json=use_json,
+        enable_color=enable_color,
+        isatty=isatty,
+        force_reconfigure=True,
     )
-    real_import = builtins.__import__
-
-    def fake_import(name, *args, **kwargs):
-        if name == "coloredlogs":
-            return fake_coloredlogs
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", fake_import)
-    _try_enable_coloredlogs(LoggingConfig.build(root_logger_name="x"))
+    root = logging.getLogger()
+    assert len(root.handlers) == 1
+    assert type(root.handlers[0]) is expected_type
 
 
-def test_format_arguments_fallback_on_bad_signature() -> None:
-    result = _format_arguments(object(), (), {}, [], [])
-    assert result == ["()", "{}"]
+def test_file_handler_is_never_rich_even_with_color(tmp_path: Path) -> None:
+    log_path = str(tmp_path / "app.log")
+    AppLogger.initialize(
+        root_logger_name="test.file_never_rich",
+        enable_color=True,
+        isatty=True,
+        file=log_path,
+        force_reconfigure=True,
+    )
+    root = logging.getLogger()
+    file_handlers = [h for h in root.handlers if isinstance(h, logging.FileHandler)]
+    assert len(file_handlers) == 1
+    file_handler = file_handlers[0]
+    assert not isinstance(file_handler, RichHandler)
+    assert file_handler.formatter is not None
+    assert file_handler.formatter._fmt == logging_module._DEFAULT_FORMAT
 
 
-def test_format_arguments_include_and_exclude() -> None:
-    def fn(a, b=2):
-        return a + b
-
-    assert _format_arguments(fn, (1,), {}, ["b"], []) == ["a=1"]
-    assert _format_arguments(fn, (1,), {}, [], ["b"]) == ["b=2"]
-
-
-def test_format_arguments_skips_self() -> None:
-    class Sample:
-        def method(self, value):
-            return value
-
-    parts = _format_arguments(Sample.method, (Sample(), 3), {}, [], [])
-    assert parts == ["value=3"]
-
-
-def test_resolve_variables_handles_none_frame() -> None:
-    assert _resolve_variables("a,b", None) == ["<cannot resolve: a,b>"]
+def test_every_custom_level_has_a_theme_entry() -> None:
+    custom_levels = [
+        "trace",
+        "spam",
+        "debug",
+        "verbose",
+        "info",
+        "notice",
+        "success",
+        "warning",
+        "error",
+        "critical",
+    ]
+    for level_name in custom_levels:
+        assert f"logging.level.{level_name}" in logging_module._RICH_LEVEL_STYLES
 
 
-def test_resolve_variables_reads_globals_and_undefined() -> None:
-    frame = stdlib_inspect.currentframe()
-    resolved = _resolve_variables("GLOBAL_RESOLVE_VAR,missing_name", frame)
-    assert "GLOBAL_RESOLVE_VAR='g'" in resolved
-    assert "missing_name=<undefined>" in resolved
+def test_rich_console_markup_is_disabled_for_interpolated_values() -> None:
+    console = logging_module._build_rich_console(
+        LoggingConfig.build(root_logger_name="x")
+    )
+    with console.capture() as capture:
+        console.print("[red]not styled[/red]", markup=False)
+    assert "[red]not styled[/red]" in capture.get()
+
+
+def test_build_rich_console_merges_level_style_overrides() -> None:
+    config = LoggingConfig.build(
+        root_logger_name="x", level_styles={"critical": "bold magenta"}
+    )
+    console = logging_module._build_rich_console(config)
+    assert console.get_style("logging.level.critical") == console.get_style(
+        "bold magenta"
+    )
 
 
 def test_audit_entry_error_is_logged(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -892,8 +905,8 @@ def test_audit_entry_error_is_logged(monkeypatch: pytest.MonkeyPatch) -> None:
     handler = _ListHandler()
     module_logger.addHandler(handler)
     monkeypatch.setattr(
-        logging_module,
-        "_format_arguments",
+        ReflectUtils,
+        "inspect_method_arguments",
         lambda *args, **kwargs: raise_(RuntimeError("bad format")),
     )
 
@@ -907,7 +920,7 @@ def test_audit_entry_error_is_logged(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # Coverage ROI notes:
-# - `logging.config.dictConfig`, `coloredlogs`, and OpenTelemetry integration are
+# - `logging.config.dictConfig`, Rich console rendering, and OpenTelemetry integration are
 #   covered via branch-level fakes; exhaustive third-party behavior is out of scope.
 
 

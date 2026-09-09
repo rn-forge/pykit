@@ -14,7 +14,7 @@ uv add "rn-forge-commons[all]"
 
 Targeted extras:
 
-- `coloredlogs` for colored terminal logging
+- `json` for JSON-formatted log output (`python-json-logger`)
 - `excel` for `openpyxl` and `pandas`
 - `otel` for OpenTelemetry log correlation
 - `pandas` for dataframe helpers

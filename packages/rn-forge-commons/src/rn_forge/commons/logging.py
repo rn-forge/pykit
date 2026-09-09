@@ -6,6 +6,9 @@
   ``{}``-style formatting, and method-audit decorators.
 - Safe record enrichment via :class:`EnrichFilter` (caller / service / env +
   optional OpenTelemetry correlation placeholders).
+- Console output renders through ``rich.logging.RichHandler`` when colour is
+  enabled and stdout is a TTY; the file handler is always a plain
+  :class:`logging.FileHandler` with the full format string.
 """
 
 from __future__ import annotations
@@ -14,7 +17,6 @@ import functools
 import importlib
 import inspect
 import logging
-from operator import attrgetter as _attrgetter
 import logging.config
 import os
 import sys
@@ -23,10 +25,11 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from types import FrameType
 from typing import Any, cast
 
 import verboselogs
+from rich.console import Console
+from rich.theme import Theme
 from rn_forge.commons._typing import VerboseLoggerBase
 from rn_forge.commons.reflection import ReflectUtils
 
@@ -51,8 +54,30 @@ _OTEL_FORMAT = (
     "%(message)s"
 )
 
-# Parameters that are always excluded from audit logging.
-_AUDIT_SELF_PARAMS = frozenset({"self", "cls"})
+# RichHandler renders its own time/level/path columns, so the console format
+# carries only what Rich does not already provide.
+_RICH_FORMAT = "%(caller)s [svc=%(service)s env=%(env)s] %(message)s"
+_RICH_OTEL_FORMAT = (
+    "%(caller)s [svc=%(service)s env=%(env)s "
+    "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s] %(message)s"
+)
+
+# verboselogs registers TRACE/SPAM/VERBOSE/NOTICE/SUCCESS, which Rich has no
+# built-in theme entries for. Level-name keys are looked up lowercased by
+# RichHandler via ``logging.level.<levelname>``.
+_RICH_LEVEL_STYLES: dict[str, str] = {
+    "logging.level.trace": "dim cyan",
+    "logging.level.spam": "dim",
+    "logging.level.debug": "green",
+    "logging.level.verbose": "blue",
+    "logging.level.info": "bright_white",
+    "logging.level.notice": "bright_blue",
+    "logging.level.success": "bold green",
+    "logging.level.warning": "yellow",
+    "logging.level.error": "bold red",
+    "logging.level.critical": "bold white on red",
+}
+_RICH_THEME = Theme(_RICH_LEVEL_STYLES)
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +87,7 @@ class BraceLogRecord(logging.LogRecord):
     """LogRecord subclass whose ``getMessage`` handles both ``%``- and ``{}``-style messages.
 
     Registered globally via ``logging.setLogRecordFactory`` so every handler
-    in the process — including coloredlogs, JSON formatters, and file handlers —
+    in the process — including RichHandler, JSON formatters, and file handlers —
     receives correctly formatted messages without any per-handler coupling.
 
     ``%``-style is tried first so third-party libraries that rely on it are
@@ -179,12 +204,18 @@ class LoggingConfig:
     Do not construct directly — use :meth:`build` so that all defaults are
     applied.  All fields are guaranteed to have a value after ``build()``;
     ``file`` is the only field that can be ``None`` (meaning no file handler).
+
+    ``level_styles`` maps a level name (e.g. ``"critical"``) to a Rich style
+    string, merged over the built-in theme (:data:`_RICH_LEVEL_STYLES`) that
+    styles the verboselogs custom levels. Only used when the RichHandler
+    console path is selected.
     """
 
     root_logger_name: str
     level: int
     file: str | None
     fmt: str
+    rich_fmt: str
     enable_color: bool
     isatty: bool
     use_json: bool
@@ -192,8 +223,8 @@ class LoggingConfig:
     update_loggers: dict[str, int]
     enable_otel_correlation: bool
     otel_optional: bool
-    field_styles: dict[str, Any]
-    level_styles: dict[str, Any]
+    level_styles: dict[str, str]
+    rich_tracebacks: bool
 
     @classmethod
     def defaults(cls) -> dict[str, Any]:
@@ -219,6 +250,7 @@ class LoggingConfig:
             "fmt": os.environ.get(
                 "DEFAULT_LOG_FORMAT", _DEFAULT_FORMAT
             ),  # env: DEFAULT_LOG_FORMAT; swapped to _OTEL_FORMAT by build() when enable_otel_correlation=True
+            "rich_fmt": _RICH_FORMAT,  # swapped to _RICH_OTEL_FORMAT by build() under the same condition
             "isatty": isatty,  # auto-detected from sys.stdout at configuration time
             "enable_color": isatty,  # colour on when stdout is a TTY
             "use_json": False,  # plain-text output by default
@@ -226,12 +258,8 @@ class LoggingConfig:
             "update_loggers": {},  # no third-party logger overrides by default
             "enable_otel_correlation": False,  # OTel trace/span injection disabled by default
             "otel_optional": True,  # suppress ImportError when opentelemetry is absent
-            "field_styles": {
-                "caller": {"bold": True, "bright": True}
-            },  # style the injected caller field
-            "level_styles": {
-                "critical": {"background": "red", "bold": True}
-            },  # make critical visually distinct
+            "level_styles": {},  # per-level Rich style overrides merged over _RICH_LEVEL_STYLES
+            "rich_tracebacks": True,  # install rich.traceback for the RichHandler console path
         }
 
     @classmethod
@@ -244,15 +272,20 @@ class LoggingConfig:
 
         ``fmt`` is derived from ``enable_otel_correlation`` when not explicitly
         provided: ``_OTEL_FORMAT`` is used when OTel correlation is enabled,
-        ``_DEFAULT_FORMAT`` otherwise.
+        ``_DEFAULT_FORMAT`` otherwise. ``rich_fmt`` (used only by the
+        RichHandler console path) is derived the same way from
+        ``_RICH_FORMAT``/``_RICH_OTEL_FORMAT``. An explicit ``fmt=`` override
+        wins for every handler type, including Rich.
         """
         merged = {
             **cls.defaults(),
             **{k: v for k, v in overrides.items() if v is not None},
         }
-        # Derive fmt from enable_otel_correlation when not explicitly overridden
-        if overrides.get("fmt") is None and merged.get("enable_otel_correlation"):
+        if overrides.get("fmt") is not None:
+            merged["rich_fmt"] = overrides["fmt"]
+        elif merged.get("enable_otel_correlation"):
             merged["fmt"] = os.environ.get("DEFAULT_LOG_FORMAT", _OTEL_FORMAT)
+            merged["rich_fmt"] = _RICH_OTEL_FORMAT
         return cls(**merged)
 
 
@@ -299,6 +332,7 @@ class AppLogger(VerboseLoggerBase):
 
     _config_lock = threading.Lock()
     _configured: bool = False
+    _rich_tracebacks_installed: bool = False
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize :class:`AppLogger`.
@@ -336,8 +370,8 @@ class AppLogger(VerboseLoggerBase):
         update_loggers: dict[str, int] | None = None,
         enable_otel_correlation: bool | None = None,
         otel_optional: bool | None = None,
-        field_styles: dict[str, Any] | None = None,
-        level_styles: dict[str, Any] | None = None,
+        level_styles: dict[str, str] | None = None,
+        rich_tracebacks: bool | None = None,
         force_reconfigure: bool = False,
     ) -> AppLogger:
         """Idempotently configure logging in a thread-safe manner.
@@ -357,7 +391,8 @@ class AppLogger(VerboseLoggerBase):
             level: Log level. Defaults to ``VERBOSE`` (or ``DEFAULT_LOG_LEVEL`` env-var).
             file: Path to a log file. Optional suffix; datestamp appended when omitted.
             fmt: Log format string. Defaults to :attr:`AppLogger.DEFAULT_FORMAT`.
-            enable_color: Enable coloredlogs output. Defaults to TTY detection.
+            enable_color: Enable the Rich console handler. Defaults to TTY detection.
+                ``use_json=True`` always wins over this, even when set.
             isatty: Override TTY detection used by *enable_color*.
             use_json: Emit JSON log records instead of plain text. Default ``False``.
             configure_root: Configure the root logger (``True``) or only the named
@@ -367,8 +402,13 @@ class AppLogger(VerboseLoggerBase):
             enable_otel_correlation: Inject OTel trace/span IDs. Default ``False``.
             otel_optional: Suppress ``ImportError`` when ``opentelemetry`` is absent.
                 Default ``True``.
-            field_styles: coloredlogs field styles merged over coloredlogs defaults.
-            level_styles: coloredlogs level styles merged over coloredlogs defaults.
+            level_styles: Per-level Rich style overrides (e.g.
+                ``{"critical": "bold white on red"}``), merged over the built-in
+                theme that styles verboselogs' custom levels. Only applies to the
+                RichHandler console path.
+            rich_tracebacks: Install ``rich.traceback`` for the RichHandler console
+                path. Default ``True``. Uses ``show_locals=False`` — tracebacks
+                routinely carry credentials in locals.
             force_reconfigure: Re-run configuration even if already configured.
                 Default ``False``.
 
@@ -396,8 +436,8 @@ class AppLogger(VerboseLoggerBase):
             update_loggers=update_loggers,
             enable_otel_correlation=enable_otel_correlation,
             otel_optional=otel_optional,
-            field_styles=field_styles,
             level_styles=level_styles,
+            rich_tracebacks=rich_tracebacks,
         )
 
         with AppLogger._config_lock:
@@ -421,9 +461,18 @@ class AppLogger(VerboseLoggerBase):
 
             AppLogger._configure_logging(_config, file_path)
 
-            # Coloredlogs
-            if _config.enable_color and _config.isatty and not _config.use_json:
-                _try_enable_coloredlogs(_config)
+            # Rich traceback rendering for the console handler path. Installed at
+            # most once per process — repeated calls just churn sys.excepthook.
+            use_rich = _config.enable_color and _config.isatty and not _config.use_json
+            if (
+                use_rich
+                and _config.rich_tracebacks
+                and not AppLogger._rich_tracebacks_installed
+            ):
+                import rich.traceback
+
+                rich.traceback.install(show_locals=False, suppress=[])
+                AppLogger._rich_tracebacks_installed = True
 
             # OpenTelemetry correlation
             if _config.enable_otel_correlation:
@@ -701,7 +750,9 @@ class AppLogger(VerboseLoggerBase):
         if not logger.isEnabledFor(audit_level):
             return
         try:
-            formatted_args = _format_arguments(func, args, kwargs, exclude, include)
+            formatted_args = ReflectUtils.inspect_method_arguments(
+                func, args, kwargs, exclude=exclude, include=include
+            )
             logger.log(
                 audit_level,
                 "Enter -> {}",
@@ -822,7 +873,7 @@ class AppLogger(VerboseLoggerBase):
         # Walk up: inspect.currentframe() → _log_variables → debug/trace_variables → caller
         _f = inspect.currentframe()
         _f = _f.f_back.f_back if _f is not None and _f.f_back is not None else None
-        resolved = _resolve_variables(var_names, _f)
+        resolved = ReflectUtils.inspect_variables(var_names, _f)
         self.log(
             level,
             "{} -> {}",
@@ -848,7 +899,13 @@ class AppLogger(VerboseLoggerBase):
         """Build and apply a ``logging.config.dictConfig``-compatible dict.
 
         ``fmt`` and ``update_loggers`` are already fully resolved on *config*
-        by :meth:`LoggingConfig.build`.
+        by :meth:`LoggingConfig.build`. The console handler is one of, in
+        precedence order: a JSON formatter on a plain ``StreamHandler`` (when
+        ``use_json``), ``rich.logging.RichHandler`` (when ``enable_color and
+        isatty``), or a plain ``StreamHandler`` with ``config.fmt``. The file
+        handler is always a plain ``logging.FileHandler`` — never Rich — using
+        the full ``config.fmt`` format string, even when the console is JSON
+        or Rich.
         """
         filters: dict[str, Any] = {
             "enrich": {
@@ -859,37 +916,56 @@ class AppLogger(VerboseLoggerBase):
             }
         }
 
+        use_rich = config.enable_color and config.isatty and not config.use_json
+
+        formatters: dict[str, Any] = {"file": {"format": config.fmt}}
         if config.use_json:
-            formatter_name = "json"
-            formatters: dict[str, Any] = {
-                "json": {
-                    "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                    "fmt": (
-                        "%(asctime)s %(levelname)s %(name)s %(service)s %(env)s "
-                        "%(caller)s %(message)s %(otelTraceID)s %(otelSpanID)s "
-                        "%(otelTraceSampled)s"
-                    ),
-                }
+            console_formatter_name = file_formatter_name = "json"
+            formatters["json"] = {
+                "()": "pythonjsonlogger.json.JsonFormatter",
+                "fmt": (
+                    "%(asctime)s %(levelname)s %(name)s %(service)s %(env)s "
+                    "%(caller)s %(message)s %(otelTraceID)s %(otelSpanID)s "
+                    "%(otelTraceSampled)s"
+                ),
+            }
+        elif use_rich:
+            console_formatter_name = "rich"
+            file_formatter_name = "file"
+            formatters["rich"] = {"format": config.rich_fmt}
+        else:
+            console_formatter_name = file_formatter_name = "file"
+
+        if use_rich:
+            console_handler: dict[str, Any] = {
+                "()": "rich.logging.RichHandler",
+                "level": config.level,
+                "formatter": console_formatter_name,
+                "filters": ["enrich"],
+                "console": _build_rich_console(config),
+                "rich_tracebacks": config.rich_tracebacks,
+                "markup": False,  # log messages interpolate untrusted values — never markup
+                "show_path": True,
+                "show_time": True,
+                "omit_repeated_times": False,
+                "log_time_format": "[%Y-%m-%d %H:%M:%S]",
             }
         else:
-            formatter_name = "standard"
-            formatters = {"standard": {"format": config.fmt}}
-
-        handlers: dict[str, Any] = {
-            "console": {
+            console_handler = {
                 "class": "logging.StreamHandler",
                 "level": config.level,
-                "formatter": formatter_name,
+                "formatter": console_formatter_name,
                 "filters": ["enrich"],
                 "stream": "ext://sys.stdout",
             }
-        }
+
+        handlers: dict[str, Any] = {"console": console_handler}
 
         if file_path:
             handlers["file"] = {
                 "class": "logging.FileHandler",
                 "level": config.level,
-                "formatter": formatter_name,
+                "formatter": file_formatter_name,
                 "filters": ["enrich"],
                 "filename": file_path,
             }
@@ -934,25 +1010,20 @@ class AppLogger(VerboseLoggerBase):
 # ---------------------------------------------------------------------------
 
 
-def _try_enable_coloredlogs(config: LoggingConfig) -> None:
-    """Install coloredlogs with styles merged over coloredlogs defaults.
+def _build_rich_console(config: LoggingConfig) -> Console:
+    """Build the ``rich.console.Console`` used by the RichHandler console path.
 
-    Silently no-ops when ``coloredlogs`` is not installed or installation fails —
-    coloredlogs is a best-effort enhancement, never a hard requirement.
+    Applies :data:`_RICH_LEVEL_STYLES` (styling verboselogs' custom levels,
+    which Rich has no built-in theme entries for), merged with any
+    ``config.level_styles`` overrides.
     """
-    try:
-        import coloredlogs
-    except ImportError:
-        return
-
-    try:
-        coloredlogs.install(  # pyright: ignore[reportUnknownMemberType]  # coloredlogs lacks stubs
-            level=config.level,
-            field_styles={**coloredlogs.DEFAULT_FIELD_STYLES, **config.field_styles},
-            level_styles={**coloredlogs.DEFAULT_LEVEL_STYLES, **config.level_styles},
-        )
-    except Exception:
-        return
+    if not config.level_styles:
+        return Console(theme=_RICH_THEME)
+    overrides = {
+        f"logging.level.{name.lower()}": style
+        for name, style in config.level_styles.items()
+    }
+    return Console(theme=Theme({**_RICH_LEVEL_STYLES, **overrides}))
 
 
 def _enable_otel_log_correlation(*, optional: bool) -> None:
@@ -971,79 +1042,6 @@ def _enable_otel_log_correlation(*, optional: bool) -> None:
         if optional:
             return
         raise
-
-
-def _format_arguments(
-    func: object,
-    args: tuple[Any, ...],
-    kwargs: dict[str, Any],
-    exclude: list[str],
-    include: list[str],
-) -> list[str]:
-    """Format function call arguments as ``name=value`` strings.
-
-    ``self`` and ``cls`` are always excluded.
-    """
-    try:
-        sig = inspect.signature(func)  # pyright: ignore[reportArgumentType]
-        bound = sig.bind(*args, **kwargs)
-        bound.apply_defaults()
-    except TypeError, ValueError:
-        return [repr(args), repr(kwargs)]
-
-    parts: list[str] = []
-    for name, value in bound.arguments.items():
-        if name in _AUDIT_SELF_PARAMS:
-            continue
-        if include and name not in include:
-            continue
-        if name in exclude:
-            continue
-        parts.append(f"{name}={value!r}")
-    return parts
-
-
-def _resolve_variables(var_names: str, frame: FrameType | None) -> list[str]:
-    """Resolve comma-separated variable names from a stack frame.
-
-    Supports dot-notation for attribute traversal (e.g. ``"obj.attr"``).
-    Callable leaf attributes are called with no arguments.
-    """
-    if frame is None or not hasattr(frame, "f_locals"):
-        return [f"<cannot resolve: {var_names}>"]
-    local_vars = frame.f_locals
-    global_vars = frame.f_globals
-    parts: list[str] = []
-    for name in (n.strip() for n in var_names.split(",")):
-        if "." in name:
-            parts.append(_resolve_dotted_variable(name, local_vars, global_vars))
-        elif name in local_vars:
-            parts.append(f"{name}={local_vars[name]!r}")
-        elif name in global_vars:
-            parts.append(f"{name}={global_vars[name]!r}")
-        else:
-            parts.append(f"{name}=<undefined>")
-    return parts
-
-
-def _resolve_dotted_variable(
-    name: str, local_vars: dict[str, Any], global_vars: dict[str, Any]
-) -> str:
-    root, _, rest = name.partition(".")
-    if root in local_vars:
-        root_val = local_vars[root]
-    elif root in global_vars:
-        root_val = global_vars[root]
-    else:
-        return f"{name}=<undefined>"
-
-    try:
-        val = _attrgetter(rest)(root_val)
-        if callable(val):
-            val = val()
-        return f"{name}={val!r}"
-    except AttributeError:
-        return f"{name}=<undefined>"
 
 
 __all__ = [

@@ -12,19 +12,23 @@ Optional extras:
 
 | Extra | Adds |
 | --- | --- |
-| `coloredlogs` | Colored console log output |
+| `json` | JSON-formatted log output (`python-json-logger`) |
 | `excel` | `openpyxl` + `pandas`-backed Excel helpers |
 | `pandas` | `pandas`-backed DataFrame/Series helpers |
 | `otel` | OpenTelemetry logging instrumentation |
 | `testing` | `assertpy` + `pytest` integration helpers |
 | `all` | Everything above |
 
+Console log output is Rich-formatted by default (a hard dependency) when stdout is a TTY.
+
 ## What's inside
 
 - **`config`** — `Config`: loads JSON/YAML config from a file or directory, deep-merges multiple sources,
   and resolves internal references.
-- **`collections`** — `DictUtils`, `ListUtils`, `JsonUtils`, `YamlUtils`: dot-path get/set, deep merge,
-  structural comparison, and JSON/YAML (de)serialization.
+- **`collections`** — `DictUtils`, `ListUtils`: dot-path get/set, deep merge, structural comparison,
+  sorting, filtering, and grouping.
+- **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`: JSON/YAML/TOML
+  (de)serialization and file I/O, plus comment-preserving round-trip editing of config documents.
 - **`logging`** — `AppLogger`, `LoggingConfig`: idempotent logging setup via `dictConfig`, built on
   `verboselogs` with a custom `TRACE` level.
 - **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()` to any
@@ -35,7 +39,10 @@ Optional extras:
 - **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and captures return code,
   stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread pool.
-- **`console`** — `CLIArgumentParser`, `BooleanAction`, `KeyValueAction`: `argparse` helpers.
+- **`console`** — `AppConsole`, `OutputMode`: a Rich output facade with RICH/PLAIN/QUIET/JSON modes,
+  tables, diffs, and confirm/prompt/status helpers.
+- **`cli`** — `build_app`, `LogLevel`, `CliOptions`, `parse_key_values`, `parse_overrides`: Typer app
+  wiring for `--log-level`/`--log-file`/`--quiet`/`--json`.
 - **`utils`** — `Environment`, `Base64`, `PathUtils`, `AppUtils`: env-var, base64, filesystem, and
   general-purpose value helpers.
 - **`excel`** / **`pandas`** — Excel workbook helpers and DataFrame/Series helpers (optional extras).

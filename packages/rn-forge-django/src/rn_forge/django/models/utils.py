@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from typing import Any
 
-from rn_forge.commons.collections import JsonUtils
+from rn_forge.commons.documents import JsonUtils
 from ._meta import get_model_meta
 
 from django.db import models

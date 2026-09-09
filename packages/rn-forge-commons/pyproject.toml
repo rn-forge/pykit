@@ -1,23 +1,38 @@
 [project]
 name = "rn-forge-commons"
-version = "0.2.2"
+version = "0.3.0"
 description = "Shared, framework-agnostic utilities for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-dependencies = ["pyyaml>=6.0.3", "verboselogs>=1.7"]
+dependencies = [
+  "ruamel.yaml>=0.19.1",
+  "tomlkit>=0.15.0",
+  "verboselogs>=1.7",
+  "rich>=15.0.0",
+  "typer>=0.26.8",
+  "dacite>=1.9.2",
+]
 
 [project.optional-dependencies]
-coloredlogs = ["coloredlogs>=15.0.1"]
+json = ["python-json-logger>=4.0.0"]
+templates = ["jinja2>=3.1.6"]
+structlog = ["structlog>=25.1.0"]
+resilience = ["purgatory>=3.0.1", "stamina>=25.2.0", "httpx>=0.28"]
 excel = ["openpyxl>=3.1.5", "pandas>=3.0.3"]
 otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
 pandas = ["pandas>=3.0.3"]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]
 all = [
-  "coloredlogs>=15.0.1",
+  "httpx>=0.28",
+  "jinja2>=3.1.6",
   "openpyxl>=3.1.5",
   "opentelemetry-instrumentation-logging>=0.64b0",
   "pandas>=3.0.3",
+  "purgatory>=3.0.1",
+  "python-json-logger>=4.0.0",
+  "stamina>=25.2.0",
+  "structlog>=25.1.0",
 ]
 
 [build-system]
@@ -41,13 +56,12 @@ dev = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-commons[excel]",
+  "rn-forge-commons[all]",
   "ruff>=0.15.21",
-  "types-pyyaml>=6.0.12.20260518",
 ]
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocstrings[python]>=1.0.6",
-  "rn-forge-commons[excel]",
+  "rn-forge-commons[all]",
 ]

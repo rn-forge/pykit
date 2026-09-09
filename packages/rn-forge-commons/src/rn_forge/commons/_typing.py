@@ -1,7 +1,7 @@
 """Internal typing helpers for third-party integration boundaries.
 
 Several of this package's optional dependencies ship no type information
-(``verboselogs``, ``coloredlogs``) or have incomplete stubs (``pandas``). This
+(``verboselogs``) or have incomplete stubs (``pandas``). This
 module is the single place where those gaps are absorbed, so a dependency
 upgrade has one file to revisit rather than scattered ``# pyright: ignore``
 comments.

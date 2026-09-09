@@ -7,11 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `pykit` is a uv workspace containing a family of `rn-forge-*` Python packages. It is a personal dev-kit, not a deployable app.
 
 - **`packages/rn-forge-commons`** (import path `rn_forge.commons`, module name `rn_forge.commons`) — general
-    Python utilities with no Django dependency: config loading (`config.py`), collections/dict/json/yaml
-    helpers (`collections.py`), structured logging built on `verboselogs`/`coloredlogs` (`logging.py`),
-    dataclass mixins, subprocess/task helpers, Excel/pandas helpers (optional extras), CLI argument parsing
-    (`console.py`). `src/rn_forge/commons/__init__.py` is the curated public API — re-export new symbols there
-    when adding public functionality.
+    Python utilities with no Django dependency: config loading (`config.py`), nested dict/list
+    helpers (`collections.py`), structured logging built on `verboselogs` with a Rich console handler
+    (`logging.py`), a Rich output facade (`console.py`) and Typer CLI wiring (`cli.py`), dataclass mixins
+    backed by `dacite` (`dataclasses.py`), subprocess/task helpers, messaging/secrets/objects protocols
+    (`messaging.py`, `secrets.py`, `objects.py`), a locked JSON state store (`state.py`), failure-isolated
+    entry-point plugin loading (`plugins.py`), Excel/pandas helpers (optional extras), TOML/YAML/JSON
+    round-trip documents (`documents.py`), and a strict Jinja render engine
+    (`templates.py`, `templates` extra). `src/rn_forge/commons/__init__.py` is the curated public API —
+    re-export new symbols there when adding public functionality (modules gated behind an optional extra
+    are deliberately excluded from it; import them directly).
 - **`packages/rn-forge-django`** (import path `rn_forge.django`) — Django/DRF integration layer built on top
     of `rn-forge-commons`. Depends on `rn-forge-commons` via `[tool.uv.sources]` workspace linking (not PyPI).
     Optional extras: `drf` (djangorestframework, plus `rn-forge-commons[excel]` since `drf.views` eagerly

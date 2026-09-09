@@ -6,6 +6,8 @@ Provides:
 - :class:`Base64` — encode/decode helpers that accept ``str`` or ``bytes``.
 - :class:`PathUtils` — filesystem helpers (write, delete, temp dir) with
   automatic parent-directory creation.
+- :class:`ContentHash` — content/file digests for detecting drift.
+- :class:`DirectoryLock` — a portable, cross-process advisory lock.
 - :class:`AppUtils` — value and import utilities: bool parsing, emptiness
   checks, dynamic imports, attribute access, and string joining.
 
@@ -15,16 +17,23 @@ All methods are static with no import-time side effects.
 from __future__ import annotations
 
 import base64
+import difflib
+import hashlib
 import importlib
 import numbers
 import os
+import pkgutil
 import shutil
+import tarfile
 import tempfile
+import time
+import zipfile
 from operator import attrgetter
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from collections.abc import Sized
-from typing import Any, Callable, Sequence, cast
+from typing import Any, Callable, Literal, Self, Sequence, cast
 
+from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
 
 _LOGGER = AppLogger.get_logger(__name__)
@@ -32,6 +41,8 @@ _LOGGER = AppLogger.get_logger(__name__)
 __all__ = [
     "AppUtils",
     "Base64",
+    "ContentHash",
+    "DirectoryLock",
     "Environment",
     "PathUtils",
 ]
@@ -88,6 +99,66 @@ class Environment:
             result is None,
         )
         return result if result is not None else default
+
+    @staticmethod
+    def require(*names: str) -> dict[str, str]:
+        """Return the values of *names*, raising if any is unset or blank.
+
+        A set-but-empty/whitespace-only variable counts as missing, same as
+        :meth:`AppUtils.is_empty`.
+
+        Args:
+            *names: Environment variable names that must all be present.
+
+        Returns:
+            A mapping of ``{name: value}`` for every requested variable.
+
+        Raises:
+            AppException: One or more variables are unset or empty. The
+                message lists every missing name at once (not just the
+                first), so a misconfigured deployment surfaces all problems
+                in one run.
+
+        Example::
+
+            cfg = Environment.require("DB_URL", "SECRET_KEY")
+        """
+        values = {name: os.environ.get(name) for name in names}
+        missing = sorted(
+            name for name, value in values.items() if AppUtils.is_empty(value)
+        )
+        if missing:
+            _LOGGER.warning("Environment.require | missing={}", missing)
+            raise AppException(
+                "Missing required environment variable(s): {}", ", ".join(missing)
+            )
+        return cast(dict[str, str], values)
+
+    @staticmethod
+    def forbid(name: str, *forbidden: str, message: str | None = None) -> None:
+        """Raise if the value of *name* equals any of *forbidden*.
+
+        Intended for "the insecure default is still in place" guards, e.g.
+        ``Environment.forbid("SECRET_KEY", "change-me")``.
+
+        Args:
+            name: Environment variable to check.
+            *forbidden: Values that must not be the current value of *name*.
+            message: Custom exception message. Defaults to a generic one
+                naming *name* and the matched value.
+
+        Raises:
+            AppException: The current value of *name* matches one of
+                *forbidden*.
+        """
+        value = os.environ.get(name)
+        if value in forbidden:
+            _LOGGER.warning(
+                "Environment.forbid | name={} | matched_forbidden_value=true", name
+            )
+            raise AppException(
+                message or f"Environment variable {name!r} is set to a forbidden value"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +229,208 @@ class PathUtils:
         return p
 
     @staticmethod
+    def atomic_write(
+        content: str | bytes,
+        path: str | Path,
+        *,
+        mode: int | None = None,
+        encoding: str = "utf-8",
+    ) -> Path:
+        """Atomically write *content* to *path*, never leaving a partial file visible.
+
+        Writes to a ``.<name>.<random>.tmp`` temp file in *path*'s directory,
+        ``fsync``s it, then publishes it over the target with
+        :func:`os.replace` — the rename is atomic, so a reader never observes
+        a partially-written file. The parent directory is then best-effort
+        ``fsync``'d too: fsyncing only the file durably records its
+        *contents*, but the rename that makes those contents visible under
+        *path* lives in the parent directory's entry table, so a crash
+        between the two can still lose the new name on some filesystems.
+        Not every platform or filesystem permits opening a directory for this,
+        hence best-effort — failure here is silently swallowed.
+
+        Permissions: an explicit *mode* always wins; otherwise an existing
+        file's mode is preserved across the replacement; otherwise (no
+        existing file, no explicit mode) the temp file's default
+        (restrictive) permissions are left as-is.
+
+        A :class:`BaseException` (not just :class:`Exception`) during the
+        write — including :exc:`KeyboardInterrupt`/:exc:`SystemExit` — still
+        cleans up the temp file before propagating, so an interrupted write
+        never leaves a stray temp file behind.
+
+        Args:
+            content: Text or binary data to write.
+            path: Destination file path.
+            mode: Optional explicit permission bits applied to the temp file
+                before the atomic rename. Takes precedence over preserving an
+                existing file's mode.
+            encoding: Encoding used when *content* is ``str``. Ignored for
+                binary writes.
+
+        Returns:
+            The resolved :class:`~pathlib.Path` that was written.
+        """
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        existing_mode = p.stat().st_mode if p.exists() else None
+
+        fd, tmp_name = tempfile.mkstemp(
+            dir=p.parent, prefix=f".{p.name}.", suffix=".tmp"
+        )
+        try:
+            if isinstance(content, bytes):
+                with os.fdopen(fd, "wb") as binary_stream:
+                    binary_stream.write(content)
+                    binary_stream.flush()
+                    os.fsync(binary_stream.fileno())
+            else:
+                with os.fdopen(fd, "w", encoding=encoding) as text_stream:
+                    text_stream.write(content)
+                    text_stream.flush()
+                    os.fsync(text_stream.fileno())
+
+            if mode is not None:
+                os.chmod(tmp_name, mode)
+            elif existing_mode is not None:
+                os.chmod(tmp_name, existing_mode)
+
+            os.replace(tmp_name, p)
+        except BaseException:
+            Path(tmp_name).unlink(missing_ok=True)
+            raise
+
+        try:
+            dir_fd = os.open(p.parent, os.O_RDONLY)
+        except OSError:
+            return p
+        try:
+            os.fsync(dir_fd)
+        except OSError:
+            pass
+        finally:
+            os.close(dir_fd)
+        return p
+
+    @staticmethod
+    def find_root(
+        start: str | Path | None = None,
+        *,
+        markers: Sequence[str | Path] = (".git",),
+        fallback: Literal["start", "raise"] = "start",
+    ) -> Path:
+        """Walk up from *start* to the nearest ancestor containing any marker.
+
+        *markers* are checked in order — every ancestor is checked against
+        the first marker before the second marker is considered at all, so
+        marker precedence outranks proximity to *start* (e.g. a ``.git``
+        several levels up beats a ``pyproject.toml`` one level up, if
+        ``markers=(".git", "pyproject.toml")``).
+
+        Args:
+            start: Directory (or file, whose parent is used) to search from.
+                Defaults to the current working directory.
+            markers: Ordered marker paths (relative to a candidate ancestor)
+                whose existence identifies the root, e.g. ``(".git",)`` or
+                ``("pyproject.toml", ".git")``.
+            fallback: ``"start"`` (default) returns the resolved *start*
+                directory when no marker matches anywhere up the tree.
+                ``"raise"`` raises :class:`AppException` instead.
+
+        Returns:
+            The resolved root directory.
+
+        Raises:
+            AppException: No marker matched and ``fallback="raise"``.
+        """
+        current = (
+            Path(start).expanduser().resolve() if start is not None else Path.cwd()
+        )
+        if current.is_file():
+            current = current.parent
+        candidates = [current, *current.parents]
+
+        for marker in markers:
+            for candidate in candidates:
+                if (candidate / marker).exists():
+                    return candidate
+
+        if fallback == "raise":
+            raise AppException(
+                "No root found from {} for markers {}", current, list(markers)
+            )
+        return current
+
+    @staticmethod
+    def normalize_relative(raw: str) -> str:
+        """Normalize *raw* to a POSIX relative path, rejecting escapes.
+
+        Rejects absolute paths and any ``".."`` that would climb above the
+        (implicit) root. ``"."`` means the root itself. Purely lexical — does
+        not touch the filesystem or resolve symlinks; pair with
+        :meth:`assert_within` when the path will actually be used.
+
+        Args:
+            raw: A path string, possibly using backslashes.
+
+        Returns:
+            The normalized POSIX relative path, or ``"."`` for the root.
+
+        Raises:
+            AppException: *raw* is empty/blank, absolute, or escapes the root.
+        """
+        if not raw.strip():
+            raise AppException("Path must not be empty")
+
+        candidate = PurePosixPath(raw.replace("\\", "/"))
+        if candidate.is_absolute():
+            raise AppException("Path must be relative: {!r}", raw)
+
+        parts: list[str] = []
+        for part in candidate.parts:
+            if part in ("", "."):
+                continue
+            if part == "..":
+                if not parts:
+                    raise AppException("Path escapes root: {!r}", raw)
+                parts.pop()
+                continue
+            parts.append(part)
+
+        return "/".join(parts) if parts else "."
+
+    @staticmethod
+    def assert_within(root: str | Path, target: str | Path) -> Path:
+        """Resolve *target* and raise unless it stays inside *root*.
+
+        Covers both the lexical escape (a declared ``../../.ssh/config``) and
+        the symlink-escape case (a symlink that *resolves* outside *root*) —
+        :meth:`~pathlib.Path.resolve` collapses ``..`` segments and follows
+        symlinks, so a single post-resolution containment check catches both.
+
+        Args:
+            root: The directory *target* must stay within.
+            target: The path to check, resolved before comparison.
+
+        Returns:
+            The resolved, absolute *target* path.
+
+        Raises:
+            AppException: The resolved *target* is not *root* itself and is
+                not inside it.
+        """
+        root_resolved = Path(root).resolve()
+        target_resolved = Path(target).resolve()
+        if (
+            target_resolved != root_resolved
+            and root_resolved not in target_resolved.parents
+        ):
+            raise AppException(
+                "Path escapes root: {} is not within {}", target_resolved, root_resolved
+            )
+        return target_resolved
+
+    @staticmethod
     def delete(
         path: str | Path,
         *,
@@ -191,6 +464,217 @@ class PathUtils:
             _LOGGER.warning("Removing directory: {}", p)
             shutil.rmtree(p)
 
+    @staticmethod
+    def backup(
+        path: str | Path,
+        destination_root: str | Path,
+        *,
+        relative_to: Path | None = None,
+    ) -> Path | None:
+        """Copy *path* under *destination_root*, preserving its relative layout.
+
+        Per-run timestamp policy (e.g. one backup directory per invocation) is
+        deliberately not this method's concern — that is application policy,
+        not a generic filesystem operation; a caller wanting timestamped
+        backups builds *destination_root* accordingly before calling this.
+
+        Args:
+            path: The file to back up. A no-op (returns ``None``) if this is
+                not an existing file.
+            destination_root: Directory under which the backup is placed.
+            relative_to: When given, *path* is stored under *destination_root*
+                at its path relative to this directory. When *path* is not
+                inside *relative_to* (or *relative_to* is omitted), it is
+                stored at its path with the filesystem root stripped, e.g.
+                ``/etc/app/config`` -> ``<destination_root>/etc/app/config``.
+
+        Returns:
+            The backup file's path, or ``None`` when *path* is not a file.
+        """
+        p = Path(path)
+        if not p.is_file():
+            return None
+        resolved = p.expanduser().resolve()
+        if relative_to is not None:
+            try:
+                rel = resolved.relative_to(Path(relative_to).expanduser().resolve())
+            except ValueError:
+                rel = Path(*resolved.parts[1:])
+        else:
+            rel = Path(*resolved.parts[1:])
+        destination = Path(destination_root) / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(resolved, destination)
+        return destination
+
+    @staticmethod
+    def atomic_symlink(link: str | Path, target: str | Path) -> None:
+        """Atomically create or replace the symlink *link*, pointing at *target*.
+
+        Writes a temporary symlink (``.<name>.tmp-<pid>``) next to *link* and
+        renames it into place with :meth:`~pathlib.Path.replace`. Never
+        unlinks *link* first — that would leave a window where the link does
+        not exist at all, which a concurrent reader could observe.
+
+        Args:
+            link: The symlink path to create or replace.
+            target: The path the symlink should point at. Not resolved —
+                pass a relative path here for a relocatable symlink.
+        """
+        link = Path(link)
+        tmp_link = link.parent / f".{link.name}.tmp-{os.getpid()}"
+        tmp_link.symlink_to(target)
+        tmp_link.replace(link)
+
+    @staticmethod
+    def extract_archive(
+        archive: str | Path,
+        destination: str | Path,
+        *,
+        filter: Literal["data", "tar", "fully_trusted"] = "data",  # noqa: A002
+    ) -> Path:
+        """Extract a ``.tar``/``.zip`` *archive* into *destination*, returning its root dir.
+
+        Args:
+            archive: The archive file. Tar formats (``.tar``, ``.tar.gz``,
+                ``.tar.bz2``, ...) are detected by content; anything else is
+                treated as a zip.
+            destination: Directory the archive's contents are extracted into.
+                Created if absent.
+            filter: The :func:`tarfile.TarFile.extractall` extraction filter
+                (tar archives only — a tar-slip vulnerability is exactly the
+                kind of thing a hand-rolled second copy of this reintroduces,
+                which is the point of having it once with a safe default).
+                Zip extraction has no equivalent filter parameter.
+
+        Returns:
+            The single top-level directory the archive extracted into.
+
+        Raises:
+            AppException: The archive's root does not contain exactly one
+                directory.
+        """
+        archive = Path(archive)
+        dest = Path(destination)
+        dest.mkdir(parents=True, exist_ok=True)
+        if tarfile.is_tarfile(archive):
+            with tarfile.open(archive) as tar:
+                tar.extractall(dest, filter=filter)
+        else:
+            with zipfile.ZipFile(archive) as zip_file:
+                zip_file.extractall(dest)
+        entries = [item for item in dest.iterdir() if item.is_dir()]
+        if len(entries) != 1:
+            raise AppException(
+                "Expected exactly one root directory in archive {}, found {}",
+                archive,
+                len(entries),
+            )
+        return entries[0]
+
+
+# ---------------------------------------------------------------------------
+# ContentHash — SHA-256 (or other) digests of content and files
+# ---------------------------------------------------------------------------
+
+
+class ContentHash:
+    """Content-hashing helpers, for detecting drift between a recorded and current state.
+
+    All methods are static.
+    """
+
+    @staticmethod
+    def of(content: str | bytes, *, algorithm: str = "sha256") -> str:
+        """Return a hex digest of *content* using *algorithm* (default ``sha256``)."""
+        payload = content.encode() if isinstance(content, str) else content
+        return hashlib.new(algorithm, payload).hexdigest()
+
+    @staticmethod
+    def of_file(path: str | Path, *, algorithm: str = "sha256") -> str | None:
+        """Return a hex digest of the file at *path*, or ``None`` if it is not a file."""
+        p = Path(path)
+        return (
+            ContentHash.of(p.read_bytes(), algorithm=algorithm) if p.is_file() else None
+        )
+
+
+# ---------------------------------------------------------------------------
+# DirectoryLock — a portable, cross-process advisory lock
+# ---------------------------------------------------------------------------
+
+
+class DirectoryLock:
+    """A portable advisory lock backed by ``mkdir``, for cross-process serialization.
+
+    ``mkdir`` is atomic on every filesystem this runs on; ``flock`` is not
+    available everywhere (and behaves inconsistently over network
+    filesystems). Use this when the lock must actually hold across processes
+    on an unknown filesystem; use :meth:`StateStore.locked
+    <rn_forge.commons.state.StateStore.locked>`'s ``flock``-based locking
+    instead when a failed lock should degrade to unlocked rather than raise.
+
+    Example::
+
+        with DirectoryLock(product_home / ".lock", on_wait=lambda p: print(f"waiting for {p}...")):
+            ...
+    """
+
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        timeout: float = 30.0,
+        poll_interval: float = 0.05,
+        on_wait: Callable[[Path], None] | None = None,
+    ) -> None:
+        """Initialize :class:`DirectoryLock`.
+
+        Args:
+            path: The lock directory. Must not exist while the lock is held
+                by anyone; created (and removed) by this lock.
+            timeout: Seconds to wait for the lock before raising.
+            poll_interval: Seconds between acquisition attempts.
+            on_wait: Called once, with *path*, the first time acquisition has
+                to wait — lets a caller print "waiting for lock ..." without
+                this module importing a console.
+        """
+        self._path = Path(path)
+        self._timeout = timeout
+        self._poll_interval = poll_interval
+        self._on_wait = on_wait
+        self._acquired = False
+
+    def __enter__(self) -> Self:
+        """Acquire the lock, waiting up to ``timeout`` seconds.
+
+        Raises:
+            AppException: The lock could not be acquired within ``timeout``.
+        """
+        deadline = time.monotonic() + self._timeout
+        announced = False
+        while True:
+            try:
+                self._path.mkdir(parents=True)
+                self._acquired = True
+                return self
+            except FileExistsError:
+                if time.monotonic() >= deadline:
+                    raise AppException(
+                        "Could not acquire lock within {}s: {}",
+                        self._timeout,
+                        self._path,
+                    ) from None
+                if not announced and self._on_wait is not None:
+                    self._on_wait(self._path)
+                    announced = True
+                time.sleep(self._poll_interval)
+
+    def __exit__(self, *exc: object) -> None:
+        """Release the lock, if held."""
+        if self._acquired:
+            shutil.rmtree(self._path, ignore_errors=True)
+
 
 # ---------------------------------------------------------------------------
 # AppUtils — value and import helpers
@@ -209,8 +693,8 @@ class AppUtils:
 
         Recognises (case-insensitive):
 
-        - Truthy: ``"true"``, ``"yes"``, ``"enabled"``
-        - Falsy: ``"false"``, ``"no"``, ``"disabled"``, ``"none"``
+        - Truthy: ``"true"``, ``"yes"``, ``"y"``, ``"on"``, ``"1"``, ``"enabled"``
+        - Falsy: ``"false"``, ``"no"``, ``"n"``, ``"off"``, ``"0"``, ``"disabled"``, ``"none"``
 
         Args:
             value: The value to convert.  ``bool`` instances are returned
@@ -238,10 +722,10 @@ class AppUtils:
             return value
 
         text = str(value).strip().lower()
-        if text in {"true", "yes", "enabled"}:
+        if text in {"true", "yes", "y", "on", "1", "enabled"}:
             _LOGGER.trace("AppUtils.parse_bool | token={} | result=True", text)
             return True
-        if text in {"false", "no", "disabled", "none"}:
+        if text in {"false", "no", "n", "off", "0", "disabled", "none"}:
             _LOGGER.trace("AppUtils.parse_bool | token={} | result=False", text)
             return False
 
@@ -287,9 +771,17 @@ class AppUtils:
     def import_string(qualname: str, package: str | None = None) -> Any:
         """Import and return an object by its fully-qualified dotted name.
 
+        Delegates to :func:`pkgutil.resolve_name` for the absolute case, which
+        also accepts ``pkg.mod:attr`` (colon-separated) as well as
+        ``pkg.mod.attr`` — a superset of this function's original
+        dot-only contract. Relative imports (a *qualname* starting with
+        ``"."``) are not supported by :func:`~pkgutil.resolve_name`, so they
+        are still handled via :func:`importlib.import_module`.
+
         Args:
-            qualname: Dotted path to the target, e.g. ``"os.path.join"`` or
-                ``".submodule.MyClass"`` for relative imports.
+            qualname: Dotted (or ``pkg.mod:attr``) path to the target, e.g.
+                ``"os.path.join"`` or ``".submodule.MyClass"`` for relative
+                imports.
             package: Required when *qualname* starts with ``"."`` (relative
                 import).  Defaults to ``None``.
 
@@ -305,19 +797,32 @@ class AppUtils:
             join = AppUtils.import_string("os.path.join")
             join("/tmp", "file.txt")  # "/tmp/file.txt"
         """
-        if qualname.startswith(".") and package is None:
+        if qualname.startswith("."):
+            if package is None:
+                _LOGGER.warning(
+                    "AppUtils.import_string | qualname={} | missing_package_for_relative_import=true",
+                    qualname,
+                )
+                raise ImportError(
+                    f"Package name is required for relative import: {qualname!r}"
+                )
+            return AppUtils._import_relative(qualname, package)
+
+        _LOGGER.debug("AppUtils.import_string | qualname={}", qualname)
+        try:
+            return pkgutil.resolve_name(qualname)
+        except AttributeError as exc:
             _LOGGER.warning(
-                "AppUtils.import_string | qualname={} | missing_package_for_relative_import=true",
-                qualname,
+                "AppUtils.import_string | qualname={} | missing_attr=true", qualname
             )
-            raise ImportError(
-                f"Package name is required for relative import: {qualname!r}"
-            )
-        _LOGGER.debug(
-            "AppUtils.import_string | qualname={} | package={}",
-            qualname,
-            package,
-        )
+            raise ImportError(f"Cannot import {qualname!r}: {exc}") from exc
+        except ImportError:
+            _LOGGER.exception("AppUtils.import_string failed | qualname={}", qualname)
+            raise
+
+    @staticmethod
+    def _import_relative(qualname: str, package: str) -> Any:
+        """Resolve a relative ``.submodule.Attr`` *qualname* via ``importlib``."""
         try:
             module_path, attr_name = qualname.rsplit(".", 1)
         except ValueError as exc:
@@ -409,3 +914,36 @@ class AppUtils:
         else:
             items = list(values)
         return separator.join(str(v) for v in items)
+
+    @staticmethod
+    def unified_diff(
+        expected: str,
+        actual: str,
+        *,
+        expected_name: str = "expected",
+        actual_name: str = "actual",
+    ) -> str:
+        """Return a unified diff between *expected* and *actual*, or ``""`` if equal.
+
+        The empty-string-for-equal-inputs contract is deliberate: callers use
+        it to decide "did anything change" without a separate equality check.
+
+        Args:
+            expected: The baseline text.
+            actual: The text being compared against *expected*.
+            expected_name: Label for *expected* in the diff header.
+            actual_name: Label for *actual* in the diff header.
+
+        Returns:
+            A conventional unified diff string, or ``""`` when *expected* and
+            *actual* are identical.
+        """
+        if expected == actual:
+            return ""
+        diff = difflib.unified_diff(
+            expected.splitlines(keepends=True),
+            actual.splitlines(keepends=True),
+            fromfile=expected_name,
+            tofile=actual_name,
+        )
+        return "".join(diff)

@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pandas
-from rn_forge.commons.collections import JsonUtils
+from rn_forge.commons.documents import JsonUtils
 from rn_forge.commons.dataclasses import DataclassMixin
 from rn_forge.commons.excel import ExcelAdapter
 from rn_forge.commons.exceptions import AppException

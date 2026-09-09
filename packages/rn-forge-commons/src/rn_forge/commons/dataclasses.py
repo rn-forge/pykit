@@ -19,10 +19,11 @@ Mark a field with ``metadata={"exclude": True}`` to omit it from
 from __future__ import annotations
 
 import dataclasses
-from types import UnionType
-from typing import Any, Self, Union, cast, get_args, get_origin, get_type_hints
+from typing import Any, ClassVar, Self, cast
 
-from rn_forge.commons.collections import JsonUtils, YamlUtils
+import dacite
+
+from rn_forge.commons.documents import JsonUtils, YamlUtils
 from rn_forge.commons.logging import AppLogger
 
 _LOGGER = AppLogger.get_logger(__name__)
@@ -95,16 +96,26 @@ class DataclassMixin:
 
         Args:
             **kwargs: Additional keyword arguments forwarded to
-                :func:`yaml.dump` (e.g. ``sort_keys``, ``default_flow_style``).
+                :meth:`~rn_forge.commons.documents.YamlUtils.serialize`
+                (e.g. ``sort_keys``, ``default_flow_style``).
 
         Returns:
             A YAML string representation of this instance.
-
-        Raises:
-            ImportError: If ``pyyaml`` is not installed.
         """
         _LOGGER.trace("DataclassMixin.to_yaml | cls={}", type(self).__name__)
         return YamlUtils.serialize(self.as_dict(), **kwargs)
+
+    #: dacite configuration used by :meth:`from_dict`. ``check_types=False``
+    #: preserves this mixin's long-standing lenient behaviour — an unmatched
+    #: value (e.g. a ``str`` for an ``int``-annotated field) passes through
+    #: unchanged rather than raising. ``cast=[tuple, set]`` preserves the old
+    #: coercion's structural ``list -> tuple``/``list -> set`` conversion for
+    #: those two container types (dacite does not cast containers by default,
+    #: even with ``check_types=False``). Override in a subclass to opt into
+    #: strict type checking: ``__dacite_config__ = dacite.Config(check_types=True)``.
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=False, cast=[tuple, set]
+    )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -114,7 +125,10 @@ class DataclassMixin:
         constructor.  This makes ``from_dict`` tolerant of extra data (e.g.
         when loading from a config file that has fields added in a newer
         schema version). Nested dataclass-typed fields are reconstructed
-        recursively for common container annotations.
+        recursively for common container annotations, via :mod:`dacite`.
+
+        Note a nested dataclass field's own overridden ``from_dict`` (if any)
+        is **not** called — dacite structures nested dataclasses itself.
 
         Args:
             data: A dict whose keys correspond to dataclass field names.
@@ -134,7 +148,6 @@ class DataclassMixin:
             raise TypeError(
                 f"{cls.__name__} is not a dataclass — DataclassMixin requires @dataclass"
             )
-        type_hints = get_type_hints(cls)
         field_names = {field.name for field in dataclasses.fields(cls)}
         ignored_keys = sorted(set(data) - field_names)
         if ignored_keys:
@@ -143,33 +156,17 @@ class DataclassMixin:
                 cls.__name__,
                 ignored_keys,
             )
-        _LOGGER.trace(
-            "DataclassMixin.from_dict: coercing fields | cls={} | keys={}",
-            cls.__name__,
-            sorted(data),
-        )
-        filtered = {
-            field.name: _coerce_field_value(
-                type_hints.get(field.name, field.type), data[field.name]
-            )
-            for field in dataclasses.fields(cls)
-            if field.name in data
-        }
         try:
-            instance = cls(**filtered)
-        except Exception:
+            return dacite.from_dict(
+                data_class=cls, data=data, config=cls.__dacite_config__
+            )
+        except dacite.DaciteError:
             _LOGGER.exception(
                 "DataclassMixin.from_dict failed | cls={} | keys={}",
                 cls.__name__,
-                sorted(filtered),
+                sorted(data),
             )
             raise
-        _LOGGER.trace(
-            "DataclassMixin.from_dict complete | cls={} | populated_keys={}",
-            cls.__name__,
-            sorted(filtered),
-        )
-        return instance
 
     @classmethod
     def from_json(cls, text: str) -> Self:
@@ -208,7 +205,7 @@ class DataclassMixin:
             A new instance populated from the parsed YAML.
 
         Raises:
-            ImportError: If ``pyyaml`` is not installed.
+            ruamel.yaml.YAMLError: If *text* is not valid YAML.
         """
         _LOGGER.trace(
             "DataclassMixin.from_yaml | cls={} | text_length={}",
@@ -314,92 +311,3 @@ def _convert_value(value: Any, *, exclude_hidden: bool) -> Any:
             for k, v in cast(dict[Any, Any], value).items()
         }
     return value
-
-
-def _coerce_field_value(annotation: Any, value: Any) -> Any:
-    """Coerce nested dataclass values for common container annotations."""
-    if value is None:
-        return None
-
-    origin = get_origin(annotation)
-    if origin in (list, set, tuple):
-        return _coerce_sequence(origin, annotation, value)
-
-    if origin is dict:
-        return _coerce_dict(annotation, value)
-
-    if origin in (UnionType, Union):
-        return _coerce_union(annotation, value)
-
-    if dataclasses.is_dataclass(annotation) and isinstance(value, dict):
-        return _coerce_nested_dataclass(annotation, value)
-
-    return value
-
-
-def _coerce_sequence(origin: Any, annotation: Any, value: Any) -> Any:
-    """Coerce a ``list``/``set``/``tuple``-annotated field, recursing into item types."""
-    item_types = get_args(annotation)
-    item_type = item_types[0] if item_types else Any
-    _LOGGER.trace(
-        "_coerce_field_value: sequence | origin={} | item_type={} | length={}",
-        getattr(origin, "__name__", origin),
-        item_type,
-        len(value),
-    )
-    items = [_coerce_field_value(item_type, item) for item in value]
-    if origin is list:
-        return items
-    if origin is set:
-        return set(items)
-    return tuple(items)
-
-
-def _coerce_dict(annotation: Any, value: Any) -> Any:
-    """Coerce a ``dict``-annotated field, recursing into value types."""
-    args = get_args(annotation)
-    value_type = args[1] if len(args) > 1 else Any
-    _LOGGER.trace(
-        "_coerce_field_value: dict | value_type={} | keys={}",
-        value_type,
-        sorted(value),
-    )
-    return {k: _coerce_field_value(value_type, v) for k, v in value.items()}
-
-
-def _coerce_union(annotation: Any, value: Any) -> Any:
-    """Coerce a ``Union``/``X | Y``-annotated field into its first matching arm."""
-    non_none = [a for a in get_args(annotation) if a is not type(None)]
-    # dict values are coerced into the first matching dataclass arm
-    if isinstance(value, dict):
-        for arg in non_none:
-            if dataclasses.is_dataclass(get_origin(arg) or arg):
-                _LOGGER.trace(
-                    "_coerce_field_value: union dict matched dataclass arm | arg={}",
-                    arg,
-                )
-                return _coerce_field_value(arg, value)
-    # list/tuple values are coerced into the first matching sequence arm
-    elif isinstance(value, (list, tuple)):
-        for arg in non_none:
-            if get_origin(arg) in (list, set, tuple):
-                _LOGGER.trace(
-                    "_coerce_field_value: union sequence matched arm | arg={}",
-                    arg,
-                )
-                return _coerce_field_value(arg, value)
-
-    return cast(Any, value)
-
-
-def _coerce_nested_dataclass(annotation: Any, value: Any) -> Any:
-    """Coerce a dict into a nested dataclass instance via its ``from_dict``."""
-    _LOGGER.trace(
-        "_coerce_field_value: nested dataclass | annotation={} | keys={}",
-        getattr(annotation, "__name__", annotation),
-        sorted(cast(dict[Any, Any], value).keys()),
-    )
-    from_dict = getattr(annotation, "from_dict", None)
-    if callable(from_dict):
-        return from_dict(value)
-    return cast(type[Any], annotation)(**value)

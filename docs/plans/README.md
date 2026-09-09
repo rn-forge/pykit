@@ -1,6 +1,6 @@
 # pykit plans
 
-Five documents, one workspace. This page is the **execution order** — read it before picking up any
+Five pykit documents plus the workspace-wide standardization plan. This page is the **execution order** — read it before picking up any
 plan, because several phases are blocked on phases in other documents and none of the plans repeats
 the whole graph.
 
@@ -8,7 +8,8 @@ the whole graph.
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` — library consolidation (Part A) + new capability (Part B) | Ready |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + extraction of local development APIs into `rn-forge-tooling` | Commons upgrade implemented (Part C uncommitted); tooling extraction and generator boundary planned |
+| [`../../../STANDARDIZATION-PLAN.md`](../../../STANDARDIZATION-PLAN.md) (moves to `rn-forge/kiln/docs/plans/`) | Workspace-wide: when the tooling extraction runs, the kiln generator, the rebuilds of agentkit and intellibuild | Revision 7 — sequencing authority for everything cross-repo |
 | [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | Ready |
 | [`azure-library-plan.md`](./azure-library-plan.md) | **New** `rn-forge-azure` package — Azure adapters for commons protocols | Ready |
@@ -24,10 +25,16 @@ only to understand where something came from.
 rn-forge-commons  ←  rn-forge-web  ←  rn-forge-django
        ↑
 rn-forge-azure
+
+rn-forge-commons  ←  rn-forge-tooling  ←  agentkit / kiln
+rn-forge-commons  ←  rn-forge-tooling  ←  rn-forge-django[codegen]   (extra; only rn_forge.django.codegen)
 ```
 
 `rn-forge-web` never imports a web framework. `rn-forge-azure` depends on commons only — never on web
-or django. Both rules are enforced by grep checks in the respective Phase 0s.
+or django. `rn-forge-django` and the future FastAPI runtime package never depend on tooling or Typer on their
+runtime surface. Framework code generators ship as a `[codegen]` extra of their runtime package,
+live in a `codegen` subpackage the runtime never imports, and are installed only in development
+environments; import-linter enforces the fence (commons plan → "Framework code generators").
 
 ## Execution order
 
@@ -45,9 +52,12 @@ Phases within a plan run in their own order unless noted. These are the **cross-
 | 8 | django Phases 0, 2, 5, 8, 9, 12 | commons Part A | Independent of the web package |
 | 9 | django Phases 1, 3, 4, 6.1, 7 | web Phases 1–6 | All five are adapters over `rn_forge.web` |
 | 10 | django Phase 6.2 | commons Phase 7 | Thin wrapper over `Environment.require` |
-| 11 | commons Phase 8 (resilience) | — | Redesign first: see web plan §A.3 |
+| 11 | ~~commons Phase 8 (resilience)~~ | — | **Done** — built async per web plan §A.3 (`purgatory` + `stamina`), not the original sync spec |
 
-Steps 1–3 and step 4 are independent of each other and can run in parallel. Step 9 is the one most
+Steps 1–3 and step 4 are independent of each other and can run in parallel. **The tooling
+extraction itself is not a step here** — it is standardization plan Phase C and runs only after
+that plan's Phase A (stabilize and commit Part C) and Phase B (kiln's golden repos, which fix the
+engine's scope). Step 9 is the one most
 likely to be started too early — five django phases will silently reimplement the web package if its
 phases have not landed.
 
@@ -58,12 +68,17 @@ reaches one should stop and record the question, not guess:
 
 | Gate | Question |
 | --- | --- |
-| commons Phase 6 | Replace the `config.py` resolver with OmegaConf? Has an explicit abort gate |
-| commons Phase 9 | Adopt structlog as a front-end over `AppLogger`? Both surveyed apps use structlog |
+| ~~commons Phase 6~~ | **Resolved (2026-09-07): gate failed, abandoned.** Replacing the `config.py` resolver with OmegaConf was estimated at 100-160+ lines of pre/post glue against an ~80-line threshold — see the outcome note in the plan. Hand-rolled resolver unchanged. |
+| ~~commons Phase 9~~ | **Resolved (2026-09-07): gate passed, built.** `StructLogger` in `src/rn_forge/commons/structlogger.py` — see the outcome note in the plan for the four validated conditions. |
 | django Phase 10 | Build outbox/inbox messaging? Needs a committed consumer + a PostgreSQL test job |
 | django Phase 11 | Celery integration? |
 | azure Phase 4 | Service Bus `MessageBus` adapter? Depends on django Phase 10's outcome |
 | azure Phase 5 | OpenTelemetry export to Azure Monitor? |
+
+**Commons Phase 18.4 is resolved:** use `rn-forge-tooling` for shared installer mechanics and the
+parameterized state machine. Keep `$RNF_HOME`, product coordinates, retention/uninstall policy and
+product-specific validation in agentkit and kiln. Taskkit remains a reference donor; do not create
+`rn-forge-selfkit`.
 
 Two further decisions are **specified work, not gates** — an implementer performs them and records
 the result: the `asgi-correlation-id` and `rfc9457` evaluations in web Phase 0.2. The plan states the

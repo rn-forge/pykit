@@ -1,314 +1,268 @@
-"""Console utilities: argument parsing and logging configuration.
+"""Console output: a Rich-based, quiet/JSON-aware output facade.
 
 Provides:
 
-- :class:`CLIArgumentParser` — an :class:`argparse.ArgumentParser`
-  subclass that auto-adds ``--log-level`` and ``--log-file`` arguments and
-  wires them into :meth:`AppLogger.initialize`.
-- :class:`BooleanAction` — a clean ``argparse.Action`` for boolean flags that
-  accepts ``true/false/yes/no/1/0`` values.
-- :class:`KeyValueAction` — an ``argparse.Action`` for ``key=value`` pairs,
-  collecting them into a dict on the namespace.
+- :class:`OutputMode` — ``RICH`` / ``PLAIN`` / ``QUIET`` / ``JSON`` output modes.
+- :class:`AppConsole` — thin facade over :class:`rich.console.Console` with
+  tri-mode dispatch, semantic helpers (``success``/``info``/``warning``/``error``),
+  a one-call table builder, a diff renderer, and confirm/prompt/status
+  interaction helpers.
+- :data:`console` — a module-level default :class:`AppConsole` singleton.
+
+This module is deliberately free of any ``typer``/``click`` import, so it is
+usable from a plain script, a Django management command, or a pytest run —
+not only from a Typer CLI (see :mod:`rn_forge.commons.cli` for that layer).
+
+Typical usage::
+
+    from rn_forge.commons.console import console, OutputMode
+
+    console.info("Starting {}", "job")
+    console.table("name", "status", rows=[("alpha", "ok"), ("beta", "failed")])
+    console.set_mode(OutputMode.JSON)
+    console.emit({"status": "ok"})
 """
 
 from __future__ import annotations
 
-import argparse
-from typing import Any, Self, Sequence
+from contextlib import AbstractContextManager, contextmanager, nullcontext
+from enum import StrEnum
+from typing import Any, Iterable, NoReturn, Self, Sequence, cast
 
-from rn_forge.commons.logging import AppLogger
+from rich.console import Console
+from rich.prompt import Confirm, Prompt
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+from rich.theme import Theme
 
-# Mapping from human-friendly level names (and single-letter shortcuts) to
-# int values.  Includes all verboselogs levels plus TRACE.
-_LOG_LEVELS: dict[str, int] = {
-    "CRITICAL": AppLogger.CRITICAL,
-    "FATAL": AppLogger.FATAL,
-    "ERROR": AppLogger.ERROR,
-    "SUCCESS": AppLogger.SUCCESS,
-    "WARNING": AppLogger.WARNING,
-    "NOTICE": AppLogger.NOTICE,
-    "INFO": AppLogger.INFO,
-    "VERBOSE": AppLogger.VERBOSE,
-    "DEBUG": AppLogger.DEBUG,
-    "SPAM": AppLogger.SPAM,
-    "TRACE": AppLogger.TRACE,
-    # Single-letter shortcuts
-    "C": AppLogger.CRITICAL,
-    "E": AppLogger.ERROR,
-    "W": AppLogger.WARNING,
-    "I": AppLogger.INFO,
-    "V": AppLogger.VERBOSE,
-    "D": AppLogger.DEBUG,
-    "T": AppLogger.TRACE,
-}
+from rn_forge.commons.documents import JsonUtils
+
+__all__ = ["AppConsole", "OutputMode", "console"]
 
 
-# ---------------------------------------------------------------------------
-# BooleanAction — clean boolean flag parsing
-# ---------------------------------------------------------------------------
+class OutputMode(StrEnum):
+    """Output mode for :class:`AppConsole`."""
+
+    RICH = "rich"
+    """Default: styled output, tables, colour."""
+    PLAIN = "plain"
+    """No styling (explicit override; also what a non-TTY gets)."""
+    QUIET = "quiet"
+    """Suppress everything except explicit ``quiet_text``."""
+    JSON = "json"
+    """Machine-readable output only."""
 
 
-class BooleanAction(argparse.Action):
-    """Argparse action that parses boolean values from strings.
+def _format(msg: Any, args: tuple[Any, ...]) -> Any:
+    """``{}``-format *msg* with *args* when both are present, matching the AppLogger idiom."""
+    if args and isinstance(msg, str):
+        return msg.format(*args)
+    return msg
 
-    Accepts: ``true``, ``false``, ``yes``, ``no``, ``1``, ``0``
-    (case-insensitive).
 
-    Usage::
+class AppConsole:
+    """Thin facade over :class:`rich.console.Console` with quiet/JSON output modes.
 
-        parser.add_argument("--dry-run", action=BooleanAction, default=False)
+    The underlying :class:`~rich.console.Console` is always reachable via
+    :attr:`rich` — this facade standardizes the common cases, it does not
+    replace the library. For anything beyond a one-off table or a status
+    spinner (progress bars, live displays, custom renderables), build against
+    :attr:`rich` directly.
     """
-
-    _TRUTHY = frozenset({"true", "yes", "1"})
-    _FALSY = frozenset({"false", "no", "0"})
 
     def __init__(
         self,
-        option_strings: Sequence[str],
-        dest: str,
-        default: bool = False,
-        required: bool = False,
-        help: str | None = None,  # noqa: A002
+        *,
+        mode: OutputMode | None = None,
+        stderr: bool = False,
+        theme: Theme | None = None,
     ) -> None:
-        super().__init__(
-            option_strings=option_strings,
-            dest=dest,
-            nargs="?",
-            const=True,
-            default=default,
-            type=None,
-            choices=None,
-            required=required,
-            help=help,
-            metavar="BOOL",
-        )
+        """Initialize :class:`AppConsole`.
 
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str | Sequence[Any] | None,
-        option_string: str | None = None,
+        Args:
+            mode: Initial output mode. Defaults to :attr:`OutputMode.RICH`
+                when stdout is a TTY, else :attr:`OutputMode.PLAIN`.
+            stderr: When ``True``, the primary console (and therefore
+                :attr:`rich`) writes to stderr instead of stdout.
+            theme: A Rich theme applied to the underlying console(s).
+        """
+        self._theme = theme
+        # highlight=False: this facade prints curated messages, not values for
+        # interactive inspection — Rich's automatic ReprHighlighter would bold
+        # numbers/strings/brackets in ordinary log-style text even with colour
+        # disabled (bold is not a colour), which looks like a rendering bug.
+        self._out = Console(stderr=stderr, theme=theme, highlight=False)
+        self._err: Console | None = self._out if stderr else None
+        self._mode = mode if mode is not None else self._default_mode()
+        self._sync_no_color()
+
+    def _default_mode(self) -> OutputMode:
+        return OutputMode.RICH if self._out.is_terminal else OutputMode.PLAIN
+
+    def _sync_no_color(self) -> None:
+        no_color = self._mode is not OutputMode.RICH
+        self._out.no_color = no_color
+        if self._err is not None:
+            self._err.no_color = no_color
+
+    @property
+    def _stderr(self) -> Console:
+        if self._err is None:
+            self._err = Console(stderr=True, theme=self._theme, highlight=False)
+            self._err.no_color = self._mode is not OutputMode.RICH
+        return self._err
+
+    # -- mode ---------------------------------------------------------------
+
+    @property
+    def mode(self) -> OutputMode:
+        """The current :class:`OutputMode`."""
+        return self._mode
+
+    def set_mode(self, mode: OutputMode) -> Self:
+        """Set the output mode. Returns ``self`` for chaining."""
+        self._mode = mode
+        self._sync_no_color()
+        return self
+
+    @property
+    def rich(self) -> Console:
+        """The underlying :class:`rich.console.Console` — the escape hatch."""
+        return self._out
+
+    # -- core -----------------------------------------------------------
+
+    def print(
+        self, msg: Any = "", *args: Any, style: str | None = None, markup: bool = True
     ) -> None:
-        if values is None or values is self.const:
-            setattr(namespace, self.dest, bool(self.const))
+        """Print *msg*, ``{}``-formatted with *args*. No-op in ``QUIET``/``JSON``."""
+        if self._mode in (OutputMode.QUIET, OutputMode.JSON):
             return
+        self._out.print(_format(msg, args), style=style, markup=markup)
 
-        text = str(values).strip().lower()
-        if text in self._TRUTHY:
-            setattr(namespace, self.dest, True)
-        elif text in self._FALSY:
-            setattr(namespace, self.dest, False)
+    def emit(self, value: Any, *, quiet_text: str | None = None) -> None:
+        """Emit *value* according to the current mode.
+
+        - ``JSON`` -> :meth:`json`.
+        - ``QUIET`` -> print *quiet_text* unstyled if given, else nothing.
+        - else -> ``self.rich.print(value)`` (renders ``Table``/``Panel``/``str``/renderables).
+        """
+        if self._mode is OutputMode.JSON:
+            self.json(value)
+        elif self._mode is OutputMode.QUIET:
+            if quiet_text is not None:
+                self._out.print(quiet_text, markup=False)
         else:
-            raise argparse.ArgumentTypeError(
-                f"Invalid boolean value '{values}' for {option_string}. "
-                f"Expected: true/false, yes/no, 1/0"
-            )
+            self._out.print(value)
 
+    def json(self, value: Any) -> None:
+        """Serialize *value* via :meth:`JsonUtils.serialize` and print it. Always emits, even in ``QUIET``."""
+        self._out.print(JsonUtils.serialize(value), markup=False)
 
-# ---------------------------------------------------------------------------
-# KeyValueAction — collect key=value pairs into a dict
-# ---------------------------------------------------------------------------
+    # -- semantic (all {}-formatting, all no-op in QUIET/JSON) --------------
 
+    def success(self, msg: str, *args: Any) -> None:
+        """Print *msg* in green. No-op in ``QUIET``/``JSON``."""
+        self.print(msg, *args, style="bold green")
 
-class KeyValueAction(argparse.Action):
-    """Argparse action that collects ``key=value`` pairs into a dict.
+    def info(self, msg: str, *args: Any) -> None:
+        """Print *msg* unstyled. No-op in ``QUIET``/``JSON``."""
+        self.print(msg, *args)
 
-    Usage::
+    def detail(self, msg: str, *args: Any) -> None:
+        """Print *msg* dimmed. No-op in ``QUIET``/``JSON``."""
+        self.print(msg, *args, style="dim")
 
-        parser.add_argument("--config", action=KeyValueAction, help="key=value config")
-        # CLI: --config timeout=30 --config retries=3
-        # Result: args.config == {"timeout": "30", "retries": "3"}
+    def warning(self, msg: str, *args: Any) -> None:
+        """Print *msg* in yellow to stderr. No-op in ``QUIET``/``JSON``."""
+        if self._mode in (OutputMode.QUIET, OutputMode.JSON):
+            return
+        self._stderr.print(_format(msg, args), style="yellow")
 
-        parser.add_argument("--env", action=KeyValueAction, nargs="*")
-        # CLI: --env FOO=bar BAZ=qux
-        # Result: args.env == {"FOO": "bar", "BAZ": "qux"}
+    def error(self, msg: str, *args: Any) -> None:
+        """Print *msg* in red to stderr. No-op in ``QUIET``/``JSON``."""
+        if self._mode in (OutputMode.QUIET, OutputMode.JSON):
+            return
+        self._stderr.print(_format(msg, args), style="bold red")
 
-    Values are always strings.  The application is responsible for type conversion.
-    """
+    def fail(self, msg: str, *args: Any, code: int = 1) -> NoReturn:
+        """Call :meth:`error`, then raise :exc:`SystemExit` with *code*.
 
-    def __init__(
-        self,
-        option_strings: Sequence[str],
-        dest: str,
-        nargs: int | str | None = None,
-        default: dict[str, str] | None = None,
-        required: bool = False,
-        help: str | None = None,  # noqa: A002
-        metavar: str | None = "KEY=VALUE",
-    ) -> None:
-        super().__init__(
-            option_strings=option_strings,
-            dest=dest,
-            nargs=nargs,
-            default=default if default is not None else {},
-            type=None,
-            required=required,
-            help=help,
-            metavar=metavar,
-        )
-
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str | Sequence[Any] | None,
-        option_string: str | None = None,
-    ) -> None:
-        dest_dict: dict[str, str] = getattr(namespace, self.dest, None) or {}
-
-        items = [values] if isinstance(values, str) else (values or [])
-        for item in items:
-            text = str(item)
-            if "=" not in text:
-                raise argparse.ArgumentTypeError(
-                    f"Invalid key=value pair '{text}' for {option_string}. "
-                    f"Expected format: KEY=VALUE"
-                )
-            key, _, val = text.partition("=")
-            dest_dict[key] = val
-
-        setattr(namespace, self.dest, dest_dict)
-
-
-# ---------------------------------------------------------------------------
-# CLIArgumentParser
-# ---------------------------------------------------------------------------
-
-
-class CLIArgumentParser(argparse.ArgumentParser):
-    """ArgumentParser with built-in ``--log-level`` and ``--log-file`` support.
-
-    Extends :class:`argparse.ArgumentParser` with:
-
-    - ``--log-level`` / ``-ll``: set the logging level (accepts full names
-      like ``INFO`` or single-letter shortcuts like ``I``).
-    - ``--log-file`` / ``-lf``: path to a log file.
-    - :meth:`configure_logging`: one-call bridge from parsed args to
-      :meth:`AppLogger.initialize`.
-    - :meth:`add_boolean_argument`: convenience for boolean flags.
-    - :meth:`add_key_value_argument`: convenience for ``key=value`` pair
-      collection.
-
-    Usage::
-
-        parser = CLIArgumentParser(prog="my-tool")
-        parser.add_argument("--input", required=True)
-        parser.add_key_value_argument("--env", help="Environment overrides")
-        args = parser.parse_args()
-        logger = parser.configure_logging(args)
-    """
-
-    def __init__(
-        self,
-        prog: str,
-        *,
-        add_log_args: bool = True,
-        default_log_level: str = "VERBOSE",
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(prog=prog, **kwargs)
-        self._default_log_level = default_log_level
-        if add_log_args:
-            self._add_log_arguments()
-
-    def _add_log_arguments(self) -> None:
-        """Add ``--log-level`` and ``--log-file`` arguments."""
-        group = self.add_argument_group("logging")
-        group.add_argument(
-            "-ll",
-            "--log-level",
-            dest="log_level",
-            type=str.upper,
-            choices=_LOG_LEVELS,
-            default=self._default_log_level,
-            help="Logging level (default: %(default)s)",
-        )
-        group.add_argument(
-            "-lf",
-            "--log-file",
-            dest="log_file",
-            default=None,
-            help="Path to log file",
-        )
-
-    def add_boolean_argument(
-        self,
-        *args: str,
-        default: bool = False,
-        **kwargs: Any,
-    ) -> Self:
-        """Add a boolean flag argument.
-
-        Accepts ``true/false/yes/no/1/0``.  Returns *self* for chaining.
+        Raises ``SystemExit`` rather than ``typer.Exit`` — this module has no
+        Typer dependency; Typer/Click both handle a bare ``SystemExit`` fine.
         """
-        kwargs["action"] = BooleanAction
-        kwargs["default"] = default
-        self.add_argument(*args, **kwargs)
-        return self
+        self.error(msg, *args)
+        raise SystemExit(code)
 
-    def add_key_value_argument(
+    # -- structures -----------------------------------------------------
+
+    def table(
         self,
-        *args: str,
-        multi: bool = True,
-        **kwargs: Any,
-    ) -> Self:
-        """Add a ``key=value`` pair argument that collects into a dict.
+        *columns: str,
+        rows: Iterable[Sequence[Any]],
+        title: str | None = None,
+        **table_kwargs: Any,
+    ) -> None:
+        """Build and print a table in one call. No-op in ``QUIET``.
 
-        Args:
-            *args: Option strings (e.g. ``"--config"``, ``"-c"``).
-            multi: When ``True`` (default), accepts multiple values per invocation
-                (``--config a=1 b=2``).  When ``False``, accepts one value per
-                invocation (``--config a=1 --config b=2``).  Both modes accumulate
-                into the same dict.
-            **kwargs: Additional keyword arguments passed to ``add_argument``.
-
-        Returns:
-            ``self`` for chaining.
+        Non-``str`` cells go through ``str()``. Cell content is never
+        interpreted as markup — data values are untrusted. In ``JSON`` mode,
+        emits ``[{column: cell, ...}, ...]`` instead of a table.
         """
-        kwargs["action"] = KeyValueAction
-        if multi:
-            kwargs.setdefault("nargs", "*")
-        self.add_argument(*args, **kwargs)
-        return self
+        if self._mode is OutputMode.QUIET:
+            return
+        rows = list(rows)
+        if self._mode is OutputMode.JSON:
+            self.json([dict(zip(columns, row, strict=False)) for row in rows])
+            return
+        tbl = Table(*columns, title=title, **table_kwargs)
+        for row in rows:
+            tbl.add_row(*(Text(str(cell)) for cell in row))
+        self._out.print(tbl)
 
-    def configure_logging(
-        self,
-        args: argparse.Namespace,
-        *,
-        root_logger_name: str | None = None,
-        **kwargs: Any,
-    ) -> AppLogger:
-        """Configure logging from parsed arguments.
+    def diff(self, text: str, *, title: str | None = None) -> None:
+        """Print *text* as a syntax-highlighted unified diff. No-op in ``QUIET``/``JSON``.
 
-        Reads ``args.log_level`` and ``args.log_file`` from the namespace
-        and delegates to :meth:`AppLogger.initialize`.
-
-        Args:
-            args: The parsed namespace (from ``parse_args()``).
-            root_logger_name: Override the root logger name.
-                Defaults to the parser's ``prog`` (spaces replaced with ``_``,
-                lowercased).
-            **kwargs: Additional keyword arguments forwarded to
-                :meth:`AppLogger.initialize`.
-
-        Returns:
-            The configured :class:`AppLogger`.
+        *text* is rendered via :class:`rich.syntax.Syntax`, which never
+        interprets markup — diff text is untrusted.
         """
-        level_name = getattr(args, "log_level", self._default_log_level)
-        level = _LOG_LEVELS.get(level_name, AppLogger.VERBOSE)
-        log_file = getattr(args, "log_file", None)
+        if self._mode in (OutputMode.QUIET, OutputMode.JSON):
+            return
+        if title:
+            self._out.rule(title)
+        self._out.print(Syntax(text, "diff"))
 
-        return AppLogger.initialize(
-            root_logger_name=root_logger_name or self.prog.replace(" ", "_").lower(),
-            level=level,
-            file=log_file,
-            **kwargs,
+    def rule(self, title: str = "") -> None:
+        """Print a horizontal rule. No-op in ``QUIET``/``JSON``."""
+        if self._mode in (OutputMode.QUIET, OutputMode.JSON):
+            return
+        self._out.rule(title)
+
+    # -- interaction (always uses the real stdin/stdout, ignores QUIET) -----
+
+    def confirm(self, msg: str, *, default: bool = False) -> bool:
+        """Prompt for a yes/no confirmation. Ignores the current output mode."""
+        return Confirm.ask(msg, default=default, console=self._out)
+
+    def prompt(
+        self, msg: str, *, default: str | None = None, password: bool = False
+    ) -> str:
+        """Prompt for a line of input. Ignores the current output mode."""
+        return cast(
+            str, Prompt.ask(msg, default=default, password=password, console=self._out)
         )
 
+    def status(self, msg: str) -> AbstractContextManager[None]:
+        """Return a spinner context manager in ``RICH`` mode, a no-op otherwise."""
+        if self._mode is not OutputMode.RICH:
+            return nullcontext()
+        return self._status_context(msg)
 
-__all__ = [
-    "CLIArgumentParser",
-    "BooleanAction",
-    "KeyValueAction",
-]
+    @contextmanager
+    def _status_context(self, msg: str):
+        with self._out.status(msg):
+            yield
+
+
+console: AppConsole = AppConsole()

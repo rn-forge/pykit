@@ -42,7 +42,6 @@ __all__ = ["Task", "TaskPool"]
 _LOGGER = AppLogger.get_logger(__name__)
 
 
-
 class Task(ABC):
     """Abstract base for units of work executed inside a :class:`TaskPool`.
 

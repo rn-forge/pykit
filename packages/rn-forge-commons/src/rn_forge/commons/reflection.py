@@ -126,9 +126,14 @@ class ReflectUtils:
         """
         _include = include or []
         _exclude = [e for e in (exclude or []) + ["self", "cls"] if e not in _include]
-        bound = inspect.signature(cast(Any, method)).bind(*method_args, **method_kwargs)
-        bound.apply_defaults()
-        return [f"{k}={v}" for k, v in bound.arguments.items() if k not in _exclude]
+        try:
+            bound = inspect.signature(cast(Any, method)).bind(
+                *method_args, **method_kwargs
+            )
+            bound.apply_defaults()
+        except TypeError, ValueError:
+            return [repr(method_args), repr(method_kwargs)]
+        return [f"{k}={v!r}" for k, v in bound.arguments.items() if k not in _exclude]
 
     @staticmethod
     def inspect_variables(
@@ -188,23 +193,39 @@ class ReflectUtils:
         if "." in var:
             return ReflectUtils._resolve_dotted_variable(var, frame)
 
-        if var not in frame.f_locals:
-            _logger().debug(
-                "ReflectUtils.inspect_variables: missing variable | var={}",
-                var,
-            )
-            return f"{var}=<undefined>"
-        return f"{var}={frame.f_locals[var]}"
+        local_vars = frame.f_locals
+        global_vars = frame.f_globals
+        if var in local_vars:
+            return f"{var}={local_vars[var]!r}"
+        if var in global_vars:
+            return f"{var}={global_vars[var]!r}"
+        _logger().debug(
+            "ReflectUtils.inspect_variables: missing variable | var={}",
+            var,
+        )
+        return f"{var}=<undefined>"
 
     @staticmethod
     def _resolve_dotted_variable(var: str, frame: FrameType) -> str:
         """Resolve a dot-notation ``"obj.attr"`` entry for `inspect_variables`."""
-        parts = var.split(".")
-        if parts[0] not in frame.f_locals:
+        root, _, rest = var.partition(".")
+        local_vars = frame.f_locals
+        global_vars = frame.f_globals
+        if root in local_vars:
+            root_val = local_vars[root]
+        elif root in global_vars:
+            root_val = global_vars[root]
+        else:
             _logger().debug(
                 "ReflectUtils.inspect_variables: missing root variable | var={}",
-                parts[0],
+                root,
             )
             return f"{var}=<undefined>"
-        val = attrgetter(".".join(parts[1:]))(frame.f_locals[parts[0]])
-        return f"{var}={val() if callable(val) else val}"
+
+        try:
+            val = attrgetter(rest)(root_val)
+            if callable(val):
+                val = val()
+            return f"{var}={val!r}"
+        except AttributeError:
+            return f"{var}=<undefined>"

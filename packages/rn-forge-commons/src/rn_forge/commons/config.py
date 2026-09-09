@@ -31,7 +31,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from rn_forge.commons.collections import DictUtils, JsonUtils, YamlUtils
+from rn_forge.commons.collections import DictUtils
+from rn_forge.commons.documents import JsonUtils, YamlUtils
 from rn_forge.commons.logging import AppLogger
 
 _SENTINEL = object()

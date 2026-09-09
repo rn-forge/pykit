@@ -56,5 +56,4 @@ dev = [
   "pytest-randomly>=4.1.0",
   "rn-forge-commons[excel]",
   "ruff>=0.15.21",
-  "types-pyyaml>=6.0.12.20260518",
 ]

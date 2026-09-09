@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional
 
+import dacite
 import pytest
 
 import rn_forge.commons.dataclasses as dataclasses_module
@@ -90,6 +91,18 @@ class RaisesOnInit(DataclassMixin):
 
     def __post_init__(self) -> None:
         raise RuntimeError("boom")
+
+
+@dataclass
+class WithDictOfNested(DataclassMixin):
+    items: dict[str, Simple]
+
+
+@dataclass
+class Strict(DataclassMixin):
+    __dacite_config__ = dacite.Config(check_types=True)
+
+    value: int
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +299,50 @@ class TestFromDict:
         assert isinstance(obj.inner, PlainInner)
         assert obj.inner.value == 9
 
+    def test_from_dict_int_field_receiving_str_passes_through_unchanged(self) -> None:
+        obj = Simple.from_dict({"name": "n", "value": "5"})
+        assert obj.value == "5"
+
+    def test_strict_subclass_raises_on_type_mismatch(self) -> None:
+        with pytest.raises(dacite.DaciteError):
+            Strict.from_dict({"value": "not an int"})
+
+    def test_optional_nested_dataclass_from_none(self) -> None:
+        obj = DeepNested.from_dict(
+            {"primary": {"label": "outer", "inner": {}}, "maybe_inner": None}
+        )
+        assert obj.maybe_inner is None
+
+    def test_optional_nested_dataclass_from_dict(self) -> None:
+        obj = DeepNested.from_dict(
+            {
+                "primary": {"label": "outer", "inner": {}},
+                "maybe_inner": {"name": "x", "value": 1},
+            }
+        )
+        assert isinstance(obj.maybe_inner, Simple)
+        assert obj.maybe_inner.name == "x"
+
+    def test_dict_of_nested_dataclass_round_trips(self) -> None:
+        obj = WithDictOfNested.from_dict(
+            {"items": {"a": {"name": "a", "value": 1}, "b": {"name": "b", "value": 2}}}
+        )
+        assert set(obj.items) == {"a", "b"}
+        assert all(isinstance(v, Simple) for v in obj.items.values())
+        assert obj.items["a"].value == 1
+        round_tripped = WithDictOfNested.from_dict(obj.as_dict())
+        assert round_tripped == obj
+
+    def test_list_of_nested_dataclass_round_trips(self) -> None:
+        obj = DeepNested.from_dict(
+            {
+                "primary": {"label": "outer", "inner": {}},
+                "aliases": [{"name": "a", "value": 1}, {"name": "b", "value": 2}],
+            }
+        )
+        round_tripped = DeepNested.from_dict(obj.as_dict())
+        assert round_tripped == obj
+
 
 # ---------------------------------------------------------------------------
 # __str__ / __repr__ tests
@@ -379,16 +436,6 @@ class TestInternalHelpers:
 
     def test_convert_value_preserves_type_objects(self) -> None:
         assert dataclasses_module._convert_value(5, exclude_hidden=True) == 5
-
-    def test_coerce_field_value_none(self) -> None:
-        assert dataclasses_module._coerce_field_value(int, None) is None
-
-    def test_coerce_field_value_union_dict_without_dataclass_arm_returns_input(
-        self,
-    ) -> None:
-        annotation = dict[str, int] | str
-        value = {"a": 1}
-        assert dataclasses_module._coerce_field_value(annotation, value) == value
 
 
 # Coverage ROI notes:

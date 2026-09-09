@@ -2,281 +2,233 @@
 
 from __future__ import annotations
 
-import argparse
-import logging
-from pathlib import Path
+import json
+from io import StringIO
 
 import pytest
+from rich.console import Console
+
+from rn_forge.commons.console import AppConsole, OutputMode
+
+
+def _console(mode: OutputMode = OutputMode.RICH) -> tuple[AppConsole, StringIO]:
+    """Build an AppConsole writing to an in-memory, colour-free buffer with a fixed width.
+
+    Colour is always off here regardless of *mode* so tests can assert on
+    literal substrings without ANSI codes splitting them; mode dispatch
+    (RICH vs PLAIN) is otherwise unaffected by colour.
+    """
+    ac = AppConsole(mode=mode)
+    buf = StringIO()
+    ac._out = Console(
+        file=buf, width=80, no_color=True, force_terminal=True, highlight=False
+    )
+    return ac, buf
+
+
+# -- mode dispatch matrix ---------------------------------------------------
+
+
+class TestPrint:
+    def test_rich_mode_prints(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.print("hello {}", "world")
+        assert "hello world" in buf.getvalue()
+
+    def test_plain_mode_prints_unstyled(self) -> None:
+        ac, buf = _console(OutputMode.PLAIN)
+        ac.print("hello")
+        assert "hello" in buf.getvalue()
+        assert "\x1b[" not in buf.getvalue()
+
+    def test_quiet_mode_suppresses(self) -> None:
+        ac, buf = _console(OutputMode.QUIET)
+        ac.print("hello")
+        assert buf.getvalue() == ""
+
+    def test_json_mode_suppresses(self) -> None:
+        ac, buf = _console(OutputMode.JSON)
+        ac.print("hello")
+        assert buf.getvalue() == ""
+
+
+class TestSemanticMethods:
+    @pytest.mark.parametrize("method", ["success", "info", "detail"])
+    def test_stdout_methods_no_op_in_quiet_and_json(self, method: str) -> None:
+        for mode in (OutputMode.QUIET, OutputMode.JSON):
+            ac, buf = _console(mode)
+            getattr(ac, method)("msg")
+            assert buf.getvalue() == ""
+
+    @pytest.mark.parametrize("method", ["success", "info", "detail"])
+    def test_stdout_methods_format_and_print(self, method: str) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        getattr(ac, method)("value={}", 42)
+        assert "value=42" in buf.getvalue()
+
+    @pytest.mark.parametrize("method", ["warning", "error"])
+    def test_stderr_methods_go_to_stderr(self, method: str) -> None:
+        ac = AppConsole(mode=OutputMode.RICH)
+        err_buf = StringIO()
+        ac._err = Console(
+            file=err_buf, width=80, no_color=True, force_terminal=True, highlight=False
+        )
+        getattr(ac, method)("oops {}", 1)
+        assert "oops 1" in err_buf.getvalue()
+
+    @pytest.mark.parametrize("method", ["warning", "error"])
+    def test_stderr_methods_no_op_in_quiet_and_json(self, method: str) -> None:
+        for mode in (OutputMode.QUIET, OutputMode.JSON):
+            ac = AppConsole(mode=mode)
+            err_buf = StringIO()
+            ac._err = Console(file=err_buf, width=80)
+            getattr(ac, method)("oops")
+            assert err_buf.getvalue() == ""
+
+    def test_fail_raises_system_exit_with_code_and_writes_stderr(self) -> None:
+        ac = AppConsole(mode=OutputMode.RICH)
+        err_buf = StringIO()
+        ac._err = Console(
+            file=err_buf, width=80, no_color=True, force_terminal=True, highlight=False
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            ac.fail("bad thing: {}", "oops", code=3)
+        assert exc_info.value.code == 3
+        assert "bad thing: oops" in err_buf.getvalue()
+
+
+class TestEmit:
+    def test_emit_json_mode_serializes(self) -> None:
+        ac, buf = _console(OutputMode.JSON)
+        ac.emit({"a": 1})
+        assert json.loads(buf.getvalue()) == {"a": 1}
+
+    def test_emit_quiet_with_quiet_text(self) -> None:
+        ac, buf = _console(OutputMode.QUIET)
+        ac.emit({"a": 1}, quiet_text="done")
+        assert buf.getvalue().strip() == "done"
+
+    def test_emit_quiet_without_quiet_text_emits_nothing(self) -> None:
+        ac, buf = _console(OutputMode.QUIET)
+        ac.emit({"a": 1})
+        assert buf.getvalue() == ""
+
+    def test_emit_rich_mode_prints_value(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.emit("a renderable string")
+        assert "a renderable string" in buf.getvalue()
+
 
-from rn_forge.commons.console import (
-    CLIArgumentParser,
-    BooleanAction,
-    KeyValueAction,
-    _LOG_LEVELS,
-)
-
-
-@pytest.fixture(autouse=True)
-def reset_logger_state():
-    from rn_forge.commons.logging import AppLogger
-
-    AppLogger._configured = False
-    yield
-    AppLogger._configured = False
-    logging.getLogger().handlers.clear()
-
-
-# -- BooleanAction ---------------------------------------------------------
-
-
-class TestBooleanAction:
-    def _parser(self) -> argparse.ArgumentParser:
-        p = argparse.ArgumentParser()
-        p.add_argument("--flag", action=BooleanAction, default=False)
-        return p
-
-    @pytest.mark.parametrize("value", ["true", "True", "TRUE", "yes", "Yes", "1"])
-    def test_truthy_values(self, value: str) -> None:
-        args = self._parser().parse_args(["--flag", value])
-        assert args.flag is True
-
-    @pytest.mark.parametrize("value", ["false", "False", "FALSE", "no", "No", "0"])
-    def test_falsy_values(self, value: str) -> None:
-        args = self._parser().parse_args(["--flag", value])
-        assert args.flag is False
-
-    def test_bare_flag_is_true(self) -> None:
-        args = self._parser().parse_args(["--flag"])
-        assert args.flag is True
-
-    def test_omitted_flag_uses_default(self) -> None:
-        args = self._parser().parse_args([])
-        assert args.flag is False
-
-    def test_invalid_value_raises(self) -> None:
-        parser = self._parser()
-        with pytest.raises(argparse.ArgumentTypeError, match="Invalid boolean value"):
-            parser.parse_args(["--flag", "maybe"])
-
-
-# -- KeyValueAction --------------------------------------------------------
-
-
-class TestKeyValueAction:
-    def test_single_pair(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "key=value"])
-        assert args.config == {"key": "value"}
-
-    def test_multiple_pairs_nargs_star(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction, nargs="*")
-        args = p.parse_args(["--config", "a=1", "b=2"])
-        assert args.config == {"a": "1", "b": "2"}
-
-    def test_repeated_flag_accumulates(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "a=1", "--config", "b=2"])
-        assert args.config == {"a": "1", "b": "2"}
-
-    def test_value_with_equals(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "url=https://host?a=1"])
-        assert args.config == {"url": "https://host?a=1"}
-
-    def test_empty_value(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "key="])
-        assert args.config == {"key": ""}
-
-    def test_missing_equals_raises(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        with pytest.raises(argparse.ArgumentTypeError, match="Invalid key=value"):
-            p.parse_args(["--config", "no_equals"])
-
-    def test_default_empty_dict(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args([])
-        assert args.config == {}
-
-    def test_overwrite_same_key(self) -> None:
-        p = argparse.ArgumentParser()
-        p.add_argument("--config", action=KeyValueAction)
-        args = p.parse_args(["--config", "a=1", "--config", "a=2"])
-        assert args.config == {"a": "2"}
-
-
-# -- CLIArgumentParser: log arguments --------------------------------
-
-
-class TestLogArguments:
-    def test_default_log_level(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args([])
-        assert args.log_level == "VERBOSE"
-
-    def test_custom_default_log_level(self) -> None:
-        parser = CLIArgumentParser(prog="test", default_log_level="DEBUG")
-        args = parser.parse_args([])
-        assert args.log_level == "DEBUG"
-
-    def test_log_level_short_flag(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args(["-ll", "info"])
-        assert args.log_level == "INFO"
-
-    def test_log_level_long_flag(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args(["--log-level", "debug"])
-        assert args.log_level == "DEBUG"
-
-    def test_single_letter_shortcut(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args(["-ll", "d"])
-        assert args.log_level == "D"
-
-    def test_log_file_default_none(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args([])
-        assert args.log_file is None
-
-    def test_log_file_flag(self, tmp_path: Path) -> None:
-        log_file = str(tmp_path / "test.log")
-        parser = CLIArgumentParser(prog="test")
-        args = parser.parse_args(["--log-file", log_file])
-        assert args.log_file == log_file
-
-    def test_no_log_args(self) -> None:
-        parser = CLIArgumentParser(prog="test", add_log_args=False)
-        args = parser.parse_args([])
-        assert not hasattr(args, "log_level")
-
-    def test_invalid_level_rejected(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        with pytest.raises(SystemExit):
-            parser.parse_args(["--log-level", "INVALID"])
-
-
-# -- CLIArgumentParser: add_boolean_argument -------------------------
-
-
-class TestAddBooleanArgument:
-    def test_chaining(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        result = parser.add_boolean_argument("--dry-run")
-        assert result is parser
-
-    def test_boolean_arg_works(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        parser.add_boolean_argument("--dry-run")
-        args = parser.parse_args(["--dry-run", "true"])
-        assert args.dry_run is True
-
-    def test_boolean_arg_default(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        parser.add_boolean_argument("--dry-run")
-        args = parser.parse_args([])
-        assert args.dry_run is False
-
-
-# -- CLIArgumentParser: add_key_value_argument -----------------------
-
-
-class TestAddKeyValueArgument:
-    def test_chaining(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        result = parser.add_key_value_argument("--env")
-        assert result is parser
-
-    def test_multi_mode_default(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        parser.add_key_value_argument("--env")
-        args = parser.parse_args(["--env", "A=1", "B=2"])
-        assert args.env == {"A": "1", "B": "2"}
-
-    def test_single_mode(self) -> None:
-        parser = CLIArgumentParser(prog="test")
-        parser.add_key_value_argument("--env", multi=False)
-        args = parser.parse_args(["--env", "A=1", "--env", "B=2"])
-        assert args.env == {"A": "1", "B": "2"}
-
-
-# -- CLIArgumentParser: configure_logging ----------------------------
-
-
-class TestConfigureLogging:
-    def test_configure_logging_returns_logger(self) -> None:
-        from rn_forge.commons.logging import AppLogger
-
-        AppLogger._configured = False
-        parser = CLIArgumentParser(prog="test-app")
-        args = parser.parse_args(["-ll", "info"])
-        logger = parser.configure_logging(args)
-        assert isinstance(logger, AppLogger)
-        AppLogger._configured = False
-
-    def test_configure_logging_with_shortcut(self) -> None:
-        from rn_forge.commons.logging import AppLogger
-
-        AppLogger._configured = False
-        parser = CLIArgumentParser(prog="test-app")
-        args = parser.parse_args(["-ll", "d"])
-        logger = parser.configure_logging(args)
-        assert isinstance(logger, AppLogger)
-        AppLogger._configured = False
-
-    def test_configure_logging_custom_root_name(self) -> None:
-        from rn_forge.commons.logging import AppLogger
-
-        AppLogger._configured = False
-        parser = CLIArgumentParser(prog="test-app")
-        args = parser.parse_args([])
-        logger = parser.configure_logging(args, root_logger_name="custom")
-        assert logger.name == "custom"
-        AppLogger._configured = False
-
-    def test_prog_name_used_as_root_logger(self) -> None:
-        from rn_forge.commons.logging import AppLogger
-
-        AppLogger._configured = False
-        parser = CLIArgumentParser(prog="My App")
-        args = parser.parse_args([])
-        logger = parser.configure_logging(args)
-        assert logger.name == "my_app"
-        AppLogger._configured = False
-
-
-# -- _LOG_LEVELS constant ---------------------------------------------------
-
-
-class TestLogLevels:
-    def test_contains_standard_levels(self) -> None:
-        for name in ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"):
-            assert name in _LOG_LEVELS
-
-    def test_contains_custom_levels(self) -> None:
-        for name in ("VERBOSE", "NOTICE", "SPAM", "TRACE", "SUCCESS"):
-            assert name in _LOG_LEVELS
-
-    def test_contains_single_letter_shortcuts(self) -> None:
-        for letter in ("C", "E", "W", "I", "V", "D", "T"):
-            assert letter in _LOG_LEVELS
-
-    def test_shortcut_matches_full_name(self) -> None:
-        assert _LOG_LEVELS["D"] == _LOG_LEVELS["DEBUG"]
-        assert _LOG_LEVELS["I"] == _LOG_LEVELS["INFO"]
-        assert _LOG_LEVELS["W"] == _LOG_LEVELS["WARNING"]
-        assert _LOG_LEVELS["E"] == _LOG_LEVELS["ERROR"]
-        assert _LOG_LEVELS["C"] == _LOG_LEVELS["CRITICAL"]
-        assert _LOG_LEVELS["V"] == _LOG_LEVELS["VERBOSE"]
-        assert _LOG_LEVELS["T"] == _LOG_LEVELS["TRACE"]
-
-    def test_all_values_are_ints(self) -> None:
-        for name, value in _LOG_LEVELS.items():
-            assert isinstance(value, int), f"{name} is not an int"
+class TestJson:
+    def test_json_always_emits_even_in_quiet(self) -> None:
+        ac, buf = _console(OutputMode.QUIET)
+        ac.json({"a": 1})
+        assert json.loads(buf.getvalue()) == {"a": 1}
+
+    def test_json_handles_path(self) -> None:
+        from pathlib import Path
+
+        ac, buf = _console(OutputMode.RICH)
+        ac.json({"p": Path("/tmp/x")})
+        assert json.loads(buf.getvalue()) == {"p": "/tmp/x"}
+
+    def test_json_handles_enum(self) -> None:
+        from enum import Enum
+
+        class Color(Enum):
+            RED = "red"
+
+        ac, buf = _console(OutputMode.RICH)
+        ac.json({"c": Color.RED})
+        assert json.loads(buf.getvalue()) == {"c": "red"}
+
+    def test_json_handles_datetime(self) -> None:
+        from datetime import datetime
+
+        ac, buf = _console(OutputMode.RICH)
+        dt = datetime(2026, 1, 1, 12, 0, 0)
+        ac.json({"dt": dt})
+        assert json.loads(buf.getvalue()) == {"dt": dt.isoformat()}
+
+    def test_json_handles_set(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.json({"s": {3, 1, 2}})
+        assert json.loads(buf.getvalue()) == {"s": [1, 2, 3]}
+
+    def test_json_handles_decimal(self) -> None:
+        from decimal import Decimal
+
+        ac, buf = _console(OutputMode.RICH)
+        ac.json({"d": Decimal("1.5")})
+        assert json.loads(buf.getvalue()) == {"d": 1.5}
+
+    def test_json_handles_nested_dataclass(self) -> None:
+        from dataclasses import dataclass
+
+        @dataclass
+        class Inner:
+            value: int
+
+        @dataclass
+        class Outer:
+            inner: Inner
+
+        ac, buf = _console(OutputMode.RICH)
+        ac.json(Outer(Inner(5)))
+        assert json.loads(buf.getvalue()) == {"inner": {"value": 5}}
+
+
+class TestTable:
+    def test_table_json_mode_emits_array_of_objects(self) -> None:
+        ac, buf = _console(OutputMode.JSON)
+        ac.table("name", "status", rows=[("alpha", "ok"), ("beta", "failed")])
+        assert json.loads(buf.getvalue()) == [
+            {"name": "alpha", "status": "ok"},
+            {"name": "beta", "status": "failed"},
+        ]
+
+    def test_table_quiet_mode_no_op(self) -> None:
+        ac, buf = _console(OutputMode.QUIET)
+        ac.table("name", rows=[("alpha",)])
+        assert buf.getvalue() == ""
+
+    def test_table_rich_mode_renders(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.table("name", "status", rows=[("alpha", "ok")])
+        out = buf.getvalue()
+        assert "name" in out
+        assert "alpha" in out
+
+    def test_table_cell_markup_not_styled(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.table("name", rows=[("[red]not styled[/red]",)])
+        assert "[red]not styled[/red]" in buf.getvalue()
+
+
+class TestDiff:
+    def test_diff_markup_not_interpreted(self) -> None:
+        ac, buf = _console(OutputMode.RICH)
+        ac.diff("[red]literal[/red]\n")
+        assert "[red]literal[/red]" in buf.getvalue()
+
+    def test_diff_no_op_in_quiet_and_json(self) -> None:
+        for mode in (OutputMode.QUIET, OutputMode.JSON):
+            ac, buf = _console(mode)
+            ac.diff("some diff text")
+            assert buf.getvalue() == ""
+
+
+class TestModeAndEscapeHatch:
+    def test_default_mode_from_terminal_detection(self) -> None:
+        ac = AppConsole()
+        assert ac.mode in (OutputMode.RICH, OutputMode.PLAIN)
+
+    def test_set_mode_returns_self_for_chaining(self) -> None:
+        ac = AppConsole()
+        result = ac.set_mode(OutputMode.QUIET)
+        assert result is ac
+        assert ac.mode is OutputMode.QUIET
+
+    def test_rich_property_is_escape_hatch(self) -> None:
+        ac = AppConsole()
+        assert isinstance(ac.rich, Console)

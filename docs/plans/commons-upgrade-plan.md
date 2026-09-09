@@ -1,7 +1,8 @@
-# `rn-forge-commons` upgrade plan
+# `rn-forge-commons` upgrade and package-boundary plan
 
-Scope: `packages/rn-forge-commons` only. `rn-forge-django` is explicitly **out of scope** — but note
-that it depends on commons via workspace linking, so every dependency added here ships into Django
+Scope: `packages/rn-forge-commons` plus the ownership boundary with the planned
+`rn-forge-tooling` package. `rn-forge-django` is explicitly **out of implementation scope** — but
+it depends on commons via workspace linking, so every dependency added here ships into Django
 services too, and every breaking API change here must be checked against `rn-forge-django` imports
 before release.
 
@@ -26,6 +27,73 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   concurrency, OIDC/JWKS auth, outbox/inbox messaging, Celery, readiness views, sequence generators,
   request-ID middleware) is deliberately **not** here — it belongs to a future Django plan.
 
+## Final package boundary
+
+`rn-forge-commons` is the runtime-safe application foundation. It must be suitable for libraries,
+web applications, workers, standalone applications and local tools. A capability does not belong
+there merely because two local CLIs currently duplicate it; it must have runtime-neutral semantics.
+
+| Owner | Capabilities |
+| --- | --- |
+| `rn-forge-commons` | Collections, dataclasses, documents, configuration, logging, exceptions, atomic file writes, content hashing, root discovery and path-containment guards |
+| `rn-forge-commons` | Transport-neutral messaging/object/secret protocols, optional resilience, and generic Python entry-point discovery |
+| `rn-forge-tooling` | `AppConsole`, Typer application wiring, local JSON state, configuration-template rendering, generator execution, directory locks, atomic symlink switching and archive extraction |
+| agentkit/kiln | Domain models, command/result schemas, plugin policy, `$RNF_HOME` layout, product installation policy and product-specific validation |
+
+The current `StateStore` is tooling-specific, not a general persistence abstraction: its lock is
+best-effort and deliberately degrades to an unlocked write because a personal developer tool should
+not fail on an unusual filesystem. A web service or shared worker must not inherit that policy.
+`ContentHash` and `PathUtils.atomic_write` remain in commons because safe writes and stable hashes
+are useful in every runtime.
+
+`EntryPointLoader` remains in commons because it contains only the generic, dependency-free Python
+entry-point mechanism. Plugin installation, enablement, validation, CLI mounting and lifecycle
+policy stay in the consuming application or tooling layer.
+
+Do not leave compatibility re-exports from commons to tooling: that would reverse the dependency
+and create a cycle. Publish the relocation as a breaking commons change with an import migration
+table. Tooling may import commons; commons must never import tooling.
+
+The dependency graph is one-way:
+
+```text
+rn-forge-django ───────────► rn-forge-commons
+rn-forge-fastapi ──────────► rn-forge-commons
+rn-forge-tooling ──────────► rn-forge-commons
+agentkit / kiln ───────────► rn-forge-tooling
+rn-forge-django[codegen] ──► rn-forge-tooling      (extra; only rn_forge.django.codegen imports it)
+```
+
+Neither `rn-forge-django` nor `rn-forge-fastapi` may take a hard dependency on Typer, the tooling
+state store or the generator engine. Production applications install only the framework runtime
+package; developer environments add the `[codegen]` extra.
+
+### Framework code generators
+
+Nx/Angular-style generation is a tooling concern with framework-specific providers that ship
+**inside the runtime package as an extra** (standardization plan D37; supersedes the separate
+`rn-forge-django-codegen` / `rn-forge-fastapi-codegen` packages of revision 6):
+
+- `rn-forge-tooling` owns a Python-callable generator contract and execution engine: option
+  validation, template rendering, staged writes, conflict handling, dry-run/diff and generator
+  state. The contract must not mention Typer.
+- `rn-forge-django[codegen]` installs `rn-forge-tooling`; the Django templates, option schemas and
+  generator implementations live in `rn_forge.django.codegen` and nowhere else. A future
+  `rn-forge-fastapi[codegen]` follows the same shape. Co-versioning with the runtime is the reason:
+  a generated app targets exactly the library version it was generated against.
+- kiln owns the Typer command surface and discovers providers through the entry-point group
+  `rn_forge.kiln.generators`, for example `kiln generate django app billing`.
+- A generator must also be directly callable as Python, conceptually
+  `generator.generate(options, workspace)`, so CLI parsing never becomes its API.
+
+Three guards keep the extra out of the runtime surface, and all three exist **before** the first
+codegen module is written (standardization plan Phase C.3):
+
+1. pykit's `.importlinter` forbids `rn_forge.django` (excluding `rn_forge.django.codegen`) from
+   importing `rn_forge.tooling`, `typer` or `jinja2`; `uv run lint-imports` runs in `task lint`.
+2. `import rn_forge.django` succeeds with no extras installed (final checklist).
+3. `rn_forge.django.__init__` never re-exports anything from `codegen`.
+
 ## Summary (read this first)
 
 **Part A — consolidation.** Replace hand-rolled logic with proven libraries, and fix the internal
@@ -35,8 +103,8 @@ duplication found alongside it.
 | --- | --- | --- | --- | --- |
 | 0 | Internal dedup + latent-bug fixes | none | no | none |
 | 1 | Rich replaces coloredlogs in `logging.py` | `rich` (hard) | no | low |
-| 2 | `console.py` rewritten as a Rich output layer (`AppConsole`) | — | **yes** | low |
-| 3 | New `cli.py`: Typer replaces `CLIArgumentParser` | `typer` (hard) | **yes** | low |
+| 2 | `AppConsole` output layer, relocated to `rn-forge-tooling` | tooling depends on `rich` | **yes** | low |
+| 3 | Typer application wiring, relocated to `rn-forge-tooling` | tooling depends on `typer` | **yes** | low |
 | 4 | `dacite` replaces the `_coerce_*` block in `dataclasses.py` | `dacite` (hard) | no | low |
 | 5 | `mergedeep` for `DictUtils.merge`; stdlib `pkgutil.resolve_name` for `import_string`; new `PathUtils.atomic_write` | `mergedeep` (hard) | no | low |
 | 6 | **Gated:** OmegaConf replaces the `config.py` resolver | `omegaconf` (hard) | maybe | **medium** |
@@ -59,21 +127,35 @@ today*, once in each repo, and the two copies have already drifted. Ordered by l
 | Phase | What | New deps | Removes (approx.) | Risk |
 | --- | --- | --- | --- | --- |
 | 10 | `PathUtils.atomic_write` reconciled against **both** copies (revises Phase 5.3) | none | ~120 lines | low |
-| 11 | New `documents.py` — round-trip TOML/YAML/JSON config documents | `documents` extra | ~190 lines | low |
-| 12 | `ContentHash` + generic `StateStore` (JSON, locked, atomic) | none | ~200 lines | low |
+| 11 | New `documents.py` — TOML/YAML/JSON serialisation + round-trip config documents | `tomlkit`, `ruamel.yaml` (base) | ~700 lines | low |
+| 12 | `ContentHash` in commons; local JSON `StateStore` in tooling | none | ~200 lines | low |
 | 13 | `PathUtils` repo-root discovery + path-escape guards | none | ~120 lines | low |
 | 14 | `DictUtils.merge` grows layers + provenance (**replaces Phase 5.1**) | none | ~190 lines | medium |
 | 15 | `DictUtils.flatten` + `TextUtils.unified_diff` | none | ~70 lines | none |
-| 16 | New `templates.py` — Jinja engine with strict undefined + `to_toml`/`to_yaml` | `templates` extra | ~80 lines | low |
+| 16 | Tooling-owned Jinja engine with strict undefined + `to_toml`/`to_yaml` | tooling depends on `jinja2` | ~80 lines | low |
 | 17 | `EntryPointLoader` — failure-isolated plugin discovery | none | ~50 lines | low |
-| 18 | `DirectoryLock` + `atomic_symlink` + `extract_archive` (the ~18% of the self-install layer that *is* generic) | none | ~135 lines | low |
-| — | **Not commons:** `$RNF_HOME` layout, self-commands, install orchestration — see Phase 18 | — | — | — |
+| 18 | Tooling-owned `DirectoryLock` + `atomic_symlink` + `extract_archive` | none | ~135 lines | low |
+| — | **Application-owned:** `$RNF_HOME` layout, self-commands and product policy — see Phase 18 | — | — | — |
 
 Phases 0-5 are safe and should be done in order. **Phase 6 has an explicit abort gate** — read its
 section before starting it. Phase 7 is trivial and can be slotted in anywhere after Phase 0. Phase 8
 is a standalone new module with no interaction with Part A, other than following the conventions
 below. **Phase 9 has an explicit abort gate**, same shape as Phase 6 — read its section before
 starting it.
+
+The extraction sequence is:
+
+1. Scaffold `rn-forge-tooling` as a typed workspace package depending on commons.
+2. Move Phases 2, 3, the `StateStore` half of Phase 12, Phase 16 and Phase 18 mechanics into it,
+   preserving behavior and tests.
+3. agentkit is rebuilt from scratch on the tooling APIs and kiln is written against them from day
+   one (standardization plan Phases D and F.3); taskkit remains a retired source of tested
+   behavior, not a future consumer.
+4. In the same breaking commons release, remove the relocated modules, their public re-exports,
+   Typer and Jinja. Do not retain shims that make commons depend on tooling.
+5. Add generator contracts only after the extraction is green; add Django/FastAPI providers as
+   `[codegen]` extras of their runtime packages when their first generators are specified. The
+   import-linter fence for `rn_forge.django.codegen` is added now, while the subpackage is empty.
 
 **Phases 8b–8c–8d are added by [`web-library-plan.md`](./web-library-plan.md) §A.2** and are the
 three protocol modules the rest of the workspace is blocked on: `rn-forge-azure` cannot start its
@@ -130,8 +212,10 @@ restated so this document is self-contained.
    `__all__`; `DataclassMixin` for dataclasses that need serialization; `AppException` /
    `AppException.check(value, "msg {}", arg, error_code=...)` for validation rather than a raw
    `raise`; `AppLogger.get_logger(__name__)` at module level (subject to rule 1).
-4. **Re-export from the curated public API.** Every new public symbol goes into
-   `src/rn_forge/commons/__init__.py`'s imports and `__all__`, both kept sorted.
+4. **Re-export from the owning package's curated public API.** Commons-owned symbols go into
+   `src/rn_forge/commons/__init__.py`; tooling-owned symbols go into
+   `src/rn_forge/tooling/__init__.py`. Keep imports and `__all__` sorted, and never re-export
+   tooling from commons.
 5. **New extras aggregate into `all`.** When adding an optional extra, add its packages to the `all`
    extra too, and gate the corresponding tests with `pytest.importorskip` following the pattern used
    by the pandas/openpyxl tests.
@@ -167,10 +251,10 @@ nothing, and keeps `rn-forge-commons` compatible with the latest stack without p
 
 ```toml
 dependencies = [
-  "pyyaml>=6.0.3",
+  "ruamel.yaml>=0.19.1",  # phase 11 (11.4) — replaces pyyaml outright
+  "tomlkit>=0.15.0",      # phase 11 (11.4)
   "verboselogs>=1.7",
   "rich>=15.0.0",        # phase 1 — matches the floor already used by rn-forge-agentkit
-  "typer>=0.26.8",       # phase 3 — matches agentkit
   "dacite>=1.9.2",       # phase 4
   "mergedeep>=1.3.4",    # phase 5
   # "omegaconf>=2.3.0",  # phase 6 ONLY IF the gate passes
@@ -181,15 +265,13 @@ dependencies = [
 json = ["python-json-logger>=4.0.0"]                                # phase 0
 resilience = ["pybreaker>=1.2.0", "tenacity>=9.0.0", "httpx>=0.28"] # phase 8
 # structlog = ["structlog>=25.1.0"]  # phase 9 ONLY IF the gate passes
-documents = ["tomlkit>=0.15.0", "ruamel.yaml>=0.19.1"]              # phase 11
-templates = ["jinja2>=3.1.6"]                                       # phase 16
+# documents = [...]  <-- NOT created; see 11.4, both deps are base deps
 excel = ["openpyxl>=3.1.5", "pandas>=3.0.3"]
 otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
 pandas = ["pandas>=3.0.3"]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]
 all = [
   "httpx>=0.28",
-  "jinja2>=3.1.6",
   "openpyxl>=3.1.5",
   "opentelemetry-instrumentation-logging>=0.64b0",
   "pandas>=3.0.3",
@@ -201,22 +283,37 @@ all = [
 ]
 ```
 
+`rn-forge-tooling` declares its dependencies directly rather than relying on commons' transitive
+dependencies:
+
+```toml
+dependencies = [
+  "jinja2>=3.1.6",
+  "rn-forge-commons",
+  "rich>=15.0.0",
+  "typer>=0.26.8",
+]
+```
+
 Also remove `coloredlogs` from the `all` extra and from any `dev`/`docs` group that references it.
 
-**Version bump:** this plan is breaking (Phases 2 and 3 remove the argparse API). Bump
-`rn-forge-commons` to **`0.3.0`** at the end of Phase 3, not incrementally.
+**Versioning:** the original argparse removal requires `rn-forge-commons` **`0.3.0`**. Relocating
+the already-exposed CLI/tooling APIs requires the next breaking commons release; release
+`rn-forge-tooling` independently so subsequent tooling changes do not force runtime-library bumps.
 
-### Validation command for every phase
+### Validation commands
 
-Run from the repo root after each phase. Do not proceed to the next phase with any of these red:
+Run from the repo root after each phase. Include tooling once it is scaffolded. Do not proceed with
+any of these red:
 
 ```bash
 uv sync --all-extras
-uv run pytest packages/rn-forge-commons
-uv run ruff check packages/rn-forge-commons
-uv run ruff format --check packages/rn-forge-commons
+uv run pytest packages/rn-forge-commons packages/rn-forge-tooling
+uv run ruff check packages/rn-forge-commons packages/rn-forge-tooling
+uv run ruff format --check packages/rn-forge-commons packages/rn-forge-tooling
 uv run pyright                       # strict mode; src/ must be clean, tests are excluded
 uv run --directory packages/rn-forge-commons --group docs mkdocs build --strict
+uv run --directory packages/rn-forge-tooling --group docs mkdocs build --strict
 ```
 
 Note `pyright` is configured `include = ["packages"]`, so it type-checks `rn-forge-django` too — a
@@ -475,12 +572,13 @@ piping it to a file shows clean unstyled text.
 
 ---
 
-### Phase 2 — `console.py` becomes a Rich output layer
+### Phase 2 — `AppConsole` becomes the tooling output layer
 
 **This phase deletes the entire current contents of `console.py`** (`CLIArgumentParser`,
 `BooleanAction`, `KeyValueAction`) and replaces the module with an output facade. The argparse
-functionality is not lost — it is superseded by Phase 3's Typer module. If you would rather not have
-a window where CLI parsing is missing, do Phases 2 and 3 as one commit.
+functionality is not lost — it is superseded by Phase 3's Typer module. Relocate the resulting
+facade from commons to tooling before the next commons release. Do Phases 2 and 3 plus relocation
+as one migration so consumers never have two canonical import paths.
 
 #### 2.1 — Why this module is the highest-value addition
 
@@ -490,11 +588,11 @@ a module-level `Console()` singleton, `emit()` (tri-mode rich/quiet/JSON dispatc
 error + exit), `_jsonable()` (dataclass/`Path`/nested coercion to JSON-safe values), and three
 separate hand-built `rich.table.Table` construction sites
 (`global_cmds.py:177`, `project_cmds.py:~208`, `shared_cmds.py:~180` and `~265`). Design the API
-below so agentkit can delete `commands/common.py` almost entirely and import from commons instead.
+below so agentkit can delete `commands/common.py` almost entirely and import from tooling instead.
 
 #### 2.2 — API
 
-New `packages/rn-forge-commons/src/rn_forge/commons/console.py`:
+New `packages/rn-forge-tooling/src/rn_forge/tooling/console.py`:
 
 ```python
 class OutputMode(StrEnum):
@@ -613,7 +711,7 @@ strongest evidence this belongs in commons; `_jsonable` is deleted outright when
 
 #### 2.5 — Tests
 
-New `tests/test_console.py` (replacing the argparse one, same filename):
+New `packages/rn-forge-tooling/tests/test_console.py`:
 
 - Mode dispatch matrix: for each of the four `OutputMode` values, assert what `print`, `emit`,
   `json`, `success`, `table` do and do not write. Use `Console(file=StringIO(), width=...)` via the
@@ -628,18 +726,17 @@ New `tests/test_console.py` (replacing the argparse one, same filename):
 
 #### 2.6 — Docs
 
-- Add `docs/api/console.md` content pointing mkdocstrings at the new symbols (the nav entry already
-  exists in `mkdocs.yml`).
-- Add a new guide `docs/guides/console.md` and a nav entry for it under Guides, covering the
+- Add tooling `docs/api/console.md` content pointing mkdocstrings at the new symbols.
+- Add a tooling guide `docs/guides/console.md` and a nav entry under Guides, covering the
   quiet/JSON tri-mode pattern with a worked example.
 
 ---
 
-### Phase 3 — New `cli.py`: Typer replaces `CLIArgumentParser`
+### Phase 3 — Tooling `cli.py`: Typer replaces `CLIArgumentParser`
 
 #### 3.1 — API
 
-New `packages/rn-forge-commons/src/rn_forge/commons/cli.py`:
+New `packages/rn-forge-tooling/src/rn_forge/tooling/cli.py`:
 
 ```python
 class LogLevel(StrEnum):
@@ -715,8 +812,10 @@ work both before and after the subcommand name, which the root callback alone ca
 #### 3.3 — Removals
 
 Delete `CLIArgumentParser`, `BooleanAction`, `KeyValueAction`, and the `_LOG_LEVELS` dict. Update
-`src/rn_forge/commons/__init__.py`: drop those three names from the imports and `__all__`, add
-`AppConsole`, `OutputMode`, `console`, `LogLevel`, `build_app`, `parse_key_values`, `CliOptions`.
+`src/rn_forge/commons/__init__.py`: drop the removed argparse names and do not expose their Typer
+replacements. Add `AppConsole`, `OutputMode`, `console`, `LogLevel`, `build_app`,
+`parse_key_values`, `parse_overrides` and `CliOptions` to
+`src/rn_forge/tooling/__init__.py` instead.
 
 Typer's native `bool` parameter handling (`--flag` / `--no-flag`) fully replaces `BooleanAction`; no
 wrapper is needed. Say so in the module docstring so the next person doesn't re-add one.
@@ -725,7 +824,7 @@ wrapper is needed. Say so in the module docstring so the next person doesn't re-
 
 #### 3.4 — Tests
 
-New `tests/test_cli.py`, using `typer.testing.CliRunner`:
+New `packages/rn-forge-tooling/tests/test_cli.py`, using `typer.testing.CliRunner`:
 
 - `LogLevel.to_int()` maps every member to the right `AppLogger` constant (drive from the enum, not
   a hardcoded list).
@@ -742,8 +841,8 @@ New `tests/test_cli.py`, using `typer.testing.CliRunner`:
 
 #### 3.5 — Docs
 
-New `docs/api/cli.md` + nav entry, new `docs/guides/cli.md` + nav entry. Update
-`docs/guides/quickstart.md`, which almost certainly shows `CLIArgumentParser`.
+New tooling `docs/api/cli.md` + nav entry and `docs/guides/cli.md` + nav entry. Update the commons
+quickstart to remove `CLIArgumentParser` and direct CLI users to `rn-forge-tooling`.
 
 ---
 
@@ -907,6 +1006,19 @@ explicit `mode` applied; no `.tmp` leftovers in the directory after a simulated 
 
 ### Phase 6 — GATED: OmegaConf for `config.py`
 
+> **Outcome (2026-09-07): gate failed, abandoned.** No `ConfigOmega` branch was written — the
+> structural analysis below made the outcome clear without needing to build and then discard a
+> prototype. Estimated cost of the four non-negotiable pieces: an `__extends__` pre-merge pass
+> handling transitive extends (~40-60 lines), a syntax-translation pass rewriting `@{}`/`#{}` into
+> OmegaConf's `${}` form since OmegaConf only understands the latter (~20-30 lines), a **post**-pass
+> to flatten `#{}`'s list-splice semantics back in — OmegaConf has no equivalent, it would substitute
+> the referenced list as a single nested element rather than splicing it inline, so a sentinel-tagged
+> pre-pass plus a post-resolution walk is needed (~30-50 lines), and dotted-index path translation
+> between `DictUtils.get`'s `"a.0.b"` form and OmegaConf's `.`/`[0]` form (~15-20 lines). That is
+> 100-160+ lines of pre/post glue on top of the `antlr4-python3-runtime` dependency risk already
+> flagged — well past the ~80-line threshold, and no simplification over the ~245-line hand-rolled
+> resolver it would replace. The hand-rolled resolver in `config.py` is unchanged.
+
 **Do not start this phase without re-reading this gate.** Phases 0-5 stand on their own; this one
 can be abandoned with no loss.
 
@@ -1022,6 +1134,24 @@ as missing; `forbid` matches and does not match; custom `message` is used.
 
 ### Phase 8 — `resilience.py`: circuit breaker + retrying HTTP client
 
+> **Outcome (2026-09-07): built per the §A.3 redesign, not the original sync spec below.** The
+> library search §A.3 asked for: `purgatory` (async-native, per-key named circuits, event hooks —
+> the maintained successor to `aiobreaker`, which itself only exists because `pybreaker`'s
+> threading-based model doesn't fit async) for the breaker, and `stamina` for retry — its *backoff
+> hook* callable (`(exc) -> bool | float | timedelta`) turned out to be exactly the shape
+> `Retry-After` support needs, confirmed by prototype. The token-bucket rate limiter is hand-rolled,
+> as anticipated — nothing on PyPI clamps from `X-RateLimit-Remaining`/`X-RateLimit-Reset` headers.
+> See `src/rn_forge/commons/resilience.py`'s module docstring for the full record and
+> `tests/test_resilience.py` (20 cases, `httpx.MockTransport`) for validation. Concretely this means:
+> `ResilientAsyncHttpClient` (async throughout, not the sync client speced below), breakers keyed by
+> an optional `key=` argument to `request`/`get`/`post`/... (falling back to the client's `name`),
+> `clock`/`sleep` constructor-injectable on the rate limiter for deterministic tests, and
+> `CircuitOpenError` (an `AppException`) wrapping purgatory's `OpenedState`. The `resilience` extra is
+> `purgatory>=3.0.1`, `stamina>=25.2.0`, `httpx>=0.28` — `pybreaker`/`tenacity` were never added. The
+> sync-client spec in 8.1-8.4 below is retained for its still-accurate design notes (the metrics seam,
+> the optional-import guard, "don't build async speculatively" — inverted here since async *is* the
+> real requirement) but is not what got built.
+>
 > **Amended by [`web-library-plan.md`](./web-library-plan.md) §A.3 — read that first.** A second
 > independent implementation (intellibench's async Azure DevOps client) shows this design misses five
 > things: it is async, breakers are per-key rather than per-client, `clock`/`sleep` must be injectable
@@ -1311,6 +1441,39 @@ in-memory store; protocol satisfaction for both sync and async.
 
 ### Phase 9 — GATED: `StructLogger`, a structlog front-end over `AppLogger`
 
+> **Outcome (2026-09-07): gate passed, built.** All four conditions in 9.1 were validated with a
+> working prototype before committing to the module (see `src/rn_forge/commons/structlogger.py`,
+> `tests/test_structlogger.py`):
+>
+> 1. **Custom levels survive.** The blocker found: `structlog.stdlib.LoggerFactory` calls
+>    `logging.setLoggerClass()` in its own `__init__`, clobbering `AppLogger`'s registration —
+>    confirmed by prototype (a logger obtained afterward was `structlog`'s internal
+>    `_FixedFindCallerLogger`, not `AppLogger`). Fix: a custom `logger_factory` calling
+>    `AppLogger.get_logger()` directly, never touching `setLoggerClass`. Once that's in place,
+>    `structlog.stdlib.BoundLogger._proxy_to_logger(method_name, ...)` calls
+>    `getattr(self._logger, method_name)(...)` — i.e. it calls the underlying `AppLogger`'s own
+>    `.trace()`/`.spam()`/`.verbose()`/`.notice()`/`.success()` methods by name, which already exist.
+>    A `_AppBoundLogger` subclass adding those five one-line methods (mirroring `.info()`'s own
+>    definition) was all that was needed — no forking of structlog internals.
+> 2. **Facade stays thin.** The processor chain is `[merge_contextvars, _render_event]` — no
+>    `ProcessorFormatter`. `_render_event` is the final processor and renders the event dict into a
+>    plain `{}`-joined string *before* it reaches `AppLogger`, so the handler's formatter (Rich/JSON/
+>    file) never needs to change — a record from `StructLogger` is indistinguishable from one a plain
+>    `AppLogger.get_logger(__name__)` call would produce, confirmed by test
+>    (`TestSameSink::test_lands_in_same_handler_as_applogger_call`) and by prototype with `use_json=True`
+>    and a file handler.
+> 3. **Prototyped for real**, not just synthetic: verified against `AppLogger.initialize(use_json=True,
+>    file=...)` with the JSON formatter and file handler both active, confirming identical output shape
+>    for `StructLogger`- and `AppLogger`-originated records.
+> 4. **Not a hard dependency** — `structlog.py` is not imported by `__init__.py`; `import
+>    rn_forge.commons` succeeds with the extra absent (test:
+>    `test_import_rn_forge_commons_succeeds_without_structlog_named_module`).
+>
+> One documented constraint survives into the API: call `AppLogger.initialize()` before the *first*
+> `StructLogger` log call (not before constructing one — the underlying logger is resolved lazily, on
+> first use via `cache_logger_on_first_use=True`), so construction order does not matter, only which
+> one logs first.
+
 **Do not start this phase without re-reading this gate.** Phases 0-8 stand on their own; this one
 can be abandoned with no loss, same as Phase 6.
 
@@ -1482,9 +1645,10 @@ a `KeyboardInterrupt` mid-write leaves no temp file behind.
 
 ### Phase 11 — New `documents.py`: round-trip TOML/YAML/JSON configuration documents
 
-**New extra:** `documents = ["tomlkit>=0.15.0", "ruamel.yaml>=0.19.1"]`.
+**Dependencies:** `tomlkit`, `ruamel.yaml` — planned as a `documents` extra, shipped as base
+dependencies instead ([11.4](#114--superseded-one-yaml-backend-one-serialisation-module)).
 
-**The gap.** commons handles YAML via `pyyaml` and JSON via `JsonUtils`, and has **no TOML support
+**The gap** (as originally written; superseded in part by 11.4). commons handles YAML via `pyyaml` and JSON via `JsonUtils`, and has **no TOML support
 at all**. Both consumers need TOML, and — more importantly — both need *comment-preserving
 round-trip* editing, which `pyyaml` structurally cannot do and `tomlkit`/`ruamel.yaml` exist
 specifically to provide. agentkit's `core/io.py` is the fuller implementation; taskkit's
@@ -1535,11 +1699,9 @@ class DocumentUtils:
 - **`DocumentError` subclasses `AppException`** per convention 3 — not agentkit's bare
   `ConfigIOError(ValueError)`. Callers that catch `ValueError` still work, since `AppException`
   should keep whatever base commons already gives it; verify before assuming.
-- **Keep `pyyaml` for the existing `YamlUtils`.** Do not migrate `collections.py` to `ruamel.yaml`
-  — that is a behaviour change to a load-bearing, well-tested API for no benefit. `ruamel.yaml` is
-  used *only* inside `documents.py`, only for the round-trip path, and only under the `documents`
-  extra. Say this in the module docstring; it is exactly the kind of thing someone will later try
-  to "unify."
+- **~~Keep `pyyaml` for the existing `YamlUtils`.~~ SUPERSEDED — see 11.4.** The original decision
+  was to leave `collections.py` on `pyyaml` and confine `ruamel.yaml` to `documents.py`'s
+  round-trip path. That was reversed once the module landed: see [11.4](#114--superseded-one-yaml-backend-one-serialisation-module).
 - **JSON has no comments**, so its round-trip and plain paths are the same code. Keep
   `indent=2, sort_keys=True` + trailing newline — both repos already agree on that, and it is what
   makes their state/config files diff cleanly.
@@ -1551,6 +1713,31 @@ class DocumentUtils:
   taskkit's own schema; commons must not take a Pydantic dependency for it. The *pattern* (report
   every validation failure with a dotted field path, not just the first) is worth keeping in
   taskkit.
+
+#### 11.4 — SUPERSEDED: one YAML backend, one serialisation module
+
+The Phase 11 plan assumed `documents.py` would sit *beside* `collections.py`'s `JsonUtils` and
+`YamlUtils`. In practice that left two YAML parsers with divergent behaviour in one package, and
+the "plain" path in `documents.py` never used `pyyaml` at all — it parsed with `ruamel` and
+flattened. Both were consolidated:
+
+- **`ruamel.yaml` is the only YAML backend.** `pyyaml` and `types-pyyaml` are dropped. `YamlUtils`
+  uses `typ="safe"`; `DocumentUtils`'s round-trip methods use `typ="rt"`. ruamel is a functional
+  superset of pyyaml, so this is a swap, not an addition. `YamlUtils.serialize`'s `**kwargs` now
+  set attributes on the `ruamel.yaml.YAML` instance rather than passing through to `yaml.dump`;
+  `sort_keys` and `default_flow_style` behave as before.
+- **`JsonUtils` and `YamlUtils` moved from `collections.py` to `documents.py`.** `collections.py`
+  is now `DictUtils` + `ListUtils` only, matching its name. `documents.py` owns every
+  serialisation concern. Both are re-exported from the curated `__init__.py`, so
+  `from rn_forge.commons import JsonUtils` is unchanged; only direct
+  `rn_forge.commons.collections` imports had to move.
+- **The `documents` extra is gone.** `ruamel.yaml` and `tomlkit` are base dependencies. Keeping
+  core serialisation behind an optional extra was untenable once `config.py`, `console.py` and
+  `dataclasses.py` all depended on it. `tomlkit` rather than stdlib `tomllib` because `tomllib`
+  cannot write TOML, let alone preserve comments.
+- **`_deep_update_document` stays separate from `DictUtils.merge`**, and now says why in its
+  docstring: `merge` is `dict`-typed and deep-copies override values, which would replace the
+  tomlkit/ruamel containers and discard their attached comments.
 
 #### 11.3 — Tests
 
@@ -1567,7 +1754,7 @@ New `tests/test_documents.py`, gated with `pytest.importorskip`:
 
 ---
 
-### Phase 12 — `ContentHash` and a generic `StateStore`
+### Phase 12 — Commons `ContentHash` and tooling `StateStore`
 
 **No new dependencies.** Both repos maintain a JSON "what did I last write where" state file keyed
 by path, and both hash file contents with SHA-256 to detect drift.
@@ -1588,6 +1775,9 @@ class ContentHash:
 
 #### 12.2 — `StateStore`
 
+Place this class in `packages/rn-forge-tooling/src/rn_forge/tooling/state.py`; it imports
+`ContentHash`, `PathUtils`, `DataclassMixin` and `AppException` from commons.
+
 agentkit's `StateStore` (208 lines) is far more developed than taskkit's `load_state`/`save_state`
 (84 lines) and is the right starting point. It contributes:
 
@@ -1601,7 +1791,7 @@ taskkit contributes the shape that makes it reusable: a **typed entry** (`Artifa
 top-level metadata (`schema_version`, a producing-tool version, a config hash) rather than agentkit's
 free-form `dict[str, Any]`.
 
-**Commons version — generic over the entry type:**
+**Tooling version — generic over the entry type but intentionally local in its locking policy:**
 
 ```python
 E = TypeVar("E", bound=DataclassMixin)
@@ -1633,8 +1823,9 @@ Design notes:
   than the current hand-rolled checks. This is a genuine payoff from Phase 4; call it out in the
   docstring. It also means Phase 12 should land after Phase 4.
 - **Keep agentkit's `flock` degradation and its comment.** Silently proceeding unlocked is a
-  deliberate choice (a personal dev tool must not fail a command because `/tmp` is on a weird
-  filesystem), and without the comment someone will later "fix" it into a hard failure.
+  deliberate local-tool choice (a personal dev tool must not fail a command because `/tmp` is on a
+  weird filesystem). This is also why `StateStore` must not be exposed as commons persistence for
+  web services or shared workers.
 - **Key normalization is the caller's job, not the store's.** agentkit resolves paths to canonical
   absolute strings (`_resolved`); taskkit uses repo-relative POSIX strings. Both are correct for
   their scope, so the store must not impose one — take `str` keys and let the caller normalize with
@@ -1815,11 +2006,15 @@ Notes:
 
 ---
 
-### Phase 16 — New `templates.py`: a strict Jinja render engine
+### Phase 16 — Tooling `templates.py`: a strict Jinja render engine
 
-**New extra:** `templates = ["jinja2>=3.1.6"]`. Depends on Phase 11 for the `to_toml` filter.
+**New tooling dependency:** `jinja2>=3.1.6`. Template rendering is a core part of generator
+execution, so Jinja is not optional in the development-only tooling distribution. The tooling
+package depends on commons Phase 11 for `DocumentUtils` and the `to_toml`/`to_yaml` filters.
 
-Both repos render packaged templates; agentkit's `RenderEngine` is the fuller version.
+Both repos render generated configuration from packaged templates; agentkit's `RenderEngine` is the
+fuller version. Put this API in
+`packages/rn-forge-tooling/src/rn_forge/tooling/templates.py`, not in either web runtime package.
 
 ```python
 class RenderError(AppException): ...
@@ -1852,16 +2047,16 @@ Notes:
 - **`keep_trailing_newline=True` in both repos; `trim_blocks`/`lstrip_blocks` only in taskkit.**
   Default `keep_trailing_newline=True` (both agree) and pass the rest through
   `environment_kwargs` rather than inventing a parameter per Jinja option.
-- **`to_toml`/`to_yaml` filters come from Phase 11's `DocumentUtils.dumps`.** Register them only
-  when the `documents` extra is importable, so `templates` alone still works.
+- **`to_toml`/`to_yaml` filters come from Phase 11's `DocumentUtils.dumps`.** Documents are part of
+  the commons base install, so tooling registers them directly.
 - **`validate()` is the non-obvious value here** — compiling every template the loader can see is
   what lets `doctor`-style commands catch a broken template before a user hits it. agentkit's
   version swallows a `TypeError` from `list_templates()` on a loaderless environment; keep that.
 - **Do not wrap async rendering, sandboxing, or bytecode caching.** Point at `.environment`.
 
-Tests: strict undefined raises `RenderError`; both loader styles; `to_toml`/`to_yaml` round-trip
-through a rendered template; `validate()` reports a broken template by name and returns `[]` for a
-loaderless engine.
+Tooling tests: strict undefined raises `RenderError`; both loader styles; `to_toml`/`to_yaml`
+round-trip through a rendered template; `validate()` reports a broken template by name and returns
+`[]` for a loaderless engine.
 
 ---
 
@@ -1908,7 +2103,7 @@ in agentkit, but the loader's docstring should mention the pattern generalizes.
 
 ---
 
-### Phase 18 — The self-install layer: extract the generic ~18%, leave the rest
+### Phase 18 — The self-install layer: put reusable mechanics in tooling
 
 This is the **largest single duplication in the survey** — agentkit's `commands/self_command.py`
 (342 lines) and taskkit's `core/install.py` (390 lines) are two implementations of one design:
@@ -1925,16 +2120,18 @@ This is the **largest single duplication in the survey** — agentkit's `command
   `paths.rnf_home()`, taskkit `install.resolve_rnf_home()`) — trivially duplicated, and it stays
   that way; see 18.3 for why commons is the wrong home for it.
 
-**The `$RNF_HOME` layout and the self-commands do not belong in commons.** It is not a general
+**The `$RNF_HOME` layout and the self-commands do not belong in commons or the generic generator
+engine.** It is not a general
 Python utility but the rn-forge toolchain's product installer: it knows about `uv`, GitHub release
 tarballs, a `current` symlink convention, and a `$RNF_HOME` directory layout. Putting it behind a
 commons extra would make `rn-forge-commons` the home of a distribution mechanism that
 `rn-forge-django` — a library that ships into deployed runtime servers and containers — will never
 use. **This includes `$RNF_HOME` resolution itself** (see 18.3).
 
-But commons *can* shrink those 732 lines, and the honest question is by how much. 18.1 answers it.
+The reusable workstation mechanics belong in `rn-forge-tooling`; product coordinates and policy
+remain in agentkit and kiln. Taskkit is a reference donor only. Section 18.1 defines that boundary.
 
-#### 18.1 — What commons can actually absorb: ~135 of 732 lines (~18%)
+#### 18.1 — What tooling can absorb: ~135 of 732 lines (~18%)
 
 Decomposition of both files, by what a commons utility could replace:
 
@@ -1953,27 +2150,28 @@ Decomposition of both files, by what a commons utility could replace:
 | agentkit's `uninstall()` — hook stripping, owned artifacts | ~90 | — | no — pure agentkit domain |
 | Docstrings, imports, `__all__` | ~35 | ~45 | no |
 
-**So the counter you invited is half-right, and worth stating plainly:** the residue is not mostly
-Typer config — agentkit only has ~55 lines of that, and taskkit has none (its Typer surface lives in
-`cli.py`, already counted separately). The residue is mostly **three things commons cannot fix**:
+The residue is not mostly Typer config — agentkit only has ~55 lines of that, and taskkit has none
+(its Typer surface lives in `cli.py`, already counted separately). It is mostly **three things a
+shared mechanism cannot remove**:
 agentkit's 90-line `uninstall()`, which is domain logic that was never install-layer at all; ~65
 lines of `uv`-specific build invocation; and ~80 lines of docstrings/imports. Extracting the four
 "yes" rows removes roughly **135 lines across both repos**, and no more.
 
 The remaining ~250 lines of genuinely-shared install *orchestration* can only be deduplicated by the
-two repos sharing an implementation — which is the separate-package option, not a commons utility.
-Commons utilities and a shared installer package are answers to different halves of the problem.
+two repos sharing an implementation. `rn-forge-tooling` is now that shared package, but it must keep
+product coordinates and product-specific validation behind injected callbacks or application-owned
+commands.
 
-Concretely, add to commons:
+Concretely, add to tooling:
 
 ```python
-# utils.py, next to PathUtils
+# rn_forge/tooling/install.py
 class DirectoryLock:
     """A portable advisory lock backed by mkdir, for cross-process serialization.
 
     mkdir is atomic on every filesystem this runs on; flock is not available
     everywhere. Use this when the lock must hold across processes on unknown
-    filesystems; use StateStore's flock-based locking (Phase 12) when a failed
+    filesystems; use tooling StateStore's flock-based locking (Phase 12) when a failed
     lock should degrade to unlocked rather than raise.
     """
     def __init__(self, path, *, timeout: float = 30.0, poll_interval: float = 0.05,
@@ -1982,16 +2180,16 @@ class DirectoryLock:
     def __exit__(self, *exc: object) -> None: ...
 
 
-PathUtils.atomic_symlink(link: str | Path, target: str | Path) -> None
+atomic_symlink(link: str | Path, target: str | Path) -> None
     # write .<name>.tmp-<pid> then os.replace; never unlink-then-recreate,
     # which leaves a window where the link does not exist at all.
 
-PathUtils.extract_archive(archive, destination, *, filter: str = "data") -> Path
+extract_archive(archive, destination, *, filter: str = "data") -> Path
     # tarfile/zipfile with the data filter set, returning the single root dir.
 ```
 
 `on_wait` on `DirectoryLock` is what lets agentkit keep printing "waiting for install lock ..."
-without commons importing a console. `extract_archive` defaulting to `filter="data"` is the point of
+without coupling the lock to a console. `extract_archive` defaulting to `filter="data"` is the point of
 having it once: agentkit sets it correctly today, and a hand-rolled second copy is exactly how a
 tar-slip vulnerability gets introduced.
 
@@ -2027,27 +2225,20 @@ configuration for someone running several tools under the rn-forge umbrella loca
 runs in production has no business carrying a developer-machine path convention, and a three-line
 saving is not a reason to leak one environment's assumptions into every consumer.
 
-It stays duplicated in agentkit and taskkit — or moves into the shared installer package, if 18.4
-happens, which is its natural home.
+Keep it in each product while their layouts differ. If the layouts converge, tooling may own a
+parameterized layout value object, but commons must never expose `$RNF_HOME`.
 
-#### 18.4 — If the orchestration is to be shared, it needs a package
+#### 18.4 — Shared orchestration decision
 
-Recorded as an option, not a recommendation, since it is your call:
+Use `rn-forge-tooling`; do not create a separate `rn-forge-selfkit`. Tooling owns the reusable
+installer state machine and mechanics, parameterized by product callbacks. It may expose a
+`ProductInstaller` that accepts product name, resolved install root, environment builder, artifact
+source and verification hooks. It must not select `$RNF_HOME`, call a particular GitHub repository,
+or define a product's retention/uninstall policy by default.
 
-A new workspace package (`rn-forge-selfkit` as a working name) depending on `rn-forge-commons` for
-`DirectoryLock`, `PathUtils.atomic_symlink`, `AppConsole` and `AppException`, exposing a
-`ProductInstaller` parameterized by product name, `$RNF_HOME` layout, and entry-point script. That
-is what removes the other ~250 lines; commons utilities alone cannot.
-
-Two things to decide first:
-
-1. Whether a fourth package is wanted, versus leaving that orchestration duplicated in two personal
-   tools that rarely change. **Leaving it is legitimate** — the code is stable, and the blast radius
-   of drift is low because a broken install fails loudly. Note this is a weaker argument than it was
-   before 18.2: the two copies have *already* drifted into one crash and one mis-ordering.
-2. Whether taskkit's richer shape is the target (`--keep N` rollbacks, structured `DoctorFinding`,
-   an explicit `build_environment` seam for stubbing the slow subprocess in tests). It is the better
-   of the two; agentkit's `--source`/`--archive` resolution is the better half of its own.
+Start from taskkit's richer seams (`--keep N` planning, structured `DoctorFinding`, explicit
+`build_environment`) and agentkit's stronger source/archive resolution, but keep those policies in
+the product adapter until both products use the same contract.
 
 ---
 
@@ -2096,43 +2287,52 @@ Recorded so a later reader does not "finish the job" by hoisting these too:
 
 ## Final checklist before calling this done
 
-- [ ] `uv sync --all-extras && uv run pytest packages/rn-forge-commons` green
-- [ ] `uv run pyright` clean (covers `rn-forge-django` too — Phase 2/3 removals may break its imports)
+- [ ] `packages/rn-forge-tooling` exists and declares a direct dependency on `rn-forge-commons`
+- [ ] `uv sync --all-extras && uv run pytest packages/rn-forge-commons packages/rn-forge-tooling` green
+- [ ] `uv run pyright` clean (covers `rn-forge-django` and tooling too)
 - [ ] `uv run ruff check . && uv run ruff format --check .` clean
 - [ ] `uv run --directory packages/rn-forge-commons --group docs mkdocs build --strict` clean
+- [ ] Tooling docs build clean
 - [ ] `grep -rn "coloredlogs\|CLIArgumentParser\|BooleanAction\|KeyValueAction\|_coerce_field_value" packages/` returns nothing
-- [ ] `src/rn_forge/commons/__init__.py` re-exports every new public symbol, `__all__` sorted and matching
+- [ ] Commons has no Typer/Jinja dependency and does not expose `cli`, `console`, `state` or `templates`
+- [ ] Django/FastAPI runtime packages have no Typer or tooling dependency outside the `codegen` extra;
+      `uv run lint-imports` proves `rn_forge.django` minus `rn_forge.django.codegen` never imports them
+- [ ] Each package's curated `__init__.py` exposes only symbols it owns; `__all__` is sorted
 - [ ] `import rn_forge.commons` succeeds in an environment with **no** optional extras installed
       (guards the Phase 8 optional-import rule)
-- [ ] Version bumped to `0.3.0`; breaking removals listed in the docs index / README
+- [ ] Breaking commons relocation and the new tooling package are listed in the docs index / README
 - [ ] `CLAUDE.md`'s `rn-forge-commons` bullet updated — it currently describes logging as "built on
       `verboselogs`/`coloredlogs`" and lists `console.py` as "CLI argument parsing"
-- [ ] New nav entries added to `mkdocs.yml` for `api/cli.md`, `api/resilience.md`,
-      `api/messaging.md`, `api/secrets.md`, `api/objects.md`, `guides/console.md`, `guides/cli.md`
+- [ ] Commons nav contains resilience/messaging/secrets/objects; tooling nav contains CLI/console
 - [ ] Phases 8b/8c/8d landed — `rn-forge-azure` Phases 2/3/4 and `rn-forge-django` Phase 10 are
       blocked on them (see [`README.md`](./README.md) for the cross-plan order)
 - [ ] Phase 6 and Phase 9 gate outcomes recorded (built, or abandoned with the reason written down)
-- [ ] Phase 18.4's decision recorded (shared installer package, or orchestration left duplicated)
+- [ ] Phase 18.4 uses tooling for shared mechanics while product layout and policy remain local
+- [ ] Generator contract is Python-callable without Typer; framework providers are `[codegen]` extras
 - [ ] No developer-workstation path convention (`$RNF_HOME` and friends) leaked into commons — see 18.3
 - [ ] Every Part C API checked against **both** agentkit and taskkit call sites, not just one
 - [ ] Nothing committed or pushed — leave the working tree for review
 
 ## Not in this plan (deliberately deferred)
 
-- **agentkit and taskkit adopting these wrappers.** Neither repo depends on `rn-forge-commons`
-  today; taking that dependency is step one of each adoption plan, and each is a separate plan in
-  its own repo. Design every API here against both repos' call sites, but **do not modify either
-  repo as part of this plan.** Expected reductions once they adopt:
+- **agentkit and kiln consuming these wrappers.** Both depend on `rn-forge-tooling`, which supplies
+  their shared development surface and depends on commons. kiln is written against tooling from the
+  start; agentkit is **rebuilt from scratch** on it (standardization plan D39, Phase F.3) — there is
+  no in-place adoption. Design each migrated API against agentkit and taskkit's tested call sites,
+  but do not modify either repo as part of this plan. The mapping below is the donor mapping for the
+  agentkit rewrite:
   - **agentkit:** `commands/base.py`'s `_jsonable`/`console`/`fail`/`emit` → `AppConsole`;
     `core/io.py` → `PathUtils.atomic_write` + `DocumentUtils`; `core/config.py`'s merge half →
-    `DictUtils.merge_layers`, its `parse_cli_overrides` → `cli.parse_overrides`; `core/diff.py` →
-    `DictUtils.flatten` + `TextUtils.unified_diff`; `core/render.py` → `TemplateEngine`;
-    `core/state.py` → `StateStore` + `ContentHash`; `core/paths.py::project_root` →
+    `DictUtils.merge_layers`, its `parse_cli_overrides` → `rn_forge.tooling.cli.parse_overrides`;
+    `core/diff.py` → `DictUtils.flatten` + `TextUtils.unified_diff`; `core/render.py` → tooling
+    `TemplateEngine`; `core/state.py` → tooling `StateStore` + commons `ContentHash`;
+    `core/paths.py::project_root` →
     `PathUtils.find_root`; `agents/registry.py`'s discovery half → `EntryPointLoader`.
-  - **taskkit:** `core/io.py`'s `atomic_write_bytes` → `PathUtils.atomic_write`; `core/config.py`'s
-    document half → `DocumentUtils`; `core/state.py` → `StateStore`; `core/paths.py` →
+  - **taskkit reference mapping (the repo is retired, so do not add a dependency):**
+    `core/io.py`'s `atomic_write_bytes` → `PathUtils.atomic_write`; `core/config.py`'s
+    document half → `DocumentUtils`; `core/state.py` → tooling `StateStore`; `core/paths.py` →
     `PathUtils.find_root`/`normalize_relative`/`assert_within`; `core/renderer.py`'s `_ENV` →
-    `TemplateEngine`; `commands/base.py`'s console pair → `AppConsole`.
+    tooling `TemplateEngine`; `commands/base.py`'s console pair → tooling `AppConsole`.
   - Both keep their domain models, result envelopes, and resolution policies — see "What Part C
     deliberately leaves in the applications."
 - **`rn-forge-django`.** Out of scope. Recorded here so they are not lost when the older plan

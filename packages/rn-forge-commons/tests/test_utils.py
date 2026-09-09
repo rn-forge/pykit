@@ -8,7 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from rn_forge.commons.utils import AppUtils, Base64, Environment, PathUtils
+from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.utils import (
+    AppUtils,
+    Base64,
+    DirectoryLock,
+    Environment,
+    PathUtils,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +68,48 @@ class TestEnvironment:
         assert Environment.is_enabled("_FLAG", default=True) is True
 
 
+class TestEnvironmentRequire:
+    def test_all_present_returns_mapping(self, monkeypatch):
+        monkeypatch.setenv("_REQ_A", "1")
+        monkeypatch.setenv("_REQ_B", "2")
+        assert Environment.require("_REQ_A", "_REQ_B") == {"_REQ_A": "1", "_REQ_B": "2"}
+
+    def test_one_missing_raises(self, monkeypatch):
+        monkeypatch.setenv("_REQ_A", "1")
+        monkeypatch.delenv("_REQ_MISSING", raising=False)
+        with pytest.raises(AppException):
+            Environment.require("_REQ_A", "_REQ_MISSING")
+
+    def test_several_missing_all_appear_in_one_message(self, monkeypatch):
+        monkeypatch.delenv("_REQ_M1", raising=False)
+        monkeypatch.delenv("_REQ_M2", raising=False)
+        with pytest.raises(AppException) as exc_info:
+            Environment.require("_REQ_M1", "_REQ_M2")
+        assert "_REQ_M1" in str(exc_info.value)
+        assert "_REQ_M2" in str(exc_info.value)
+
+    def test_empty_string_counts_as_missing(self, monkeypatch):
+        monkeypatch.setenv("_REQ_EMPTY", "   ")
+        with pytest.raises(AppException):
+            Environment.require("_REQ_EMPTY")
+
+
+class TestEnvironmentForbid:
+    def test_matches_raises(self, monkeypatch):
+        monkeypatch.setenv("_SECRET", "change-me")
+        with pytest.raises(AppException):
+            Environment.forbid("_SECRET", "change-me")
+
+    def test_does_not_match_passes(self, monkeypatch):
+        monkeypatch.setenv("_SECRET", "a-real-secret")
+        Environment.forbid("_SECRET", "change-me")
+
+    def test_custom_message_used(self, monkeypatch):
+        monkeypatch.setenv("_SECRET", "change-me")
+        with pytest.raises(AppException, match="custom message"):
+            Environment.forbid("_SECRET", "change-me", message="custom message")
+
+
 # ---------------------------------------------------------------------------
 # Base64
 # ---------------------------------------------------------------------------
@@ -94,6 +143,283 @@ class TestBase64:
 # ---------------------------------------------------------------------------
 # PathUtils
 # ---------------------------------------------------------------------------
+
+
+class TestAtomicWrite:
+    def test_writes_bytes(self, tmp_path):
+        target = tmp_path / "f.bin"
+        result = PathUtils.atomic_write(b"\x00\x01data", target)
+        assert result == target
+        assert target.read_bytes() == b"\x00\x01data"
+
+    def test_writes_str(self, tmp_path):
+        target = tmp_path / "f.txt"
+        PathUtils.atomic_write("hello", target)
+        assert target.read_text() == "hello"
+
+    def test_creates_parent_directories(self, tmp_path):
+        target = tmp_path / "a" / "b" / "f.txt"
+        PathUtils.atomic_write("hi", target)
+        assert target.read_text() == "hi"
+
+    def test_preserves_existing_file_mode(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        os.chmod(target, 0o600)
+        PathUtils.atomic_write("new", target)
+        assert target.read_text() == "new"
+        assert (target.stat().st_mode & 0o777) == 0o600
+
+    def test_explicit_mode_applied(self, tmp_path):
+        target = tmp_path / "f.txt"
+        PathUtils.atomic_write("hi", target, mode=0o640)
+        assert (target.stat().st_mode & 0o777) == 0o640
+
+    def test_no_tmp_leftovers_after_mid_write_failure(self, tmp_path, monkeypatch):
+        target = tmp_path / "f.txt"
+
+        def fail_fsync(fd):
+            raise OSError("simulated failure")
+
+        monkeypatch.setattr(os, "fsync", fail_fsync)
+        with pytest.raises(OSError):
+            PathUtils.atomic_write("hi", target)
+        assert list(tmp_path.iterdir()) == []
+
+    def test_no_tmp_leftovers_after_keyboard_interrupt(self, tmp_path, monkeypatch):
+        target = tmp_path / "f.txt"
+
+        def raise_interrupt(fd):
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(os, "fsync", raise_interrupt)
+        with pytest.raises(KeyboardInterrupt):
+            PathUtils.atomic_write("hi", target)
+        assert list(tmp_path.iterdir()) == []
+
+    def test_parent_directory_fsync_failure_is_swallowed(self, tmp_path, monkeypatch):
+        target = tmp_path / "f.txt"
+        real_open = os.open
+
+        def fail_dir_open(path, flags, *args, **kwargs):
+            if path == tmp_path:
+                raise OSError("cannot open directory")
+            return real_open(path, flags, *args, **kwargs)
+
+        monkeypatch.setattr(os, "open", fail_dir_open)
+        result = PathUtils.atomic_write("hi", target)  # must not raise
+        assert result.read_text() == "hi"
+
+
+class TestFindRoot:
+    def test_marker_precedence_order(self, tmp_path):
+        # .git several levels up beats pyproject.toml one level up
+        (tmp_path / ".git").mkdir()
+        nested = tmp_path / "a" / "b"
+        nested.mkdir(parents=True)
+        (nested.parent / "pyproject.toml").touch()
+        result = PathUtils.find_root(nested, markers=(".git", "pyproject.toml"))
+        assert result == tmp_path
+
+    def test_fallback_start(self, tmp_path):
+        isolated = tmp_path / "isolated"
+        isolated.mkdir()
+        result = PathUtils.find_root(isolated, markers=(".nonexistent-marker",))
+        assert result == isolated
+
+    def test_fallback_raise(self, tmp_path):
+        isolated = tmp_path / "isolated"
+        isolated.mkdir()
+        with pytest.raises(AppException):
+            PathUtils.find_root(
+                isolated, markers=(".nonexistent-marker",), fallback="raise"
+            )
+
+    def test_finds_marker_at_start(self, tmp_path):
+        (tmp_path / ".git").mkdir()
+        assert PathUtils.find_root(tmp_path, markers=(".git",)) == tmp_path
+
+
+class TestNormalizeRelative:
+    def test_dot_accepted_as_root(self):
+        assert PathUtils.normalize_relative(".") == "."
+
+    def test_normal_relative_path(self):
+        assert PathUtils.normalize_relative("a/b/c") == "a/b/c"
+
+    def test_absolute_path_rejected(self):
+        with pytest.raises(AppException):
+            PathUtils.normalize_relative("/etc/passwd")
+
+    def test_dotdot_escape_rejected(self):
+        with pytest.raises(AppException):
+            PathUtils.normalize_relative("../../etc/passwd")
+
+    def test_empty_rejected(self):
+        with pytest.raises(AppException):
+            PathUtils.normalize_relative("")
+
+    def test_internal_dotdot_resolved(self):
+        assert PathUtils.normalize_relative("a/b/../c") == "a/c"
+
+
+class TestAssertWithin:
+    def test_path_inside_root_allowed(self, tmp_path):
+        target = tmp_path / "a" / "b.txt"
+        target.parent.mkdir()
+        target.touch()
+        assert PathUtils.assert_within(tmp_path, target) == target.resolve()
+
+    def test_non_symlink_path_outside_root_rejected(self, tmp_path):
+        outside = tmp_path.parent / f"outside-{tmp_path.name}"
+        with pytest.raises(AppException):
+            PathUtils.assert_within(tmp_path, outside)
+
+    def test_symlink_resolving_inside_root_allowed(self, tmp_path):
+        real = tmp_path / "real.txt"
+        real.touch()
+        link = tmp_path / "link.txt"
+        link.symlink_to(real)
+        assert PathUtils.assert_within(tmp_path, link) == real.resolve()
+
+    def test_symlink_resolving_outside_root_rejected(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "outside.txt"
+        outside.touch()
+        link = root / "escape.txt"
+        link.symlink_to(outside)
+        with pytest.raises(AppException):
+            PathUtils.assert_within(root, link)
+
+    def test_root_itself_allowed(self, tmp_path):
+        assert PathUtils.assert_within(tmp_path, tmp_path) == tmp_path.resolve()
+
+
+class TestPathUtilsBackup:
+    def test_not_a_file_returns_none(self, tmp_path):
+        assert PathUtils.backup(tmp_path / "missing.txt", tmp_path / "backups") is None
+
+    def test_copies_file_with_relative_to(self, tmp_path):
+        source_root = tmp_path / "repo"
+        (source_root / "sub").mkdir(parents=True)
+        source = source_root / "sub" / "f.txt"
+        source.write_text("hi")
+        dest_root = tmp_path / "backups"
+        result = PathUtils.backup(source, dest_root, relative_to=source_root)
+        assert result == dest_root / "sub" / "f.txt"
+        assert result.read_text() == "hi"
+
+    def test_copies_file_without_relative_to(self, tmp_path):
+        source = tmp_path / "f.txt"
+        source.write_text("hi")
+        dest_root = tmp_path / "backups"
+        result = PathUtils.backup(source, dest_root)
+        assert result is not None
+        assert result.read_text() == "hi"
+        assert result.is_relative_to(dest_root)
+
+
+class TestAtomicSymlink:
+    def test_creates_new_symlink(self, tmp_path):
+        target = tmp_path / "target.txt"
+        target.write_text("hi")
+        link = tmp_path / "link"
+        PathUtils.atomic_symlink(link, target)
+        assert link.is_symlink()
+        assert link.read_text() == "hi"
+
+    def test_replaces_existing_symlink(self, tmp_path):
+        target1 = tmp_path / "t1.txt"
+        target1.write_text("one")
+        target2 = tmp_path / "t2.txt"
+        target2.write_text("two")
+        link = tmp_path / "link"
+        PathUtils.atomic_symlink(link, target1)
+        PathUtils.atomic_symlink(link, target2)
+        assert link.read_text() == "two"
+
+    def test_no_tmp_leftovers(self, tmp_path):
+        target = tmp_path / "target.txt"
+        target.write_text("hi")
+        link = tmp_path / "link"
+        PathUtils.atomic_symlink(link, target)
+        leftovers = [p for p in tmp_path.iterdir() if ".tmp-" in p.name]
+        assert leftovers == []
+
+
+class TestExtractArchive:
+    def test_extracts_tar_gz(self, tmp_path):
+        import tarfile
+
+        src_dir = tmp_path / "src" / "root"
+        src_dir.mkdir(parents=True)
+        (src_dir / "file.txt").write_text("hello")
+        archive = tmp_path / "archive.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(src_dir, arcname="root")
+
+        dest = tmp_path / "extracted"
+        result = PathUtils.extract_archive(archive, dest)
+        assert result == dest / "root"
+        assert (result / "file.txt").read_text() == "hello"
+
+    def test_extracts_zip(self, tmp_path):
+        import zipfile
+
+        archive = tmp_path / "archive.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("root/file.txt", "hello")
+
+        dest = tmp_path / "extracted"
+        result = PathUtils.extract_archive(archive, dest)
+        assert result == dest / "root"
+        assert (result / "file.txt").read_text() == "hello"
+
+    def test_multiple_root_dirs_raises(self, tmp_path):
+        import zipfile
+
+        archive = tmp_path / "archive.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("a/file.txt", "1")
+            zf.writestr("b/file.txt", "2")
+
+        dest = tmp_path / "extracted"
+        with pytest.raises(AppException):
+            PathUtils.extract_archive(archive, dest)
+
+
+class TestDirectoryLock:
+    def test_acquires_and_releases(self, tmp_path):
+        lock_path = tmp_path / ".lock"
+        with DirectoryLock(lock_path):
+            assert lock_path.exists()
+        assert not lock_path.exists()
+
+    def test_second_acquisition_waits_then_times_out(self, tmp_path):
+        lock_path = tmp_path / ".lock"
+        lock_path.mkdir()
+        with pytest.raises(AppException):
+            with DirectoryLock(lock_path, timeout=0.1, poll_interval=0.02):
+                pass
+
+    def test_on_wait_called_when_blocked(self, tmp_path):
+        lock_path = tmp_path / ".lock"
+        lock_path.mkdir()
+        waited = []
+        with pytest.raises(AppException):
+            with DirectoryLock(
+                lock_path, timeout=0.1, poll_interval=0.02, on_wait=waited.append
+            ):
+                pass
+        assert waited == [lock_path]
+
+    def test_lock_released_on_exception(self, tmp_path):
+        lock_path = tmp_path / ".lock"
+        with pytest.raises(RuntimeError):
+            with DirectoryLock(lock_path):
+                raise RuntimeError("boom")
+        assert not lock_path.exists()
 
 
 class TestPathUtils:
@@ -164,7 +490,9 @@ class TestParseBool:
     def test_truthy_true(self, s):
         assert AppUtils.parse_bool(s) is True
 
-    @pytest.mark.parametrize("s", ["yes", "YES", "enabled", "ENABLED"])
+    @pytest.mark.parametrize(
+        "s", ["yes", "YES", "enabled", "ENABLED", "y", "Y", "on", "ON", "1"]
+    )
     def test_truthy_other(self, s):
         assert AppUtils.parse_bool(s) is True
 
@@ -172,7 +500,9 @@ class TestParseBool:
     def test_falsy_false(self, s):
         assert AppUtils.parse_bool(s) is False
 
-    @pytest.mark.parametrize("s", ["no", "NO", "disabled", "none", "None"])
+    @pytest.mark.parametrize(
+        "s", ["no", "NO", "disabled", "none", "None", "n", "N", "off", "OFF", "0"]
+    )
     def test_falsy_other(self, s):
         assert AppUtils.parse_bool(s) is False
 
@@ -299,6 +629,12 @@ class TestImportString:
         with pytest.raises(ImportError):
             AppUtils.import_string("totally_missing_module_xyz.Symbol")
 
+    def test_colon_separated_form_supported(self):
+        join = AppUtils.import_string("os.path:join")
+        import os.path
+
+        assert join is os.path.join
+
 
 # Coverage ROI notes:
 # - Import-string failure cases are covered at the wrapper level; importer and
@@ -386,3 +722,21 @@ class TestJoinString:
         # Two list args: each list is stringified, not unpacked
         result = AppUtils.join_string("|", [1, 2], [3, 4])
         assert result == "[1, 2]|[3, 4]"
+
+
+class TestUnifiedDiff:
+    def test_equal_inputs_return_empty_string(self):
+        assert AppUtils.unified_diff("same\n", "same\n") == ""
+
+    def test_different_inputs_produce_a_diff(self):
+        result = AppUtils.unified_diff("a\n", "b\n")
+        assert result != ""
+        assert "-a" in result
+        assert "+b" in result
+
+    def test_names_appear_in_header(self):
+        result = AppUtils.unified_diff(
+            "a\n", "b\n", expected_name="old.txt", actual_name="new.txt"
+        )
+        assert "old.txt" in result
+        assert "new.txt" in result
