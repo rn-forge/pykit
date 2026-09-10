@@ -4,8 +4,14 @@ Shared, framework-agnostic utilities for Python programming. Part of the [pykit]
 
 ## Install
 
-```bash
-uv add rn-forge-commons
+Not published to PyPI: a release is a git tag, and a consumer pins one by
+direct URL (kiln D46).
+
+```toml
+[project]
+dependencies = [
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
 ```
 
 Optional extras:
@@ -25,30 +31,69 @@ Console log output is Rich-formatted by default (a hard dependency) when stdout 
 
 ## What's inside
 
-- **`config`** — `Config`: loads JSON/YAML config from a file or directory, deep-merges multiple sources,
-  and resolves internal references.
-- **`collections`** — `DictUtils`, `ListUtils`: dot-path get/set, deep merge, structural comparison,
-  sorting, filtering, and grouping.
-- **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`: JSON/YAML/TOML
-  (de)serialization and file I/O, plus comment-preserving round-trip editing of config documents.
-- **`logging`** — `AppLogger`, `LoggingConfig`: idempotent logging setup via `dictConfig`, built on
-  `verboselogs` with a custom `TRACE` level.
-- **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()` to any
-  `@dataclass`.
+Modules are grouped by kind of mechanism. Public class names do not encode the
+grouping and are all re-exported from the package facade, so
+`from rn_forge.commons import PathUtils` works regardless of which submodule
+holds it.
+
+**Top level**
+
+- **`config`** — `Config`: loads JSON/YAML config from a file or directory, deep-merges multiple
+  sources, and resolves internal references.
 - **`exceptions`** — `AppException`: structured exception base class for the `rn-forge-*` family.
-- **`reflection`** — `ReflectUtils`: fully-qualified name resolution, error-message formatting, and
-  stack-frame variable inspection.
-- **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and captures return code,
-  stdout, and stderr.
-- **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread pool.
-- **`blocks`** — `ManagedBlock`: render, extract and remove a generator-owned fenced block inside a
-  file somebody else owns (`.gitignore`, `CLAUDE.md`, `mkdocs.yml`).
 - **`findings`** — `Finding`, `Severity`: the structured result shape every checker and doctor
   reports in, serialisable for `--json`.
-- **`utils`** — `Environment`, `Base64`, `PathUtils`, `AppUtils`: env-var, base64, filesystem, and
-  general-purpose value helpers.
-- **`excel`** / **`pandas`** — Excel workbook helpers and DataFrame/Series helpers (optional extras).
 - **`testing`** — `output_path` fixture and `assertpy` integration, for use from `conftest.py`.
+
+**`lang/`** — Python objects themselves; no filesystem, no outside world.
+
+- **`collections`** — `DictUtils`, `ListUtils`: dot-path get/set, layered merge with provenance,
+  flatten, structural comparison, sorting, filtering, grouping.
+- **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()`
+  to any `@dataclass`, reconstructing nested dataclasses and enum members on the way back.
+- **`reflection`** — `ReflectUtils`: fully-qualified name resolution, error-message formatting,
+  and stack-frame variable inspection.
+- **`types`** — the recursive `JsonValue` alias.
+- **`utils`** — `AppUtils`, `Base64`: bool parsing, emptiness checks, dynamic imports, null-safe
+  attribute access, string joining, unified diffs, and base64 encode/decode.
+
+**`fs/`** — everything that reads or writes a real file.
+
+- **`paths`** — `PathUtils`: atomic writes, backups, temp dirs, repository-root discovery and the
+  `assert_within` path-escape guard.
+- **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
+- **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization and atomic
+  publication.
+- **`blocks`** — `ManagedBlock`: render, extract and remove a generator-owned fenced block inside a
+  file somebody else owns (`.gitignore`, `CLAUDE.md`, `mkdocs.yml`), preserving every byte outside
+  the markers.
+- **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`: JSON/YAML/TOML
+  (de)serialization and file I/O, plus comment-preserving round-trip editing of config documents.
+
+**`data/`** (optional extras) — `excel`, `pandas`: Excel workbook helpers and DataFrame/Series
+helpers.
+
+**`logging/`**
+
+- **`logging`** — `AppLogger`, `LoggingConfig`: idempotent logging setup via `dictConfig`, built on
+  `verboselogs` with a custom `TRACE` level. Console records go to **stderr**, so a command's
+  stdout carries only its result.
+- **`structlog`** (`structlog` extra) — `StructLogger`: structured logging over the same handlers.
+
+**`runtime/`** — the process and its surroundings.
+
+- **`environment`** — `Environment`: typed env-var access, plus the `require`/`forbid` fail-fast
+  guards a process calls at startup.
+- **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and captures return
+  code, stdout, and stderr.
+- **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread pool.
+- **`plugins`** — `EntryPointLoader`: failure-isolated entry-point plugin discovery.
+
+**`integration/`** — protocols for the systems an application talks to.
+
+- **`messaging`**, **`objects`**, **`secrets`** — `MessageBus`, `ObjectStore`, `SecretStore` and
+  their in-memory implementations.
+- **`resilience`** (`resilience` extra) — async circuit breakers and a retrying HTTP client.
 
 Import from the top-level package for the curated public API:
 
@@ -60,19 +105,17 @@ cfg = Config("config")
 logger.info("database.host={}", cfg.get("database.host"))
 ```
 
-### Moved to `rn-forge-tooling`
+### The developer-tooling packages
 
-The developer-tooling surface now lives in
-[`rn-forge-tooling`](../rn-forge-tooling/README.md), which depends on this package. There are no
-compatibility re-exports — that would reverse the dependency:
+The command-line layer lives in [`rn-forge-cli`](../rn-forge-cli/README.md) and the file-owning
+tooling in [`rn-forge-tooling`](../rn-forge-tooling/README.md). Both depend on this package;
+neither is depended on by it, and there are deliberately no compatibility re-exports in either
+direction — that would reverse the dependency. `uv run lint-imports` proves it.
 
-| Was | Now |
+| Concern | Package |
 | --- | --- |
-| `rn_forge.commons.console` | `rn_forge.tooling.console` |
-| `rn_forge.commons.cli` | `rn_forge.tooling.cli` |
-| `rn_forge.commons.state` | `rn_forge.tooling.state` |
-| `rn_forge.commons.templates` (`templates` extra) | `rn_forge.tooling.templates` |
-| `DirectoryLock`, `PathUtils.atomic_symlink`, `PathUtils.extract_archive` | `rn_forge.tooling.install` |
+| `AppConsole`, Typer app factory, standard options, exit codes, the `[cli]` surface | `rn-forge-cli` |
+| `StateStore`, `TemplateEngine`, the generation engine, `extract_archive`, docs checkers | `rn-forge-tooling` |
 
 ## Docs
 

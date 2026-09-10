@@ -45,7 +45,7 @@ payload = user.to_json()
 ## Pandas and Excel
 
 ```python
-from rn_forge.commons.excel import ExcelAdapter, ExcelUtils
+from rn_forge.commons.data.excel import ExcelAdapter, ExcelUtils
 
 frames = ExcelAdapter.read_dataframe("orders.xlsx")
 workbook = ExcelAdapter.from_dataframe(frames)

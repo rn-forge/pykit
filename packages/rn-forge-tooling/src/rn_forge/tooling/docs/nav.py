@@ -1,8 +1,12 @@
 """Generate `mkdocs.yml`'s nav block from `docs/_areas.yml` and the tree.
 
 `mkdocs.yml` is a repository-owned file with one generated block in it, so the
-nav is rendered through a :class:`~rn_forge.commons.blocks.ManagedBlock` and
+nav is rendered through a :class:`~rn_forge.commons.fs.blocks.ManagedBlock` and
 everything outside the markers is preserved byte for byte.
+
+The nav is built as data and serialized by the YAML library, never by string
+interpolation: a page title containing a colon, a ``#`` or a leading ``-`` is
+ordinary English and must not be able to produce a file mkdocs cannot parse.
 
 Page order inside an area is: the area's `index.md` first, then the pages its
 `index.md` links to in the order it links them, then everything else
@@ -14,12 +18,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rn_forge.commons.blocks import ManagedBlock
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.fs.blocks import ManagedBlock
+from rn_forge.commons.fs.documents import YamlUtils
 from rn_forge.tooling.docs.areas import Area, load_areas
 from rn_forge.tooling.docs.markdown import is_external, links
 
-__all__ = ["ACRONYMS", "NAV_BLOCK", "build_nav", "title_from_filename", "update_nav"]
+__all__ = [
+    "ACRONYMS",
+    "NAV_BLOCK",
+    "NavEntry",
+    "build_nav",
+    "title_from_filename",
+    "update_nav",
+]
 
 NAV_BLOCK = ManagedBlock("generated nav", indent="  ")
 """The fenced block inside `mkdocs.yml`'s ``nav:`` that this module owns."""
@@ -74,27 +86,39 @@ def _children_entries(docs_root: Path, area_key: str) -> list[tuple[str, str]]:
     ]
 
 
-def _area_lines(docs_root: Path, area: Area) -> list[str]:
+NavEntry = dict[str, "str | list[NavEntry]"]
+"""One mkdocs nav entry: a title mapped to a page path or to nested entries."""
+
+BLOCK_INDENT = "  "
+"""What every serialized nav line is indented by, to sit under ``nav:``."""
+
+
+def _area_entry(docs_root: Path, area: Area) -> NavEntry | None:
+    """The nav entry for *area*, or ``None`` when it contributes nothing."""
     area_dir = docs_root / area.key
     if (area.optional or area.generated) and not area_dir.is_dir():
-        return []
+        return None
     if area.nav == "index-only":
-        return [f"  - {area.title}: {area.key}/index.md"]
+        return {area.title: f"{area.key}/index.md"}
     entries = _children_entries(docs_root, area.key)
     if not entries:
-        return []
-    return [f"  - {area.title}:"] + [
-        f"      - {title}: {rel}" for title, rel in entries
-    ]
+        return None
+    return {area.title: [{title: rel} for title, rel in entries]}
 
 
 def build_nav(docs_root: str | Path) -> str:
     """Render the nav block's body for the docs tree at *docs_root*."""
     docs_root = Path(docs_root)
-    lines = ["  - Home: index.md"]
-    for area in load_areas(docs_root):
-        lines.extend(_area_lines(docs_root, area))
-    return "".join(f"{line}\n" for line in lines)
+    nav: list[NavEntry] = [{"Home": "index.md"}]
+    nav.extend(
+        entry
+        for area in load_areas(docs_root)
+        if (entry := _area_entry(docs_root, area)) is not None
+    )
+    serialized = YamlUtils.serialize(nav)
+    return "".join(
+        f"{BLOCK_INDENT}{line}\n" if line else "\n" for line in serialized.splitlines()
+    )
 
 
 def update_nav(mkdocs_path: str | Path, docs_root: str | Path) -> tuple[str, bool]:

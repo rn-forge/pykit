@@ -27,19 +27,26 @@ venv = ".venv"
 "**/tests/*" = ["ALL"]
 
 [tool.uv.sources]
+rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-tooling = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+  "packages/rn-forge-cli",
   "packages/rn-forge-commons",
   "packages/rn-forge-django",
   "packages/rn-forge-tooling",
 ]
 
 [dependency-groups]
-workspace = ["rn-forge-commons[all]", "rn-forge-django[all]", "rn-forge-tooling"]
+workspace = [
+  "rn-forge-cli",
+  "rn-forge-commons[all]",
+  "rn-forge-django[all]",
+  "rn-forge-tooling",
+]
 
 docs = [
   "mkdocs>=1.6.1",

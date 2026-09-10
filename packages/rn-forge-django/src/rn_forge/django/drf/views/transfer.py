@@ -17,9 +17,9 @@ from django.http import HttpResponse
 from django.http.response import HttpResponseBase
 from django.db import connection, transaction
 from django.db.models import Q
-from rn_forge.commons.collections import DictUtils
+from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.utils import AppUtils
+from rn_forge.commons.lang.utils import AppUtils
 from rest_framework import status
 from rn_forge.django.drf._typing import action
 from rest_framework.exceptions import ValidationError

@@ -16,7 +16,7 @@ Every artifact declares who owns its bytes:
 | `BLOCK` | the generator owns one fenced block inside a repo-owned file | drift, inside the block only |
 
 ```python
-from rn_forge.commons.blocks import ManagedBlock
+from rn_forge.commons.fs.blocks import ManagedBlock
 from rn_forge.tooling.generation import Artifact, ArtifactKind
 
 taskfile = Artifact(path="Taskfile.yml", kind=ArtifactKind.MANAGED, content=rendered)

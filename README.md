@@ -8,13 +8,19 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 | Package | Import path | Description |
 | --- | --- | --- |
-| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | General-purpose utilities: config loading, collections/dict/json/yaml helpers, structured logging, dataclass mixins, subprocess/task helpers, Excel/pandas helpers, round-trip documents, integration protocols, managed blocks and structured findings. No Django dependency. |
-| [`rn-forge-tooling`](packages/rn-forge-tooling) | `rn_forge.tooling` | The developer-tooling surface for the `rn-forge-*` CLIs: Rich console, Typer wiring, local JSON state, a strict Jinja engine, the generation engine, installer mechanics and the docs checkers. Depends on `rn-forge-commons`; never a runtime dependency of a deployed app. |
+| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | Runtime-neutral utilities, grouped by kind of mechanism: `lang` (collections, dataclasses, reflection, values), `fs` (paths, hashing, locks, blocks, documents), `data` (Excel/pandas), `logging`, `runtime` (environment, subprocess, tasks, plugins) and `integration` (messaging/object/secret protocols, resilience), plus config, exceptions, findings and testing helpers. No web framework. |
+| [`rn-forge-cli`](packages/rn-forge-cli) | `rn_forge.cli` | The shared command-line layer: Rich console, the Typer application factory, the standard option set, the error-to-exit-code mapping and the declared `[cli]` surface. What an ordinary batch application wants as much as a developer tool does. |
+| [`rn-forge-tooling`](packages/rn-forge-tooling) | `rn_forge.tooling` | The file-owning developer tooling: local JSON state, a strict Jinja engine, the generation engine, install mechanics and the docs checkers. Depends on `rn-forge-cli`; never a runtime dependency of a deployed app. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 
-The import boundaries between these are executable: [`.importlinter`](.importlinter) forbids
-`rn_forge.commons` from importing tooling, Typer or Jinja, and forbids `rn_forge.django`'s runtime
-surface from doing the same outside a future `codegen` extra. `uv run lint-imports` proves it.
+The import boundaries between these are executable. [`.importlinter`](.importlinter) states four
+contracts — `rn_forge.commons` imports neither `cli` nor `tooling`, `rn_forge.cli` never imports
+`tooling`, the three libraries layer strictly (tooling → cli → commons), and `rn_forge.django`'s
+runtime surface imports none of them outside a future `codegen` extra. `uv run lint-imports` proves
+them, and CI gates every other job on it.
+
+There are deliberately **no compatibility re-exports** in any direction: a shim would satisfy a
+caller and reverse the dependency.
 
 All packages ship a `py.typed` marker and are type-checked in strict mode.
 
@@ -48,4 +54,4 @@ uv run pyright                # type check (strict mode, packages/ only)
 uv run lint-imports           # enforce package import boundaries
 ```
 
-See [`packages/rn-forge-commons`](packages/rn-forge-commons), [`packages/rn-forge-tooling`](packages/rn-forge-tooling) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.
+See [`packages/rn-forge-commons`](packages/rn-forge-commons), [`packages/rn-forge-cli`](packages/rn-forge-cli), [`packages/rn-forge-tooling`](packages/rn-forge-tooling) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.

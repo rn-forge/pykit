@@ -1,42 +1,35 @@
-"""Validate a docs tree against the area model the repository declares.
+"""Validate a docs tree against the area model and the policy the caller supplies.
 
-Checks only what is mechanically decidable: area scaffolding, file naming, ADR
-numbering and status, link and anchor resolution, that no `_*.md` file is
-referenced from a page that ships, and that the root instruction file points at
-the docs rules. It does not judge prose, page length, or whether content sits
-in the right area — that is review, and review is a runbook, not a checker.
+Checks only what is mechanically decidable: area scaffolding, file naming,
+numbered-series numbering and status, link and anchor resolution, that no
+`_*.md` file is referenced from a page that ships, and that the root
+instruction file points at the docs rules. It does not judge prose, page
+length, or whether content sits in the right area — that is review, and review
+is a runbook, not a checker.
+
+What counts as a numbered series, what its statuses may say, how release or
+epic directories are named and what the instruction files are called are **not
+here**: they are one organisation's decisions, and they arrive as a
+:class:`~rn_forge.tooling.docs.policy.DocsPolicy`.
 """
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.tooling.docs.areas import Area, load_areas
 from rn_forge.tooling.docs.markdown import headings, is_external, links
-
-__all__ = ["INSTRUCTION_FILES", "check_structure"]
-
-KEBAB_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\.md$")
-ADR_RE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
-EPIC_DIR_RE = re.compile(r"^E(\d+)-[a-z0-9-]+$")
-FEATURE_FILE_RE = re.compile(r"^F(\d+)\.(\d+)-[a-z0-9-]+\.md$")
-RELEASE_DIR_RE = re.compile(r"^release-(\d+)$")
-STATUS_RE = re.compile(r"^\*\*Status:\*\*\s*(.+)$", re.MULTILINE)
-ALLOWED_ADR_STATUS = re.compile(
-    r"^(proposed|accepted|deprecated|superseded by adr-\d{4})"
+from rn_forge.tooling.docs.policy import (
+    STATUS_LINE,
+    DocsPolicy,
+    NestedArea,
+    NumberedArea,
+    SequenceArea,
 )
-"""Matched against a lowercased status line, so the ADR token is lowercase here.
 
-The donor script compared a lowercased status against an uppercase ``ADR-``,
-which rejected every superseded ADR; the check is only useful if the one
-status that names another decision can actually pass it.
-"""
-
-INSTRUCTION_FILES = ("CLAUDE.md", "AGENTS.md")
-"""Root instruction files, in the order they are looked for."""
+__all__ = ["check_structure"]
 
 
 def _error(code: str, path: Path, message: str) -> Finding:
@@ -79,98 +72,116 @@ def _check_areas(areas: list[Area], docs_root: Path) -> list[Finding]:
     return findings
 
 
-def _check_naming(areas: list[Area], docs_root: Path) -> list[Finding]:
+def _check_naming(
+    areas: list[Area], docs_root: Path, policy: DocsPolicy
+) -> list[Finding]:
     findings: list[Finding] = []
+    policy_areas = {
+        *([policy.numbered.path] if policy.numbered else []),
+        *(area.path for area in policy.sequences),
+        *(area.path for area in policy.nested),
+    }
 
     for area in areas:
         area_dir = docs_root / area.key
-        if area.generated or area.key == "adr" or not area_dir.is_dir():
+        if area.generated or area.key in policy_areas or not area_dir.is_dir():
             continue
         findings.extend(
             _error("kebab-case", path, "not kebab-case")
             for path in _content_pages(area_dir)
-            if not KEBAB_RE.match(path.name)
+            if not policy.page_name.match(path.name)
         )
 
-    findings.extend(_check_adr_naming(docs_root / "adr"))
-    findings.extend(_check_release_naming(docs_root / "releases"))
-    findings.extend(_check_epic_naming(docs_root / "specs" / "epics"))
+    if policy.numbered:
+        findings.extend(_check_numbered_naming(docs_root, policy.numbered))
+    for sequence in policy.sequences:
+        findings.extend(_check_sequence_naming(docs_root / sequence.path, sequence))
+    for nested in policy.nested:
+        findings.extend(_check_nested_naming(docs_root / nested.path, nested))
     return findings
 
 
-def _check_adr_naming(adr_dir: Path) -> list[Finding]:
-    if not adr_dir.is_dir():
+def _check_numbered_naming(docs_root: Path, series: NumberedArea) -> list[Finding]:
+    """Every page named to the series' shape, numbered uniquely and without gaps."""
+    directory = docs_root / series.path
+    if not directory.is_dir():
         return []
     findings: list[Finding] = []
     numbers: list[int] = []
-    for path in _content_pages(adr_dir):
-        match = ADR_RE.match(path.name)
+    for path in _content_pages(directory):
+        match = series.filename.match(path.name)
         if not match:
-            findings.append(
-                _error("adr-naming", path, "does not match <nnnn>-<slug>.md")
-            )
+            findings.append(_error("naming", path, f"does not match {series.shape}"))
             continue
         numbers.append(int(match.group(1)))
     if len(numbers) != len(set(numbers)):
         findings.append(
-            _error("adr-duplicate-number", adr_dir, "duplicate ADR numbers")
+            _error(
+                "duplicate-number",
+                directory,
+                f"duplicate {series.label} numbers",
+            )
         )
+    width = len(str(max(numbers))) if numbers else 1
     for expected, actual in enumerate(sorted(set(numbers)), start=1):
         if expected != actual:
             findings.append(
                 _error(
-                    "adr-number-gap",
-                    adr_dir,
-                    f"expected {expected:04d}, found {actual:04d}",
+                    "number-gap",
+                    directory,
+                    f"expected {expected:0{width}d}, found {actual:0{width}d}",
                 )
             )
             break
     return findings
 
 
-def _check_release_naming(releases_dir: Path) -> list[Finding]:
-    if not releases_dir.is_dir():
+def _check_sequence_naming(directory: Path, sequence: SequenceArea) -> list[Finding]:
+    """Every child directory named to the shape, each with an ``index.md``."""
+    if not directory.is_dir():
         return []
     findings: list[Finding] = []
-    for path in sorted(p for p in releases_dir.iterdir() if p.is_dir()):
-        if not RELEASE_DIR_RE.match(path.name):
-            findings.append(
-                _error("release-naming", path, "does not match release-<n>/")
-            )
+    for path in sorted(p for p in directory.iterdir() if p.is_dir()):
+        if not sequence.dirname.match(path.name):
+            findings.append(_error("naming", path, f"does not match {sequence.shape}"))
         elif not (path / "index.md").exists():
             findings.append(
-                _error("release-missing-index", path, "release-<n>/ has no index.md")
+                _error("missing-index", path, f"{sequence.shape} has no index.md")
             )
     return findings
 
 
-def _check_epic_naming(epics_dir: Path) -> list[Finding]:
-    if not epics_dir.is_dir():
+def _check_nested_naming(directory: Path, nested: NestedArea) -> list[Finding]:
+    """Every container directory, and the pages inside it, named to the shape."""
+    if not directory.is_dir():
         return []
     findings: list[Finding] = []
-    for path in sorted(p for p in epics_dir.iterdir() if p.is_dir()):
-        if not EPIC_DIR_RE.match(path.name):
-            findings.append(_error("epic-naming", path, "does not match E<n>-<slug>/"))
+    for path in sorted(p for p in directory.iterdir() if p.is_dir()):
+        if not nested.dirname.match(path.name):
+            findings.append(
+                _error("naming", path, f"does not match {nested.dir_shape}")
+            )
         findings.extend(
-            _error("feature-naming", feature_path, "does not match F<n>.<m>-<slug>.md")
-            for feature_path in sorted(path.glob("F*.md"))
-            if not FEATURE_FILE_RE.match(feature_path.name)
+            _error("naming", page, f"does not match {nested.page_shape}")
+            for page in sorted(path.glob(nested.page_glob))
+            if not nested.page_name.match(page.name)
         )
     return findings
 
 
-def _check_adr_status(docs_root: Path) -> list[Finding]:
-    adr_dir = docs_root / "adr"
-    if not adr_dir.is_dir():
+def _check_status(docs_root: Path, series: NumberedArea) -> list[Finding]:
+    """Every page in the numbered series carries a status the policy allows."""
+    directory = docs_root / series.path
+    if not directory.is_dir():
         return []
     findings: list[Finding] = []
-    for path in _content_pages(adr_dir):
-        match = STATUS_RE.search(path.read_text(encoding="utf-8"))
-        if not match or not ALLOWED_ADR_STATUS.match(
+    for path in _content_pages(directory):
+        match = STATUS_LINE.search(path.read_text(encoding="utf-8"))
+        if not match or not series.statuses.match(
             _clean_status(match.group(1)).lower()
         ):
             findings.append(
-                _error("adr-status", path, "missing or invalid **Status:** line")
+                _error("status", path, "missing or invalid **Status:** line")
             )
     return findings
 
@@ -228,25 +239,29 @@ def _resolved_links(path: Path) -> set[Path]:
     }
 
 
-def _check_instruction_pointer(repo_root: Path, docs_root: Path) -> list[Finding]:
+def _check_instruction_pointer(
+    repo_root: Path, docs_root: Path, instruction_files: tuple[str, ...]
+) -> list[Finding]:
     """Some instruction file must link both `docs/_structure.md` and `docs/index.md`.
 
     That is the only route into the rules for a session that has read neither
     the generator nor this checker. It is deliberately not "every instruction
-    file links both": instructions are single-sourced, so `AGENTS.md` is a
-    pointer at `CLAUDE.md` rather than a second copy that can drift. What
-    matters is that following the links from whichever file an agent opened
-    first arrives at the rules.
+    file links both": instructions are single-sourced, so the second file a
+    policy names is normally a pointer at the first rather than a copy that can
+    drift. What matters is that following the links from whichever file an
+    agent opened first arrives at the rules.
+
+    Which files those are is the caller's policy, not this module's.
     """
     present = [
-        repo_root / name for name in INSTRUCTION_FILES if (repo_root / name).exists()
+        repo_root / name for name in instruction_files if (repo_root / name).exists()
     ]
     if not present:
         return [
             _error(
                 "missing-instruction-file",
                 repo_root,
-                f"no instruction file: expected one of {', '.join(INSTRUCTION_FILES)}",
+                f"no instruction file: expected one of {', '.join(instruction_files)}",
             )
         ]
 
@@ -277,12 +292,16 @@ def _check_instruction_pointer(repo_root: Path, docs_root: Path) -> list[Finding
     ]
 
 
-def check_structure(repo_root: str | Path, docs_root: str | Path) -> list[Finding]:
+def check_structure(
+    repo_root: str | Path, docs_root: str | Path, policy: DocsPolicy
+) -> list[Finding]:
     """Run every structure check, returning the findings in reporting order.
 
     Args:
         repo_root: The repository root, where the instruction files live.
         docs_root: The docs tree, normally ``<repo_root>/docs``.
+        policy: The repository's own conventions. Required, and deliberately
+            without a default — see :mod:`rn_forge.tooling.docs.policy`.
     """
     repo_root = Path(repo_root)
     docs_root = Path(docs_root)
@@ -293,9 +312,9 @@ def check_structure(repo_root: str | Path, docs_root: str | Path) -> list[Findin
 
     return [
         *_check_areas(areas, docs_root),
-        *_check_naming(areas, docs_root),
-        *_check_adr_status(docs_root),
+        *_check_naming(areas, docs_root, policy),
+        *(_check_status(docs_root, policy.numbered) if policy.numbered else []),
         *_check_links(docs_root),
         *_check_no_underscore_refs(docs_root),
-        *_check_instruction_pointer(repo_root, docs_root),
+        *_check_instruction_pointer(repo_root, docs_root, policy.instruction_files),
     ]

@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, cast
 
-from rn_forge.commons.documents import YamlUtils
+from rn_forge.commons.fs.documents import YamlUtils
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.tooling.docs.markdown import headings, is_external, links
 

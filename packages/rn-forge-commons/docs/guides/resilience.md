@@ -5,7 +5,7 @@ retry with `Retry-After` awareness (`stamina`), and a rate limiter clamped from 
 the `resilience` extra.
 
 ```python
-from rn_forge.commons.resilience import ResilientAsyncHttpClient
+from rn_forge.commons.integration.resilience import ResilientAsyncHttpClient
 
 async with ResilientAsyncHttpClient("https://api.example.com", name="example-api") as client:
     response = await client.get("/widgets")

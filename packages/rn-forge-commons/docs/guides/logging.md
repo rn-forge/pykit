@@ -74,11 +74,11 @@ class Client:
 ## StructLogger vs. AppLogger.get_logger
 
 `AppLogger.get_logger(__name__)` is for one-off, unstructured log calls. Reach for
-[`StructLogger`](../api/structlogger.md) (`structlog` extra) instead when you want context —
+[`StructLogger`](../api/logging/structlog.md) (`structlog` extra) instead when you want context —
 a request id, a tenant — bound once and carried across a chain of log calls:
 
 ```python
-from rn_forge.commons.structlogger import StructLogger
+from rn_forge.commons.logging.structlog import StructLogger
 
 log = StructLogger(__name__).bind(request_id=request_id)
 log.info("processing order", order_id=order_id)

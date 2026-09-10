@@ -9,7 +9,7 @@ deep-merges multiple files, and resolves internal references:
 - ``__extends__`` key — inherits and merges from another dict path
 
 Reference paths use the same dot-delimited notation as
-:meth:`~rn_forge.commons.collections.DictUtils.get`.
+:meth:`~rn_forge.commons.lang.collections.DictUtils.get`.
 
 Provides:
     Config: Immutable-ish configuration object loaded from one or more
@@ -31,8 +31,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from rn_forge.commons.collections import DictUtils
-from rn_forge.commons.documents import JsonUtils, YamlUtils
+from rn_forge.commons.lang.collections import DictUtils
+from rn_forge.commons.fs.documents import JsonUtils, YamlUtils
 from rn_forge.commons.logging import AppLogger
 
 _SENTINEL = object()
@@ -131,7 +131,7 @@ class Config:
     def get(self, key_path: str, *, default: Any = None) -> Any:
         """Retrieve a value using a dot-delimited key path.
 
-        Delegates to :meth:`~rn_forge.commons.collections.DictUtils.get`.
+        Delegates to :meth:`~rn_forge.commons.lang.collections.DictUtils.get`.
 
         Args:
             key_path: Dot-delimited path, e.g. ``"database.host"``.
@@ -146,7 +146,7 @@ class Config:
     def set(self, key_path: str, value: Any) -> None:
         """Set a value using a dot-delimited key path.
 
-        Delegates to :meth:`~rn_forge.commons.collections.DictUtils.set`.
+        Delegates to :meth:`~rn_forge.commons.lang.collections.DictUtils.set`.
         Intermediate dicts are created automatically.
 
         Args:

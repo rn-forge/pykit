@@ -8,7 +8,7 @@ from typing import Any, TypedDict, cast
 
 from django.conf import settings
 from django.core.signals import setting_changed
-from rn_forge.commons.collections import DictUtils
+from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 
 __all__ = [

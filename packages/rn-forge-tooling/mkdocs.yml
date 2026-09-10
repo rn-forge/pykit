@@ -1,5 +1,5 @@
 site_name: rn-forge-tooling
-site_description: Shared developer-tooling surface for the rn-forge-* CLIs
+site_description: File-owning developer tooling for the rn-forge-* CLIs
 site_dir: .out/site
 use_directory_urls: false
 
@@ -35,14 +35,11 @@ nav:
   - Guides:
       - guides/index.md
       - Installation: guides/installation.md
-      - Console: guides/console.md
-      - CLI: guides/cli.md
       - Generation: guides/generation.md
       - Docs checks: guides/docs-checks.md
   - API Reference:
       - api/index.md
-      - CLI: api/cli.md
-      - Console: api/console.md
+      - Commands: api/commands.md
       - Docs: api/docs.md
       - Generation: api/generation.md
       - Install: api/install.md

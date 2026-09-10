@@ -43,24 +43,35 @@ nav:
       - Processes and Tasks: guides/processes-and-tasks.md
   - API Reference:
       - api/index.md
-      - Collections: api/collections.md
       - Config: api/config.md
-      - Dataclasses: api/dataclasses.md
-      - Blocks: api/blocks.md
-      - Documents: api/documents.md
-      - Excel: api/excel.md
       - Exceptions: api/exceptions.md
       - Findings: api/findings.md
-      - Logging: api/logging.md
-      - Messaging: api/messaging.md
-      - Objects: api/objects.md
-      - Pandas: api/pandas.md
-      - Plugins: api/plugins.md
-      - Reflection: api/reflection.md
-      - Resilience: api/resilience.md
-      - Secrets: api/secrets.md
-      - StructLogger: api/structlogger.md
-      - Subprocess: api/subprocess.md
-      - Tasks: api/tasks.md
       - Testing: api/testing.md
-      - Utils: api/utils.md
+      - Language:
+          - Collections: api/lang/collections.md
+          - Dataclasses: api/lang/dataclasses.md
+          - Reflection: api/lang/reflection.md
+          - Types: api/lang/types.md
+          - Utils: api/lang/utils.md
+      - Filesystem:
+          - Blocks: api/fs/blocks.md
+          - Documents: api/fs/documents.md
+          - Hashing: api/fs/hashing.md
+          - Locks: api/fs/locks.md
+          - Paths: api/fs/paths.md
+      - Data:
+          - Excel: api/data/excel.md
+          - Pandas: api/data/pandas.md
+      - Logging:
+          - Logging: api/logging/index.md
+          - StructLogger: api/logging/structlog.md
+      - Runtime:
+          - Environment: api/runtime/environment.md
+          - Plugins: api/runtime/plugins.md
+          - Subprocess: api/runtime/subprocess.md
+          - Tasks: api/runtime/tasks.md
+      - Integration:
+          - Messaging: api/integration/messaging.md
+          - Objects: api/integration/objects.md
+          - Resilience: api/integration/resilience.md
+          - Secrets: api/integration/secrets.md

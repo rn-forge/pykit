@@ -9,7 +9,7 @@ from collections.abc import Mapping, Sequence
 from io import BytesIO, StringIO
 from typing import Any, cast
 
-from rn_forge.commons.excel import ExcelAdapter
+from rn_forge.commons.data.excel import ExcelAdapter
 from rn_forge.django.drf.views.renderers import TransferColumn
 
 __all__ = [

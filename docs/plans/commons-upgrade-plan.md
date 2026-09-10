@@ -27,7 +27,15 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   concurrency, OIDC/JWKS auth, outbox/inbox messaging, Celery, readiness views, sequence generators,
   request-ID middleware) is deliberately **not** here — it belongs to a future Django plan.
 
-## Execution status (2026-09-09)
+## Execution status (2026-09-10)
+
+> **Parts A–C are done and reviewed. Start at
+> [Part D — resume here](#part-d--resume-here).** Everything between this line
+> and that heading is the record of what was built and why; read it for
+> context, not for instructions. The boundary it describes under "Final package
+> boundary" is **superseded** by Part D.
+
+### Parts A–C (2026-09-09)
 
 The existing Parts A–C implementation is committed in the starting tree (`28bef7f`); the
 "Part C uncommitted" handoff is stale. This stabilization pass leaves its fixes uncommitted:
@@ -37,12 +45,9 @@ The existing Parts A–C implementation is committed in the starting tree (`28be
 - Layered merges honor escaped dotted paths and remove provenance for replaced descendants.
 - The curated API marks temporary tooling ownership; repository guidance matches the current APIs.
 
-**Remaining work is blocked, not complete:** tooling extraction, installer orchestration,
-generator contracts and the codegen import fence are standardization Phase C. Per the execution
-order in [`README.md`](./README.md), they require Phase B's owner-reviewed kiln golden repositories.
-`../kiln` does not exist in this workspace. Do not infer engine scope or move the boundary before
-that prerequisite is satisfied or the owner explicitly overrides it. No packages, dependencies,
-releases or downstream application changes were made in this pass.
+**Phase C landed** at commit `4624bfe`: `packages/rn-forge-tooling` exists and holds the console,
+Typer wiring, state store, template engine, generation engine, installer mechanics and docs
+checkers. It was then **reviewed, and the boundary it chose was found to be wrong** — see Part D.
 
 Validation: 831 commons tests passed; one test skipped because `pwsh` is unavailable.
 Workspace Ruff lint/format and strict Pyright passed; the commons strict MkDocs build passed.
@@ -50,6 +55,12 @@ Base-only import passed offline (fresh installation was blocked by PyPI DNS fail
 Unchecked extraction items below remain pending.
 
 ## Final package boundary
+
+> **Superseded by [Part D](#part-d--resume-here) (kiln D52).** The two-package split
+> below is not the target any more: the development layer becomes
+> `rn-forge-cli` + `rn-forge-tooling`. What remains correct here is the
+> one-way-graph rule, the no-compatibility-re-exports rule and the codegen
+> fence. Kept as the record of the reasoning Part D revises.
 
 `rn-forge-commons` is the runtime-safe application foundation. It must be suitable for libraries,
 web applications, workers, standalone applications and local tools. A capability does not belong
@@ -2286,6 +2297,272 @@ Recorded so a later reader does not "finish the job" by hoisting these too:
 - **agentkit's `doctor.py`** (436 lines). Its checks are agentkit-specific; the *pattern* of a
   structured finding list is already shared by taskkit's `Finding`, but two similar dataclasses do
   not justify a shared abstraction yet. Revisit only if a third consumer appears.
+
+---
+
+## Part D — resume here
+
+**Status: D.1–D.7 applied in the working tree (uncommitted); D.8–D.9 not
+started.** Everything above is done and committed at `4624bfe`; nothing above
+needs re-reading to act on this part, beyond the module inventory. See the
+[Part D checklist](#part-d-checklist) for what landed and what did not, and
+"[What D.8 and D.9 need](#what-d8-and-d9-need)" for why the last two steps
+stop here.
+
+**Why this exists.** Phase C was reviewed twice — codex
+(`../kiln/docs/plans/reviews/phase-c-codex.md`) and the owner
+(`phase-c-owner.md`). Both concluded the commons/tooling seam is in the wrong
+place, from opposite directions: codex, that a business batch legitimately wants
+Typer and a console and should not be told the developer stack is off-limits;
+the owner, that installable tools need install/update/`$RNF_HOME`/state/plugins
+and ordinary batch apps do not. The resolution is three layers, not two. The
+decisions are kiln **D52–D56**; the scope and acceptance are kiln plan
+**§0.8** and **Phase C.2**.
+
+**Read before starting:** `../kiln/docs/adr/0002-the-dependency-graphs.md`
+(the layering), `../kiln/docs/adr/0009-tooling-owns-the-boilerplate.md` (what
+`rn-forge-cli` must hold), `../kiln/docs/plans/standardization-plan.md` §2.8
+(the per-API boundary table), §2.11 (the target layout) and §3 Phase C.2 (the
+ordered steps and the acceptance block).
+
+**Ground rules, unchanged:** nothing is committed or pushed without being asked;
+the working tree is left for review; commons never imports cli, and cli never
+imports tooling; no compatibility re-exports in any direction.
+
+### D.0 — Order, and why
+
+Defects first, then the split, then the layout, then the consumers. The
+confirmed defects are in `generation.py`, `blocks.py` and `dataclasses.py` —
+exactly the code about to move. Fixing them after a move makes every regression
+ambiguous between "the fix was wrong" and "the move was wrong".
+
+### D.1 — Defect fixes (do these first, in place)
+
+Each was reproduced by the reviewer; F1–F4 were re-verified against `4624bfe`.
+
+| Id | File | Defect | Fix |
+| --- | --- | --- | --- |
+| **F1** | `tooling/generation.py:481` | staging is keyed by `change.path`, and `_render_file` renders every block against the *original* on-disk text, so two blocks in one file leave only the last. The apply loop at 496–501 also backs up one destination repeatedly to the same backup path, so a later backup can capture already-modified content and rollback stops working | group changes by destination; compose block edits against one evolving buffer; back up and write each file exactly once; reject incompatible whole-file and block ownership of the same path |
+| **F6** | `commons/blocks.py:145,165` | splits and rejoins the whole file, normalizing CRLF to LF and appending a terminal newline; removal deletes every preceding whitespace-only line. Contradicts the byte-preservation promise. `generation.read_text` normalizes newlines too | replace only the identified span; preserve the original prefix, suffix and newline sequences; fix the reading path as well |
+| **F2** | `tooling/generation.py:514` | `except Exception` — a `KeyboardInterrupt` leaves generated content on disk with no matching state | roll back on `BaseException`, then re-raise the interruption rather than converting it to an `AppException` |
+| **F3** | `commons/dataclasses.py`, `commons/findings.py:62` | `Severity` is a `StrEnum` and `is_error` compares with `is`, so a JSON round trip leaves a `str` and silently demotes an error to a non-error. **This is a `DataclassMixin` defect, not a `Finding` one** — the mixin does not reconstruct enum fields, so every dataclass with one is affected | reconstruct and validate enum fields during deserialization in the mixin; audit every dataclass with an enum field; reject unknown values |
+| **F4** | `tooling/generation.py:157,487` | `Artifact` validation checks only block/kind consistency and staging joins an unchecked path, so an absolute or `..` path is written **before any backup exists**; symlink containment is unchecked too | normalize and validate artifact and stale-state paths against the repo, staging and backup roots before any mutation, using `PathUtils.assert_within`; re-check at execution |
+| **F5** | `tooling/generation.py:421,504,522` | approving stale drift with `force` backs the file up, leaves it on disk, and drops its state entry — ownership forgotten, content kept. Same branch affects stale blocks | keep the intended deletion/removal separate from the blocking drift classification; execute it once approved; retain unrelated block content |
+
+**F1 and F6 share an implementation** — "edit only the owned span of one
+buffer". Do them as one change.
+
+Tests, all new: two inserts in one file, two updates, removal plus update, CRLF
+input, input with no terminal newline, a block preceded by two blank lines,
+interruption raised from `verify` after at least one replacement, a JSON round
+trip of every enum-bearing dataclass plus an unknown enum value, and artifact
+paths that are absolute, contain `..`, or traverse a symlink.
+
+### D.2 — Split the development layer (kiln D52)
+
+New package `packages/rn-forge-cli`, distribution `rn-forge-cli`, module
+`rn_forge.cli`. It takes, from the current tooling:
+
+- `console.py` → `rn_forge/cli/console.py` (`AppConsole`)
+- `cli.py` → `rn_forge/cli/app.py` (`build_app`) + `options.py` (the standard
+  option set, `command_options`, `parse_overrides`) + `errors.py`
+  (error → exit code)
+- a new `declare.py` for ADR-0009's `[cli]` surface
+
+`rn-forge-tooling` keeps `generation/`, `templates.py`, `state.py`, `install/`
+and `docs/`, and gains `rn-forge-cli` as a dependency.
+
+Two APIs move **back to commons**, for the reason codex gave and this plan
+adopts — what the signature contains, not who calls it today:
+
+- `DirectoryLock` and `atomic_symlink` → `commons/fs/locks.py`. No installer
+  policy in either signature; a local worker can serialize filesystem work or
+  publish a snapshot atomically.
+
+Two stay where they are, against the reviewer's recommendation:
+
+- `ManagedBlock` **stays in commons**. It is a byte-preserving fenced-span edit
+  with no generator policy in its signature. "Its current examples are all dev
+  tooling" is true of every API here, because dev tools are the only current
+  consumers; the same test that moved the lock and the symlink back keeps this
+  one in place.
+- `extract_archive`, `StateStore` and `TemplateEngine` **stay in tooling**, for
+  the reasons in the review: a single-root-directory requirement is a
+  release-bundle convention, a best-effort lock that degrades to an unlocked
+  write is a developer-tool policy, and a Jinja wrapper with strict undefined
+  values, TOML/YAML filters and hardcoded `autoescape=False` targets generated
+  configuration.
+
+`.importlinter` gains three contracts: `rn_forge.commons` may not import
+`rn_forge.cli` or `rn_forge.tooling`; `rn_forge.cli` may not import
+`rn_forge.tooling`. These run in `task lint` alongside the existing codegen
+fence.
+
+### D.3 — Extract the docs policy (review A2)
+
+`tooling/docs/structure.py` hardcodes ADR numbering and statuses, epic /
+feature / release naming, instruction filenames, and fixed `adr`, `releases`
+and `specs/epics` paths at lines 95–97. That is rn-forge repository policy
+living inside a general-purpose library, which contradicts kiln ADR-0001.
+
+Keep link, Markdown and nav **mechanics** in tooling and add
+`tooling/docs/policy.py`: a protocol the caller supplies, carrying the area
+names, the ADR identifier pattern and status vocabulary, and the instruction
+filenames. kiln supplies a concrete policy from `rn-forge-kiln-checks` in kiln
+Phase D; until that exists, the default policy is a fixture in kiln, not a
+default in tooling. Do **not** build a generic validation framework — this is
+one injected object.
+
+### D.4 — Re-layout all three packages (kiln D55, plan §2.11)
+
+Group modules by kind of mechanism. **Public class names do not move** and each
+package facade keeps re-exporting them, so `from rn_forge.commons import
+PathUtils` is unaffected; only submodule paths change. No shims: pre-v1, three
+consumers, and kiln D39 already says rebuild rather than migrate.
+
+```text
+rn_forge/commons/
+  __init__.py        facade
+  exceptions.py  findings.py  config.py  testing.py
+  lang/              collections.py  dataclasses.py  reflection.py
+                     types.py (was _typing)  utils.py (AppUtils, Base64)
+  fs/                paths.py  hashing.py  locks.py  blocks.py  documents.py
+  data/              pandas.py  excel.py
+  logging/           __init__.py (AppLogger, LoggingConfig, TRACE)  structlog.py
+  runtime/           environment.py  subprocess.py  tasks.py  plugins.py
+  integration/       messaging.py  objects.py  secrets.py  resilience.py
+
+rn_forge/cli/        app.py  options.py  console.py  errors.py  declare.py
+
+rn_forge/tooling/
+  __init__.py        lazy facade — no eager jinja2 import
+  generation/        artifacts.py  plan.py  apply.py
+  templates.py  state.py
+  install/           archive.py  home.py  install.py
+  docs/              markdown.py  links.py  nav.py  areas.py  site.py
+                     policy.py  structure.py
+  cli/               tooling's own command surfaces (rn-forge-docs)
+```
+
+`AppUtils` stays whole in `lang/utils.py`. It is an acknowledged grab bag
+(`parse_bool`, `is_empty`, `get_or_default`, `import_string`,
+`null_safe_attrgetter`, `join_string`, `unified_diff`); splitting it would break
+a public class name for tidiness. New helpers must justify not going into a
+named module instead.
+
+Several submodule names shadow stdlib ones (`collections`, `dataclasses`,
+`logging`, `subprocess`, `pandas`). The flat layout already did; Python 3's
+absolute imports handle it.
+
+Update each package's docs nav and `mkdocs.yml` to match the new tree.
+
+### D.5 — The remaining review findings
+
+| Id | Where | Fix |
+| --- | --- | --- |
+| **F10** | `cli.py:151` | route diagnostic logging to stderr from initialization, so stdout carries only the structured result regardless of whether `--json` sits at the root or on the command. Test real log output with the flag in both positions |
+| **F11** | `docs/nav.py:82,86-87` | serialize nav titles and paths with the YAML library instead of interpolating unquoted scalars; a title like `Guides: development` currently produces a `ScannerError`. Preserve the managed-block layout |
+| **F13** | `docs/cli.py:89` | `docs nav --json` updates the file and exits 0 with empty stdout. Emit a structured result covering changed / path / check status, for both the rewrite and `--check` branches |
+| **F12** | `docs/markdown.py:38` | stop reimplementing heading slugs — call Python-Markdown's own `toc` slugify and unique-id logic, so `# Résumé` and repeated headings agree with the renderer. Also handle reference-style links and ignore headings inside fenced code. Lower priority than the rest of this section |
+| **F14** | `AGENTS.md:13` | still describes the pre-extraction tree and says extraction is blocked. Make it a pointer to `CLAUDE.md`, per kiln §0.6's single-sourcing rule |
+
+### D.6 — CI (review F7)
+
+`.github/workflows/main.yml:14` invokes package CI only for commons and Django,
+and coverage at lines 50–52 excludes tooling although Sonar now scans it.
+Neither workflow runs `lint-imports`.
+
+Add `rn-forge-cli` and `rn-forge-tooling` to package verification, build,
+release and coverage, and make root `lint-imports` a required gate. Do this now
+rather than waiting for kiln Phase F to regenerate the skeleton: an import
+contract that only passes locally is not a contract.
+
+### D.7 — The release contract (review F9)
+
+`packages/rn-forge-tooling/pyproject.toml:9` declares an unconstrained
+`rn-forge-commons` with a workspace source override, and its installation guide
+says `uv add rn-forge-tooling`. The workspace proves compatibility only with the
+editable checkout, and the guide describes a distribution model kiln **D46**
+rejected.
+
+Under D46 the pinned-direct-URL rule applies to these packages' own dependency
+on commons, not only to consumer repos. Declare it that way, rewrite both
+installation guides to match, keep the workspace override for local development
+only, and smoke-test an install outside the workspace using the documented
+command.
+
+### D.8 — Cut the releases, then wire the consumers (kiln F8)
+
+In this order: release `rn-forge-commons` at the post-split boundary, then
+`rn-forge-cli`, then `rn-forge-tooling`. Every consumer pins to a tag, so
+nothing downstream can move first.
+
+Then, in `../kiln`: rename `tests/fixtures/golden/python-cli` to `python-tool`,
+add `python-app`, point `python-app` at commons + cli and `python-tool` at all
+three, re-point every commons pin, update each
+`scripts/standards/check_rn_forge_deps.py` `REQUIRED` header, set kiln's own
+`.rn-forge/kiln/config.toml` archetype to `python-tool`, re-render
+`.rn-forge/kiln/standard.md`, and **re-seed every `state.json`** — `task lint`
+fails with `has drifted from the committed state` until it agrees.
+
+### D.9 — The acceptance ADR-0009 never had
+
+`golden/python-app` must contain a working CLI with **zero hand-written
+application construction**: a `main()`, its commands, its tests, and nothing
+else. Under kiln ADR-0005 a claim not demonstrated in a runnable golden repo is
+not demonstrated, and Phase C claimed this one without demonstrating it.
+
+If that repo cannot be written, ADR-0009 is not ready to be accepted and kiln
+D49 stays proposed. Say so rather than working around it.
+
+### Part D checklist
+
+- [x] F1+F6, F2, F3, F4, F5 fixed with the tests listed in D.1
+- [x] `packages/rn-forge-cli` exists; tooling depends on it; commons depends on neither
+- [x] `uv run lint-imports` proves all three layering contracts plus the codegen fence
+- [x] `rg 'rn_forge\.(cli|tooling)' packages/rn-forge-commons/src` returns nothing
+- [x] `rg 'rn_forge\.tooling' packages/rn-forge-cli/src` returns nothing
+- [x] `DirectoryLock`/`atomic_symlink` are in `commons/fs/locks.py`; `ManagedBlock` stayed
+- [x] `tooling/docs/structure.py` names no ADR, release, epic or instruction-file constant
+- [x] All three packages laid out per D.4; no compatibility re-exports; navs updated
+- [x] F10, F11, F13, F12, F14 closed (F14 needed no change — `AGENTS.md` was already a pointer)
+- [x] pykit CI verifies, builds, releases and covers all three packages; `lint-imports` is a gate
+- [x] Both installation guides describe the D46 pinned direct URL
+- [~] An out-of-workspace install was smoke-tested **from the built distributions**, not from the
+      tags: `uv build` for all three, then `uv pip install` into a clean venv outside the
+      workspace, then importing all three and running `rn-forge-docs --help`. The documented
+      `git+...@rn-forge-cli-v0.1.0` form cannot resolve until the tags exist, which is D.8.
+- [ ] Releases cut in the order commons → cli → tooling
+- [ ] kiln golden repos renamed/added, pins and `REQUIRED` updated, every `state.json` re-seeded
+- [ ] `golden/python-app` has a CLI with zero hand-written app construction — or D49 is reported as not ready
+- [x] `uv run pytest -q`, `ruff check`, `ruff format --check`, `pyright` and all four strict docs
+      builds green (a fourth site, `rn-forge-cli`, joined the monorepo build)
+- [x] Nothing committed or pushed — working tree left for review
+
+### What D.8 and D.9 need
+
+D.8 cuts three releases and D.9 writes a golden repo in `../kiln`. Neither was
+done, for two reasons that are not a matter of effort:
+
+- **Cutting a release pushes a tag.** `.github/workflows/_package-ci.yml` tags
+  and publishes from `main` on a version bump, so "cut the releases" means
+  committing and pushing this work — which Part D's ground rules forbid without
+  being asked. The versions are staged for it: commons `0.4.0` → `0.5.0` (the
+  layout is a break), cli `0.1.0` (new), tooling `0.1.0` → `0.2.0`.
+- **The pins already name the tags they will get.** `rn-forge-cli` and
+  `rn-forge-tooling` declare their commons dependency as
+  `rn-forge-commons @ git+…@rn-forge-commons-v0.5.0`, and tooling names
+  `rn-forge-cli-v0.1.0`. Those references resolve the moment the tags exist and
+  fail informatively until then; the workspace override means local development
+  never touches them. Nothing else has to change when the releases are cut.
+
+D.9's acceptance — `golden/python-app` with zero hand-written app construction —
+now has the library side it was waiting for: `rn_forge.cli.declare` builds an
+application from a `[cli]` table, `rn_forge.cli.run` owns the exit codes, and
+`packages/rn-forge-cli/tests/test_declare.py` demonstrates a declared app whose
+only hand-written code is the command functions. Whether that is *enough* for
+ADR-0009 to move from proposed to accepted is a question the golden repo
+answers, and that repo lives in `../kiln`.
 
 ---
 

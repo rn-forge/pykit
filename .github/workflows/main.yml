@@ -11,7 +11,26 @@ permissions:
   contents: read
 
 jobs:
+  # An import contract that only passes on a developer's machine is not a
+  # contract. This gates everything else: the three-layer split is the shape
+  # the packages are built around, and a break in it invalidates the rest.
+  import-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - name: uv sync
+        run: uv sync --all-packages --all-extras --locked
+
+      - name: lint-imports
+        run: uv run --no-sync lint-imports
+
   commons-ci:
+    needs: import-boundaries
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -19,7 +38,26 @@ jobs:
       package-name: rn-forge-commons
       package-dir: packages/rn-forge-commons
 
+  cli-ci:
+    needs: import-boundaries
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-cli
+      package-dir: packages/rn-forge-cli
+
+  tooling-ci:
+    needs: import-boundaries
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-tooling
+      package-dir: packages/rn-forge-tooling
+
   django-ci:
+    needs: import-boundaries
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -28,7 +66,7 @@ jobs:
       package-dir: packages/rn-forge-django
 
   sonar:
-    needs: [commons-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, django-ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,16 +85,18 @@ jobs:
 
       - name: Run tests with coverage
         run: >
-          uv run pytest --cov=rn_forge.commons --cov=rn_forge.django
+          uv run pytest
+          --cov=rn_forge.commons --cov=rn_forge.cli
+          --cov=rn_forge.tooling --cov=rn_forge.django
           --cov-report=xml:coverage.xml
-          packages/rn-forge-commons packages/rn-forge-django
+          packages
 
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docs:
-    needs: [commons-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, django-ci]
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:

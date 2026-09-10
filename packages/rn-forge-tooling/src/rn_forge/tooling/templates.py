@@ -20,7 +20,7 @@ from typing import Any
 
 import jinja2
 
-from rn_forge.commons.documents import ConfigFormat, DocumentUtils
+from rn_forge.commons.fs.documents import ConfigFormat, DocumentUtils
 from rn_forge.commons.exceptions import AppException
 
 __all__ = ["RenderError", "TemplateEngine"]

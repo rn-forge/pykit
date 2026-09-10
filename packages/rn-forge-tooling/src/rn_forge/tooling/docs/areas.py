@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
-from rn_forge.commons.documents import YamlUtils
+from rn_forge.commons.fs.documents import YamlUtils
 from rn_forge.commons.exceptions import AppException
 
 __all__ = ["Area", "NAV_VALUES", "load_areas"]

@@ -8,7 +8,7 @@ from datetime import date
 
 from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.utils import AppUtils
+from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils

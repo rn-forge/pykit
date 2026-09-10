@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from rn_forge.commons.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
 from rn_forge.tooling.state import StateStore
 
@@ -97,28 +97,28 @@ class TestStateStore:
 
 class TestContentHash:
     def test_of_deterministic(self):
-        from rn_forge.commons.utils import ContentHash
+        from rn_forge.commons.fs.hashing import ContentHash
 
         assert ContentHash.of("hello") == ContentHash.of("hello")
         assert ContentHash.of("hello") != ContentHash.of("world")
 
     def test_of_str_and_bytes_equivalent(self):
-        from rn_forge.commons.utils import ContentHash
+        from rn_forge.commons.fs.hashing import ContentHash
 
         assert ContentHash.of("hello") == ContentHash.of(b"hello")
 
     def test_of_file_missing_returns_none(self, tmp_path):
-        from rn_forge.commons.utils import ContentHash
+        from rn_forge.commons.fs.hashing import ContentHash
 
         assert ContentHash.of_file(tmp_path / "missing") is None
 
     def test_of_file_directory_returns_none(self, tmp_path):
-        from rn_forge.commons.utils import ContentHash
+        from rn_forge.commons.fs.hashing import ContentHash
 
         assert ContentHash.of_file(tmp_path) is None
 
     def test_of_file_matches_of_content(self, tmp_path):
-        from rn_forge.commons.utils import ContentHash
+        from rn_forge.commons.fs.hashing import ContentHash
 
         path = tmp_path / "f.txt"
         path.write_text("hello")

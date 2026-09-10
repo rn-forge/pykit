@@ -1,7 +1,7 @@
 """A locked, atomically-written, JSON-backed key -> entry state store.
 
 Provides :class:`StateStore`, generic over a
-:class:`~rn_forge.commons.dataclasses.DataclassMixin` entry type — the "what
+:class:`~rn_forge.commons.lang.dataclasses.DataclassMixin` entry type — the "what
 did I last write where" file both a CLI and a long-running process use to
 detect drift between recorded and current state.
 
@@ -21,11 +21,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generic, TypeVar, cast
 
-from rn_forge.commons._typing import JsonValue
-from rn_forge.commons.dataclasses import DataclassMixin
+from rn_forge.commons.lang.types import JsonValue
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.utils import PathUtils
+from rn_forge.commons.fs.paths import PathUtils
 
 __all__ = ["StateStore"]
 
@@ -39,7 +39,7 @@ class StateStore(Generic[E]):
 
     Args:
         path: The state file.
-        entry_type: A :class:`~rn_forge.commons.dataclasses.DataclassMixin`
+        entry_type: A :class:`~rn_forge.commons.lang.dataclasses.DataclassMixin`
             subclass; entries round-trip through its ``from_dict``/``as_dict``,
             so validation is the dataclass's job.
         schema_version: Written to the file and checked on load.

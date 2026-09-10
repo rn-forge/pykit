@@ -1,39 +1,67 @@
 # Executable import boundaries for the pykit workspace (kiln ADR-0003).
 #
-# Two rules, both of which a reader of the dependency graph would otherwise
+# Four rules, all of which a reader of the dependency graph would otherwise
 # have to take on trust:
 #
-#   1. commons is runtime-neutral and never reaches back into tooling.
-#   2. a framework's runtime surface never depends on developer tooling, on
+#   1. commons is runtime-neutral: it never reaches into cli or tooling, and
+#      never imports Typer or Jinja.
+#   2. cli is the command-line shape and nothing more: it never imports
+#      tooling, so a batch application can take the CLI layer without the
+#      file-owning machinery (kiln D52, ADR-0002).
+#   3. the three libraries layer strictly: tooling -> cli -> commons.
+#   4. a framework's runtime surface never depends on developer tooling, on
 #      Typer or on Jinja — those arrive only with its `codegen` extra, which
 #      lives in `rn_forge.<framework>.codegen` and nowhere else.
+#
+# There are deliberately no compatibility re-exports in any direction; a shim
+# would satisfy a caller and reverse the dependency.
 #
 # Run with `uv run lint-imports`.
 
 [importlinter]
 root_packages =
     rn_forge.commons
+    rn_forge.cli
     rn_forge.tooling
     rn_forge.django
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
-name = rn_forge.commons never imports tooling, Typer or Jinja
+name = rn_forge.commons never imports cli, tooling, Typer or Jinja
 type = forbidden
 source_modules =
     rn_forge.commons
 forbidden_modules =
+    rn_forge.cli
     rn_forge.tooling
     typer
     click
     jinja2
 
+[importlinter:contract:cli-has-no-tooling]
+name = rn_forge.cli never imports tooling or Jinja
+type = forbidden
+source_modules =
+    rn_forge.cli
+forbidden_modules =
+    rn_forge.tooling
+    jinja2
+
+[importlinter:contract:library-layers]
+name = tooling depends on cli, cli depends on commons, never the other way round
+type = layers
+layers =
+    rn_forge.tooling
+    rn_forge.cli
+    rn_forge.commons
+
 [importlinter:contract:django-runtime-has-no-tooling]
-name = rn_forge.django's runtime surface never imports tooling, Typer or Jinja
+name = rn_forge.django's runtime surface never imports cli, tooling, Typer or Jinja
 type = forbidden
 source_modules =
     rn_forge.django
 forbidden_modules =
+    rn_forge.cli
     rn_forge.tooling
     typer
     jinja2
@@ -44,10 +72,3 @@ ignore_imports =
     rn_forge.django.codegen -> *
     rn_forge.django.codegen.* -> *
 unmatched_ignore_imports_alerting = none
-
-[importlinter:contract:tooling-layers]
-name = tooling depends on commons, never the other way round
-type = layers
-layers =
-    rn_forge.tooling
-    rn_forge.commons

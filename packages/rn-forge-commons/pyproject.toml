@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-commons"
-version = "0.4.0"
+version = "0.5.0"
 description = "Shared, framework-agnostic utilities for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]

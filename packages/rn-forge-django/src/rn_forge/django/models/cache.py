@@ -5,7 +5,7 @@ from __future__ import annotations
 from operator import attrgetter
 from typing import Any, Protocol, cast
 
-from rn_forge.commons.utils import AppUtils
+from rn_forge.commons.lang.utils import AppUtils
 
 __all__ = ["ModelLookupCache"]
 

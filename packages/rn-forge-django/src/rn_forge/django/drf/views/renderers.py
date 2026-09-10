@@ -13,7 +13,7 @@ from typing import cast
 from openpyxl.styles import Font
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from rn_forge.commons.excel import CellFormat, ExcelAdapter, ExcelUtils
+from rn_forge.commons.data.excel import CellFormat, ExcelAdapter, ExcelUtils
 
 __all__ = [
     "CsvExportRenderer",

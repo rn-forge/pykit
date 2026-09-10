@@ -2,31 +2,54 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Start here in a new session
+
+`docs/plans/commons-upgrade-plan.md` is the record of how this workspace got its
+current shape. Parts A–C are committed; Part D — the three-layer split into
+`rn-forge-commons`, `rn-forge-cli` and `rn-forge-tooling`, the re-layout of all
+of them, and the Phase C review findings — is applied in the working tree, with
+its checklist in that document marking what is done and what is left. The
+decisions behind it are in `../kiln` (ADR-0002, ADR-0005, ADR-0009; plan §0.8,
+§2.8, §2.11 and Phase C.2).
+
+The "Repository overview" below describes the tree as it now is.
+
 ## Repository overview
 
 `pykit` is a uv workspace containing a family of `rn-forge-*` Python packages. It is a personal dev-kit, not a deployable app.
 
-- **`packages/rn-forge-commons`** (import path `rn_forge.commons`, module name `rn_forge.commons`) — general
-    Python utilities with no Django dependency: config loading (`config.py`), nested dict/list
-    helpers (`collections.py`), structured logging built on `verboselogs` with a Rich console handler
-    (`logging.py`), dataclass mixins
-    backed by `dacite` (`dataclasses.py`), subprocess/task helpers, messaging/secrets/objects protocols
-    (`messaging.py`, `secrets.py`, `objects.py`), generator-owned fenced blocks (`blocks.py`), structured
-    check results (`findings.py`), failure-isolated
-    entry-point plugin loading (`plugins.py`), Excel/pandas helpers (optional extras), TOML/YAML/JSON
-    round-trip documents (`documents.py`). `src/rn_forge/commons/__init__.py` is the curated public API —
-    re-export new symbols there when adding public functionality (modules gated behind an optional extra
-    are deliberately excluded from it; import them directly).
-- **`packages/rn-forge-tooling`** (import path `rn_forge.tooling`) — the shared developer-tooling
-    surface for the `rn-forge-*` CLIs (`kiln`, `agentkit`) and for framework `[codegen]` extras.
-    Depends on `rn-forge-commons` via `[tool.uv.sources]` workspace linking. Hard dependencies on
-    `rich`, `typer` and `jinja2`: a Rich output facade (`console.py`), Typer application wiring
-    (`cli.py`), a locked JSON state store with an envelope-metadata field (`state.py`), a strict
-    Jinja render engine (`templates.py`), the generation engine — artifact kinds, action
-    classification and transactional apply (`generation.py`), workstation install mechanics —
-    directory lock, atomic symlink, archive extraction (`install.py`), and the documentation-tree
-    checkers plus their `rn-forge-docs` command (`docs/`). `src/rn_forge/tooling/__init__.py` is the
-    curated public API; `generation` and `docs` are deliberately imported directly.
+- **`packages/rn-forge-commons`** (import path `rn_forge.commons`) — runtime-neutral Python
+    utilities with no web-framework dependency, grouped by kind of mechanism rather than laid out
+    flat. Top level: config loading (`config.py`), `AppException` (`exceptions.py`), structured
+    check results (`findings.py`), pytest helpers (`testing.py`). `lang/` — nested dict/list
+    helpers (`collections.py`), dataclass mixins backed by `dacite` (`dataclasses.py`),
+    `reflection.py`, the `JsonValue` alias (`types.py`), and `AppUtils`/`Base64` (`utils.py`).
+    `fs/` — atomic writes, backups and path guards (`paths.py`), content digests (`hashing.py`),
+    cross-process locks and atomic symlinks (`locks.py`), generator-owned fenced blocks
+    (`blocks.py`), TOML/YAML/JSON round-trip documents (`documents.py`). `data/` — Excel/pandas
+    helpers behind optional extras. `logging/` — structured logging built on `verboselogs` with a
+    Rich handler that writes to **stderr**, plus a `structlog` front end. `runtime/` — env-var
+    access and fail-fast guards (`environment.py`), subprocess/task helpers, failure-isolated
+    entry-point plugin loading (`plugins.py`). `integration/` — messaging/secrets/objects protocols
+    and the resilience helpers. `src/rn_forge/commons/__init__.py` is the curated public API —
+    re-export new symbols there when adding public functionality. Public class names do not encode
+    the grouping, so moving a module never moves a class name. Modules gated behind an optional
+    extra are deliberately excluded from the facade; import them directly.
+- **`packages/rn-forge-cli`** (import path `rn_forge.cli`) — the shared command-line layer for every
+    `rn-forge-*` application, developer tool or not. Hard dependencies on `rich` and `typer`:
+    a Rich output facade (`console.py`), the Typer application factory (`app.py`), the standard
+    option set and CLI value parsers (`options.py`), the error-to-exit-code mapping and the `run`
+    wrapper a `main()` uses (`errors.py`), and the declared `[cli]` surface of kiln ADR-0009
+    (`declare.py`). `src/rn_forge/cli/__init__.py` is the curated public API; `declare` is
+    deliberately imported directly, since it reads a repository's configuration document.
+- **`packages/rn-forge-tooling`** (import path `rn_forge.tooling`) — the file-owning developer
+    tooling: a locked JSON state store with an envelope-metadata field (`state.py`), a strict Jinja
+    render engine (`templates.py`), the generation engine split into vocabulary, classification and
+    transactional apply (`generation/`), release-bundle extraction (`install/`), the
+    documentation-tree checkers and their injected `DocsPolicy` (`docs/`), and this package's own
+    command surfaces (`cli/`, which ships `rn-forge-docs`). Depends on `rn-forge-cli`, which
+    depends on `rn-forge-commons`. Hard dependencies on `jinja2` and `markdown`. The facade is
+    lazy: importing `rn_forge.tooling` does not import Jinja.
 - **`packages/rn-forge-django`** (import path `rn_forge.django`) — Django/DRF integration layer built on top
     of `rn-forge-commons`. Depends on `rn-forge-commons` via `[tool.uv.sources]` workspace linking (not PyPI).
     Optional extras: `drf` (djangorestframework, plus `rn-forge-commons[excel]` since `drf.views` eagerly
@@ -36,18 +59,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### The import boundary is executable
 
-`.importlinter` at the repo root states the two rules the dependency graph depends on, and
-`uv run lint-imports` proves them:
+`.importlinter` at the repo root states the four rules the dependency graph depends on, and
+`uv run lint-imports` proves them (CI gates every other job on it):
 
-1. `rn_forge.commons` never imports `rn_forge.tooling`, Typer or Jinja — it is runtime-neutral and
-   ships into web servers and containers.
-2. `rn_forge.django`'s runtime surface never imports `rn_forge.tooling`, Typer or Jinja. Only
-   `rn_forge.django.codegen` may, and only with the (not yet built) `codegen` extra installed.
+1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or Jinja — it is
+   runtime-neutral and ships into web servers and containers.
+2. `rn_forge.cli` never imports `rn_forge.tooling` or Jinja — a batch application takes the
+   command-line layer without the file-owning machinery (kiln D52, ADR-0002).
+3. The three libraries layer strictly: `tooling` → `cli` → `commons`.
+4. `rn_forge.django`'s runtime surface never imports any of them. Only `rn_forge.django.codegen`
+   may, and only with the (not yet built) `codegen` extra installed.
 
-There are deliberately **no compatibility re-exports** from commons to tooling — that would reverse
-the dependency. When moving a symbol across the boundary, move it; do not alias it.
+There are deliberately **no compatibility re-exports** in any direction — a shim would satisfy a
+caller and reverse the dependency. When moving a symbol across the boundary, move it; do not alias
+it.
 
-All three packages use `uv_build` as the build backend with `module-name` mapped to their `rn_forge.*` namespace
+### Releases are pinned git tags, not PyPI versions
+
+None of these packages is published to PyPI. A release is a tag
+(`rn-forge-commons-v0.5.0`), and every consumer — including `rn-forge-cli` and `rn-forge-tooling`
+depending on `rn-forge-commons` — declares it as a pinned direct URL
+(`rn-forge-commons @ git+https://github.com/rn-forge/pykit@<tag>#subdirectory=packages/<pkg>`),
+per kiln D46. The `[tool.uv.sources]` workspace override exists for local development only; it is
+what makes the workspace resolve to the checkout, and it is not what a consumer resolves.
+
+All four packages use `uv_build` as the build backend with `module-name` mapped to their `rn_forge.*` namespace
 package, and all ship a `py.typed` marker (strict typing is a contract of these libraries).
 
 ## Design principles
@@ -90,7 +126,7 @@ Run all commands from the repo root unless testing a single package.
 ```bash
 uv sync --all-extras                     # install workspace + all optional extras
 uv run pytest                            # run tests across the workspace
-uv run pytest packages/rn-forge-django   # run one package's tests
+uv run pytest packages/rn-forge-cli       # run one package's tests
 uv run pytest -k test_name                # run a single test by name/keyword
 uv run pytest -m unit                     # rn-forge-django only: fast isolated tests
 uv run pytest -m integration              # rn-forge-django only: DB-backed tests
@@ -108,7 +144,7 @@ Root `pyproject.toml` configures Pyright in `strict` mode, `include = ["packages
 
 ### Docs
 
-`rn-forge-commons` and `rn-forge-tooling` each have an mkdocs site (`packages/<pkg>/mkdocs.yml`, `docs/` dir, `mkdocstrings` autogenerating API docs from docstrings under `src`), and the root `mkdocs.yml` includes both via the monorepo plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from the repo root for the combined site. Per-package builds are strict, so a cross-package link will fail the build — reference the other package by name instead of linking into it. Keep docstrings accurate since they are the doc source, not just IDE hints.
+`rn-forge-commons`, `rn-forge-cli` and `rn-forge-tooling` each have an mkdocs site (`packages/<pkg>/mkdocs.yml`, `docs/` dir, `mkdocstrings` autogenerating API docs from docstrings under `src`), and the root `mkdocs.yml` includes them all via the monorepo plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from the repo root for the combined site. Per-package builds are strict, so a cross-package link will fail the build — reference the other package by name instead of linking into it. Keep docstrings accurate since they are the doc source, not just IDE hints.
 
 ## Architecture notes
 
@@ -135,7 +171,8 @@ Sub-namespaced by auth mechanism: `auth/basic`, `auth/jwt`, `auth/saml`, plus sh
 
 ## Testing conventions
 
-- Tests live in each package's `tests/`, mirroring the `src/rn_forge/<pkg>/` layout (e.g. `tests/auth/drf/test_authentication_and_permissions.py` tests `src/rn_forge/django/auth/drf/`).
+- Tests live in each package's `tests/`, mirroring the `src/rn_forge/<pkg>/` layout (e.g. `tests/fs/test_paths.py` tests `src/rn_forge/commons/fs/paths.py`, and `tests/auth/drf/test_authentication_and_permissions.py` tests `src/rn_forge/django/auth/drf/`). When a module moves, its test module moves with it.
+- Every package has a `tests` package, so a test module that has to be imported *by name* (a `--policy` reference, say) needs an unambiguous alias rather than `tests.<...>` — see `rn-forge-tooling/tests/docs/test_docs.py`.
 - `rn-forge-django/tests/conftest.py` configures Django (`settings.configure(...)`, sqlite in-memory DB, `django.setup()`) — no separate Django settings module exists; this conftest is the only settings source for tests.
 - `rn-forge-django` defines `unit` and `integration` pytest markers (`pyproject.toml`) — mark DB-backed tests `integration` and fast isolated tests `unit`.
 - `pytest-randomly` randomizes test order by default in every package — do not rely on cross-test ordering.

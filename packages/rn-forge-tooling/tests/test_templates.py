@@ -76,7 +76,7 @@ class TestKeepTrailingNewline:
 class TestDocumentFilters:
     def test_to_toml_filter_round_trips(self, tmp_path):
         pytest.importorskip("tomlkit")
-        from rn_forge.commons.documents import ConfigFormat, DocumentUtils
+        from rn_forge.commons.fs.documents import ConfigFormat, DocumentUtils
 
         engine = TemplateEngine(directory=str(tmp_path))
         rendered = engine.render_string("{{ data | to_toml }}", {"data": {"a": 1}})
@@ -84,7 +84,7 @@ class TestDocumentFilters:
 
     def test_to_yaml_filter_round_trips(self, tmp_path):
         pytest.importorskip("ruamel.yaml")
-        from rn_forge.commons.documents import ConfigFormat, DocumentUtils
+        from rn_forge.commons.fs.documents import ConfigFormat, DocumentUtils
 
         engine = TemplateEngine(directory=str(tmp_path))
         rendered = engine.render_string("{{ data | to_yaml }}", {"data": {"a": 1}})

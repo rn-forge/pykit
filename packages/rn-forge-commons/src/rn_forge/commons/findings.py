@@ -3,7 +3,7 @@
 Provides :class:`Finding` and :class:`Severity`. A checker returns a list of
 findings; a CLI renders them as a table or, with ``--json``, as
 ``[finding.as_dict()]`` — :class:`Finding` is a
-:class:`~rn_forge.commons.dataclasses.DataclassMixin`, so that serialisation
+:class:`~rn_forge.commons.lang.dataclasses.DataclassMixin`, so that serialisation
 is free and round-trips.
 
 ``code`` is the stable identifier, dotted and lowercase (``artifact.drift``,
@@ -16,8 +16,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from rn_forge.commons._typing import JsonValue
-from rn_forge.commons.dataclasses import DataclassMixin
+from rn_forge.commons.lang.types import JsonValue
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = ["Finding", "Severity"]
 
