@@ -8,8 +8,8 @@ the whole graph.
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + extraction of local development APIs into `rn-forge-tooling` | Commons implementation stabilized; tooling extraction and generator boundary blocked on owner-reviewed kiln golden repositories |
-| [`../../../STANDARDIZATION-PLAN.md`](../../../STANDARDIZATION-PLAN.md) (moves to `rn-forge/kiln/docs/plans/`) | Workspace-wide: when the tooling extraction runs, the kiln generator, the rebuilds of agentkit and intellibuild | Revision 7 — sequencing authority for everything cross-repo |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + extraction of local development APIs into `rn-forge-tooling` | Commons implementation stabilized; **tooling extraction done** (standardization plan Phase C) — `packages/rn-forge-tooling` exists and the import boundary is enforced by `.importlinter` |
+| `rn-forge/kiln/docs/plans/standardization-plan.md` (outside this repo; a pointer remains at `rn-forge/STANDARDIZATION-PLAN.md`) | Workspace-wide: when the tooling extraction runs, the kiln generator, the rebuilds of agentkit and intellibuild | Revision 8 — sequencing authority for everything cross-repo |
 | [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | Ready |
 | [`azure-library-plan.md`](./azure-library-plan.md) | **New** `rn-forge-azure` package — Azure adapters for commons protocols | Ready |
@@ -55,9 +55,11 @@ Phases within a plan run in their own order unless noted. These are the **cross-
 | 11 | ~~commons Phase 8 (resilience)~~ | — | **Done** — built async per web plan §A.3 (`purgatory` + `stamina`), not the original sync spec |
 
 Steps 1–3 and step 4 are independent of each other and can run in parallel. **The tooling
-extraction itself is not a step here** — it is standardization plan Phase C and runs only after
-that plan's Phase A (stabilize and commit Part C) and Phase B (kiln's golden repos, which fix the
-engine's scope). Step 9 is the one most
+extraction itself is not a step here** — it is standardization plan Phase C, which ran after that
+plan's Phase A (stabilize and commit Part C) and Phase B (kiln's golden repos, which fixed the
+engine's scope). Its pykit half has landed: `rn-forge-tooling` owns the console, CLI, state,
+template, generation, install and docs-checker surface. What remains of Phase C is in the kiln
+repo and needs a published `rn-forge-tooling` tag to pin against. Step 9 is the one most
 likely to be started too early — five django phases will silently reimplement the web package if its
 phases have not landed.
 

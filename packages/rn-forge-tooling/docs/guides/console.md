@@ -3,7 +3,7 @@
 `AppConsole` is a thin facade over `rich.console.Console` with four output modes:
 
 ```python
-from rn_forge.commons.console import console, OutputMode
+from rn_forge.tooling.console import console, OutputMode
 
 console.info("Starting {}", "job")
 console.success("Done in {}s", 1.2)
@@ -17,7 +17,7 @@ A CLI typically needs three output personalities: normal (styled, human-readable
 that by switching `console`'s mode instead of writing separate code paths:
 
 ```python
-from rn_forge.commons.console import console, OutputMode
+from rn_forge.tooling.console import console, OutputMode
 
 def run(*, quiet: bool = False, json_output: bool = False) -> None:
     if json_output:

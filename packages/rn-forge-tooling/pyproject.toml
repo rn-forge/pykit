@@ -1,0 +1,50 @@
+[project]
+name = "rn-forge-tooling"
+version = "0.1.0"
+description = "Shared developer-tooling surface for the rn-forge-* CLIs: console, Typer wiring, local state, templates and generation"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+dependencies = [
+  "rn-forge-commons",
+  "rich>=15.0.0",
+  "typer>=0.26.8",
+  "jinja2>=3.1.6",
+]
+
+[project.scripts]
+rn-forge-docs = "rn_forge.tooling.docs.cli:app"
+
+[project.optional-dependencies]
+testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.tooling"
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-tooling = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-tooling",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-tooling",
+]

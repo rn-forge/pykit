@@ -8,14 +8,15 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 | Package | Import path | Description |
 | --- | --- | --- |
-| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | General-purpose utilities: config loading, collections/dict/json/yaml helpers, structured logging, dataclass mixins, subprocess/task helpers, Excel/pandas helpers, round-trip documents, integration protocols, and temporary Typer CLI helpers. No Django dependency. |
+| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | General-purpose utilities: config loading, collections/dict/json/yaml helpers, structured logging, dataclass mixins, subprocess/task helpers, Excel/pandas helpers, round-trip documents, integration protocols, managed blocks and structured findings. No Django dependency. |
+| [`rn-forge-tooling`](packages/rn-forge-tooling) | `rn_forge.tooling` | The developer-tooling surface for the `rn-forge-*` CLIs: Rich console, Typer wiring, local JSON state, a strict Jinja engine, the generation engine, installer mechanics and the docs checkers. Depends on `rn-forge-commons`; never a runtime dependency of a deployed app. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 
-The planned `rn-forge-tooling` package will own CLI/console, local state, templates and installer
-mechanics. This breaking relocation is gated on owner-reviewed kiln fixtures; see the
-[plan execution order](docs/plans/README.md).
+The import boundaries between these are executable: [`.importlinter`](.importlinter) forbids
+`rn_forge.commons` from importing tooling, Typer or Jinja, and forbids `rn_forge.django`'s runtime
+surface from doing the same outside a future `codegen` extra. `uv run lint-imports` proves it.
 
-Both packages ship a `py.typed` marker and are type-checked in strict mode.
+All packages ship a `py.typed` marker and are type-checked in strict mode.
 
 ## Design principles
 
@@ -44,6 +45,7 @@ uv run pytest                 # run tests across the workspace
 uv run ruff check .           # lint
 uv run ruff format .          # format
 uv run pyright                # type check (strict mode, packages/ only)
+uv run lint-imports           # enforce package import boundaries
 ```
 
-See [`packages/rn-forge-commons`](packages/rn-forge-commons) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.
+See [`packages/rn-forge-commons`](packages/rn-forge-commons), [`packages/rn-forge-tooling`](packages/rn-forge-tooling) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.

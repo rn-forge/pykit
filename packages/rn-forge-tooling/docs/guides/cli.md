@@ -5,7 +5,7 @@
 
 ```python
 import typer
-from rn_forge.commons.cli import build_app
+from rn_forge.tooling.cli import build_app
 
 app = build_app("my-tool", help="Do the thing.")
 
@@ -25,7 +25,7 @@ either pair.
 ## Reading the resolved flags in a command
 
 ```python
-from rn_forge.commons.cli import options
+from rn_forge.tooling.cli import options
 
 @app.command()
 def run(ctx: typer.Context) -> None:
@@ -40,7 +40,7 @@ that wants to accept its own `--quiet`/`--json` too should declare them and merg
 `command_options`:
 
 ```python
-from rn_forge.commons.cli import JsonOption, QuietOption, command_options
+from rn_forge.tooling.cli import JsonOption, QuietOption, command_options
 
 @app.command()
 def run(ctx: typer.Context, quiet: QuietOption = False, json_output: JsonOption = False) -> None:
@@ -51,10 +51,10 @@ def run(ctx: typer.Context, quiet: QuietOption = False, json_output: JsonOption 
 
 `parse_key_values` collects flat `KEY=VALUE` pairs; `parse_overrides` is its dotted-path, typed
 sibling for `--set` style config overrides, producing a nested mapping meant to be merged as the
-highest-precedence layer over a loaded config (see [`DictUtils`](../api/collections.md)):
+highest-precedence layer over a loaded config (see `DictUtils.merge` in `rn-forge-commons`):
 
 ```python
-from rn_forge.commons.cli import parse_overrides
+from rn_forge.tooling.cli import parse_overrides
 
 parse_overrides(["database.port=5432", "feature_flags=[\"a\", \"b\"]"])
 # {"database": {"port": 5432}, "feature_flags": ["a", "b"]}

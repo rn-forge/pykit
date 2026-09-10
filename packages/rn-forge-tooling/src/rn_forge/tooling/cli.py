@@ -5,12 +5,13 @@ Provides:
 - :class:`LogLevel` — CLI-facing log level names, with :meth:`~LogLevel.to_int`
   mapping to the matching :class:`~rn_forge.commons.logging.AppLogger` level.
 - :data:`LogLevelOption`, :data:`LogFileOption`, :data:`QuietOption`,
-  :data:`JsonOption` — reusable ``Annotated`` option types.
-- :class:`CliOptions` — the resolved ``--quiet``/``--json`` flags, stored on
-  ``ctx.obj``.
+  :data:`JsonOption`, :data:`DryRunOption`, :data:`YesOption` — reusable
+  ``Annotated`` option types.
+- :class:`CliOptions` — the resolved ``--quiet``/``--json``/``--dry-run``/
+  ``--yes`` flags, stored on ``ctx.obj``.
 - :func:`build_app` — a :class:`typer.Typer` factory whose root callback wires
   ``--log-level``/``--log-file`` into ``AppLogger.initialize()`` and
-  ``--quiet``/``--json`` into the :data:`~rn_forge.commons.console.console`
+  ``--quiet``/``--json`` into the :data:`~rn_forge.tooling.console.console`
   singleton.
 - :func:`options` / :func:`command_options` — read (and, for the latter,
   merge) :class:`CliOptions` from a :class:`typer.Context`.
@@ -32,16 +33,18 @@ from typing import Annotated, Any, Sequence, cast
 
 import typer
 
-from rn_forge.commons.console import OutputMode, console
+from rn_forge.tooling.console import OutputMode, console
 from rn_forge.commons.logging import AppLogger
 
 __all__ = [
     "CliOptions",
+    "DryRunOption",
     "JsonOption",
     "LogFileOption",
     "LogLevel",
     "LogLevelOption",
     "QuietOption",
+    "YesOption",
     "build_app",
     "command_options",
     "options",
@@ -93,14 +96,30 @@ QuietOption = Annotated[
 JsonOption = Annotated[
     bool, typer.Option("--json", help="Emit machine-readable JSON output.")
 ]
+DryRunOption = Annotated[
+    bool,
+    typer.Option(
+        "--dry-run", help="Report what would change without writing anything."
+    ),
+]
+YesOption = Annotated[
+    bool, typer.Option("--yes", "-y", help="Assume yes for every confirmation.")
+]
 
 
 @dataclass(frozen=True, slots=True)
 class CliOptions:
-    """Resolved ``--quiet``/``--json`` flags, stored on the root ``ctx.obj``."""
+    """The resolved standard flags, stored on the root ``ctx.obj``.
+
+    ``dry_run`` and ``yes`` live here rather than on each command because
+    every command that writes anything needs both, and a command reading them
+    off the context cannot forget to thread one through.
+    """
 
     quiet: bool = False
     json_output: bool = False
+    dry_run: bool = False
+    yes: bool = False
 
 
 def options(ctx: typer.Context) -> CliOptions:
@@ -110,15 +129,20 @@ def options(ctx: typer.Context) -> CliOptions:
 
 
 def command_options(
-    ctx: typer.Context, *, quiet: bool = False, json_output: bool = False
+    ctx: typer.Context,
+    *,
+    quiet: bool = False,
+    json_output: bool = False,
+    dry_run: bool = False,
+    yes: bool = False,
 ) -> CliOptions:
-    """Merge command-level ``--quiet``/``--json`` flags with the root context's.
+    """Merge command-level standard flags with the root context's.
 
     Typer allows these flags both before and after the subcommand name; the
     root callback alone only sees the former. Call this from a command that
     declares its own :data:`QuietOption`/:data:`JsonOption` parameters to
     merge them with whatever the root callback already resolved, re-apply the
-    result to :data:`~rn_forge.commons.console.console`, and persist the
+    result to :data:`~rn_forge.tooling.console.console`, and persist the
     merged value back onto the root context.
 
     Raises:
@@ -126,7 +150,10 @@ def command_options(
     """
     root_opts = options(ctx)
     merged = CliOptions(
-        quiet=root_opts.quiet or quiet, json_output=root_opts.json_output or json_output
+        quiet=root_opts.quiet or quiet,
+        json_output=root_opts.json_output or json_output,
+        dry_run=root_opts.dry_run or dry_run,
+        yes=root_opts.yes or yes,
     )
     if merged.quiet and merged.json_output:
         raise typer.BadParameter("--quiet and --json are mutually exclusive")
@@ -138,7 +165,14 @@ def command_options(
     return merged
 
 
+def _given_on_the_command_line(ctx: typer.Context, name: str) -> bool:
+    """Whether *name* was passed explicitly rather than taking its default."""
+    source = ctx.get_parameter_source(name)
+    return source is not None and source.name == "COMMANDLINE"
+
+
 def _apply_root_options(
+    ctx: typer.Context,
     app_name: str,
     *,
     quiet: bool,
@@ -152,12 +186,20 @@ def _apply_root_options(
         console.set_mode(OutputMode.JSON)
     elif quiet:
         console.set_mode(OutputMode.QUIET)
-    if log_level is not None:
-        AppLogger.initialize(
-            root_logger_name=app_name.replace(" ", "_").lower(),
-            level=log_level.to_int(),
-            file=str(log_file) if log_file else None,
-        )
+    if log_level is None:
+        return
+    level = log_level.to_int()
+    if json_output and not _given_on_the_command_line(ctx, "log_level"):
+        # The console log handler writes to stdout, which in --json mode is the
+        # payload: a default-level log line would leave the output unparseable.
+        # An explicit --log-level is still honoured — that is someone debugging,
+        # who can redirect the stream themselves.
+        level = AppLogger.CRITICAL
+    AppLogger.initialize(
+        root_logger_name=app_name.replace(" ", "_").lower(),
+        level=level,
+        file=str(log_file) if log_file else None,
+    )
 
 
 def build_app(
@@ -172,7 +214,7 @@ def build_app(
     """Return a Typer app whose root callback wires the standard options.
 
     ``--log-level``/``--log-file`` feed :meth:`AppLogger.initialize`;
-    ``--quiet``/``--json`` feed the :data:`~rn_forge.commons.console.console`
+    ``--quiet``/``--json`` feed the :data:`~rn_forge.tooling.console.console`
     singleton. ``no_args_is_help=True`` and ``pretty_exceptions_show_locals=False``
     are set by default (overridable via *typer_kwargs*) — the latter for the
     same credential-leak reason :meth:`AppLogger.initialize`'s
@@ -205,6 +247,7 @@ def build_app(
             json_output: JsonOption = False,
         ) -> None:
             _apply_root_options(
+                ctx,
                 name,
                 quiet=quiet,
                 json_output=json_output,
@@ -222,6 +265,7 @@ def build_app(
             log_file: LogFileOption = None,
         ) -> None:
             _apply_root_options(
+                ctx,
                 name,
                 quiet=False,
                 json_output=False,
@@ -239,6 +283,7 @@ def build_app(
             json_output: JsonOption = False,
         ) -> None:
             _apply_root_options(
+                ctx,
                 name,
                 quiet=quiet,
                 json_output=json_output,

@@ -1,4 +1,4 @@
-"""Tests for rn_forge.commons.console."""
+"""Tests for rn_forge.tooling.console."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from io import StringIO
 import pytest
 from rich.console import Console
 
-from rn_forge.commons.console import AppConsole, OutputMode
+from rn_forge.tooling.console import AppConsole, OutputMode
 
 
 def _console(mode: OutputMode = OutputMode.RICH) -> tuple[AppConsole, StringIO]:
@@ -232,3 +232,10 @@ class TestModeAndEscapeHatch:
     def test_rich_property_is_escape_hatch(self) -> None:
         ac = AppConsole()
         assert isinstance(ac.rich, Console)
+
+
+class TestJsonIsNotReflowed:
+    def test_long_json_stays_parseable_in_a_narrow_terminal(self) -> None:
+        ac, buf = _console(OutputMode.JSON)
+        ac.emit({"path": "a" * 200})
+        assert json.loads(buf.getvalue()) == {"path": "a" * 200}

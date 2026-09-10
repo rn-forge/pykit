@@ -29,12 +29,17 @@ venv = ".venv"
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
+rn-forge-tooling = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/rn-forge-commons", "packages/rn-forge-django"]
+members = [
+  "packages/rn-forge-commons",
+  "packages/rn-forge-django",
+  "packages/rn-forge-tooling",
+]
 
 [dependency-groups]
-workspace = ["rn-forge-commons[all]", "rn-forge-django[all]"]
+workspace = ["rn-forge-commons[all]", "rn-forge-django[all]", "rn-forge-tooling"]
 
 docs = [
   "mkdocs>=1.6.1",
@@ -48,6 +53,7 @@ dev = [
   { include-group = "docs" },
   "assertpy>=1.1",
   "django-stubs>=6.0.7",
+  "import-linter>=2.3",
   "pandas-stubs>=3.0.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",

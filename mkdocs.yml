@@ -16,6 +16,7 @@ plugins:
           paths:
             - packages/rn-forge-commons/src
             - packages/rn-forge-django/src
+            - packages/rn-forge-tooling/src
           options:
             docstring_style: auto
             heading_level: 2
@@ -36,3 +37,4 @@ nav:
   - Home: index.md
   - rn-forge-commons: '!include packages/rn-forge-commons/mkdocs.yml'
   - rn-forge-django: '!include packages/rn-forge-django/mkdocs.yml'
+  - rn-forge-tooling: '!include packages/rn-forge-tooling/mkdocs.yml'

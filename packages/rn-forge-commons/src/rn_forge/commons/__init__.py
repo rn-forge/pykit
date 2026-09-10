@@ -13,35 +13,23 @@ The re-export surface covers configuration, collections, dataclasses,
 logging, subprocesses, task execution, and general utility helpers.
 """
 
-# tooling-bound (Phase C): cli, console, state, templates; DirectoryLock,
-# PathUtils.atomic_symlink and PathUtils.extract_archive.
-# commons-owned (Part C): documents, ContentHash, atomic writes, backups,
-# path guards/root discovery, merge/flatten/diff helpers and EntryPointLoader.
+# Phase C moved the developer-tooling surface out of this package: cli,
+# console, state, templates, DirectoryLock, atomic_symlink and
+# extract_archive now live in `rn-forge-tooling`, which depends on this
+# package. There are deliberately no compatibility re-exports — that would
+# reverse the dependency. See `docs/guides/installation.md`.
+# commons-owned: documents, ContentHash, atomic writes, backups, managed
+# blocks, findings, path guards/root discovery, merge/flatten/diff helpers
+# and EntryPointLoader.
 
-from rn_forge.commons.cli import (
-    CliOptions,
-    JsonOption,
-    LogFileOption,
-    LogLevel,
-    LogLevelOption,
-    QuietOption,
-    build_app,
-    command_options,
-    options,
-    parse_key_values,
-    parse_overrides,
-)
+from rn_forge.commons._typing import JsonValue
+from rn_forge.commons.blocks import ManagedBlock
 from rn_forge.commons.collections import (
     DictUtils,
     ListUtils,
     MergeResult,
 )
 from rn_forge.commons.config import Config
-from rn_forge.commons.console import (
-    AppConsole,
-    OutputMode,
-    console,
-)
 from rn_forge.commons.dataclasses import DataclassMixin
 from rn_forge.commons.documents import (
     ConfigFormat,
@@ -51,6 +39,7 @@ from rn_forge.commons.documents import (
     YamlUtils,
 )
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.findings import Finding, Severity
 from rn_forge.commons.logging import (
     AppLogger,
     LoggingConfig,
@@ -75,20 +64,17 @@ from rn_forge.commons.secrets import (
     SecretNotFound,
     SecretStore,
 )
-from rn_forge.commons.state import StateStore
 from rn_forge.commons.subprocess import Process
 from rn_forge.commons.tasks import Task, TaskPool
 from rn_forge.commons.utils import (
     AppUtils,
     Base64,
     ContentHash,
-    DirectoryLock,
     Environment,
     PathUtils,
 )
 
 __all__ = [
-    "AppConsole",
     "AppException",
     "AppLogger",
     "AppUtils",
@@ -96,48 +82,37 @@ __all__ = [
     "AsyncObjectStore",
     "AsyncSecretStore",
     "Base64",
-    "CliOptions",
     "Config",
     "ConfigFormat",
     "ContentHash",
     "DataclassMixin",
     "DictUtils",
-    "DirectoryLock",
     "DocumentError",
     "DocumentUtils",
     "EntryPointLoader",
     "EnvSecretStore",
     "Environment",
+    "Finding",
     "HandlerRegistry",
     "InMemoryMessageBus",
     "InMemoryObjectStore",
-    "JsonOption",
     "JsonUtils",
+    "JsonValue",
     "ListUtils",
-    "LogFileOption",
-    "LogLevel",
-    "LogLevelOption",
     "LoggingConfig",
+    "ManagedBlock",
     "MergeResult",
     "MessageBus",
     "ObjectNotFound",
     "ObjectStore",
-    "OutputMode",
     "PathUtils",
     "PluginError",
     "Process",
-    "QuietOption",
     "ReflectUtils",
     "SecretNotFound",
     "SecretStore",
-    "StateStore",
+    "Severity",
     "Task",
     "TaskPool",
     "YamlUtils",
-    "build_app",
-    "command_options",
-    "console",
-    "options",
-    "parse_key_values",
-    "parse_overrides",
 ]

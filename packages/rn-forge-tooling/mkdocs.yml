@@ -1,0 +1,50 @@
+site_name: rn-forge-tooling
+site_description: Shared developer-tooling surface for the rn-forge-* CLIs
+site_dir: .out/site
+use_directory_urls: false
+
+theme:
+  name: material
+  highlightjs: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_style: auto
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            show_root_heading: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Guides:
+      - guides/index.md
+      - Installation: guides/installation.md
+      - Console: guides/console.md
+      - CLI: guides/cli.md
+      - Generation: guides/generation.md
+      - Docs checks: guides/docs-checks.md
+  - API Reference:
+      - api/index.md
+      - CLI: api/cli.md
+      - Console: api/console.md
+      - Docs: api/docs.md
+      - Generation: api/generation.md
+      - Install: api/install.md
+      - State: api/state.md
+      - Templates: api/templates.md

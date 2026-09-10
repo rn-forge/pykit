@@ -2309,34 +2309,34 @@ Recorded so a later reader does not "finish the job" by hoisting these too:
 
 ## Final checklist before calling this done
 
-- [ ] `packages/rn-forge-tooling` exists and declares a direct dependency on `rn-forge-commons`
+- [x] `packages/rn-forge-tooling` exists and declares a direct dependency on `rn-forge-commons`
 - [x] Current commons validation: `uv sync --all-extras` and `uv run pytest packages/rn-forge-commons -q` green
-- [ ] Run the combined commons/tooling suite after tooling exists
+- [x] Run the combined commons/tooling suite after tooling exists
 - [x] `uv run pyright` clean (covers `rn-forge-django` and tooling too)
 - [x] `uv run ruff check . && uv run ruff format --check .` clean
 - [x] `uv run --directory packages/rn-forge-commons --group docs mkdocs build --strict` clean
-- [ ] Tooling docs build clean
+- [x] Tooling docs build clean
 - [x] `grep -rn "coloredlogs\|CLIArgumentParser\|BooleanAction\|KeyValueAction\|_coerce_field_value" packages/` returns nothing
-- [ ] Commons has no Typer/Jinja dependency and does not expose `cli`, `console`, `state` or `templates`
-- [ ] Django/FastAPI runtime packages have no Typer or tooling dependency outside the `codegen` extra;
+- [x] Commons has no Typer/Jinja dependency and does not expose `cli`, `console`, `state` or `templates`
+- [x] Django/FastAPI runtime packages have no Typer or tooling dependency outside the `codegen` extra;
       `uv run lint-imports` proves `rn_forge.django` minus `rn_forge.django.codegen` never imports them
 - [x] Commons curated imports and `__all__` are sorted; temporary tooling symbols are marked
-- [ ] Each package exposes only symbols it owns after extraction
+- [x] Each package exposes only symbols it owns after extraction
 - [x] `import rn_forge.commons` succeeds in an environment with **no** optional extras installed
       (guards the Phase 8 optional-import rule). Verified offline in an isolated import path containing
       only installed base dependency distributions; the fresh `uv --isolated` install was blocked by PyPI DNS failure.
-- [ ] Breaking commons relocation and the new tooling package are listed in the docs index / README
+- [x] Breaking commons relocation and the new tooling package are listed in the docs index / README
 - [x] `CLAUDE.md`'s `rn-forge-commons` bullet updated — it currently describes logging as "built on
       `verboselogs`/`coloredlogs`" and lists `console.py` as "CLI argument parsing"
 - [x] Commons nav contains resilience/messaging/secrets/objects
-- [ ] Tooling nav contains CLI/console after extraction
+- [x] Tooling nav contains CLI/console after extraction
 - [x] Phases 8b/8c/8d landed — `rn-forge-azure` Phases 2/3/4 and `rn-forge-django` Phase 10 are
       blocked on them (see [`README.md`](./README.md) for the cross-plan order)
 - [x] Phase 6 and Phase 9 gate outcomes recorded (built, or abandoned with the reason written down)
-- [ ] Phase 18.4 uses tooling for shared mechanics while product layout and policy remain local
-- [ ] Generator contract is Python-callable without Typer; framework providers are `[codegen]` extras
+- [x] Phase 18.4 uses tooling for shared mechanics while product layout and policy remain local (`rn_forge.tooling.install`; `ProductInstaller` deferred until a second product needs the same contract)
+- [x] Generator contract is Python-callable without Typer (`rn_forge.tooling.generation.Generator`); framework providers are `[codegen]` extras, fenced by `.importlinter`
 - [x] No developer-workstation path convention (`$RNF_HOME` and friends) leaked into commons — see 18.3
-- [ ] Every Part C API checked against **both** agentkit and taskkit call sites, not just one
+- [x] Every Part C API checked against **both** agentkit and taskkit call sites, not just one
 - [x] Nothing committed or pushed — leave the working tree for review
 
 ## Not in this plan (deliberately deferred)

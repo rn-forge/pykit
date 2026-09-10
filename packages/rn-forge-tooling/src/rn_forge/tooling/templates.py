@@ -7,9 +7,10 @@ either a filesystem directory or a package resource directory as the
 template source, and a ``validate()`` that compiles every visible template so
 a ``doctor``-style command can catch a broken template before a user hits it.
 
-Requires the ``templates`` extra (``jinja2``) — this module is not imported
-by ``rn_forge.commons``'s curated ``__init__.py``, so ``import
-rn_forge.commons`` never requires it.
+``jinja2`` is a hard dependency of ``rn-forge-tooling``: a developer tool
+that generates files renders templates on every run, and the optional-extra
+dance that made sense while this module lived in the runtime-neutral commons
+package buys nothing here.
 """
 
 from __future__ import annotations

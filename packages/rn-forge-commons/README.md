@@ -17,7 +17,6 @@ Optional extras:
 | `pandas` | `pandas`-backed DataFrame/Series helpers |
 | `otel` | OpenTelemetry logging instrumentation |
 | `testing` | `assertpy` + `pytest` integration helpers |
-| `templates` | Strict Jinja template rendering |
 | `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
 | `structlog` | Structured logging over the existing stdlib handlers |
 | `all` | Everything above |
@@ -42,10 +41,10 @@ Console log output is Rich-formatted by default (a hard dependency) when stdout 
 - **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and captures return code,
   stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread pool.
-- **`console`** — `AppConsole`, `OutputMode`: a Rich output facade with RICH/PLAIN/QUIET/JSON modes,
-  tables, diffs, and confirm/prompt/status helpers.
-- **`cli`** — `build_app`, `LogLevel`, `CliOptions`, `parse_key_values`, `parse_overrides`: Typer app
-  wiring for `--log-level`/`--log-file`/`--quiet`/`--json`.
+- **`blocks`** — `ManagedBlock`: render, extract and remove a generator-owned fenced block inside a
+  file somebody else owns (`.gitignore`, `CLAUDE.md`, `mkdocs.yml`).
+- **`findings`** — `Finding`, `Severity`: the structured result shape every checker and doctor
+  reports in, serialisable for `--json`.
 - **`utils`** — `Environment`, `Base64`, `PathUtils`, `AppUtils`: env-var, base64, filesystem, and
   general-purpose value helpers.
 - **`excel`** / **`pandas`** — Excel workbook helpers and DataFrame/Series helpers (optional extras).
@@ -61,8 +60,19 @@ cfg = Config("config")
 logger.info("database.host={}", cfg.get("database.host"))
 ```
 
-CLI/console, local state, templates and installer mechanics remain here temporarily until the
-planned `rn-forge-tooling` extraction. See the [execution prerequisites](../../docs/plans/README.md).
+### Moved to `rn-forge-tooling`
+
+The developer-tooling surface now lives in
+[`rn-forge-tooling`](../rn-forge-tooling/README.md), which depends on this package. There are no
+compatibility re-exports — that would reverse the dependency:
+
+| Was | Now |
+| --- | --- |
+| `rn_forge.commons.console` | `rn_forge.tooling.console` |
+| `rn_forge.commons.cli` | `rn_forge.tooling.cli` |
+| `rn_forge.commons.state` | `rn_forge.tooling.state` |
+| `rn_forge.commons.templates` (`templates` extra) | `rn_forge.tooling.templates` |
+| `DirectoryLock`, `PathUtils.atomic_symlink`, `PathUtils.extract_archive` | `rn_forge.tooling.install` |
 
 ## Docs
 

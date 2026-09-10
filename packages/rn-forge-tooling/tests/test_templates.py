@@ -1,4 +1,4 @@
-"""Tests for rn_forge.commons.templates."""
+"""Tests for rn_forge.tooling.templates."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("jinja2")
 
-from rn_forge.commons.templates import RenderError, TemplateEngine  # noqa: E402
+from rn_forge.tooling.templates import RenderError, TemplateEngine  # noqa: E402
 
 
 class TestConstruction:

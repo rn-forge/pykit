@@ -11,11 +11,11 @@ Provides:
 
 This module is deliberately free of any ``typer``/``click`` import, so it is
 usable from a plain script, a Django management command, or a pytest run —
-not only from a Typer CLI (see :mod:`rn_forge.commons.cli` for that layer).
+not only from a Typer CLI (see :mod:`rn_forge.tooling.cli` for that layer).
 
 Typical usage::
 
-    from rn_forge.commons.console import console, OutputMode
+    from rn_forge.tooling.console import console, OutputMode
 
     console.info("Starting {}", "job")
     console.table("name", "status", rows=[("alpha", "ok"), ("beta", "failed")])
@@ -157,8 +157,13 @@ class AppConsole:
             self._out.print(value)
 
     def json(self, value: Any) -> None:
-        """Serialize *value* via :meth:`JsonUtils.serialize` and print it. Always emits, even in ``QUIET``."""
-        self._out.print(JsonUtils.serialize(value), markup=False)
+        """Serialize *value* via :meth:`JsonUtils.serialize` and print it. Always emits, even in ``QUIET``.
+
+        Printed with ``soft_wrap`` so Rich neither wraps nor crops it: a
+        machine-readable payload that the console reflowed at terminal width
+        is no longer parseable, and the consumer is a pipe, not a reader.
+        """
+        self._out.print(JsonUtils.serialize(value), markup=False, soft_wrap=True)
 
     # -- semantic (all {}-formatting, all no-op in QUIET/JSON) --------------
 

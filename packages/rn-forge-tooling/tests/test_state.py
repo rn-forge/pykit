@@ -1,7 +1,8 @@
-"""Tests for rn_forge.commons.state."""
+"""Tests for rn_forge.tooling.state."""
 
 from __future__ import annotations
 
+import json
 import threading
 from dataclasses import dataclass
 
@@ -9,7 +10,7 @@ import pytest
 
 from rn_forge.commons.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
-from rn_forge.commons.state import StateStore
+from rn_forge.tooling.state import StateStore
 
 
 @dataclass
@@ -122,3 +123,63 @@ class TestContentHash:
         path = tmp_path / "f.txt"
         path.write_text("hello")
         assert ContentHash.of_file(path) == ContentHash.of("hello")
+
+
+class TestMetadata:
+    def test_metadata_is_written_beside_the_entries(self, tmp_path):
+        store = StateStore(
+            tmp_path / "state.json",
+            entry_type=ArtifactState,
+            metadata={"kiln_version": "0.1.0", "config_hash": "abc"},
+        )
+        store.record("a", ArtifactState(hash="1"))
+        document = json.loads((tmp_path / "state.json").read_text())
+        assert document["metadata"] == {"kiln_version": "0.1.0", "config_hash": "abc"}
+        assert set(document["entries"]) == {"a"}
+
+    def test_metadata_reads_back_what_the_last_writer_recorded(self, tmp_path):
+        path = tmp_path / "state.json"
+        StateStore(path, entry_type=ArtifactState, metadata={"v": "1"}).record(
+            "a", ArtifactState(hash="1")
+        )
+        assert StateStore(path, entry_type=ArtifactState).metadata == {"v": "1"}
+
+    def test_metadata_without_a_file_is_the_configured_value(self, tmp_path):
+        store = StateStore(
+            tmp_path / "state.json", entry_type=ArtifactState, metadata={"v": "1"}
+        )
+        assert store.metadata == {"v": "1"}
+
+    def test_no_metadata_key_when_none_is_configured(self, tmp_path):
+        store = StateStore(tmp_path / "state.json", entry_type=ArtifactState)
+        store.record("a", ArtifactState(hash="1"))
+        assert "metadata" not in json.loads((tmp_path / "state.json").read_text())
+
+    def test_invalid_metadata_raises(self, tmp_path):
+        path = tmp_path / "state.json"
+        path.write_text('{"schema_version": "1", "entries": {}, "metadata": []}')
+        with pytest.raises(AppException):
+            StateStore(path, entry_type=ArtifactState).metadata
+
+
+class TestReplaceAll:
+    def test_drops_entries_that_are_no_longer_produced(self, tmp_path):
+        store = StateStore(tmp_path / "state.json", entry_type=ArtifactState)
+        store.record_many({"a": ArtifactState(hash="1"), "b": ArtifactState(hash="2")})
+        store.replace_all({"b": ArtifactState(hash="3")})
+        assert set(store.load()) == {"b"}
+        assert store.load()["b"].hash == "3"
+
+    def test_empty_mapping_clears_the_file(self, tmp_path):
+        store = StateStore(tmp_path / "state.json", entry_type=ArtifactState)
+        store.record("a", ArtifactState(hash="1"))
+        store.replace_all({})
+        assert store.load() == {}
+
+
+class TestRender:
+    def test_output_is_canonical_regardless_of_insertion_order(self):
+        first = StateStore.render({"b": 1, "a": {"z": 1, "y": 2}})
+        second = StateStore.render({"a": {"y": 2, "z": 1}, "b": 1})
+        assert first == second
+        assert first.endswith("\n")

@@ -1,0 +1,53 @@
+# Executable import boundaries for the pykit workspace (kiln ADR-0003).
+#
+# Two rules, both of which a reader of the dependency graph would otherwise
+# have to take on trust:
+#
+#   1. commons is runtime-neutral and never reaches back into tooling.
+#   2. a framework's runtime surface never depends on developer tooling, on
+#      Typer or on Jinja — those arrive only with its `codegen` extra, which
+#      lives in `rn_forge.<framework>.codegen` and nowhere else.
+#
+# Run with `uv run lint-imports`.
+
+[importlinter]
+root_packages =
+    rn_forge.commons
+    rn_forge.tooling
+    rn_forge.django
+include_external_packages = True
+
+[importlinter:contract:commons-is-runtime-neutral]
+name = rn_forge.commons never imports tooling, Typer or Jinja
+type = forbidden
+source_modules =
+    rn_forge.commons
+forbidden_modules =
+    rn_forge.tooling
+    typer
+    click
+    jinja2
+
+[importlinter:contract:django-runtime-has-no-tooling]
+name = rn_forge.django's runtime surface never imports tooling, Typer or Jinja
+type = forbidden
+source_modules =
+    rn_forge.django
+forbidden_modules =
+    rn_forge.tooling
+    typer
+    jinja2
+# `rn_forge.django.codegen` is the one place the extra may be imported from.
+# It does not exist yet (the standardization plan defers generators), so an
+# unmatched exemption is not an error here — the contract still holds today.
+ignore_imports =
+    rn_forge.django.codegen -> *
+    rn_forge.django.codegen.* -> *
+unmatched_ignore_imports_alerting = none
+
+[importlinter:contract:tooling-layers]
+name = tooling depends on commons, never the other way round
+type = layers
+layers =
+    rn_forge.tooling
+    rn_forge.commons

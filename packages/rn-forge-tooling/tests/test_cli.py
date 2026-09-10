@@ -1,23 +1,26 @@
-"""Tests for rn_forge.commons.cli."""
+"""Tests for rn_forge.tooling.cli."""
 
 from __future__ import annotations
 
+import json
 import logging
 
 import pytest
 import typer
 from typer.testing import CliRunner
 
-from rn_forge.commons.cli import (
+from rn_forge.tooling.cli import (
     CliOptions,
+    DryRunOption,
     LogLevel,
     build_app,
     command_options,
     options,
     parse_key_values,
     parse_overrides,
+    YesOption,
 )
-from rn_forge.commons.console import OutputMode, console
+from rn_forge.tooling.console import OutputMode, console
 from rn_forge.commons.logging import AppLogger
 
 runner = CliRunner()
@@ -128,6 +131,56 @@ class TestBuildApp:
         result = runner.invoke(app, ["--quiet", "hello"])
         assert result.exit_code == 0
         assert seen["opts"] == CliOptions(quiet=True, json_output=False)
+
+    def test_json_mode_keeps_log_output_off_stdout(self) -> None:
+        app = build_app("testapp")
+
+        @app.command()
+        def emit(ctx: typer.Context) -> None:
+            console.json({"ok": True})
+
+        result = runner.invoke(app, ["--json", "emit"])
+        assert result.exit_code == 0
+        assert json.loads(result.stdout) == {"ok": True}
+
+    def test_explicit_log_level_is_honoured_even_with_json(self) -> None:
+        app = build_app("testapp")
+
+        @app.command()
+        def emit(ctx: typer.Context) -> None:
+            pass
+
+        result = runner.invoke(app, ["--json", "--log-level", "debug", "emit"])
+        assert result.exit_code == 0
+        assert logging.getLogger().level == logging.DEBUG
+
+    def test_dry_run_and_yes_are_command_level_and_merge(self) -> None:
+        app = build_app("testapp")
+        seen: dict[str, CliOptions] = {}
+
+        @app.command()
+        def apply_(
+            ctx: typer.Context,
+            dry_run: DryRunOption = False,
+            yes: YesOption = False,
+        ) -> None:
+            seen["opts"] = command_options(ctx, dry_run=dry_run, yes=yes)
+
+        result = runner.invoke(app, ["apply-", "--dry-run", "-y"])
+        assert result.exit_code == 0
+        assert seen["opts"] == CliOptions(dry_run=True, yes=True)
+
+    def test_dry_run_defaults_to_false(self) -> None:
+        app = build_app("testapp")
+        seen: dict[str, CliOptions] = {}
+
+        @app.command()
+        def apply_(ctx: typer.Context, dry_run: DryRunOption = False) -> None:
+            seen["opts"] = command_options(ctx, dry_run=dry_run)
+
+        result = runner.invoke(app, ["apply-"])
+        assert result.exit_code == 0
+        assert seen["opts"] == CliOptions()
 
     def test_options_seen_after_subcommand_name_via_command_options(self) -> None:
         app = build_app("testapp")
