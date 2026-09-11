@@ -5,7 +5,7 @@ Azure adapters for protocols defined elsewhere in the workspace. It depends on `
 on nothing else in the workspace — deliberately **not** on `rn-forge-web` or `rn-forge-django`, so an
 Azure-backed worker or CLI pulls in no HTTP machinery.
 
-**Start from [`README.md`](./README.md)** — it carries the execution order across all four plans.
+**Start from [`README.md`](./README.md)** — it carries the execution order across all five plans.
 This package is blocked on `rn-forge-commons` Phases 8b/8c/8d (the protocol modules); see Phase 0.1.
 
 This package implements protocols; it does not define them. That single rule is what keeps it honest
@@ -24,6 +24,121 @@ Three sources feed this plan, and it is self-contained:
 
 Companion documents: [`web-library-plan.md`](./web-library-plan.md) (which defines the amendments this
 plan depends on) and [`django-upgrade-plan.md`](./django-upgrade-plan.md).
+
+## Alignment with the standardization plan (kiln revision 9)
+
+**Written 2026-09-10.** This plan predates `rn-forge/kiln`. Its five phases, the translation-layer
+principle and the error-translation table are unchanged. What changed is the workspace around it.
+Authority: `../../../kiln/docs/plans/standardization-plan.md` (revision 9), ADR-0002 (dependency
+graphs), ADR-0005 (archetypes and golden repos), D46 (releases are pinned git tags).
+
+### 1. "Depends on commons and nothing else" now excludes two more packages
+
+The development layer split into `rn-forge-cli` and `rn-forge-tooling` (kiln **D52**), so the rule
+this plan opens with has two new names in it. `rn-forge-azure` may import **`rn_forge.commons` only**
+— never `rn_forge.web`, `rn_forge.django`, `rn_forge.cli` or `rn_forge.tooling`. The reasoning is the
+one already in this document, extended: an Azure-backed worker must not acquire ASGI middleware, and
+it must not acquire a Typer application factory or a generation engine either.
+
+This is exactly why the protocols it implements live in **commons**, not in web. Under the current
+commons layout (kiln **D55**) they are:
+
+| Protocol | Module | Facade import |
+| --- | --- | --- |
+| `SecretStore` / `AsyncSecretStore` | `rn_forge/commons/integration/secrets.py` | `from rn_forge.commons import SecretStore` |
+| `ObjectStore` / `AsyncObjectStore` | `rn_forge/commons/integration/objects.py` | `from rn_forge.commons import ObjectStore` |
+| `MessageBus` / `HandlerRegistry` | `rn_forge/commons/integration/messaging.py` | `from rn_forge.commons import MessageBus` |
+| resilience (`RateLimiter`, `retryable`, `parse_retry_after`) | `rn_forge/commons/integration/resilience.py` | **direct import** — it sits behind the `resilience` extra and is deliberately excluded from the facade |
+
+**Import the three protocols through the curated facade**, not the submodule path — D55 moved
+modules but froze public class names precisely so that `from rn_forge.commons import SecretStore` is
+stable across a regrouping. Phase 0.1's prerequisite check should look for the symbol, not the file.
+Resilience is the exception and follows the workspace rule for extras: a module gated behind an
+optional extra is excluded from the facade and imported directly, so that `import rn_forge.commons`
+keeps working with no extras installed.
+
+### 2. The boundary is an import-linter contract
+
+Add to `.importlinter`, with `rn_forge.azure` in `root_packages`:
+
+```ini
+[importlinter:contract:azure-depends-on-commons-only]
+name = rn_forge.azure imports commons and nothing else in the workspace
+type = forbidden
+source_modules =
+    rn_forge.azure
+forbidden_modules =
+    rn_forge.web
+    rn_forge.django
+    rn_forge.cli
+    rn_forge.tooling
+```
+
+`uv run lint-imports` gates every other CI job, so this is a real gate rather than a documented
+intention. It also gives the namespace-collision warning below a second line of defence: a contract
+naming `rn_forge.azure` as a source module fails loudly if the package ever resolves to the SDK's
+`azure` instead.
+
+### 3. Releases are pinned git tags (D46)
+
+The scaffold below declares `# kiln D46 — a pinned direct URL, not a bare name; see the alignment section, §3
+dependencies = [
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]` with a workspace source override.
+A source override does not survive into a built wheel, so a consumer outside the workspace could not
+resolve commons at all. Corrected:
+
+```toml
+dependencies = [
+  # kiln D46 — not on PyPI; a release is a tag. The uv source override is local development only.
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-azure = { workspace = true }
+```
+
+The package's own releases are `rn-forge-azure-v0.1.0` and so on, and its installation guide documents
+the `git+…@tag` form. **This interacts with the extras design**: a consumer installs
+`rn-forge-azure[keyvault] @ git+…@rn-forge-azure-v0.1.0#subdirectory=packages/rn-forge-azure`. Write
+that full line into the installation guide for each extra — the shape is unfamiliar enough that a
+consumer will otherwise reach for `uv add`, which is the finding that was raised against tooling's
+guide (commons plan D.7).
+
+### 4. Layout (D55)
+
+Five flat modules, all one kind of mechanism (Azure service adapters), so flat stays — and, as with
+`rn-forge-web`, that is now a recorded decision rather than a default. If the package grows past its
+five phases, group by service family and keep the public class names where they are.
+
+### 5. Consumers, and the golden-repo rule
+
+The two applications this plan names are being rebuilt as kiln archetypes (**D53**): intellibuild is
+`python-web-api` with `framework = fastapi`, and the cims successor is `python-web-app` with
+`framework = django`. Neither is an adoption of the surveyed code (**D39** — rebuild, not migrate),
+which reinforces this plan's existing stance that both are prior art.
+
+One consequence worth stating: **no golden repo depends on `rn-forge-azure`.** kiln's archetypes
+describe repo shape, not cloud provider, and an Azure adapter is an application dependency. So this
+package's acceptance stays what it already is — the three-tier testing strategy below, with tier 1
+(protocol conformance against commons' in-memory implementation) as the tier that earns the package.
+Do not go looking for a golden repo to prove it.
+
+### 6. Adding the package to pykit is a repo-shape change
+
+pykit is the `python-lib` archetype. Beyond `[tool.uv.workspace] members`, `[tool.uv.sources]` and
+the `workspace` dependency group, once kiln Phase F.1 has regenerated pykit's skeleton you also
+update `[archetype.python-lib] packages` in `.rn-forge/kiln/config.toml` (it drives the generated CI
+matrix, build and release jobs), re-seed `.rn-forge/kiln/state.json` via `kiln apply`, and add the
+site to the root `mkdocs.yml` nav and `docs/index.md`. Before that regeneration none of those files
+exists; do not create them early.
+
+### 7. Validation
+
+Every phase's validation block gains `uv run lint-imports`. After kiln Phase F.1 the repo's public
+verbs are the ten kiln wrappers (ADR-0008) and `task validate` is what CI runs; the `uv run …` forms
+below remain valid as the inner primitives.
 
 ## Summary (read this first)
 
@@ -144,8 +259,9 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "rn_forge.azure"
 
-[tool.uv.sources]
+[tool.uv.sources]                   # local development only — see the alignment section, §3
 rn-forge-commons = { workspace = true }
+rn-forge-azure = { workspace = true }
 ```
 
 **Pin floors against what is actually installed, not against the numbers above** — those are
@@ -178,6 +294,7 @@ uv run pytest packages/rn-forge-azure
 uv run ruff check packages/rn-forge-azure
 uv run ruff format --check packages/rn-forge-azure
 uv run pyright
+uv run lint-imports                  # the commons-only boundary — alignment §2
 uv run --directory packages/rn-forge-azure --group docs mkdocs build --strict
 ```
 
@@ -210,19 +327,24 @@ is reachable.
 
 ### 0.1 — The protocols must exist first
 
-Every phase in this package implements a protocol that **does not exist in the workspace today**. They
-are specified in the web plan's amendment §A.2 and they land in `rn-forge-commons`:
+Every phase in this package implements a protocol defined in `rn-forge-commons`, specified by the web
+plan's amendment §A.2 and built as the commons plan's Phases **8b**, **8c** and **8d**.
 
-| Protocol | Commons module | Needed by | Modelled on |
+> **Status 2026-09-10: all three have landed.** What was a prerequisite is now a verification step —
+> confirm the symbol imports from the facade, then proceed. The module paths moved in the D55
+> re-layout and the class names did not, which is exactly what the facade is for.
+
+| Protocol | Commons module (after D55) | Needed by | Modelled on |
 | --- | --- | --- | --- |
-| `SecretStore` / `AsyncSecretStore` + `EnvSecretStore` | `commons/secrets.py` | Phase 2 | intellibench `intellibuild_ports/secrets.py` |
-| `ObjectStore` / `AsyncObjectStore` | `commons/objects.py` | Phase 3 | intellibench's specified `BlobPort` (`put`/`get`/`delete`/`url_for`) |
-| `MessageBus` + `InMemoryMessageBus` | `commons/messaging.py` | Phase 4 | cims `apps/messaging/bus.py` |
+| `SecretStore` / `AsyncSecretStore` + `EnvSecretStore` | `commons/integration/secrets.py` | Phase 2 | intellibench `intellibuild_ports/secrets.py` |
+| `ObjectStore` / `AsyncObjectStore` + `InMemoryObjectStore` | `commons/integration/objects.py` | Phase 3 | intellibench's specified `BlobPort` (`put`/`get`/`delete`/`url_for`) |
+| `MessageBus` / `AsyncMessageBus` + `InMemoryMessageBus` | `commons/integration/messaging.py` | Phase 4 | cims `apps/messaging/bus.py` |
 
-**The commons plan has now been amended**: these are its Phases **8b** (`messaging.py`), **8c**
-(`secrets.py`) and **8d** (`objects.py`), each specified in full there. Do not start Phase 2 before
-`commons/secrets.py` exists, and do not define a protocol here "temporarily" — there is no such
-thing.
+Verify with `python -c "from rn_forge.commons import SecretStore, ObjectStore, MessageBus"` rather
+than by looking for a file. Do not define a protocol here "temporarily" — there is no such thing.
+
+The shaping notes below are the record of how each was designed; check the shipped surface against
+them and raise any gap against the **commons** plan, never by widening a protocol from this side.
 
 Notes on shaping each, from the surveys:
 
@@ -566,6 +688,13 @@ installs no logging handler.
 - [ ] Every client class closes cleanly and is context-manager-usable; no module-level client
       singletons
 - [ ] Dependency floors verified against actually-resolved versions, not guessed
+- [ ] `.importlinter` carries `azure-depends-on-commons-only` and `uv run lint-imports` is green —
+      no import of `rn_forge.web`, `rn_forge.django`, `rn_forge.cli` or `rn_forge.tooling`
+- [ ] Protocols are imported from the commons facade (`from rn_forge.commons import SecretStore`),
+      not from `rn_forge.commons.integration.*` — D55 froze the class names, not the module paths
+- [ ] The commons dependency is a pinned direct URL at a release tag (kiln D46), and the installation
+      guide gives the full `git+…@tag` line for each extra rather than `uv add rn-forge-azure`
+- [ ] The package is wired into pykit's repo shape per alignment §6
 - [ ] The namespace decision (`rn_forge.azure` vs `rn_forge.azure_adapters`) recorded with its reason
 - [ ] Phase 4 and Phase 5 gate outcomes recorded (built, or abandoned with the reason written down)
 - [ ] `CLAUDE.md`'s repository overview describes the package and its extras

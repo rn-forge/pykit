@@ -17,6 +17,135 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   assuming"). Those answers are baked into the destinations below — they are facts about this repo
   as of that date, not guesses.
 
+## Alignment with the standardization plan (kiln revision 9)
+
+**Written 2026-09-10.** This plan predates `rn-forge/kiln`. Every phase, every extraction decision
+and the "do not improve these" list are unchanged. What changed is the workspace around it: the
+library graph gained a layer, releases became tags, the package layout got a rule, and this package
+acquired a named place in the archetype catalogue and in the code-generation design. Authority:
+`../../../kiln/docs/plans/standardization-plan.md` (revision 9) and `../../../kiln/docs/adr/` —
+chiefly ADR-0002, ADR-0005, ADR-0009, D37, D46, D53, D55 and D56.
+
+### 1. The graph has three library layers, and none of them is above this package
+
+The development layer split into `rn-forge-cli` and `rn-forge-tooling` (kiln **D52**), so
+Convention "Django stays in this package" now has a mirror rule: **`rn_forge.django`'s runtime
+surface imports neither `rn_forge.cli` nor `rn_forge.tooling`, and neither Typer nor Jinja.** That is
+not a new intention — it is already an executable contract in `.importlinter`
+(`django-runtime-has-no-tooling`), and `uv run lint-imports` gates every other CI job.
+
+The one exception is `rn_forge.django.codegen`, which is §4 below.
+
+```text
+commons ──► cli ──► tooling ──► kiln / agentkit
+   └──────────────────────────► web ──► django            (this package)
+                                 └───► fastapi
+```
+
+### 2. `rn-forge-web` as a dependency, and the contract that has to move with it
+
+"Dependency changes" below adds `rn-forge-web` as a base dependency. Two things must land in the same
+change, or the arrow is only a claim:
+
+1. `.importlinter` gains `rn_forge.web` in `root_packages` and the two contracts written up in the
+   web plan's alignment section §2 — the framework-free contract on `rn_forge.web`, and a layers
+   contract placing `rn_forge.django` and `rn_forge.fastapi` as independent siblings above it. The
+   sibling part matters here: **`rn_forge.django` must never import `rn_forge.fastapi`,** and the
+   layers contract is what says so.
+2. The existing `django-runtime-has-no-tooling` contract is unchanged and still applies — adding a
+   dependency on web does not open a path to cli or tooling, because web cannot reach them either.
+
+### 3. Releases are pinned git tags, not PyPI versions (D46)
+
+"Version bump: … bump `rn-forge-django` to `0.3.0`" means **cutting the tag
+`rn-forge-django-v0.3.0`**. None of these packages is on PyPI. Consequently the dependency block in
+"Dependency changes" is wrong as written — a `[tool.uv.sources]` workspace override does not survive
+into a built wheel, so a consumer outside the workspace could not resolve commons or web at all.
+Corrected:
+
+```toml
+[project]
+dependencies = [
+  "django>=6.0.7",
+  # kiln D46 — pinned direct URLs; `[tool.uv.sources]` below is local development only.
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
+
+[tool.uv.sources]                   # local development only
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+```
+
+Two consequences for sequencing: **`rn-forge-web` must have a release tag before this package can
+declare it**, which is a harder edge than the phase-level "⇢ web Phase N" blocks already listed; and
+the package's installation guide documents the `git+…@tag` form, including for each extra
+(`rn-forge-django[drf] @ git+…`), never `uv add rn-forge-django`. The equivalent omission in tooling's
+guide was a review finding (commons plan D.7) — do not repeat it here.
+
+### 4. Code generation has a fixed home now (D37, D56)
+
+This plan carries no generator, and that has not changed. What has changed is that the *destination*
+is settled, so nothing here should drift toward it by accident:
+
+- Django generators — model, serializer, viewset, admin scaffolds — ship as
+  **`rn-forge-django[codegen]`**, live in `rn_forge.django.codegen` and nowhere else, and register
+  under the entry-point group `rn_forge.kiln.generators`. kiln supplies only the Typer command
+  surface (`kiln generate django app billing`).
+- kiln generates **repo shape**; a framework generates its own code (**D56**). `kiln generate package`
+  is kiln's; a Django model scaffold is this package's.
+- The fence exists before the first codegen module: `.importlinter`'s
+  `django-runtime-has-no-tooling` contract already carries the `rn_forge.django.codegen -> *`
+  exemptions, and `import rn_forge.django` must succeed with no extras installed.
+
+If a phase in this plan ever starts rendering a template, it is in the wrong subpackage.
+
+### 5. Layout (D55)
+
+Commons, cli and tooling were re-laid-out into sub-packages by kind of mechanism.
+`rn-forge-django` **already has that shape** — `models/`, `auth/{basic,jwt,saml,drf}/`,
+`drf/{views,serializers}/` — so D55 requires no move here. What it does impose: public class names do
+not move when a module does, and there are no compatibility re-exports in any direction. Convention 4
+("re-export from the sub-package `__init__`, not the top-level one") is unaffected and still correct
+for this package.
+
+New modules land in the sub-package that matches their mechanism: Phase 7's middleware and Phase 8's
+`models/sequences.py` already do; Phase 10's `messaging/` is its own sub-package and Django app,
+which is the right shape.
+
+### 6. The consumer is an archetype, and a claim needs a golden repo
+
+The cims successor is a kiln **`python-web-app`** repo with `framework = django` and
+`frontend = angular` (**D53**), rebuilt rather than migrated (**D39**) — which is the formal version
+of this plan's existing "cims is prior art, not a compatibility constraint" stance.
+
+Under kiln **ADR-0005**, a claim not demonstrated in a runnable golden repo is not demonstrated. So
+`golden/python-web-app-django` (kiln Phase E) is where this package's wiring is proved end to end:
+`uv sync && task validate` in that repo, with the settings facade, the problem-details handler, the
+pagination class and the correlation middleware actually wired. Phase 12's docs-only recipes and the
+web plan's `wiring-django.md` are the prose form of the same thing, and the golden repo is authored
+from them.
+
+That also fixes the shape of the `[cli]` question for a Django repo: management commands stay Django's
+`manage.py`; the declared `[cli]` surface of ADR-0009 belongs to `python-app`/`python-tool` repos, not
+to this package. Do not add a Typer surface to `rn-forge-django`.
+
+### 7. Repo shape and validation
+
+`rn-forge-django` is an existing member of pykit (`python-lib` archetype), so nothing has to be added
+to the workspace for it. Two ongoing obligations once kiln Phase F.1 regenerates pykit's skeleton:
+the package stays listed in `[archetype.python-lib] packages` (it drives the generated per-package CI
+matrix and the release job), and `.rn-forge/kiln/state.json` is re-seeded by `kiln apply` whenever a
+generated file changes — `task lint` fails with `has drifted from the committed state` until it does.
+
+Every phase's validation block gains `uv run lint-imports`. After Phase F.1, `task validate` is what
+CI runs and the `uv run …` forms below are its inner primitives.
+
+### 8. What did not change
+
+Every phase's content, the gates on Phases 10 and 11, the extras design (including `oidc` being its
+own extra and there being no `messaging` extra), the conventions, and the additive-only promise.
+
 ## Summary (read this first)
 
 Everything here is **additive**. No existing public API in `rn-forge-django` is removed or changed
@@ -34,7 +163,7 @@ full cross-plan order.
 | --- | --- | --- | --- | --- |
 | 0 | Test-harness prerequisites (cache backend, shared table-creation fixture) | — | no | none |
 | 1 | DRF `problem_details_exception_handler` adapter | **⇢ web Phase 2** | no | low |
-| 2 | `StandardPagination` + `PaginationSettings` in the settings facade | — | no | low |
+| 2 | **`CursorPagination`** (AIP-158) + legacy page-number + `PaginationSettings` | **⇢ web Phase 4** | no | low |
 | 3 | `CacheIdempotencyStore` adapter (Django cache) | **⇢ web Phase 5** | no | low |
 | 4 | `VersionedModelMixin`, `ImmutableModelMixin`, `enforce_version` | **⇢ web Phase 3** (4.3 only) | no | low |
 | 5 | `OmitEmptyMixin` serializer mixin, `PermissionByMethodMixin` view mixin | — | no | none |
@@ -46,7 +175,7 @@ full cross-plan order.
 | --- | --- | --- | --- | --- |
 | 7 | `middleware.py` — WSGI correlation-ID middleware | **⇢ web Phase 1** | no | low |
 | 8 | `models/sequences.py` — sequence-backed human-readable code generator | — | no | **medium** |
-| 9 | `auth/jwt/oidc.py` — JWKS bearer authentication | `oidc` extra (`pyjwt[crypto]`) | no | medium |
+| 9 | `auth/jwt/oidc.py` — JWKS bearer **binding** over the web `Principal` contract, + basic auth | `oidc` extra (`pyjwt[crypto]`) | no | medium |
 
 **Part C — gated subsystems. Do not start these without passing the gate.**
 
@@ -54,7 +183,8 @@ full cross-plan order.
 | --- | --- | --- | --- | --- |
 | 10 | **Gated:** `messaging/` — outbox/inbox models, relay, consumer (bus + registry come from commons Phase 8b) | none | no | **high** |
 | 11 | **Gated:** `celery.py` — app factory + retryable-task preset | `celery` extra | no | medium |
-| 12 | Docs-only: drf-spectacular + camelCase recipes | none | no | none |
+| 12 | **Code:** camelCase wiring, DRF schema mirrors, `SPECTACULAR_SETTINGS` | `openapi` extra (`drf-spectacular`, `djangorestframework-camel-case`) | no | low |
+| 13 | Conformance driver over `rn_forge.web.conformance.CASES` | **⇢ web Phase 11** | no | low |
 | — | Deferred: claim-check pattern, Azure adapters, `RawPassthroughField` | — | — | — |
 
 Phases 0-6 are safe and should be done in order (Phase 0 first — the later ones need its fixtures).
@@ -172,6 +302,10 @@ rn-forge-commons = { workspace = true }
 rn-forge-web = { workspace = true }
 ```
 
+> **Corrected by the alignment section, §3.** Both rn-forge entries are pinned direct URLs at release
+> tags (kiln D46); the `[tool.uv.sources]` block is local development only and does not survive into
+> a built wheel. Use the form given there, not the one above.
+
 The dependency direction across the workspace is `django → web → commons`, with
 `azure → commons` alongside it. Nothing in `rn-forge-web` may import Django (its own boundary check
 enforces that), so this arrow only ever points one way.
@@ -223,6 +357,7 @@ uv run pytest packages/rn-forge-django
 uv run ruff check packages/rn-forge-django
 uv run ruff format --check packages/rn-forge-django
 uv run pyright                       # strict mode; src/ must be clean, tests are excluded
+uv run lint-imports                  # the boundary contracts — alignment §§1-2, 4
 uv run --directory packages/rn-forge-django --group docs mkdocs build --strict
 ```
 
@@ -374,18 +509,54 @@ contract rather than restating it.
 
 ---
 
-### Phase 2 — `StandardPagination` and `PaginationSettings`
+### Phase 2 — Cursor pagination (standard) and `PaginationSettings`
 
-**Source:** cims `apps/common/pagination.py::StandardPagination`.
+**Amended by the web plan (§A.1).** The original phase shipped only
+`StandardPagination(PageNumberPagination)` from cims. That is now the *legacy* option: it makes a
+Django API structurally un-swappable with a FastAPI one, because the two would disagree on the
+envelope, the query parameters and the continuation mechanism on every list endpoint. Page-number
+pagination is not wrong — it is a different contract, and the shared kit has to pick one.
+
+**Source:** cims `apps/common/pagination.py::StandardPagination` (legacy half);
+`rn_forge.web.pagination` + web plan §4.1 (standard half).
 **Destination:** new `src/rn_forge/django/drf/pagination.py`.
 
+#### 2.0 — `CursorPagination` is the standard class
+
 ```python
-class StandardPagination(PageNumberPagination):
-    """Page-number pagination with settings-facade-driven defaults."""
+class CursorPagination(drf_pagination.CursorPagination):
+    """Keyset pagination emitting the AIP-158 envelope over the shared cursor codec."""
+
+
+class LegacyPageNumberPagination(PageNumberPagination):
+    """Page-number pagination. Use only where a total and a jumpable index are required."""
 ```
 
-Class defaults `page_size=50`, `page_size_query_param="pageSize"`, `max_page_size=200`, all three
-overridable through the settings facade.
+**Subclass DRF's own `CursorPagination`; do not reimplement keyset paging.** Its ordering handling,
+its `WHERE (sort_key, pk) > (...)` construction and its edge cases are proven, and principle #1 says
+depend on that. Override exactly three things:
+
+1. **the cursor codec** — `encode_cursor`/`decode_cursor` delegate to `rn_forge.web.pagination`, so a
+   token issued by the Django stack is structurally the same token the FastAPI stack issues;
+2. **the query parameters** — `pageToken` and `pageSize`, not DRF's `cursor` and `page_size`;
+3. **`get_paginated_response` and `get_paginated_response_schema`** — emit the AIP-158 envelope
+   (`items`, `nextPageToken`, optional `totalSize`), and the schema override is what keeps
+   drf-spectacular's output agreeing with FastAPI's.
+
+Clamp `pageSize` to the cap; **never reject an over-large value** with a 400 — web §4.1, and AIP-158's
+own rule. DRF will not do this for you.
+
+**The `reverse` decision is made here** (web plan §4.3). DRF's cursor carries a `reverse` flag so it
+can serve a previous page; `rn_forge.web.pagination.Cursor` has no such field and AIP-158 is
+forward-only. Either add `reverse: bool = False` to the web `Cursor` — three lines there, and FastAPI
+never sets it — or disable reverse paging here. **Decide, record it in both plans, and do not let the
+two packages answer differently**: a `previousPageToken` on one stack and not the other is exactly the
+divergence the shared package exists to prevent.
+
+`LegacyPageNumberPagination` keeps cims's class defaults `page_size=50`,
+`page_size_query_param="pageSize"`, `max_page_size=200`, all three overridable through the settings
+facade. **The name carries the status** — a class called `StandardPagination` will keep being chosen
+by default no matter what a guide says. There is no compatibility alias, per the workspace rule.
 
 #### 2.1 — Settings-facade wiring
 
@@ -406,15 +577,22 @@ Add a `PaginationSettings` layer nested under `DRFSettings`, following `DRFViews
 **The reload trap.** `rn_forge_django_settings` is rebound by `_reload_settings` on the
 `setting_changed` signal (`settings.py:193-205`). A class attribute evaluated at import time would
 freeze the value from first import and silently ignore `override_settings`. So
-`StandardPagination` **must** read the facade at request time — override the
+**both** pagination classes **must** read the facade at request time — override the
 `get_page_size(request)` method and read `rn_forge_django_settings.drf.pagination` inside it, and
 import the *module* (`from rn_forge.django import settings as rnf_settings`) or the module-level
 name in a way that re-reads the rebound global. Assert this with a test that uses
-`override_settings` and checks the *new* value takes effect.
+`override_settings` and checks the *new* value takes effect. This applies to `CursorPagination` too,
+and it is easier to get wrong there because DRF's own class reads `page_size` as a class attribute.
 
-**Tests.** New `tests/drf/test_pagination.py` (`unit`): class defaults; each of the three settings
-overridden through `override_settings(RN_FORGE_DJANGO={...})`; `pageSize` query-param honoured and
-clamped at `max_page_size`; reload-after-`setting_changed`.
+**Tests.** New `tests/drf/test_pagination.py` (`unit`): class defaults for both classes; each of the
+three settings overridden through `override_settings(RN_FORGE_DJANGO={...})`;
+reload-after-`setting_changed` on both. For `CursorPagination` specifically: the AIP-158 envelope
+(`items`/`nextPageToken`, `totalSize` absent by default); a token round-trips through
+`rn_forge.web.pagination` and **decodes with the shared codec, not DRF's** — assert that directly,
+since a silent fallback to DRF's encoding is the failure that breaks cross-stack token parity;
+`pageSize` above `max_page_size` is **clamped to the cap and returns 200**, never a 400; a tampered
+`pageToken` raises `InvalidCursor` and renders as a 400 problem body. For
+`LegacyPageNumberPagination`: the `pageSize` query-param honoured and clamped.
 
 **There is no existing settings test to copy.** Verified 2026-08-31: no test in
 `packages/rn-forge-django/tests/` uses `override_settings` or touches `rn_forge_django_settings` at
@@ -886,6 +1064,30 @@ PostgreSQL path as verified-in-cims-only in the module docstring and in the PR.
 `EntraAuthenticationScheme`).
 **Destination:** new `src/rn_forge/django/auth/jwt/oidc.py`. New `oidc` extra.
 
+**Amended by the web plan (§A.1): this phase is now a *binding*, not a design.** Three things move out
+of it, and what is left is the DRF plumbing:
+
+- **`Principal` is `rn_forge.web.auth.Principal`** (web §10.2), not a type defined here. cims's is
+  prior art for the *fields*; the shared one is what a FastAPI service also returns, which is the
+  whole point. `claims_to_principal` returns it, and its signature stops being `-> Any`.
+- **Token verification comes from the commons `auth/` module** (web plan §A.2) — JWKS fetch, caching,
+  rotation, signature and claims validation. This module does not implement any of it; it calls it.
+  **This phase is blocked on that module and on web Phase 10.**
+- **The failure behaviour is web §10.4's, not DRF's.** DRF's stock `BaseAuthentication` raises
+  `NotAuthenticated`/`AuthenticationFailed`, which render as DRF's own `{"detail": ...}` body with a
+  `WWW-Authenticate` header of DRF's own construction. Both are wrong against the shared contract:
+  the body must be `application/problem+json` via Phase 1's handler, and the challenge must be RFC
+  6750 §3's `error=`/`error_description=` form built by `web.auth.challenge_header`. Override, do not
+  inherit. Getting this wrong is the single most likely way this package ends up with two error
+  formats.
+
+**Also ship basic auth** (RFC 7617) in `auth/basic/`, producing the same `Principal` and the same 401
+challenge, explicitly documented as local-development and simple-internal-deployment only — the
+fastapi plan's Phase 6b ships its twin, and the conformance table (Phase 13) covers both.
+
+**Scope/role checks** use `web.auth.Requirement` through a DRF permission class, so a requirement
+expressed once evaluates identically on both stacks.
+
 This is a *different mechanism* from the existing `auth/jwt/authentication.py`, which wraps
 simplejwt-issued tokens against a local `User`. Here the token is issued externally and verified
 against a remote JWKS endpoint, with no local user. Same sub-package, separate module; do not try to
@@ -969,7 +1171,7 @@ writing code:
    builder was deferred by the commons plan precisely because it had no consumer; this subsystem is
    that consumer. Either build it in commons first, or confirm that consumer-supplied builders are
    the permanent design.
-4. **Commons Phase 8b has landed** (`rn_forge.commons.messaging`: `MessageBus`,
+4. **Commons Phase 8b has landed** (`rn_forge.commons.integration.messaging`: `MessageBus`,
    `InMemoryMessageBus`, `HandlerRegistry`). This phase now consumes those rather than defining
    them — see §10.2.
 
@@ -988,7 +1190,7 @@ section); the consumer adds it to `INSTALLED_APPS`.
   (Convention 3).
 - **`bus.py` — moved out of this package.** Per
   [`web-library-plan.md`](./web-library-plan.md) §A.2, the `MessageBus` protocol, `InMemoryMessageBus`
-  and `HandlerRegistry` now live in **`rn_forge.commons.messaging`** (commons plan Phase 8b), so
+  and `HandlerRegistry` now live in **`rn_forge.commons.integration.messaging`** (commons plan Phase 8b), so
   `rn-forge-azure` can implement a Service Bus adapter without depending on Django. This package
   **imports** them; it defines none of them. Messaging is not HTTP-shaped and a worker needs it, which
   is why commons rather than `rn-forge-web` is the destination.
@@ -1013,7 +1215,7 @@ section); the consumer adds it to `INSTALLED_APPS`.
   `on_lag_observed` and `log` are the Convention 1 and 2 hooks.
 - **`consumer.py`** — `process_event(event, registry, inbox_model)` implementing
   dedup-by-`message_id`, dispatch and status recording against the Django ORM. `HandlerRegistry`
-  itself comes from `rn_forge.commons.messaging` (it is a plain dict-backed registry with no ORM
+  itself comes from `rn_forge.commons.integration.messaging` (it is a plain dict-backed registry with no ORM
   involvement); only the inbox-table interaction is Django's. Re-raise after recording a failure so
   the broker can dead-letter — swallowing there turns a visible failure into silent data loss.
 
@@ -1077,26 +1279,71 @@ change to it changes their retry behaviour.
 
 ---
 
-### Phase 12 — Docs-only: drf-spectacular and camelCase recipes
+### Phase 12 — Schema and casing, as shipped code
 
-No code, no dependencies. cims's `SPECTACULAR_SETTINGS` (`CAMELIZE_NAMES: True` plus the
-`djangorestframework_camel_case.contrib` postprocessing hook) and the global
-`CamelCaseJSONRenderer` / `CamelCaseJSONParser` wiring are a well-known but easy-to-miss
-configuration combination. This package has neither dependency and should not acquire them
-speculatively.
+**Amended by the web plan (§A.1): this phase was docs-only and is now code.** The original reasoning
+was that the package has neither dependency and should not acquire them speculatively. That holds for
+a recipe nobody is obliged to follow; it does not hold once `api-conventions.md` makes camelCase and
+the OpenAPI component names **normative for both frameworks**. `rn-forge-fastapi` enforces its half in
+code (its Phase 2 `WireModel` and Phase 3 `operationId` function); a Django half that is a page of
+copy-pasteable settings is not a matching guarantee, and the asymmetry would show up as two different
+generated clients.
 
-**Deliverable:** a new `docs/guides/api-conventions.md` (nav entry under Guides) containing:
+**New dependencies**, both behind an `openapi` extra so a consumer that does not publish a schema
+carries neither: `djangorestframework-camel-case` and `drf-spectacular`. Verify both are currently
+maintained in this phase's first step and record the result — the workspace dependency policy applies
+here as everywhere.
 
-1. The recommended `SPECTACULAR_SETTINGS` block, verbatim and copy-pasteable.
-2. The `REST_FRAMEWORK` renderer/parser snippet for camelCase.
-3. **The nested-`DictField` gotcha**, which is the reason this page exists: global camelCase parsing
-   recurses into opaque `DictField`/`JSONField` values and mangles keys that must stay as-is. cims
-   works around it in `apps/core/serializers.py::normalize_line`. Show the workaround.
-4. A pointer to Phase 9's `JWKSBearerAuthenticationScheme` omission — if a consumer wants the
-   drf-spectacular security-scheme registration, this is where the recipe lives.
+**Deliverables:**
 
-If a second consumer independently needs the nested-dict escape hatch, *then* promote it to a real
-`RawPassthroughField` in `rn_forge/django/drf/serializers/fields.py`. Not before.
+1. **Casing wired through the settings facade.** `CamelCaseJSONRenderer` / `CamelCaseJSONParser` as
+   the defaults, switchable off for a consumer that has a reason, following the `PaginationSettings`
+   pattern exactly. The rule is camelCase out, **both spellings accepted in** — matching the FastAPI
+   side's `populate_by_name=True`, so an internal caller posting `snake_case` works against either
+   stack.
+2. **A DRF serializer mirror of `ProblemDetail`,** plus `Page`, `CheckResult` and `HealthReport`.
+   This is the Django counterpart of the fastapi plan's Phase 2 pydantic mirrors and it exists for
+   the same reason: drf-spectacular builds `components/schemas` from serializers, so without a
+   serializer the shared error type never reaches the Django schema — the exact gap fastapi Phase 3
+   exists to close on its side. Each mirror gets the round-trip test its pydantic twin gets:
+   `Mirror(data=asdict(dataclass_instance)).is_valid()` and `.data == asdict(...)`.
+3. **`SPECTACULAR_SETTINGS` shipped as a dict this package exports,** not as a snippet to copy:
+   `OAS_VERSION` pinned to **3.1.0** to match FastAPI, `CAMELIZE_NAMES: True`, the
+   `djangorestframework_camel_case.contrib` postprocessing hook, the shared component names, and the
+   `operationId` convention from `api-conventions.md`. An application spreads it into its own
+   settings and overrides what it must.
+4. **The nested-`DictField` gotcha**, which was the original reason this page existed and is now the
+   reason a piece of code exists: global camelCase parsing recurses into opaque `DictField`/
+   `JSONField` values and mangles keys that must stay verbatim. cims works around it in
+   `apps/core/serializers.py::normalize_line`. **Ship `RawPassthroughField`** in
+   `rn_forge/django/drf/serializers/fields.py` rather than documenting the workaround: making casing
+   the library's default makes this the library's problem, and the "wait for a second consumer" test
+   the original phase set is met the moment casing stops being opt-in.
+5. **`JWKSBearerAuthenticationScheme`** — the drf-spectacular security-scheme registration for
+   Phase 9's authenticator, so the schema declares how to authenticate. Previously listed as an
+   omission with a pointer to a recipe; with this phase shipping code it belongs here.
+6. A `docs/guides/openapi.md` covering what an application still has to do, which should be close to
+   nothing beyond spreading the settings dict.
+
+---
+
+### Phase 13 — The conformance driver
+
+~15 lines, and the only test in this package that can fail because of something `rn-forge-fastapi`
+does. It is the Django half of the pair; the FastAPI half is that plan's Phase 6c, and **both must
+exist for either to mean anything.**
+
+Build a minimal Django/DRF application wired with everything this plan ships — the problem handler,
+cursor pagination, the idempotency store, `enforce_version`, the readiness view, the correlation
+middleware and the Phase 9 authenticator — run every case in `rn_forge.web.conformance.CASES` through
+the DRF test client, redact with `web.conformance.redact`, and assert equality against the table.
+
+- **Assert against the table, never against FastAPI's output.** Two stacks agreeing on the wrong
+  thing is not conformance.
+- **A case this package cannot satisfy is a finding, not a skip.** Either an adapter is missing, or
+  the case encodes a decision Django cannot honour — which is a web-plan change, raised there. A
+  `pytest.skip` here silently removes the guarantee.
+- Mark it `integration` if it needs the DB; the idempotency and concurrency cases will.
 
 ---
 
@@ -1130,9 +1377,29 @@ If a second consumer independently needs the nested-dict escape hatch, *then* pr
       `pytest-randomly` twice with different seeds
 - [ ] `mkdocs.yml` nav updated for every new page (pagination, idempotency, middleware, oidc,
       api-conventions, plus messaging/celery if Part C shipped)
-- [ ] Version bumped to `0.3.0`
+- [ ] Version bumped to `0.3.0` and released as the tag `rn-forge-django-v0.3.0` (kiln D46 — there is
+      no PyPI release), with the installation guide documenting the `git+…@tag` form per extra
+- [ ] `uv run lint-imports` green: `rn_forge.django`'s runtime surface imports neither `rn_forge.cli`,
+      `rn_forge.tooling`, Typer nor Jinja, and never imports `rn_forge.fastapi`
+- [ ] `.importlinter` carries `rn_forge.web` in `root_packages` with the two contracts from the web
+      plan's alignment §2, landed in the same change as the `rn-forge-web` dependency
+- [ ] No Typer command surface was added to this package (alignment §6 — the declared `[cli]` surface
+      belongs to `python-app`/`python-tool` repos; Django keeps `manage.py`)
 - [ ] `CLAUDE.md`'s `rn-forge-django` bullet updated — its extras list and architecture notes both
       change if Phase 9 or Part C lands
+- [ ] `CursorPagination` is the standard class and emits the AIP-158 envelope over the shared codec;
+      the page-number class is named `LegacyPageNumberPagination`; `pageSize` is clamped, never
+      rejected with a 400
+- [ ] The `reverse`-flag decision (web §4.3) is made and recorded in **both** plans
+- [ ] camelCase renderer/parser wired as the default through the settings facade, with both spellings
+      accepted on input; `RawPassthroughField` ships and the nested-`DictField` case is tested
+- [ ] The DRF schema mirrors round-trip against the `rn_forge.web` dataclasses, and the emitted schema
+      is OpenAPI **3.1.0** with the shared components named exactly as the FastAPI side names them
+- [ ] Phase 9 returns `rn_forge.web.auth.Principal`, renders 401/403 as `problem+json` through Phase
+      1's handler, and builds its challenge with `web.auth.challenge_header` rather than inheriting
+      DRF's — asserted by a test, since inheriting DRF's default is the silent failure mode
+- [ ] Basic auth ships and is documented as local/simple-deployment only
+- [ ] Phase 13's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no skips
 - [ ] Phase 10 and Phase 11 gate outcomes recorded (built, or abandoned with the reason written down)
 - [ ] The Phase 8 migrations decision recorded, whichever way it went
 - [ ] Nothing committed or pushed — leave the working tree for review
