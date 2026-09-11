@@ -1,4 +1,4 @@
-"""Tests for rn_forge.commons.logging."""
+"""Tests for rn_forge.commons.logging.logger."""
 
 from __future__ import annotations
 
@@ -17,14 +17,14 @@ from rn_forge.commons import (
     AppLogger,
     LoggingConfig,
 )
-from rn_forge.commons.logging import (
+from rn_forge.commons.logging.logger import (
     TRACE,
     BraceLogRecord,
     EnrichFilter,
     _enable_otel_log_correlation,
 )
 from rn_forge.commons.lang.reflection import ReflectUtils
-import rn_forge.commons.logging as logging_module
+import rn_forge.commons.logging.logger as logging_module
 
 from conftest import raise_
 
@@ -402,7 +402,7 @@ def test_otel_correlation_injects_context_without_adding_handlers() -> None:
             """
 import logging
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, use_span
-from rn_forge.commons.logging import _enable_otel_log_correlation
+from rn_forge.commons.logging.logger import _enable_otel_log_correlation
 
 handler = logging.NullHandler()
 logging.getLogger().addHandler(handler)

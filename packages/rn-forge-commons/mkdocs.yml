@@ -63,7 +63,7 @@ nav:
           - Excel: api/data/excel.md
           - Pandas: api/data/pandas.md
       - Logging:
-          - Logging: api/logging/index.md
+          - Logger: api/logging/logger.md
           - StructLogger: api/logging/structlog.md
       - Runtime:
           - Environment: api/runtime/environment.md

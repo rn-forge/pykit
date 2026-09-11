@@ -2,20 +2,20 @@
 
 Provides :class:`StructLogger` — context binding (``bind``/``unbind``/``new``)
 and structured keyword fields on top of whatever
-:meth:`~rn_forge.commons.logging.AppLogger.initialize` already configured
+:meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` already configured
 (Rich console, file, JSON). Every record still flows through those same
 handlers: this module renders the bound context into the ``{}``-style message
-:class:`~rn_forge.commons.logging.BraceLogRecord` already expects, then calls
-through to the same :class:`~rn_forge.commons.logging.AppLogger` instance
-:meth:`~rn_forge.commons.logging.AppLogger.get_logger` would return — it does
+:class:`~rn_forge.commons.logging.logger.BraceLogRecord` already expects, then calls
+through to the same :class:`~rn_forge.commons.logging.logger.AppLogger` instance
+:meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` would return — it does
 not call ``dictConfig`` or install its own formatter.
 
-Use :meth:`~rn_forge.commons.logging.AppLogger.get_logger` directly for
+Use :meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` directly for
 ordinary unstructured logging; reach for :class:`StructLogger` when you want
 context (a request id, a tenant) bound once and carried across a chain of log
 calls.
 
-**Call** :meth:`~rn_forge.commons.logging.AppLogger.initialize` **before the
+**Call** :meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` **before the
 first** :class:`StructLogger` **log call** (not necessarily before
 constructing one — the underlying logger is resolved lazily, on first use).
 verboselogs' custom levels (``TRACE``, ``SPAM``, ``VERBOSE``, ``NOTICE``,
@@ -34,7 +34,7 @@ from typing import Any, Self
 
 import structlog
 
-from rn_forge.commons.logging import AppLogger
+from rn_forge.commons.logging.logger import AppLogger
 
 __all__ = ["StructLogger"]
 
