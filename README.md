@@ -9,15 +9,30 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | Package | Import path | Description |
 | --- | --- | --- |
 | [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | Runtime-neutral utilities, grouped by kind of mechanism: `lang` (collections, dataclasses, reflection, values), `fs` (paths, hashing, locks, blocks, documents), `data` (Excel/pandas), `logging`, `runtime` (environment, subprocess, tasks, plugins) and `integration` (messaging/object/secret protocols, resilience), plus config, exceptions, findings and testing helpers. No web framework. |
-| [`rn-forge-cli`](packages/rn-forge-cli) | `rn_forge.cli` | The shared command-line layer: Rich console, the Typer application factory, the standard option set, the error-to-exit-code mapping and the declared `[cli]` surface. What an ordinary batch application wants as much as a developer tool does. |
+| [`rn-forge-cli`](packages/rn-forge-cli) | `rn_forge.cli` | The shared command-line layer: `CliApp` (a `typer.Typer` subclass), the standard option set, the error-to-exit-code mapping and the declared `[cli]` surface. What an ordinary batch application wants as much as a developer tool does. Console output is not here — it is a property of the process, and lives in `rn-forge-commons`. |
 | [`rn-forge-tooling`](packages/rn-forge-tooling) | `rn_forge.tooling` | The file-owning developer tooling: local JSON state, a strict Jinja engine, the generation engine, install mechanics and the docs checkers. Depends on `rn-forge-cli`; never a runtime dependency of a deployed app. |
+| [`rn-forge-web`](packages/rn-forge-web) | `rn_forge.web` | Framework-agnostic HTTP/API primitives — the wire semantics an application promises its callers: correlation IDs, RFC 9457 problem details, ETag preconditions, AIP-158 pagination, idempotency, readiness, ASGI middleware, the auth contract, and a framework-free conformance table. Depends on `rn-forge-commons` and nothing else. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 
-The import boundaries between these are executable. [`.importlinter`](.importlinter) states four
-contracts — `rn_forge.commons` imports neither `cli` nor `tooling`, `rn_forge.cli` never imports
-`tooling`, the three libraries layer strictly (tooling → cli → commons), and `rn_forge.django`'s
-runtime surface imports none of them outside a future `codegen` extra. `uv run lint-imports` proves
-them, and CI gates every other job on it.
+## Import boundaries
+
+The boundaries between these packages are executable, not conventional.
+[`.importlinter`](.importlinter) states six contracts and `uv run lint-imports` proves them; CI
+gates every other job on it.
+
+1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or Jinja — it is
+   runtime-neutral and ships into web servers and containers.
+2. `rn_forge.cli` never imports `rn_forge.tooling` or Jinja — a batch application takes the
+   command-line layer without the file-owning machinery (kiln D52, ADR-0002).
+3. The three libraries layer strictly: `tooling` → `cli` → `commons`.
+4. `rn_forge.django`'s runtime surface imports none of them. Only `rn_forge.django.codegen` may,
+   and only with the (not yet built) `codegen` extra installed.
+5. `rn_forge.web` imports no web framework (`django`, `fastapi`, `starlette`, `rest_framework`)
+   and neither `rn_forge.cli` nor `rn_forge.tooling` — it ships into an ASGI server and has no
+   business reaching the command-line or file-owning layers.
+6. The framework packages layer on top of it: `django` → `web` → `commons`, with `fastapi` an
+   independent sibling of `django` (an optional layer in the contract until that package exists),
+   so neither may import the other.
 
 There are deliberately **no compatibility re-exports** in any direction: a shim would satisfy a
 caller and reverse the dependency.
@@ -31,7 +46,42 @@ All packages ship a `py.typed` marker and are type-checked in strict mode.
 3. **Package boundaries are non-negotiable.** Framework-free packages import no web framework; heavy or situational dependencies live behind optional extras; protocols live in the lowest package that can hold them, adapters beside the technology they adapt.
 4. **pykit is upstream.** Applications are built on these libraries rather than re-deriving them, so apps sharing pykit share logic and read alike.
 
-See [CLAUDE.md](CLAUDE.md) for the full statement of these.
+These hold for every existing package and for every future one — new modules, new packages, new
+extras. When a plan or a change conflicts with one of them, the principle wins unless the deviation
+is written down with its reason.
+
+On #1, hand-roll only when one of these is true, and say which one in the module docstring: nothing
+maintained covers the concern (check PyPI before concluding this, not memory); the candidate drags
+in a framework that would break a package boundary; or the needed slice is genuinely a few lines
+and the candidate is unmaintained or far heavier.
+
+On #2, a wrapper means: configuration is a frozen dataclass (or a settings-facade field), never a
+kwargs soup; errors surface as `AppException` subclasses; logging is injected, never assumed;
+public symbols are re-exported from the package's curated `__init__.py`. The wrapper standardizes
+— it does not add features the library lacks, and the underlying object stays reachable as an
+escape hatch.
+
+On #4, surveys of existing applications are **prior art that informs the design**, not
+compatibility constraints to preserve — where an application got something wrong, fix it here
+rather than encoding it.
+
+## Releases are pinned git tags, not PyPI versions
+
+None of these packages is published to PyPI. A release is a tag (`rn-forge-commons-v0.5.0`), and
+every consumer — including `rn-forge-cli` and `rn-forge-tooling` depending on `rn-forge-commons`
+— declares it as a pinned direct URL (kiln D46):
+
+```toml
+dependencies = [
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+```
+
+The `[tool.uv.sources]` workspace override exists for local development only: it is what makes the
+workspace resolve to this checkout, and it is not what a consumer resolves.
+
+All packages use `uv_build` as the build backend, with `module-name` mapped to their `rn_forge.*`
+namespace package.
 
 ## Requirements
 
@@ -54,4 +104,8 @@ uv run pyright                # type check (strict mode, packages/ only)
 uv run lint-imports           # enforce package import boundaries
 ```
 
-See [`packages/rn-forge-commons`](packages/rn-forge-commons), [`packages/rn-forge-cli`](packages/rn-forge-cli), [`packages/rn-forge-tooling`](packages/rn-forge-tooling) and [`packages/rn-forge-django`](packages/rn-forge-django) for package-specific details, and [CLAUDE.md](CLAUDE.md) for architecture notes.
+Each package's own `README.md` and `docs/` carry its architecture: see
+[`rn-forge-commons`](packages/rn-forge-commons), [`rn-forge-cli`](packages/rn-forge-cli),
+[`rn-forge-tooling`](packages/rn-forge-tooling), [`rn-forge-web`](packages/rn-forge-web) and
+[`rn-forge-django`](packages/rn-forge-django). [CLAUDE.md](CLAUDE.md) is the agent-instruction
+file; it points here rather than restating any of it.

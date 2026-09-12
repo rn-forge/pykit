@@ -16,7 +16,7 @@ logging, subprocesses, task execution, and general utility helpers.
 # Modules are grouped by kind of mechanism (lang, fs, data, logging, runtime,
 # integration); public class names are unaffected and stay re-exported here.
 # The developer-tooling surface lives in two packages that depend on this one:
-# `rn-forge-cli` (console, Typer wiring, standard options, exit codes) and
+# `rn-forge-cli` (Typer wiring, standard options, exit codes) and
 # `rn-forge-tooling` (state, templates, generation, install, docs checks).
 # There are deliberately no compatibility re-exports in either direction —
 # that would reverse the dependency, and `.importlinter` proves it does not
@@ -59,7 +59,7 @@ from rn_forge.commons.lang.collections import (
     ListUtils,
     MergeResult,
 )
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import DataclassMixin, StrictDataclassMixin
 from rn_forge.commons.lang.reflection import ReflectUtils
 from rn_forge.commons.lang.types import JsonValue
 from rn_forge.commons.lang.utils import AppUtils, Base64
@@ -67,12 +67,14 @@ from rn_forge.commons.logging import (
     AppLogger,
     LoggingConfig,
 )
+from rn_forge.commons.runtime.console import AppConsole, OutputMode, console
 from rn_forge.commons.runtime.environment import Environment
 from rn_forge.commons.runtime.plugins import EntryPointLoader, PluginError
 from rn_forge.commons.runtime.subprocess import Process
 from rn_forge.commons.runtime.tasks import Task, TaskPool
 
 __all__ = [
+    "AppConsole",
     "AppException",
     "AppLogger",
     "AppUtils",
@@ -104,6 +106,7 @@ __all__ = [
     "MessageBus",
     "ObjectNotFound",
     "ObjectStore",
+    "OutputMode",
     "PathUtils",
     "PluginError",
     "Process",
@@ -111,8 +114,10 @@ __all__ = [
     "SecretNotFound",
     "SecretStore",
     "Severity",
+    "StrictDataclassMixin",
     "Task",
     "TaskPool",
     "YamlUtils",
     "atomic_symlink",
+    "console",
 ]

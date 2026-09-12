@@ -9,13 +9,23 @@ Provides:
   interaction helpers.
 - :data:`console` — a module-level default :class:`AppConsole` singleton.
 
-This module is deliberately free of any ``typer``/``click`` import, so it is
-usable from a plain script, a Django management command, or a pytest run —
-not only from a Typer CLI (see :mod:`rn_forge.cli` for that layer).
+**Why this lives in commons.** Console output is a property of the *process*,
+like :mod:`~rn_forge.commons.runtime.environment` beside it — not of the
+command-line parser. This module imports no ``typer`` and no ``click``, so a
+Django management command, a worker entry point, a plain script or a pytest
+run can all use it; ``rn_forge.django`` in particular is forbidden by
+``.importlinter`` from importing ``rn_forge.cli`` at all, so a console living
+there would have been unreachable from the framework packages that want it.
+Rich is already a commons dependency for the logging handler, which writes to
+**stderr** for the same reason :meth:`emit` writes payloads to stdout: a
+machine-readable result and a human-readable log must not share a stream.
+
+:mod:`rn_forge.cli` builds on this — it is the Typer layer, and it wires
+``--quiet``/``--json`` into the :data:`console` singleton below.
 
 Typical usage::
 
-    from rn_forge.cli.console import console, OutputMode
+    from rn_forge.commons import console, OutputMode
 
     console.info("Starting {}", "job")
     console.table("name", "status", rows=[("alpha", "ok"), ("beta", "failed")])

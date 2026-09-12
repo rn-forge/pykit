@@ -9,24 +9,17 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from rn_forge.cli.console import console
-from rn_forge.cli.errors import run
-from rn_forge.commons.logging import AppLogger
-
 from rn_forge.cli import (
+    CliApp,
     CliOptions,
     DryRunOption,
     JsonOption,
     LogLevel,
-    build_app,
-    command_options,
-    options,
-    parse_key_values,
-    parse_overrides,
     YesOption,
+    parse_overrides,
 )
-from rn_forge.cli.console import OutputMode, console
 from rn_forge.commons.logging import AppLogger
+from rn_forge.commons.runtime.console import OutputMode, console
 
 runner = CliRunner()
 
@@ -62,12 +55,12 @@ class TestLogLevel:
         assert level.to_int() == expected
 
 
-# -- build_app -----------------------------------------------------------
+# -- CliApp ------------------------------------------------------------
 
 
-class TestBuildApp:
+class TestCliApp:
     def test_help_lists_log_and_output_options(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
 
         @app.command()
         def hello() -> None:
@@ -80,32 +73,8 @@ class TestBuildApp:
         assert "--quiet" in result.output
         assert "--json" in result.output
 
-    def test_add_log_options_false_omits_them(self) -> None:
-        app = build_app("testapp", add_log_options=False)
-
-        @app.command()
-        def hello() -> None:
-            print("hi")
-
-        result = runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "--log-level" not in result.output
-        assert "--log-file" not in result.output
-
-    def test_add_output_options_false_omits_them(self) -> None:
-        app = build_app("testapp", add_output_options=False)
-
-        @app.command()
-        def hello() -> None:
-            print("hi")
-
-        result = runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "--quiet" not in result.output
-        assert "--json" not in result.output
-
     def test_quiet_and_json_together_is_a_usage_error(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
 
         @app.command()
         def hello() -> None:
@@ -115,7 +84,7 @@ class TestBuildApp:
         assert result.exit_code != 0
 
     def test_log_level_sets_root_logger_level(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
 
         @app.command()
         def hello() -> None:
@@ -126,19 +95,19 @@ class TestBuildApp:
         assert logging.getLogger().level == logging.DEBUG
 
     def test_options_seen_before_subcommand_name(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
         seen: dict[str, CliOptions] = {}
 
         @app.command()
         def hello(ctx: typer.Context) -> None:
-            seen["opts"] = options(ctx)
+            seen["opts"] = CliOptions.from_context(ctx)
 
         result = runner.invoke(app, ["--quiet", "hello"])
         assert result.exit_code == 0
         assert seen["opts"] == CliOptions(quiet=True, json_output=False)
 
     def test_json_mode_keeps_log_output_off_stdout(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
 
         @app.command()
         def emit(ctx: typer.Context) -> None:
@@ -149,7 +118,7 @@ class TestBuildApp:
         assert json.loads(result.stdout) == {"ok": True}
 
     def test_explicit_log_level_is_honoured_even_with_json(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
 
         @app.command()
         def emit(ctx: typer.Context) -> None:
@@ -160,7 +129,7 @@ class TestBuildApp:
         assert logging.getLogger().level == logging.DEBUG
 
     def test_dry_run_and_yes_are_command_level_and_merge(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
         seen: dict[str, CliOptions] = {}
 
         @app.command()
@@ -169,26 +138,28 @@ class TestBuildApp:
             dry_run: DryRunOption = False,
             yes: YesOption = False,
         ) -> None:
-            seen["opts"] = command_options(ctx, dry_run=dry_run, yes=yes)
+            seen["opts"] = CliOptions.from_context(ctx, dry_run=dry_run, yes=yes).apply(
+                ctx
+            )
 
         result = runner.invoke(app, ["apply-", "--dry-run", "-y"])
         assert result.exit_code == 0
         assert seen["opts"] == CliOptions(dry_run=True, yes=True)
 
     def test_dry_run_defaults_to_false(self) -> None:
-        app = build_app("testapp")
+        app = CliApp("testapp")
         seen: dict[str, CliOptions] = {}
 
         @app.command()
         def apply_(ctx: typer.Context, dry_run: DryRunOption = False) -> None:
-            seen["opts"] = command_options(ctx, dry_run=dry_run)
+            seen["opts"] = CliOptions.from_context(ctx, dry_run=dry_run).apply(ctx)
 
         result = runner.invoke(app, ["apply-"])
         assert result.exit_code == 0
         assert seen["opts"] == CliOptions()
 
-    def test_options_seen_after_subcommand_name_via_command_options(self) -> None:
-        app = build_app("testapp")
+    def test_options_seen_after_subcommand_name_are_merged(self) -> None:
+        app = CliApp("testapp")
         seen: dict[str, CliOptions] = {}
 
         @app.command()
@@ -196,27 +167,11 @@ class TestBuildApp:
             ctx: typer.Context,
             quiet: bool = typer.Option(False, "--quiet"),
         ) -> None:
-            seen["opts"] = command_options(ctx, quiet=quiet)
+            seen["opts"] = CliOptions.from_context(ctx, quiet=quiet).apply(ctx)
 
         result = runner.invoke(app, ["hello", "--quiet"])
         assert result.exit_code == 0
         assert seen["opts"] == CliOptions(quiet=True, json_output=False)
-
-
-# -- parse_key_values ------------------------------------------------------
-
-
-class TestParseKeyValues:
-    def test_happy_path(self) -> None:
-        assert parse_key_values(["a=1", "b=2"]) == {"a": "1", "b": "2"}
-
-    def test_empty_input(self) -> None:
-        assert parse_key_values(None) == {}
-        assert parse_key_values([]) == {}
-
-    def test_missing_equals_raises(self) -> None:
-        with pytest.raises(typer.BadParameter):
-            parse_key_values(["no_equals"])
 
 
 # -- parse_overrides ---------------------------------------------------------
@@ -259,12 +214,12 @@ class TestJsonStaysParseable:
 
     @pytest.fixture
     def app(self):
-        application = build_app("json-demo", "Demo.")
+        application = CliApp("json-demo", "Demo.")
         logger = AppLogger.get_logger("json_demo.command")
 
         @application.command()
         def report(ctx: typer.Context, json_output: JsonOption = False) -> None:
-            command_options(ctx, json_output=json_output)
+            CliOptions.from_context(ctx, json_output=json_output).apply(ctx)
             logger.info("a diagnostic that must not land on stdout")
             console.emit({"status": "ok"})
 
@@ -279,5 +234,5 @@ class TestJsonStaysParseable:
         ids=["flag-at-the-root", "flag-on-the-command"],
     )
     def test_stdout_is_parseable_wherever_the_flag_sits(self, app, args, capsys):
-        assert run(app, args) == 0
+        assert app.run(args) == 0
         assert json.loads(capsys.readouterr().out) == {"status": "ok"}

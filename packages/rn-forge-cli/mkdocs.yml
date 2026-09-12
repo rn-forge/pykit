@@ -35,13 +35,10 @@ nav:
   - Guides:
       - guides/index.md
       - Installation: guides/installation.md
-      - Console: guides/console.md
       - CLI: guides/cli.md
-      - Declaring a CLI: guides/declare.md
+      - Declaring a CLI: guides/declaring.md
   - API Reference:
       - api/index.md
       - App: api/app.md
       - Options: api/options.md
-      - Console: api/console.md
-      - Errors: api/errors.md
-      - Declare: api/declare.md
+      - Surface: api/surface.md

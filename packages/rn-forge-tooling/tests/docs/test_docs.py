@@ -327,7 +327,7 @@ class TestCheckSite:
 class TestDocsCli:
     @pytest.fixture(autouse=True)
     def _rich_console(self):
-        from rn_forge.cli.console import OutputMode, console
+        from rn_forge.commons.runtime.console import OutputMode, console
 
         console.set_mode(OutputMode.RICH)
         yield

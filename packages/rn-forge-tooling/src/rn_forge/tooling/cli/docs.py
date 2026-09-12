@@ -28,8 +28,8 @@ import typer
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding
 from rn_forge.commons.lang.utils import AppUtils
-from rn_forge.cli import build_app
-from rn_forge.cli.console import OutputMode, console
+from rn_forge.cli import CliApp
+from rn_forge.commons.runtime.console import OutputMode, console
 from rn_forge.tooling.docs.nav import update_nav
 from rn_forge.tooling.docs.policy import DocsPolicy
 from rn_forge.tooling.docs.site import check_site
@@ -37,7 +37,7 @@ from rn_forge.tooling.docs.structure import check_structure
 
 __all__ = ["app"]
 
-app = build_app("rn-forge-docs", "Documentation structure, link and nav checks.")
+app = CliApp("rn-forge-docs", "Documentation structure, link and nav checks.")
 
 RootOption = Annotated[
     Path,

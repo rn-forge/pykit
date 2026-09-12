@@ -1,4 +1,4 @@
-"""Tests for rn_forge.cli.console."""
+"""Tests for rn_forge.commons.runtime.console."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from io import StringIO
 import pytest
 from rich.console import Console
 
-from rn_forge.cli.console import AppConsole, OutputMode
+from rn_forge.commons.runtime.console import AppConsole, OutputMode
 
 
 def _console(mode: OutputMode = OutputMode.RICH) -> tuple[AppConsole, StringIO]:

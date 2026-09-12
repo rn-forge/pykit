@@ -3,7 +3,7 @@
 `AppConsole` is a thin facade over `rich.console.Console` with four output modes:
 
 ```python
-from rn_forge.cli.console import console, OutputMode
+from rn_forge.commons import console, OutputMode
 
 console.info("Starting {}", "job")
 console.success("Done in {}s", 1.2)
@@ -17,7 +17,7 @@ A CLI typically needs three output personalities: normal (styled, human-readable
 that by switching `console`'s mode instead of writing separate code paths:
 
 ```python
-from rn_forge.cli.console import console, OutputMode
+from rn_forge.commons import console, OutputMode
 
 def run(*, quiet: bool = False, json_output: bool = False) -> None:
     if json_output:
@@ -42,8 +42,16 @@ console.table("name", "status", rows=rows)
 ```
 
 `warning()`/`error()` always go to stderr; `fail()` calls `error()` then raises `SystemExit` — no
-Typer dependency, so it works the same from a plain script as from a Typer command (see the
-[CLI guide](cli.md) for the Typer-specific layer built on top of this one).
+Typer dependency, so it works the same from a plain script as from a Typer command. The
+Typer-specific layer built on top of this one is `rn-forge-cli`.
 
 The underlying `rich.console.Console` is always reachable via `console.rich` for anything this
 facade doesn't cover — a `Progress` bar, a `Live` display, or a custom renderable.
+
+## Where the mode comes from in a CLI
+
+Nothing in this package sets the mode for you — it is a plain facade, usable
+from a script, a Django management command, a worker or a test. In an
+`rn-forge` command-line application, `rn-forge-cli` drives it: its `--quiet`
+and `--json` flags call `set_mode` before the command body runs, so a command
+just calls `console.emit(...)` and gets the right personality.

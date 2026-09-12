@@ -1,8 +1,16 @@
-"""Dataclass mixin for serialisation and dict conversion.
+"""Dataclass mixins for serialisation and dict conversion.
 
-Provides :class:`DataclassMixin`, a base class that adds ``as_dict()``,
-``to_json()``, ``to_yaml()``, and ``from_dict()`` to any
-``@dataclass``-decorated class.
+Provides:
+
+- :class:`DataclassMixin` — adds ``as_dict()``, ``to_json()``, ``to_yaml()``
+  and ``from_dict()`` to any ``@dataclass``-decorated class. Lenient: a value
+  whose type does not match its field passes through unchanged.
+- :class:`StrictDataclassMixin` — the same surface for records parsed from an
+  externally-authored document, with dacite type checking on and failures
+  raised as ``AppException``.
+
+Pick by where the data comes from: a hand-written config file gets the strict
+variant, a record your own code constructs gets the base.
 
 Field exclusion
 ~~~~~~~~~~~~~~~
@@ -24,6 +32,7 @@ from typing import Any, ClassVar, Self, cast
 
 import dacite
 
+from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import JsonUtils, YamlUtils
 from rn_forge.commons.logging import AppLogger
 
@@ -121,8 +130,11 @@ class DataclassMixin:
     #: was — and every ``is`` comparison against a member then quietly
     #: evaluates false. Casting reconstructs the member and rejects a value
     #: the enum does not define, which is the whole point of declaring one.
-    #: Override in a subclass to opt into strict type checking:
-    #: ``__dacite_config__ = dacite.Config(check_types=True)``.
+    #: To opt into strict type checking, prefer :class:`StrictDataclassMixin`
+    #: over overriding this directly — a hand-written
+    #: ``dacite.Config(check_types=True)`` builds a *fresh* config and silently
+    #: drops the ``cast`` list above, reintroducing the ``StrEnum`` bug this
+    #: comment describes.
     __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
         check_types=False, cast=[Enum, tuple, set]
     )
@@ -171,7 +183,13 @@ class DataclassMixin:
                 data_class=cls, data=data, config=cls.__dacite_config__
             )
         except dacite.DaciteError:
-            _LOGGER.exception(
+            # Debug, not exception: this re-raises, so the caller decides
+            # whether a parse failure is an error. Logging a full traceback at
+            # ERROR here double-reports it — and under
+            # :class:`StrictDataclassMixin`, where an invalid config document
+            # is an ordinary user mistake, it buries the clean message under a
+            # dacite stack the reader can do nothing with.
+            _LOGGER.debug(
                 "DataclassMixin.from_dict failed | cls={} | keys={}",
                 cls.__name__,
                 sorted(data),
@@ -263,7 +281,70 @@ class DataclassMixin:
         return f"{type(self).__name__}({parts})"
 
 
-__all__ = ["DataclassMixin"]
+class StrictDataclassMixin(DataclassMixin):
+    """A :class:`DataclassMixin` for records parsed from *externally-authored* input.
+
+    Use this for a dataclass whose values arrive from a hand-written document —
+    a repository's ``config.toml``, a ``_areas.yml`` manifest, a fixture
+    definition. Use the plain :class:`DataclassMixin` for a record constructed
+    in code, where strictness costs a check and buys nothing.
+
+    Two differences from the base, and no others:
+
+    - **dacite type checking is on.** A ``str`` where a ``bool`` is declared is
+      rejected rather than passed through. The ``cast`` list is carried over
+      unchanged, so ``list -> tuple``/``list -> set`` structural coercion and
+      ``StrEnum`` member reconstruction still work — see
+      :attr:`DataclassMixin.__dacite_config__` for why that matters.
+    - **Failures surface as :class:`~rn_forge.commons.exceptions.AppException`.**
+      The base re-raises dacite's own exception types, and a bad enum value
+      raises a bare :exc:`ValueError` that is not a ``DaciteError`` at all.
+      Neither names the document the author has to go and fix.
+
+    Example::
+
+        @dataclass(frozen=True, slots=True)
+        class CliSurface(StrictDataclassMixin):
+            name: str
+            log_options: bool = True
+
+        CliSurface.from_dict({"name": "app", "log_options": "yes"})
+        # AppException: Invalid CliSurface: wrong value type for field
+        # "log_options" - should be "bool" instead of value "yes" of type "str"
+    """
+
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=True, cast=[Enum, tuple, set]
+    )
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create an instance from *data*, validating every field's type.
+
+        Args:
+            data: A dict whose keys correspond to dataclass field names.
+                Unrecognised keys are silently ignored, as in the base class.
+
+        Returns:
+            A new instance of this class populated with matching field values.
+
+        Raises:
+            AppException: A value does not match its field's declared type, a
+                required field is absent, or an enum-typed field names a member
+                the enum does not define.
+            TypeError: If the subclass was not decorated with ``@dataclass``.
+        """
+        try:
+            return super().from_dict(data)
+        # ValueError is caught alongside DaciteError deliberately: dacite lets
+        # an enum's own `ValueError` propagate rather than wrapping it, so
+        # catching only DaciteError would leak the one failure a reader of a
+        # config document is most likely to cause (a misspelled enum value).
+        except (dacite.DaciteError, ValueError) as error:
+            raise AppException("Invalid {}: {}", cls.__name__, error) from error
+
+
+__all__ = ["DataclassMixin", "StrictDataclassMixin"]
 
 
 def _dataclass_to_dict(obj: Any, *, exclude_hidden: bool) -> dict[str, Any]:

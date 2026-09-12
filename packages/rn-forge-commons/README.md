@@ -51,6 +51,8 @@ holds it.
   flatten, structural comparison, sorting, filtering, grouping.
 - **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()`
   to any `@dataclass`, reconstructing nested dataclasses and enum members on the way back.
+  `StrictDataclassMixin`: the same surface for a record parsed from a hand-written document, with
+  dacite type checking on and failures raised as `AppException` naming the offending field.
 - **`reflection`** — `ReflectUtils`: fully-qualified name resolution, error-message formatting,
   and stack-frame variable inspection.
 - **`types`** — the recursive `JsonValue` alias.
@@ -84,6 +86,10 @@ helpers.
 
 - **`environment`** — `Environment`: typed env-var access, plus the `require`/`forbid` fail-fast
   guards a process calls at startup.
+- **`console`** — `AppConsole`, `OutputMode`, `console`: a Rich output facade with RICH/PLAIN/
+  QUIET/JSON modes, semantic helpers, a one-call table builder and confirm/prompt/status
+  interaction. Imports no Typer or Click, so a script, a worker or a Django management command
+  uses it directly; `rn-forge-cli` drives its mode from `--quiet`/`--json`.
 - **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and captures return
   code, stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread pool.

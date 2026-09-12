@@ -1,4 +1,4 @@
-"""Tests for rn_forge.cli.errors."""
+"""Tests for rn_forge.cli.app."""
 
 from __future__ import annotations
 
@@ -6,29 +6,28 @@ import pytest
 import typer
 from typer._click.exceptions import UsageError
 
-from rn_forge.cli.app import build_app
-from rn_forge.cli.errors import ExitCode, exit_code_for, run
+from rn_forge.cli import CliApp, ExitCode, run
 from rn_forge.commons.exceptions import AppException
 
 
-class TestExitCodeFor:
+class TestExitCodeForError:
     def test_usage_error_is_two(self):
-        assert exit_code_for(UsageError("bad")) is ExitCode.USAGE
+        assert ExitCode.for_error(UsageError("bad")) is ExitCode.USAGE
 
     def test_interrupt_is_one_hundred_and_thirty(self):
-        assert exit_code_for(KeyboardInterrupt()) is ExitCode.INTERRUPTED
+        assert ExitCode.for_error(KeyboardInterrupt()) is ExitCode.INTERRUPTED
 
     def test_application_failure_is_one(self):
-        assert exit_code_for(AppException("nope")) is ExitCode.FAILURE
+        assert ExitCode.for_error(AppException("nope")) is ExitCode.FAILURE
 
     def test_an_explicit_exit_keeps_its_own_code(self):
-        assert exit_code_for(typer.Exit(0)) == 0
-        assert exit_code_for(typer.Exit(3)) == 3
+        assert ExitCode.for_error(typer.Exit(0)) == 0
+        assert ExitCode.for_error(typer.Exit(3)) == 3
 
 
 @pytest.fixture
 def app():
-    application = build_app("demo", "A demo.")
+    application = CliApp("demo", "A demo.")
 
     @application.command()
     def ok() -> None:
@@ -72,3 +71,31 @@ class TestRun:
 
     def test_an_explicit_exit_code_survives(self, app):
         assert run(app, ["bail"]) == 3
+
+
+class TestCallReturnsAnExitCode:
+    """`sys.exit(app())` is what a generated console script runs, so calling a
+    CliApp must return a code rather than raising — that is what lets a repo's
+    `[project.scripts]` be the plain `pkg.cli:app` and still get the mapping."""
+
+    def test_calling_the_app_returns_the_code(self, app):
+        assert app(["ok"]) == ExitCode.OK
+        assert app(["fail"]) == ExitCode.FAILURE
+        assert app(["bail"]) == 3
+
+    def test_the_run_method_matches_the_free_function(self, app):
+        assert app.run(["ok"]) == run(app, ["ok"])
+
+    def test_the_free_function_still_takes_a_plain_typer_app(self):
+        plain = typer.Typer()
+
+        @plain.command()
+        def boom() -> None:
+            raise AppException("from a hand-built app")
+
+        @plain.command()
+        def fine() -> None:
+            pass
+
+        assert run(plain, ["boom"]) == ExitCode.FAILURE
+        assert run(plain, ["fine"]) == ExitCode.OK

@@ -27,13 +27,16 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   concurrency, OIDC/JWKS auth, outbox/inbox messaging, Celery, readiness views, sequence generators,
   request-ID middleware) is deliberately **not** here — it belongs to a future Django plan.
 
-## Execution status (2026-09-10)
+## Execution status (2026-09-12)
 
 > **Parts A–C are done and reviewed. Start at
-> [Part D — resume here](#part-d--resume-here).** Everything between this line
-> and that heading is the record of what was built and why; read it for
-> context, not for instructions. The boundary it describes under "Final package
-> boundary" is **superseded** by Part D.
+> [Part D — resume here](#part-d--resume-here), then
+> [Part E](#part-e-the-rn-forge-cli-reshape).** Everything between this line
+> and Part D is the record of what was built and why; read it for context, not
+> for instructions. The boundary it describes under "Final package boundary" is
+> **superseded** by Part D. The module layout Part D gives `rn-forge-cli` is
+> **superseded by Part E**, which renames inside that package without moving the
+> package boundary; D.8 and D.9 remain the only unstarted work.
 
 ### Parts A–C (2026-09-09)
 
@@ -2369,6 +2372,12 @@ New package `packages/rn-forge-cli`, distribution `rn-forge-cli`, module
   (error → exit code)
 - a new `declare.py` for ADR-0009's `[cli]` surface
 
+> **The module names above are superseded by [Part E](#part-e-the-rn-forge-cli-reshape).**
+> `console.py` moved on to commons, `declare.py` and `errors.py` folded into
+> `app.py` behind a `CliApp` class, and `surface.py` holds what is left of the
+> declared-surface records. The *package* boundary this step established is
+> unchanged; only the layout inside `rn-forge-cli` moved.
+
 `rn-forge-tooling` keeps `generation/`, `templates.py`, `state.py`, `install/`
 and `docs/`, and gains `rn-forge-cli` as a dependency.
 
@@ -2557,12 +2566,159 @@ done, for two reasons that are not a matter of effort:
   never touches them. Nothing else has to change when the releases are cut.
 
 D.9's acceptance — `golden/python-app` with zero hand-written app construction —
-now has the library side it was waiting for: `rn_forge.cli.declare` builds an
-application from a `[cli]` table, `rn_forge.cli.run` owns the exit codes, and
-`packages/rn-forge-cli/tests/test_declare.py` demonstrates a declared app whose
-only hand-written code is the command functions. Whether that is *enough* for
+now has the library side it was waiting for: `CliApp.from_config` builds an
+application from a `[cli]` table, `CliApp.__call__` owns the exit codes, and
+`packages/rn-forge-cli/tests/test_surface.py` demonstrates a declared app whose
+only hand-written code is the command functions. After Part E the golden repo
+needs no `main()` at all — `[project.scripts]` points straight at the app
+object. Whether that is *enough* for
 ADR-0009 to move from proposed to accepted is a question the golden repo
 answers, and that repo lives in `../kiln`.
+
+---
+
+## Part E — the `rn-forge-cli` reshape
+
+**Status: applied in the working tree (uncommitted), with Part D.** Part D put
+the right *packages* in place; this part fixes the module and class names
+inside `rn-forge-cli`, which a review found did not say what they held. No
+package boundary moves — `.importlinter` proves the same six contracts before
+and after.
+
+### E.0 — What was wrong
+
+Five findings, in the order they were fixed:
+
+| Id | Finding |
+| --- | --- |
+| **E1** | `add_log_options`/`add_output_options` forced four near-identical `@app.callback()` bodies (Typer introspects a callback's static signature, so each boolean combination needs its own function). Nothing in the workspace or the golden repos ever passed `False` — only two tests and one doc line |
+| **E2** | `parse_key_values` had zero callers and was strictly subsumed by `parse_overrides`. `parse_overrides` also had zero callers, but is half of a designed pair with `DictUtils.merge_layers` — it was missing the option alias that would let anyone find it |
+| **E3** | `DataclassMixin` defaults to `check_types=False`, so `CliSurface` — whose entire job is parsing a hand-written `[cli]` table — validated nothing. Worse, the class docstring's suggested override, `dacite.Config(check_types=True)`, silently drops the `cast=[Enum, tuple, set]` list, reintroducing the `StrEnum` round-trip bug (F3) that the comment directly above it explains |
+| **E4** | `errors.py` held no errors (`ExitCode`, `exit_code_for`, `run`) in a workspace where `exceptions.py` means "exception classes"; `declare.py` was the only verb-named module and collided with its own headline function (`from rn_forge.cli.declare import declare`); and `build_app`'s `add_*_options` names did not match `CliSurface`'s `log_options`/`output_options`, so `declare.py` existed partly to translate between them |
+| **E5** | `console.py` promised in its own docstring to be usable "from a Django management command", which `.importlinter` forbids — `rn_forge.django` may not import `rn_forge.cli` at all. Importing it also dragged Typer into the dependency set of a caller that wanted only Rich |
+
+Two defects were found while fixing the above and fixed in passing:
+
+- `run()` reported an `AppException` with `str(failure)`, which is the
+  diagnostic form (`-1 | text | {}`) — right for a log line, wrong for the one
+  sentence a person reads. Now uses `.message`.
+- `DataclassMixin.from_dict` logged a failure with `_LOGGER.exception` and then
+  re-raised it, double-reporting. Under strict checking, where an invalid
+  config document is an ordinary user mistake, that buried the clean message
+  under a dacite stack. Now logs at debug.
+
+### E.1 — `StrictDataclassMixin` (commons)
+
+New `StrictDataclassMixin` in `commons/lang/dataclasses.py`: the same surface
+as `DataclassMixin` with `check_types=True` — carrying the `cast` list forward,
+which is exactly the mistake the old docstring invited — and parse failures
+raised as `AppException`. It catches `ValueError` alongside `dacite.DaciteError`
+because dacite lets an enum's own `ValueError` propagate unwrapped, which is the
+failure a config-document author is most likely to cause.
+
+It is a class rather than a shared `dacite.Config` constant **because of the
+error translation**: a constant can share the incantation but has nowhere to put
+the `AppException` mapping, and validation whose failure message names dacite's
+internals is not worth turning on.
+
+Applies to records parsed from externally-authored documents — `CliSurface`,
+`CommandSurface` now; `DocsArea`, `StateEntry` and the `FixtureDefinition`
+family are the remaining candidates. Records constructed in code (`Finding`,
+`Process`, `Page[T]`, `ProblemDetail`, `Principal`) stay on the base.
+
+**Deferred, deliberately:** making strict the *default* and lenient the opt-out
+is the better end state. The current default exists to preserve pre-upgrade
+behaviour, not because it is right. Flipping it is a behaviour change across
+five packages and every `from_dict` round trip, so it needs its own pass with
+the callers enumerated — not a drive-by.
+
+### E.2 — `console.py` → `commons/runtime/console.py`
+
+Console output is a property of the *process*, like `environment.py` beside it,
+not of the command-line parser. Rich was already a commons dependency for the
+logging handler, so the move costs no new dependency, and it is what makes the
+module's own docstring true: a Django management command, a worker entry point
+or a plain script can now use it.
+
+`AppConsole`, `OutputMode` and `console` are on the commons facade. There is no
+re-export from `rn_forge.cli` — the no-shims rule applies to a move like any
+other. `rn-forge-cli` is now unambiguously "the Typer layer", which is what made
+the rest of this part obvious.
+
+### E.3 — `CliApp`, and what folded into it
+
+`build_app` is gone; `CliApp(typer.Typer)` replaces it. `errors.py` and
+`declare.py` are deleted, their behaviour folded in:
+
+| Was | Is |
+| --- | --- |
+| `build_app(name, ...)` | `CliApp(name, ...)` |
+| `declare(source)` | `CliApp.from_config(source)` |
+| `build_declared_app(surface)` | `CliApp.from_surface(surface)` |
+| `load_surface(source)` | `CliSurface.load(source)` |
+| `exit_code_for(exc)` | `ExitCode.for_error(exc)` |
+| `run(app)` | `CliApp.__call__` / `.run()`; the free `run()` stays for a plain `typer.Typer` |
+| `options(ctx)` | `CliOptions.from_context(ctx)` |
+| `command_options(ctx, **flags)` | `CliOptions.from_context(ctx, **flags).apply(ctx)` |
+
+**Why a subclass and not a factory.** A generated console script is literally
+`sys.exit(app())`, and `CliApp.__call__` returns an exit code — so a repository
+writing the ordinary `mypkg.cli:app` entry point gets the error mapping without
+knowing it exists. ADR-0009 says a repo never writes exit-code handling; a
+factory can only *offer* that. The proof it matters: `rn-forge-docs` shipped
+`rn_forge.tooling.cli.docs:app`, a bare Typer app, and had silently lost the
+entire mapping. It now returns `0`/`1`/`2`/`130` correctly with no change to its
+`[project.scripts]` line.
+
+This is the one place `CliApp` changes an inherited behaviour rather than adding
+to it (design principle #2), so it is justified in the method docstring.
+
+**What stayed split.** `CliSurface`/`CommandSurface` remain records in their own
+`surface.py`, not constructor arguments. Folding them in would mean a
+repository's `[cli]` table could not be *validated* without building a Typer app
+— which is what a kiln config check, or a test, wants to do.
+
+`CliOptions` gained `from_context` (pure: reads the root callback's options and
+merges the command's own over them) and `apply` (validates the mutually
+exclusive pair, sets the console mode, persists to the root context). Two steps
+rather than one because a caller that only wants to know the options stops after
+the first; the chain matches `AppConsole.set_mode`, which already returns `Self`.
+
+### E.4 — Deletions
+
+- `add_log_options`/`add_output_options`, and with them three of the four root
+  callbacks and `CliSurface.log_options`/`output_options`. A repo that wants
+  neither group drops to a plain `typer.Typer` — ADR-0009 level 3.
+- `parse_key_values`. `parse_overrides` stays and gained `SetOption`, the
+  `--set dotted.key=value` alias that makes it findable and completes the
+  pairing with `DictUtils.merge_layers`.
+
+### Part E checklist
+
+- [x] `StrictDataclassMixin` added; `DataclassMixin`'s misleading override
+      docstring fixed; `from_dict` no longer double-reports
+- [x] `console.py` moved to `commons/runtime/console.py`; on the commons facade;
+      no re-export left behind in `rn_forge.cli`
+- [x] `CliApp` replaces `build_app`; `errors.py` and `declare.py` deleted;
+      `surface.py` holds the records
+- [x] `CliOptions.from_context(...).apply(ctx)` replaces `options`/`command_options`
+- [x] `add_log_options`/`add_output_options` and `parse_key_values` deleted;
+      `SetOption` added
+- [x] `rn-forge-docs` gets the exit-code mapping through its existing
+      `[project.scripts]` entry — verified `0`/`1`/`2` end to end
+- [x] `uv run lint-imports` — 6 contracts kept, 0 broken
+- [x] `uv run pytest -q` — 1520 passed, 1 skipped
+- [x] `uv run ruff check .`, `uv run ruff format`, `uv run pyright` (0 errors) clean
+- [x] `rn-forge-cli` and `rn-forge-commons` strict docs builds pass;
+      `rn-forge-docs check` passes on both trees
+- [x] Nothing committed or pushed — working tree left for review
+
+### Follow-ups this part deliberately did not do
+
+- Flip `DataclassMixin`'s default to strict (see E.1).
+- Move `DocsArea`, `StateEntry` and the `FixtureDefinition` family onto
+  `StrictDataclassMixin` — same reasoning as `CliSurface`, but each needs its
+  own round-trip check.
 
 ---
 

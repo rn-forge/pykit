@@ -56,6 +56,15 @@ jobs:
       package-name: rn-forge-tooling
       package-dir: packages/rn-forge-tooling
 
+  web-ci:
+    needs: import-boundaries
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-web
+      package-dir: packages/rn-forge-web
+
   django-ci:
     needs: import-boundaries
     uses: ./.github/workflows/_package-ci.yml
@@ -66,7 +75,7 @@ jobs:
       package-dir: packages/rn-forge-django
 
   sonar:
-    needs: [commons-ci, cli-ci, tooling-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -87,7 +96,7 @@ jobs:
         run: >
           uv run pytest
           --cov=rn_forge.commons --cov=rn_forge.cli
-          --cov=rn_forge.tooling --cov=rn_forge.django
+          --cov=rn_forge.tooling --cov=rn_forge.web --cov=rn_forge.django
           --cov-report=xml:coverage.xml
           packages
 
@@ -96,7 +105,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docs:
-    needs: [commons-ci, cli-ci, tooling-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci]
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
