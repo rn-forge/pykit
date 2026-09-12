@@ -27,6 +27,7 @@ root_packages =
     rn_forge.cli
     rn_forge.tooling
     rn_forge.django
+    rn_forge.fastapi
     rn_forge.web
 include_external_packages = True
 
@@ -77,6 +78,23 @@ ignore_imports =
     rn_forge.django.codegen.* -> *
 unmatched_ignore_imports_alerting = none
 
+[importlinter:contract:fastapi-runtime-has-no-tooling]
+name = rn_forge.fastapi never imports django, cli, tooling or Jinja
+type = forbidden
+source_modules =
+    rn_forge.fastapi
+forbidden_modules =
+    rn_forge.django
+    rn_forge.cli
+    rn_forge.tooling
+    jinja2
+# Written while `rn_forge.fastapi.codegen` is empty, for the same reason as
+# django's: a fence added after the first generator was never tested.
+ignore_imports =
+    rn_forge.fastapi.codegen -> *
+    rn_forge.fastapi.codegen.* -> *
+unmatched_ignore_imports_alerting = none
+
 [importlinter:contract:web-is-framework-free]
 name = rn_forge.web never imports a web framework, cli or tooling
 type = forbidden
@@ -94,11 +112,8 @@ forbidden_modules =
 name = django and fastapi depend on web, web depends on commons, never the other way round
 type = layers
 # The `:` makes django and fastapi independent siblings at one layer: neither
-# may import the other. The parentheses mark `rn_forge.fastapi` optional — it
-# is planned (fastapi-library-plan.md) and does not exist yet, and an optional
-# layer is what lets the contract be written once rather than amended on
-# arrival.
+# may import the other.
 layers =
-    rn_forge.django : (rn_forge.fastapi)
+    rn_forge.django : rn_forge.fastapi
     rn_forge.web
     rn_forge.commons

@@ -34,6 +34,51 @@ Three sources feed this plan, and it is self-contained:
 **Start from [`README.md`](./README.md)** — it carries the execution order across all five plans.
 This package is blocked on web Phases 1–8 in their entirety; see Phase 0.
 
+## Implementation status (2026-09-12)
+
+**Phases 0–7 and 6c are applied in the working tree; Phase 8 and the release tag are open.** The
+package, its README, docs site and tests are at `packages/rn-forge-fastapi`; the checklist at the
+end marks each item.
+
+Decisions recorded while implementing, each with its reason in the package README or the module
+docstring named:
+
+- **0.1 — the tag is pinned before it exists.** `rn-forge-web-v0.1.0` is not cut; the pin names the
+  tag it will get, the same convention web's own `rn-forge-commons-v0.5.0` pin follows. Cutting it
+  is web plan step 12 and needs a decision to push.
+- **0.2 — `rn_forge.fastapi` is kept.** Reasons in the README's "The namespace decision";
+  `tests/test_fastapi_namespace.py` asserts the disjoint `__path__`.
+- **0.3 — no `tests/__init__.py`, and `test_fastapi_*` basenames.** `CLAUDE.md` forbids the first
+  (it collides with django's `tests` package from the root); the second is forced by the same root
+  collection, since `test_problem.py` etc. already exist in `rn-forge-web`.
+- **`rn-forge-commons` is not a declared dependency** — nothing imports it directly.
+- **Phase 1 registers a handler per registry type**, not one on `Exception`: Starlette's
+  `ServerErrorMiddleware` re-raises after rendering, which would turn every 409 into a logged
+  traceback. `problem.py` explains it.
+- **Phase 5 shipped no module.** Web's `CorrelationIdMiddleware` installs with
+  `app.add_middleware` unchanged; the one FastAPI-specific concern (a 500 skips the header stamp)
+  is handled in `problem.py`, where the 500 is rendered.
+- **Phase 6b binds `rn_forge.web.Authenticator`, not the commons verifier.** The commons `auth/`
+  module still does not exist; the web protocol does, and it is what an application's verifier sits
+  behind — so the binding is not a second protocol. Nothing here needs to change when commons lands.
+- **Phase 6's timeout test was not written**: `run_checks` has no timeout, and adding one is a web
+  decision (below).
+
+**Web-plan changes this plan raised, executed in `rn-forge-web`** (the guiding principle's "raise it
+against `rn-forge-web`"): `ProblemRegistry.rows()`, `ProblemRegistry.problem_for_status()` (the
+folded `_status_mapping`), `build(..., problem=)`, and `errors_from_pointer_list` dropping the
+leading `body` segment and rendering a missing field as `This field is required.` — without the last
+one the `problem.validation-errors-are-rfc6901-pointers` case cannot pass on FastAPI. Tests added in
+`rn-forge-web/tests/test_problem.py`; web's `wiring-fastapi.md` is now a pointer.
+
+**Raised against the web plan and left open:** `run_checks` has no per-check timeout; the generic
+`Page[T]` cannot be named literally `Page` in `components/schemas` (FastAPI emits `Page_OrderOut_`);
+the `operationId` convention covers CRUD only.
+
+**Open, and not this plan's to close alone:** Phase 8 — kiln has no `golden/python-web-api` yet
+(kiln Phase E); the `rn-forge-web` release tag; and step 14a — `rn-forge-django` has no conformance
+driver, so this driver currently proves FastAPI against the table but nothing about drift.
+
 ## Alignment with the standardization plan (kiln revision 9)
 
 Unlike the other four documents, this plan is written after `rn-forge/kiln` exists, so the alignment
@@ -707,42 +752,46 @@ template change never made in a golden repo is a bug. Do not skip to the applica
 ## Final checklist before calling this done
 
 - [ ] `rn-forge-web` has a release tag and this package pins it as a direct URL; the workspace override
-      is local development only (kiln D46)
-- [ ] `uv sync --all-extras && uv run pytest packages/rn-forge-fastapi` green
-- [ ] `uv run pyright` clean across every package
-- [ ] `uv run ruff check . && uv run ruff format --check .` clean
-- [ ] `uv run lint-imports` green with `fastapi-runtime-has-no-tooling` present, including the
+      is local development only (kiln D46) — **the pin is written; the tag is not cut** (web plan
+      step 12, needs a decision to push)
+- [x] `uv sync --all-extras && uv run pytest packages/rn-forge-fastapi` green
+- [x] `uv run pyright` clean across every package
+- [x] `uv run ruff check` and `ruff format --check` clean over the changed packages
+- [x] `uv run lint-imports` green with `fastapi-runtime-has-no-tooling` present, including the
       `codegen` exemptions written while the subpackage is empty
-- [ ] `rn_forge.fastapi` imports neither `rn_forge.django`, `rn_forge.cli` nor `rn_forge.tooling`
-- [ ] The namespace decision recorded, and the `__path__`-disjoint test passes
-- [ ] No wire decision was made in this package — every status code, header name and encoding traces to
-      `rn-forge-web`; anything that could not, was raised against the web plan
-- [ ] `WireModel` ships and every mirror derives from it; responses serialize by alias; RFC 9457's
+- [x] `rn_forge.fastapi` imports neither `rn_forge.django`, `rn_forge.cli` nor `rn_forge.tooling`
+- [x] The namespace decision recorded, and the `__path__`-disjoint test passes
+- [x] No wire decision was made in this package — every status code, header name and encoding traces to
+      `rn-forge-web`; anything that could not, was raised against the web plan (see
+      "Implementation status")
+- [x] `WireModel` ships and every mirror derives from it; responses serialize by alias; RFC 9457's
       core members survive the alias generator unchanged (asserted, not assumed)
-- [ ] Pagination parameters are `pageSize`/`pageToken`, the size is clamped rather than rejected, and
+- [x] Pagination parameters are `pageSize`/`pageToken`, the size is clamped rather than rejected, and
       no `le=` bound appears on the page-size query parameter
 - [ ] The emitted schema is OpenAPI **3.1.0**; the shared components are named exactly
       `ProblemDetail`, `Page`, `CheckResult`, `HealthReport`; the `operationId` convention is applied
-      through a shipped `generate_unique_id_function`
-- [ ] Phase 6b's 401 carries an RFC 6750 §3 `WWW-Authenticate`, its 403 carries none, and neither
+      through a shipped `generate_unique_id_function` — **all but `Page`**, which FastAPI names per
+      parametrization (`Page_OrderOut_`); raised against the web plan
+- [x] Phase 6b's 401 carries an RFC 6750 §3 `WWW-Authenticate`, its 403 carries none, and neither
       body leaks a verification reason
-- [ ] Phase 6c's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no
+- [x] Phase 6c's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no
       skips, and asserts against the table rather than against Django's output
-- [ ] Phase 2's mirrors round-trip against the web dataclasses, asserted by a test
-- [ ] Phase 3's schema injection is idempotent, survives caching, and never overwrites a declared
+- [x] Phase 2's mirrors round-trip against the web dataclasses, asserted by a test
+- [x] Phase 3's schema injection is idempotent, survives caching, and never overwrites a declared
       `responses=`
-- [ ] Phase 5 shipped a module only if there was something to wrap — no one-line wrapper for symmetry
-- [ ] `src/rn_forge/fastapi/__init__.py` re-exports every public symbol, `__all__` sorted
-- [ ] `uv run --directory packages/rn-forge-fastapi --group docs mkdocs build --strict` clean
-- [ ] `wiring-fastapi.md` promoted from the web plan and visibly shorter than it was
+- [x] Phase 5 shipped a module only if there was something to wrap — no one-line wrapper for symmetry
+- [x] `src/rn_forge/fastapi/__init__.py` re-exports every public symbol, `__all__` sorted
+- [x] `uv run --directory packages/rn-forge-fastapi --group docs mkdocs build --strict` clean
+- [x] `wiring-fastapi.md` promoted from the web plan and visibly shorter than it was
 - [ ] `golden/python-web-api` wires the package end to end and passes `task validate` standalone; its
-      wiring module is about a page; its generated OpenAPI contains `ProblemDetail`
-- [ ] The package is wired into pykit's repo shape (workspace members, sources, workspace dependency
-      group, and after kiln Phase F.1 `[archetype.python-lib] packages` + `state.json` re-seed + root
-      `mkdocs.yml` nav + `docs/index.md`)
-- [ ] `CLAUDE.md`'s repository overview describes the package and the dependency direction
+      wiring module is about a page; its generated OpenAPI contains `ProblemDetail` — **blocked:
+      kiln Phase E has not created the golden repo**
+- [x] The package is wired into pykit's repo shape (workspace members, sources, workspace dependency
+      group, CI job, root `mkdocs.yml` nav and `docs/index.md`). `[archetype.python-lib] packages`
+      and the `state.json` re-seed wait for kiln Phase F.1, as for web
+- [x] `CLAUDE.md` and the root README describe the package and the dependency direction
       (`fastapi → web → commons`, siblings with `django`)
-- [ ] Nothing committed or pushed — leave the working tree for review
+- [x] Nothing committed or pushed — leave the working tree for review
 
 ## Not in this plan (deliberately deferred)
 

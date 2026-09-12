@@ -39,6 +39,7 @@ venv = ".venv"
 rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
+rn-forge-fastapi = { workspace = true }
 rn-forge-tooling = { workspace = true }
 rn-forge-web = { workspace = true }
 
@@ -47,6 +48,7 @@ members = [
   "packages/rn-forge-cli",
   "packages/rn-forge-commons",
   "packages/rn-forge-django",
+  "packages/rn-forge-fastapi",
   "packages/rn-forge-tooling",
   "packages/rn-forge-web",
 ]
@@ -56,6 +58,7 @@ workspace = [
   "rn-forge-cli",
   "rn-forge-commons[all]",
   "rn-forge-django[all]",
+  "rn-forge-fastapi",
   "rn-forge-tooling",
   "rn-forge-web",
 ]

@@ -189,16 +189,73 @@ def test_build_carries_instance_and_extensions():
 # --- the two normalizers --------------------------------------------------
 
 
+def test_rows_is_a_read_only_view_in_registration_order():
+    registry = (
+        ProblemRegistry()
+        .register(KeyError, CONFLICT)
+        .register(ValueError, INTERNAL_ERROR)
+    )
+    assert_that(list(registry.rows())).is_equal_to([KeyError, ValueError])
+    with pytest.raises(TypeError):
+        registry.rows()[RuntimeError] = CONFLICT  # type: ignore[index]
+
+
+def test_problem_for_status_prefers_the_first_registered_row():
+    """A framework 404 must render exactly like a registered LookupError."""
+    assert_that(default_registry().problem_for_status(404).slug).is_equal_to(
+        "not-found"
+    )
+    assert_that(default_registry().problem_for_status(409)).is_equal_to(CONFLICT)
+
+
+def test_problem_for_status_derives_an_unregistered_row_from_the_reason_phrase():
+    row = default_registry().problem_for_status(405)
+    assert_that(row).is_equal_to(
+        ProblemType("method-not-allowed", 405, "Method Not Allowed")
+    )
+
+
+def test_problem_for_status_slugs_punctuated_phrases():
+    assert_that(ProblemRegistry().problem_for_status(418).slug).is_equal_to(
+        "i-m-a-teapot"
+    )
+
+
+def test_problem_for_status_without_a_reason_phrase_falls_back():
+    assert_that(ProblemRegistry().problem_for_status(499)).is_equal_to(INTERNAL_ERROR)
+
+
+def test_build_uses_an_explicit_row_instead_of_resolving_one():
+    problem = default_registry().build(
+        RuntimeError("Not Found"),
+        instance="/x",
+        problem=ProblemType("not-found", 404, "Not Found"),
+    )
+    assert_that(problem.status).is_equal_to(404)
+    assert_that(problem.detail).is_equal_to("Not Found")
+
+
 def test_pointer_list_from_pydantic_errors():
+    """Normalized to the same list DRF's field map produces for the same failure."""
     raw = [
         {"loc": ("body", "name"), "msg": "Field required", "type": "missing"},
         {"loc": ("body", "items", 0, "qty"), "msg": "must be > 0"},
     ]
     assert_that(errors_from_pointer_list(raw)).is_equal_to(
         [
-            {"pointer": "/body/name", "message": "Field required"},
-            {"pointer": "/body/items/0/qty", "message": "must be > 0"},
+            {"pointer": "/name", "message": "This field is required."},
+            {"pointer": "/items/0/qty", "message": "must be > 0"},
         ]
+    )
+    assert_that(errors_from_pointer_list(raw)[0]).is_equal_to(
+        errors_from_field_map({"name": ["This field is required."]})[0]
+    )
+
+
+def test_pointer_list_keeps_the_prefix_of_a_non_body_location():
+    raw = [{"loc": ("query", "pageSize"), "msg": "Input should be a valid integer"}]
+    assert_that(errors_from_pointer_list(raw)).is_equal_to(
+        [{"pointer": "/query/pageSize", "message": "Input should be a valid integer"}]
     )
 
 

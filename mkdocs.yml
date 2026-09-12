@@ -17,6 +17,7 @@ plugins:
             - packages/rn-forge-commons/src
             - packages/rn-forge-cli/src
             - packages/rn-forge-django/src
+            - packages/rn-forge-fastapi/src
             - packages/rn-forge-tooling/src
             - packages/rn-forge-web/src
           options:
@@ -40,5 +41,6 @@ nav:
   - rn-forge-commons: '!include packages/rn-forge-commons/mkdocs.yml'
   - rn-forge-cli: '!include packages/rn-forge-cli/mkdocs.yml'
   - rn-forge-django: '!include packages/rn-forge-django/mkdocs.yml'
+  - rn-forge-fastapi: '!include packages/rn-forge-fastapi/mkdocs.yml'
   - rn-forge-tooling: '!include packages/rn-forge-tooling/mkdocs.yml'
   - rn-forge-web: '!include packages/rn-forge-web/mkdocs.yml'

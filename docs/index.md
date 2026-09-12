@@ -22,13 +22,18 @@
 - [rn-forge-django](rn-forge-django/index.md) — opinionated Django/DRF integration layer:
   model base classes, a typed settings facade, basic/JWT/SAML auth, and DRF bulk/import/export
   views built on top of `rn-forge-commons`.
+- [rn-forge-fastapi](rn-forge-fastapi/index.md) — FastAPI adapters over `rn-forge-web`: problem
+  handlers, pydantic mirrors of the wire shapes with a camelCase base model, the OpenAPI error-type
+  repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health
+  router and the auth binding. Makes no wire decision of its own.
 
 Pick a package above for its guides and API reference.
 
 The development layer is **two** packages, not one: `rn-forge-cli` is what any program with a command
 line takes, and `rn-forge-tooling` is what a program that installs itself, owns files in someone
 else's repo or renders templates takes. `rn-forge-web` is on the other side of the graph entirely:
-`web → commons`, and `django → web → commons`, so a package that ships into an ASGI server never
+`web → commons`, with `django → web → commons` and `fastapi → web → commons` as independent
+siblings, so a package that ships into an ASGI server never
 reaches the command-line or file-owning layers. There are no compatibility re-exports in any
 direction, and `.importlinter` proves the layering. See the [plan execution order](plans/README.md) for what is
 still open.

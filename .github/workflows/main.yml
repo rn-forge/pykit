@@ -74,8 +74,17 @@ jobs:
       package-name: rn-forge-django
       package-dir: packages/rn-forge-django
 
+  fastapi-ci:
+    needs: import-boundaries
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-fastapi
+      package-dir: packages/rn-forge-fastapi
+
   sonar:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, fastapi-ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -97,6 +106,7 @@ jobs:
           uv run pytest
           --cov=rn_forge.commons --cov=rn_forge.cli
           --cov=rn_forge.tooling --cov=rn_forge.web --cov=rn_forge.django
+          --cov=rn_forge.fastapi
           --cov-report=xml:coverage.xml
           packages
 
@@ -105,7 +115,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docs:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, fastapi-ci]
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:

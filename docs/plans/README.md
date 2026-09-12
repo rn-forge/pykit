@@ -19,7 +19,7 @@ is new and is written aligned. No module design changed.
 | `rn-forge/kiln/docs/plans/standardization-plan.md` (outside this repo; a pointer remains at `rn-forge/STANDARDIZATION-PLAN.md`) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Revision 9** — sequencing authority for everything cross-repo, and the authority every alignment section below cites |
 | [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready; aligned 2026-09-10 |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | Ready; aligned 2026-09-10 |
-| [`fastapi-library-plan.md`](./fastapi-library-plan.md) | **New** `rn-forge-fastapi` package — FastAPI adapters over `rn-forge-web` | **New 2026-09-10.** The web plan's deferral trigger fired: intellibuild is a `python-web-api` repo and kiln authors `golden/python-web-api` before it |
+| [`fastapi-library-plan.md`](./fastapi-library-plan.md) | **New** `rn-forge-fastapi` package — FastAPI adapters over `rn-forge-web` | **Phases 0–7 and 6c applied in the working tree (2026-09-12).** Open: the `rn-forge-web` release tag, Phase 8 (`golden/python-web-api` does not exist yet), and the django conformance driver it lands with (step 14a) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | **New** `rn-forge-azure` package — Azure adapters for commons protocols | Ready; aligned 2026-09-10 |
 | [`01-extraction-from-cims.md`](./01-extraction-from-cims.md) | The original cims survey | **Superseded — background only** |
 

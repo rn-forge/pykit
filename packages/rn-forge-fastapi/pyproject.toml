@@ -1,0 +1,58 @@
+[project]
+name = "rn-forge-fastapi"
+version = "0.1.0"
+description = "FastAPI adapters over rn-forge-web"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+# Pinned direct URL, not a bare name: these packages are not on PyPI, and a
+# release is a tag (kiln D46). `[tool.uv.sources]` below overrides this with
+# the workspace checkout for local development only — the declaration here is
+# what a consumer outside the workspace actually resolves.
+#
+# `rn-forge-commons` is not declared: nothing here imports it directly, and it
+# arrives pinned through `rn-forge-web`.
+dependencies = [
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  # A hard dependency, not an extra: every module in this package is a FastAPI
+  # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
+  "fastapi>=0.141.1",
+]
+
+[project.optional-dependencies]
+# httpx is what FastAPI's TestClient drives requests through.
+testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.fastapi"
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+rn-forge-fastapi = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+markers = ["unit: fast isolated tests"]
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "httpx>=0.28.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-fastapi",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-fastapi",
+]

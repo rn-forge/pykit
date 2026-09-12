@@ -2,8 +2,9 @@
 
 Not executed by this package's tests — installing FastAPI here would put a web
 framework in `rn-forge-web`'s dependency graph, which is the boundary the
-package exists to hold. It is symbol-checked against the public API, and its
-end-to-end proof is the conformance driver `rn-forge-fastapi` will ship.
+package exists to hold. It is symbol-checked against the public API. Its
+end-to-end proof is the conformance driver `rn-forge-fastapi` ships, which runs
+the same ten endpoints built from that package's adapters instead of by hand.
 
 Compare it with `asgi_app.py` and `django_app.py`: the handlers differ, and
 every wire decision is made by the same call into `rn_forge.web`.

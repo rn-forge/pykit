@@ -30,8 +30,11 @@ so this shape is correct under either number.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from http import HTTPStatus
+from types import MappingProxyType
 from typing import Any, Final, Self, cast
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
@@ -186,6 +189,15 @@ class ProblemRegistry:
         self._rows[exc_type] = problem
         return self
 
+    def rows(self) -> Mapping[type[BaseException], ProblemType]:
+        """Return a read-only view of the registered rows, in registration order.
+
+        A framework adapter needs the registered exception *types* — Starlette
+        dispatches a handler per class — and an OpenAPI document needs the
+        statuses they map to.
+        """
+        return MappingProxyType(self._rows)
+
     def problem_for(self, exc: BaseException) -> ProblemType:
         """Return the row for *exc*, walking its MRO before falling back.
 
@@ -198,6 +210,31 @@ class ProblemRegistry:
                 return row
         return self._fallback
 
+    def problem_for_status(self, status: int) -> ProblemType:
+        """Return the row for a bare HTTP status that carries no exception type.
+
+        A framework raises HTTP errors no application registered — a routing
+        404, a 405. The row is the **first registered row with that status**, so
+        a framework 404 and a ``LookupError`` produce the same body. With no such
+        row it is derived from the IANA reason phrase (405 →
+        ``method-not-allowed`` / ``Method Not Allowed``); a status with no
+        reason phrase resolves to the fallback.
+
+        Both framework packages call this rather than keeping a status table of
+        their own: a status-to-slug mapping is a wire decision, and two tables
+        are two decisions.
+        """
+        for row in self._rows.values():
+            if row.status == status:
+                return row
+        try:
+            phrase = HTTPStatus(status).phrase
+        except ValueError:
+            return self._fallback
+        return ProblemType(
+            "-".join(re.findall(r"[a-z0-9]+", phrase.lower())), status, phrase
+        )
+
     def type_uri(self, problem: ProblemType) -> str:
         """Return the ``type`` member for *problem*."""
         return f"{self._type_base}{problem.slug}" if self._type_base else BLANK_TYPE
@@ -209,6 +246,7 @@ class ProblemRegistry:
         instance: str,
         detail: str | None = None,
         extensions: Mapping[str, Any] | None = None,
+        problem: ProblemType | None = None,
     ) -> ProblemDetail:
         """Build the problem body for *exc*.
 
@@ -219,6 +257,8 @@ class ProblemRegistry:
             detail: Overrides the derived detail. Supply it to say something
                 more useful than ``str(exc)``.
             extensions: Extra members, flattened onto the wire body.
+            problem: The row to build from instead of resolving one from *exc*
+                — for a framework HTTP error, :meth:`problem_for_status`'s.
 
         Returns:
             The problem. When the status is 5xx and *detail* was not supplied,
@@ -226,7 +266,7 @@ class ProblemRegistry:
             ``str(exc)`` — this is the one piece of policy in the module, and
             it is the default because getting it wrong leaks internals.
         """
-        row = self.problem_for(exc)
+        row = problem if problem is not None else self.problem_for(exc)
         if detail is not None:
             resolved = detail
         elif row.status >= 500:
@@ -281,25 +321,47 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
     )
 
 
+_REQUIRED_FIELD_MESSAGE: Final = "This field is required."
+"""The message a missing field carries, on both stacks. It is DRF's wording."""
+
+
 def errors_from_pointer_list(raw: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
     """Normalize a FastAPI/pydantic error list into pointer/message pairs.
 
-    pydantic reports ``[{"loc": ("body", "field"), "msg": "...", ...}, ...]``.
-    Each ``loc`` becomes an RFC 6901 JSON pointer.
+    pydantic reports ``[{"loc": ("body", "field"), "msg": "...", "type": "..."}, ...]``.
+    Each ``loc`` becomes an RFC 6901 JSON pointer, with the two normalizations
+    that make the list identical to :func:`errors_from_field_map`'s for the
+    same failure — which the conformance table asserts:
+
+    - **A leading ``"body"`` segment is dropped.** FastAPI prefixes the part of
+      the request a field came from; the pointer is into the body document,
+      which is what DRF's field map already describes. ``query``, ``header``
+      and ``path`` locations keep their prefix, being outside the body.
+    - **A missing field says** ``"This field is required."`` rather than
+      pydantic's ``"Field required"``. Only this one message is translated: it
+      is the failure the table pins, and a vocabulary for every validator
+      would be a translation layer nobody asked for.
 
     Args:
         raw: The ``errors()`` output of a pydantic validation error.
 
     Returns:
-        ``[{"pointer": "/body/field", "message": "..."}, ...]``.
+        ``[{"pointer": "/field", "message": "..."}, ...]``.
     """
     return [
         {
-            "pointer": _pointer(entry.get("loc") or ()),
-            "message": str(entry.get("msg", "")),
+            "pointer": _pointer(_body_relative(entry.get("loc") or ())),
+            "message": _REQUIRED_FIELD_MESSAGE
+            if entry.get("type") == "missing"
+            else str(entry.get("msg", "")),
         }
         for entry in raw
     ]
+
+
+def _body_relative(loc: Sequence[Any]) -> Sequence[Any]:
+    """Drop FastAPI's leading ``"body"`` location segment, if there is one."""
+    return loc[1:] if loc and loc[0] == "body" else loc
 
 
 def errors_from_field_map(raw: Mapping[str, Any]) -> list[dict[str, str]]:

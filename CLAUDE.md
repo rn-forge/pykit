@@ -71,7 +71,7 @@ satisfy strict mode (explicit types, no untyped `Any` leakage across public APIs
 
 ### Docs
 
-`rn-forge-commons`, `rn-forge-cli`, `rn-forge-tooling` and `rn-forge-web` each have an mkdocs site
+`rn-forge-commons`, `rn-forge-cli`, `rn-forge-tooling`, `rn-forge-web` and `rn-forge-fastapi` each have an mkdocs site
 (`packages/<pkg>/mkdocs.yml`), and the root `mkdocs.yml` includes them all via the monorepo
 plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from
 the repo root for the combined site. Per-package builds are strict, so a cross-package link fails
@@ -94,12 +94,16 @@ moves a class name.
   root-level `uv run pytest` reads no per-package `[tool.pytest.ini_options]`, so it collects
   without `--import-mode=importlib`, and a second directory importable as `tests` collides with
   django's and fails collection for the whole workspace.
+- For the same reason, a test module's **basename must be unique across every package without a
+  `tests/__init__.py`**: from the root, two `test_problem.py` files are one module name and both
+  fail collection. `rn-forge-fastapi` prefixes its test modules `test_fastapi_*` for this, since its
+  modules share names with `rn-forge-web`'s.
 - For the same reason, `rn-forge-web` marks its async tests with an explicit
   `@pytest.mark.asyncio` rather than relying on its own `asyncio_mode = "auto"`, which is not in
   effect when the suite runs from the repo root.
-- `rn-forge-django` defines `unit` and `integration` markers; `rn-forge-web` defines `unit`. Both
-  emit `PytestUnknownMarkWarning` from the repo root, since the root has no pytest config to
-  register them in. The warnings are cosmetic.
+- `rn-forge-django` defines `unit` and `integration` markers; `rn-forge-web` and
+  `rn-forge-fastapi` define `unit`. All emit `PytestUnknownMarkWarning` from the repo root, since
+  the root has no pytest config to register them in. The warnings are cosmetic.
 - `pytest-randomly` randomizes order in every package — do not rely on cross-test ordering.
 - Tests are excluded from ruff's lint rules (`per-file-ignores` = `ALL` for `**/tests/*`) and from
   Pyright's strict checking.
