@@ -17,7 +17,16 @@ build-backend = "uv_build"
 [tool.pyright]
 typeCheckingMode = "strict"
 include = ["packages"]
-ignore = ["tests", "**/tests"]
+ignore = [
+  "tests",
+  "**/tests",
+  # The two framework examples in rn-forge-web's adoption pack are documentation:
+  # they import Django/DRF and FastAPI, which this workspace deliberately does not
+  # install for that package. The framework-free asgi_app.py beside them is NOT
+  # excluded — it is executed by the test suite and is typechecked like any source.
+  "packages/rn-forge-web/docs/adoption/examples/django_app.py",
+  "packages/rn-forge-web/docs/adoption/examples/fastapi_app.py",
+]
 reportMissingTypeStubs = false
 reportUnnecessaryTypeIgnoreComment = "error"
 venvPath = "."
@@ -31,6 +40,7 @@ rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-tooling = { workspace = true }
+rn-forge-web = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -38,6 +48,7 @@ members = [
   "packages/rn-forge-commons",
   "packages/rn-forge-django",
   "packages/rn-forge-tooling",
+  "packages/rn-forge-web",
 ]
 
 [dependency-groups]
@@ -46,6 +57,7 @@ workspace = [
   "rn-forge-commons[all]",
   "rn-forge-django[all]",
   "rn-forge-tooling",
+  "rn-forge-web",
 ]
 
 docs = [
@@ -64,6 +76,7 @@ dev = [
   "pandas-stubs>=3.0.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
+  "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
   "pytest-django>=4.12.0",
   "pytest-randomly>=4.1.0",

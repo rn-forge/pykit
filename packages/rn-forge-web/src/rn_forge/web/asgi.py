@@ -1,0 +1,157 @@
+"""The correlation-ID ASGI middleware, and the six ASGI type aliases it needs.
+
+This lives here rather than in a framework package because **ASGI is a
+specification, not a framework**: the middleware below works unchanged under
+FastAPI, Starlette, Litestar, Quart or a bare ASGI app.
+
+Why it is hand-written
+----------------------
+
+``asgi-correlation-id`` (5.0.1) was evaluated as the Phase 0.2 candidate and
+rejected on one criterion: it declares ``starlette>=0.18`` as a **hard**
+dependency, so adopting it would make a Django consumer install Starlette to
+read a ContextVar. That breaks the boundary rule this package exists to hold.
+See "Dependencies and why" in the package README.
+
+Two things this gets right that are easy to lose
+------------------------------------------------
+
+1. **It is a pure ASGI middleware, not a ``BaseHTTPMiddleware``.** Starlette's
+   ``BaseHTTPMiddleware`` runs the downstream app in a spawned task, and a
+   ContextVar set in ``dispatch()`` is documented not to reliably propagate
+   into exception handlers invoked from that task. Setting the value around
+   ``self.app(...)`` in a plain ASGI callable has no such gap. Since
+   ``BaseHTTPMiddleware`` cannot be imported here anyway, the risk is that a
+   consumer wraps *this* in one — so: do not.
+2. **The types are declared locally.** ``Scope``, ``Receive``, ``Send`` and
+   ``ASGIApp`` come from ``starlette.types`` in most codebases, and importing
+   that is exactly what would drag Starlette into a Django install. Six aliases
+   is a cheaper price. (``asgiref`` is not the alternative — it is
+   Django-adjacent machinery for six aliases.)
+
+The ContextVar is bound with a plain ``set()`` and **never reset**. That is not
+an oversight: see :mod:`rn_forge.web.context`, which explains why a
+``finally: reset()`` here unbinds the value before the outermost error handler
+that needs it runs.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Awaitable, Callable, MutableMapping
+from typing import Any
+
+from rn_forge.web.context import (
+    DEFAULT_CORRELATION_HEADER,
+    new_correlation_id,
+    set_correlation_id,
+)
+
+__all__ = [
+    "ASGIApp",
+    "CorrelationIdMiddleware",
+    "Message",
+    "Receive",
+    "Scope",
+    "Send",
+]
+
+type Scope = MutableMapping[str, Any]
+"""The ASGI connection scope."""
+
+type Message = MutableMapping[str, Any]
+"""One ASGI event, in either direction."""
+
+type Receive = Callable[[], Awaitable[Message]]
+"""The ASGI receive callable."""
+
+type Send = Callable[[Message], Awaitable[None]]
+"""The ASGI send callable."""
+
+type ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+"""An ASGI application or middleware."""
+
+
+def _get_header(headers: object, name: str) -> str | None:
+    """Return the first value of *name* from a raw ASGI header list.
+
+    ASGI headers are a list of ``(bytes, bytes)`` pairs and field names are
+    case-insensitive, so both sides are lowercased before comparison.
+    """
+    if not isinstance(headers, list):
+        return None
+    wanted = name.lower().encode("latin-1")
+    for entry in headers:  # pyright: ignore[reportUnknownVariableType]
+        if not isinstance(entry, (tuple, list)) or len(entry) != 2:  # pyright: ignore[reportUnknownArgumentType]
+            continue
+        key, value = entry  # pyright: ignore[reportUnknownVariableType]
+        if isinstance(key, bytes) and key.lower() == wanted:
+            if isinstance(value, bytes):
+                return value.decode("latin-1")
+    return None
+
+
+def _set_header(message: Message, name: str, value: str) -> None:
+    """Set *name* on an ``http.response.start`` message, replacing any existing value.
+
+    Replacing rather than appending is what stops the header being emitted
+    twice when an inner application already set one.
+    """
+    raw = message.get("headers")
+    existing: list[tuple[bytes, bytes]] = []
+    if isinstance(raw, list):
+        for entry in raw:  # pyright: ignore[reportUnknownVariableType]
+            if isinstance(entry, (tuple, list)) and len(entry) == 2:  # pyright: ignore[reportUnknownArgumentType]
+                key, val = entry  # pyright: ignore[reportUnknownVariableType]
+                if isinstance(key, bytes) and isinstance(val, bytes):
+                    existing.append((key, val))
+    wanted = name.lower().encode("latin-1")
+    kept = [(k, v) for k, v in existing if k.lower() != wanted]
+    kept.append((wanted, value.encode("latin-1")))
+    message["headers"] = kept
+
+
+class CorrelationIdMiddleware:
+    """Bind a correlation ID for the request and stamp it on the response.
+
+    Args:
+        app: The downstream ASGI application.
+        header_name: The header read on the way in and written on the way out.
+        generator: Produces an ID when the caller supplied none.
+
+    Example::
+
+        app = CorrelationIdMiddleware(app)
+
+    A caller-supplied ID is **never replaced** — that is the whole contract.
+    Non-``http`` scopes (``websocket``, ``lifespan``) pass straight through
+    untouched, before anything else happens.
+    """
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        header_name: str = DEFAULT_CORRELATION_HEADER,
+        generator: Callable[[], str] = new_correlation_id,
+    ) -> None:
+        self.app = app
+        self.header_name = header_name
+        self.generator = generator
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Run the middleware for one connection."""
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        correlation_id = (
+            _get_header(scope.get("headers"), self.header_name) or self.generator()
+        )
+        set_correlation_id(correlation_id)
+
+        async def send_wrapper(message: Message) -> None:
+            if message.get("type") == "http.response.start":
+                _set_header(message, self.header_name, correlation_id)
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)

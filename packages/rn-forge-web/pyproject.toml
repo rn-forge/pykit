@@ -1,0 +1,55 @@
+[project]
+name = "rn-forge-web"
+version = "0.1.0"
+description = "Framework-agnostic HTTP/API primitives built on rn-forge-commons"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+# Pinned direct URL, not a bare name: these packages are not on PyPI, and a
+# release is a tag (kiln D46). `[tool.uv.sources]` below overrides this with
+# the workspace checkout for local development only — the declaration here is
+# what a consumer outside the workspace actually resolves.
+#
+# There is deliberately no third-party dependency beyond commons. The two
+# candidates this package was planned around were both evaluated and both
+# rejected; see "Dependencies and why" in README.md for the reasons.
+dependencies = [
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+
+[project.optional-dependencies]
+testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.web"
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+asyncio_mode = "auto"
+markers = ["unit: fast isolated tests"]
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-asyncio>=1.3.0",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-web",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-web",
+]

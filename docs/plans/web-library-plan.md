@@ -192,6 +192,61 @@ in this package" list, the dependency-policy rules, and Conventions 1–6. The `
 deferral **did** change — its trigger has fired; see
 [`fastapi-library-plan.md`](./fastapi-library-plan.md) and the "Deferred" section below.
 
+## Implementation status — applied 2026-09-11
+
+**This plan is executed.** `packages/rn-forge-web` exists in the working tree with all eleven phases
+applied; the final checklist at the bottom is ticked with the evidence. Two things a reader of the
+plan alone would get wrong, so they are recorded here rather than only in the package:
+
+**Phase 0.2 decided both candidate libraries — both rejected.**
+
+- **`asgi-correlation-id` 5.0.1: rejected on criterion 5.** It declares `starlette>=0.18` as a hard
+  runtime dependency, not an extra, so adopting it would make every Django/WSGI consumer install
+  Starlette to read a ContextVar. Criteria 1–3 pass; criterion 5 is disqualifying on its own.
+  Phases 1 and 7 are therefore built as originally specified, and `asgi.py` declares its six ASGI
+  type aliases locally. **The `asgi` extra in the scaffold above does not exist** — the package has
+  no optional dependencies at all.
+- **`rfc9457` 0.4.1: rejected on criterion 2.** No framework dependency (only `multidict`) and it
+  ships `py.typed`, but its `Problem` is an `Exception` with its own `__init__`, `__str__` and
+  `__repr__`, which cannot compose with `AppException` without one contract losing. It also models
+  no `instance` member and has no parse direction, so the wrapper would be larger than the
+  implementation. §2.1 is built as written.
+
+So `rn-forge-web` has **exactly one dependency, `rn-forge-commons`**, and the negative results for
+Phases 3–6 are recorded in the package README with their date.
+
+**Four things the implementation settled that this plan left open or got slightly wrong:**
+
+1. **`str(exc)` was the wrong source for a sub-500 `detail`.** `AppException.__str__` renders
+   `"<error_code> | <message> | <error_data>"`, so §2.2 as specified would have put the exception's
+   whole context dictionary on the wire. `build()` reads `.message` instead. A test caught it.
+2. **`HealthReport` needed an `as_body()`.** Its `http_status` field is both snake_case — violating
+   the casing rule of Phase 9 — and a restatement of the status line. `as_body()` emits `status` and
+   `checks` only; `http_status` stays on the dataclass for the framework layer to read.
+3. **`InMemoryIdempotencyStore` cannot implement both protocols.** One class cannot carry a `def`
+   and an `async def` under the same name, and renaming the async one would make it satisfy neither
+   protocol. Two classes ship, the async one delegating to the sync one so they cannot drift.
+4. **A conformance case can depend on another, and that had to become data.** The idempotency replay
+   case only replays something. `ConformanceCase.depends_on` names its prerequisites explicitly, and
+   each case starts from a fresh application — otherwise a driver under a randomizing test runner
+   passes or fails by luck. `case_by_id` resolves them.
+
+**The conformance table is proven in-package, which the plan did not anticipate.** Phase 9.4's
+"worked minimal example per framework, exercised by a test" is delivered as three examples under
+`docs/adoption/examples/`, and the framework-free one (`asgi_app.py`, bare ASGI over the primitives
+and nothing else) is **executed against every case in `CASES`** by this package's own suite. That
+makes it the first of the three independent proofs §11.1 is designed to collect, and it makes the
+table testable rather than aspirational today rather than when the framework drivers land. The
+Django and FastAPI examples cannot be executed here — installing either framework would breach the
+boundary — so they are parsed and symbol-checked against the public API, which catches the realistic
+rot without importing a framework. That limitation is stated in the examples' own README.
+
+**Not done, and deliberately:** the amendments in §A.1–A.3 were already applied to the django and
+commons plans before this run. Phase 10 ships the *contract* only; the commons token-verification
+module it names as a build-order predecessor does not exist yet, and nothing here imports it.
+Nothing is committed.
+
+
 ## Summary (read this first)
 
 Every module below is derived from two independent implementations. Where they disagree, this plan
@@ -1669,49 +1724,52 @@ container, build nothing — is a *convention* worth documenting, not code worth
 
 ## Final checklist before calling this done
 
-- [ ] `requires-python = ">=3.14"` on `rn-forge-web`; commons and django floors untouched
-- [ ] Phase 0.2's two library evaluations decided, with reasons, in the package README — including the
+- [x] `requires-python = ">=3.14"` on `rn-forge-web`; commons and django floors untouched
+- [x] Phase 0.2's two library evaluations decided, with reasons, in the package README — including the
       negative results for Phases 3–6
-- [ ] `uv sync --all-extras && uv run pytest packages/rn-forge-web` green
-- [ ] Every module imports with the base install (no `asgi` extra); the extra-gated paths tested both
-      ways
-- [ ] `uv run pyright` clean across every package
-- [ ] `uv run ruff check . && uv run ruff format --check .` clean
-- [ ] The framework-boundary grep returns nothing — no `django`, `fastapi`, `starlette` or
+- [x] `uv sync --all-extras && uv run pytest packages/rn-forge-web` green
+- [x] Every module imports with the base install — there is no `asgi` extra and no extra-gated path,
+      because Phase 0.2 rejected `asgi-correlation-id` (see "Implementation status")
+- [x] `uv run pyright` clean across every package
+- [x] `uv run ruff check . && uv run ruff format --check .` clean
+- [x] The framework-boundary grep returns nothing — no `django`, `fastapi`, `starlette` or
       `rest_framework` import anywhere under `packages/rn-forge-web/src/`
-- [ ] `.importlinter` carries the `web-is-framework-free` and `web-layers` contracts and
+- [x] `.importlinter` carries the `web-is-framework-free` and `web-layers` contracts and
       `uv run lint-imports` is green — the grep is the fast check, the contract is the gate
-- [ ] `rn_forge.web` imports neither `rn_forge.cli` nor `rn_forge.tooling` (same contract)
-- [ ] The commons dependency is a pinned direct URL at a release tag (kiln D46), and the installation
+- [x] `rn_forge.web` imports neither `rn_forge.cli` nor `rn_forge.tooling` (same contract)
+- [x] The commons dependency is a pinned direct URL at a release tag (kiln D46), and the installation
       guide documents that form rather than `uv add rn-forge-web`
-- [ ] The package is wired into pykit's repo shape per alignment §6 (workspace members, sources,
-      `[archetype.python-lib] packages`, `state.json` re-seed, root `mkdocs.yml` nav, `docs/index.md`)
-- [ ] Every declared dependency is justified in `pyproject.toml` and in the README's
+- [x] The package is wired into pykit's repo shape per alignment §6: workspace members, sources, the
+      `workspace` dependency group, `.importlinter`, root `mkdocs.yml` nav and `docs/index.md`.
+      `[archetype.python-lib] packages` and the `state.json` re-seed are **not** done because
+      `.rn-forge/` does not exist yet — alignment §6 says not to invent kiln files early. Redo those
+      two after kiln Phase F.1 regenerates pykit's skeleton.
+- [x] Every declared dependency is justified in `pyproject.toml` and in the README's
       "Dependencies and why" section; none of them is a web framework
-- [ ] Any wrapped library's exceptions are translated to `AppException` subclasses at the wrapper
+- [x] Any wrapped library's exceptions are translated to `AppException` subclasses at the wrapper
       boundary — no third-party exception type reaches a consumer
-- [ ] `src/rn_forge/web/__init__.py` re-exports every public symbol, `__all__` sorted
-- [ ] `uv run --directory packages/rn-forge-web --group docs mkdocs build --strict` clean
-- [ ] Phase 9's context pack complete: `api-conventions.md`, both wiring guides, the checklist, and a
+- [x] `src/rn_forge/web/__init__.py` re-exports every public symbol, `__all__` sorted
+- [x] `uv run --directory packages/rn-forge-web --group docs mkdocs build --strict` clean
+- [x] Phase 9's context pack complete: `api-conventions.md`, both wiring guides, the checklist, and a
       runnable example per framework covered by a test
-- [ ] `api-conventions.md` names no application and assumes no domain, and carries the casing rule
+- [x] `api-conventions.md` names no application and assumes no domain, and carries the casing rule
       and the OpenAPI conventions as well as the seven modules' wire contracts
-- [ ] `model-conventions.md` shipped (Phase 9.5); it contains no code
-- [ ] Pagination is AIP-158 on the wire (`pageSize`/`pageToken`/`nextPageToken`), the page size is
+- [x] `model-conventions.md` shipped (Phase 9.5); it contains no code
+- [x] Pagination is AIP-158 on the wire (`pageSize`/`pageToken`/`nextPageToken`), the page size is
       clamped and never rejected, and `totalSize` is off by default
-- [ ] Phase 10's `Principal`, protocols and `challenge_header` shipped; the 401/403 boundary follows
+- [x] Phase 10's `Principal`, protocols and `challenge_header` shipped; the 401/403 boundary follows
       RFC 6750 §3 and the 401 body leaks no verification reason
-- [ ] Phase 11's conformance table ships in the package (not in `tests/`), is re-exported from the
+- [x] Phase 11's conformance table ships in the package (not in `tests/`), is re-exported from the
       curated `__init__`, and has at least one case per area in §11.2
-- [ ] Every wire decision settled in this plan has a conformance case; a decision with no case is
+- [x] Every wire decision settled in this plan has a conformance case; a decision with no case is
       treated as unfinished
-- [ ] The unification boundary section is present and the deferred entries below it do not read as
+- [x] The unification boundary section is present and the deferred entries below it do not read as
       staging posts toward a shared ORM layer
-- [ ] `CLAUDE.md`'s repository-overview section describes the new package and the dependency direction
+- [x] `CLAUDE.md`'s repository-overview section describes the new package and the dependency direction
       (`web → commons`, `django → web → commons`, `fastapi → web → commons`), and says that web
       imports neither `rn_forge.cli` nor `rn_forge.tooling`
-- [ ] The amendment sections above applied to the commons and django plans
-- [ ] Nothing committed or pushed — leave the working tree for review
+- [x] The amendment sections above applied to the commons and django plans
+- [x] Nothing committed or pushed — leave the working tree for review
 
 ## Not in this plan (deliberately deferred)
 

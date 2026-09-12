@@ -50,6 +50,22 @@ The "Repository overview" below describes the tree as it now is.
     command surfaces (`cli/`, which ships `rn-forge-docs`). Depends on `rn-forge-cli`, which
     depends on `rn-forge-commons`. Hard dependencies on `jinja2` and `markdown`. The facade is
     lazy: importing `rn_forge.tooling` does not import Jinja.
+- **`packages/rn-forge-web`** (import path `rn_forge.web`) — framework-agnostic HTTP/API
+    primitives: the wire semantics an application promises its callers, shared by Django/DRF,
+    FastAPI/Starlette and anything else that speaks HTTP. The correlation ID (`context.py`), RFC 9457
+    problem details and the MRO-resolving exception registry (`problem.py`, `exceptions.py`), ETag
+    `If-Match` preconditions (`concurrency.py`), AIP-158 opaque-cursor pagination (`pagination.py`),
+    the idempotency-store protocols and request hashing (`idempotency.py`), readiness-check
+    aggregation (`health.py`), a pure-ASGI correlation middleware with locally-declared ASGI type
+    aliases (`asgi.py`), the `Principal`/authenticator/authorizer contract and the 401/403 +
+    `WWW-Authenticate` rules (`auth.py`), and `conformance/` — the scenario table, shipped as
+    framework-free **data**, that each framework package runs its own stack through. Nine modules,
+    all one kind of mechanism (inbound HTTP wire semantics), so the package is deliberately **flat**
+    (kiln D55). Depends on `rn-forge-commons` and **nothing else**: no third-party dependency at all,
+    both Phase 0 candidates (`asgi-correlation-id`, `rfc9457`) having been evaluated and rejected —
+    the reasons are in the package README's "Dependencies and why". `src/rn_forge/web/__init__.py` is
+    the curated public API. `docs/adoption/` is a normative deliverable, not garnish: it is what an
+    application's specification is written against.
 - **`packages/rn-forge-django`** (import path `rn_forge.django`) — Django/DRF integration layer built on top
     of `rn-forge-commons`. Depends on `rn-forge-commons` via `[tool.uv.sources]` workspace linking (not PyPI).
     Optional extras: `drf` (djangorestframework, plus `rn-forge-commons[excel]` since `drf.views` eagerly
@@ -59,7 +75,7 @@ The "Repository overview" below describes the tree as it now is.
 
 ### The import boundary is executable
 
-`.importlinter` at the repo root states the four rules the dependency graph depends on, and
+`.importlinter` at the repo root states the rules the dependency graph depends on, and
 `uv run lint-imports` proves them (CI gates every other job on it):
 
 1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or Jinja — it is
@@ -69,6 +85,11 @@ The "Repository overview" below describes the tree as it now is.
 3. The three libraries layer strictly: `tooling` → `cli` → `commons`.
 4. `rn_forge.django`'s runtime surface never imports any of them. Only `rn_forge.django.codegen`
    may, and only with the (not yet built) `codegen` extra installed.
+5. `rn_forge.web` imports no web framework (`django`, `fastapi`, `starlette`, `rest_framework`) and
+   neither `rn_forge.cli` nor `rn_forge.tooling` — it ships into an ASGI server and has no business
+   reaching the command-line or file-owning layers. The framework packages layer on top of it:
+   `django → web → commons`, with `fastapi` an independent sibling of `django` (an optional layer in
+   the contract until that package exists), so neither may import the other.
 
 There are deliberately **no compatibility re-exports** in any direction — a shim would satisfy a
 caller and reverse the dependency. When moving a symbol across the boundary, move it; do not alias
@@ -140,11 +161,14 @@ Per-package commands work the same way with `--directory packages/<pkg>` or by `
 
 ### Type checking scope
 
-Root `pyproject.toml` configures Pyright in `strict` mode, `include = ["packages"]`, `ignore = ["tests", "**/tests"]`. Test code is intentionally excluded from strict typing; library source under `src/` is not — new source code must satisfy strict mode (explicit types, no untyped `Any` leakage across public APIs).
+Root `pyproject.toml` configures Pyright in `strict` mode, `include = ["packages"]`, ignoring `tests`
+and the two framework examples in `rn-forge-web/docs/adoption/examples/` (they import Django and
+FastAPI, which that package deliberately does not install; the framework-free `asgi_app.py` beside
+them **is** typechecked, and is executed by the test suite against the conformance table). Test code is intentionally excluded from strict typing; library source under `src/` is not — new source code must satisfy strict mode (explicit types, no untyped `Any` leakage across public APIs).
 
 ### Docs
 
-`rn-forge-commons`, `rn-forge-cli` and `rn-forge-tooling` each have an mkdocs site (`packages/<pkg>/mkdocs.yml`, `docs/` dir, `mkdocstrings` autogenerating API docs from docstrings under `src`), and the root `mkdocs.yml` includes them all via the monorepo plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from the repo root for the combined site. Per-package builds are strict, so a cross-package link will fail the build — reference the other package by name instead of linking into it. Keep docstrings accurate since they are the doc source, not just IDE hints.
+`rn-forge-commons`, `rn-forge-cli`, `rn-forge-tooling` and `rn-forge-web` each have an mkdocs site (`packages/<pkg>/mkdocs.yml`, `docs/` dir, `mkdocstrings` autogenerating API docs from docstrings under `src`), and the root `mkdocs.yml` includes them all via the monorepo plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from the repo root for the combined site. Per-package builds are strict, so a cross-package link will fail the build — reference the other package by name instead of linking into it. Keep docstrings accurate since they are the doc source, not just IDE hints.
 
 ## Architecture notes
 
@@ -172,8 +196,10 @@ Sub-namespaced by auth mechanism: `auth/basic`, `auth/jwt`, `auth/saml`, plus sh
 ## Testing conventions
 
 - Tests live in each package's `tests/`, mirroring the `src/rn_forge/<pkg>/` layout (e.g. `tests/fs/test_paths.py` tests `src/rn_forge/commons/fs/paths.py`, and `tests/auth/drf/test_authentication_and_permissions.py` tests `src/rn_forge/django/auth/drf/`). When a module moves, its test module moves with it.
-- Every package has a `tests` package, so a test module that has to be imported *by name* (a `--policy` reference, say) needs an unambiguous alias rather than `tests.<...>` — see `rn-forge-tooling/tests/docs/test_docs.py`.
+- A test module that has to be imported *by name* (a `--policy` reference, say) needs an unambiguous alias rather than `tests.<...>` — see `rn-forge-tooling/tests/docs/test_docs.py`.
+- Only `rn-forge-django` ships a `tests/__init__.py`. Do **not** add one to another package: a root-level `uv run pytest` reads no per-package `[tool.pytest.ini_options]`, so it collects without `--import-mode=importlib`, and a second directory importable as `tests` collides with django's and fails collection for the whole workspace.
+- `rn-forge-web` marks its async tests with an explicit `@pytest.mark.asyncio` rather than relying on its own `asyncio_mode = "auto"`, for the same reason: that setting is not in effect when the suite runs from the repo root.
 - `rn-forge-django/tests/conftest.py` configures Django (`settings.configure(...)`, sqlite in-memory DB, `django.setup()`) — no separate Django settings module exists; this conftest is the only settings source for tests.
-- `rn-forge-django` defines `unit` and `integration` pytest markers (`pyproject.toml`) — mark DB-backed tests `integration` and fast isolated tests `unit`.
+- `rn-forge-django` defines `unit` and `integration` pytest markers (`pyproject.toml`) — mark DB-backed tests `integration` and fast isolated tests `unit`. `rn-forge-web` defines `unit`. Both emit `PytestUnknownMarkWarning` when the suite is run from the repo root, since the root has no pytest config to register them in; the warnings are cosmetic.
 - `pytest-randomly` randomizes test order by default in every package — do not rely on cross-test ordering.
 - Tests are excluded from ruff's lint rules (`per-file-ignores` = `ALL` for `**/tests/*`) and from Pyright's strict checking.

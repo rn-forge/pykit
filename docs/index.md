@@ -14,6 +14,11 @@
 - [rn-forge-tooling](rn-forge-tooling/index.md) — the file-owning developer tooling: a locked JSON
   state store, a strict Jinja engine, the generation engine, release-bundle extraction and the
   documentation-tree checkers. Depends on `rn-forge-cli`.
+- [rn-forge-web](rn-forge-web/index.md) — framework-agnostic HTTP/API primitives: the correlation
+  ID, RFC 9457 problem details and the exception registry, ETag preconditions, AIP-158 cursor
+  pagination, the idempotency-store protocol, readiness aggregation, a pure-ASGI correlation
+  middleware, the authentication contract, and the conformance table both framework packages are
+  tested against. Depends on `rn-forge-commons` and imports no web framework.
 - [rn-forge-django](rn-forge-django/index.md) — opinionated Django/DRF integration layer:
   model base classes, a typed settings facade, basic/JWT/SAML auth, and DRF bulk/import/export
   views built on top of `rn-forge-commons`.
@@ -22,6 +27,8 @@ Pick a package above for its guides and API reference.
 
 The development layer is **two** packages, not one: `rn-forge-cli` is what any program with a command
 line takes, and `rn-forge-tooling` is what a program that installs itself, owns files in someone
-else's repo or renders templates takes. There are no compatibility re-exports in any direction, and
-`.importlinter` proves the layering. See the [plan execution order](plans/README.md) for what is
+else's repo or renders templates takes. `rn-forge-web` is on the other side of the graph entirely:
+`web → commons`, and `django → web → commons`, so a package that ships into an ASGI server never
+reaches the command-line or file-owning layers. There are no compatibility re-exports in any
+direction, and `.importlinter` proves the layering. See the [plan execution order](plans/README.md) for what is
 still open.

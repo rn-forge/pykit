@@ -1,0 +1,58 @@
+site_name: rn-forge-web
+site_description: Framework-agnostic HTTP/API primitives built on rn-forge-commons
+site_dir: .out/site
+use_directory_urls: false
+
+theme:
+  name: material
+  highlightjs: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_style: auto
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            show_root_heading: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Guides:
+      - guides/index.md
+      - Installation: guides/installation.md
+      - Quickstart: guides/quickstart.md
+  - Adoption:
+      - adoption/index.md
+      - API conventions: adoption/api-conventions.md
+      - Model conventions: adoption/model-conventions.md
+      - Wiring into Django: adoption/wiring-django.md
+      - Wiring into FastAPI: adoption/wiring-fastapi.md
+      - Adoption checklist: adoption/checklist.md
+      - Worked examples: adoption/examples/README.md
+  - API Reference:
+      - api/index.md
+      - Context: api/context.md
+      - Problem: api/problem.md
+      - Exceptions: api/exceptions.md
+      - Concurrency: api/concurrency.md
+      - Pagination: api/pagination.md
+      - Idempotency: api/idempotency.md
+      - Health: api/health.md
+      - ASGI: api/asgi.md
+      - Auth: api/auth.md
+      - Conformance: api/conformance.md

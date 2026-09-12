@@ -12,6 +12,9 @@
 #   4. a framework's runtime surface never depends on developer tooling, on
 #      Typer or on Jinja — those arrive only with its `codegen` extra, which
 #      lives in `rn_forge.<framework>.codegen` and nowhere else.
+#   5. `rn_forge.web` is the framework-agnostic HTTP layer: it imports no web
+#      framework and neither of the development-layer packages, and the
+#      framework packages layer on top of it (web plan alignment §2).
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -24,6 +27,7 @@ root_packages =
     rn_forge.cli
     rn_forge.tooling
     rn_forge.django
+    rn_forge.web
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
@@ -72,3 +76,29 @@ ignore_imports =
     rn_forge.django.codegen -> *
     rn_forge.django.codegen.* -> *
 unmatched_ignore_imports_alerting = none
+
+[importlinter:contract:web-is-framework-free]
+name = rn_forge.web never imports a web framework, cli or tooling
+type = forbidden
+source_modules =
+    rn_forge.web
+forbidden_modules =
+    django
+    fastapi
+    starlette
+    rest_framework
+    rn_forge.cli
+    rn_forge.tooling
+
+[importlinter:contract:web-layers]
+name = django and fastapi depend on web, web depends on commons, never the other way round
+type = layers
+# The `:` makes django and fastapi independent siblings at one layer: neither
+# may import the other. The parentheses mark `rn_forge.fastapi` optional — it
+# is planned (fastapi-library-plan.md) and does not exist yet, and an optional
+# layer is what lets the contract be written once rather than amended on
+# arrival.
+layers =
+    rn_forge.django : (rn_forge.fastapi)
+    rn_forge.web
+    rn_forge.commons
