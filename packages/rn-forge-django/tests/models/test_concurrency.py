@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 
 from rn_forge.django.models import (
     BaseModel,
     ImmutableModelMixin,
     VersionedModelMixin,
 )
-from rn_forge.web import DomainConflict
+from rn_forge.web import DomainConflict, VersionConflict
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -64,6 +64,18 @@ class TestVersionedModelMixin:
         order.save(update_fields=["reference"])
         order.refresh_from_db()
         assert (order.reference, order.version) == ("C", 2)
+
+    def test_a_stale_instance_cannot_overwrite_a_newer_save(self) -> None:
+        first = _order()
+        second = _VersionedOrder.objects.get(pk=first.pk)
+        first.reference = "first"
+        first.save()
+        second.reference = "second"
+        with pytest.raises(VersionConflict), transaction.atomic():
+            second.save()
+        assert second.version == 1
+        stored = _VersionedOrder.objects.get(pk=first.pk)
+        assert (stored.reference, stored.version) == ("first", 2)
 
     def test_in_memory_instance_is_not_stale(self) -> None:
         order = _order()

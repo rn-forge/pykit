@@ -1815,19 +1815,22 @@ fixtures = [
 jwt = [
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
+    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 oidc = [
     { name = "djangorestframework" },
-    { name = "rn-forge-commons", extra = ["auth"] },
+    { name = "rn-forge-commons", extra = ["auth", "excel"] },
 ]
 openapi = [
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
+    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 saml = [
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "python3-saml" },
+    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 
 [package.dev-dependencies]
@@ -1869,10 +1872,13 @@ requires-dist = [
     { name = "python3-saml", marker = "extra == 'all'", specifier = ">=1.16.0" },
     { name = "python3-saml", marker = "extra == 'saml'", specifier = ">=1.16.0" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["auth", "excel"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["auth", "excel"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'drf'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'jwt'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'openapi'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'saml'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
 ]
 provides-extras = ["drf", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "all"]

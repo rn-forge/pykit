@@ -30,10 +30,10 @@ tag.
 | Extra | Adds |
 | --- | --- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing), including Excel transfer support via `rn-forge-commons[excel]` |
-| `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
-| `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
-| `oidc` | `djangorestframework` + `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
+| `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `oidc` | `djangorestframework` + `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
 | `celery` | `celery`, for `rn_forge.django.celery` |
 | `fixtures` | `rn-forge-commons[excel]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |

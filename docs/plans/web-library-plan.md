@@ -51,7 +51,8 @@ below stand. What changed is the **workspace around it**: the library graph, the
 the package layout rule, and who the consumers are. Read this section before Phase 0; the rest of the
 document is unchanged except where it is corrected in place and marked.
 
-Authority: `../../../kiln/docs/plans/standardization-plan.md` (revision 9) and
+Authority: the kiln standardization plan (revision 9, since retired; D-numbers resolve through
+`../../../kiln/docs/plans/context.md` §2.2) and
 `../../../kiln/docs/adr/` — chiefly ADR-0002 (the dependency graphs), ADR-0005 (archetypes and golden
 repos) and D46 (releases are pinned git tags).
 
@@ -1414,6 +1415,16 @@ This is the whole reason the phase exists. Both stacks must emit the same thing:
 - **Basic auth as a production mechanism.** Both framework packages ship basic auth (RFC 7617)
   because local development and simple internal deployments genuinely need it — and both must mark
   it as such in their docs and produce the identical 401 challenge.
+
+> **Pending gap (2026-09-13, not yet a phase):** neither `rn-forge-web` nor `rn-forge-commons`
+> ships a ready-made `Authenticator` that wires `JwtVerifier`/`JwksCache`/`discover_oidc` through
+> `principal_from_claims` to a `Credentials → Principal` implementation. Every consuming app
+> currently hand-writes this glue identically for its DRF `PrincipalBearerAuthentication` subclass
+> and its FastAPI `bearer_auth()` authenticator. A single `OidcAuthenticator` (issuer/audience in,
+> `Authenticator` out) belongs in this module or in commons, reused unchanged by both framework
+> bindings — it stays inside the "verify + map claims" boundary this phase already draws and does
+> not cross into login/token issuance. No phase number assigned; needs a decision before scoping.
+> See [`docs/auth-overview.md`](../auth-overview.md) for the fuller writeup.
 
 **Tests.** `tests/test_auth.py` (`unit`): `Principal` round-trips through `DataclassMixin`;
 `Requirement` evaluation for each of the four set forms including the empty requirement; `authorize`

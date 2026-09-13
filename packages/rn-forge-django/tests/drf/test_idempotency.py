@@ -72,7 +72,7 @@ class TestCacheIdempotencyStore:
             store = CacheIdempotencyStore(timeout=30, cache_alias="other")
             assert store.record_or_replay(scope="s", key="k", request_body={}) is None
         cache.add.assert_called_once()
-        assert cache.add.call_args.args[0] == "idempotency:s:k"
+        assert cache.add.call_args.args[0] == "idempotency:1:s:k"
         assert cache.add.call_args.args[2] == 30
         cache.set.assert_not_called()
         cache.get.assert_not_called()
@@ -85,8 +85,13 @@ class TestCacheIdempotencyStore:
                 scope="s", key="k", status=200, response_body={"ok": True}
             )
         slot, entry, timeout = cache.set.call_args.args
-        assert (slot, timeout) == ("idempotency:s:k", 45)
+        assert (slot, timeout) == ("idempotency:1:s:k", 45)
         assert entry["response"] == {"status": 200, "body": {"ok": True}}
+
+    def test_a_colon_cannot_move_a_key_across_scopes(self) -> None:
+        assert CacheIdempotencyStore.cache_key(
+            "tenant:orders", "x"
+        ) != CacheIdempotencyStore.cache_key("tenant", "orders:x")
 
 
 class _ChargeView(APIView):

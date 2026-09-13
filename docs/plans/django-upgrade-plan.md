@@ -100,7 +100,8 @@ Completed in a second pass, on the owner's instruction to finish the remaining p
 and the "do not improve these" list are unchanged. What changed is the workspace around it: the
 library graph gained a layer, releases became tags, the package layout got a rule, and this package
 acquired a named place in the archetype catalogue and in the code-generation design. Authority:
-`../../../kiln/docs/plans/standardization-plan.md` (revision 9) and `../../../kiln/docs/adr/` —
+the kiln standardization plan (revision 9, since retired; D-numbers resolve through
+`../../../kiln/docs/plans/context.md` §2.2) and `../../../kiln/docs/adr/` —
 chiefly ADR-0002, ADR-0005, ADR-0009, D37, D46, D53, D55 and D56.
 
 ### 1. The graph has three library layers, and none of them is above this package

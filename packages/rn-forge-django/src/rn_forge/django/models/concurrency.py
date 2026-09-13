@@ -18,7 +18,7 @@ from typing import Any, ClassVar, override
 from django.db import models
 from django.db.models.base import ModelBase
 from rn_forge.django.models._meta import get_model_meta
-from rn_forge.web import DomainConflict
+from rn_forge.web import DomainConflict, VersionConflict
 
 __all__ = ["ImmutableModelMixin", "VersionedModelMixin"]
 
@@ -34,6 +34,11 @@ class VersionedModelMixin(models.Model):
     The increment is done in Python rather than with an ``F()`` expression: an
     ``F()`` leaves the in-memory instance stale, and the ETag a response emits
     right after the save would carry the old version.
+
+    The ``UPDATE`` is conditioned on the version the instance was loaded at, so
+    the check and the write are one statement: of two instances loaded at the
+    same version, the second to save matches no row and raises
+    :class:`rn_forge.web.VersionConflict` (412) instead of overwriting the first.
     """
 
     version: models.PositiveIntegerField[int, int] = models.PositiveIntegerField(
@@ -57,12 +62,60 @@ class VersionedModelMixin(models.Model):
             self.version += 1
             if update_fields is not None:
                 update_fields = {*update_fields, "version"}
-        super().save(
-            force_insert=force_insert,
-            force_update=force_update,
-            using=using,
-            update_fields=update_fields,
+        try:
+            super().save(
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            )
+        except VersionConflict:
+            self.version -= 1
+            raise
+
+    @override
+    def _do_update(  # pyright: ignore[reportIncompatibleMethodOverride]  # private Django hook, untyped in the stubs
+        self,
+        base_qs: models.QuerySet[Any],
+        using: str | None,
+        pk_val: Any,
+        values: list[tuple[models.Field[Any, Any], Any, Any]],
+        update_fields: Iterable[str] | None,
+        forced_update: bool,
+        returning_fields: list[models.Field[Any, Any]],
+    ) -> Any:
+        """Match the row only at the loaded version; raise if it moved on."""
+        if self._state.adding or not any(
+            field.attname == "version" for field, _, _ in values
+        ):
+            return super()._do_update(
+                base_qs,
+                using,
+                pk_val,
+                values,
+                update_fields,
+                forced_update,
+                returning_fields,
+            )
+        expected = self.version - 1
+        results = super()._do_update(
+            base_qs.filter(version=expected),
+            using,
+            pk_val,
+            values,
+            update_fields,
+            forced_update,
+            returning_fields,
         )
+        if not results and base_qs.filter(pk=pk_val).exists():
+            raise VersionConflict(
+                "{} {} was modified concurrently: expected version {}",
+                type(self).__name__,
+                pk_val,
+                expected,
+                error_code=412,
+            )
+        return results
 
 
 class ImmutableModelMixin(models.Model):

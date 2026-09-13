@@ -53,7 +53,7 @@ _FASTAPI_VALIDATION_SCHEMAS: Final = ("HTTPValidationError", "ValidationError")
 _VERBS: Final[Mapping[str, str]] = {
     "POST": "Create",
     "PUT": "Update",
-    "PATCH": "Update",
+    "PATCH": "PartialUpdate",
     "DELETE": "Delete",
 }
 
@@ -67,7 +67,8 @@ def operation_id(route: APIRoute) -> str:
       ``/api/v1/work-items/{id}`` → ``workItems``.
     - **Verb** is ``List`` for a ``GET`` on a collection and ``Get`` for one on
       an item (the path ends in a parameter); ``Create`` for ``POST``,
-      ``Update`` for ``PUT``/``PATCH``, ``Delete`` for ``DELETE``.
+      ``Update`` for ``PUT``, ``PartialUpdate`` for ``PATCH`` (distinct, so a
+      resource serving both gets two operation IDs), ``Delete`` for ``DELETE``.
 
     The convention covers CRUD and nothing else. A route outside it — an action
     such as ``POST /orders/{id}/cancel`` — gets a mechanical name

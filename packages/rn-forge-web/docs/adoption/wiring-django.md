@@ -106,7 +106,7 @@ TTL = 60 * 60 * 24
 
 class CacheIdempotencyStore:
     def record_or_replay(self, *, scope, key, request_body):
-        slot = f"idempotency:{scope}:{key}"
+        slot = f"idempotency:{len(scope)}:{scope}:{key}"  # length prefix: no ":" collisions
         digest = request_hash(request_body)
 
         if cache.add(slot, {"hash": digest, "response": None}, TTL):
@@ -126,7 +126,7 @@ class CacheIdempotencyStore:
         return StoredResponse(status=stored["status"], body=stored["body"], replayed=True)
 
     def complete(self, *, scope, key, status, response_body):
-        slot = f"idempotency:{scope}:{key}"
+        slot = f"idempotency:{len(scope)}:{scope}:{key}"
         entry = cache.get(slot) or {"hash": None, "response": None}
         entry["response"] = {"status": status, "body": dict(response_body)}
         cache.set(slot, entry, TTL)

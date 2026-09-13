@@ -1,6 +1,7 @@
 """Tests for rn_forge.web.health."""
 
 import asyncio
+import threading
 
 import pytest
 from assertpy import assert_that
@@ -186,6 +187,31 @@ async def test_checks_run_concurrently_not_serially():
     )
     assert_that(report.status).is_equal_to("pass")
     assert_that(started).contains("a", "b")
+
+
+@pytest.mark.asyncio
+async def test_sync_checks_run_off_the_event_loop():
+    # Each check blocks until both checks are running (the barrier) and the
+    # loop has run other work (loop_ran). On the loop, or serially, neither can
+    # happen, so the checks time out and fail. The timeouts only bound the
+    # failure path; a passing run never waits on them.
+    both_running = threading.Barrier(2)
+    loop_ran = threading.Event()
+
+    def blocking() -> CheckResult:
+        both_running.wait(timeout=5)
+        if not loop_ran.wait(timeout=5):
+            return CheckResult(status="fail", reason="event loop was blocked")
+        return CheckResult(status="pass")
+
+    async def tick() -> None:
+        await asyncio.sleep(0)
+        loop_ran.set()
+
+    ticker = asyncio.create_task(tick())
+    report = await run_checks({"a": blocking, "b": blocking})
+    await ticker
+    assert_that(report.status).is_equal_to("pass")
 
 
 @pytest.mark.asyncio

@@ -20,22 +20,34 @@ drf = [
 fixtures = [
   "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
-jwt = ["djangorestframework>=3.17.1", "djangorestframework-simplejwt>=5.5.1"]
+# Every extra that brings DRF also brings commons' `excel`: importing any
+# `rn_forge.django.drf` module runs the `drf` facade, whose transfer views
+# import the Excel adapter.
+jwt = [
+  "djangorestframework>=3.17.1",
+  "djangorestframework-simplejwt>=5.5.1",
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
 # JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
 # simplejwt against a local User; verification is commons' `auth` extra.
 oidc = [
   "djangorestframework>=3.17.1",
-  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 celery = ["celery>=5.6.3"]
 # drf-spectacular only. djangorestframework-camel-case was evaluated and not
 # taken: its last release is 1.4.2 (2023-02), with classifiers stopping at
 # Python 3.10 — casing lives in `rn_forge.django.drf.casing` instead.
-openapi = ["djangorestframework>=3.17.1", "drf-spectacular>=0.30.0"]
+openapi = [
+  "djangorestframework>=3.17.1",
+  "drf-spectacular>=0.30.0",
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
 saml = [
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "python3-saml>=1.16.0",
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 all = [
   "celery>=5.6.3",

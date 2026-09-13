@@ -140,7 +140,11 @@ class RateLimiter:
         self._reset_at: float | None = None
 
     def update_from_headers(self, headers: Mapping[str, str]) -> None:
-        """Clamp the known remaining quota from ``X-RateLimit-Remaining``/``-Reset``."""
+        """Clamp the known remaining quota from ``X-RateLimit-Remaining``/``-Reset``.
+
+        ``X-RateLimit-Reset`` is read as a Unix epoch timestamp in seconds, so
+        :meth:`acquire` compares it against a wall clock.
+        """
         remaining = headers.get("X-RateLimit-Remaining")
         if remaining is not None:
             try:
@@ -157,13 +161,14 @@ class RateLimiter:
     async def acquire(
         self,
         *,
-        clock: Callable[[], float] = time.monotonic,
+        clock: Callable[[], float] = time.time,
         sleep: Callable[[float], Awaitable[None]],
     ) -> None:
         """Wait, if necessary, until quota is available, then consume one unit.
 
         Args:
-            clock: Injectable time source, for deterministic tests.
+            clock: Injectable wall-clock time source (epoch seconds, the unit
+                of ``X-RateLimit-Reset``), for deterministic tests.
             sleep: Injectable async sleep, for deterministic tests.
         """
         if self._remaining <= 0 and self._reset_at is not None:
@@ -195,7 +200,7 @@ class ResilientAsyncHttpClient:
         fail_max: int = 5,
         reset_timeout: float = 60.0,
         on_state_change: Callable[[str, str, str], None] | None = None,
-        clock: Callable[[], float] = time.monotonic,
+        clock: Callable[[], float] = time.time,
         sleep: Callable[[float], Awaitable[None]] | None = None,
         **httpx_kwargs: Any,
     ) -> None:
@@ -209,15 +214,17 @@ class ResilientAsyncHttpClient:
                 retries).
             wait_initial: Minimum backoff before the first retry, in seconds.
             wait_max: Maximum backoff between retries, in seconds.
-            fail_max: Consecutive failures before a circuit opens.
+            fail_max: Consecutive failures before a circuit opens. A
+                non-transient status (a 404, a 422) is the caller's error, not
+                the upstream's, and does not count.
             reset_timeout: Seconds an open circuit stays open before allowing
                 a trial request.
             on_state_change: ``(key, old_state, new_state)`` called on every
                 circuit transition. Defaults to an ``AppLogger`` warning —
                 this is the metrics seam; wire it to your own backend rather
                 than importing OpenTelemetry here.
-            clock: Injectable time source used by the rate limiter, for
-                deterministic tests.
+            clock: Injectable wall-clock time source (epoch seconds) used by
+                the rate limiter, for deterministic tests.
             sleep: Injectable async sleep used by the rate limiter. Defaults
                 to ``asyncio.sleep``.
             **httpx_kwargs: Forwarded to ``httpx.AsyncClient``.
@@ -231,7 +238,9 @@ class ResilientAsyncHttpClient:
         self._sleep = sleep or _default_sleep()
         self._rate_limiter = RateLimiter()
         self._breakers = purgatory.AsyncCircuitBreakerFactory(
-            default_threshold=fail_max, default_ttl=reset_timeout
+            default_threshold=fail_max,
+            default_ttl=reset_timeout,
+            exclude=[(httpx.HTTPStatusError, _is_client_error)],
         )
         self._breakers_initialized = False
         self._last_state: dict[str, str] = {}
@@ -331,6 +340,14 @@ class ResilientAsyncHttpClient:
             old_state,
             new_state,
         )
+
+
+def _is_client_error(exc: BaseException) -> bool:
+    """Whether *exc* is a non-transient status — excluded from breaker failures."""
+    return (
+        isinstance(exc, httpx.HTTPStatusError)
+        and exc.response.status_code not in TRANSIENT_STATUS_CODES
+    )
 
 
 def _default_sleep() -> Callable[[float], Awaitable[None]]:

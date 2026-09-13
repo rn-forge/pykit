@@ -213,8 +213,10 @@ contract and not a by-product.
   generator turns into a client method name, so two stacks that differ there
   produce two different client call sites for the same endpoint even when every
   byte of JSON matches. The convention is `<resource><Verb>` in lowerCamelCase
-  (`ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate`, `ordersDelete`),
-  and each package implements it.
+  (`ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate` for `PUT`,
+  `ordersPartialUpdate` for `PATCH`, `ordersDelete`), and each package
+  implements it. `PUT` and `PATCH` get distinct verbs so a resource serving
+  both never produces a duplicate `operationId`.
 - Every operation that can return an error declares the problem responses it
   can produce, by status.
 

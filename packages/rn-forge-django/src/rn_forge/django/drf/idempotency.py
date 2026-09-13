@@ -55,9 +55,11 @@ class CacheIdempotencyStore:
         """Return the cache key for *key* within *scope*.
 
         ``scope`` exists so two endpoints cannot collide on a client-chosen key:
-        pass the route name, or a tenant id for a tenant-scoped API.
+        pass the route name, or a tenant id for a tenant-scoped API. The scope
+        is length-prefixed, so a ``:`` in either part cannot make two
+        ``(scope, key)`` pairs share an entry.
         """
-        return f"idempotency:{scope}:{key}"
+        return f"idempotency:{len(scope)}:{scope}:{key}"
 
     def record_or_replay(
         self, *, scope: str, key: str, request_body: Any

@@ -16,10 +16,10 @@ Optional extras:
 | Extra | Adds |
 | --- | --- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing), including Excel transfer support via `rn-forge-commons[excel]` |
-| `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
-| `openapi` | `drf-spectacular`, for `drf.openapi` |
-| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `jwt` | `djangorestframework-simplejwt`-backed JWT auth — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `openapi` | `drf-spectacular`, for `drf.openapi` — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
 | `celery` | `celery`, for the `celery` app factory |
 | `fixtures` | `rn-forge-commons[excel]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |

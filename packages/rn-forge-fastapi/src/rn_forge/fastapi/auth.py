@@ -20,9 +20,12 @@ exception, so a UI sees ``problem+json`` for an auth failure like any other.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Awaitable, Callable
+from typing import cast
 
 from fastapi import Depends, Request, Security
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBasic,
@@ -131,9 +134,20 @@ async def _authenticate(
     credentials: Credentials,
     log: Log | None,
 ) -> Principal:
-    """Run a sync or async authenticator, logging the reason for a refusal."""
+    """Run a sync or async authenticator, logging the reason for a refusal.
+
+    A synchronous authenticator runs in the threadpool, as FastAPI runs a sync
+    dependency, so its network I/O (a JWKS fetch, say) does not block the loop.
+    """
     try:
-        outcome = authenticator.authenticate(credentials=credentials)
+        if inspect.iscoroutinefunction(authenticator.authenticate):
+            outcome = authenticator.authenticate(credentials=credentials)
+        else:
+            authenticate = cast(
+                Callable[..., Principal | Awaitable[Principal]],
+                authenticator.authenticate,
+            )
+            outcome = await run_in_threadpool(authenticate, credentials=credentials)
         return outcome if isinstance(outcome, Principal) else await outcome
     except AuthenticationFailed as exc:
         if log is not None:

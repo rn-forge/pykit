@@ -87,7 +87,7 @@ Usage::
 _VERBS: Final[Mapping[str, str]] = {
     "POST": "Create",
     "PUT": "Update",
-    "PATCH": "Update",
+    "PATCH": "PartialUpdate",
     "DELETE": "Delete",
 }
 
@@ -133,7 +133,8 @@ class WireAutoSchema(AutoSchema):
     ``<resource><Verb>`` in lowerCamelCase: *resource* is the last literal path
     segment (``/api/work-items/{id}`` → ``workItems``); *Verb* is ``List`` for a
     ``GET`` on a collection and ``Get`` on an item, ``Create`` for ``POST``,
-    ``Update`` for ``PUT``/``PATCH``, ``Delete`` for ``DELETE``. An action
+    ``Update`` for ``PUT``, ``PartialUpdate`` for ``PATCH``, ``Delete`` for
+    ``DELETE``. An action
     outside CRUD gets a mechanical name; give it an explicit
     ``@extend_schema(operation_id=...)``.
     """

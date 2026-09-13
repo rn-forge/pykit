@@ -100,8 +100,9 @@ violation.
 - **The authenticator.** `bearer_auth` takes any `rn_forge.web.Authenticator` or
   `AsyncAuthenticator`: verify the token, map claims to a `Principal`, and raise
   `AuthenticationFailed` with the reason — the reason reaches `log`, never the
-  body. `basic_auth` is for local development and simple internal deployments
-  only.
+  body. A sync `Authenticator` runs in the threadpool, so a blocking JWKS fetch
+  does not stall the event loop. `basic_auth` is for local development and
+  simple internal deployments only.
 - **The idempotency store.** Implement `rn_forge.web.AsyncIdempotencyStore`
   over the application's database. Race safety comes from a `UNIQUE (scope, key)`
   constraint with `INSERT … ON CONFLICT DO NOTHING` and a read-back, never a

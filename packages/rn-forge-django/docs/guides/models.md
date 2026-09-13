@@ -51,7 +51,9 @@ class LedgerEntry(ImmutableModelMixin, BaseModel):
     """Any change outside the audit columns, and any delete, raises DomainConflict (409)."""
 ```
 
-The `version` bump survives a partial `save(update_fields=[...])`. `ImmutableModelMixin` re-reads
+The `version` bump survives a partial `save(update_fields=[...])`. The `UPDATE` only matches the row
+at the version the instance was loaded at, so a save from a stale instance — another request saved
+in between — raises `rn_forge.web.VersionConflict` (412) rather than silently overwriting it. `ImmutableModelMixin` re-reads
 the row on every update — one extra query — and does not guard queryset-level `update()`/`delete()`.
 
 Turn a stale write into a 412 from a DRF view, and emit the `ETag` the client sends back:

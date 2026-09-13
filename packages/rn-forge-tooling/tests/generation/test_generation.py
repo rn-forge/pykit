@@ -176,6 +176,12 @@ class TestApply:
         result, _ = run(tmp_path, artifacts)
         assert set(actions(result).values()) == {Action.UNCHANGED, Action.SKIP}
 
+    def test_unterminated_block_content_is_unchanged_on_second_apply(self, tmp_path):
+        artifacts = [block(content="value")]
+        run(tmp_path, artifacts)
+        result, _ = run(tmp_path, artifacts)
+        assert actions(result) == {".gitignore": Action.UNCHANGED}
+
     def test_block_insert_preserves_the_file_body(self, tmp_path):
         (tmp_path / ".gitignore").write_text("repo line\n")
         run(tmp_path, [block()])

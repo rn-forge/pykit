@@ -29,7 +29,8 @@ plan depends on) and [`django-upgrade-plan.md`](./django-upgrade-plan.md).
 
 **Written 2026-09-10.** This plan predates `rn-forge/kiln`. Its five phases, the translation-layer
 principle and the error-translation table are unchanged. What changed is the workspace around it.
-Authority: `../../../kiln/docs/plans/standardization-plan.md` (revision 9), ADR-0002 (dependency
+Authority: the kiln standardization plan (revision 9, since retired; D-numbers resolve through
+`../../../kiln/docs/plans/context.md` §2.2), ADR-0002 (dependency
 graphs), ADR-0005 (archetypes and golden repos), D46 (releases are pinned git tags).
 
 ### 1. "Depends on commons and nothing else" now excludes two more packages

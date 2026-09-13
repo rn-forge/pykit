@@ -158,9 +158,16 @@ def _aggregate(
 
 
 async def _run_one(check: Check) -> CheckResult:
-    """Run one check, awaiting an awaitable result and never propagating."""
+    """Run one check, awaiting an awaitable result and never propagating.
+
+    A synchronous check runs in a worker thread, so blocking I/O in it neither
+    stalls the event loop nor serialises the other checks.
+    """
     try:
-        outcome = check()
+        if inspect.iscoroutinefunction(check):
+            outcome = check()
+        else:
+            outcome = await asyncio.to_thread(check)
         if inspect.isawaitable(outcome):
             outcome = await outcome
         return _coerce(outcome)

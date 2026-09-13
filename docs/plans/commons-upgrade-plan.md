@@ -2319,14 +2319,14 @@ place, from opposite directions: codex, that a business batch legitimately wants
 Typer and a console and should not be told the developer stack is off-limits;
 the owner, that installable tools need install/update/`$RNF_HOME`/state/plugins
 and ordinary batch apps do not. The resolution is three layers, not two. The
-decisions are kiln **D52–D56**; the scope and acceptance are kiln plan
-**§0.8** and **Phase C.2**.
+decisions are kiln **D52–D56**; the scope and acceptance were the kiln plan's
+**§0.8** and **Phase C.2**, now in `kiln-dependencies.md`.
 
 **Read before starting:** `../kiln/docs/adr/0002-the-dependency-graphs.md`
 (the layering), `../kiln/docs/adr/0009-tooling-owns-the-boilerplate.md` (what
-`rn-forge-cli` must hold), `../kiln/docs/plans/standardization-plan.md` §2.8
-(the per-API boundary table), §2.11 (the target layout) and §3 Phase C.2 (the
-ordered steps and the acceptance block).
+`rn-forge-cli` must hold), and `kiln-dependencies.md`: §3.1 (the per-API
+boundary table), §3.2 (the target layout) and §1's Phase C.2 section (the
+ordered steps).
 
 **Ground rules, unchanged:** nothing is committed or pushed without being asked;
 the working tree is left for review; commons never imports cli, and cli never

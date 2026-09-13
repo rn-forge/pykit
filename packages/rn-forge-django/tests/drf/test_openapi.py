@@ -112,7 +112,7 @@ def test_operation_ids_follow_the_resource_verb_convention(schema) -> None:
         "workItemsList",
         "workItemsCreate",
         "workItemsGet",
-        "workItemsUpdate",
+        "workItemsPartialUpdate",
         "workItemsDelete",
         "readyzList",
     }

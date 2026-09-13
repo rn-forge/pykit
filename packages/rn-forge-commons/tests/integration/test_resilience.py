@@ -116,6 +116,22 @@ class TestRateLimiter:
         run(limiter.acquire(clock=lambda: 3.0, sleep=fake_sleep))
         assert slept == [7.0]
 
+    def test_an_epoch_reset_is_measured_against_the_wall_clock(self):
+        import time
+
+        limiter = RateLimiter(capacity=1)
+        reset = time.time() + 10
+        limiter.update_from_headers(
+            {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": str(reset)}
+        )
+        slept = []
+
+        async def fake_sleep(seconds):
+            slept.append(seconds)
+
+        run(limiter.acquire(sleep=fake_sleep))
+        assert len(slept) == 1 and 0 < slept[0] <= 10
+
 
 # -- ResilientAsyncHttpClient ----------------------------------------------
 
@@ -222,6 +238,30 @@ class TestResilientAsyncHttpClient:
                 with pytest.raises(CircuitOpenError):
                     await client.get("/thing")
                 assert calls["n"] == calls_before
+            finally:
+                await client.close()
+
+        run(scenario())
+
+    def test_client_errors_do_not_open_the_breaker(self):
+        statuses = iter([404, 404, 200])
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(next(statuses))
+
+        async def scenario():
+            client = ResilientAsyncHttpClient(
+                "http://test",
+                name="svc",
+                stop_after_attempt=1,
+                fail_max=2,
+                transport=httpx.MockTransport(handler),
+            )
+            try:
+                for _ in range(2):
+                    with pytest.raises(httpx.HTTPStatusError):
+                        await client.get("/thing")
+                assert (await client.get("/thing")).status_code == 200
             finally:
                 await client.close()
 

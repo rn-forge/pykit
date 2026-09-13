@@ -160,7 +160,7 @@ def test_one_operation_snapshot():
         ("GET", "/orders/{order_id}", "ordersGet"),
         ("POST", "/orders", "ordersCreate"),
         ("PUT", "/orders/{order_id}", "ordersUpdate"),
-        ("PATCH", "/api/v1/work-items/{item_id}", "workItemsUpdate"),
+        ("PATCH", "/api/v1/work-items/{item_id}", "workItemsPartialUpdate"),
         ("DELETE", "/orders/{order_id}", "ordersDelete"),
     ],
 )

@@ -144,8 +144,17 @@ class Artifact:
 
     @property
     def content_hash(self) -> str:
-        """SHA-256 of :attr:`content`."""
-        return ContentHash.of(self.content)
+        """SHA-256 of :attr:`content` — for a block, of the body as written to disk.
+
+        A block body is re-terminated when rendered (``"value"`` is written as
+        ``"value\\n"``), so the hash is taken of what :meth:`ManagedBlock.extract`
+        will read back; otherwise an untouched block would plan as drift.
+        """
+        if self.block is None:
+            return ContentHash.of(self.content)
+        return ContentHash.of(
+            self.block.extract(self.block.render("", self.content)) or ""
+        )
 
     def to_entry(self) -> StateEntry:
         """The state entry recording this artifact as applied."""

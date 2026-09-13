@@ -108,6 +108,32 @@ jobs:
       - name: pytest (PostgreSQL)
         run: uv run --directory packages/rn-forge-django --package rn-forge-django --no-sync pytest
 
+  # Every other job syncs --all-extras, which hides an extra that forgets a
+  # dependency another extra brings. Each extra is installed alone, from the
+  # built wheel's metadata, into a clean venv and imported.
+  django-extras:
+    needs: import-boundaries
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: [base, drf, fixtures, jwt, oidc, celery, openapi, saml]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - name: Build wheels
+        run: |
+          for package in rn-forge-commons rn-forge-web rn-forge-django; do
+            uv build --package "$package" --wheel --out-dir dist
+          done
+
+      - name: Install and import the ${{ matrix.extra }} extra
+        run: uv run --no-project --with packaging python .github/scripts/check_django_extra.py ${{ matrix.extra }}
+
   fastapi-ci:
     needs: import-boundaries
     uses: ./.github/workflows/_package-ci.yml

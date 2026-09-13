@@ -21,6 +21,10 @@ circuit, tripped independently:
 await client.get("/widgets", key=f"tenant-{tenant_id}")
 ```
 
+Only failures that say something about the upstream count toward `fail_max`: connection errors,
+timeouts and the transient statuses (429, 500, 502, 503, 504). A 404 or 422 is raised to the caller
+but never opens the circuit.
+
 ## The metrics seam
 
 `on_state_change(key, old_state, new_state)` is called on every circuit transition. It defaults to
@@ -38,7 +42,8 @@ ResilientAsyncHttpClient(
 ## Testable timing
 
 The rate limiter's `clock`/`sleep` are constructor-injectable, so a test can run on a fake clock
-instead of real wall time:
+instead of real wall time. `X-RateLimit-Reset` is read as a Unix epoch timestamp, so `clock` is a
+wall clock (default `time.time`), not a monotonic one:
 
 ```python
 client = ResilientAsyncHttpClient(

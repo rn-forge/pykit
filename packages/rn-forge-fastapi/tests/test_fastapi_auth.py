@@ -1,5 +1,6 @@
 """Tests for rn_forge.fastapi.auth."""
 
+import asyncio
 import base64
 
 import pytest
@@ -91,6 +92,22 @@ def test_a_valid_bearer_token_yields_the_principal():
     assert_that(response.json()).is_equal_to(
         {"subject": "alice", "scopes": ["read"], "mechanism": "bearer"}
     )
+
+
+def test_a_sync_authenticator_runs_off_the_event_loop():
+    loops = []
+
+    class Probe(Directory):
+        def authenticate(self, *, credentials):
+            try:
+                loops.append(asyncio.get_running_loop())
+            except RuntimeError:
+                loops.append(None)
+            return super().authenticate(credentials=credentials)
+
+    response = build(Probe()).get("/me", headers={"Authorization": "Bearer good"})
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(loops).is_equal_to([None])
 
 
 def test_an_async_authenticator_is_awaited():

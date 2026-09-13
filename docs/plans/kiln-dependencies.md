@@ -3,9 +3,10 @@
 **Date:** 2026-09-12 · **From:** `rn-forge/kiln` on `feature/v1`
 
 kiln's standardization plan (revision 14) has been split into kiln's own spec
-tree — epics, releases and ADRs under `rn-forge/kiln/docs/`. The plan itself is
-frozen and kept unedited at `docs/plans/standardization-plan.md` in the kiln repo,
-so the paths this repo's plans cite (§2.8, §2.11, Phase C.2) still resolve.
+tree — epics, releases and ADRs under `rn-forge/kiln/docs/` — and the plan file
+is retired. What this repo's plans cited from it lives here now: its §2.8
+boundary table is §3.1 below, its §2.11 layout is §3.2, and its Phase C.2 steps
+are in §1.
 
 **pykit owns its own spec.** This file is only the handoff: the pykit-side work
 the kiln plan carried, what is done, what kiln is waiting on, and the design kiln

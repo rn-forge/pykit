@@ -38,6 +38,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Auth overview: auth-overview.md
   - rn-forge-commons: '!include packages/rn-forge-commons/mkdocs.yml'
   - rn-forge-cli: '!include packages/rn-forge-cli/mkdocs.yml'
   - rn-forge-django: '!include packages/rn-forge-django/mkdocs.yml'
