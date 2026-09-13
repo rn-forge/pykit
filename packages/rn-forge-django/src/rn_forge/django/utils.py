@@ -4,6 +4,8 @@ Provides:
 
 - :class:`RequestUtils` — debug snapshot extraction from a Django
   :class:`~django.http.HttpRequest`.
+- :func:`require_settings` / :func:`require_environment` — startup guards that
+  fail with Django's ``ImproperlyConfigured``, naming every missing value at once.
 """
 
 from __future__ import annotations
@@ -11,10 +13,17 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any, Protocol, cast
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
+from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.utils import AppUtils
+from rn_forge.commons.runtime.environment import Environment
 
 __all__ = [
     "RequestUtils",
+    "require_environment",
+    "require_settings",
 ]
 
 _REDACTED_HEADERS = frozenset(
@@ -83,3 +92,45 @@ class RequestUtils:
                 },
             },
         }
+
+
+# ---------------------------------------------------------------------------
+# Startup guards
+# ---------------------------------------------------------------------------
+
+
+def require_settings(*names: str) -> None:
+    """Raise ``ImproperlyConfigured`` if any named Django setting is unset or blank.
+
+    Every missing name is reported in one message, so a misconfigured
+    deployment surfaces all of its problems in a single run. Blank means what
+    :meth:`rn_forge.commons.lang.utils.AppUtils.is_empty` says it means.
+
+    Raises:
+        ImproperlyConfigured: One or more settings are missing.
+    """
+    missing = sorted(
+        name for name in names if AppUtils.is_empty(getattr(settings, name, None))
+    )
+    if missing:
+        raise ImproperlyConfigured(
+            f"Missing required Django setting(s): {', '.join(missing)}"
+        )
+
+
+def require_environment(*names: str) -> dict[str, str]:
+    """Return the named environment variables, raising if any is unset or blank.
+
+    A delegation to :meth:`rn_forge.commons.runtime.environment.Environment.require`,
+    re-raised as ``ImproperlyConfigured`` — what Django's machinery and a
+    deployment runbook expect at startup, and what commons cannot raise
+    without importing Django.
+
+    Raises:
+        ImproperlyConfigured: One or more variables are missing; the message
+            names all of them.
+    """
+    try:
+        return Environment.require(*names)
+    except AppException as exc:
+        raise ImproperlyConfigured(exc.message) from exc

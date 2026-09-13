@@ -10,6 +10,7 @@ from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
 from rn_forge.django.drf._typing import (
@@ -26,6 +27,7 @@ __all__ = [
     "AuditFieldsViewMixin",
     "ExceptionContextViewMixin",
     "ModelFilterViewMixin",
+    "PermissionByMethodMixin",
     "RequestAccessViewMixin",
 ]
 
@@ -103,6 +105,33 @@ class ExceptionContextViewMixin(GenericAPIView):
         if message is not None:
             context["message"] = message
         return context
+
+
+class PermissionByMethodMixin(GenericAPIView):
+    """Select DRF permission classes per HTTP method.
+
+    ``PERMISSION_CLASSES_BY_METHOD`` maps an upper-cased method to the classes
+    it requires. **A method not in the map falls back to the view's own
+    ``permission_classes``** — never to "no permissions", which would silently
+    open every unmapped method. A method mapped to an empty sequence is
+    explicitly unguarded.
+
+    This is a different axis from the ``PERMISSION_ACTION_MAP`` setting, which
+    maps viewset *actions* to permission names; both can be active at once and
+    neither supersedes the other.
+    """
+
+    PERMISSION_CLASSES_BY_METHOD: ClassVar[
+        Mapping[str, Sequence[type[BasePermission]]]
+    ] = {}
+
+    @override
+    def get_permissions(self) -> Sequence[BasePermission]:  # pyright: ignore[reportIncompatibleMethodOverride]  # DRF stubs return list[BasePermission]
+        method = str(self.request.method).upper()
+        classes = self.PERMISSION_CLASSES_BY_METHOD.get(method)
+        if classes is None:
+            return cast(Sequence[BasePermission], super().get_permissions())
+        return [permission() for permission in classes]
 
 
 # ---------------------------------------------------------------------------

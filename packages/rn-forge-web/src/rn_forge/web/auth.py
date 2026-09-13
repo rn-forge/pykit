@@ -55,10 +55,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Final, Literal, Protocol, runtime_checkable
+from typing import Any, Final, Literal, Protocol, cast, runtime_checkable
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
-from rn_forge.web.exceptions import PermissionDenied
+from rn_forge.web.exceptions import AuthenticationFailed, PermissionDenied
 
 __all__ = [
     "AUTH_FAILED_DETAIL",
@@ -71,6 +71,7 @@ __all__ = [
     "Requirement",
     "ScopeAuthorizer",
     "challenge_header",
+    "principal_from_claims",
 ]
 
 AUTH_FAILED_DETAIL: Final = "Authentication failed."
@@ -272,3 +273,54 @@ def challenge_header(
 def _quote(value: str) -> str:
     """Escape a quoted-string parameter value (RFC 9110 §5.6.4)."""
     return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def principal_from_claims(
+    claims: Mapping[str, Any], *, mechanism: str = "bearer"
+) -> Principal:
+    """The default mapping from verified token claims to a :class:`Principal`.
+
+    Shared so a Django service and a FastAPI service reading the same token
+    produce the same principal. Claims are read as the common IdPs issue them:
+
+    | Principal | Claim |
+    | --- | --- |
+    | `subject` | `sub` (required) |
+    | `issuer` | `iss` |
+    | `scopes` | `scope` (RFC 8693 §4.2, space-delimited) or `scp` (Entra; string or list) |
+    | `roles` | `roles` (Entra app roles; a list) |
+    | `tenant` | `tid` (Entra) |
+
+    Anything else — Keycloak's nested ``realm_access.roles``, an Okta group
+    claim — is a deployment's shape: override the mapping and read ``claims``.
+
+    Args:
+        claims: Claims already verified by the caller.
+        mechanism: Recorded on the principal.
+
+    Raises:
+        AuthenticationFailed: There is no ``sub``. The detail stays generic.
+    """
+    subject = claims.get("sub")
+    if not isinstance(subject, str) or not subject:
+        raise AuthenticationFailed("Token has no subject", error_code=401)
+    issuer = claims.get("iss")
+    tenant = claims.get("tid")
+    return Principal(
+        subject=subject,
+        issuer=issuer if isinstance(issuer, str) else None,
+        scopes=_string_set(claims.get("scope")) | _string_set(claims.get("scp")),
+        roles=_string_set(claims.get("roles")),
+        tenant=tenant if isinstance(tenant, str) else None,
+        claims=dict(claims),
+        mechanism=mechanism,
+    )
+
+
+def _string_set(value: object) -> frozenset[str]:
+    """A space-delimited string or a list of strings, as a frozenset."""
+    if isinstance(value, str):
+        return frozenset(value.split())
+    if isinstance(value, (list, tuple)):
+        return frozenset(str(item) for item in cast("list[object]", value))
+    return frozenset()

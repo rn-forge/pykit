@@ -6,12 +6,13 @@ import json
 from datetime import date, datetime, time, timezone
 
 import pytest
-from django.db import connection, models
+from django.core.exceptions import ImproperlyConfigured
+from django.db import models
 from django.http import HttpRequest
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 
 from rn_forge.django.models import BaseModel, ModelUtils, NaturalKeyLookupManager
-from rn_forge.django.utils import RequestUtils
+from rn_forge.django.utils import RequestUtils, require_environment, require_settings
 
 
 # ---------------------------------------------------------------------------
@@ -33,18 +34,9 @@ class Article(BaseModel):
         return ["title"]
 
 
-def _create_tables() -> None:
-    with connection.schema_editor() as editor:
-        try:
-            editor.create_model(Article)
-        except Exception:
-            pass
-
-
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(django_db_setup, django_db_blocker):  # noqa: PT004
-    with django_db_blocker.unblock():
-        _create_tables()
+def _django_tables(create_tables):  # noqa: PT004
+    create_tables(Article)
 
 
 # ---------------------------------------------------------------------------
@@ -275,3 +267,35 @@ class TestToJson:
         d = ModelUtils.as_dict(a)
         parsed = json.loads(ModelUtils.to_json(a))
         assert set(parsed.keys()) == set(d.keys())
+
+
+@pytest.mark.unit
+class TestRequireSettings:
+    def test_passes_when_every_setting_is_present(self) -> None:
+        with override_settings(RNF_ONE="a", RNF_TWO="b"):
+            require_settings("RNF_ONE", "RNF_TWO")
+
+    def test_names_every_missing_or_blank_setting_at_once(self) -> None:
+        with override_settings(RNF_BLANK="  "):
+            with pytest.raises(ImproperlyConfigured) as caught:
+                require_settings("RNF_BLANK", "RNF_ABSENT", "DATABASES")
+        message = str(caught.value)
+        assert "RNF_ABSENT" in message and "RNF_BLANK" in message
+        assert "DATABASES" not in message
+
+
+@pytest.mark.unit
+class TestRequireEnvironment:
+    def test_returns_the_values(self, monkeypatch) -> None:
+        monkeypatch.setenv("RNF_DB_URL", "sqlite://")
+        assert require_environment("RNF_DB_URL") == {"RNF_DB_URL": "sqlite://"}
+
+    def test_names_every_missing_variable_as_improperly_configured(
+        self, monkeypatch
+    ) -> None:
+        monkeypatch.delenv("RNF_MISSING_A", raising=False)
+        monkeypatch.setenv("RNF_MISSING_B", "")
+        with pytest.raises(ImproperlyConfigured) as caught:
+            require_environment("RNF_MISSING_A", "RNF_MISSING_B")
+        assert "RNF_MISSING_A" in str(caught.value)
+        assert "RNF_MISSING_B" in str(caught.value)

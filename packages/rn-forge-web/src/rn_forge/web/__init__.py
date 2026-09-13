@@ -64,6 +64,7 @@ from rn_forge.web.auth import (
     Requirement,
     ScopeAuthorizer,
     challenge_header,
+    principal_from_claims,
 )
 from rn_forge.web.concurrency import (
     ANY_ETAG,
@@ -238,6 +239,7 @@ __all__ = [
     "get_correlation_id",
     "new_correlation_id",
     "next_link_header",
+    "principal_from_claims",
     "problem_from_body",
     "redact",
     "request_hash",

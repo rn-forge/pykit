@@ -994,6 +994,11 @@ disable reverse paging on the Django side. **Decide it in django Phase 2 and rec
 the two packages answer it differently, because a `previousPageToken` on one stack and not the other
 is precisely the divergence this package exists to prevent.
 
+> **Decided in django Phase 2 (2026-09-12): forward-only on both stacks.** `Cursor` gains no
+> `reverse` field; `rn_forge.django.drf.pagination.CursorPagination` emits no `previousPageToken`,
+> exactly as `rn-forge-fastapi` does not. AIP-158 is forward-only, and adding the field would have
+> been a web change serving one stack. Recorded in the django plan too.
+
 **Not here:** the actual keyset SQL. Turning `Cursor` into a `WHERE (sort_key, id) > (?, ?)` predicate
 is ORM-specific — Django ORM in `rn-forge-django`, SQLAlchemy in the deferred `rn-forge-sqlalchemy`.
 
@@ -1581,6 +1586,9 @@ Three new modules, each justified by a consumer that exists today:
   (RFC 8414), and a `verify(token) -> Mapping[str, Any]` returning verified claims. It returns
   claims, **not** a `Principal` — `Principal` is a wire-contract type and lives in web, and commons
   must not depend on web. The mapping from claims to `Principal` is web Phase 10's.
+
+  > **Built (2026-09-12)** as `rn_forge/commons/integration/auth.py` (`auth` extra), with the default
+  > claims → `Principal` mapping added here as `principal_from_claims`.
 
   Build order: this module, then web Phase 10, then the two framework bindings. Both the django plan's
   Phase 9 and the fastapi plan's deferred `Security` dependency are blocked on it.

@@ -17,6 +17,83 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   assuming"). Those answers are baked into the destinations below — they are facts about this repo
   as of that date, not guesses.
 
+## Implementation status (2026-09-12)
+
+**Every phase, 0–13, is applied in the working tree**, together with the commons `auth` module
+Phase 9 was blocked on. Nothing is committed, pushed or tagged.
+
+Decisions recorded while implementing, each with its reason in the module docstring named:
+
+- **Dependency form (alignment §3).** `rn-forge-commons` and `rn-forge-web` are pinned direct URLs
+  at `rn-forge-commons-v0.5.0` and `rn-forge-web-v0.1.0`; version bumped to `0.3.0`. **Neither the web
+  tag nor `rn-forge-django-v0.3.0` exists yet** — the pins name the tags they will get, as fastapi's
+  do. `.importlinter` already carried `rn_forge.web` and both web contracts, so no change was needed
+  there.
+- **Phase 0.** `create_tables` is a session-scoped factory fixture rather than a plain function, so it
+  can own `django_db_blocker.unblock()`; `test_bulk.py`'s per-test create/drop became create-once plus
+  row deletion.
+- **Phase 1.** DRF's `ValidationError` is the one DRF row added to the registry (→ 422, the table's
+  status); every other DRF `APIException` resolves through `problem_for_status`. Added
+  `problem_details_handler404`/`500` in `rn_forge/django/exceptions.py` — the table's
+  `problem.framework-404-is-a-problem-body` case cannot pass without a Django-level handler. No
+  convenience re-export of the web exceptions (workspace rule over §1.1's optional one).
+- **Phase 2 — the `reverse` decision: forward-only.** No `reverse` on web's `Cursor`; no
+  `previousPageToken`. Recorded in the web plan §4.3. Consequence: the shared token has no offset, so
+  **the first ordering field must be unique** (default `"pk"`); a tie at a page boundary raises
+  rather than skipping rows. `tests/test_settings.py` added, covering the facade generally.
+- **Phase 3.** The DRF seam is the `idempotent(store, scope=...)` method decorator; it replays the
+  stored body verbatim.
+- **Phase 5.** `OmitEmptyMixin` gates on DRF's own `required` flag (no second list), so the
+  representation and the schema cannot disagree.
+- **Phase 6.2.** Commons Phase 7 had landed; `require_environment` delegates.
+- **Phase 7.** Customization is by subclassing (`header` attribute, `log` method) — no factory. The
+  `rn_forge.web.context` accessors are **not** re-exported from `middleware.py` (workspace rule over
+  the phase's suggestion).
+- **Phase 8 — migrations: none.** `AbstractSequenceCounter` is abstract; the consumer owns the concrete
+  model and its migration, and passes it as `counter_model=`. The PostgreSQL path and concurrent
+  allocation are untested (no PostgreSQL job); said so in the module docstring and the models guide.
+- **Phase 9 — first shipped as a binding over `rn_forge.web.Authenticator`** (the JWKS half followed;
+  see "Phase 9, completed" below). The commons `auth/`
+  module still does not exist; fastapi Phase 6b resolved the same block the same way. So: no `oidc`
+  extra, no `pyjwt`, no `claims_to_principal`. The classes are `PrincipalBearerAuthentication`,
+  `PrincipalBasicAuthentication` and the `requires(...)` permission factory, in **`auth/drf/principal.py`**
+  rather than `auth/jwt/oidc.py` and `auth/basic/` — both of those sub-packages import simplejwt at
+  package import. The JWKS URL recipes are in `docs/guides/auth.md`.
+- **Phase 12.** `drf-spectacular` 0.30.0 (2026-07) is maintained and is the `openapi` extra.
+  **`djangorestframework-camel-case` failed the maintenance check** (last release 1.4.2, 2023-02;
+  classifiers stop at Python 3.10) and was not added: `drf/casing.py` carries the renderer, parser and
+  schema hook instead. `RawPassthroughField` ships (it was on the deferred list). The DRF mirrors
+  round-trip against the web dataclasses; `ProblemDetail` is appended to every schema.
+- **Phase 13.** `tests/test_django_conformance.py` runs every case in `CASES` with no skips; all pass.
+
+Completed in a second pass, on the owner's instruction to finish the remaining phases:
+
+- **Phase 9, completed — JWKS verification.** The commons module web plan §A.2 specifies now exists
+  as `rn_forge/commons/integration/auth.py` (`auth` extra, `pyjwt[crypto]`): `JwksCache` (max-age,
+  one bounded refetch on an unknown `kid`), `JwtVerifier` (signature, required `exp`/`iss`/`aud`,
+  algorithm allow-list) and `discover_oidc` (RFC 8414 issuer match). It returns claims; the default
+  claims → `Principal` mapping is `rn_forge.web.principal_from_claims`, so both stacks map alike.
+  Django's `auth/drf/oidc.py` (`oidc` extra) ships `JWKSAuthenticator` and `JWKSBearerAuthentication`
+  with `jwks_url`/`issuer`/`audience`/`algorithms`/`cache_timeout` class attributes and a
+  `claims_to_principal` hook. The key set is cached per subclass in process memory, not in Django's
+  cache — a deviation from the phase text, since per-process state is sufficient for a key set.
+- **Phase 10 gate — passed on the owner's decision.** (1) Consumer: the cims successor,
+  `golden/python-web-app-django`. (2) Locking: a `django-postgres` CI job runs the whole Django suite
+  on PostgreSQL 17; `postgres`-marked tests cover `skip_locked` and real sequences, and skip with a
+  reason on sqlite. (3) Envelopes: consumer-supplied `envelope_builder` is the permanent design; no
+  CloudEvents builder in commons. (4) Commons 8b had landed. Built as `rn_forge/django/messaging/`:
+  abstract models (the `(published_at, occurred_at)` index kept; no `status` column — state is the
+  timestamps), `make_outbox_relay`, `process_event` (handler in a savepoint; failure recorded then
+  re-raised; `UnknownMessageType`). No `messaging` extra.
+- **Phase 11 gate — passed on the owner's decision.** `rn_forge/django/celery.py` (`celery` extra):
+  `make_app` and `RETRYABLE_TASK_KWARGS`. Celery 5.6.3 has no 3.14 classifier but imports and runs
+  on 3.14; `tests/test_celery.py` is the proof. No `make_outbox_relay_task`.
+- **PostgreSQL locally:** not run. Docker Desktop's daemon did not come up on the development machine
+  and `pgserver` has no 3.14 wheels, so the `postgres` tests are verified only by the CI job.
+
+**Open, and not this plan's to close alone:** the release tags (set aside by the owner);
+`golden/python-web-app-django` (kiln).
+
 ## Alignment with the standardization plan (kiln revision 9)
 
 **Written 2026-09-10.** This plan predates `rn-forge/kiln`. Every phase, every extraction decision

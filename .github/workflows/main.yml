@@ -74,6 +74,40 @@ jobs:
       package-name: rn-forge-django
       package-dir: packages/rn-forge-django
 
+  # sqlite has no row locks, so the outbox relay's skip_locked claim and the
+  # real-sequence path of SequenceGenerator are only proven here.
+  django-postgres:
+    needs: import-boundaries
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: rnforge
+          POSTGRES_PASSWORD: rnforge
+          POSTGRES_DB: rnforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rnforge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      RN_FORGE_DJANGO_TEST_DATABASE_URL: postgresql://rnforge:rnforge@localhost:5432/rnforge
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - name: uv sync
+        run: uv sync --all-packages --all-extras --locked
+
+      - name: pytest (PostgreSQL)
+        run: uv run --directory packages/rn-forge-django --package rn-forge-django --no-sync pytest
+
   fastapi-ci:
     needs: import-boundaries
     uses: ./.github/workflows/_package-ci.yml
@@ -84,7 +118,7 @@ jobs:
       package-dir: packages/rn-forge-fastapi
 
   sonar:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, fastapi-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, fastapi-ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -115,7 +149,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docs:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, fastapi-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, fastapi-ci]
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:

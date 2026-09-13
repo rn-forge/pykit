@@ -1,26 +1,49 @@
 [project]
 name = "rn-forge-django"
-version = "0.2.2"
-description = "Opinionated Django/DRF integration layer built on rn-forge-commons"
+version = "0.3.0"
+description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-dependencies = ["django>=6.0.7", "rn-forge-commons"]
+dependencies = [
+  "django>=6.0.7",
+  # kiln D46 — pinned direct URLs; `[tool.uv.sources]` below is local development only.
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
 
 [project.optional-dependencies]
-drf = ["djangorestframework>=3.17.1", "rn-forge-commons[excel]"]
-fixtures = ["rn-forge-commons[excel]"]
+drf = [
+  "djangorestframework>=3.17.1",
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+fixtures = [
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
 jwt = ["djangorestframework>=3.17.1", "djangorestframework-simplejwt>=5.5.1"]
+# JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
+# simplejwt against a local User; verification is commons' `auth` extra.
+oidc = [
+  "djangorestframework>=3.17.1",
+  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+celery = ["celery>=5.6.3"]
+# drf-spectacular only. djangorestframework-camel-case was evaluated and not
+# taken: its last release is 1.4.2 (2023-02), with classifiers stopping at
+# Python 3.10 — casing lives in `rn_forge.django.drf.casing` instead.
+openapi = ["djangorestframework>=3.17.1", "drf-spectacular>=0.30.0"]
 saml = [
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "python3-saml>=1.16.0",
 ]
 all = [
+  "celery>=5.6.3",
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
+  "drf-spectacular>=0.30.0",
   "python3-saml>=1.16.0",
-  "rn-forge-commons[excel]",
+  "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 
 [build-system]
@@ -33,6 +56,7 @@ module-name = "rn_forge.django"
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
+rn-forge-web = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra"
@@ -45,6 +69,8 @@ markers = [
 dev = [
   "assertpy>=1.1",
   "django-stubs>=6.0.7",
+  # The PostgreSQL test job (RN_FORGE_DJANGO_TEST_DATABASE_URL); see tests/conftest.py.
+  "psycopg[binary]>=3.3.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

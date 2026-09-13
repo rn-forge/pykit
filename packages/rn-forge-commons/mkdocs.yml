@@ -73,6 +73,7 @@ nav:
           - Subprocess: api/runtime/subprocess.md
           - Tasks: api/runtime/tasks.md
       - Integration:
+          - Token verification: api/integration/auth.md
           - Messaging: api/integration/messaging.md
           - Objects: api/integration/objects.md
           - Resilience: api/integration/resilience.md

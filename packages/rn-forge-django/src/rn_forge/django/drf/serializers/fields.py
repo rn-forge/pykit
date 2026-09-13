@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, cast, override
+from typing import Any, ClassVar, cast, override
 
 from rest_framework import serializers
 from rn_forge.django.drf._typing import (
     ChoiceFieldProtocol,
     PrimaryKeyRelatedFieldProtocol,
 )
+from rn_forge.django.drf.casing import RawDict, RawList
 from rn_forge.django.models import BaseEnum
 
 __all__ = [
     "EnumChoiceField",
     "NestedReadPrimaryKeyRelatedField",
+    "RawPassthroughField",
 ]
 
 
@@ -96,3 +98,29 @@ class NestedReadPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
     def use_pk_only_optimization(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Disable DRF's PK-only shortcut when nested read serialization is enabled."""
         return self.serializer_class is None
+
+
+class RawPassthroughField(serializers.JSONField):
+    """A JSON value whose keys stay verbatim under camelCase rendering and parsing.
+
+    Global casing recurses into every nested mapping, which mangles a value
+    whose keys are data rather than names — a vendor payload, a mapping keyed
+    by SKU. On the way out the value is marked so
+    :class:`~rn_forge.django.drf.casing.CamelCaseJSONRenderer` skips it; on the
+    way in :class:`~rn_forge.django.drf.casing.CamelCaseJSONParser` skips any
+    key with this field's name in the view's serializer tree.
+
+    The parser matches by *name*, at any depth: a same-named ordinary field
+    elsewhere in the same request body is passed through too.
+    """
+
+    raw_passthrough: ClassVar[bool] = True
+
+    @override
+    def to_representation(self, value: Any) -> Any:
+        representation = cast(object, super().to_representation(value))  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave JSONField untyped
+        if isinstance(representation, Mapping):
+            return RawDict(cast(Mapping[str, Any], representation))
+        if isinstance(representation, list):
+            return RawList(cast(list[Any], representation))
+        return representation

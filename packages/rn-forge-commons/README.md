@@ -18,6 +18,7 @@ Optional extras:
 
 | Extra | Adds |
 | --- | --- |
+| `auth` | JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`) |
 | `json` | JSON-formatted log output (`python-json-logger`) |
 | `excel` | `openpyxl` + `pandas`-backed Excel helpers |
 | `pandas` | `pandas`-backed DataFrame/Series helpers |
@@ -100,6 +101,8 @@ helpers.
 - **`messaging`**, **`objects`**, **`secrets`** — `MessageBus`, `ObjectStore`, `SecretStore` and
   their in-memory implementations.
 - **`resilience`** (`resilience` extra) — async circuit breakers and a retrying HTTP client.
+- **`auth`** (`auth` extra) — `JwtVerifier`, `JwksCache` and `discover_oidc`: bearer-token
+  verification returning verified claims. The `Principal` and the 401 wire shape are `rn-forge-web`'s.
 
 Import from the top-level package for the curated public API:
 

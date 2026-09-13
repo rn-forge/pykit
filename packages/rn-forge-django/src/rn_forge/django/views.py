@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import html
 import json
+from collections.abc import Callable, Collection, Mapping
 from typing import Any
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
+from rn_forge.web import Check, run_checks_sync
 
 from rn_forge.django.utils import RequestUtils
 
@@ -16,6 +18,7 @@ __all__ = [
     "debug_request_view",
     "healthcheck_view",
     "index_view",
+    "readiness_view",
 ]
 
 
@@ -64,3 +67,34 @@ def healthcheck_view(request: HttpRequest) -> HttpResponse:
 def debug_request_view(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """Return the structured request snapshot produced by :class:`RequestUtils`."""
     return JsonResponse(RequestUtils.debug_request(request), **kwargs)
+
+
+def readiness_view(
+    checks: Mapping[str, Check],
+    *,
+    required: Collection[str] = (),
+) -> Callable[[HttpRequest], JsonResponse]:
+    """Build a readiness view that reports one entry per dependency check.
+
+    A factory, so the checks are the URLconf's to supply::
+
+        path("readyz", readiness_view({"database": ping_db}, required=["database"]))
+
+    The body is :meth:`rn_forge.web.HealthReport.as_body` and the status is the
+    report's own: 503 when a check named in *required* fails, 200 otherwise.
+    Every semantic — exception capture, ``bool`` coercion, the four statuses —
+    is :func:`rn_forge.web.run_checks_sync`'s, which also raises on an async
+    check rather than report it as passing. Liveness is
+    :func:`healthcheck_view`, which runs nothing.
+
+    Args:
+        checks: Name → synchronous check.
+        required: Names whose failure makes the service unavailable.
+    """
+
+    @require_GET
+    def view(request: HttpRequest) -> JsonResponse:
+        report = run_checks_sync(checks, required=required)
+        return JsonResponse(report.as_body(), status=report.http_status)
+
+    return view

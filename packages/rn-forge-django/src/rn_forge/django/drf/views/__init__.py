@@ -2,6 +2,7 @@ from rn_forge.django.drf.views.mixins import (
     AuditFieldsViewMixin,
     ExceptionContextViewMixin,
     ModelFilterViewMixin,
+    PermissionByMethodMixin,
     RequestAccessViewMixin,
 )
 from rn_forge.django.drf.views.base import (
@@ -63,6 +64,7 @@ __all__ = [
     "JsonImportParser",
     "JsonExportRenderer",
     "ModelFilterViewMixin",
+    "PermissionByMethodMixin",
     "RequestAccessViewMixin",
     "SnapshotImportModelViewSet",
     "SnapshotImportViewMixin",

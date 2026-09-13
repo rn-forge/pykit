@@ -4,6 +4,14 @@
 
 ::: rn_forge.django.models.base
 
+## Concurrency and immutability
+
+::: rn_forge.django.models.concurrency
+
+## Sequences
+
+::: rn_forge.django.models.sequences
+
 ## Fields
 
 ::: rn_forge.django.models.fields

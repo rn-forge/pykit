@@ -88,6 +88,47 @@ in `DEFAULT_PERMISSION_ACTION_MAP`; override per-request-app defaults via
 Use `PermissionKeyViewMixin` instead when you want permission-key resolution without full
 `AuthorizationViewMixin` request-access plumbing (e.g. on plain `GenericAPIView`s).
 
+## Externally issued tokens: `PrincipalBearerAuthentication`
+
+For an API whose callers hold tokens issued by an identity provider — Entra ID, Auth0, Okta,
+Keycloak — rather than a local `User`, bind DRF to the `rn_forge.web` auth contract. The token is
+verified by an `rn_forge.web.Authenticator` you supply, and `request.user` is the resulting
+`rn_forge.web.Principal`:
+
+```python
+from rest_framework.views import APIView
+from rn_forge.django.auth.drf import PrincipalBearerAuthentication, requires
+from rn_forge.web import Requirement
+
+
+class ApiBearer(PrincipalBearerAuthentication):
+    authenticator = JwksAuthenticator(jwks_url=..., audience="api://orders", issuer=...)
+    realm = "orders"
+
+
+class OrderView(APIView):
+    authentication_classes = [ApiBearer]
+    permission_classes = [requires(Requirement(all_scopes=frozenset({"orders:read"})))]
+```
+
+With `problem_details_exception_handler` installed: no or invalid credentials are a **401**
+`problem+json` with an RFC 6750 `WWW-Authenticate: Bearer realm="orders"` challenge and a detail that
+never says why verification failed; valid credentials lacking the scope are a **403** with no
+challenge. The same `Requirement` evaluates identically on `rn-forge-fastapi`.
+
+Verifying the JWT is the authenticator's job. There is no JWKS verifier in this package, and none in
+`rn-forge-commons` yet; when commons ships one it sits behind the same `Authenticator` protocol and
+nothing here changes. The JWKS endpoint an authenticator fetches is IdP configuration:
+
+| IdP | `jwks_url` |
+| --- | --- |
+| Entra ID | `https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys` |
+| Auth0 | `https://{domain}/.well-known/jwks.json` |
+| Okta | `https://{domain}/oauth2/{authorization-server-id}/v1/keys` |
+
+`PrincipalBasicAuthentication` is the RFC 7617 twin, producing the same `Principal` and the same
+401. **It is for local development and simple internal deployments only.**
+
 ## Built-in auth management viewsets
 
 `rn_forge.django.auth.drf.views` ships ready-to-mount viewsets for the standard Django auth

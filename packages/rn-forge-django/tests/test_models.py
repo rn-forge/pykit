@@ -65,23 +65,6 @@ class StrictWidget(BaseModel):
         return ["code"]
 
 
-def _create_tables() -> None:
-    """Create in-memory tables for our test models."""
-    with connection.schema_editor() as editor:
-        try:
-            editor.create_model(Widget)
-        except Exception:
-            pass
-        try:
-            editor.create_model(Campaign)
-        except Exception:
-            pass
-        try:
-            editor.create_model(StrictWidget)
-        except Exception:
-            pass
-
-
 # ---------------------------------------------------------------------------
 # FixtureModelMixin
 # ---------------------------------------------------------------------------
@@ -298,10 +281,9 @@ TestModelLookupCacheWithoutDb = pytest.mark.unit(TestModelLookupCacheWithoutDb)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(django_db_setup, django_db_blocker):  # noqa: PT004
+def _django_tables(create_tables):  # noqa: PT004
     """Create Widget and Campaign tables for this module."""
-    with django_db_blocker.unblock():
-        _create_tables()
+    create_tables(Widget, Campaign, StrictWidget)
 
 
 @pytest.mark.integration

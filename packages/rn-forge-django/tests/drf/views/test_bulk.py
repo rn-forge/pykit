@@ -168,18 +168,14 @@ class _BulkLoadImportWidgetView(BulkLoadImportViewMixin, GenericViewSet):
 
 
 @pytest.fixture(autouse=True)
-def _bulk_widget_schema() -> Generator[None, None, None]:
-    with connection.schema_editor() as schema_editor:
-        schema_editor.create_model(_BulkWidget)
-        schema_editor.create_model(_ImportWidget)
-        schema_editor.create_model(_CompoundImportWidget)
+def _bulk_widget_schema(create_tables) -> Generator[None, None, None]:
+    create_tables(_BulkWidget, _ImportWidget, _CompoundImportWidget)
     try:
         yield
     finally:
-        with connection.schema_editor() as schema_editor:
-            schema_editor.delete_model(_CompoundImportWidget)
-            schema_editor.delete_model(_ImportWidget)
-            schema_editor.delete_model(_BulkWidget)
+        _CompoundImportWidget.objects.all().delete()
+        _ImportWidget.objects.all().delete()
+        _BulkWidget.objects.all().delete()
 
 
 class TestBulkCreateViewMixin:

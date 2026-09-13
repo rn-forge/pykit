@@ -17,9 +17,21 @@ RN_FORGE_DJANGO = {
             "IMPORT_MAX_ROWS": 10_000,
             "PERMISSION_ACTION_MAP": {"list": "read"},
         },
+        "PAGINATION": {
+            "PAGE_SIZE": 50,  # default page size
+            "PAGE_SIZE_QUERY_PARAM": "pageSize",
+            "MAX_PAGE_SIZE": 200,  # larger requests are clamped, never rejected
+        },
+        "CASING": {
+            "ENABLED": True,  # camelCase renderer/parser; False = plain JSON
+        },
     },
 }
 ```
+
+`DRF.PAGINATION` is read at request time by `CursorPagination` and `LegacyPageNumberPagination`;
+a `page_size` or `max_page_size` set on a pagination subclass wins over it. `DRF.CASING` switches
+`CamelCaseJSONRenderer` and `CamelCaseJSONParser` — see [OpenAPI and camelCase](openapi.md).
 
 Read the resolved, typed settings at runtime via the module-level facade:
 

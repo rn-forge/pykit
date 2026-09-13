@@ -1,5 +1,5 @@
 site_name: rn-forge-django
-site_description: Opinionated Django/DRF integration layer built on rn-forge-commons
+site_description: Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web
 site_dir: .out/site
 use_directory_urls: false
 
@@ -40,12 +40,17 @@ nav:
       - Models: guides/models.md
       - Auth: guides/auth.md
       - DRF Views: guides/drf-views.md
+      - OpenAPI and camelCase: guides/openapi.md
+      - Messaging: guides/messaging.md
       - Fixtures: guides/fixtures.md
   - API Reference:
       - api/index.md
       - Settings: api/settings.md
       - Models: api/models.md
       - Exceptions: api/exceptions.md
+      - Middleware: api/middleware.md
+      - Messaging: api/messaging.md
+      - Celery: api/celery.md
       - Fixtures: api/fixtures.md
       - Urls and Views: api/urls-and-views.md
       - Auth:
@@ -55,9 +60,16 @@ nav:
           - JWT: api/auth/jwt.md
           - SAML: api/auth/saml.md
           - DRF: api/auth/drf.md
+          - Principal (bearer and basic): api/auth/principal.md
+          - OIDC (JWKS bearer): api/auth/oidc.md
       - DRF:
           - api/drf/index.md
           - Views: api/drf/views.md
           - Serializers: api/drf/serializers.md
           - Exceptions: api/drf/exceptions.md
+          - Pagination: api/drf/pagination.md
+          - Idempotency: api/drf/idempotency.md
+          - Concurrency: api/drf/concurrency.md
+          - Casing: api/drf/casing.md
+          - OpenAPI: api/drf/openapi.md
           - Utils: api/drf/utils.md

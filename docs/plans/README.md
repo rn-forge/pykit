@@ -16,9 +16,10 @@ is new and is written aligned. No module design changed.
 | Document | Scope | Status |
 | --- | --- | --- |
 | [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–C committed; Part D.1–D.7 applied in the working tree.** D.8 (cut the three release tags) and D.9 (the `golden/python-app` acceptance) are open and need a decision to commit and push |
-| `rn-forge/kiln/docs/plans/standardization-plan.md` (outside this repo; a pointer remains at `rn-forge/STANDARDIZATION-PLAN.md`) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Revision 9** — sequencing authority for everything cross-repo, and the authority every alignment section below cites |
+| `rn-forge/kiln/docs/plans/standardization-plan.md` (outside this repo; a pointer remains at `rn-forge/STANDARDIZATION-PLAN.md`) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Frozen at revision 14** (2026-09-12) and superseded by kiln's `docs/specs/` and `docs/adr/`. Its section references in the plans below still resolve |
+| [`kiln-dependencies.md`](./kiln-dependencies.md) | What kiln needs from pykit: the lifecycle surface (kiln C.3), `rn-forge-fastapi` for kiln's web archetypes, and the release trigger | **Handoff, 2026-09-12** — the lifecycle surface is not started and blocks kiln release-1 |
 | [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready; aligned 2026-09-10 |
-| [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | Ready; aligned 2026-09-10 |
+| [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | **All phases (0–13) applied in the working tree (2026-09-12)**, with the commons `auth` module they needed. Open: the release tags, and `golden/python-web-app-django` (kiln) |
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | **New** `rn-forge-fastapi` package — FastAPI adapters over `rn-forge-web` | **Phases 0–7 and 6c applied in the working tree (2026-09-12).** Open: the `rn-forge-web` release tag, Phase 8 (`golden/python-web-api` does not exist yet), and the django conformance driver it lands with (step 14a) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | **New** `rn-forge-azure` package — Azure adapters for commons protocols | Ready; aligned 2026-09-10 |
 | [`01-extraction-from-cims.md`](./01-extraction-from-cims.md) | The original cims survey | **Superseded — background only** |
@@ -71,7 +72,7 @@ Phases within a plan run in their own order unless noted. These are the **cross-
 | 3 | ~~commons Phases **8b, 8c, 8d** (messaging / secrets / objects protocols)~~ | — | **Done** — now `rn_forge/commons/integration/{messaging,secrets,objects}.py`, exported from the facade. This unblocked azure Phases 2–4 and django Phase 10 |
 | 4 | **web Phase 0** (scaffold + library evaluations) | — | Blocking; decides what Phases 1/2/7 contain |
 | 5 | web Phases 1–8 | web Phase 0 | In order; Phase 8 is the curated API + docs. **Add each Phase 11 conformance case in the same change as the phase that settles its decision** |
-| 5a | **commons `auth/`** (JWKS + JWT verify + OIDC discovery) | — | web plan §A.2. Blocks web Phase 10, django Phase 9 and fastapi Phase 6b. Returns verified *claims*, never a `Principal` |
+| 5a | ~~**commons `auth/`** (JWKS + JWT verify + OIDC discovery)~~ | — | **Done (2026-09-12)** — `rn_forge/commons/integration/auth.py`, `auth` extra. Returns verified claims; `rn_forge.web.principal_from_claims` maps them. Django binds it in `auth/drf/oidc.py`; fastapi can pass the same verifier behind a `web.Authenticator` |
 | 5b | **web Phase 10** (the auth contract) | step 5a | `Principal`, the protocols, the 401/403 boundary and the RFC 6750 challenge. Must land **before** web Phase 8, whose curated `__init__` exports it |
 | 5c | **web Phase 11** (the conformance table) | web Phases 1–6, 10 | Ships as data in `src/`, not in `tests/`. Both framework drivers import it |
 | 6 | web **Phase 9** (consumer context pack) | web Phases 1–8 | The hand-off artifact for application specs |
@@ -111,13 +112,13 @@ reaches one should stop and record the question, not guess:
 | --- | --- |
 | ~~commons Phase 6~~ | **Resolved (2026-09-07): gate failed, abandoned.** Replacing the `config.py` resolver with OmegaConf was estimated at 100-160+ lines of pre/post glue against an ~80-line threshold — see the outcome note in the plan. Hand-rolled resolver unchanged. |
 | ~~commons Phase 9~~ | **Resolved (2026-09-07): gate passed, built.** `StructLogger`, now at `src/rn_forge/commons/logging/structlog.py` after the D55 re-layout — see the outcome note in the plan for the four validated conditions. |
-| django Phase 10 | Build outbox/inbox messaging? Needs a committed consumer + a PostgreSQL test job |
-| django Phase 11 | Celery integration? |
+| ~~django Phase 10~~ | **Resolved (2026-09-12): built, on the owner's decision.** Consumer: the cims successor (`golden/python-web-app-django`); PostgreSQL CI job `django-postgres` added; envelopes stay consumer-supplied |
+| ~~django Phase 11~~ | **Resolved (2026-09-12): built, on the owner's decision.** `rn_forge.django.celery`, `celery` extra; no relay-task wrapper |
 | azure Phase 4 | Service Bus `MessageBus` adapter? Depends on django Phase 10's outcome |
 | azure Phase 5 | OpenTelemetry export to Azure Monitor? |
 | fastapi Phase 0.2 | Keep `rn_forge.fastapi`, or fall back to `rn_forge.fastapi_adapters`? Free today, a breaking rename later |
 | fastapi Phase 5 | If web's ASGI middleware needs no FastAPI adaptation at all, ship no module — confirm rather than adding a wrapper for symmetry |
-| django Phase 2 / web §4.3 | Add `reverse: bool = False` to the web `Cursor` so Django can keep DRF's previous-page support, or drop reverse paging and stay strictly forward-only as AIP-158 is? **Both packages must answer the same way** — decide once, record in both plans |
+| ~~django Phase 2 / web §4.3~~ | **Resolved (2026-09-12): forward-only on both stacks.** No `reverse` on the web `Cursor`, no `previousPageToken`; recorded in both plans |
 
 **Commons Part D.8/D.9 are open by decision, not by effort.** Cutting a release pushes a tag, which
 the plans' ground rules forbid without being asked; the pins already name the tags they will get. See
