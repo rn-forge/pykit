@@ -15,11 +15,15 @@ a developer's filesystem and a tool that owns files in it. It owns:
 - `generation` — artifact kinds, action classification and transactional apply,
   split into `artifacts` (the vocabulary), `plan` (what a write would do) and
   `apply` (making a batch of writes all-or-nothing).
-- `install` — archive extraction for a release bundle.
+- `install` — the tool lifecycle: `$RNF_HOME` layout (`ToolHome`), release
+  sources and verification, archive extraction, the `ToolProduct` seam, and the
+  transactional `install`/`upgrade`/`uninstall`/`cleanup`/`status`/`doctor`
+  verbs.
 - `docs` — the documentation-tree checkers (link, Markdown and nav mechanics),
   which take the repository's own conventions as an injected
   `DocsPolicy` rather than hardcoding anyone's.
-- `cli` — this package's own command surfaces, currently `rn-forge-docs`.
+- `cli` — this package's own command surfaces: `rn-forge-docs`, and the
+  lifecycle commands a `[cli.lifecycle]` table mounts.
 
 A repository that only needs a command line takes `rn-forge-cli` and stops
 there. A package that ships into a deployed runtime (`rn-forge-django`,

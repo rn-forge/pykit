@@ -19,8 +19,8 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
 
 ## Implementation status (2026-09-12)
 
-**Every phase, 0–13, is applied in the working tree**, together with the commons `auth` module
-Phase 9 was blocked on. Nothing is committed, pushed or tagged.
+**Every phase, 0–13, is implemented and committed (`9d8588c`)**, together with the commons `auth`
+module Phase 9 was blocked on. Nothing is tagged; the release follows kiln's in-progress work.
 
 Decisions recorded while implementing, each with its reason in the module docstring named:
 
@@ -88,8 +88,14 @@ Completed in a second pass, on the owner's instruction to finish the remaining p
 - **Phase 11 gate — passed on the owner's decision.** `rn_forge/django/celery.py` (`celery` extra):
   `make_app` and `RETRYABLE_TASK_KWARGS`. Celery 5.6.3 has no 3.14 classifier but imports and runs
   on 3.14; `tests/test_celery.py` is the proof. No `make_outbox_relay_task`.
-- **PostgreSQL locally:** not run. Docker Desktop's daemon did not come up on the development machine
-  and `pgserver` has no 3.14 wheels, so the `postgres` tests are verified only by the CI job.
+- **PostgreSQL locally: run on 2026-09-13.** The whole suite against a `postgres:17` container, with
+  the CI job's `RN_FORGE_DJANGO_TEST_DATABASE_URL`: **393 passed, none skipped** — the
+  `skip_locked` relay and real-sequence tests included. It found two tests that only held on
+  sqlite, both test defects rather than code defects, and both fixed:
+  `test_truncate_uses_quoted_table_name` read the live connection's vendor (it now pins the vendor and
+  asserts both the `DELETE FROM` and `TRUNCATE TABLE` branches), and
+  `test_default_save_does_not_run_full_clean` used an over-long value, which PostgreSQL rejects itself
+  (it now uses a blank value, which `full_clean` rejects and every database stores).
 
 **Open, and not this plan's to close alone:** the release tags (set aside by the owner);
 `golden/python-web-app-django` (kiln).
@@ -1441,46 +1447,51 @@ the DRF test client, redact with `web.conformance.redact`, and assert equality a
 
 ## Final checklist before calling this done
 
-- [ ] `uv sync --all-extras && uv run pytest packages/rn-forge-django` green
-- [ ] `uv run pyright` clean (strict; `src/` only — no new file-level suppressions added)
-- [ ] `uv run ruff check . && uv run ruff format --check .` clean
-- [ ] `uv run --directory packages/rn-forge-django --group docs mkdocs build --strict` clean
-- [ ] Every new public symbol re-exported from its **sub-package** `__init__.py`, `__all__` sorted
-      (Convention 4 — the top-level `rn_forge/django/__init__.py` stays empty)
-- [ ] `import rn_forge.django` succeeds with **no** optional extras installed (guards Phase 9's and
-      Phase 11's optional imports)
-- [ ] Existing behaviour unchanged: `tests/drf/test_exceptions.py` and the pre-existing
-      settings-reload tests pass untouched
-- [ ] Every new test carries a `unit` or `integration` marker; full suite passes under
-      `pytest-randomly` twice with different seeds
-- [ ] `mkdocs.yml` nav updated for every new page (pagination, idempotency, middleware, oidc,
-      api-conventions, plus messaging/celery if Part C shipped)
-- [ ] Version bumped to `0.3.0` and released as the tag `rn-forge-django-v0.3.0` (kiln D46 — there is
-      no PyPI release), with the installation guide documenting the `git+…@tag` form per extra
-- [ ] `uv run lint-imports` green: `rn_forge.django`'s runtime surface imports neither `rn_forge.cli`,
+Reconciled 2026-09-13 against the implementation status above and re-run where a command could be.
+Items marked from the status record rather than a fresh run say so.
+
+- [x] `uv sync --all-extras && uv run pytest packages/rn-forge-django` green — 389 passed, 4 skipped
+      on sqlite; 393 passed, none skipped on PostgreSQL 17
+- [x] `uv run pyright` clean (strict; `src/` only — no new file-level suppressions added)
+- [x] `uv run ruff check . && uv run ruff format --check .` clean
+- [x] `uv run --directory packages/rn-forge-django --group docs mkdocs build --strict` clean
+- [x] Every new public symbol re-exported from its **sub-package** `__init__.py`, `__all__` sorted
+      (Convention 4 — the top-level `rn_forge/django/__init__.py` stays empty) — from the status record
+- [x] `import rn_forge.django` succeeds with **no** optional extras installed — proven by the CI
+      `django-extras` matrix's `base` entry, which installs the built wheel alone; not run locally,
+      because outside the workspace the pinned tags do not resolve yet
+- [x] Existing behaviour unchanged: `tests/drf/test_exceptions.py` is untouched by the django commit
+      and passes
+- [x] Every test module carries a `unit`/`integration` marker; the suite passes under
+      `pytest-randomly` with seeds `1234` and `98765`
+- [x] `mkdocs.yml` nav lists every page under `docs/`
+- [ ] Version bumped to `0.3.0` **(done)** and released as the tag `rn-forge-django-v0.3.0` **(not
+      cut — follows kiln's in-progress work)**, with the installation guide documenting the
+      `git+…@tag` form per extra
+- [x] `uv run lint-imports` green: `rn_forge.django`'s runtime surface imports neither `rn_forge.cli`,
       `rn_forge.tooling`, Typer nor Jinja, and never imports `rn_forge.fastapi`
-- [ ] `.importlinter` carries `rn_forge.web` in `root_packages` with the two contracts from the web
-      plan's alignment §2, landed in the same change as the `rn-forge-web` dependency
-- [ ] No Typer command surface was added to this package (alignment §6 — the declared `[cli]` surface
-      belongs to `python-app`/`python-tool` repos; Django keeps `manage.py`)
-- [ ] `CLAUDE.md`'s `rn-forge-django` bullet updated — its extras list and architecture notes both
-      change if Phase 9 or Part C lands
-- [ ] `CursorPagination` is the standard class and emits the AIP-158 envelope over the shared codec;
+- [x] `.importlinter` carries `rn_forge.web` in `root_packages` with the two contracts from the web
+      plan's alignment §2
+- [x] No Typer command surface was added to this package — no `typer` import under `src/`
+- [x] ~~`CLAUDE.md`'s `rn-forge-django` bullet updated~~ — superseded: `CLAUDE.md` no longer carries
+      package bullets; `packages/rn-forge-django/README.md` lists the `oidc`, `openapi` and `celery`
+      extras and the `messaging` module
+- [x] `CursorPagination` is the standard class and emits the AIP-158 envelope over the shared codec;
       the page-number class is named `LegacyPageNumberPagination`; `pageSize` is clamped, never
-      rejected with a 400
-- [ ] The `reverse`-flag decision (web §4.3) is made and recorded in **both** plans
-- [ ] camelCase renderer/parser wired as the default through the settings facade, with both spellings
-      accepted on input; `RawPassthroughField` ships and the nested-`DictField` case is tested
-- [ ] The DRF schema mirrors round-trip against the `rn_forge.web` dataclasses, and the emitted schema
-      is OpenAPI **3.1.0** with the shared components named exactly as the FastAPI side names them
-- [ ] Phase 9 returns `rn_forge.web.auth.Principal`, renders 401/403 as `problem+json` through Phase
-      1's handler, and builds its challenge with `web.auth.challenge_header` rather than inheriting
-      DRF's — asserted by a test, since inheriting DRF's default is the silent failure mode
-- [ ] Basic auth ships and is documented as local/simple-deployment only
-- [ ] Phase 13's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no skips
-- [ ] Phase 10 and Phase 11 gate outcomes recorded (built, or abandoned with the reason written down)
-- [ ] The Phase 8 migrations decision recorded, whichever way it went
-- [ ] Nothing committed or pushed — leave the working tree for review
+      rejected with a 400 — from the status record
+- [x] The `reverse`-flag decision (web §4.3) is made and recorded in **both** plans — forward-only
+- [x] camelCase renderer/parser wired as the default through the settings facade, with both spellings
+      accepted on input; `RawPassthroughField` ships — from the status record (`drf/casing.py`)
+- [x] The DRF schema mirrors round-trip against the `rn_forge.web` dataclasses, and the emitted schema
+      is OpenAPI **3.1.0** with `ProblemDetail` appended — the shared `Page` name carries the open
+      FastAPI naming question (see the plan index, "What is open")
+- [x] Phase 9 returns `rn_forge.web.auth.Principal`, renders 401/403 as `problem+json` through Phase
+      1's handler, and builds its challenge with `web.auth.challenge_header` — from the status record
+- [x] Basic auth ships and is documented as local/simple-deployment only
+- [x] Phase 13's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no skips
+- [x] Phase 10 and Phase 11 gate outcomes recorded — both built, on the owner's decision
+- [x] The Phase 8 migrations decision recorded — none; the consumer owns the concrete model
+- [x] Committed at `9d8588c`; not pushed or tagged
 
 ## Not in this plan (deliberately deferred)
 

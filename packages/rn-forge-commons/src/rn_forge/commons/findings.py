@@ -42,7 +42,9 @@ class Finding(DataclassMixin):
             ``"artifact.drift"``.
         severity: See :class:`Severity`.
         message: Human-readable, one line, specific to this occurrence.
-        path: Repo-relative path the finding is about, when there is one.
+        path: The path the finding is about, when there is one — relative to
+            the repository for a repository check, absolute for a check of a
+            workstation install.
         line: 1-indexed line within *path*, when the rule is line-precise.
         details: Rule-specific structured data for ``--json`` consumers —
             expected and actual hashes, a resolved link target, and so on.

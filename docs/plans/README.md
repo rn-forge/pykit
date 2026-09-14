@@ -1,32 +1,32 @@
 # pykit plans
 
 Six pykit documents plus the workspace-wide standardization plan. This page is the **execution
-order** — read it before picking up any plan, because several phases are blocked on phases in other
-documents and none of the plans repeats the whole graph.
+order** and the **status board** — read it before picking up any plan, because several phases are
+blocked on phases in other documents and none of the plans repeats the whole graph.
 
-**Updated 2026-09-10 for kiln revision 9.** The commons plan is implemented through Part D.7; the
-web, azure and django plans were drafted before `rn-forge/kiln` existed and each now opens with an
+**Updated 2026-09-13.** Every phase pykit can take on its own is implemented across the commons,
+web, django and fastapi plans. Commons Parts A–E, web, django and fastapi are committed (`f59c40f`,
+`8b5160b`, `9d8588c`, `3e80dbd`); commons Part F (the tool lifecycle) and the 2026-09-13 gap pass are
+in the working tree. What remains is the release tags and the golden-repo acceptances in kiln —
+**sequenced by the owner to follow kiln's in-progress work** — and the open questions under
+[What is open](#what-is-open). `rn-forge-azure` and `rn-forge-sqlalchemy` are **parked**.
+
+The web, azure and django plans were drafted before `rn-forge/kiln` existed and each opens with an
 **"Alignment with the standardization plan"** section stating what the workspace changed around them
 (three library layers, pinned-git-tag releases, the D55 layout rule, import-linter contracts, and
-which kiln archetype each consumer is). Read that section before the plan it heads. The fastapi plan
-is new and is written aligned. No module design changed.
+which kiln archetype each consumer is). Read that section before the plan it heads.
 
 ## The documents
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–C committed; Part D.1–D.7 applied in the working tree.** D.8 (cut the three release tags) and D.9 (the `golden/python-app` acceptance) are open and need a decision to commit and push |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–E committed; Part F (tool lifecycle) in the working tree.** Open: D.8 (release tags) and D.9 (`golden/python-app`, kiln) — both follow kiln's in-progress work |
 | The standardization plan (retired; outside this repo) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Retired at revision 14** (2026-09-12), replaced by kiln's `docs/specs/` and `docs/adr/`. D-numbers resolve through kiln's `docs/plans/context.md` §2.2, phases through §2.1, and the pykit-side sections through [`kiln-dependencies.md`](./kiln-dependencies.md) |
-| [`kiln-dependencies.md`](./kiln-dependencies.md) | What kiln needs from pykit: the lifecycle surface (kiln C.3), `rn-forge-fastapi` for kiln's web archetypes, and the release trigger | **Handoff, 2026-09-12** — the lifecycle surface is not started and blocks kiln release-1 |
-| [`web-library-plan.md`](./web-library-plan.md) | **New** `rn-forge-web` package — framework-agnostic HTTP primitives | Ready; aligned 2026-09-10 |
-| [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | **All phases (0–13) applied in the working tree (2026-09-12)**, with the commons `auth` module they needed. Open: the release tags, and `golden/python-web-app-django` (kiln) |
-| [`fastapi-library-plan.md`](./fastapi-library-plan.md) | **New** `rn-forge-fastapi` package — FastAPI adapters over `rn-forge-web` | **Phases 0–7 and 6c applied in the working tree (2026-09-12).** Open: the `rn-forge-web` release tag, Phase 8 (`golden/python-web-api` does not exist yet), and the django conformance driver it lands with (step 14a) |
-| [`azure-library-plan.md`](./azure-library-plan.md) | **New** `rn-forge-azure` package — Azure adapters for commons protocols | Ready; aligned 2026-09-10 |
-| [`01-extraction-from-cims.md`](./01-extraction-from-cims.md) | The original cims survey | **Superseded — background only** |
-
-`01-extraction-from-cims.md` is the survey the others grew out of. Its recommendations have been
-split, re-decided and in places reversed by the newer plans. **Do not implement from it.** Read it
-only to understand where something came from.
+| [`kiln-dependencies.md`](./kiln-dependencies.md) | What kiln needs from pykit: the lifecycle surface (kiln C.3), `rn-forge-fastapi` for kiln's web archetypes, and the release trigger | **Handoff, 2026-09-12; updated 2026-09-13.** Lifecycle surface done (commons Part F); fastapi implemented, its acceptance is kiln's; releases follow kiln's in-progress work |
+| [`web-library-plan.md`](./web-library-plan.md) | `rn-forge-web` — framework-agnostic HTTP primitives | **All eleven phases implemented; committed at `8b5160b`.** Open: the release tag, and the `OidcAuthenticator` gap (§10) |
+| [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | **All phases (0–13) implemented; committed at `9d8588c`**; the PostgreSQL suite was run locally on 2026-09-13. Open: the release tag, and `golden/python-web-app-django` (kiln) |
+| [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
+| [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
 
 ## Dependency direction
 
@@ -34,7 +34,7 @@ only to understand where something came from.
 rn-forge-commons  ←  rn-forge-cli  ←  rn-forge-tooling  ←  agentkit / kiln
 rn-forge-commons  ←  rn-forge-web  ←  rn-forge-django
 rn-forge-commons  ←  rn-forge-web  ←  rn-forge-fastapi
-rn-forge-commons  ←  rn-forge-azure
+rn-forge-commons  ←  rn-forge-azure                        (parked; not built)
 
 rn-forge-tooling  ←  rn-forge-django[codegen]    (extra; only rn_forge.django.codegen)
 rn-forge-tooling  ←  rn-forge-fastapi[codegen]   (extra; only rn_forge.fastapi.codegen)
@@ -45,12 +45,13 @@ a command line takes — including business batches — and `rn-forge-tooling` i
 installs itself, owns files in someone else's repo or renders templates takes. Placement is decided by
 what an API's *signature* contains, not by who calls it today.
 
-`rn-forge-web` never imports a web framework. `rn-forge-azure` depends on commons only — never on web,
-django, cli or tooling. `rn-forge-django` and `rn-forge-fastapi` are **independent siblings** above
-web: neither imports the other, and neither runtime surface imports cli, tooling, Typer or Jinja.
+`rn-forge-web` never imports a web framework. `rn-forge-azure` will depend on commons only — never on
+web, django, cli or tooling. `rn-forge-django` and `rn-forge-fastapi` are **independent siblings**
+above web: neither imports the other, and neither runtime surface imports cli, tooling, Typer or Jinja.
 Framework code generators ship as a `[codegen]` extra of their runtime package, live in a `codegen`
 subpackage the runtime never imports, register under the entry-point group `rn_forge.kiln.generators`,
-and are installed only in development environments (kiln D37, D56).
+and are installed only in development environments (kiln D37, D56). Both `codegen` subpackages are
+empty; the fences exist.
 
 **None of this is on trust.** `.importlinter` at the repo root states every rule above and
 `uv run lint-imports` gates every other CI job. A new package adds its contract in the same change
@@ -59,79 +60,91 @@ that adds its dependency — a boundary that only passes locally is not a bounda
 **Releases are pinned git tags, not PyPI versions** (kiln D46). Every rn-forge dependency is declared
 as `<name> @ git+https://github.com/rn-forge/pykit@<tag>#subdirectory=packages/<pkg>`; the
 `[tool.uv.sources]` workspace override exists for local development only and does not survive into a
-built wheel. Each plan's scaffold section carries the corrected form.
+built wheel. The pins already name the tags they will get; none of those tags is cut yet.
 
 ## Execution order
 
 Phases within a plan run in their own order unless noted. These are the **cross-plan** edges:
 
-| Step | Do this | Blocked on | Why |
+| Step | Do this | Blocked on | Status |
 | --- | --- | --- | --- |
 | 1 | ~~commons Part A (Phases 0–5)~~ | — | **Done** — Phase 6's gate failed and was abandoned; see the gates table |
-| 2 | ~~commons Phase 7 (env guards)~~ | — | **Done** — django Phase 6.2 is unblocked |
-| 3 | ~~commons Phases **8b, 8c, 8d** (messaging / secrets / objects protocols)~~ | — | **Done** — now `rn_forge/commons/integration/{messaging,secrets,objects}.py`, exported from the facade. This unblocked azure Phases 2–4 and django Phase 10 |
-| 4 | **web Phase 0** (scaffold + library evaluations) | — | Blocking; decides what Phases 1/2/7 contain |
-| 5 | web Phases 1–8 | web Phase 0 | In order; Phase 8 is the curated API + docs. **Add each Phase 11 conformance case in the same change as the phase that settles its decision** |
-| 5a | ~~**commons `auth/`** (JWKS + JWT verify + OIDC discovery)~~ | — | **Done (2026-09-12)** — `rn_forge/commons/integration/auth.py`, `auth` extra. Returns verified claims; `rn_forge.web.principal_from_claims` maps them. Django binds it in `auth/drf/oidc.py`; fastapi can pass the same verifier behind a `web.Authenticator` |
-| 5b | **web Phase 10** (the auth contract) | step 5a | `Principal`, the protocols, the 401/403 boundary and the RFC 6750 challenge. Must land **before** web Phase 8, whose curated `__init__` exports it |
-| 5c | **web Phase 11** (the conformance table) | web Phases 1–6, 10 | Ships as data in `src/`, not in `tests/`. Both framework drivers import it |
-| 6 | web **Phase 9** (consumer context pack) | web Phases 1–8 | The hand-off artifact for application specs |
-| 7 | azure Phases 0–3 | commons 8c, 8d | Key Vault needs `SecretStore`; Blob needs `ObjectStore` |
-| 8 | django Phases 0, 2, 5, 8, 9, 12 | commons Part A | Independent of the web package |
-| 9 | django Phases 1, 3, 4, 6.1, 7 | web Phases 1–6 | All five are adapters over `rn_forge.web` |
-| 10 | django Phase 6.2 | commons Phase 7 | Thin wrapper over `Environment.require` |
-| 11 | ~~commons Phase 8 (resilience)~~ | — | **Done** — built async per web plan §A.3 (`purgatory` + `stamina`), not the original sync spec |
-| 12 | **Release `rn-forge-web`** (tag `rn-forge-web-v0.1.0`) | web Phases 1–8 | kiln D46: django and fastapi declare it as a pinned direct URL, so the tag must exist before either can declare the dependency. A workspace override hides this locally, which is the trap |
-| 13 | fastapi Phase 0 | step 12 | Blocking; the release, the namespace decision and the import contract |
-| 14 | fastapi Phases 1–7 | fastapi Phase 0 | 1–6 are independent of each other except 3, which needs 1 and 2; 7 is the curated API + docs |
-| 14a | **django Phase 13 and fastapi Phase 6c** (the two conformance drivers) | step 5c, and each package's own phases | **Land them together.** Each asserts its stack against the shared table; one alone proves nothing about drift, which is the only thing they exist to catch |
-| 15 | fastapi **Phase 8** (`golden/python-web-api` wires it end to end) | fastapi Phase 7, kiln Phase E | The acceptance. It can fail the web/fastapi split rather than the code — read the phase before assuming it is a formality |
+| 2 | ~~commons Phase 7 (env guards)~~ | — | **Done** |
+| 3 | ~~commons Phases **8b, 8c, 8d** (messaging / secrets / objects protocols)~~ | — | **Done** — `rn_forge/commons/integration/{messaging,secrets,objects}.py` |
+| 4 | ~~web Phase 0 (scaffold + library evaluations)~~ | — | **Done (2026-09-11)** — both candidate libraries rejected; see the web plan's implementation status |
+| 5 | ~~web Phases 1–8~~ | web Phase 0 | **Done (2026-09-11)** |
+| 5a | ~~commons `auth/` (JWKS + JWT verify + OIDC discovery)~~ | — | **Done (2026-09-12)** — `rn_forge/commons/integration/auth.py`, `auth` extra |
+| 5b | ~~web Phase 10 (the auth contract)~~ | step 5a | **Done** |
+| 5c | ~~web Phase 11 (the conformance table)~~ | web Phases 1–6, 10 | **Done** — ships as data in `src/` |
+| 6 | ~~web Phase 9 (consumer context pack)~~ | web Phases 1–8 | **Done** |
+| 7 | azure Phases 0–3 | commons 8c, 8d | **Parked (2026-09-13)** — unblocked, not scheduled |
+| 8 | ~~django Phases 0, 2, 5, 8, 9, 12~~ | commons Part A | **Done (2026-09-12)** |
+| 9 | ~~django Phases 1, 3, 4, 6.1, 7~~ | web Phases 1–6 | **Done (2026-09-12)** |
+| 10 | ~~django Phase 6.2~~ | commons Phase 7 | **Done** |
+| 11 | ~~commons Phase 8 (resilience)~~ | — | **Done** — built async per web plan §A.3 (`purgatory` + `stamina`) |
+| 12 | **Release `rn-forge-web`** (tag `rn-forge-web-v0.1.0`), with the commons → cli → tooling tags and then django/fastapi | web Phases 1–8 | **Open** — follows kiln's in-progress work. Until the tags exist, django and fastapi resolve only inside the workspace, which nothing local catches |
+| 13 | ~~fastapi Phase 0~~ | step 12 | **Done** — the web pin was written before its tag exists |
+| 14 | ~~fastapi Phases 1–7 and 6b~~ | fastapi Phase 0 | **Done (2026-09-12)** |
+| 14a | ~~django Phase 13 and fastapi Phase 6c (the two conformance drivers)~~ | step 5c | **Done** — both run every case in `CASES` with no skips |
+| 15 | fastapi **Phase 8** (`golden/python-web-api` wires it end to end) | fastapi Phase 7, kiln Phase E | **Open** — kiln work; follows kiln's in-progress work |
 
-**Steps 1–3 and step 11 are done** (commons Parts A–C, committed at `4624bfe` plus the Part D work
-in the tree). The live front of the graph is step 4 — web Phase 0 — and everything downstream of it.
+**Every step pykit can take alone is done.** Step 12 is a release; step 15, commons D.9, kiln F3.3
+(the lifecycle golden) and `golden/python-web-app-django` are golden repos in kiln. The owner has
+sequenced all of them after kiln's in-progress work.
 
-**The development-layer
-split is not a step here** — it is standardization plan Phase C/C.2, whose pykit half is applied in
-the working tree: `rn-forge-cli` owns the Typer app factory, console, standard options and exit
-codes; `rn-forge-tooling` owns state, templates, the generation engine, installer mechanics and the
-docs checkers; commons kept `DirectoryLock`, `atomic_symlink` and `ManagedBlock`. What remains is
-commons plan **D.8** (cut the commons → cli → tooling release tags, which means committing and
-pushing) and **D.9** (the `golden/python-app` acceptance, which lives in the kiln repo).
+## Gated decisions
 
-Two steps are the ones most likely to be started too early. **Step 9** — five django phases will
-silently reimplement the web package if its phases have not landed. **Step 12** — skipping the web
-release tag leaves django and fastapi resolvable only inside the workspace, which nothing local will
-catch.
+A gated phase needs a human decision, not an implementer's judgement. Every gate is resolved except
+azure's two, which are parked with the package:
 
-## Decisions needed before implementation starts
-
-Six phases are **gated** and need a human decision, not an implementer's judgement. An agent that
-reaches one should stop and record the question, not guess:
-
-| Gate | Question |
+| Gate | Outcome |
 | --- | --- |
-| ~~commons Phase 6~~ | **Resolved (2026-09-07): gate failed, abandoned.** Replacing the `config.py` resolver with OmegaConf was estimated at 100-160+ lines of pre/post glue against an ~80-line threshold — see the outcome note in the plan. Hand-rolled resolver unchanged. |
-| ~~commons Phase 9~~ | **Resolved (2026-09-07): gate passed, built.** `StructLogger`, now at `src/rn_forge/commons/logging/structlog.py` after the D55 re-layout — see the outcome note in the plan for the four validated conditions. |
-| ~~django Phase 10~~ | **Resolved (2026-09-12): built, on the owner's decision.** Consumer: the cims successor (`golden/python-web-app-django`); PostgreSQL CI job `django-postgres` added; envelopes stay consumer-supplied |
-| ~~django Phase 11~~ | **Resolved (2026-09-12): built, on the owner's decision.** `rn_forge.django.celery`, `celery` extra; no relay-task wrapper |
-| azure Phase 4 | Service Bus `MessageBus` adapter? Depends on django Phase 10's outcome |
-| azure Phase 5 | OpenTelemetry export to Azure Monitor? |
-| fastapi Phase 0.2 | Keep `rn_forge.fastapi`, or fall back to `rn_forge.fastapi_adapters`? Free today, a breaking rename later |
-| fastapi Phase 5 | If web's ASGI middleware needs no FastAPI adaptation at all, ship no module — confirm rather than adding a wrapper for symmetry |
-| ~~django Phase 2 / web §4.3~~ | **Resolved (2026-09-12): forward-only on both stacks.** No `reverse` on the web `Cursor`, no `previousPageToken`; recorded in both plans |
+| ~~commons Phase 6~~ | **Resolved (2026-09-07): gate failed, abandoned.** Replacing the `config.py` resolver with OmegaConf was estimated at 100-160+ lines of glue against an ~80-line threshold. Hand-rolled resolver unchanged. |
+| ~~commons Phase 9~~ | **Resolved (2026-09-07): gate passed, built.** `StructLogger`, at `src/rn_forge/commons/logging/structlog.py`. |
+| ~~django Phase 10~~ | **Resolved (2026-09-12): built, on the owner's decision.** Consumer: the cims successor; PostgreSQL CI job `django-postgres`; envelopes stay consumer-supplied |
+| ~~django Phase 11~~ | **Resolved (2026-09-12): built, on the owner's decision.** `rn_forge.django.celery`, `celery` extra |
+| ~~django Phase 2 / web §4.3~~ | **Resolved (2026-09-12): forward-only on both stacks.** No `reverse` on the web `Cursor`, no `previousPageToken` |
+| ~~fastapi Phase 0.2~~ | **Resolved (2026-09-12): `rn_forge.fastapi` kept.** Reasons in the package README; a test asserts the disjoint `__path__` |
+| ~~fastapi Phase 5~~ | **Resolved (2026-09-12): no module shipped.** Web's `CorrelationIdMiddleware` installs unchanged |
+| azure Phase 4 | Service Bus `MessageBus` adapter? — **parked with the package** (django Phase 10, which it waited on, was built) |
+| azure Phase 5 | OpenTelemetry export to Azure Monitor? — **parked with the package** |
 
-**Commons Part D.8/D.9 are open by decision, not by effort.** Cutting a release pushes a tag, which
-the plans' ground rules forbid without being asked; the pins already name the tags they will get. See
-the commons plan's "What D.8 and D.9 need".
+**Commons Phase 18.4 is resolved:** use `rn-forge-tooling` for shared installer mechanics — now
+`rn_forge.tooling.install` and its lifecycle verbs (commons Part F). Product coordinates and product
+policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
 
-**Commons Phase 18.4 is resolved:** use `rn-forge-tooling` for shared installer mechanics and the
-parameterized state machine. Keep `$RNF_HOME`, product coordinates, retention/uninstall policy and
-product-specific validation in agentkit and kiln. Taskkit remains a reference donor; do not create
-`rn-forge-selfkit`.
+## What is open
 
-Two further decisions are **specified work, not gates** — an implementer performs them and records
-the result: the `asgi-correlation-id` and `rfc9457` evaluations in web Phase 0.2. The plan states the
-pass/fail criteria and what each phase contains under either outcome.
+**Next, sequenced after kiln's in-progress work:**
+
+- The release tags: commons `v0.5.0` → cli `v0.1.0` → tooling `v0.2.0` → web `v0.1.0` → django
+  `v0.3.0` / fastapi. Cutting a tag pushes, which needs the owner's word.
+- The kiln golden repos: `golden/python-app` (commons D.9), `golden/python-tool` declaring
+  `[cli.lifecycle]` (kiln F3.3), `golden/python-web-api` (fastapi Phase 8) and
+  `golden/python-web-app-django`, plus kiln's pin flip and `state.json` re-seed (commons D.8).
+- Committing commons Part F and the 2026-09-13 gap pass, which are in the working tree.
+
+**Open questions, no decision yet:**
+
+- **`OidcAuthenticator`** — one ready-made OIDC `Authenticator` shared by both framework bindings.
+  Recorded as a pending gap in web plan §10; needs a decision before it is scoped.
+- **`Page[T]` on FastAPI** — FastAPI names each parametrization (`Page_OrderOut_`), so the shared
+  component cannot be named literally `Page`. Raised against web by the fastapi plan.
+- **`operationId` convention** — covers CRUD routes only. Raised against web by the fastapi plan.
+- **commons Part E follow-ups** — make `DataclassMixin` strict by default; move `DocsArea`,
+  `StateEntry` and the `FixtureDefinition` family onto `StrictDataclassMixin`.
+
+**Waiting on kiln D2:** the `[codegen]` extras of `rn-forge-django` and `rn-forge-fastapi`. The import
+fences exist; the generators do not.
+
+**Parked (2026-09-13), not scheduled:**
+
+- **`rn-forge-azure`** — [`azure-library-plan.md`](./azure-library-plan.md) is complete and unblocked;
+  its Phase 4/5 gates and namespace decision are made when it is picked up.
+- **`rn-forge-sqlalchemy`** — no plan yet; its likely contents are recorded in the web plan's
+  "Deferred" section. Its trigger is unchanged (the first SQLAlchemy application rewritten on this
+  kit — intellibuild), and it is planned with that application's spec, not ahead of it.
+- **Multi-tenant row scoping** stays deferred until a second application states its tenancy model.
 
 ## Standing rules for every plan
 
@@ -149,12 +162,11 @@ pass/fail criteria and what each phase contains under either outcome.
   stack through it. A decision with no case in that table is a decision that will drift.
 - **A unified model base class, repository protocol or serializer abstraction is permanently out of
   scope** — see the web plan's "The unification boundary". What is shared is vocabulary
-  (`model-conventions.md`) and wire shapes. The deferred `rn-forge-sqlalchemy` is a **sibling** of the
+  (`model-conventions.md`) and wire shapes. The parked `rn-forge-sqlalchemy` is a **sibling** of the
   two framework packages, not a step toward merging them.
 - **cims and intellibench are prior art, not compatibility constraints.** Both are being respecified
   and reimplemented against these libraries. Where a survey found a weaker design, the plans fix it.
-- The Python floor stays **`>=3.14`** across the workspace. The 3.12 floor an earlier draft proposed
-  is void (web plan Phase 0.1).
+- The Python floor stays **`>=3.14`** across the workspace.
 - Every phase ends with its own validation command block, and every one of them includes
   `uv run lint-imports`. After standardization plan Phase F.1 regenerates pykit's skeleton, `task
   validate` is what CI runs and the `uv run …` forms are its inner primitives.
@@ -164,8 +176,10 @@ pass/fail criteria and what each phase contains under either outcome.
   matrix, build and release jobs), needs a `.rn-forge/kiln/state.json` re-seed via `kiln apply`, and
   joins the root `mkdocs.yml` nav and `docs/index.md`. Those kiln files do not exist before Phase
   F.1 — do not create them early.
-- **Consumers are archetypes, and a claim needs a golden repo.** intellibuild is `python-web-api`
-  (`framework = fastapi`); the cims successor is `python-web-app` (`framework = django`). Under kiln
-  ADR-0005 a claim not demonstrated in a runnable golden repo is not demonstrated — the rule that
-  caught standardization Phase C shipping ADR-0009 without evidence.
-- Nothing is committed or pushed — plans leave the working tree for review.
+- **Consumers are archetypes, and a claim needs a golden repo.** intellibuild is `python-web-app`
+  (`framework = fastapi`, `frontend = angular`, with a separately built frontend package — owner
+  decision 2026-09-12; a standalone kiln plan that gates no release); the cims successor is
+  `python-web-app` (`framework = django`). Under kiln ADR-0005 a claim not demonstrated in a runnable
+  golden repo is not demonstrated — the rule that caught standardization Phase C shipping ADR-0009
+  without evidence.
+- Nothing is committed or pushed without the owner asking.

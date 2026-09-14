@@ -109,8 +109,9 @@ violation.
   check-then-insert. `require_idempotency_key()` reads the header; the route
   calls `record_or_replay` and `complete`.
 - **The checks.** Zero-argument callables, sync or async, returning a `bool` or a
-  `rn_forge.web.CheckResult`. Give a slow dependency its own timeout inside the
-  check: `run_checks` does not impose one.
+  `rn_forge.web.CheckResult`. Pass `health_router(timeout=...)` so a hung
+  dependency is reported as `fail` rather than hanging `/readyz`; the default,
+  `None`, waits indefinitely.
 
 ## Conformance
 

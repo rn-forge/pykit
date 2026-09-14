@@ -28,6 +28,36 @@ A `target` naming a `typer.Typer` becomes a subcommand namespace; a target
 naming a function becomes a single command. Either way the target is imported
 by name, so nothing here learns what a command does.
 
+## Lifecycle verbs: `[cli.lifecycle]`
+
+An installable tool also declares its lifecycle verbs. The table names the
+product object the verbs act on and the factory that builds them:
+
+```toml
+[cli.lifecycle]
+product = "golden_tool.product:PRODUCT"
+target = "rn_forge.tooling.cli.lifecycle:lifecycle_commands"
+verbs = ["status", "doctor"]    # optional; default: all six
+```
+
+| Key | Meaning |
+| --- | --- |
+| `product` | import path of the product object |
+| `target` | import path of a factory called as `factory(product, verbs)` that returns a `typer.Typer` |
+| `verbs` | any of `install`, `upgrade`, `uninstall`, `cleanup`, `status`, `doctor` |
+
+The verbs are mounted at the root of the application: `golden-tool doctor`,
+not `golden-tool lifecycle doctor`. A verb that repeats a `[[cli.commands]]`
+name, an unknown verb, or a factory that does not return a Typer app is
+rejected when the application is built.
+
+`target` is a string, not a default, on purpose. The factory and the product
+protocol live in `rn-forge-tooling`, the file-owning layer, and this package
+may not import it. A repository that declares lifecycle verbs depends on
+`rn-forge-tooling`; one that does not never loads it. Whether a repository has
+the table at all is its manager's decision — kiln renders it for a repository
+whose config sets `lifecycle = true`.
+
 ## The whole of `cli.py`
 
 ```python

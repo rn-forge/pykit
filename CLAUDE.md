@@ -10,13 +10,20 @@ architecture here; it drifts.
 
 ## Start here in a new session
 
+[`docs/plans/README.md`](docs/plans/README.md) is the status board: what is done, what is open,
+and what is parked. Read it first.
+
 `docs/plans/commons-upgrade-plan.md` is the record of how this workspace got its current shape.
-Parts A–C are committed; Part D — the three-layer split into `rn-forge-commons`, `rn-forge-cli`
-and `rn-forge-tooling`, the re-layout of all of them, and the Phase C review findings — and Part E
-— the `rn-forge-cli` module/class reshape around `CliApp`, and `StrictDataclassMixin` — are
-applied in the working tree, with their checklists in that document marking what is done and what
-is left. The decisions behind them are in `../kiln` (ADR-0002, ADR-0005, ADR-0009; plan §0.8,
-§2.8, §2.11 and Phase C.2).
+Parts A–E are committed — Part D is the three-layer split into `rn-forge-commons`, `rn-forge-cli`
+and `rn-forge-tooling` with the Phase C review findings, Part E the `rn-forge-cli` reshape around
+`CliApp` and `StrictDataclassMixin`. Part F — the tool lifecycle surface
+(`rn_forge.tooling.install`, `[cli.lifecycle]`) — is in the working tree. The web, django and
+fastapi plans are implemented and committed. The decisions behind them are in `../kiln`
+(ADR-0002, ADR-0005, ADR-0009; plan §0.8, §2.8, §2.11 and Phase C.2).
+
+What is left is sequenced, not forgotten: the release tags and the kiln golden-repo acceptances
+follow kiln's in-progress work. `rn-forge-azure` and `rn-forge-sqlalchemy` are parked — do not
+start either without being asked.
 
 ## Orientation
 

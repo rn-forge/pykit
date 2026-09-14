@@ -144,7 +144,7 @@ Both rewrites this plan is written for now have names in kiln's archetype catalo
 
 | Rewrite | Archetype | kiln golden repo | Phase |
 | --- | --- | --- | --- |
-| intellibuild (successor to intellibench) | `python-web-api`, `framework = fastapi` | `golden/python-web-api` | kiln Phase E, then F.4 |
+| intellibuild (successor to intellibench) | `python-web-app`, `framework = fastapi`, `frontend = angular` (owner decision 2026-09-12) | `golden/python-web-api` covers the fastapi adapters | standalone kiln plan; gates no release |
 | the cims successor | `python-web-app`, `framework = django`, `frontend = angular` | `golden/python-web-app-django` | kiln Phase E |
 
 This changes Phase 9 from a documentation deliverable into a **testable** one. Under kiln **ADR-0005**
@@ -243,9 +243,25 @@ boundary — so they are parsed and symbol-checked against the public API, which
 rot without importing a framework. That limitation is stated in the examples' own README.
 
 **Not done, and deliberately:** the amendments in §A.1–A.3 were already applied to the django and
-commons plans before this run. Phase 10 ships the *contract* only; the commons token-verification
-module it names as a build-order predecessor does not exist yet, and nothing here imports it.
-Nothing is committed.
+commons plans before this run. Phase 10 ships the *contract* only, and nothing here imports the
+commons token-verification module.
+
+**Since then (to 2026-09-13):**
+
+- Committed at `8b5160b`. The release tag `rn-forge-web-v0.1.0` is not cut; it follows kiln's
+  in-progress work, with the other releases.
+- The commons token-verification module Phase 10 names now exists, as
+  `rn_forge/commons/integration/auth.py` (2026-09-12); `principal_from_claims` maps its claims.
+- Both framework conformance drivers landed and run every case in `CASES` with no skips, so §11.1's
+  three independent proofs are collected.
+- **`run_checks` takes a per-check `timeout`** (2026-09-13), raised by the fastapi plan. A check
+  still running when it expires is reported as `fail` with the reason `timed out after <n>s`, so a
+  hung dependency cannot hang `/readyz`. It is an option of the async runner, not a wire rule: the
+  sync runner Django uses cannot interrupt a check, and `fail` was already a legal wire value, so
+  `api-conventions.md` and the conformance table are unchanged.
+- **Open, raised against this plan by fastapi:** the generic `Page[T]` cannot be named literally
+  `Page` in FastAPI's `components/schemas`, and the `operationId` convention covers CRUD only. The
+  `OidcAuthenticator` gap in §10 is also open.
 
 
 ## Summary (read this first)
@@ -1651,14 +1667,14 @@ plan's to report.
 
 ## Deferred — do not build these yet
 
-- **`rn-forge-fastapi` — no longer deferred; the trigger fired.** The condition was "the first FastAPI
+- **`rn-forge-fastapi` — no longer deferred; built.** The condition was "the first FastAPI
   application rewritten on `rn-forge-web`", and there are now two: intellibuild
-  (`python-web-api`, `framework = fastapi`) and kiln's own `golden/python-web-api`, which under
-  ADR-0005 is authored *before* the app that copies it. The package is planned in
-  [`fastapi-library-plan.md`](./fastapi-library-plan.md), which starts from the extraction candidates
-  in the next section. It is still blocked on Phases 1-8 here, and Phase 9's `wiring-fastapi.md`
-  remains the interim answer until it lands.
-- **`rn-forge-sqlalchemy`.** intellibench's `storage/models/base.py` (declarative base, naming
+  (`python-web-app`, `framework = fastapi`) and kiln's own `golden/python-web-api`, which under
+  ADR-0005 is authored *before* the app that copies it. The package is implemented per
+  [`fastapi-library-plan.md`](./fastapi-library-plan.md); Phase 9's `wiring-fastapi.md` is now a
+  pointer to it.
+- **`rn-forge-sqlalchemy` — parked (2026-09-13).** Not scheduled; picked up with intellibuild's spec.
+  intellibench's `storage/models/base.py` (declarative base, naming
   convention, `TimestampMixin`, `ScopedModel`) and `repository.py`'s optimistic-`update`/
   `StaleVersionError` are the SQLAlchemy counterpart of `rn_forge.django.models.base`. Genuinely
   reusable for the Alembic apps, and genuinely a separate package. Trigger: the first SQLAlchemy
@@ -1704,7 +1720,8 @@ plan's to report.
   it encodes one specific tenancy model with sentinels for org- and system-scoped rows. Generalizing a
   tenancy model from a single application's assumptions is how a library acquires a shape nobody else
   can use; revisit when a second app's rewritten spec states its tenancy requirements.
-- **An LLM port.** `intellibuild_ports/llm.py` + the Azure OpenAI adapter. See the Azure plan.
+- **An LLM port.** `intellibuild_ports/llm.py` + the Azure OpenAI adapter. See the Azure plan, which
+  is parked.
 
 ---
 

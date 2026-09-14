@@ -36,6 +36,7 @@ nav:
       - guides/index.md
       - Installation: guides/installation.md
       - Generation: guides/generation.md
+      - Tool lifecycle: guides/lifecycle.md
       - Docs checks: guides/docs-checks.md
   - API Reference:
       - api/index.md

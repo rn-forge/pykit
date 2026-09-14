@@ -45,7 +45,7 @@ from rn_forge.cli.options import (
     YesOption,
     parse_overrides,
 )
-from rn_forge.cli.surface import CliSurface, CommandSurface
+from rn_forge.cli.surface import CliSurface, CommandSurface, LifecycleSurface
 
 __all__ = [
     "CliApp",
@@ -55,6 +55,7 @@ __all__ = [
     "DryRunOption",
     "ExitCode",
     "JsonOption",
+    "LifecycleSurface",
     "LogFileOption",
     "LogLevel",
     "LogLevelOption",

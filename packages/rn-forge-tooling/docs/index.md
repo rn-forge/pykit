@@ -9,7 +9,8 @@ It provides:
 - a locked, atomically-written JSON state store
 - a strict Jinja render engine
 - a generation engine: artifact kinds, action classification, transactional apply
-- install mechanics: archive extraction for a release bundle
+- the tool lifecycle: `$RNF_HOME` layout, release fetching and verification,
+  and transactional install/upgrade/uninstall/cleanup/status/doctor verbs
 - the documentation-tree checkers, and the `rn-forge-docs` command that runs them
 
 Where `rn-forge-commons` is runtime-neutral — safe in a web server, a worker or

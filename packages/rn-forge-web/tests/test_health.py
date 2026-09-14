@@ -226,6 +226,45 @@ async def test_an_empty_map_is_200_async():
     assert_that(report.http_status).is_equal_to(200)
 
 
+@pytest.mark.asyncio
+async def test_a_hung_async_check_times_out_as_a_failure():
+    async def hung() -> CheckResult:
+        await asyncio.Event().wait()
+        return CheckResult(status="pass")
+
+    report = await asyncio.wait_for(
+        run_checks({"db": hung, "queue": aok}, required=["db"], timeout=0.05),
+        timeout=2,
+    )
+    assert_that(report.checks["db"].status).is_equal_to("fail")
+    assert_that(report.checks["db"].reason).is_equal_to("timed out after 0.05s")
+    assert_that(report.checks["queue"].status).is_equal_to("pass")
+    assert_that(report.http_status).is_equal_to(503)
+
+
+@pytest.mark.asyncio
+async def test_a_hung_sync_check_times_out_without_blocking_the_run():
+    release = threading.Event()
+
+    def hung() -> bool:
+        return release.wait(timeout=2)
+
+    try:
+        report = await asyncio.wait_for(
+            run_checks({"db": hung}, timeout=0.05), timeout=1
+        )
+    finally:
+        release.set()
+    assert_that(report.checks["db"].status).is_equal_to("fail")
+    assert_that(report.checks["db"].reason).contains("timed out")
+
+
+@pytest.mark.asyncio
+async def test_a_check_inside_the_timeout_is_unaffected():
+    report = await run_checks({"db": aok, "sync": ok}, timeout=1)
+    assert_that(report.status).is_equal_to("pass")
+
+
 # --- the wire body --------------------------------------------------------
 
 

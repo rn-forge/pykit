@@ -9,8 +9,10 @@ wired into the other framework.
 *"the first FastAPI application rewritten on `rn-forge-web`"*, on the reasoning that an adapter API
 should be fixed against a real rewrite rather than against code being deleted. Two now exist:
 
-- **intellibuild** — the successor to intellibench, a kiln **`python-web-api`** repo with
-  `framework = fastapi` (standardization plan D41, D53; rebuilt, not migrated, per D39).
+- **intellibuild** — the successor to intellibench, a kiln **`python-web-app`** repo with
+  `framework = fastapi` and `frontend = angular`, its frontend built as a separate package (owner
+  decision 2026-09-12, which replaced `python-web-api`; rebuilt, not migrated, per D39). It is now a
+  standalone plan in kiln and does not gate kiln's releases.
 - **`golden/python-web-api`** — kiln's hand-authored, runnable golden repo for that archetype, which
   under kiln **ADR-0005** is written and reviewed *before* the application that copies it, and before
   any generator code exists. It is the acceptance test for this package, and it is why this plan has
@@ -34,11 +36,20 @@ Three sources feed this plan, and it is self-contained:
 **Start from [`README.md`](./README.md)** — it carries the execution order across all five plans.
 This package is blocked on web Phases 1–8 in their entirety; see Phase 0.
 
-## Implementation status (2026-09-12)
+## Implementation status (2026-09-12, updated 2026-09-13)
 
-**Phases 0–7 and 6c are applied in the working tree; Phase 8 and the release tag are open.** The
-package, its README, docs site and tests are at `packages/rn-forge-fastapi`; the checklist at the
-end marks each item.
+**Phases 0–7, 6b and 6c are implemented and committed (`3e80dbd`); Phase 8 and the release tag are
+open, and both follow kiln's in-progress work.** The package, its README, docs site and tests are at
+`packages/rn-forge-fastapi`; the checklist at the end marks each item.
+
+**Updated 2026-09-13** — three statements below were true on 2026-09-12 and no longer are:
+
+- The commons `auth/` module exists (`rn_forge/commons/integration/auth.py`). Phase 6b's binding
+  needed no change: an application puts the commons verifier behind `rn_forge.web.Authenticator`.
+- `rn-forge-django` has its conformance driver (`tests/test_django_conformance.py`), so step 14a is
+  done and the two drivers together now prove the stacks agree.
+- `run_checks` has a per-check timeout, and `health_router(timeout=...)` passes it through; the
+  timeout test is written (`test_a_hung_required_check_times_out_as_503`).
 
 Decisions recorded while implementing, each with its reason in the package README or the module
 docstring named:
@@ -71,13 +82,12 @@ leading `body` segment and rendering a missing field as `This field is required.
 one the `problem.validation-errors-are-rfc6901-pointers` case cannot pass on FastAPI. Tests added in
 `rn-forge-web/tests/test_problem.py`; web's `wiring-fastapi.md` is now a pointer.
 
-**Raised against the web plan and left open:** `run_checks` has no per-check timeout; the generic
-`Page[T]` cannot be named literally `Page` in `components/schemas` (FastAPI emits `Page_OrderOut_`);
-the `operationId` convention covers CRUD only.
+**Raised against the web plan:** a per-check timeout for `run_checks` (**resolved 2026-09-13**); the
+generic `Page[T]` cannot be named literally `Page` in `components/schemas` (FastAPI emits
+`Page_OrderOut_`) — **open**; the `operationId` convention covers CRUD only — **open**.
 
 **Open, and not this plan's to close alone:** Phase 8 — kiln has no `golden/python-web-api` yet
-(kiln Phase E); the `rn-forge-web` release tag; and step 14a — `rn-forge-django` has no conformance
-driver, so this driver currently proves FastAPI against the table but nothing about drift.
+(kiln Phase E); and the `rn-forge-web` release tag.
 
 ## Alignment with the standardization plan (kiln revision 9)
 
@@ -732,7 +742,7 @@ template change never made in a golden repo is a bug. Do not skip to the applica
 - **`rn-forge-fastapi[codegen]`.** Router/schema/dependency scaffolds under `rn_forge.fastapi.codegen`,
   registered in `rn_forge.kiln.generators` (kiln D37, D56). The import fence exists from Phase 0; the
   generators wait for D2 to be lifted, the same as Django's.
-- **`rn-forge-sqlalchemy`.** The declarative base, naming convention, `TimestampMixin`, the optimistic
+- **`rn-forge-sqlalchemy` — parked (2026-09-13).** The declarative base, naming convention, `TimestampMixin`, the optimistic
   `update`/`StaleVersionError` repository helper, and a SQLAlchemy `IdempotencyStore`. Recorded in the
   web plan with its own trigger: the first SQLAlchemy application rewritten on this kit. intellibuild
   is that application, so this is the **next** package to plan after this one — plan it with
@@ -740,10 +750,9 @@ template change never made in a golden repo is a bug. Do not skip to the applica
 - **Multi-tenant row scoping.** The `before_execute` isolation hook and RLS binding. The web plan's
   reasoning stands: generalizing a tenancy model from one application's assumptions produces a shape
   nobody else can use. Revisit when a second app's rewritten spec states its tenancy requirements.
-- ~~**A FastAPI `Security` dependency over OIDC/JWKS.**~~ **No longer deferred — it is Phase 6b.**
-  The web plan's Phase 10 now specifies the contract and the commons plan's §A.2 carries the
-  verification module as a named blocker, so the two things this deferral was waiting on are planned
-  rather than hypothetical. It remains *blocked* on both; blocked is not the same as deferred.
+- ~~**A FastAPI `Security` dependency over OIDC/JWKS.**~~ **No longer deferred — shipped as Phase
+  6b.** Both things it waited on — web Phase 10's contract and the commons verification module —
+  have landed.
 - **Server-sent events / websockets / background tasks.** No prior art in the survey, no second
   consumer, no evidence of a shared shape. Not deferred with a trigger — simply out of scope.
 

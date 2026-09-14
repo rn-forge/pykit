@@ -47,7 +47,12 @@ from rn_forge.cli.options import (
     LogLevelOption,
     QuietOption,
 )
-from rn_forge.cli.surface import SURFACE_KEY, CliSurface, CommandSurface
+from rn_forge.cli.surface import (
+    SURFACE_KEY,
+    CliSurface,
+    CommandSurface,
+    LifecycleSurface,
+)
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.logging import AppLogger
@@ -250,6 +255,8 @@ class CliApp(typer.Typer):
         )
         for command in surface.commands:
             app.add_declared(command)
+        if surface.lifecycle is not None:
+            app.add_lifecycle(surface.lifecycle)
         _LOGGER.verbose(
             "CliApp: built {} with {} command(s)",
             surface.name,
@@ -283,6 +290,44 @@ class CliApp(typer.Typer):
                 command.target,
             )
         self.command(name=command.name, help=command.help)(target)
+
+    def add_lifecycle(self, lifecycle: LifecycleSurface) -> None:
+        """Mount the declared lifecycle verbs at the root of this application.
+
+        Imports the product and the factory by name, calls
+        ``factory(product, verbs)``, and merges the :class:`typer.Typer` it
+        returns into this one — so the verbs are ``golden-tool doctor``, not
+        a namespace. Knowing the factory only by name is what keeps this
+        package from importing the tooling that implements it.
+
+        Raises:
+            AppException: Either import fails, the factory is not callable,
+                or it does not return a :class:`typer.Typer`.
+        """
+        imported: list[Any] = []
+        for role, reference in (
+            ("product", lifecycle.product),
+            ("target", lifecycle.target),
+        ):
+            try:
+                imported.append(AppUtils.import_string(reference))
+            except Exception as error:
+                raise AppException(
+                    "Cannot import lifecycle {} {!r}: {}", role, reference, error
+                ) from error
+        product, factory = imported
+        if not callable(factory):
+            raise AppException(
+                "Lifecycle target {!r} is not callable", lifecycle.target
+            )
+        commands = factory(product, lifecycle.verbs)
+        if not isinstance(commands, typer.Typer):
+            raise AppException(
+                "Lifecycle target {!r} returned {!r}, not a Typer app",
+                lifecycle.target,
+                commands,
+            )
+        self.add_typer(commands)
 
     def run(self, args: Sequence[str] | None = None, **kwargs: Any) -> int:
         """Invoke this application and return its exit code. See :func:`run`."""

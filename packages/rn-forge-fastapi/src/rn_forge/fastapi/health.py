@@ -33,6 +33,7 @@ def health_router(
     checks: Mapping[str, Check],
     required: Collection[str] = (),
     prefix: str = "",
+    timeout: float | None = None,
 ) -> APIRouter:
     """Return a router serving ``/healthz`` and ``/readyz``.
 
@@ -42,6 +43,9 @@ def health_router(
             is reported as ``fail``; it never fails the endpoint.
         required: The names whose failure makes the service unavailable (503).
         prefix: Mounted in front of both paths.
+        timeout: Seconds each check may run before it is reported as ``fail``,
+            so a hung dependency cannot hang ``/readyz``. ``None`` waits
+            indefinitely.
     """
     router = APIRouter(prefix=prefix, tags=["health"])
 
@@ -57,7 +61,7 @@ def health_router(
         },
     )
     async def readyz() -> JSONResponse:
-        report = await run_checks(checks, required=required)
+        report = await run_checks(checks, required=required, timeout=timeout)
         return JSONResponse(report.as_body(), status_code=report.http_status)
 
     return router

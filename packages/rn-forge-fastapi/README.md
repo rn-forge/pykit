@@ -121,10 +121,12 @@ there rather than worked around here:
   renders a missing field as `This field is required.`, so pydantic and DRF
   produce the identical pointer list the conformance table requires.
 
-Three are **open** and recorded rather than decided here:
+- `run_checks(..., timeout=)` — a per-check timeout, so a hanging check cannot
+  hang `/readyz`. A check still running when it expires is reported as `fail`,
+  `timed out after <n>s`; `health_router(timeout=...)` passes it through.
 
-- `run_checks` has no per-check timeout, so a hanging check hangs `/readyz`.
-  A timeout's status and reason are a wire decision for web's health module.
+Two are **open** and recorded rather than decided here:
+
 - `Page[T]` is generic, so FastAPI names its component `Page_UserOut_`, not
   `Page`. The web conventions' "identical component names" cannot hold literally
   for a generic envelope; the naming rule needs restating there.

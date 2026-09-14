@@ -28,7 +28,7 @@ import — or fail on it — merely by importing this package.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from rn_forge.tooling.install import extract_archive
+    from rn_forge.tooling.install import ToolHome, ToolProduct, extract_archive
     from rn_forge.tooling.state import StateStore
     from rn_forge.tooling.templates import RenderError, TemplateEngine
 
@@ -36,6 +36,8 @@ __all__ = [
     "RenderError",
     "StateStore",
     "TemplateEngine",
+    "ToolHome",
+    "ToolProduct",
     "extract_archive",
 ]
 
@@ -43,6 +45,8 @@ _MODULES = {
     "RenderError": "rn_forge.tooling.templates",
     "StateStore": "rn_forge.tooling.state",
     "TemplateEngine": "rn_forge.tooling.templates",
+    "ToolHome": "rn_forge.tooling.install",
+    "ToolProduct": "rn_forge.tooling.install",
     "extract_archive": "rn_forge.tooling.install",
 }
 

@@ -8,6 +8,7 @@ import pytest
 import typer
 
 from rn_forge.cli import CliApp, CliSurface, CommandSurface, ExitCode, LogLevel, run
+from rn_forge.cli.surface import LIFECYCLE_VERBS
 from rn_forge.commons.exceptions import AppException
 
 # Command implementations the declared surfaces below point at. They are
@@ -148,6 +149,72 @@ class TestFromSurface:
                     commands=(CommandSurface(name="x", target=f"{HERE}:CONFIG"),),
                 )
             )
+
+
+PRODUCT = object()
+
+
+def lifecycle_factory(product, verbs):
+    """A stand-in for tooling's factory: one command per verb."""
+    commands = typer.Typer()
+    for verb in verbs:
+
+        def verb_command(verb=verb) -> None:
+            print(f"{verb} ran for {product is PRODUCT}")
+
+        commands.command(name=verb)(verb_command)
+    return commands
+
+
+def not_a_typer(product, verbs):
+    return "nope"
+
+
+class TestLifecycle:
+    def _surface(self, **lifecycle):
+        return CliSurface.load(
+            {
+                "name": "demo",
+                "lifecycle": {
+                    "product": f"{HERE}:PRODUCT",
+                    "target": f"{HERE}:lifecycle_factory",
+                    **lifecycle,
+                },
+            }
+        )
+
+    def test_verbs_default_to_all_six(self):
+        surface = self._surface()
+        assert surface.lifecycle is not None
+        assert surface.lifecycle.verbs == LIFECYCLE_VERBS
+
+    def test_verbs_are_mounted_at_the_root_against_the_product(self, capsys):
+        app = CliApp.from_surface(self._surface(verbs=["status", "doctor"]))
+        assert run(app, ["doctor"]) == ExitCode.OK
+        assert "doctor ran for True" in capsys.readouterr().out
+        assert run(app, ["install"]) == ExitCode.USAGE
+
+    def test_an_unknown_verb_is_rejected(self):
+        with pytest.raises(AppException, match="Unknown lifecycle verb"):
+            self._surface(verbs=["explode"])
+
+    def test_a_verb_colliding_with_a_command_is_rejected(self):
+        with pytest.raises(AppException, match="Duplicate"):
+            CliSurface.load(
+                {
+                    "name": "demo",
+                    "commands": [{"name": "status", "target": f"{HERE}:greet"}],
+                    "lifecycle": {"product": "x:y", "target": "x:z"},
+                }
+            )
+
+    def test_an_unimportable_product_is_reported(self):
+        with pytest.raises(AppException, match="lifecycle product"):
+            CliApp.from_surface(self._surface(product="no.such.module:PRODUCT"))
+
+    def test_a_factory_not_returning_typer_is_rejected(self):
+        with pytest.raises(AppException, match="not a Typer app"):
+            CliApp.from_surface(self._surface(target=f"{HERE}:not_a_typer"))
 
 
 class TestFromConfig:

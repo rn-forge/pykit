@@ -11,7 +11,7 @@ What the package replaced, so a reader of an older application recognises it:
 | --- | --- |
 | the three exception handlers | `register_problem_handlers(app, registry=...)` |
 | `page_params`, `require_idempotency_key`, `require_if_match` | the same names, as factories |
-| the `/healthz` + `/readyz` router | `health_router(checks=..., required=...)` |
+| the `/healthz` + `/readyz` router | `health_router(checks=..., required=..., timeout=...)` |
 | the camelCase alias generator on each model | `WireModel` |
 | the `ProblemDetail` injection into `components/schemas` | `install_problem_schema(app)` |
 | the `operationId` convention | `operation_id`, passed as `generate_unique_id_function` |

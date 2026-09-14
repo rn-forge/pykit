@@ -27,6 +27,19 @@ A *target* naming a :class:`typer.Typer` becomes a subcommand namespace; a
 target naming a function becomes a single command. Either way the target is
 imported by name, so nothing here learns what a command does.
 
+An installable tool also declares its lifecycle verbs (``install``,
+``upgrade``, ``uninstall``, ``cleanup``, ``status``, ``doctor``)::
+
+    [cli.lifecycle]
+    product = "golden_tool.product:PRODUCT"
+    target = "<module:factory that builds the verb commands>"
+    verbs = ["status", "doctor"]          # optional; default: all six
+
+*target* names a factory called with the imported product and the verbs,
+returning a :class:`typer.Typer` whose commands are mounted at the root. The
+factory lives in the file-owning tooling package, which this package may not
+import — so it is reached, like every other target, only by name.
+
 **This module holds records, not behaviour.** It parses and validates a
 surface; :mod:`rn_forge.cli.app` turns one into a running application. The
 split is what lets a repository's configuration be *checked* — by a kiln
@@ -49,10 +62,19 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import DocumentUtils
 from rn_forge.commons.lang.dataclasses import StrictDataclassMixin
 
-__all__ = ["CliSurface", "CommandSurface", "SURFACE_KEY"]
+__all__ = [
+    "CliSurface",
+    "CommandSurface",
+    "LIFECYCLE_VERBS",
+    "LifecycleSurface",
+    "SURFACE_KEY",
+]
 
 SURFACE_KEY = "cli"
 """The table a declared surface is read from."""
+
+LIFECYCLE_VERBS = ("install", "upgrade", "uninstall", "cleanup", "status", "doctor")
+"""Every lifecycle verb a ``[cli.lifecycle]`` table may list."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +96,35 @@ class CommandSurface(StrictDataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
+class LifecycleSurface(StrictDataclassMixin):
+    """The lifecycle verbs of an installable tool.
+
+    Args:
+        product: Import path of the product object the verbs act on.
+        target: Import path of the factory that builds the verb commands,
+            called as ``factory(product, verbs)`` and returning a
+            :class:`typer.Typer`.
+        verbs: Which of :data:`LIFECYCLE_VERBS` to expose. Default: all.
+    """
+
+    product: str
+    target: str
+    verbs: tuple[str, ...] = LIFECYCLE_VERBS
+
+    def __post_init__(self) -> None:
+        unknown = [verb for verb in self.verbs if verb not in LIFECYCLE_VERBS]
+        if unknown:
+            raise AppException(
+                "Unknown lifecycle verb(s): {} (expected any of {})",
+                ", ".join(unknown),
+                ", ".join(LIFECYCLE_VERBS),
+            )
+        duplicates = _duplicates(self.verbs)
+        if duplicates:
+            raise AppException("Duplicate lifecycle verb(s): {}", ", ".join(duplicates))
+
+
+@dataclass(frozen=True, slots=True)
 class CliSurface(StrictDataclassMixin):
     """A whole declared command line.
 
@@ -87,6 +138,7 @@ class CliSurface(StrictDataclassMixin):
         help: The application's ``--help`` description.
         default_log_level: The default value of ``--log-level``.
         commands: The commands and namespaces the app exposes.
+        lifecycle: The lifecycle verbs, for an installable tool.
     """
 
     name: str
@@ -95,11 +147,13 @@ class CliSurface(StrictDataclassMixin):
     commands: tuple[CommandSurface, ...] = field(
         default_factory=tuple[CommandSurface, ...]
     )
+    lifecycle: LifecycleSurface | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise AppException("A declared CLI needs a name")
-        duplicates = _duplicates(command.name for command in self.commands)
+        verbs = self.lifecycle.verbs if self.lifecycle is not None else ()
+        duplicates = _duplicates([*(command.name for command in self.commands), *verbs])
         if duplicates:
             raise AppException("Duplicate command name(s): {}", ", ".join(duplicates))
 

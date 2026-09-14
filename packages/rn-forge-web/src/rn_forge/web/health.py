@@ -32,6 +32,11 @@ The rules that make this safe
   report carries ``http_status`` so each framework does not re-derive it.
 - **The async runner runs checks concurrently.** A readiness endpoint that
   serially awaits five two-second timeouts is a ten-second readiness endpoint.
+- **The async runner can bound each check.** With ``timeout`` set, a check
+  still running after that many seconds is reported as ``fail`` and the run
+  moves on — a hung dependency must not hang the probe that exists to report
+  it. An async check is cancelled; a sync check's worker thread cannot be, so
+  it finishes in the background and its result is discarded.
 - **The sync runner refuses an awaitable** rather than reporting a coroutine
   object as truthy-and-therefore-passing, which is precisely the bug that
   would otherwise ship.
@@ -175,8 +180,21 @@ async def _run_one(check: Check) -> CheckResult:
         return _failed(exc)
 
 
+async def _run_bounded(check: Check, timeout: float | None) -> CheckResult:
+    """Run one check, failing it if it is still running after *timeout* seconds."""
+    if timeout is None:
+        return await _run_one(check)
+    try:
+        return await asyncio.wait_for(_run_one(check), timeout)
+    except TimeoutError:
+        return CheckResult(status="fail", reason=f"timed out after {timeout:g}s")
+
+
 async def run_checks(
-    checks: Mapping[str, Check], *, required: Collection[str] = ()
+    checks: Mapping[str, Check],
+    *,
+    required: Collection[str] = (),
+    timeout: float | None = None,
 ) -> HealthReport:
     """Run *checks* concurrently and aggregate them.
 
@@ -184,12 +202,16 @@ async def run_checks(
         checks: Name → check. Sync and async checks may be mixed freely.
         required: Names whose failure makes the service unavailable (503).
             A name not present in *checks* is ignored.
+        timeout: Seconds each check may run before it is reported as
+            ``fail``. ``None`` (the default) waits indefinitely.
 
     Returns:
         The aggregate report, including the HTTP status to serve.
     """
     names = list(checks)
-    results = await asyncio.gather(*(_run_one(checks[name]) for name in names))
+    results = await asyncio.gather(
+        *(_run_bounded(checks[name], timeout) for name in names)
+    )
     return _aggregate(dict(zip(names, results, strict=True)), required)
 
 

@@ -322,9 +322,15 @@ class TestTruncateModelMixin:
         Widget.truncate()
         assert Widget.objects.count() == 0
 
+    @pytest.mark.parametrize(
+        ("vendor", "statement"),
+        [("sqlite", "DELETE FROM"), ("postgresql", "TRUNCATE TABLE")],
+    )
     def test_truncate_uses_quoted_table_name(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, vendor: str, statement: str
     ) -> None:
+        # The vendor is pinned rather than read from the test database, so both
+        # branches are asserted whichever database the suite runs on.
         calls: list[str] = []
 
         class FakeCursor:
@@ -339,10 +345,11 @@ class TestTruncateModelMixin:
 
         monkeypatch.setattr(connection.ops, "quote_name", lambda name: f'"{name}"')
         monkeypatch.setattr(connection, "cursor", lambda: FakeCursor())
+        monkeypatch.setattr(connection, "vendor", vendor)
 
         Widget.truncate()
 
-        assert calls == ['DELETE FROM "rn_forge_django_widget"']
+        assert calls == [f'{statement} "rn_forge_django_widget"']
 
 
 @pytest.mark.django_db
@@ -365,15 +372,16 @@ class TestBaseModelFields:
         )
         assert w.status == Status.Inactive
 
+    # A blank `name` is what `full_clean` rejects and every database stores. An
+    # over-long value would prove nothing on PostgreSQL, which enforces
+    # `max_length` itself.
     def test_default_save_does_not_run_full_clean(self) -> None:
-        widget = Widget(name="x" * 101, code="TOO-LONG", created_by="u", updated_by="u")
+        widget = Widget(name="", code="BLANK", created_by="u", updated_by="u")
         widget.save()
         assert widget.pk is not None
 
     def test_opt_in_save_runs_full_clean(self) -> None:
-        widget = StrictWidget(
-            name="x" * 101, code="TOO-LONG", created_by="u", updated_by="u"
-        )
+        widget = StrictWidget(name="", code="BLANK", created_by="u", updated_by="u")
         with pytest.raises(ValidationError):
             widget.save()
 

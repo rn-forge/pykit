@@ -5,8 +5,12 @@ Azure adapters for protocols defined elsewhere in the workspace. It depends on `
 on nothing else in the workspace — deliberately **not** on `rn-forge-web` or `rn-forge-django`, so an
 Azure-backed worker or CLI pulls in no HTTP machinery.
 
-**Start from [`README.md`](./README.md)** — it carries the execution order across all five plans.
-This package is blocked on `rn-forge-commons` Phases 8b/8c/8d (the protocol modules); see Phase 0.1.
+> **Parked (2026-09-13), on the owner's decision.** Nothing here is built and nothing is scheduled.
+> The plan is complete and unblocked — commons Phases 8b/8c/8d, the protocol modules Phase 0.1
+> waits on, landed on 2026-09-10 — so picking it up starts at Phase 0. The Phase 4 and Phase 5
+> gates and the namespace decision are made then, not now.
+
+**Start from [`README.md`](./README.md)** — it carries the execution order across all the plans.
 
 This package implements protocols; it does not define them. That single rule is what keeps it honest
 and it is the reason Phase 0 is a prerequisite check rather than a scaffold.

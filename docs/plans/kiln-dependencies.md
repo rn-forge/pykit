@@ -100,10 +100,22 @@ git status --porcelain | wc -l        # 0 after the commit
 
 ## 2. Open — what kiln is waiting on
 
-### 2.1 The tool lifecycle surface (kiln Phase C.3) — not started
+### 2.1 The tool lifecycle surface (kiln Phase C.3) — applied in the working tree (2026-09-13)
 
 **Blocks:** kiln F3.3 (`golden/python-tool` becomes a tool), and through it
-kiln's release-1. `rn_forge/tooling/install/` holds only `archive.py`.
+kiln's release-1. Recorded as `commons-upgrade-plan.md` Part F, with the four
+places the implementation departs from the design below:
+
+- `ToolProduct` is a defaulted base class, not a bare `Protocol`, so "every
+  member defaulted" is true in code and a trivial tool is one constructor call.
+- It gains one defaulted member, `build(release_root, version_dir)`; the
+  default copies the tree. A Python tool needs this to build its environment in
+  place, and no other member can do it.
+- `[cli.lifecycle]` has a required `target` key naming
+  `rn_forge.tooling.cli.lifecycle:lifecycle_commands`. A default would put that
+  string in `rn-forge-cli`'s source, which the acceptance `rg` below forbids.
+- `doctor` reports an uninstalled product as a warning rather than an error, so
+  F3.3's `golden-tool doctor` exits 0 from a development checkout.
 
 Repo `rn-forge/pykit`, branch `feature/upgrade`. Mechanism only; no kiln change.
 Follow pykit's own conventions (no compatibility re-exports, `.importlinter`
@@ -178,16 +190,19 @@ them, port nothing.
 `golden-tool doctor` and `golden-tool status`, and nothing in v1 self-installs
 except kiln.
 
-### 2.2 `rn-forge-fastapi` — in progress
+### 2.2 `rn-forge-fastapi` — implemented; the acceptance is kiln's
 
 **Blocks:** kiln E5 (the web archetypes), release-2. kiln starts E5 when
-`fastapi-library-plan.md` reaches its acceptance.
+`fastapi-library-plan.md` reaches its acceptance. Phases 0–7, 6b and 6c are
+committed (`3e80dbd`) and both framework conformance drivers pass every case.
+The acceptance is its Phase 8 — `golden/python-web-api`, in kiln.
 
-**Alignment needed in pykit:** the owner decided on 2026-09-12 that intellibuild
-is `python-web-app` (`fastapi + angular`), with a separately built frontend
-package. This repo's plan index and `fastapi-library-plan.md` still say
-`python-web-api`. intellibuild is now a standalone plan in kiln
-(`docs/plans/intellibuild.md`) and does not gate kiln's releases.
+**Alignment, done 2026-09-13:** the owner decided on 2026-09-12 that
+intellibuild is `python-web-app` (`fastapi + angular`), with a separately built
+frontend package. This repo's plan index, `fastapi-library-plan.md` and
+`web-library-plan.md` now say so. intellibuild is a standalone plan in kiln
+(`docs/plans/intellibuild.md`) and does not gate kiln's releases;
+`golden/python-web-api` stays the acceptance for `rn-forge-fastapi`.
 
 ### 2.3 Releases — triggered, not scheduled
 
@@ -199,6 +214,11 @@ flips its default source from branch to tag.
 
 This suspends the "releases are pinned git tags" rule this repo's plan index
 states (kiln D46); it does not reverse it.
+
+**Owner, 2026-09-13:** the releases and the kiln-side acceptances (F3.3,
+`golden/python-app`, `golden/python-web-api`, `golden/python-web-app-django`)
+come next, once kiln's in-progress work is complete. No tag exists yet beyond
+commons `v0.2.2` and django `v0.2.2`.
 
 ## 3. Design the kiln plan recorded for pykit
 

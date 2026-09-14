@@ -27,16 +27,19 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
   concurrency, OIDC/JWKS auth, outbox/inbox messaging, Celery, readiness views, sequence generators,
   request-ID middleware) is deliberately **not** here — it belongs to a future Django plan.
 
-## Execution status (2026-09-12)
+## Execution status (2026-09-13)
 
-> **Parts A–C are done and reviewed. Start at
-> [Part D — resume here](#part-d--resume-here), then
-> [Part E](#part-e-the-rn-forge-cli-reshape).** Everything between this line
-> and Part D is the record of what was built and why; read it for context, not
-> for instructions. The boundary it describes under "Final package boundary" is
+> **Parts A–E are done, reviewed and committed (Parts D and E at `f59c40f`).
+> [Part F](#part-f--the-tool-lifecycle-surface-kiln-phase-c3) — the tool
+> lifecycle surface — is in the working tree.** Everything between this line and
+> Part D is the record of what was built and why; read it for context, not for
+> instructions. The boundary it describes under "Final package boundary" is
 > **superseded** by Part D. The module layout Part D gives `rn-forge-cli` is
 > **superseded by Part E**, which renames inside that package without moving the
-> package boundary; D.8 and D.9 remain the only unstarted work.
+> package boundary.
+>
+> **What remains is D.8 (the release tags) and D.9 (`golden/python-app`, in
+> kiln).** The owner has sequenced both after kiln's in-progress work.
 
 ### Parts A–C (2026-09-09)
 
@@ -2305,8 +2308,8 @@ Recorded so a later reader does not "finish the job" by hoisting these too:
 
 ## Part D — resume here
 
-**Status: D.1–D.7 applied in the working tree (uncommitted); D.8–D.9 not
-started.** Everything above is done and committed at `4624bfe`; nothing above
+**Status: D.1–D.7 done and committed (`f59c40f`); D.8–D.9 not started — the
+owner has sequenced them after kiln's in-progress work.** Everything above is done and committed at `4624bfe`; nothing above
 needs re-reading to act on this part, beyond the module inventory. See the
 [Part D checklist](#part-d-checklist) for what landed and what did not, and
 "[What D.8 and D.9 need](#what-d8-and-d9-need)" for why the last two steps
@@ -2322,8 +2325,8 @@ and ordinary batch apps do not. The resolution is three layers, not two. The
 decisions are kiln **D52–D56**; the scope and acceptance were the kiln plan's
 **§0.8** and **Phase C.2**, now in `kiln-dependencies.md`.
 
-**Read before starting:** `../kiln/docs/adr/0002-the-dependency-graphs.md`
-(the layering), `../kiln/docs/adr/0009-tooling-owns-the-boilerplate.md` (what
+**Read before starting:** `../kiln/docs/adr/ADR-0002.md`
+(the layering), `../kiln/docs/adr/ADR-0009.md` (what
 `rn-forge-cli` must hold), and `kiln-dependencies.md`: §3.1 (the per-API
 boundary table), §3.2 (the target layout) and §1's Phase C.2 section (the
 ordered steps).
@@ -2372,7 +2375,7 @@ New package `packages/rn-forge-cli`, distribution `rn-forge-cli`, module
   (error → exit code)
 - a new `declare.py` for ADR-0009's `[cli]` surface
 
-> **The module names above are superseded by [Part E](#part-e-the-rn-forge-cli-reshape).**
+> **The module names above are superseded by [Part E](#part-e--the-rn-forge-cli-reshape).**
 > `console.py` moved on to commons, `declare.py` and `errors.py` folded into
 > `app.py` behind a `CliApp` class, and `surface.py` holds what is left of the
 > declared-surface records. The *package* boundary this step established is
@@ -2579,7 +2582,7 @@ answers, and that repo lives in `../kiln`.
 
 ## Part E — the `rn-forge-cli` reshape
 
-**Status: applied in the working tree (uncommitted), with Part D.** Part D put
+**Status: done and committed with Part D (`f59c40f`).** Part D put
 the right *packages* in place; this part fixes the module and class names
 inside `rn-forge-cli`, which a review found did not say what they held. No
 package boundary moves — `.importlinter` proves the same six contracts before
@@ -2719,6 +2722,62 @@ the first; the chain matches `AppConsole.set_mode`, which already returns `Self`
 - Move `DocsArea`, `StateEntry` and the `FixtureDefinition` family onto
   `StrictDataclassMixin` — same reasoning as `CliSurface`, but each needs its
   own round-trip check.
+
+---
+
+## Part F — the tool lifecycle surface (kiln Phase C.3)
+
+**Status: applied in the working tree (uncommitted), 2026-09-13.** The scope,
+design and acceptance are `kiln-dependencies.md` §2.1; kiln F3.3 is the
+consumer. No package boundary moves: `.importlinter` still holds 7 contracts,
+and `rn-forge-cli` still names no tooling module.
+
+| Module | Holds |
+| --- | --- |
+| `tooling/install/home.py` | `rnf_home()`, `ToolHome`: `<home>/<product>/versions/<v>/`, `current`, `state.json`, the lock, `activate` |
+| `tooling/install/release.py` | `ReleaseSource` protocol, `GitHubReleases`, `LocalArchive`, `fetch_release` (download, SHA-256 verify, extract) |
+| `tooling/install/product.py` | `ToolProduct` (defaulted base class), `Link`, `Check` |
+| `tooling/install/lifecycle.py` | `install`, `upgrade`, `uninstall`, `cleanup`, `status`, `doctor` and their result records |
+| `tooling/cli/lifecycle.py` | `lifecycle_commands(product, verbs)`, the Typer factory a `[cli.lifecycle]` table names |
+| `cli/surface.py`, `cli/app.py` | `LifecycleSurface`, `CliSurface.lifecycle`, `CliApp.add_lifecycle` |
+
+Four places this departs from the §2.1 sketch, each for a stated reason:
+
+- **`ToolProduct` is a class, not a `Protocol`.** A protocol cannot supply
+  defaults, and "every member defaulted" is the property that keeps a trivial
+  tool trivial.
+- **`build(release_root, version_dir)` is a member.** agentkit builds a `uv`
+  environment *in* the version directory because a venv bakes its own path into
+  its scripts. That cannot be expressed through `artifacts()`. The default
+  copies the tree.
+- **`[cli.lifecycle]` requires `target`.** A default factory path would be the
+  string `rn_forge.tooling` inside `rn-forge-cli`, which §2.1's acceptance
+  forbids. kiln renders the table, so the key costs a repository nothing.
+- **An uninstalled product is a `doctor` warning.** kiln F3.3 runs
+  `golden-tool doctor` from a development checkout and expects exit 0.
+
+`install` runs fetch → build → links → migrate → state → swap `current`.
+Each step registers its undo before it runs, and a failure undoes the steps
+taken, in reverse. An `Exception` becomes an `AppException`; an interruption is
+re-raised unchanged. Confirmation lives in the commands, not the functions.
+
+### Part F checklist
+
+- [x] `install/home.py`, `release.py`, `product.py`, `lifecycle.py`, every
+      `ToolProduct` member but name and version defaulted
+- [x] Tests: failed download, failed migration, interrupted swap (re-raises
+      `KeyboardInterrupt`), failed reinstall, `uninstall` over an install that
+      never completed, a file in the way of a link, checksum mismatch
+- [x] `[cli.lifecycle]` → `LifecycleSurface` on `StrictDataclassMixin`;
+      `CliApp.from_config` mounts the verbs at the root by import string;
+      verb/command collisions rejected
+- [x] `golden-tool doctor` exits 0 with the product row, and
+      `golden-tool status --json` has `.version`, demonstrated in
+      `rn-forge-tooling/tests/cli/test_lifecycle_commands.py`
+- [x] `! rg -q 'rn_forge\.tooling' packages/rn-forge-cli/src`; `lint-imports` 7 kept
+- [x] Tooling guide `guides/lifecycle.md`; cli `declaring.md` documents the table
+- [ ] kiln F3.3 — `golden/python-tool` declares the table and implements
+      `ToolProduct` (kiln's work, now unblocked)
 
 ---
 

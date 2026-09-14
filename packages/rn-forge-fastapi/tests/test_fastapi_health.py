@@ -85,6 +85,21 @@ def test_the_prefix_is_applied_to_both_paths():
     assert_that(client.get("/ops/readyz").status_code).is_equal_to(200)
 
 
+def test_a_hung_required_check_times_out_as_503():
+    async def hung():
+        await asyncio.Event().wait()
+
+    app = FastAPI()
+    app.include_router(
+        health_router(checks={"db": hung}, required=["db"], timeout=0.05)
+    )
+    response = TestClient(app).get("/readyz")
+    assert_that(response.status_code).is_equal_to(503)
+    assert_that(response.json()["checks"]["db"]).contains_entry(
+        {"status": "fail"}, {"reason": "timed out after 0.05s"}
+    )
+
+
 def test_two_routers_do_not_share_checks():
     first = client_for({"db": lambda: False}, required=["db"])
     second = client_for({"db": lambda: True}, required=["db"])
