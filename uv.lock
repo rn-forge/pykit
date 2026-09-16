@@ -1820,6 +1820,7 @@ jwt = [
 oidc = [
     { name = "djangorestframework" },
     { name = "rn-forge-commons", extra = ["auth", "excel"] },
+    { name = "rn-forge-web", extra = ["auth"] },
 ]
 openapi = [
     { name = "djangorestframework" },
@@ -1880,6 +1881,7 @@ requires-dist = [
     { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'openapi'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'saml'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
 ]
 provides-extras = ["drf", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "all"]
 
@@ -1913,6 +1915,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+oidc = [
+    { name = "rn-forge-web", extra = ["auth"] },
+]
 testing = [
     { name = "assertpy" },
     { name = "httpx" },
@@ -1927,7 +1932,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
-    { name = "rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extra = ["oidc"] },
     { name = "ruff" },
 ]
 docs = [
@@ -1944,8 +1949,9 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'testing'", specifier = ">=0.28.1" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["testing"]
+provides-extras = ["testing", "oidc"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1955,7 +1961,7 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
-    { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["oidc"], editable = "packages/rn-forge-fastapi" },
     { name = "ruff", specifier = ">=0.15.21" },
 ]
 docs = [
@@ -2036,6 +2042,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+auth = [
+    { name = "rn-forge-commons", extra = ["auth"] },
+]
 testing = [
     { name = "assertpy" },
     { name = "pytest" },
@@ -2049,14 +2058,14 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
-    { name = "rn-forge-web" },
+    { name = "rn-forge-web", extra = ["auth"] },
     { name = "ruff" },
 ]
 docs = [
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
-    { name = "rn-forge-web" },
+    { name = "rn-forge-web", extra = ["auth"] },
 ]
 
 [package.metadata]
@@ -2064,8 +2073,9 @@ requires-dist = [
     { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'auth'", editable = "packages/rn-forge-commons" },
 ]
-provides-extras = ["testing"]
+provides-extras = ["testing", "auth"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2075,14 +2085,14 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
-    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth"], editable = "packages/rn-forge-web" },
     { name = "ruff", specifier = ">=0.15.21" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
-    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth"], editable = "packages/rn-forge-web" },
 ]
 
 [[package]]

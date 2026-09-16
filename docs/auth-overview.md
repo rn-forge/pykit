@@ -11,7 +11,7 @@ the cross-package summary that none of those, individually, can be.
 | Layer | Owns | Standards |
 | --- | --- | --- |
 | `rn-forge-commons` | Verification: JWKS fetch/cache/rotation, JWT signature and claims validation, OIDC discovery (`JwksCache`, `JwtVerifier`, `discover_oidc`). No HTTP-server concept. | RFC 7519, 7517, 8414, OIDC Discovery 1.0 |
-| `rn-forge-web` | The contract: `Principal`, `Requirement`, the `Authenticator`/`Authorizer` protocols, and the failure wire shape (401 vs 403, the `WWW-Authenticate` challenge, `problem+json`). | RFC 6750 §3, RFC 7617, RFC 9457 |
+| `rn-forge-web` | The contract: `Principal`, `Requirement`, the `Authenticator`/`Authorizer` protocols, and the failure wire shape (401 vs 403, the `WWW-Authenticate` challenge, `problem+json`) — plus `oidc.OidcAuthenticator`, the one implementation joining commons' verifier to the contract (`auth` extra). | RFC 6750 §3, RFC 7617, RFC 9457 |
 | `rn-forge-django` / `rn-forge-fastapi` | The binding only: a DRF `BaseAuthentication` / a FastAPI `Security` dependency, each producing the same `web.Principal`. | — |
 
 `web` never verifies a token itself — it only defines what "verified" and "denied" look like on
@@ -65,27 +65,55 @@ around, with basic as the explicitly-dev-only fallback. Outside that:
 
 ### FastAPI + OAuth2 IdP (e.g. Ping) — bearer token validation, no login flow
 
-1. Add the `auth` extra for `rn-forge-commons`'s `JwtVerifier`/`JwksCache`/`discover_oidc`.
-2. Call `discover_oidc()` against the IdP's `.well-known/openid-configuration` (or hardcode
-   `issuer`/`jwks_uri`); build a `JwksCache` and a `JwtVerifier(audience=..., issuer=...)`.
-3. Write an `Authenticator` adapter: verify the token via `JwtVerifier`, map the resulting claims
-   through `rn_forge.web.principal_from_claims()`, and translate `TokenVerificationError` into
-   `rn_forge.web.AuthenticationFailed`. This step is boilerplate every app currently repeats —
-   see the open gap below.
-4. Build the dependency: `bearer_auth(authenticator=your_authenticator, log=...)`.
-5. Guard routes: `requires(bearer_auth(...), Requirement(all_scopes={"orders:read"}))`.
-6. Register `rn_forge.fastapi.register_problem_handlers` so auth failures come back as
+1. Install the `oidc` extra: `uv add "rn-forge-fastapi[oidc]"`. It brings
+   `rn-forge-web[auth]`, and with it `rn-forge-commons`'s verifier.
+2. Build the authenticator **once, at startup** — discovery and the JWKS fetch happen here, not
+   per request:
+
+   ```python
+   from rn_forge.web.oidc import OidcAuthenticator
+
+   authenticator = OidcAuthenticator.from_issuer(
+       "https://idp.example.com/tenant", audience="api://orders"
+   )
+   ```
+
+   Use `OidcAuthenticator.from_jwks_url(...)` instead for an IdP that publishes no discovery
+   document, or to pin the key-set URL.
+3. Build the dependency: `bearer_auth(authenticator=authenticator, log=...)`.
+4. Guard routes: `requires(bearer_auth(...), Requirement(all_scopes={"orders:read"}))`.
+5. Register `rn_forge.fastapi.register_problem_handlers` so auth failures come back as
    `problem+json` with the correct 401/403 and `WWW-Authenticate`.
+
+Django reaches the same authenticator through `JWKSBearerAuthentication`, which builds one from
+its `jwks_url`/`issuer`/`audience` class attributes — so both stacks accept the same tokens.
 
 The asymmetry is structural, not accidental: an IdP-driven SAML login needs a session owner
 (Django), an OAuth2 access token needs only verification (commons + web + the framework binding),
 since the IdP already ran its own login flow before your app ever sees the token.
 
-## Open gap: no ready-made OIDC `Authenticator`
+## The shared OIDC `Authenticator`
 
-Step 3 above (and its Django `PrincipalBearerAuthentication` equivalent) is identical glue code
-every consuming app currently hand-writes: `JwtVerifier` → catch `TokenVerificationError` → map
-via `principal_from_claims()` → `Principal`. Nothing in `rn-forge-web` or `rn-forge-commons` ships
-this as a single `Authenticator` implementation today. This is tracked as pending in
-[`web-library-plan.md`](plans/web-library-plan.md) Phase 10 — see the note there before adding a
-one-off version in an app or in a framework package.
+`rn_forge.web.oidc.OidcAuthenticator` is the one implementation of the
+`JwtVerifier` → catch `TokenVerificationError` → `principal_from_claims()` → `Principal` chain.
+Both framework bindings use it, so a token accepted by a Django service is accepted by a FastAPI
+service configured against the same IdP.
+
+It lives in `rn-forge-web`, not `rn-forge-commons`, because its signature is `Credentials` in and
+`Principal` out — both web types, and commons cannot depend on web. It stays inside the
+"verify and map claims" boundary: it does not issue tokens, run a login flow or own a session.
+
+Behind web's `auth` extra, since it is the one module in the package with a third-party
+dependency (PyJWT, via `rn-forge-commons[auth]`). It is deliberately **not** re-exported from
+`rn_forge.web` — import `rn_forge.web.oidc` directly.
+
+Two things it does not decide for you: an IdP whose roles or scopes sit somewhere non-standard
+(Keycloak's nested `realm_access.roles`, an Okta group claim) needs a `claims_to_principal`
+override, and the authenticator must be built once at startup — a per-request instance refetches
+the key set on every call.
+
+---
+
+## My followup thoughts
+
+SAML is a login flow into the provider. once logged in, it is a post back into the backend from where it could issue a JWT and all furture frontend to backend conversations happen using that JWT

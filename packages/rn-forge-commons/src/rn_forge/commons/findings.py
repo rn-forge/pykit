@@ -1,10 +1,7 @@
 """Structured findings: the result shape every checker and doctor reports in.
 
-Provides :class:`Finding` and :class:`Severity`. A checker returns a list of
-findings; a CLI renders them as a table or, with ``--json``, as
-``[finding.as_dict()]`` — :class:`Finding` is a
-:class:`~rn_forge.commons.lang.dataclasses.DataclassMixin`, so that serialisation
-is free and round-trips.
+A checker returns a list of :class:`Finding` values for a CLI to render as a
+table or JSON.
 
 ``code`` is the stable identifier, dotted and lowercase (``artifact.drift``,
 ``docs.broken-link``). It is what a suppression list, a CI annotation or a
@@ -17,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from rn_forge.commons.lang.types import JsonValue
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
 
 __all__ = ["Finding", "Severity"]
 
@@ -34,7 +31,7 @@ class Severity(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
-class Finding(DataclassMixin):
+class Finding(LenientDataclassMixin):
     """One structured result from a check.
 
     Args:
@@ -49,6 +46,9 @@ class Finding(DataclassMixin):
         details: Rule-specific structured data for ``--json`` consumers —
             expected and actual hashes, a resolved link target, and so on.
             Never load-bearing for rendering.
+
+    Type checking is disabled because dacite cannot validate the recursive
+    :data:`~rn_forge.commons.lang.types.JsonValue` alias used by ``details``.
     """
 
     code: str

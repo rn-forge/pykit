@@ -1,10 +1,4 @@
-"""Generic import/export view mixins for DRF model views.
-
-These mixins define the public data-transfer extension contract for
-rn-forge-django. They are intentionally format-agnostic; concrete layers such
-as Excel should build on top of these hooks rather than embedding workbook
-handling into the base view behavior.
-"""
+"""Format-agnostic import and export mixins for DRF model views."""
 
 from __future__ import annotations
 

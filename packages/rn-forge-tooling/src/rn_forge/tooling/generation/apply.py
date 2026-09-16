@@ -1,11 +1,4 @@
-"""Transactional application: stage everything, back up once, then swap it in.
-
-Changes are grouped by *destination*, not by artifact: the block edits for one
-file are composed against a single evolving buffer, and every destination is
-backed up and written exactly once. Anything raised during the writes — the
-caller's ``verify`` callback included — restores the working tree and the
-state file before propagating.
-"""
+"""Transactional application of generation plans."""
 
 from __future__ import annotations
 
@@ -40,13 +33,6 @@ def _compose(
     root: Path, writes: Sequence[Change], previous: Mapping[str, StateEntry]
 ) -> dict[str, str | None]:
     """The final text of every destination this plan touches, keyed by path.
-
-    Changes are grouped by destination rather than by artifact, and the block
-    edits for one file are composed against a single evolving buffer. Rendering
-    each block against the original on-disk text would leave only the last
-    block's edit, and writing each block separately would back the same file up
-    more than once — the second backup capturing content the first write had
-    already changed, which is what rollback restores.
 
     Returns:
         Destination path to its new text, or ``None`` when it is to be deleted.

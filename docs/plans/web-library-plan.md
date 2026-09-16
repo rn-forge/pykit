@@ -259,9 +259,13 @@ commons token-verification module.
   hung dependency cannot hang `/readyz`. It is an option of the async runner, not a wire rule: the
   sync runner Django uses cannot interrupt a check, and `fail` was already a legal wire value, so
   `api-conventions.md` and the conformance table are unchanged.
-- **Open, raised against this plan by fastapi:** the generic `Page[T]` cannot be named literally
-  `Page` in FastAPI's `components/schemas`, and the `operationId` convention covers CRUD only. The
-  `OidcAuthenticator` gap in §10 is also open.
+- **Schema naming, raised against this plan by fastapi — resolved 2026-09-15.** The generic `Page[T]`
+  cannot be one `Page` component (OpenAPI has no generics), and the `operationId` convention covered
+  CRUD only. Both rules now live in **`rn_forge/web/openapi.py`** — the convention is `Page<Item>` and
+  `<resource><Action>` for an AIP-136 custom method — and each framework package calls that module
+  rather than deriving names itself. `api-conventions.md` §9 is rewritten to match. See
+  "§9.1 — the naming rules, in code" below.
+- **Open:** nothing. The `OidcAuthenticator` gap in §10 was closed on 2026-09-15.
 
 
 ## Summary (read this first)
@@ -1290,11 +1294,36 @@ Ship, under `packages/rn-forge-web/docs/adoption/`:
      hurried endpoint.
 
    - **OpenAPI: the generated client is the real interface.** Both packages emit **OpenAPI 3.1.0**
-     (JSON Schema 2020-12), both name the shared shapes identically in `components/schemas`
-     (`ProblemDetail`, `Page`, `CheckResult`, `HealthReport`), and both follow one `operationId`
-     convention — `operationId` is what a generator turns into a client method name, so two stacks
-     that differ there produce two different client call sites for the same endpoint even when every
-     byte of JSON matches. Name the convention in this document and let each package implement it.
+     (JSON Schema 2020-12), both name the shared *non-generic* shapes identically in
+     `components/schemas` (`ProblemDetail`, `CheckResult`, `HealthReport`), both name the paginated
+     envelope `Page<Item>`, and both follow one `operationId` convention — neither name is on the
+     wire, but a generator turns one into a client type name and the other into a client method name,
+     so two stacks that differ there produce two different call sites for the same endpoint even when
+     every byte of JSON matches.
+
+### §9.1 — the naming rules, in code (2026-09-15)
+
+Naming them in this document and letting each package implement it was the original instruction, and
+it produced two identical `operationId` functions in two packages — which is one edit away from drift,
+and which is how the CRUD-only gap went unnoticed on both sides at once. They now live in
+`rn_forge/web/openapi.py`, framework-free, and `WireAutoSchema` and `rn_forge.fastapi.operation_id`
+are thin calls into it.
+
+Two rules, and the reasoning for each is in the module docstring rather than repeated here:
+
+- **`operation_id(path, method)`** — `<resource><Verb>` for CRUD, unchanged from what both packages
+  already emitted, plus `<resource><Action>` for a custom method spelled
+  [AIP-136](https://google.aip.dev/136)-style as `/orders/{orderId}:cancel`. The colon is what makes
+  an action distinguishable from a sub-collection; as a plain path segment it is not, so that
+  spelling keeps its mechanical name and its explicit override.
+- **`page_component_name(item)`** — `Page<Item>`. The "identical component names" rule could never
+  hold for a generic envelope: OpenAPI has no generics, so a page of orders and a page of users are
+  two schemas. Each framework package renames its own output (pydantic's `Page_OrderOut_`,
+  drf-spectacular's `PaginatedOrderOutList`) to this form.
+
+One asymmetry stays and is recorded rather than fixed: OpenAPI requires `operationId` to be unique
+document-wide, drf-spectacular warns and appends a numeral on a collision, and FastAPI does neither.
+Two routes ending in the same literal segment collide silently on that stack.
 2. **`wiring-django.md`** and **`wiring-fastapi.md`** — Phase 8.3's two guides, which double as the
    adoption path. Each shows the full adapter layer for one framework: settings, middleware,
    exception-handler registration, the idempotency store adapter, health-check registration.
@@ -1432,15 +1461,22 @@ This is the whole reason the phase exists. Both stacks must emit the same thing:
   because local development and simple internal deployments genuinely need it — and both must mark
   it as such in their docs and produce the identical 401 challenge.
 
-> **Pending gap (2026-09-13, not yet a phase):** neither `rn-forge-web` nor `rn-forge-commons`
-> ships a ready-made `Authenticator` that wires `JwtVerifier`/`JwksCache`/`discover_oidc` through
-> `principal_from_claims` to a `Credentials → Principal` implementation. Every consuming app
-> currently hand-writes this glue identically for its DRF `PrincipalBearerAuthentication` subclass
-> and its FastAPI `bearer_auth()` authenticator. A single `OidcAuthenticator` (issuer/audience in,
-> `Authenticator` out) belongs in this module or in commons, reused unchanged by both framework
-> bindings — it stays inside the "verify + map claims" boundary this phase already draws and does
-> not cross into login/token issuance. No phase number assigned; needs a decision before scoping.
-> See [`docs/auth-overview.md`](../auth-overview.md) for the fuller writeup.
+> **Resolved (2026-09-15): built as `rn_forge.web.oidc.OidcAuthenticator`.** The gap was that
+> neither `rn-forge-web` nor `rn-forge-commons` shipped a ready-made `Authenticator` wiring
+> `JwtVerifier`/`JwksCache`/`discover_oidc` through `principal_from_claims` to a
+> `Credentials → Principal` implementation — each framework package hand-wrote it, and only
+> Django actually had one (`JWKSAuthenticator`), so a FastAPI consumer wrote its own copy.
+>
+> It lives in **web, not commons**: its signature is `Credentials` in and `Principal` out, both
+> web types, and commons cannot depend on web. It sits behind web's new `auth` extra
+> (`rn-forge-commons[auth]`) in its own module, excluded from the curated `__init__.py`, so a
+> plain `rn-forge-web` install still pulls nothing but commons. Constructors are `from_issuer`
+> (discovery) and `from_jwks_url` (pinned key set), both run once at startup.
+>
+> Django's `JWKSAuthenticator` was **moved**, not aliased (the no-compatibility-re-exports rule):
+> `JWKSBearerAuthentication` now builds an `OidcAuthenticator` and `rn_forge.django` exports one
+> name fewer. It stays inside the "verify + map claims" boundary this phase draws and does not
+> cross into login/token issuance. See [`docs/auth-overview.md`](../auth-overview.md).
 
 **Tests.** `tests/test_auth.py` (`unit`): `Principal` round-trips through `DataclassMixin`;
 `Requirement` evaluation for each of the four set forms including the empty requirement; `authorize`

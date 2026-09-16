@@ -1,15 +1,7 @@
 """Managed blocks: one owner's fenced region inside a file another owner writes.
 
-Provides :class:`ManagedBlock`, the mechanism behind ``.gitignore``'s
-``# BEGIN rn-forge kiln`` section, ``CLAUDE.md``'s
-``<!-- BEGIN rn-forge kiln -->`` section and ``mkdocs.yml``'s
-``# BEGIN generated nav`` section: a generator owns the bytes between its two
-markers and never touches the rest of the file.
-
-Three tools had grown a private copy of this (agentkit's gitignore
-scaffolding, taskkit's ``update_gitignore_block``, the docs ``gen_nav``
-marker logic), each with its own idea of what happens when the markers are
-missing, duplicated or empty. This is the one implementation.
+A :class:`ManagedBlock` owns the bytes between two markers and preserves the
+rest of the file.
 
 Example::
 

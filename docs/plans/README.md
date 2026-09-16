@@ -4,12 +4,14 @@ Six pykit documents plus the workspace-wide standardization plan. This page is t
 order** and the **status board** — read it before picking up any plan, because several phases are
 blocked on phases in other documents and none of the plans repeats the whole graph.
 
-**Updated 2026-09-13.** Every phase pykit can take on its own is implemented across the commons,
-web, django and fastapi plans. Commons Parts A–E, web, django and fastapi are committed (`f59c40f`,
-`8b5160b`, `9d8588c`, `3e80dbd`); commons Part F (the tool lifecycle) and the 2026-09-13 gap pass are
-in the working tree. What remains is the release tags and the golden-repo acceptances in kiln —
-**sequenced by the owner to follow kiln's in-progress work** — and the open questions under
-[What is open](#what-is-open). `rn-forge-azure` and `rn-forge-sqlalchemy` are **parked**.
+**Updated 2026-09-15.** Every phase pykit can take on its own is implemented across the commons,
+web, django and fastapi plans, and all of it up to 2026-09-13 is committed — commons Part F and that
+day's gap pass landed in `757908e`. All three close-out items — the strict-dataclass flip (commons E.1a), the
+OpenAPI naming rules (web §9.1) and `OidcAuthenticator` (web §10) — are in the working tree.
+**The pykit close-out list is now empty**; what remains is the release, under
+[What is open](#what-is-open), **which is deliberately last**. Golden repos in kiln are downstream
+acceptance, not pykit work.
+`rn-forge-azure` and `rn-forge-sqlalchemy` are **parked**.
 
 The web, azure and django plans were drafted before `rn-forge/kiln` existed and each opens with an
 **"Alignment with the standardization plan"** section stating what the workspace changed around them
@@ -20,10 +22,10 @@ which kiln archetype each consumer is). Read that section before the plan it hea
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–E committed; Part F (tool lifecycle) in the working tree.** Open: D.8 (release tags) and D.9 (`golden/python-app`, kiln) — both follow kiln's in-progress work |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–F committed; the strict-dataclass follow-ups done (E.1a, 2026-09-15).** Open: D.8 release (last). D.9 and F3.3 are kiln acceptance |
 | The standardization plan (retired; outside this repo) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Retired at revision 14** (2026-09-12), replaced by kiln's `docs/specs/` and `docs/adr/`. D-numbers resolve through kiln's `docs/plans/context.md` §2.2, phases through §2.1, and the pykit-side sections through [`kiln-dependencies.md`](./kiln-dependencies.md) |
 | [`kiln-dependencies.md`](./kiln-dependencies.md) | What kiln needs from pykit: the lifecycle surface (kiln C.3), `rn-forge-fastapi` for kiln's web archetypes, and the release trigger | **Handoff, 2026-09-12; updated 2026-09-13.** Lifecycle surface done (commons Part F); fastapi implemented, its acceptance is kiln's; releases follow kiln's in-progress work |
-| [`web-library-plan.md`](./web-library-plan.md) | `rn-forge-web` — framework-agnostic HTTP primitives | **All eleven phases implemented; committed at `8b5160b`.** Open: the release tag, and the `OidcAuthenticator` gap (§10) |
+| [`web-library-plan.md`](./web-library-plan.md) | `rn-forge-web` — framework-agnostic HTTP primitives | **All eleven phases implemented; committed at `8b5160b`**, plus §9.1 (the OpenAPI naming rules) and §10's `OidcAuthenticator` (both 2026-09-15). Open: the release tag |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | **All phases (0–13) implemented; committed at `9d8588c`**; the PostgreSQL suite was run locally on 2026-09-13. Open: the release tag, and `golden/python-web-app-django` (kiln) |
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
@@ -115,27 +117,52 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
 
 ## What is open
 
-**Next, sequenced after kiln's in-progress work:**
+### pykit close-out, in order
 
-- The release tags: commons `v0.5.0` → cli `v0.1.0` → tooling `v0.2.0` → web `v0.1.0` → django
-  `v0.3.0` / fastapi. Cutting a tag pushes, which needs the owner's word.
-- The kiln golden repos: `golden/python-app` (commons D.9), `golden/python-tool` declaring
-  `[cli.lifecycle]` (kiln F3.3), `golden/python-web-api` (fastapi Phase 8) and
-  `golden/python-web-app-django`, plus kiln's pin flip and `state.json` re-seed (commons D.8).
-- Committing commons Part F and the 2026-09-13 gap pass, which are in the working tree.
+1. ~~**Strict dataclasses by default**~~ — **done 2026-09-15** (commons E.1a). `DataclassMixin`
+   type-checks and raises `AppException`; `StrictDataclassMixin` is gone and
+   `LenientDataclassMixin` is the opt-out; `Area`, `StateEntry` and the `FixtureDefinition` family
+   are parsed through it. The pass found that dacite cannot type-check a PEP 695 `type` alias or an
+   unbound type variable, so `Finding`, `CheckResult`, `HealthReport` and `Page[T]` opt out with
+   their reason in the docstring — see E.1a.
+2. ~~**Schema naming: `operationId` and the paginated component**~~ — **done 2026-09-15** (web §9.1).
+   Both rules moved into a new `rn_forge/web/openapi.py` that the two bindings call, so there is one
+   copy rather than two that agree until someone edits one: the paginated envelope is `Page<Item>`
+   (a generic cannot be one component — OpenAPI has no generics), and an operation outside the six
+   CRUD verbs is an AIP-136 custom method, `/orders/{orderId}:cancel` → `ordersCancel`.
+   `api-conventions.md` §9 is rewritten to match, and a test on each stack proves they agree.
+3. ~~**`OidcAuthenticator`**~~ — **done 2026-09-15** (web §10). Built as
+   `rn_forge.web.oidc.OidcAuthenticator`, behind web's new `auth` extra and excluded from the
+   curated `__init__.py`. It lives in web because its signature is `Credentials` in and
+   `Principal` out — both web types, and commons cannot depend on web. Django's
+   `JWKSAuthenticator` was moved into it rather than aliased, so `JWKSBearerAuthentication` and
+   FastAPI's `bearer_auth()` now share one implementation; a test on each stack drives the same
+   token through it. **Nothing pykit-side is left before the release.**
 
-**Open questions, no decision yet:**
+### Last: the release
 
-- **`OidcAuthenticator`** — one ready-made OIDC `Authenticator` shared by both framework bindings.
-  Recorded as a pending gap in web plan §10; needs a decision before it is scoped.
-- **`Page[T]` on FastAPI** — FastAPI names each parametrization (`Page_OrderOut_`), so the shared
-  component cannot be named literally `Page`. Raised against web by the fastapi plan.
-- **`operationId` convention** — covers CRUD routes only. Raised against web by the fastapi plan.
-- **commons Part E follow-ups** — make `DataclassMixin` strict by default; move `DocsArea`,
-  `StateEntry` and the `FixtureDefinition` family onto `StrictDataclassMixin`.
+**In plain terms:** today every package asks for its siblings by a version label (a git tag such as
+`rn-forge-web-v0.1.0`) that has not been created yet. Inside this repository that does not matter,
+because `uv` links the packages to each other directly. Anyone *outside* it — kiln, a golden repo, an
+application — cannot install them until the labels exist. Cutting the release means merging this
+branch to `main` and creating those tags, in dependency order: commons `v0.5.0` → cli `v0.1.0` →
+tooling `v0.2.0` → web `v0.1.0` → django `v0.3.0` / fastapi `v0.1.0`. Nothing in the code changes
+when that happens; the pins already name the tags. It is last so that everything above lands in the
+first published version instead of forcing a second one. Creating a tag pushes, so it needs the
+owner's word.
 
-**Waiting on kiln D2:** the `[codegen]` extras of `rn-forge-django` and `rn-forge-fastapi`. The import
-fences exist; the generators do not.
+### Downstream acceptance — kiln's work, not a pykit item
+
+pykit's packages are finished when the items above are. kiln then proves them in its golden repos
+(kiln ADR-0005: a claim not shown in a runnable golden repo is not shown): `golden/python-app`
+(commons D.9), `golden/python-tool` with `[cli.lifecycle]` (kiln F3.3), `golden/python-web-api`
+(fastapi Phase 8) and `golden/python-web-app-django`, plus kiln's pin flip and `state.json` re-seed.
+They are listed here only because a golden repo can surface a gap — and a gap it finds comes back as
+a new pykit item, not as a reason to hold pykit open now.
+
+**Waiting on kiln:** the `[codegen]` extras of `rn-forge-django` and `rn-forge-fastapi` (kiln D2), and
+the `[archetype.python-lib] packages` entry plus `state.json` re-seed (kiln Phase F.1). The import
+fences exist; the generators and kiln files do not.
 
 **Parked (2026-09-13), not scheduled:**
 

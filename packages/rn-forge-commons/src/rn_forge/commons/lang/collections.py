@@ -1,19 +1,4 @@
-"""Collection utilities for nested dict and list access, deep merge, and comparison.
-
-Provides:
-    DictUtils: Dot-path get/set, deep merge, and structural comparison
-        for nested dictionaries.
-    ListUtils: List access, sorting, filtering, and grouping helpers.
-
-All methods are pure functions with no import-time side effects.
-
-Typical usage::
-
-    from rn_forge.commons.lang.collections import DictUtils
-
-    data = {"a": {"b": {"c": 42}}}
-    value = DictUtils.get(data, "a.b.c")  # 42
-"""
+"""Nested collection access, deep merge, comparison, filtering, and grouping."""
 
 from __future__ import annotations
 
@@ -41,12 +26,7 @@ class _PathNotFound(Exception):
 
 @dataclass(frozen=True, slots=True)
 class MergeResult:
-    """The result of :meth:`DictUtils.merge_layers`.
-
-    Not a :class:`~rn_forge.commons.lang.dataclasses.DataclassMixin` — that class
-    lives in ``dataclasses.py``, which imports from this module; inheriting it
-    here would be a circular import.
-    """
+    """Configuration and provenance returned by :meth:`DictUtils.merge_layers`."""
 
     config: dict[str, Any]
     provenance: dict[str, str]
@@ -60,8 +40,8 @@ class MergeResult:
 class DictUtils:
     """Utilities for nested dict traversal, mutation, merging, and comparison.
 
-    All methods are static.  Dot-delimited key paths (e.g. ``"a.b.c"``) are
-    supported; escape a literal dot with a backslash (``"a\\.b"``).
+    Dot-delimited key paths (e.g. ``"a.b.c"``) are supported; escape a literal
+    dot with a backslash (``"a\\.b"``).
     """
 
     @staticmethod

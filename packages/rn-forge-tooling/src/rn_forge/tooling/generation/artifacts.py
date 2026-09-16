@@ -1,19 +1,4 @@
-"""The generation model: artifact kinds, actions, and the plan they describe.
-
-Every artifact is one of three :class:`ArtifactKind` values:
-
-- **managed** — the generator owns the whole file. Hand edits are drift.
-- **seeded** — the generator writes the file if it is absent and never looks
-  at its contents again. Repos are meant to edit these.
-- **block** — the generator owns a fenced region inside a file somebody else
-  owns (see :class:`~rn_forge.commons.fs.blocks.ManagedBlock`). The body
-  outside the markers is never touched.
-
-This module holds the vocabulary and the shared filesystem helpers.
-:mod:`~rn_forge.tooling.generation.plan` decides what a write *would* do;
-:mod:`~rn_forge.tooling.generation.apply` makes a batch of writes
-all-or-nothing.
-"""
+"""Artifact, action, plan, and result models for file generation."""
 
 from __future__ import annotations
 
@@ -21,9 +6,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import ClassVar, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-import dacite
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
@@ -96,14 +80,8 @@ class StateEntry(DataclassMixin):
 
     A seeded entry records presence only: hashing content the repository is
     supposed to edit would turn every legitimate edit into drift.
-    """
 
-    #: The state file is committed, reviewed and hand-editable, so it is
-    #: validated strictly on load: a truncated or mistyped entry must surface
-    #: here rather than as an unrelated error in the middle of an apply.
-    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
-        check_types=True, cast=[ArtifactKind, tuple, set]
-    )
+    """
 
     path: str
     kind: ArtifactKind
@@ -275,10 +253,7 @@ class ApplyResult:
         return tuple(change.path for change in self.changes)
 
 
-# The three helpers below are shared by `plan` and `apply` and are internal to
-# this package: they carry no leading underscore because a module-private name
-# used from a sibling module is a contradiction, and they are deliberately not
-# re-exported from `generation/__init__.py`.
+# Internal helpers shared by the planning and application modules.
 def read_text(path: Path) -> str:
     """Read *path* without translating its newlines, or ``""`` when it is absent.
 

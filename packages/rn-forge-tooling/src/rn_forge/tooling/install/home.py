@@ -1,23 +1,4 @@
-"""Where an installed tool lives on a workstation.
-
-Provides :func:`rnf_home` — ``$RNF_HOME``, defaulting to ``~/.rn-forge`` — and
-:class:`ToolHome`, the layout of one product under it::
-
-    <home>/
-      bin/                      links a product's artifacts put on PATH
-      <product>/
-        versions/<version>/     one directory per installed version
-        current -> versions/<v> the active version, swapped atomically
-        state.json              the installed version and its state schema
-        .lock/                  held for the whole of any lifecycle verb
-        .work/                  scratch space for a transaction in flight
-
-The ``current`` symlink is only ever replaced with
-:func:`~rn_forge.commons.fs.locks.atomic_symlink`, so a concurrent reader sees
-the old version or the new one and never neither. A version directory is not
-observed by anything until ``current`` points at it, which is what lets an
-install build one in place.
-"""
+"""Filesystem layout and activation for installed tools."""
 
 from __future__ import annotations
 
@@ -55,13 +36,7 @@ def _segment(value: str, what: str) -> str:
 
 
 class ToolHome:
-    """The on-disk layout of one product under ``$RNF_HOME``.
-
-    Holds paths, and the two operations whose safety depends on doing them the
-    same way every time: taking the lock and swapping ``current``. What goes
-    *into* a version directory is the product's business, and the order of a
-    transaction is :mod:`~rn_forge.tooling.install.lifecycle`'s.
-    """
+    """The on-disk layout of one product under ``$RNF_HOME``."""
 
     def __init__(self, name: str, root: str | Path | None = None) -> None:
         """Initialize :class:`ToolHome`.

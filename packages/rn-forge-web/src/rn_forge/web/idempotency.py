@@ -1,35 +1,7 @@
-"""Idempotency keys: the store protocol, request hashing and a test double.
+"""Idempotency store protocols, request hashing, and in-memory test doubles.
 
-A client retrying an unsafe request sends the same ``Idempotency-Key``; the
-server executes once and replays the stored response thereafter. This module
-declares the contract both framework packages implement and neither invents.
-
-Three properties the protocol requires, all of which are easy to lose
----------------------------------------------------------------------
-
-1. **The request body is hashed.** Replaying a key with a *different* body is a
-   client bug, and :func:`request_hash` makes it detectable
-   (:class:`~rn_forge.web.exceptions.IdempotencyKeyReuse`, 409) rather than a
-   silently-wrong cached response. This is the single most valuable thing here.
-2. **The protocol is two-phase.** :meth:`~IdempotencyStore.record_or_replay`
-   returns ``None`` on first sight — the caller executes, then calls
-   :meth:`~IdempotencyStore.complete` — or the stored response on a replay. A
-   ``replay``/``remember`` pair with no constraint tying the two writes lets two
-   concurrent first-sight requests both execute.
-3. **Race safety comes from a uniqueness constraint, not a check-then-insert.**
-   An implementer requirement, not an implementation detail: a SQL adapter uses
-   ``INSERT ... ON CONFLICT DO NOTHING`` against a ``UNIQUE (scope, key)``
-   constraint and reads the row back; a cache adapter uses an atomic
-   set-if-absent (Django's ``cache.add()``). A ``get``-then-``set`` adapter
-   silently loses the property, and its tests will not notice.
-
-Sync and async are two protocols, not one
------------------------------------------
-
-A SQLAlchemy store is ``async def`` against an ``AsyncSession``; a Django cache
-store is a sync call. Two ``Protocol`` classes with identical method shapes are the
-honest way to say that; a single protocol returning ``Awaitable[...] | ...``
-is not.
+Stores must claim keys atomically. Reusing a key with a different request hash
+is an error; a completed key replays its stored response.
 """
 
 from __future__ import annotations
@@ -84,9 +56,7 @@ class StoredResponse(DataclassMixin):
 class IdempotencyStore(Protocol):
     """The synchronous idempotency-key contract.
 
-    Implementers must satisfy property 3 in the module docstring: the claim
-    made by ``record_or_replay`` is atomic, so two concurrent first-sight
-    requests do not both receive ``None``.
+    The claim made by :meth:`record_or_replay` must be atomic.
     """
 
     def record_or_replay(
@@ -146,22 +116,12 @@ class _Entry:
 
 
 class InMemoryIdempotencyStore:
-    """A dict-backed :class:`IdempotencyStore`. **For tests.**
+    """A dict-backed :class:`IdempotencyStore` for tests.
 
     It holds everything forever and is not shared between processes, so it is a
-    test double and a local-development convenience, never a deployment.
-
-    In-flight replays
-    -----------------
-
-    A key that has been claimed but whose ``complete`` has not yet been called
-    returns ``None`` — the same as first sight. That is the specified
-    behaviour, and it is a deliberate choice rather than an oversight: an
-    in-flight duplicate is indistinguishable from a first request that crashed
-    before completing, and returning a distinct "in progress" signal would
-    require every adapter to also decide when a claim expires. A consumer that
-    needs 409-on-concurrent-duplicate implements it in its own adapter with a
-    lease timeout, and this docstring is where that decision is recorded.
+    test double, not a production store. A claimed but incomplete key returns
+    ``None``; implementations that distinguish in-flight duplicates must define
+    their own lease behavior.
     """
 
     def __init__(self) -> None:
@@ -200,14 +160,7 @@ class InMemoryIdempotencyStore:
 
 
 class InMemoryAsyncIdempotencyStore:
-    """A dict-backed :class:`AsyncIdempotencyStore`. **For tests.**
-
-    A separate class rather than extra methods on
-    :class:`InMemoryIdempotencyStore`: one object cannot carry both a ``def``
-    and an ``async def`` under the same name, and giving the async one a
-    different name would make it satisfy neither protocol. It delegates to a
-    sync store, so the two doubles cannot drift.
-    """
+    """An async wrapper around the in-memory test store."""
 
     def __init__(self) -> None:
         self._inner = InMemoryIdempotencyStore()

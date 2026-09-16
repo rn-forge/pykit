@@ -53,6 +53,8 @@ nav:
       - Pagination: api/pagination.md
       - Idempotency: api/idempotency.md
       - Health: api/health.md
+      - OpenAPI naming: api/openapi.md
       - ASGI: api/asgi.md
       - Auth: api/auth.md
+      - OIDC: api/oidc.md
       - Conformance: api/conformance.md

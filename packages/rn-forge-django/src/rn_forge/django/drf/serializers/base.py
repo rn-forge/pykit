@@ -15,15 +15,7 @@ _EMPTY: tuple[object, ...] = (None, "")
 class OmitEmptyMixin(serializers.Serializer):
     """Drop *optional* fields whose value is empty from ``to_representation``.
 
-    **Empty means ``None`` or ``""`` only** — not ``0``, not ``False``, not
-    ``[]``, not ``{}``. Those are values.
-
-    **Only fields with ``required=False`` are stripped.** A required field is
-    part of the contract the schema advertises, so it is emitted even when
-    empty — including one declared ``allow_null=True``. The gate is DRF's own
-    ``required`` flag rather than a separate list so the representation and the
-    schema cannot disagree about which fields may be absent. Note that DRF sets
-    ``required=False`` on every ``read_only`` field.
+    Empty means only ``None`` or ``""``. Required fields are never stripped.
     """
 
     @override

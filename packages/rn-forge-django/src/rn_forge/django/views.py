@@ -29,11 +29,7 @@ __all__ = [
 
 @require_GET
 def index_view(request: HttpRequest) -> HttpResponse:
-    """Render a minimal HTML diagnostics page for the current request.
-
-    This endpoint is intentionally dependency-light so consuming apps can
-    include it directly from URLconf without adding templates.
-    """
+    """Render a template-free HTML diagnostics page for the request."""
     payload: dict[str, Any] = {
         "version": getattr(settings, "VERSION", None),
         "request": RequestUtils.debug_request(request),
@@ -76,16 +72,8 @@ def readiness_view(
 ) -> Callable[[HttpRequest], JsonResponse]:
     """Build a readiness view that reports one entry per dependency check.
 
-    A factory, so the checks are the URLconf's to supply::
-
-        path("readyz", readiness_view({"database": ping_db}, required=["database"]))
-
-    The body is :meth:`rn_forge.web.HealthReport.as_body` and the status is the
-    report's own: 503 when a check named in *required* fails, 200 otherwise.
-    Every semantic — exception capture, ``bool`` coercion, the four statuses —
-    is :func:`rn_forge.web.run_checks_sync`'s, which also raises on an async
-    check rather than report it as passing. Liveness is
-    :func:`healthcheck_view`, which runs nothing.
+    Returns 503 when a required check fails and 200 otherwise. Async checks are
+    rejected by :func:`rn_forge.web.run_checks_sync`.
 
     Args:
         checks: Name → synchronous check.

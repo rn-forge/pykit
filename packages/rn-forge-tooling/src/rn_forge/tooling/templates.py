@@ -1,17 +1,4 @@
-"""A strict Jinja2 render engine for generated config files and documents.
-
-Provides :class:`TemplateEngine`, a thin wrapper over `jinja2.Environment`
-with strict-undefined-by-default rendering (a silently-empty variable in a
-generated config file is a bug that surfaces far from its cause), support for
-either a filesystem directory or a package resource directory as the
-template source, and a ``validate()`` that compiles every visible template so
-a ``doctor``-style command can catch a broken template before a user hits it.
-
-``jinja2`` is a hard dependency of ``rn-forge-tooling``: a developer tool
-that generates files renders templates on every run, and the optional-extra
-dance that made sense while this module lived in the runtime-neutral commons
-package buys nothing here.
-"""
+"""Strict Jinja2 rendering from filesystem or package templates."""
 
 from __future__ import annotations
 

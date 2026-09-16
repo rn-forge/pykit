@@ -97,7 +97,7 @@ class TestSurfaceValidation:
 
 class TestSurfaceIsStrictlyTyped:
     """A [cli] table is written by hand, so a wrong type names the key rather
-    than failing later as an attribute error (StrictDataclassMixin)."""
+    than failing later as an attribute error (strict `from_dict`)."""
 
     def test_a_wrong_scalar_type_is_rejected_by_name(self):
         with pytest.raises(AppException, match="help"):

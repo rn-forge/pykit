@@ -1,18 +1,4 @@
-"""The lifecycle verbs as Typer commands, for a declared ``[cli.lifecycle]`` table.
-
-A repository does not import this. Its ``[cli.lifecycle]`` table names it::
-
-    [cli.lifecycle]
-    product = "golden_tool.product:PRODUCT"
-    target = "rn_forge.tooling.cli.lifecycle:lifecycle_commands"
-
-and :meth:`rn_forge.cli.CliApp.from_config` imports both by name, calls
-:func:`lifecycle_commands` with the product and the declared verbs, and mounts
-the result at the root of the application — ``golden-tool doctor``, not
-``golden-tool lifecycle doctor``. The indirection is the import contract:
-``rn-forge-cli`` may not import this package, so it cannot know this module
-except as a string in a repository's configuration.
-"""
+"""Typer commands for a declared tool lifecycle."""
 
 from __future__ import annotations
 

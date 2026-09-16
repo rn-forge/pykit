@@ -128,12 +128,7 @@ class PaginationSettings:
 
 @dataclass(frozen=True)
 class CasingSettings:
-    """Runtime settings for the camelCase JSON renderer and parser.
-
-    ``enabled`` defaults to ``True``: camelCase on the wire is the kit's
-    contract. Switching it off makes both classes behave as DRF's plain JSON
-    renderer and parser.
-    """
+    """Runtime settings for the camelCase JSON renderer and parser."""
 
     enabled: bool = _DEFAULT_CASING_ENABLED
 

@@ -24,10 +24,10 @@ def _cache_namespace(model_class: type[object]) -> str:
 
 
 class ModelLookupCache:
-    """In-memory cache for bulk-loaded model instances.
+    """Bulk-load model instances for in-memory lookup by selected fields.
 
-    Typical use: load all rows of a reference table once at startup, then
-    resolve foreign-key values in O(1) rather than issuing per-row queries.
+    Typical use: load a reference table once at startup, then resolve
+    foreign-key values in O(1) rather than issuing per-row queries.
 
     Example::
 

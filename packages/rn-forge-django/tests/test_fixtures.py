@@ -10,6 +10,7 @@ import pytest
 
 pd = pytest.importorskip("pandas")
 
+from rn_forge.commons.exceptions import AppException  # noqa: E402
 from rn_forge.django.fixtures import (  # noqa: E402
     ColumnType,
     FixtureColumn,
@@ -170,3 +171,36 @@ class TestFixtureManager:
                 str(tmp_path / "output" / "inventory" / "categories.json"),
             )
         ]
+
+
+class TestFixtureConfigParsing:
+    """A fixture config is written by hand, so it is validated on load."""
+
+    def test_definition_round_trips_through_dict(self, tmp_path: Path) -> None:
+        definition = _fixture_config(tmp_path).fixtures[0]
+        assert FixtureDefinition.from_dict(definition.as_dict()) == definition
+
+    def test_config_round_trips_through_dict(self, tmp_path: Path) -> None:
+        config = _fixture_config(tmp_path)
+        assert FixtureManagerConfig.from_dict(config.as_dict()) == config
+
+    def test_column_type_is_rebuilt_as_the_enum_member(self) -> None:
+        column = FixtureColumn.from_dict({"name": "enabled", "type": "boolean"})
+        assert column.type is ColumnType.BOOLEAN
+
+    def test_an_unknown_column_type_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid FixtureColumn"):
+            FixtureColumn.from_dict({"name": "enabled", "type": "sideways"})
+
+    def test_a_mistyped_field_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid FixtureColumn"):
+            FixtureColumn.from_dict({"name": "code", "required": "yes"})
+
+    def test_a_missing_required_field_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid FixtureDefinition"):
+            FixtureDefinition.from_dict({"app_label": "inventory"})
+
+    def test_a_root_path_given_as_a_string_is_rejected(self) -> None:
+        """`root_path` is a `Path`; a string would only fail later, at joinpath."""
+        with pytest.raises(AppException, match="Invalid FixtureManagerConfig"):
+            FixtureManagerConfig.from_dict({"root_path": "/tmp", "fixtures": []})

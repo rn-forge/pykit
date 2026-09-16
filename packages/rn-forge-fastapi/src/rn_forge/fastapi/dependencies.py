@@ -1,21 +1,7 @@
-"""Request dependencies: page parameters, ``Idempotency-Key`` and ``If-Match``.
+"""FastAPI dependencies for pagination and conditional request headers.
 
-Five to ten lines each. The value is not the line count; it is that every
-application spells them the same way, and that the one easy mistake — a
-``Query(le=...)`` on the page size — is made once, here, correctly.
-
-Each is a **factory**, so the cap and the header names are per-application
-arguments rather than module constants. Each raises a :mod:`rn_forge.web`
-exception and lets :func:`rn_forge.fastapi.register_problem_handlers` render it.
-
-Parameter defaults, not ``Annotated``
--------------------------------------
-
-``Query(...)`` and ``Header(...)`` are passed as parameter *defaults*. Under
-``from __future__ import annotations`` an annotation is a string that FastAPI
-evaluates against the module's globals, and a factory's arguments — the cap,
-the header name — are closure variables that evaluation cannot see. A default
-is evaluated when the inner function is defined, where they are in scope.
+Factories keep endpoint-specific limits and header names in scope for FastAPI
+without relying on closure variables in evaluated annotations.
 """
 
 from __future__ import annotations
@@ -74,9 +60,6 @@ def page_params(*, cap: int, default: int) -> Callable[..., tuple[int, Cursor | 
 def require_idempotency_key(*, header: str = "Idempotency-Key") -> Callable[..., str]:
     """Return a dependency yielding the idempotency key, or raising a 400 without one.
 
-    It reads the key and nothing more. Storing it is an
-    :class:`rn_forge.web.AsyncIdempotencyStore` the application supplies.
-
     Args:
         header: The request header carrying the key.
     """
@@ -93,9 +76,7 @@ def require_if_match(*, codec: ETagCodec | None = None) -> Callable[..., str]:
     """Return a dependency yielding the raw ``If-Match`` value of a write.
 
     Absent → 428, unparseable → 400, both before the route runs. The value is
-    returned verbatim because the version comparison needs the entity's current
-    version, which only the route has: pass it to
-    :func:`rn_forge.web.check_precondition`.
+    returned verbatim for a later :func:`rn_forge.web.check_precondition` call.
 
     Args:
         codec: The validator format. Defaults to

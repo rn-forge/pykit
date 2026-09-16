@@ -203,20 +203,50 @@ a guide enforces is a convention that holds until the first hurried endpoint.
 The generated client is the real interface, so the schema is part of the
 contract and not a by-product.
 
+Neither a component name nor an `operationId` is on the wire — no request or
+response carries either. A **generator** reads them, turning one into a client
+type name and the other into a client method name, so two stacks that disagree
+here produce two different call sites for the same endpoint even when every byte
+of JSON matches. OpenAPI 3.1 standardises neither, so the rules below are house
+conventions rather than compliance with a specification. They live in code, in
+`rn_forge.web.openapi`, and both framework packages call that rather than
+deriving names themselves.
+
 - Both stacks emit **OpenAPI 3.1.0** (JSON Schema 2020-12).
-- The shared shapes are named identically in `components/schemas`:
-  **`ProblemDetail`**, **`Page`**, **`CheckResult`**, **`HealthReport`**. A
-  handler that builds an error body by hand is invisible to schema collection,
-  so each framework package injects `ProblemDetail` explicitly — without it a
-  generated TypeScript client has no error type at all.
-- **One `operationId` convention across both stacks.** `operationId` is what a
-  generator turns into a client method name, so two stacks that differ there
-  produce two different client call sites for the same endpoint even when every
-  byte of JSON matches. The convention is `<resource><Verb>` in lowerCamelCase
-  (`ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate` for `PUT`,
-  `ordersPartialUpdate` for `PATCH`, `ordersDelete`), and each package
-  implements it. `PUT` and `PATCH` get distinct verbs so a resource serving
-  both never produces a duplicate `operationId`.
+- The shared **non-generic** shapes are named identically in
+  `components/schemas`: **`ProblemDetail`**, **`CheckResult`**,
+  **`HealthReport`**. A handler that builds an error body by hand is invisible to
+  schema collection, so each framework package injects `ProblemDetail`
+  explicitly — without it a generated TypeScript client has no error type at all.
+- **The paginated envelope is named `Page<Item>`** — `PageOrderOut`, not a
+  single `Page`. It cannot be a single component, because OpenAPI has no
+  generics: a component is one concrete schema, so a page of orders and a page of
+  users are two of them. The only way to have one `Page` component is to leave
+  `items` untyped, which destroys the client typing this section exists to
+  protect. Left to themselves the two stacks disagree — pydantic mangles the type
+  parameters into `Page_OrderOut_`, drf-spectacular emits `PaginatedOrderOutList`
+  — so each framework package renames its own output to `Page<Item>`. The names
+  then match as far as `<Item>` does, which is the application's side of the
+  bargain: a resource's wire model carries the same name on both stacks.
+- **One `operationId` convention across both stacks**, `<resource><Verb>` in
+  lowerCamelCase: `ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate` for
+  `PUT`, `ordersPartialUpdate` for `PATCH`, `ordersDelete`. `PUT` and `PATCH` get
+  distinct verbs so a resource serving both never produces a duplicate
+  `operationId`.
+- **An operation outside those six is a custom method, spelled
+  [AIP-136](https://google.aip.dev/136)-style as `:action` on the resource it
+  acts on**, and named `<resource><Action>`: `POST /orders/{orderId}:cancel` →
+  `ordersCancel`, `POST /orders:batchCreate` → `ordersBatchCreate`. The colon is
+  what makes the name derivable. Spelled as a plain path segment, nothing
+  distinguishes an action from a sub-collection — `POST /orders/{orderId}/cancel`
+  and `POST /orders/{orderId}/items` have the same shape — so that spelling
+  yields a mechanical `cancelCreate` and needs an explicit override
+  (`operation_id=` on FastAPI, `@extend_schema(operation_id=...)` on DRF).
+- `operationId` **must be unique across the document**; OpenAPI requires it, and
+  a generator that meets a duplicate produces a broken client. drf-spectacular
+  warns and appends a numeral; FastAPI does neither, so on that stack a
+  collision is silent. Two routes ending in the same literal segment
+  (`/orders/{id}/items` and `/invoices/{id}/items`) are the case to watch.
 - Every operation that can return an error declares the problem responses it
   can produce, by status.
 

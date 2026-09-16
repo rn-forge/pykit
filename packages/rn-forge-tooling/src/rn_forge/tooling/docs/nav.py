@@ -1,17 +1,7 @@
-"""Generate `mkdocs.yml`'s nav block from `docs/_areas.yml` and the tree.
+"""Generate `mkdocs.yml` navigation from `docs/_areas.yml` and the docs tree.
 
-`mkdocs.yml` is a repository-owned file with one generated block in it, so the
-nav is rendered through a :class:`~rn_forge.commons.fs.blocks.ManagedBlock` and
-everything outside the markers is preserved byte for byte.
-
-The nav is built as data and serialized by the YAML library, never by string
-interpolation: a page title containing a colon, a ``#`` or a leading ``-`` is
-ordinary English and must not be able to produce a file mkdocs cannot parse.
-
-Page order inside an area is: the area's `index.md` first, then the pages its
-`index.md` links to in the order it links them, then everything else
-alphabetically. An index page is therefore how a human overrides nav order,
-which keeps ordering out of the config file.
+Pages are ordered with `index.md` first, followed by its linked pages in link
+order, then all remaining pages alphabetically.
 """
 
 from __future__ import annotations

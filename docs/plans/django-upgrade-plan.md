@@ -73,9 +73,11 @@ Completed in a second pass, on the owner's instruction to finish the remaining p
   one bounded refetch on an unknown `kid`), `JwtVerifier` (signature, required `exp`/`iss`/`aud`,
   algorithm allow-list) and `discover_oidc` (RFC 8414 issuer match). It returns claims; the default
   claims → `Principal` mapping is `rn_forge.web.principal_from_claims`, so both stacks map alike.
-  Django's `auth/drf/oidc.py` (`oidc` extra) ships `JWKSAuthenticator` and `JWKSBearerAuthentication`
-  with `jwks_url`/`issuer`/`audience`/`algorithms`/`cache_timeout` class attributes and a
-  `claims_to_principal` hook. The key set is cached per subclass in process memory, not in Django's
+  Django's `auth/drf/oidc.py` (`oidc` extra) ships `JWKSBearerAuthentication` with
+  `jwks_url`/`issuer`/`audience`/`algorithms`/`cache_timeout` class attributes and a
+  `claims_to_principal` hook; the verifier-to-`Principal` step itself is
+  `rn_forge.web.oidc.OidcAuthenticator` (2026-09-15 — the `JWKSAuthenticator` that used to live
+  here was moved there so FastAPI shares it, not aliased). The key set is cached per subclass in process memory, not in Django's
   cache — a deviation from the phase text, since per-process state is sufficient for a key set.
 - **Phase 10 gate — passed on the owner's decision.** (1) Consumer: the cims successor,
   `golden/python-web-app-django`. (2) Locking: a `django-postgres` CI job runs the whole Django suite

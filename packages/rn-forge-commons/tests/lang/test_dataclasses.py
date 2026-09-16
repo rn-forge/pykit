@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum
-from typing import Optional
+from typing import Literal, Optional
 
-import dacite
 import pytest
 
 import rn_forge.commons.lang.dataclasses as dataclasses_module
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.dataclasses import DataclassMixin, LenientDataclassMixin
 from rn_forge.commons.findings import Finding, Severity
 
 
@@ -101,10 +102,32 @@ class WithDictOfNested(DataclassMixin):
 
 
 @dataclass
-class Strict(DataclassMixin):
-    __dacite_config__ = dacite.Config(check_types=True)
+class Lenient(LenientDataclassMixin):
+    name: str = "test"
+    value: int = 0
 
-    value: int
+
+type Status = Literal["pass", "fail"]
+
+
+@dataclass
+class WithAliasField(DataclassMixin):
+    status: Status
+
+
+@dataclass
+class WithLenientAliasField(LenientDataclassMixin):
+    status: Status
+
+
+@dataclass
+class GenericRecord[T](DataclassMixin):
+    items: Sequence[T]
+
+
+@dataclass
+class LenientGenericRecord[T](LenientDataclassMixin):
+    items: Sequence[T]
 
 
 # ---------------------------------------------------------------------------
@@ -301,13 +324,17 @@ class TestFromDict:
         assert isinstance(obj.inner, PlainInner)
         assert obj.inner.value == 9
 
-    def test_from_dict_int_field_receiving_str_passes_through_unchanged(self) -> None:
-        obj = Simple.from_dict({"name": "n", "value": "5"})
-        assert obj.value == "5"
+    def test_from_dict_int_field_receiving_str_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid Simple"):
+            Simple.from_dict({"name": "n", "value": "5"})
 
-    def test_strict_subclass_raises_on_type_mismatch(self) -> None:
-        with pytest.raises(dacite.DaciteError):
-            Strict.from_dict({"value": "not an int"})
+    def test_from_dict_missing_required_field_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid WithDictOfNested"):
+            WithDictOfNested.from_dict({})
+
+    def test_lenient_subclass_passes_a_mismatched_value_through(self) -> None:
+        obj = Lenient.from_dict({"name": "n", "value": "5"})
+        assert obj.value == "5"
 
     def test_optional_nested_dataclass_from_none(self) -> None:
         obj = DeepNested.from_dict(
@@ -475,7 +502,7 @@ class TestEnumFields:
         assert Thing.from_dict({"shape": "round"}).shape is Shape.ROUND
 
     def test_unknown_enum_value_is_rejected(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(AppException, match="Invalid Paint"):
             Paint.from_dict({"colour": "puce"})
 
     def test_finding_severity_survives_a_json_round_trip(self):
@@ -483,3 +510,26 @@ class TestEnumFields:
         restored = Finding.from_json(finding.to_json())
         assert restored.severity is Severity.ERROR
         assert restored.is_error
+
+
+class TestDaciteCannotCheck:
+    """Pin the two annotations dacite's type check cannot see through.
+
+    Both are documented in the module docstring as the reason a record uses
+    `LenientDataclassMixin`. A dacite release that fixes either fails here,
+    which is the signal to move those records back onto the strict base.
+    """
+
+    def test_a_pep695_alias_is_rejected_even_when_the_value_matches(self) -> None:
+        with pytest.raises(AppException, match="Invalid WithAliasField"):
+            WithAliasField.from_dict({"status": "pass"})
+
+    def test_a_pep695_alias_parses_under_the_lenient_mixin(self) -> None:
+        assert WithLenientAliasField.from_dict({"status": "pass"}).status == "pass"
+
+    def test_an_unbound_type_var_is_rejected(self) -> None:
+        with pytest.raises(AppException, match="Invalid GenericRecord"):
+            GenericRecord.from_dict({"items": [1, 2]})
+
+    def test_an_unbound_type_var_parses_under_the_lenient_mixin(self) -> None:
+        assert LenientGenericRecord.from_dict({"items": [1, 2]}).items == [1, 2]

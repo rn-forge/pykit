@@ -1,20 +1,4 @@
-"""Shared type aliases and typing helpers for third-party integration boundaries.
-
-Several of this package's optional dependencies ship no type information
-(``verboselogs``) or have incomplete stubs (``pandas``). This
-module is the single place where those gaps are absorbed, so a dependency
-upgrade has one file to revisit rather than scattered ``# pyright: ignore``
-comments.
-
-It also holds :data:`JsonValue`, the one recursive JSON alias the package
-uses, so "arbitrary JSON metadata" has a single spelling.
-
-The third-party helpers come in two shapes:
-
-- **Base-class aliases** declared under ``TYPE_CHECKING`` with a plain runtime
-  fallback, for subclassing an untyped third-party class.
-- **Thin typed wrappers** that contain the cast once so call sites stay clean.
-"""
+"""Shared type aliases and typed third-party integration boundaries."""
 
 from __future__ import annotations
 
@@ -40,8 +24,7 @@ type JsonValue = (
 """Any value :func:`json.dumps` accepts, recursively.
 
 Annotating "arbitrary JSON metadata" as ``dict[str, Any]`` makes every read of
-it untyped; this alias keeps the recursion explicit so a caller has to narrow
-before using a value. Several modules had grown their own copy of it.
+it untyped; callers of this alias must narrow values before using them.
 """
 
 

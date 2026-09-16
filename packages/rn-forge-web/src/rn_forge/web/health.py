@@ -1,45 +1,7 @@
-"""Readiness checks: run a map of them, aggregate, and decide the HTTP status.
+"""Run and aggregate readiness checks.
 
-A readiness endpoint answers one question — should a load balancer send this
-process traffic? — and it answers it by running a named check per dependency.
-This module runs the checks; the endpoints themselves are each framework
-package's job, because a Django view and a FastAPI router share no shape.
-
-Also not here: liveness. ``/healthz`` returns 200 unconditionally and needs no
-library.
-
-Four statuses, not a bool
--------------------------
-
-``pass``/``warn``/``fail`` are obvious. ``skipped`` is the one nobody invents on
-their own and the one that matters: a check group that is configured away or
-not yet implemented reports ``skipped`` with a reason, so its absence is
-*visible* rather than silent. It costs nothing and it is the difference between
-"the queue check passed" and "there is no queue check".
-
-The rules that make this safe
------------------------------
-
-- **A check may return a bare ``bool``** and it is coerced. A one-line
-  ``lambda: db_reachable()`` should not have to build a :class:`CheckResult`.
-- **Every check is wrapped.** A check that raises becomes ``fail`` with
-  ``reason=str(exc)``. A check reports a failure; it must never itself crash
-  the run, because a readiness endpoint that 500s tells a load balancer
-  nothing.
-- **``required`` drives the HTTP status, and nothing else does.** A ``fail`` in
-  *required* → 503. A ``fail`` outside it degrades the overall status but
-  leaves ``http_status`` at 200. ``warn`` never changes ``http_status``. The
-  report carries ``http_status`` so each framework does not re-derive it.
-- **The async runner runs checks concurrently.** A readiness endpoint that
-  serially awaits five two-second timeouts is a ten-second readiness endpoint.
-- **The async runner can bound each check.** With ``timeout`` set, a check
-  still running after that many seconds is reported as ``fail`` and the run
-  moves on — a hung dependency must not hang the probe that exists to report
-  it. An async check is cancelled; a sync check's worker thread cannot be, so
-  it finishes in the background and its result is discarded.
-- **The sync runner refuses an awaitable** rather than reporting a coroutine
-  object as truthy-and-therefore-passing, which is precisely the bug that
-  would otherwise ship.
+Exceptions and timeouts become failed checks. A failed required check makes
+the service unavailable; optional failures only degrade the aggregate status.
 """
 
 from __future__ import annotations
@@ -50,7 +12,7 @@ from collections.abc import Awaitable, Callable, Collection, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
 from rn_forge.web.exceptions import WebError
 
 __all__ = [
@@ -67,11 +29,11 @@ type CheckStatus = Literal["pass", "warn", "fail", "skipped"]
 
 
 @dataclass(frozen=True)
-class CheckResult(DataclassMixin):
+class CheckResult(LenientDataclassMixin):
     """One dependency's verdict.
 
-    ``remediation`` is what an operator should *do* about a failure, which is
-    the field that turns a readiness page into a runbook.
+    Lenient parsing is required because dacite cannot type-check the PEP 695
+    :data:`CheckStatus` alias.
     """
 
     status: CheckStatus
@@ -85,23 +47,19 @@ type Check = Callable[[], CheckResult | bool | Awaitable[CheckResult | bool]]
 
 
 @dataclass(frozen=True)
-class HealthReport(DataclassMixin):
-    """The aggregate of one readiness run."""
+class HealthReport(LenientDataclassMixin):
+    """The aggregate of one readiness run.
+
+    Lenient parsing is required because dacite cannot type-check the PEP 695
+    :data:`CheckStatus` alias.
+    """
 
     status: CheckStatus
     checks: Mapping[str, CheckResult]
     http_status: int
 
     def as_body(self) -> dict[str, Any]:
-        """Return the wire body: ``status`` and ``checks``, and nothing else.
-
-        ``http_status`` is deliberately **not** in the body. It exists so each
-        framework does not re-derive the status code from the checks, and a
-        status line repeated as a body field is one more thing that can
-        disagree with itself. It is also the only snake_case name on this
-        dataclass, so leaving it out is what keeps the response camelCase
-        without a per-field alias.
-        """
+        """Return ``status`` and ``checks`` without the transport status."""
         return {
             "status": self.status,
             "checks": {

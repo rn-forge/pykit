@@ -1,17 +1,4 @@
-"""Validate a docs tree against the area model and the policy the caller supplies.
-
-Checks only what is mechanically decidable: area scaffolding, file naming,
-numbered-series numbering and status, link and anchor resolution, that no
-`_*.md` file is referenced from a page that ships, and that the root
-instruction file points at the docs rules. It does not judge prose, page
-length, or whether content sits in the right area — that is review, and review
-is a runbook, not a checker.
-
-What counts as a numbered series, what its statuses may say, how release or
-epic directories are named and what the instruction files are called are **not
-here**: they are one organisation's decisions, and they arrive as a
-:class:`~rn_forge.tooling.docs.policy.DocsPolicy`.
-"""
+"""Validate a docs tree against its area model and repository policy."""
 
 from __future__ import annotations
 
@@ -242,16 +229,10 @@ def _resolved_links(path: Path) -> set[Path]:
 def _check_instruction_pointer(
     repo_root: Path, docs_root: Path, instruction_files: tuple[str, ...]
 ) -> list[Finding]:
-    """Some instruction file must link both `docs/_structure.md` and `docs/index.md`.
+    """Require an instruction file to link the docs index and structure rules.
 
-    That is the only route into the rules for a session that has read neither
-    the generator nor this checker. It is deliberately not "every instruction
-    file links both": instructions are single-sourced, so the second file a
-    policy names is normally a pointer at the first rather than a copy that can
-    drift. What matters is that following the links from whichever file an
-    agent opened first arrives at the rules.
-
-    Which files those are is the caller's policy, not this module's.
+    Other instruction files may link to that file instead of duplicating the
+    two links.
     """
     present = [
         repo_root / name for name in instruction_files if (repo_root / name).exists()
@@ -300,8 +281,7 @@ def check_structure(
     Args:
         repo_root: The repository root, where the instruction files live.
         docs_root: The docs tree, normally ``<repo_root>/docs``.
-        policy: The repository's own conventions. Required, and deliberately
-            without a default — see :mod:`rn_forge.tooling.docs.policy`.
+        policy: The repository's documentation conventions.
     """
     repo_root = Path(repo_root)
     docs_root = Path(docs_root)

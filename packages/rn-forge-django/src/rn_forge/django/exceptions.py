@@ -1,19 +1,4 @@
-"""Shared exception helpers for Django-level JSON error handling.
-
-Two families live here:
-
-- :func:`json_exception_response` / :func:`django_exception_handler` — this
-  package's original ``{"path", "error", "message"}`` body. Unchanged.
-- :func:`problem_details_response` and the ``handler404``/``handler500`` views
-  over it — RFC 9457 ``application/problem+json`` bodies built by
-  :class:`rn_forge.web.ProblemRegistry`, the shape every ``rn-forge-*``
-  application returns. The DRF exception handler
-  :func:`rn_forge.django.drf.exceptions.problem_details_exception_handler`
-  renders through the same function, so a routing 404 and a view's 404 cannot
-  differ.
-
-Nothing here decides a slug, a status or a detail; the registry does.
-"""
+"""Django exception handlers for legacy JSON and RFC 9457 responses."""
 
 from __future__ import annotations
 
@@ -116,11 +101,8 @@ def problem_details_response(
 ) -> JsonResponse:
     """Render *exc* as an ``application/problem+json`` response.
 
-    The bound correlation ID is always attached as the ``correlation_id``
-    extension (``null`` when no middleware bound one). A 401 says only that
-    authentication failed and carries a ``WWW-Authenticate`` challenge — one
-    built by :func:`rn_forge.web.challenge_header` unless *headers* already
-    has one. A 5xx is logged with its traceback, since the body says nothing.
+    Includes the bound correlation ID. A 401 uses a generic detail and adds a
+    ``WWW-Authenticate`` challenge unless *headers* already contains one.
 
     Args:
         exc: The exception being rendered.
@@ -159,11 +141,7 @@ def problem_details_response(
 def problem_details_handler404(
     request: HttpRequest, exception: Exception | None = None
 ) -> JsonResponse:
-    """Render Django's own 404 — an unmatched route — as a problem.
-
-    Name it from the root URLconf:
-    ``handler404 = "rn_forge.django.exceptions.problem_details_handler404"``.
-    """
+    """Render an unmatched Django route as a problem response."""
     row = _REGISTRY.problem_for_status(HTTPStatus.NOT_FOUND)
     return problem_details_response(
         exception or Resolver404(),
@@ -175,12 +153,7 @@ def problem_details_handler404(
 
 
 def problem_details_handler500(request: HttpRequest) -> JsonResponse:
-    """Render an exception escaping a plain Django view as a problem.
-
-    Name it from the root URLconf:
-    ``handler500 = "rn_forge.django.exceptions.problem_details_handler500"``.
-    DRF views never reach it; their exceptions go through the DRF handler.
-    """
+    """Render an exception escaping a plain Django view as a problem."""
     return problem_details_response(
         RuntimeError("Unhandled exception"),
         instance=request.path,

@@ -1,49 +1,11 @@
-"""Async circuit breaker + retrying HTTP client.
+"""Async HTTP resilience with per-key circuit breakers, retry, and rate limiting.
 
-**Design history — read before "fixing" the library choice.** The original
-design for this module (a sync ``pybreaker`` + ``tenacity`` + ``httpx``
-client, one breaker per client instance) does not fit the workspace's actual
-call path: every real outbound client here is async, breakers need to be
-per-key (one Azure DevOps organisation, one tenant — not one per process),
-timing needs to be injectable for tests, retry needs to honour a server's
-``Retry-After`` header, and a token-bucket limiter that clamps itself from
-rate-limit response headers belongs beside it. A second, independent async
-client (an Azure DevOps integration) converged on exactly this shape,
-confirming it rather than inventing it. See
-``docs/plans/web-library-plan.md`` §A.3 for the fuller finding.
+Retries honor ``Retry-After`` and the token bucket clamps its quota from
+``X-RateLimit-Remaining`` and ``X-RateLimit-Reset`` response headers. Circuits
+are keyed independently so one failing upstream does not block another.
 
-The redesign follows this workspace's design principle: depend on a
-maintained library rather than hand-rolling. Before writing anything, this
-searched for a maintained async-capable circuit breaker (``pybreaker``'s
-threading-based model does not fit an async call path) and landed on
-`purgatory <https://mardiros.github.io/purgatory/>`_ — async-native, per-key
-circuits identified by name, in-memory or Redis-backed, with event hooks.
-Retry is `stamina <https://stamina.hynek.me/>`_, a thin, opinionated wrapper
-over ``tenacity`` whose *backoff hook* — a callable that inspects the
-exception and returns whether to retry, or a custom backoff to override the
-default — is exactly the shape ``Retry-After`` support needs. Nothing on
-PyPI does the token-bucket-clamped-from-response-headers rate limiter this
-also needs, so that piece is hand-rolled — the honest result of the search,
-not a shortcut around it.
-
-Provides:
-
-- :func:`parse_retry_after` — parses a ``Retry-After`` header (delta-seconds
-  or HTTP-date form) into seconds.
-- :func:`retryable` — a stamina backoff hook: ``True``/``False``/a custom
-  backoff, given an exception from an HTTP call.
-- :class:`RateLimiter` — a token bucket clamped from
-  ``X-RateLimit-Remaining``/``X-RateLimit-Reset`` response headers — never
-  optimistic about how much quota remains.
-- :class:`CircuitOpenError` — raised when a call is refused because its
-  circuit is open.
-- :class:`ResilientAsyncHttpClient` — an ``httpx.AsyncClient`` wrapped in a
-  per-key circuit breaker, retry, and rate limiting.
-
-This module must not be imported by ``rn_forge.commons``'s curated
-``__init__.py`` at module scope — ``import rn_forge.commons`` must keep
-working with no optional extras installed. Requires the ``resilience`` extra
-(``purgatory``, ``stamina``, ``httpx``).
+Requires the ``resilience`` extra (``purgatory``, ``stamina``, ``httpx``) and
+must be imported directly.
 """
 
 from __future__ import annotations
@@ -183,10 +145,8 @@ class RateLimiter:
 class ResilientAsyncHttpClient:
     """An ``httpx.AsyncClient`` wrapped in a per-key circuit breaker, retry, and rate limiting.
 
-    Breakers are keyed by name (default: the *key* argument to
-    :meth:`request`, falling back to *name*) so one client instance can
-    protect several independent upstream keys (e.g. one breaker per tenant)
-    rather than one breaker per client — see the module docstring.
+    Breakers use the request *key*, falling back to the client *name*, so one
+    instance can protect independent upstreams separately.
     """
 
     def __init__(
@@ -249,7 +209,7 @@ class ResilientAsyncHttpClient:
 
     @property
     def client(self) -> httpx.AsyncClient:
-        """The underlying ``httpx.AsyncClient`` — the escape hatch."""
+        """The underlying ``httpx.AsyncClient``."""
         return self._client
 
     async def request(

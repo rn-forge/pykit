@@ -1,22 +1,4 @@
-"""``rn-forge-docs`` — the docs checkers as a command.
-
-Three commands, matching the three public docs tasks a repository's Taskfile
-wires up::
-
-    rn-forge-docs structure --policy my_repo.docs:POLICY
-    rn-forge-docs check              # links, anchors, nav targets, orphans
-    rn-forge-docs nav [--check]      # regenerate mkdocs.yml's nav block
-
-Each exits non-zero when it produces an error-severity finding, and each
-accepts ``--json`` for machine-readable output.
-
-``structure`` needs to be told the repository's own conventions — what its
-numbered document series is called, what statuses it allows, what its
-instruction files are named. ``--policy`` names the
-:class:`~rn_forge.tooling.docs.policy.DocsPolicy` to import. There is no
-default: a general-purpose checker that ships one organisation's policy is a
-checker only that organisation can run (kiln ADR-0001).
-"""
+"""Command-line interface for documentation structure, link, and nav checks."""
 
 from __future__ import annotations
 

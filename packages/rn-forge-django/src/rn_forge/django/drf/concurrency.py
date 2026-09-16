@@ -1,15 +1,4 @@
-"""The ``If-Match`` precondition for DRF views over a versioned model.
-
-A delegation, not an implementation: ETag parsing, the codecs and the
-412/428/400 decisions are :func:`rn_forge.web.check_precondition`'s. What stays
-here is lifting the precondition off a DRF request.
-
-The one Django-only convenience is the **body fallback**: with no ``If-Match``
-header, a ``version`` key in the request body is formatted into a validator and
-checked the same way. ``rn-forge-web`` deliberately does not offer this — it
-weakens the header contract — so an API meant to be swappable with a FastAPI
-one should require the header.
-"""
+"""``If-Match`` preconditions for DRF views over versioned models."""
 
 from __future__ import annotations
 
@@ -37,9 +26,7 @@ def enforce_version(
 ) -> None:
     """Raise unless the client's precondition matches *instance*'s current version.
 
-    The header wins over the body key when both are sent. With neither and
-    ``required=False`` this passes silently: making the precondition mandatory
-    is the caller's choice, per route.
+    The header takes precedence over the request body's ``version`` fallback.
 
     Args:
         request: The DRF request.
@@ -77,11 +64,7 @@ def enforce_version(
 
 
 def etag_for(instance: VersionedModelMixin, *, codec: ETagCodec | None = None) -> str:
-    """Return the ``ETag`` response header value for *instance*.
-
-    A server that enforces ``If-Match`` but never emits an ``ETag`` is asking
-    clients to guess; emit this on every read and write of a versioned row.
-    """
+    """Return the ``ETag`` response header value for *instance*."""
     resolved = codec if codec is not None else VersionETagCodec()
     return resolved.format(entity_id=instance.pk, version=instance.version)
 

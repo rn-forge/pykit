@@ -1,16 +1,4 @@
-"""Archive extraction for release bundles.
-
-Provides :func:`extract_archive` — tar/zip extraction with a safe default
-filter, requiring the archive to contain exactly one root directory. That
-single-root requirement is a release-bundle convention rather than a general
-filesystem operation, which is why this stays in tooling while the lock and
-the atomic symlink it used to sit beside moved to
-:mod:`rn_forge.commons.fs.locks`.
-
-Deliberately absent: the download. ``urllib.request`` against a GitHub
-releases API is product-specific coordinates, and a generic "download a file"
-wrapper adds nothing over the standard library.
-"""
+"""Safe extraction of single-root tar and zip release bundles."""
 
 from __future__ import annotations
 
@@ -39,10 +27,7 @@ def extract_archive(
         destination: Directory the archive's contents are extracted into.
             Created if absent.
         filter: The :func:`tarfile.TarFile.extractall` extraction filter
-            (tar archives only — a tar-slip vulnerability is exactly the
-            kind of thing a hand-rolled second copy of this reintroduces,
-            which is the point of having it once with a safe default).
-            Zip extraction has no equivalent filter parameter.
+            for tar archives. Zip extraction has no equivalent parameter.
 
     Returns:
         The single top-level directory the archive extracted into.

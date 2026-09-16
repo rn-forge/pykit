@@ -84,7 +84,9 @@ one the `problem.validation-errors-are-rfc6901-pointers` case cannot pass on Fas
 
 **Raised against the web plan:** a per-check timeout for `run_checks` (**resolved 2026-09-13**); the
 generic `Page[T]` cannot be named literally `Page` in `components/schemas` (FastAPI emits
-`Page_OrderOut_`) — **open**; the `operationId` convention covers CRUD only — **open**.
+`Page_OrderOut_`) and the `operationId` convention covered CRUD only (**both resolved 2026-09-15**,
+in `rn_forge/web/openapi.py` — see web plan §9.1; this package renames the component in
+`install_problem_schema` and delegates `operation_id`).
 
 **Open, and not this plan's to close alone:** Phase 8 — kiln has no `golden/python-web-api` yet
 (kiln Phase E); and the `rn-forge-web` release tag.
@@ -777,10 +779,10 @@ template change never made in a golden repo is a bug. Do not skip to the applica
       core members survive the alias generator unchanged (asserted, not assumed)
 - [x] Pagination parameters are `pageSize`/`pageToken`, the size is clamped rather than rejected, and
       no `le=` bound appears on the page-size query parameter
-- [ ] The emitted schema is OpenAPI **3.1.0**; the shared components are named exactly
-      `ProblemDetail`, `Page`, `CheckResult`, `HealthReport`; the `operationId` convention is applied
-      through a shipped `generate_unique_id_function` — **all but `Page`**, which FastAPI names per
-      parametrization (`Page_OrderOut_`); raised against the web plan
+- [x] The emitted schema is OpenAPI **3.1.0**; the shared non-generic components are named exactly
+      `ProblemDetail`, `CheckResult`, `HealthReport`; the paginated envelope is `Page<Item>`
+      (`install_problem_schema` renames pydantic's `Page_OrderOut_`); the `operationId` convention is
+      applied through a shipped `generate_unique_id_function` that calls `rn_forge.web.openapi`
 - [x] Phase 6b's 401 carries an RFC 6750 §3 `WWW-Authenticate`, its 403 carries none, and neither
       body leaks a verification reason
 - [x] Phase 6c's conformance driver runs every case in `rn_forge.web.conformance.CASES` with no

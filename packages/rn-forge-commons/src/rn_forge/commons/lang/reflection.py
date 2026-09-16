@@ -29,10 +29,7 @@ def _logger():
 
 
 class ReflectUtils:
-    """Reflection and introspection utilities.
-
-    All methods are static.  Useful for logging, error formatting, and audit
-    tooling that needs human-readable names for arbitrary Python objects.
+    """Reflection helpers for human-readable names and arguments.
 
     Example::
 

@@ -1,35 +1,4 @@
-"""Sequence-backed, gap-free, human-readable codes (``PO-000042``).
-
-On PostgreSQL a real database sequence (``CREATE SEQUENCE IF NOT EXISTS`` +
-``nextval``) allocates the value. Everywhere else a counter row is locked with
-``select_for_update()`` inside a transaction and incremented.
-
-What is and is not proven
--------------------------
-
-The test suite runs on sqlite, which has no row locks: ``select_for_update()``
-is a no-op there, so the counter path's *arithmetic* is tested and its
-*concurrency* is not. The PostgreSQL path is not exercised by this package's
-suite at all — it has no PostgreSQL service — and is verified only in the
-system it was extracted from. Treat both as unproven under contention until a
-PostgreSQL job exists.
-
-Why the counter is abstract
----------------------------
-
-This package ships no migrations anywhere, and a concrete counter model would
-make it start: every consumer adding ``rn_forge.django`` would inherit a table
-and a migration history for a table with no domain content. So the consumer
-declares the concrete model (and owns its migration), and names it::
-
-    class SequenceCounter(AbstractSequenceCounter):
-        pass
-
-    ORDER_CODES = SequenceGenerator("order_code", counter_model=SequenceCounter, prefix="PO-")
-
-The counter model is required even on PostgreSQL, so a deployment can move
-between backends without a code change.
-"""
+"""Database-backed generation of human-readable sequence codes."""
 
 from __future__ import annotations
 
@@ -58,11 +27,7 @@ class AbstractSequenceCounter(models.Model):
 
 
 def default_code_formatter(prefix: str, value: int) -> str:
-    """Return ``f"{prefix}{value:06d}"`` with a prefix, else ``str(value)``.
-
-    A shape such as ``PO-2026-0001`` is domain policy — the year especially —
-    and belongs in a caller-supplied formatter, not here.
-    """
+    """Return a six-digit value with a prefix, or the raw value without one."""
     return f"{prefix}{value:06d}" if prefix else str(value)
 
 

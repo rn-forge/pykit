@@ -8,9 +8,10 @@ Three things an application otherwise gets wrong, each shipped as code:
 - :data:`SPECTACULAR_SETTINGS` — OpenAPI **3.1.0**, camelCase names, the
   ``ProblemDetail`` component always present, and the camelCase schema hook.
   Spread it into your own ``SPECTACULAR_SETTINGS`` and override what you must.
-- :class:`WireAutoSchema` — the ``operationId`` convention ``<resource><Verb>``
-  that ``rn-forge-fastapi``'s ``operation_id`` implements, so a generated client
-  has the same method names on either stack. Name it as
+- :class:`WireAutoSchema` — the ``operationId`` and paginated-component naming
+  conventions, read from :mod:`rn_forge.web.openapi` so that this stack and the
+  FastAPI one apply one rule rather than two copies of it. A generated client
+  gets the same method names and the same page type on either. Name it as
   ``REST_FRAMEWORK["DEFAULT_SCHEMA_CLASS"]``.
 - The security-scheme extensions for
   :class:`~rn_forge.django.auth.drf.principal.PrincipalBearerAuthentication` and
@@ -31,6 +32,7 @@ from typing import Any, Final, cast, override
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
 from rn_forge.django.drf.casing import camelize_key
+from rn_forge.web.openapi import operation_id, page_component_name
 
 __all__ = [
     "OPENAPI_VERSION",
@@ -84,13 +86,6 @@ Usage::
     SPECTACULAR_SETTINGS = {**RNF_SPECTACULAR, "TITLE": "Orders API"}
 """
 
-_VERBS: Final[Mapping[str, str]] = {
-    "POST": "Create",
-    "PUT": "Update",
-    "PATCH": "PartialUpdate",
-    "DELETE": "Delete",
-}
-
 
 def camelize_schema_hook(
     result: dict[str, Any], generator: Any, request: Any, public: bool
@@ -128,28 +123,28 @@ def _camelize_schema(schema: dict[str, Any]) -> None:
 
 
 class WireAutoSchema(AutoSchema):
-    """drf-spectacular's ``AutoSchema`` with the kit's ``operationId`` convention.
+    """drf-spectacular's ``AutoSchema``, named by the kit's OpenAPI conventions.
 
-    ``<resource><Verb>`` in lowerCamelCase: *resource* is the last literal path
-    segment (``/api/work-items/{id}`` → ``workItems``); *Verb* is ``List`` for a
-    ``GET`` on a collection and ``Get`` on an item, ``Create`` for ``POST``,
-    ``Update`` for ``PUT``, ``PartialUpdate`` for ``PATCH``, ``Delete`` for
-    ``DELETE``. An action
-    outside CRUD gets a mechanical name; give it an explicit
-    ``@extend_schema(operation_id=...)``.
+    Both rules come from :mod:`rn_forge.web.openapi`, which the FastAPI binding
+    reads too:
+
+    - **``operationId``** — ``<resource><Verb>`` in lowerCamelCase for CRUD, and
+      ``<resource><Action>`` for an AIP-136 custom method spelled
+      ``/orders/<str:pk>:cancel``. An action spelled as a plain path segment
+      gets a mechanical name; give it an explicit
+      ``@extend_schema(operation_id=...)``.
+    - **The paginated component** — ``PageOrderOut`` rather than
+      drf-spectacular's ``PaginatedOrderOutList``, so the two stacks put the same
+      type name in a generated client.
     """
 
     @override
     def get_operation_id(self) -> str:
-        method = self.method.upper()
-        segments = [segment for segment in self.path.split("/") if segment]
-        literals = [segment for segment in segments if not segment.startswith("{")]
-        resource = camelize_key(literals[-1].replace("-", "_")) if literals else "root"
-        if method == "GET":
-            verb = "Get" if segments and segments[-1].startswith("{") else "List"
-        else:
-            verb = _VERBS.get(method, method.capitalize())
-        return f"{resource}{verb}"
+        return operation_id(self.path, self.method)
+
+    @override
+    def get_paginated_name(self, serializer_name: str) -> str:
+        return page_component_name(serializer_name)
 
 
 class PrincipalBearerAuthenticationScheme(OpenApiAuthenticationExtension):

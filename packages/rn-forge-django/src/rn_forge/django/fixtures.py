@@ -1,17 +1,4 @@
-"""Prepare Django JSON fixtures from Excel workbooks.
-
-Provides a focused port of the useful part of the earlier accelerate-django
-fixture workflow:
-
-- read one workbook per fixture definition
-- validate required sheets and columns
-- convert rows into Django ``loaddata`` JSON payloads
-- optionally load the generated JSON fixtures into a configured Django app
-
-This module intentionally does *not* include project-level database reset or
-global Django bootstrap wrappers; those were too coupled to application
-runtime and introduced side effects that do not belong in a reusable library.
-"""
+"""Generate and load Django JSON fixtures from Excel workbooks."""
 
 from __future__ import annotations
 

@@ -1,37 +1,8 @@
-"""Exception handlers: every error a FastAPI application produces is an RFC 9457 problem.
+"""Render FastAPI and Starlette failures as RFC 9457 problem responses.
 
-The single highest-value adapter in the package. An application that skips it
-has two error formats — its own, and FastAPI's ``{"detail": ...}``.
-
-:func:`register_problem_handlers` installs handlers for four sources of error,
-and every body is built by :class:`rn_forge.web.ProblemRegistry`; nothing here
-decides a slug, a status or a detail:
-
-1. **Every exception type the registry knows**, one handler per type.
-2. **Starlette's ``HTTPException``** — a routing 404, a 405 — through
-   :meth:`rn_forge.web.ProblemRegistry.problem_for_status`.
-3. **``RequestValidationError``**, normalized through
-   :func:`rn_forge.web.errors_from_pointer_list`.
-4. **Bare ``Exception``** — a 500 whose body says nothing and whose ``log``
-   says everything.
-
-Why one handler per registered type, not one on ``Exception``
--------------------------------------------------------------
-
-Starlette sends a handler keyed on ``Exception`` to its outermost
-``ServerErrorMiddleware``, which writes the response and then **re-raises**:
-every 409 would print a traceback and fail a ``TestClient`` test. Keyed on the
-exception's own class, the handler runs in ``ExceptionMiddleware`` instead,
-which swallows the exception and sits *inside* user middleware, so the
-correlation header is stamped on the way out. Hence: **register an
-application's exceptions on the registry before calling this.** A row added
-afterwards still renders correctly, but through the ``Exception`` path.
-
-That path is outside every user middleware, so the handler stamps the
-correlation header itself. It still finds the ID: the middleware binds it
-without resetting (see :mod:`rn_forge.web.context`). With no middleware
-installed at all, the body is still a valid problem whose ``correlation_id`` is
-``null``.
+Register application exception mappings before installing the handlers so
+Starlette dispatches them through its typed exception middleware. The fallback
+handler also stamps the current correlation ID.
 """
 
 from __future__ import annotations

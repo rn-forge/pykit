@@ -34,14 +34,8 @@ def process_event(
 ) -> bool:
     """Handle *event* once, however many times it is delivered.
 
-    The handler runs in a savepoint inside the transaction that marks the inbox
-    row processed, so its database writes and the "processed" mark commit
-    together or not at all.
-
-    A failure — a raising handler, or no handler for the type — is **recorded
-    on the inbox row and then re-raised**, so the broker can retry or
-    dead-letter the message. Swallowing it would turn a visible failure into
-    silent data loss.
+    Handler writes and the processed marker commit atomically. Failures are
+    recorded on the inbox row and re-raised for broker retry or dead-lettering.
 
     Args:
         event: The received message. ``id_key``/``type_key`` name its id and
@@ -55,7 +49,6 @@ def process_event(
 
     Raises:
         UnknownMessageType: No handler is registered for the type.
-        Exception: Whatever the handler raised.
     """
     message_id, message_type = str(event[id_key]), str(event[type_key])
     alias = router.db_for_write(inbox_model)

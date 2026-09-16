@@ -1,21 +1,8 @@
 """Messaging protocols: a transport-agnostic publish interface.
 
-Provides:
-
-- :class:`MessageBus` / :class:`AsyncMessageBus` — a minimal publish protocol,
-  satisfied structurally by any sync/async message-bus client (Azure Service
-  Bus, SQS, an in-process event dispatcher, ...).
-- :class:`InMemoryMessageBus` — records published events; the test double and
-  the local/dev default.
-- :class:`HandlerRegistry` — maps a message type to its handler. Instantiable,
-  not a module-level registry, so two registries can coexist and a test can
-  start from a clean one.
-
 No delivery guarantees are implied. ``publish`` is fire-and-forget from the
 protocol's point of view — retries, at-least-once delivery, and transactional
-outbox semantics are the caller's responsibility, not this module's.
-
-This module has no optional dependency — it is protocols, a dict, and a list.
+outbox semantics are the caller's responsibility.
 """
 
 from __future__ import annotations

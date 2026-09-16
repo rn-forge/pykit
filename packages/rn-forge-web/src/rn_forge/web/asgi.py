@@ -1,38 +1,7 @@
-"""The correlation-ID ASGI middleware, and the six ASGI type aliases it needs.
+"""Framework-independent correlation-ID ASGI middleware and type aliases.
 
-This lives here rather than in a framework package because **ASGI is a
-specification, not a framework**: the middleware below works unchanged under
-FastAPI, Starlette, Litestar, Quart or a bare ASGI app.
-
-Why it is hand-written
-----------------------
-
-``asgi-correlation-id`` (5.0.1) was evaluated as the Phase 0.2 candidate and
-rejected on one criterion: it declares ``starlette>=0.18`` as a **hard**
-dependency, so adopting it would make a Django consumer install Starlette to
-read a ContextVar. That breaks the boundary rule this package exists to hold.
-See "Dependencies and why" in the package README.
-
-Two things this gets right that are easy to lose
-------------------------------------------------
-
-1. **It is a pure ASGI middleware, not a ``BaseHTTPMiddleware``.** Starlette's
-   ``BaseHTTPMiddleware`` runs the downstream app in a spawned task, and a
-   ContextVar set in ``dispatch()`` is documented not to reliably propagate
-   into exception handlers invoked from that task. Setting the value around
-   ``self.app(...)`` in a plain ASGI callable has no such gap. Since
-   ``BaseHTTPMiddleware`` cannot be imported here anyway, the risk is that a
-   consumer wraps *this* in one — so: do not.
-2. **The types are declared locally.** ``Scope``, ``Receive``, ``Send`` and
-   ``ASGIApp`` come from ``starlette.types`` in most codebases, and importing
-   that is exactly what would drag Starlette into a Django install. Six aliases
-   is a cheaper price. (``asgiref`` is not the alternative — it is
-   Django-adjacent machinery for six aliases.)
-
-The ContextVar is bound with a plain ``set()`` and **never reset**. That is not
-an oversight: see :mod:`rn_forge.web.context`, which explains why a
-``finally: reset()`` here unbinds the value before the outermost error handler
-that needs it runs.
+The middleware leaves the request-local context value bound so outer exception
+handlers can read it after the application raises.
 """
 
 from __future__ import annotations

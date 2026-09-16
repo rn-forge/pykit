@@ -1,19 +1,6 @@
-"""Excel utilities built on ``openpyxl``.
+"""Excel workbook, formatting, and pandas adapters built on ``openpyxl``.
 
-Provides:
-
-- :class:`CellFormat` — dataclass capturing cell formatting attributes
-  (font, fill, border, number format, alignment, protection).
-- :class:`WorkbookTemplate` — config struct for sheet column layout and
-  default formatting.
-- :class:`ExcelUtils` — static helpers for creating, loading, and saving
-  workbooks; applying row/column formats; managing named tables; and
-  auto-adjusting column widths.
-- :class:`ExcelAdapter` — adapters between workbook/file/bytes I/O and
-  pandas DataFrame representations.
-
-Requires ``openpyxl``. DataFrame adapter methods also require ``pandas``.
-Install with ``pip install rn-forge-commons[excel]``.
+Requires the ``excel`` extra.
 """
 
 from __future__ import annotations
@@ -89,7 +76,7 @@ class WorkbookTemplate(DataclassMixin):
 
 
 class ExcelUtils:
-    """Static helpers for Excel workbook operations via ``openpyxl``.
+    """Excel workbook operations via ``openpyxl``.
 
     Requires ``openpyxl`` — install with ``rn-forge-commons[excel]``.
 

@@ -1,15 +1,8 @@
 """Cross-process serialization and atomic publication on the filesystem.
 
-Provides:
-
-- :class:`DirectoryLock` — a portable, ``mkdir``-based cross-process advisory
-  lock.
-- :func:`atomic_symlink` — replace a symlink without ever unlinking it first.
-
-Neither carries any installer policy in its signature, which is why they live
-here rather than in the tool that first needed them: a local worker can
-serialize filesystem work or publish a snapshot atomically for reasons that
-have nothing to do with installing a release.
+:class:`DirectoryLock` is a portable, ``mkdir``-based advisory lock.
+:func:`atomic_symlink` replaces a symlink without first leaving the path
+unlinked.
 """
 
 from __future__ import annotations

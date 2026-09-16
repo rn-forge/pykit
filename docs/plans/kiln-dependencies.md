@@ -100,7 +100,7 @@ git status --porcelain | wc -l        # 0 after the commit
 
 ## 2. Open — what kiln is waiting on
 
-### 2.1 The tool lifecycle surface (kiln Phase C.3) — applied in the working tree (2026-09-13)
+### 2.1 The tool lifecycle surface (kiln Phase C.3) — done, committed at `757908e`
 
 **Blocks:** kiln F3.3 (`golden/python-tool` becomes a tool), and through it
 kiln's release-1. Recorded as `commons-upgrade-plan.md` Part F, with the four
@@ -130,7 +130,7 @@ contracts kept). Estimate: 3 days.
    `generation/apply.py`: stage, back up, swap `current` last, restore on
    failure. Tests: failed download, failed migration, interrupted swap,
    `uninstall` over an install that never completed.
-1. **`[cli.lifecycle]`** — a `CliSurface` record (on `StrictDataclassMixin`, like
+1. **`[cli.lifecycle]`** — a `CliSurface` record (strictly parsed, like
    the rest of the surface) listing the verbs, and `CliApp.from_config`
    mounting them against a product object named in the table. `rn-forge-cli`
    must not import tooling (contract), so the mount resolves the product and the

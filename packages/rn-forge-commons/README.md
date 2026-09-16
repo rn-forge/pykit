@@ -52,8 +52,11 @@ holds it.
   flatten, structural comparison, sorting, filtering, grouping.
 - **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()`
   to any `@dataclass`, reconstructing nested dataclasses and enum members on the way back.
-  `StrictDataclassMixin`: the same surface for a record parsed from a hand-written document, with
-  dacite type checking on and failures raised as `AppException` naming the offending field.
+  `from_dict()` is **strict**: a value whose type does not match its field is rejected as an
+  `AppException` naming the offending field. `LenientDataclassMixin`: the same surface with type
+  checking off — for a record whose input is known-ragged, and for the two annotations dacite
+  cannot see through (a PEP 695 `type` alias, an unbound type variable), which the module
+  docstring spells out.
 - **`reflection`** — `ReflectUtils`: fully-qualified name resolution, error-message formatting,
   and stack-frame variable inspection.
 - **`types`** — the recursive `JsonValue` alias.

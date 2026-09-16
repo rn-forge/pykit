@@ -1,21 +1,7 @@
-"""The authentication binding: ``Security`` dependencies over the web auth contract.
+"""FastAPI security dependencies for the web authentication contracts.
 
-The contract — :class:`rn_forge.web.Principal`, the authenticator and
-authorizer protocols, the 401/403 boundary — is :mod:`rn_forge.web.auth`'s. The
-failure wire shape is :func:`rn_forge.fastapi.register_problem_handlers`'. This
-module only lifts credentials off the request, hands them to an authenticator
-and returns the principal.
-
-**Bound to :class:`rn_forge.web.Authenticator`, not to a token verifier.**
-Verifying a JWT against a JWKS is an application's authenticator's job, over
-whatever verifier it uses; this binding accepts any object satisfying the web
-protocol, sync or async.
-
-FastAPI's ``HTTPBearer``/``HTTPBasic`` are used with ``auto_error=False``,
-which keeps what they are good for — the ``securitySchemes`` entry in the
-OpenAPI document — and discards what they get wrong: their own 401 body and a
-challenge that is not RFC 6750's. Every refusal raises a :mod:`rn_forge.web`
-exception, so a UI sees ``problem+json`` for an auth failure like any other.
+Framework credential parsers run with ``auto_error=False`` so failures use the
+shared problem response and challenge behavior.
 """
 
 from __future__ import annotations
@@ -77,12 +63,7 @@ def bearer_auth(
 def basic_auth(
     *, authenticator: Authenticator | AsyncAuthenticator, log: Log | None = None
 ) -> PrincipalDependency:
-    """Return a dependency yielding the :class:`rn_forge.web.Principal` for HTTP Basic.
-
-    **For local development and simple internal deployments only.** A password
-    on every request is not a production mechanism, and this does not become
-    one by producing the same ``Principal`` and the same 401 as
-    :func:`bearer_auth`.
+    """Return a dependency yielding a principal for HTTP Basic credentials.
 
     Args:
         authenticator: Verifies ``Credentials(scheme="Basic", token=...)``, where
@@ -111,8 +92,7 @@ def requires(
 ) -> PrincipalDependency:
     """Return a dependency that authenticates, then enforces *requirement*.
 
-    A principal lacking the access is a 403 with no challenge — the caller is
-    authenticated; that is the 401/403 boundary.
+    Insufficient access produces 403 without an authentication challenge.
 
     Args:
         authenticate: A dependency from :func:`bearer_auth` or :func:`basic_auth`.

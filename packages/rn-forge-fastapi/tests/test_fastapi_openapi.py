@@ -3,9 +3,11 @@
 import pytest
 from assertpy import assert_that
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import (
     OPENAPI_VERSION,
+    Page,
     WireModel,
     health_router,
     install_problem_schema,
@@ -31,6 +33,12 @@ DEFAULT_PROBLEM_STATUSES = {
 
 class OrderOut(WireModel):
     order_id: str
+
+
+class PageOrderOut(WireModel):
+    """A hand-written model whose name collides with the flattened generic."""
+
+    decoy: str
 
 
 def problem_response(description):
@@ -182,3 +190,70 @@ def test_an_explicit_operation_id_wins():
 
     operation = app.openapi()["paths"]["/orders/{order_id}/cancel"]["post"]
     assert_that(operation["operationId"]).is_equal_to("ordersCancel")
+
+
+def test_a_custom_method_is_named_resource_action():
+    app = FastAPI(generate_unique_id_function=operation_id)
+
+    @app.post("/orders/{order_id}:cancel")
+    async def cancel(order_id: str): ...
+
+    operation = app.openapi()["paths"]["/orders/{order_id}:cancel"]["post"]
+    assert_that(operation["operationId"]).is_equal_to("ordersCancel")
+
+
+def test_a_custom_method_route_still_matches_a_request():
+    """The colon spelling has to route, not just name."""
+    app = FastAPI()
+
+    @app.post("/orders/{order_id}:cancel")
+    async def cancel(order_id: str) -> dict[str, str]:
+        return {"orderId": order_id}
+
+    response = TestClient(app).post("/orders/123:cancel")
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to({"orderId": "123"})
+
+
+class TestPageComponentNaming:
+    """Pydantic names a parametrized generic `Page_OrderOut_`; the convention does not."""
+
+    @staticmethod
+    def _paged_app():
+        app = FastAPI(generate_unique_id_function=operation_id)
+        install_problem_schema(app)
+
+        @app.get("/orders")
+        async def list_orders() -> Page[OrderOut]: ...
+
+        return app
+
+    def test_the_component_is_flattened(self):
+        schemas = self._paged_app().openapi()["components"]["schemas"]
+        assert_that(schemas).contains_key("PageOrderOut")
+        assert_that(schemas).does_not_contain_key("Page_OrderOut_")
+
+    def test_the_response_reference_is_rewritten(self):
+        operation = self._paged_app().openapi()["paths"]["/orders"]["get"]
+        schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
+        assert_that(schema).is_equal_to({"$ref": "#/components/schemas/PageOrderOut"})
+
+    def test_the_item_reference_inside_the_page_survives(self):
+        schemas = self._paged_app().openapi()["components"]["schemas"]
+        assert_that(
+            schemas["PageOrderOut"]["properties"]["items"]["items"]
+        ).is_equal_to({"$ref": "#/components/schemas/OrderOut"})
+
+    def test_a_name_that_would_collide_is_left_alone(self):
+        """A wrong name is recoverable; two schemas under one key are not."""
+        app = FastAPI(generate_unique_id_function=operation_id)
+        install_problem_schema(app)
+
+        @app.get("/orders")
+        async def list_orders() -> Page[OrderOut]: ...
+
+        @app.get("/pages")
+        async def page_order_out() -> PageOrderOut: ...
+
+        schemas = app.openapi()["components"]["schemas"]
+        assert_that(schemas).contains_key("PageOrderOut", "Page_OrderOut_")

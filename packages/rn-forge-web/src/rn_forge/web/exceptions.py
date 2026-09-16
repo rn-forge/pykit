@@ -1,25 +1,4 @@
-"""Exceptions for the HTTP wire contract.
-
-Every exception here derives from :class:`~rn_forge.commons.exceptions.AppException`,
-so a consumer already catching that catches these. The hierarchy exists so a
-framework adapter can map an exception to a status code by *type* rather than
-by string matching, and :func:`rn_forge.web.problem.default_registry` registers
-every one of them against the status code the relevant RFC prescribes.
-
-Where the status codes come from:
-
-- ``DomainConflict`` → **409**: a conflict with the resource's state generally
-  (RFC 9110 §15.5.10).
-- ``VersionConflict`` → **412**: "the precondition given evaluated to false on
-  the server" (RFC 9110 §15.5.13). Not 409 — see the web plan §3.1.
-- ``PreconditionRequired`` → **428** (RFC 6585 §3).
-- ``MalformedPrecondition`` / ``InvalidCursor`` / ``IdempotencyKeyRequired`` →
-  **400**: the client sent something the server cannot parse or act on.
-- ``IdempotencyKeyReuse`` → **409**: the same key with a different body.
-- ``AuthenticationFailed`` → **401**, ``PermissionDenied`` → **403**. The split
-  is RFC 6750 §3 and is not a judgement call — see :mod:`rn_forge.web.auth`.
-- ``RemoteProblem`` → **502**: an upstream service returned a problem body.
-"""
+"""Typed exceptions mapped to HTTP problems by the default registry."""
 
 from __future__ import annotations
 
@@ -80,8 +59,8 @@ class IdempotencyKeyReuse(WebError):
 class AuthenticationFailed(WebError):
     """No credentials were supplied, or they failed verification (401).
 
-    The message must never say *why* verification failed — see
-    :mod:`rn_forge.web.auth` §"Never leak why verification failed".
+    The message carries the reason for the binding to log; it must never reach
+    the response body, which renders :data:`~rn_forge.web.auth.AUTH_FAILED_DETAIL`.
     """
 
 

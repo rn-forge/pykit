@@ -1,17 +1,4 @@
-"""DRF serializer mirrors of the :mod:`rn_forge.web` wire shapes.
-
-drf-spectacular builds ``components/schemas`` from serializers, so without
-these the shared error and health types never reach a Django schema. They are
-the counterparts of ``rn-forge-fastapi``'s pydantic mirrors, and each is named
-so the component drf-spectacular derives (the class name less ``Serializer``)
-is exactly the FastAPI side's: ``ProblemDetail``, ``Page``, ``CheckResult``,
-``HealthReport``.
-
-Field names are ``snake_case``; the camelCase renderer and the schema hook in
-:mod:`rn_forge.django.drf.openapi` put them on the wire as camelCase. A
-problem's extension members are flattened on the wire (RFC 9457 §3.2) and are
-not modelled here.
-"""
+"""DRF serializer mirrors of the shared web error and health shapes."""
 
 from __future__ import annotations
 

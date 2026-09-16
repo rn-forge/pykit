@@ -1,34 +1,8 @@
-"""Optimistic concurrency: ETag validators and the ``If-Match`` precondition.
+"""ETag codecs and ``If-Match`` checks for optimistic concurrency.
 
-An entity's ``version`` column becomes an ETag; the client sends it back as
-``If-Match`` on the next write; the server refuses the write if the version has
-moved. This module owns the validator format and the precondition check, and
-nothing else — turning a version into a ``WHERE`` clause is the ORM's job.
-
-Status codes, and they are not a judgement call
------------------------------------------------
-
-- **412 Precondition Failed** when the client's precondition evaluated to false
-  (RFC 9110 §15.5.13 defines exactly that).
-- **428 Precondition Required** when the route demands a precondition and the
-  client sent none (RFC 6585 §3).
-- **400** when the header is present but unparseable.
-
-Not 409 for a mismatch: 409 is for a conflict with the resource's state
-generally, which is a superset. A consumer that genuinely needs 409 here
-re-registers :class:`~rn_forge.web.exceptions.VersionConflict` on its own
-registry instance — one line, which is the payoff for the registry being
-instantiable. No application should need to.
-
-Strong validators are rejected
-------------------------------
-
-Both codecs emit and accept only the **weak** form, ``W/"..."``. A strong
-validator asserts byte-for-byte equality of the representation, and a version
-counter does not: two responses at the same version can differ in a
-``Content-Type`` or a computed field. A bare ``"7"`` is therefore a
-:class:`~rn_forge.web.exceptions.MalformedPrecondition`, not a silently
-accepted synonym. ``If-Match: *`` is accepted, as RFC 9110 §13.1.1 requires.
+Version mismatches produce 412, required missing preconditions produce 428,
+and malformed validators produce 400. Version codecs accept weak validators
+and ``If-Match: *`` only.
 """
 
 from __future__ import annotations

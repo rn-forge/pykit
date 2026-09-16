@@ -1,8 +1,7 @@
 """Filesystem helpers: atomic writes, backups, temp dirs and containment guards.
 
-Provides :class:`PathUtils` — writes and deletes that create their parent
-directories, an atomic publish-by-rename, repository-root discovery and the
-:meth:`~PathUtils.assert_within` path-escape guard. All methods are static.
+Includes atomic publish-by-rename, repository-root discovery, and
+:meth:`~PathUtils.assert_within` containment checks.
 """
 
 from __future__ import annotations
@@ -22,10 +21,7 @@ __all__ = ["PathUtils"]
 
 
 class PathUtils:
-    """Filesystem helpers with automatic parent-directory creation.
-
-    All methods are static.
-    """
+    """Filesystem helpers with automatic parent-directory creation."""
 
     @staticmethod
     def temp_dir() -> Path:
@@ -298,11 +294,6 @@ class PathUtils:
         relative_to: Path | None = None,
     ) -> Path | None:
         """Copy *path* under *destination_root*, preserving its relative layout.
-
-        Per-run timestamp policy (e.g. one backup directory per invocation) is
-        deliberately not this method's concern — that is application policy,
-        not a generic filesystem operation; a caller wanting timestamped
-        backups builds *destination_root* accordingly before calling this.
 
         Args:
             path: The file to back up. A no-op (returns ``None``) if this is

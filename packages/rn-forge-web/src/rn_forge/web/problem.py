@@ -1,32 +1,4 @@
-"""RFC 9457 problem details, and the exception-to-problem registry.
-
-The highest-value module in the package: it is what makes two applications on
-two frameworks return the *same* error body for the same situation.
-
-Four pieces:
-
-1. :class:`ProblemDetail` — the wire shape, with ``as_body()`` as the single
-   place that knows extensions flatten to the top level (RFC 9457 §3.2).
-2. :class:`ProblemRegistry` — exception class → :class:`ProblemType`, resolved
-   by MRO so an adapter subclass inherits its base's row automatically.
-3. :func:`errors_from_field_map` / :func:`errors_from_pointer_list` — the two
-   frameworks' validation-error shapes normalized to one RFC 6901 pointer list.
-4. :func:`problem_from_body` — the client-side direction: parse an upstream's
-   problem body back into a :class:`ProblemDetail`.
-
-Why this is hand-written
-------------------------
-
-``rfc9457`` (0.4.1) was evaluated as the Phase 0.2 candidate and rejected: its
-``Problem`` is an ``Exception`` with its own constructor, ``__str__`` and
-``__repr__``, which cannot compose with :class:`~rn_forge.commons.exceptions.AppException`
-without one of the two losing its contract. It also models no ``instance``
-member, carries no registry, and has no parse direction. See
-"Dependencies and why" in the package README.
-
-RFC 9457 obsoletes RFC 7807; the media type and the member names are unchanged,
-so this shape is correct under either number.
-"""
+"""RFC 9457 problem details and exception-to-problem mapping."""
 
 from __future__ import annotations
 
@@ -134,9 +106,8 @@ class ProblemType:
     title: str
 
 
-# The rows both surveyed implementations converged on, plus the two the
-# precondition contract (§3.1) needs. `default_registry()` binds each of them
-# to an exception class; they are public so a consumer can re-bind one.
+# Standard problem rows. `default_registry()` binds each to an exception class;
+# they remain public so applications can customize those bindings.
 NOT_FOUND: Final = ProblemType("not-found", 404, "Not Found")
 VALIDATION_ERROR: Final = ProblemType("validation-error", 422, "Validation Error")
 INTERNAL_ERROR: Final = ProblemType("internal-error", 500, "Internal Server Error")
@@ -155,10 +126,6 @@ BAD_GATEWAY: Final = ProblemType("bad-gateway", 502, "Bad Gateway")
 
 class ProblemRegistry:
     """Maps exception classes to problem types, resolving by MRO.
-
-    An *instantiable* registry rather than a module-level dict: two
-    applications in one process, and a test that wants a clean registry, both
-    need instances.
 
     Args:
         type_base: Prefix for the ``type`` URI. When empty (the default), the
@@ -220,9 +187,6 @@ class ProblemRegistry:
         ``method-not-allowed`` / ``Method Not Allowed``); a status with no
         reason phrase resolves to the fallback.
 
-        Both framework packages call this rather than keeping a status table of
-        their own: a status-to-slug mapping is a wire decision, and two tables
-        are two decisions.
         """
         for row in self._rows.values():
             if row.status == status:
@@ -322,25 +286,14 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
 
 
 _REQUIRED_FIELD_MESSAGE: Final = "This field is required."
-"""The message a missing field carries, on both stacks. It is DRF's wording."""
+"""The normalized validation message for a missing field."""
 
 
 def errors_from_pointer_list(raw: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
     """Normalize a FastAPI/pydantic error list into pointer/message pairs.
 
-    pydantic reports ``[{"loc": ("body", "field"), "msg": "...", "type": "..."}, ...]``.
-    Each ``loc`` becomes an RFC 6901 JSON pointer, with the two normalizations
-    that make the list identical to :func:`errors_from_field_map`'s for the
-    same failure — which the conformance table asserts:
-
-    - **A leading ``"body"`` segment is dropped.** FastAPI prefixes the part of
-      the request a field came from; the pointer is into the body document,
-      which is what DRF's field map already describes. ``query``, ``header``
-      and ``path`` locations keep their prefix, being outside the body.
-    - **A missing field says** ``"This field is required."`` rather than
-      pydantic's ``"Field required"``. Only this one message is translated: it
-      is the failure the table pins, and a vocabulary for every validator
-      would be a translation layer nobody asked for.
+    Leading ``body`` locations are removed and missing-field messages are
+    normalized. Other location prefixes and messages are preserved.
 
     Args:
         raw: The ``errors()`` output of a pydantic validation error.
@@ -367,10 +320,7 @@ def _body_relative(loc: Sequence[Any]) -> Sequence[Any]:
 def errors_from_field_map(raw: Mapping[str, Any]) -> list[dict[str, str]]:
     """Normalize a DRF-style ``{field: [messages]}`` map into pointer/message pairs.
 
-    **Recurses.** Nested serializers produce nested dicts, and lists of
-    serializers produce lists of dicts; a non-recursive version silently drops
-    every nested error. (cims's handler does not recurse — that is a bug fixed
-    on the way through, not a behaviour preserved.)
+    Nested mappings and lists are traversed recursively.
 
     Args:
         raw: A DRF ``serializer.errors`` mapping.
@@ -411,17 +361,8 @@ def _pointer(parts: Iterable[Any]) -> str:
 def problem_from_body(status: int, body: Mapping[str, Any]) -> ProblemDetail:
     """Parse an upstream ``application/problem+json`` body back into a problem.
 
-    **Tolerant on the way in, strict on the way out.** RFC 9457 requires only
-    that the body be a JSON object, every member is optional in practice, and
-    upstreams get this wrong — a parser that raised on a slightly-wrong body
-    would convert an upstream 404 into a local 500. Missing ``type`` defaults to
-    ``about:blank``, missing ``status`` falls back to *status*, and every
-    unknown member lands in ``extensions``.
-
-    It takes a parsed mapping and a status, not a response object: no ``httpx``
-    or ``requests`` import, so it is usable from a commons ``ResilientHttpClient``
-    call site, a Django test, or an async client without any of them becoming a
-    dependency of this package.
+    Missing ``type`` defaults to ``about:blank``, missing ``status`` falls back
+    to *status*, and unknown members become extensions.
 
     Args:
         status: The HTTP status of the response the body came from.

@@ -1,9 +1,4 @@
-"""Subprocess execution utilities with structured result capture.
-
-Provides:
-    Process: Immutable dataclass that executes a subprocess and captures its
-        return code, stdout, and stderr.  Named shortcuts are available for
-        common runtimes (Python, Maven, npm, Azure CLI, PowerShell).
+"""Subprocess execution with structured result capture.
 
 Typical usage::
 

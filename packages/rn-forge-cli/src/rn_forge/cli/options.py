@@ -1,21 +1,4 @@
-"""The standard option set every ``rn-forge`` CLI takes, and its value parsers.
-
-Provides:
-
-- :class:`LogLevel` — CLI-facing log level names, with :meth:`~LogLevel.to_int`
-  mapping to the matching :class:`~rn_forge.commons.logging.AppLogger` level.
-- :data:`LogLevelOption`, :data:`LogFileOption`, :data:`QuietOption`,
-  :data:`JsonOption`, :data:`DryRunOption`, :data:`YesOption`, :data:`SetOption`
-  — reusable ``Annotated`` option types.
-- :class:`CliOptions` — the resolved ``--quiet``/``--json``/``--dry-run``/
-  ``--yes`` flags, stored on ``ctx.obj``.
-- :func:`parse_overrides` — dotted-path, JSON-or-TOML-scalar parsing for
-  :data:`SetOption`, e.g. ``--set database.port=5432``.
-
-Boolean flags use Typer's native ``--flag``/``--no-flag`` handling. The
-application class that wires these into a root callback is
-:class:`rn_forge.cli.app.CliApp`.
-"""
+"""Standard CLI options and value parsers."""
 
 from __future__ import annotations
 
@@ -105,22 +88,7 @@ SetOption = Annotated[
 
 @dataclass(frozen=True, slots=True)
 class CliOptions:
-    """The resolved standard flags, stored on the root ``ctx.obj``.
-
-    ``dry_run`` and ``yes`` live here rather than on each command because
-    every command that writes anything needs both, and a command reading them
-    off the context cannot forget to thread one through.
-
-    Build one with :meth:`from_context` and finish with :meth:`apply`::
-
-        @app.command()
-        def sync(ctx: typer.Context, quiet: QuietOption = False) -> None:
-            opts = CliOptions.from_context(ctx, quiet=quiet).apply(ctx)
-
-    The two steps are separate because :meth:`from_context` is pure and
-    :meth:`apply` is not — a caller that only wants to know what the options
-    *are* (a test, a command managing its own console) stops after the first.
-    """
+    """Resolved standard flags stored on the root ``ctx.obj``."""
 
     quiet: bool = False
     json_output: bool = False
@@ -139,11 +107,7 @@ class CliOptions:
     ) -> Self:
         """Return the options for this command: the root callback's, merged with these.
 
-        Typer allows the standard flags both before and after the subcommand
-        name; the root callback alone only sees the former. A command that
-        declares its own :data:`QuietOption`/:data:`JsonOption` parameters
-        passes them here to merge them with whatever the root already
-        resolved. A flag set at either level wins.
+        A flag set on either the root callback or the command is retained.
 
         Pure — nothing is written to *ctx* and no console mode is changed.
         Chain :meth:`apply` for that.
@@ -160,12 +124,6 @@ class CliOptions:
 
     def apply(self, ctx: typer.Context) -> Self:
         """Validate this combination, set the console mode, and persist onto *ctx*.
-
-        Three effects, all of them deliberate: the mutually-exclusive pair is
-        rejected, :data:`~rn_forge.commons.runtime.console.console` is switched
-        to the mode the flags ask for, and the result is written to the root
-        context so a nested command reads the merged value rather than the
-        root callback's.
 
         Returns:
             ``self``, so the call chains off :meth:`from_context`.
@@ -187,12 +145,8 @@ class CliOptions:
 def parse_overrides(values: Sequence[str] | None) -> dict[str, Any]:
     """Parse ``["a.b=1", "c=[1,2]"]`` into a nested mapping with typed scalars.
 
-    The parser behind :data:`SetOption`. Each value is parsed first as JSON,
-    then as a TOML scalar, falling back to the raw string when neither
-    succeeds. Dotted keys nest into sub-mappings, which is exactly the shape
-    :meth:`rn_forge.commons.lang.collections.DictUtils.merge_layers` takes as
-    its highest-precedence layer — so a ``--set`` override lands in a layered
-    configuration with its provenance tracked.
+    Values are parsed as JSON, then as TOML scalars, and otherwise retained as
+    strings. Dotted keys create nested mappings.
 
     Raises:
         typer.BadParameter: An entry has no ``=``, an empty key, or a dotted

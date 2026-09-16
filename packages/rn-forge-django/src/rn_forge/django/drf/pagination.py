@@ -1,36 +1,4 @@
-"""DRF pagination: AIP-158 cursor pagination, and a legacy page-number class.
-
-:class:`CursorPagination` is the standard class. It emits the envelope
-``rn-forge-web`` specifies for every framework — ``items``, ``nextPageToken``,
-``totalSize`` absent — over the shared token codec, so a token issued by a
-Django service is byte-for-byte the token a FastAPI service issues for the same
-keyset. :class:`LegacyPageNumberPagination` is the other contract — a total and
-a jumpable page index — kept for the endpoints that genuinely need one; the
-name says which to reach for.
-
-Both read ``RN_FORGE_DJANGO["DRF"]["PAGINATION"]`` at request time, never at
-import, so ``override_settings`` takes effect. A class attribute set on a
-subclass (``page_size``, ``max_page_size``) wins over the setting.
-
-Forward-only, deliberately
---------------------------
-
-DRF's own cursor carries a ``reverse`` flag to serve a previous page.
-:class:`rn_forge.web.Cursor` has no such field and AIP-158 is forward-only, so
-this class emits no ``previousPageToken`` — the same answer the FastAPI stack
-gives. The decision is recorded in both the web and the django plans.
-
-The ordering must be unique
----------------------------
-
-DRF's keyset machinery is reused unchanged: it orders by ``ordering``, filters
-past the first field's position and fetches one extra row. DRF copes with a
-non-unique first field by carrying an *offset* in its cursor; the shared token
-carries none. So the first ordering field must be unique — ``"pk"`` (the
-default here), or a unique timestamp. A page boundary landing on a repeated
-value raises :class:`~rn_forge.commons.exceptions.AppException` rather than
-silently skipping or repeating rows.
-"""
+"""AIP-158 cursor pagination and legacy page-number pagination for DRF."""
 
 from __future__ import annotations
 
@@ -70,9 +38,8 @@ def _page_size(
 class CursorPagination(drf_pagination.CursorPagination):
     """Keyset pagination emitting the AIP-158 envelope over the shared cursor codec.
 
-    Query parameters are ``pageToken`` and the configured page-size parameter
-    (``pageSize`` by default). An over-large ``pageSize`` is clamped to the cap;
-    a tampered ``pageToken`` raises :class:`rn_forge.web.InvalidCursor` (400).
+    Pagination is forward-only and the first ordering field must be unique.
+    Invalid tokens raise :class:`rn_forge.web.InvalidCursor`.
     """
 
     cursor_query_param = DEFAULT_PAGE_TOKEN_PARAM
@@ -159,12 +126,7 @@ class CursorPagination(drf_pagination.CursorPagination):
 
 
 class LegacyPageNumberPagination(drf_pagination.PageNumberPagination):
-    """Page-number pagination. Use only where a total and a jumpable index are required.
-
-    Keeps DRF's ``count``/``next``/``previous``/``results`` envelope — a
-    different contract from :class:`CursorPagination`'s, which is why it is not
-    the default. The page size is clamped to the cap, as it is there.
-    """
+    """Page-number pagination with DRF's standard envelope and a size cap."""
 
     page_size: int | None = None  # None defers to the settings facade
     page_size_query_param = "pageSize"

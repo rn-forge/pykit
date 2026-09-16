@@ -99,10 +99,13 @@ verified by an `rn_forge.web.Authenticator` you supply, and `request.user` is th
 from rest_framework.views import APIView
 from rn_forge.django.auth.drf import PrincipalBearerAuthentication, requires
 from rn_forge.web import Requirement
+from rn_forge.web.oidc import OidcAuthenticator
 
 
 class ApiBearer(PrincipalBearerAuthentication):
-    authenticator = JwksAuthenticator(jwks_url=..., audience="api://orders", issuer=...)
+    authenticator = OidcAuthenticator.from_issuer(
+        "https://login.example.com/tenant/v2.0", audience="api://orders"
+    )
     realm = "orders"
 
 
@@ -116,9 +119,17 @@ With `problem_details_exception_handler` installed: no or invalid credentials ar
 never says why verification failed; valid credentials lacking the scope are a **403** with no
 challenge. The same `Requirement` evaluates identically on `rn-forge-fastapi`.
 
-Verifying the JWT is the authenticator's job. There is no JWKS verifier in this package, and none in
-`rn-forge-commons` yet; when commons ships one it sits behind the same `Authenticator` protocol and
-nothing here changes. The JWKS endpoint an authenticator fetches is IdP configuration:
+Verifying the JWT is the authenticator's job, and you do not have to write one:
+`rn_forge.web.oidc.OidcAuthenticator` (web's `auth` extra, which Django's `oidc` extra brings) is
+the shared implementation, so this stack accepts exactly the tokens a FastAPI service accepts.
+`JWKSBearerAuthentication` below builds one for you from class attributes.
+
+Build the authenticator **once, at import or startup** — it holds the JWKS cache, so a
+per-request instance refetches the key set on every call. For an IdP whose roles or scopes sit
+somewhere non-standard (Keycloak's nested `realm_access.roles`, an Okta group claim), pass a
+`claims_to_principal` override.
+
+The JWKS endpoint an authenticator fetches is IdP configuration:
 
 | IdP | `jwks_url` |
 | --- | --- |

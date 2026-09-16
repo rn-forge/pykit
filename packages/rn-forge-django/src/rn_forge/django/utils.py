@@ -1,12 +1,4 @@
-"""Django-specific utility helpers.
-
-Provides:
-
-- :class:`RequestUtils` — debug snapshot extraction from a Django
-  :class:`~django.http.HttpRequest`.
-- :func:`require_settings` / :func:`require_environment` — startup guards that
-  fail with Django's ``ImproperlyConfigured``, naming every missing value at once.
-"""
+"""Request diagnostics and configuration guards for Django."""
 
 from __future__ import annotations
 
@@ -56,11 +48,7 @@ class RequestUtils:
     def debug_request(request: HttpRequest) -> dict[str, Any]:
         """Return a structured snapshot of *request* for logging or error reports.
 
-        Collects path, method, content type, scheme, host/port, the full set of
-        HTTP headers, and selected META entries.  No external calls are made.
-
-        Works with both Django's :class:`~django.http.HttpRequest` and DRF's
-        ``rest_framework.request.Request`` (which exposes the same interface).
+        Sensitive authorization, cookie, and API-key metadata is redacted.
         """
         meta = dict(cast(Mapping[str, object], cast(Any, request).META))
         headers = {
@@ -102,9 +90,8 @@ class RequestUtils:
 def require_settings(*names: str) -> None:
     """Raise ``ImproperlyConfigured`` if any named Django setting is unset or blank.
 
-    Every missing name is reported in one message, so a misconfigured
-    deployment surfaces all of its problems in a single run. Blank means what
-    :meth:`rn_forge.commons.lang.utils.AppUtils.is_empty` says it means.
+    All missing names are reported together. Empty values follow
+    :meth:`rn_forge.commons.lang.utils.AppUtils.is_empty`.
 
     Raises:
         ImproperlyConfigured: One or more settings are missing.
@@ -120,11 +107,6 @@ def require_settings(*names: str) -> None:
 
 def require_environment(*names: str) -> dict[str, str]:
     """Return the named environment variables, raising if any is unset or blank.
-
-    A delegation to :meth:`rn_forge.commons.runtime.environment.Environment.require`,
-    re-raised as ``ImproperlyConfigured`` — what Django's machinery and a
-    deployment runbook expect at startup, and what commons cannot raise
-    without importing Django.
 
     Raises:
         ImproperlyConfigured: One or more variables are missing; the message

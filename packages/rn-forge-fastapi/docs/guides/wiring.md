@@ -57,8 +57,10 @@ the composition root is the only place that touches real infrastructure.
 4. **Derive every model from `WireModel`.** camelCase on the wire is enforced by
    the base class, including in a hand-built
    `JSONResponse(model.model_dump(mode="json"))`.
-5. **Name non-CRUD routes.** `operation_id` covers `<resource><Verb>` for CRUD;
-   give an action route an explicit `operation_id=`.
+5. **Spell a non-CRUD route as a custom method.** `POST /orders/{order_id}:cancel`
+   is named `ordersCancel` automatically, on both stacks. The same action as a
+   plain path segment (`/orders/{order_id}/cancel`) is indistinguishable from a
+   sub-collection and needs an explicit `operation_id=`.
 
 ## Routes
 
@@ -91,13 +93,32 @@ async def orders_update(order_id: str, if_match: Annotated[str, Depends(require_
     ...
 ```
 
+`Page[OrderOut]` reaches the schema as the component `PageOrderOut`, not
+pydantic's `Page_OrderOut_` — `install_problem_schema` renames it, and the DRF
+binding names its own the same way.
+
 `pageSize` above the cap is clamped, never rejected — do not add a
 `Query(le=...)` alongside `page_params`; that is a 422 and a specification
 violation.
 
 ## What an application still writes
 
-- **The authenticator.** `bearer_auth` takes any `rn_forge.web.Authenticator` or
+- **The authenticator — unless it is OIDC.** For bearer tokens from an identity
+  provider, install `rn-forge-fastapi[oidc]` and use the shared implementation
+  rather than writing one:
+
+  ```python
+  from rn_forge.web.oidc import OidcAuthenticator
+
+  authenticator = OidcAuthenticator.from_issuer(
+      "https://idp.example.com/tenant", audience="api://orders"
+  )
+  caller = bearer_auth(authenticator=authenticator, log=log)
+  ```
+
+  Build it once at startup — it holds the JWKS cache. It is the same
+  authenticator `rn-forge-django` uses, so both stacks accept the same tokens.
+  For any other scheme, `bearer_auth` takes any `rn_forge.web.Authenticator` or
   `AsyncAuthenticator`: verify the token, map claims to a `Principal`, and raise
   `AuthenticationFailed` with the reason — the reason reaches `log`, never the
   body. A sync `Authenticator` runs in the threadpool, so a blocking JWKS fetch

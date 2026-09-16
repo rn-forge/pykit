@@ -36,21 +36,9 @@ def make_outbox_relay[M: AbstractOutboxMessage](
 ) -> Callable[[], int]:
     """Build a callable that claims, publishes and marks one batch of outbox rows.
 
-    The returned callable takes no arguments and returns how many messages it
-    published, so a caller drains the outbox with
-    ``while relay(): pass`` — and a Celery beat task is one line around it::
-
-        relay = make_outbox_relay(OutboxMessage, bus, envelope_builder=to_envelope)
-
-        @shared_task
-        def publish_outbox() -> int:
-            return relay()
-
     Rows are claimed with ``select_for_update(skip_locked=True)`` in
-    ``transaction.atomic()``, oldest ``occurred_at`` first, and every row is
-    published to its own ``destination`` before the batch is marked. A publish
-    error rolls the claim back, so the batch is retried whole — at-least-once;
-    see the package docstring.
+    ``transaction.atomic()``. A publish error rolls the claim back, so delivery
+    is at least once.
 
     Args:
         outbox_model: The consuming app's concrete outbox model.

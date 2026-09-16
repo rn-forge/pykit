@@ -1,11 +1,4 @@
-"""Typed environment-variable access, with fail-fast guards.
-
-Provides :class:`Environment` — reading, writing and interpreting environment
-variables, plus the ``require``/``forbid`` guards a process calls at startup so
-that a misconfigured deployment fails at boot rather than at the first request.
-
-All methods are static with no import-time side effects.
-"""
+"""Typed environment-variable access with fail-fast startup guards."""
 
 from __future__ import annotations
 
@@ -22,10 +15,7 @@ __all__ = ["Environment"]
 
 
 class Environment:
-    """Typed helpers for reading and writing environment variables.
-
-    All methods are static.
-    """
+    """Typed helpers for reading and writing environment variables."""
 
     @staticmethod
     def get_all() -> dict[str, str]:

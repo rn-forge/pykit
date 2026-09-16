@@ -1,20 +1,4 @@
-"""Abstract Django model building blocks.
-
-Provides:
-
-- :class:`NaturalKeyLookupManager` — Manager that resolves natural keys for
-  fixture loading.
-- :class:`TruncateModelMixin` — ``TRUNCATE TABLE`` helper, useful for test
-  teardown.
-- :class:`FixtureModelMixin` — Abstract contract that declares the
-  ``natural_keys()`` class method.
-- :class:`BaseModel` — Abstract model with status, audit timestamps, and
-  natural-key support.
-- :class:`DateModel` — Abstract model extending :class:`BaseModel` with a
-  single date field.
-- :class:`DateRangeModel` — Abstract model extending :class:`BaseModel` with
-  ``start_date`` / ``end_date`` and an ``is_date_range_active`` property.
-"""
+"""Abstract Django model building blocks."""
 
 from __future__ import annotations
 
@@ -85,8 +69,7 @@ class TruncateModelMixin:
     def truncate(cls) -> None:
         """Truncate the table backing this model.
 
-        Uses ``TRUNCATE TABLE`` on backends that support it (PostgreSQL, MySQL).
-        Falls back to ``DELETE FROM`` on SQLite, which does not support TRUNCATE.
+        SQLite falls back to ``DELETE FROM`` because it lacks ``TRUNCATE``.
         """
         _LOGGER.warning("TruncateModelMixin.truncate: {}", cls.__name__)
         table = connection.ops.quote_name(get_model_meta(cls).db_table)
@@ -105,19 +88,15 @@ class FixtureModelMixin:
     def natural_keys(cls) -> list[str]:
         """Return the list of field names that form this model's natural key.
 
-        Used by :class:`NaturalKeyLookupManager` to resolve fixture references.
-        Consumers should treat the corresponding :meth:`natural_key` values as a
-        tuple even when only one field name is returned here.
+        The corresponding :meth:`natural_key` always returns a tuple.
         """
         raise NotImplementedError(f"natural_keys not implemented: {cls.__name__}")
 
     def natural_key(self) -> tuple[Any, ...]:
         """Return the current instance values for :meth:`natural_keys`.
 
-        Dotted attribute paths are supported. Legacy Django-style
-        ``"relation__field"`` paths are accepted and converted to standard
-        attribute traversal. Single natural-key values are normalized to a
-        one-element tuple so callers always receive tuple-shaped output.
+        Supports dotted paths and legacy ``"relation__field"`` paths. A single
+        value is returned as a one-element tuple.
         """
         getter = attrgetter(*(key.replace("__", ".") for key in self.natural_keys()))
         result = cast(object | tuple[Any, ...], getter(self))
@@ -138,12 +117,8 @@ class BaseModel(
 ):
     """Abstract base model with status field and audit timestamps.
 
-    All concrete models should inherit from this class. The default manager
-    (:attr:`objects`) is :class:`NaturalKeyLookupManager`, which enables
-    natural-key fixture loading.
-
-    Field names use snake_case. The underlying database columns preserve the
-    original camelCase names for backwards compatibility.
+    Uses :class:`NaturalKeyLookupManager` and preserves camelCase database
+    column names.
     """
 
     status = EnumField.build(
@@ -181,11 +156,7 @@ class BaseModel(
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
     ) -> None:
-        """Optionally run model validation, then delegate to ``super().save()``.
-
-        The explicit ``full_clean`` call is kept here because this library
-        allows models to opt into validation-on-save.
-        """
+        """Optionally validate the model before saving it."""
         if self.should_validate_on_save():
             self.full_clean(exclude=self.get_full_clean_exclude(update_fields))
 

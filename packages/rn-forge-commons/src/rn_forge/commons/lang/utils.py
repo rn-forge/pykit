@@ -1,18 +1,4 @@
-"""Value and import helpers, plus base64 encoding.
-
-Provides:
-
-- :class:`AppUtils` — bool parsing, emptiness checks, dynamic imports,
-  null-safe attribute access, string joining and unified diffs.
-- :class:`Base64` — encode/decode helpers that accept ``str`` or ``bytes``.
-
-:class:`AppUtils` is an acknowledged grab bag rather than a designed surface;
-it stays whole because splitting it would break a public class name for
-tidiness. A new helper belongs in a named module unless it genuinely has no
-other home.
-
-All methods are static with no import-time side effects.
-"""
+"""Value, dynamic-import, diff, and base64 helpers."""
 
 from __future__ import annotations
 
@@ -33,10 +19,7 @@ __all__ = ["AppUtils", "Base64"]
 
 
 class Base64:
-    """Base64 encode/decode utilities that accept ``str`` or ``bytes`` input.
-
-    All methods are static.
-    """
+    """Base64 utilities accepting ``str`` or ``bytes`` input."""
 
     @staticmethod
     def encode(value: str | bytes) -> str:
@@ -57,10 +40,7 @@ class Base64:
 
 
 class AppUtils:
-    """General-purpose value and import utilities.
-
-    All methods are static.
-    """
+    """General-purpose value and import utilities."""
 
     @staticmethod
     def parse_bool(value: Any, *, strict: bool = True) -> bool | None:
@@ -146,12 +126,8 @@ class AppUtils:
     def import_string(qualname: str, package: str | None = None) -> Any:
         """Import and return an object by its fully-qualified dotted name.
 
-        Delegates to :func:`pkgutil.resolve_name` for the absolute case, which
-        also accepts ``pkg.mod:attr`` (colon-separated) as well as
-        ``pkg.mod.attr`` — a superset of this function's original
-        dot-only contract. Relative imports (a *qualname* starting with
-        ``"."``) are not supported by :func:`~pkgutil.resolve_name`, so they
-        are still handled via :func:`importlib.import_module`.
+        Accepts ``pkg.mod:attr`` and ``pkg.mod.attr`` forms. A leading ``.``
+        performs a relative import and requires *package*.
 
         Args:
             qualname: Dotted (or ``pkg.mod:attr``) path to the target, e.g.

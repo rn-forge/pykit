@@ -1,35 +1,7 @@
-"""The correlation ID: a per-request identifier that survives service hops.
+"""Store and propagate a request correlation ID.
 
-The smallest module in the package and the one everything else reads. It holds
-a :class:`~contextvars.ContextVar` and the four functions around it, plus a
-structlog-shaped log processor that injects the bound value.
-
-Two ways to bind, and the difference matters
---------------------------------------------
-
-:func:`set_correlation_id` binds without keeping a reset token.
-:func:`bind_correlation_id` is a context manager that resets on exit. They are
-not interchangeable, and the next person to read this will want to "fix" one
-into the other:
-
-- **ASGI (use** :func:`set_correlation_id` **).** Every request runs in its own
-  task with its own copied context, so leaving the value bound leaks nothing
-  into another request. It must *not* be reset in a ``finally``, because a bare
-  ``Exception`` handler is dispatched by the server's outermost error
-  middleware — which sits outside every user-added middleware — so resetting on
-  the way out unbinds the value before the handler that needs it runs.
-- **WSGI / sync (use** :func:`bind_correlation_id` **).** A worker thread
-  genuinely is reused across requests, so the binding must be undone or the
-  next request on that thread inherits it.
-
-The log processor is duck-typed
--------------------------------
-
-:func:`correlation_log_processor` has structlog's processor signature — three
-positional arguments returning the event dict — but this module does not import
-structlog. That is deliberate boundary-keeping rather than dependency
-avoidance: this package must stay importable in a process that has no
-structlog, and the signature is three positional arguments wide.
+Use :func:`set_correlation_id` for task-local ASGI contexts and
+:func:`bind_correlation_id` where a reused worker context must be reset.
 """
 
 from __future__ import annotations
@@ -54,13 +26,7 @@ __all__ = [
 ]
 
 DEFAULT_CORRELATION_HEADER: Final = "X-Correlation-ID"
-"""The header name every ``rn-forge-*`` application reads and writes.
-
-``X-Correlation-ID`` rather than ``X-Request-ID`` because it is the name that
-survives across service hops, which is the actual use case. It is a parameter
-everywhere it is read, for deployments fronted by infrastructure that stamps a
-different header.
-"""
+"""Default request and response header for correlation IDs."""
 
 CORRELATION_ID_KEY: Final = "correlation_id"
 """The key :func:`correlation_log_processor` writes, and the problem-body extension name."""
@@ -79,8 +45,7 @@ def new_correlation_id() -> str:
 def set_correlation_id(value: str) -> None:
     """Bind *value* for the current context, keeping no reset token.
 
-    This is the ASGI form. See the module docstring for why it deliberately
-    does not reset.
+    Use this form when the caller owns an isolated task context.
     """
     correlation_id_var.set(value)
 
@@ -130,9 +95,7 @@ def correlation_log_processor(
 ) -> MutableMapping[str, Any]:
     """Inject the bound correlation ID into a structlog event dict.
 
-    Usable directly as ``structlog.configure(processors=[correlation_log_processor, ...])``.
-    The signature is duck-typed against structlog's processor protocol, not an
-    import of it — see the module docstring.
+    Usable directly as a structlog processor without importing structlog.
 
     Args:
         logger: The bound logger. Unused; part of the processor signature.

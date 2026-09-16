@@ -1,7 +1,4 @@
-"""Content digests, for detecting drift between a recorded and a current state.
-
-Provides :class:`ContentHash`. All methods are static.
-"""
+"""Content digests for detecting drift from a recorded state."""
 
 from __future__ import annotations
 
@@ -12,10 +9,7 @@ __all__ = ["ContentHash"]
 
 
 class ContentHash:
-    """Content-hashing helpers, for detecting drift between a recorded and current state.
-
-    All methods are static.
-    """
+    """Content-hashing helpers for strings, bytes, and files."""
 
     @staticmethod
     def of(content: str | bytes, *, algorithm: str = "sha256") -> str:

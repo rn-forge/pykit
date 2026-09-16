@@ -1,55 +1,4 @@
-"""The declared ``[cli]`` surface a repository describes itself with (kiln ADR-0009).
-
-A repository states what its command line *is* — its name, its help text and
-which command namespaces exist — and :class:`~rn_forge.cli.app.CliApp` builds
-the application from that description. The repository writes command
-functions; it never writes app construction, flag plumbing or exit-code
-handling.
-
-The description looks like this, in whatever configuration document the
-repository already has (``.rn-forge/kiln/config.toml``, for a kiln-managed
-repo)::
-
-    [cli]
-    name = "golden-app"
-    help = "Do the thing."
-
-    [[cli.commands]]
-    name = "sync"
-    target = "golden_app.commands.sync:sync"
-
-    [[cli.commands]]
-    name = "db"
-    help = "Database maintenance."
-    target = "golden_app.commands.db:app"
-
-A *target* naming a :class:`typer.Typer` becomes a subcommand namespace; a
-target naming a function becomes a single command. Either way the target is
-imported by name, so nothing here learns what a command does.
-
-An installable tool also declares its lifecycle verbs (``install``,
-``upgrade``, ``uninstall``, ``cleanup``, ``status``, ``doctor``)::
-
-    [cli.lifecycle]
-    product = "golden_tool.product:PRODUCT"
-    target = "<module:factory that builds the verb commands>"
-    verbs = ["status", "doctor"]          # optional; default: all six
-
-*target* names a factory called with the imported product and the verbs,
-returning a :class:`typer.Typer` whose commands are mounted at the root. The
-factory lives in the file-owning tooling package, which this package may not
-import — so it is reached, like every other target, only by name.
-
-**This module holds records, not behaviour.** It parses and validates a
-surface; :mod:`rn_forge.cli.app` turns one into a running application. The
-split is what lets a repository's configuration be *checked* — by a kiln
-config command, or by a test — without constructing a Typer app to do it.
-
-**This reads a surface; it does not own one.** The ``[cli]`` table is the
-repository's config, rendered there by whatever tool manages the repository.
-Nothing here knows about kiln, archetypes or ``.rn-forge/`` — pass the path,
-or pass the already-parsed mapping.
-"""
+"""Models for a repository's declared ``[cli]`` surface."""
 
 from __future__ import annotations
 
@@ -60,7 +9,7 @@ from typing import Any, Iterable, Mapping, Self
 from rn_forge.cli.options import LogLevel
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import DocumentUtils
-from rn_forge.commons.lang.dataclasses import StrictDataclassMixin
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = [
     "CliSurface",
@@ -78,7 +27,7 @@ LIFECYCLE_VERBS = ("install", "upgrade", "uninstall", "cleanup", "status", "doct
 
 
 @dataclass(frozen=True, slots=True)
-class CommandSurface(StrictDataclassMixin):
+class CommandSurface(DataclassMixin):
     """One command or command namespace of a declared CLI.
 
     Args:
@@ -96,7 +45,7 @@ class CommandSurface(StrictDataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
-class LifecycleSurface(StrictDataclassMixin):
+class LifecycleSurface(DataclassMixin):
     """The lifecycle verbs of an installable tool.
 
     Args:
@@ -125,13 +74,8 @@ class LifecycleSurface(StrictDataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
-class CliSurface(StrictDataclassMixin):
+class CliSurface(DataclassMixin):
     """A whole declared command line.
-
-    A :class:`~rn_forge.commons.lang.dataclasses.StrictDataclassMixin` because
-    every field here comes from a document a person wrote by hand: a ``str``
-    where a ``bool`` belongs should name the offending key, not surface three
-    frames later as an attribute error.
 
     Args:
         name: The application name, also used as the root logger name.

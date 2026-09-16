@@ -27,7 +27,7 @@ That is the whole of it. What each piece does:
 | Setting | Effect |
 | --- | --- |
 | `CamelCaseJSONRenderer` / `CamelCaseJSONParser` | camelCase out; camelCase **or** `snake_case` in. Switch off with `RN_FORGE_DJANGO["DRF"]["CASING"]["ENABLED"] = False` |
-| `WireAutoSchema` | `operationId` = `<resource><Verb>` (`workItemsList`, `workItemsGet`, `workItemsCreate`, ...) |
+| `WireAutoSchema` | `operationId` = `<resource><Verb>` (`workItemsList`, `workItemsGet`, `workItemsCreate`, ...), `<resource><Action>` for an AIP-136 custom method (`/orders/<str:pk>:cancel` → `ordersCancel`), and `Page<Item>` for the paginated component in place of drf-spectacular's `Paginated<Item>List`. Both rules come from `rn_forge.web.openapi`, which the FastAPI binding reads too |
 | `SPECTACULAR_SETTINGS` | pins OAS 3.1.0, always emits `ProblemDetail`, camelizes component property names |
 | importing `rn_forge.django.drf.openapi` | registers `bearerAuth` / `basicAuth` security schemes for the principal authentication classes |
 

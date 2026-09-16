@@ -25,7 +25,7 @@ type ConformanceArea = Literal[
     "casing",
     "correlation",
 ]
-"""The eight areas §11.2 of the web plan requires coverage in."""
+"""Areas covered by the conformance suite."""
 
 REDACTED: Final = "<redacted>"
 """What :func:`redact` substitutes for a member that legitimately varies."""
@@ -58,19 +58,9 @@ class RequestSpec:
 class ConformanceCase:
     """One wire decision, expressed as a request and the response it must get.
 
-    ``expect_headers`` is compared case-insensitively on the field name and
-    exactly on the value. ``expect_body`` is compared for equality *after*
-    :func:`redact`, so a member listed in :data:`VARIABLE_MEMBERS` need only be
-    present, not equal.
-
-    ``expect_absent_headers`` is the negative half, and it carries real weight:
-    a 403 that wrongly emits a ``WWW-Authenticate`` challenge is a
-    specification violation no positive assertion catches.
-
-    ``depends_on`` names cases whose requests must be issued, in order, before
-    this one — a replay only replays something. It is stated as data rather
-    than left to the order of the table, because a driver running under a
-    randomizing test runner would otherwise pass or fail by luck.
+    Header names are compared case-insensitively and values exactly. Bodies are
+    compared after :func:`redact`. ``depends_on`` names prerequisite requests
+    in execution order.
     """
 
     id: str

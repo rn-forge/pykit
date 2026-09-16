@@ -1,17 +1,4 @@
-"""The Django-cache :class:`rn_forge.web.IdempotencyStore`, and its DRF seam.
-
-The protocol, request hashing and reuse semantics are :mod:`rn_forge.web.idempotency`'s.
-This module stores claims in the Django cache and lifts the key off a DRF
-request; it decides nothing else.
-
-**The claim is ``cache.add()``.** It is an atomic set-if-absent, which is what
-gives the store the race property the protocol requires: two concurrent
-first-sight requests, one claim. A ``get``-then-``set`` store lets both execute
-and no ordinary test notices.
-
-**Use a shared cache backend.** ``LocMemCache`` gives every worker process its
-own dictionary, which makes this store a no-op under any real deployment.
-"""
+"""Django-cache idempotency storage and DRF integration."""
 
 from __future__ import annotations
 
@@ -39,7 +26,7 @@ _SAFE_METHODS: Final = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
 
 class CacheIdempotencyStore:
-    """``rn_forge.web.IdempotencyStore`` over the Django cache.
+    """Implement ``rn_forge.web.IdempotencyStore`` over a shared Django cache.
 
     Args:
         timeout: Seconds a claim and its stored response live. Defaults to 24h.
@@ -54,10 +41,8 @@ class CacheIdempotencyStore:
     def cache_key(scope: str, key: str) -> str:
         """Return the cache key for *key* within *scope*.
 
-        ``scope`` exists so two endpoints cannot collide on a client-chosen key:
-        pass the route name, or a tenant id for a tenant-scoped API. The scope
-        is length-prefixed, so a ``:`` in either part cannot make two
-        ``(scope, key)`` pairs share an entry.
+        The length-prefixed scope prevents collisions between endpoint or tenant
+        namespaces.
         """
         return f"idempotency:{len(scope)}:{scope}:{key}"
 
@@ -110,10 +95,10 @@ def idempotent[V, **P](
 ]:
     """Decorate a DRF handler method so an unsafe request executes once per key.
 
-    A missing key on an unsafe method is :class:`rn_forge.web.IdempotencyKeyRequired`
-    (400); a replay returns the stored status and body verbatim; the same key
-    with a different body is :class:`rn_forge.web.IdempotencyKeyReuse` (409).
-    Safe methods pass straight through.
+    Safe methods bypass the store. A missing key on an unsafe method raises
+    :class:`rn_forge.web.IdempotencyKeyRequired` (400); a replay returns the
+    stored status and body verbatim; the same key with a different body raises
+    :class:`rn_forge.web.IdempotencyKeyReuse` (409).
 
     Example::
 

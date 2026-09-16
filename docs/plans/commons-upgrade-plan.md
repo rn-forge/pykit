@@ -29,17 +29,26 @@ Two sources feed this plan, and it is self-contained — it does not depend on a
 
 ## Execution status (2026-09-13)
 
-> **Parts A–E are done, reviewed and committed (Parts D and E at `f59c40f`).
-> [Part F](#part-f--the-tool-lifecycle-surface-kiln-phase-c3) — the tool
-> lifecycle surface — is in the working tree.** Everything between this line and
+> **Parts A–F are done, reviewed and committed (Parts D and E at `f59c40f`,
+> [Part F](#part-f--the-tool-lifecycle-surface-kiln-phase-c3) at `757908e`).**
+> Everything between this line and
 > Part D is the record of what was built and why; read it for context, not for
 > instructions. The boundary it describes under "Final package boundary" is
 > **superseded** by Part D. The module layout Part D gives `rn-forge-cli` is
 > **superseded by Part E**, which renames inside that package without moving the
 > package boundary.
 >
-> **What remains is D.8 (the release tags) and D.9 (`golden/python-app`, in
-> kiln).** The owner has sequenced both after kiln's in-progress work.
+> **What remains for this plan:** **D.8, the release — deliberately last**. The
+> Part E strict-dataclass follow-ups are done (E.1a, 2026-09-15). D.9
+> (`golden/python-app`) and kiln F3.3 are kiln's acceptance of this work, not
+> items this plan closes.
+>
+> **The release, in plain terms:** the packages ask for each other by git tags
+> that have not been created. Inside this repo that is invisible, because `uv`
+> links them directly; outside it, nothing can install them until the tags
+> exist. Releasing means merging to `main` and tagging commons → cli → tooling
+> (→ web → django/fastapi). No code changes when it happens. It goes last so the
+> remaining fixes land in the first published version rather than a second one.
 
 ### Parts A–C (2026-09-09)
 
@@ -2625,15 +2634,13 @@ the `AppException` mapping, and validation whose failure message names dacite's
 internals is not worth turning on.
 
 Applies to records parsed from externally-authored documents — `CliSurface`,
-`CommandSurface` now; `DocsArea`, `StateEntry` and the `FixtureDefinition`
-family are the remaining candidates. Records constructed in code (`Finding`,
+`CommandSurface` now; `Area` (tooling `docs/areas.py`), `StateEntry` and the
+`FixtureDefinition` family are the remaining candidates. Records constructed in code (`Finding`,
 `Process`, `Page[T]`, `ProblemDetail`, `Principal`) stay on the base.
 
-**Deferred, deliberately:** making strict the *default* and lenient the opt-out
-is the better end state. The current default exists to preserve pre-upgrade
-behaviour, not because it is right. Flipping it is a behaviour change across
-five packages and every `from_dict` round trip, so it needs its own pass with
-the callers enumerated — not a drive-by.
+**Superseded by E.1a (2026-09-15): strict is now the default.** What this
+section describes as `StrictDataclassMixin` is `DataclassMixin` itself, and the
+class named here no longer exists.
 
 ### E.2 — `console.py` → `commons/runtime/console.py`
 
@@ -2718,16 +2725,58 @@ the first; the chain matches `AppConsole.set_mode`, which already returns `Self`
 
 ### Follow-ups this part deliberately did not do
 
-- Flip `DataclassMixin`'s default to strict (see E.1).
-- Move `DocsArea`, `StateEntry` and the `FixtureDefinition` family onto
-  `StrictDataclassMixin` — same reasoning as `CliSurface`, but each needs its
-  own round-trip check.
+**Decided 2026-09-14 (owner): do both, before the release. Done 2026-09-15 —
+see E.1a.**
+
+- [x] Flip `DataclassMixin`'s default to strict (see E.1).
+- [x] Move `Area`, `StateEntry` and the `FixtureDefinition` family onto strict
+      parsing, each with its own round-trip check. The earlier text named the
+      first record `DocsArea`; no such class exists. It is `Area` in
+      `rn_forge/tooling/docs/areas.py`, which was a plain frozen dataclass that
+      `load_areas` validated by hand.
+
+### E.1a — strict by default (2026-09-15)
+
+`DataclassMixin.from_dict` now type-checks and raises `AppException`;
+`StrictDataclassMixin` is **gone**, not aliased, and `LenientDataclassMixin` is
+the opt-out. `CliSurface` and its two siblings simply subclass the base.
+
+`Area` moved onto the mixin and `load_areas` parses through `from_dict` instead
+of coercing each field with `str()`/`bool()`; it re-raises naming the manifest,
+which the class-level message cannot know. `StateEntry` dropped its hand-written
+`__dacite_config__` — the override the base docstring warns about — and gains
+the `AppException` translation it never had. The `FixtureDefinition` family
+needed no change beyond tests.
+
+**What the pass actually found.** dacite 1.9.2's type check cannot see through
+two annotations this workspace uses freely on a 3.14 floor:
+
+- a **PEP 695 `type` alias** — it compares the value against the
+  `TypeAliasType` object, so *every* value is rejected;
+- an **unbound type variable** on a generic record.
+
+That is not a style problem, it is the reason four records opt out:
+`Finding` (`details: dict[str, JsonValue]`), `CheckResult` and `HealthReport`
+(`status: CheckStatus`) and `Page[T]` (`items: Sequence[T]`). All four are
+built in code rather than parsed from a document, so nothing is lost — but the
+rule is now load-bearing and lives in the `dataclasses` module docstring, with
+both limitations pinned by tests so a dacite release that fixes either fails
+loudly. A recursive alias (`JsonValue`) cannot be inlined around this; a
+non-recursive one (`CheckStatus`) could be, at the cost of stating the type
+twice, and was not.
+
+**One behaviour change worth knowing about:** `FixtureManagerConfig.root_path`
+is a `Path`, so a config document giving it as a string is now rejected rather
+than silently producing a `str` that fails later at `joinpath`. No loader in
+this repo parses that record yet. Adding `Path` to the mixin's `cast` list is
+the fix when one does; it was left out here because nothing needs it and the
+cast would apply workspace-wide.
 
 ---
 
 ## Part F — the tool lifecycle surface (kiln Phase C.3)
 
-**Status: applied in the working tree (uncommitted), 2026-09-13.** The scope,
+**Status: done, committed at `757908e`.** The scope,
 design and acceptance are `kiln-dependencies.md` §2.1; kiln F3.3 is the
 consumer. No package boundary moves: `.importlinter` still holds 7 contracts,
 and `rn-forge-cli` still names no tooling module.

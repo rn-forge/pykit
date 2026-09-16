@@ -1,14 +1,4 @@
-"""Optimistic concurrency and immutability, as mixins that compose with any base.
-
-Neither is folded into :class:`~rn_forge.django.models.base.BaseModel`: a model
-opts in by listing the mixin *before* its base, so ``super().save()`` still
-reaches ``BaseModel``'s validation::
-
-    class Order(VersionedModelMixin, BaseModel): ...
-
-The precondition side — turning ``If-Match`` into a 412 — is
-:func:`rn_forge.django.drf.concurrency.enforce_version`.
-"""
+"""Opt-in optimistic-concurrency and immutability model mixins."""
 
 from __future__ import annotations
 
@@ -26,19 +16,8 @@ __all__ = ["ImmutableModelMixin", "VersionedModelMixin"]
 class VersionedModelMixin(models.Model):
     """Abstract mixin adding an optimistic-concurrency ``version`` counter.
 
-    ``version`` starts at 1 and is incremented by every ``save()`` of an
-    existing row — never on insert. A partial save with ``update_fields`` still
-    persists the bump, since that is exactly the path optimistic concurrency
-    exists for.
-
-    The increment is done in Python rather than with an ``F()`` expression: an
-    ``F()`` leaves the in-memory instance stale, and the ETag a response emits
-    right after the save would carry the old version.
-
-    The ``UPDATE`` is conditioned on the version the instance was loaded at, so
-    the check and the write are one statement: of two instances loaded at the
-    same version, the second to save matches no row and raises
-    :class:`rn_forge.web.VersionConflict` (412) instead of overwriting the first.
+    Existing rows increment from the loaded version, including partial saves.
+    A concurrent update raises :class:`rn_forge.web.VersionConflict`.
     """
 
     version: models.PositiveIntegerField[int, int] = models.PositiveIntegerField(
@@ -121,15 +100,8 @@ class VersionedModelMixin(models.Model):
 class ImmutableModelMixin(models.Model):
     """Abstract mixin that rejects post-creation mutation and deletion.
 
-    Saving an existing row re-reads it and raises
-    :class:`rn_forge.web.DomainConflict` (409) if any concrete field outside
-    ``IMMUTABLE_EXCLUDE_FIELDS`` differs — **one extra query per save**, which
-    is the cost of the guarantee. ``delete()`` always raises. Inserts are
-    untouched.
-
-    The default exclusions are ``BaseModel``'s audit columns; a model on a
-    different base overrides the class attribute. Queryset-level ``update()``
-    and ``delete()`` bypass model methods and are not guarded.
+    Saving a changed row raises :class:`rn_forge.web.DomainConflict`; deleting
+    always raises. Queryset-level ``update()`` and ``delete()`` bypass the guard.
     """
 
     IMMUTABLE_EXCLUDE_FIELDS: ClassVar[frozenset[str]] = frozenset(

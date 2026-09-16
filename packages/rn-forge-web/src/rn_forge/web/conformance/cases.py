@@ -1,31 +1,4 @@
-"""The cases themselves: one per wire decision this package settles.
-
-Every case here encodes a decision made elsewhere in the package, and the
-comment above each group names it. A decision with no case is treated as
-unfinished, so this file grows in the same change as the module it constrains.
-
-The fixture endpoints a driver must expose
-------------------------------------------
-
-The paths below are not arbitrary; a driver builds a small application that
-serves exactly these, over the primitives in this package:
-
-| Path | Behaviour the driver wires |
-| --- | --- |
-| `/conformance/boom` | raises an unregistered exception |
-| `/conformance/conflict` | raises `DomainConflict("Order already dispatched")` |
-| `/conformance/missing` | the framework's own 404, mapped through the registry |
-| `/conformance/validate` | validates a body with one required `name` field |
-| `/conformance/items/1` | `PATCH`, `check_precondition(..., current_version=7, entity_id="1", required=True)` |
-| `/conformance/items` | `GET`, a three-item collection paginated with `default=2, cap=2` |
-| `/conformance/charges` | `POST`, guarded by an `InMemoryIdempotencyStore` |
-| `/conformance/readyz` | `run_checks({"db": ..., "queue": ...}, required=["db"])` |
-| `/conformance/private` | requires `Requirement(all_scopes={"read"})` |
-| `/conformance/echo` | `GET`, returns `{}` and nothing else |
-
-Each of those is one or two lines over this package's primitives, which is the
-point: if a driver needs more than that, the split is wrong.
-"""
+"""HTTP conformance cases consumed by framework-specific test drivers."""
 
 from __future__ import annotations
 

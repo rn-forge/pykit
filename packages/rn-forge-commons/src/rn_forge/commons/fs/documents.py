@@ -1,29 +1,8 @@
-"""Serialisation and round-trip config documents: JSON, YAML, and TOML.
+"""JSON, YAML, and TOML serialization and round-trip document editing.
 
-Provides:
-
-- :class:`JsonUtils` — JSON load/serialize/file I/O with dataclass-aware
-  serialisation and sensible defaults.
-- :class:`YamlUtils` — YAML load/serialize/file I/O with multi-document
-  support.
-- :class:`ConfigFormat` — TOML/YAML/JSON, resolved from a path suffix.
-- :class:`DocumentUtils` — suffix-dispatched plain-mapping I/O (comments
-  discarded) and round-trip document I/O (comments and formatting preserved).
-- :class:`DocumentError` — raised on an unreadable, unparsable, or
-  non-mapping-rooted document.
-
-**One YAML backend.** ``ruamel.yaml`` handles every YAML path in this
-package: ``typ="safe"`` for plain loads and dumps, ``typ="rt"`` only where
-comments and formatting must survive an edit. ``pyyaml`` is not a dependency
-— ruamel is a functional superset of it, and running two YAML parsers with
-divergent behaviour in one package is worse than the one dependency swap.
-The trade-off is that ruamel's ``load``/``dump`` are typed as partially
-unknown, so calls go through :func:`_yaml_load` / :func:`_yaml_dump`, which
-own the required ``cast`` in one place rather than scattering it across
-call sites.
-
-TOML uses ``tomlkit`` rather than stdlib ``tomllib``: ``tomllib`` reads TOML
-but cannot write it, and cannot preserve comments across an edit.
+Plain reads return regular mappings and discard comments. Round-trip reads use
+``ruamel.yaml`` or ``tomlkit`` to preserve comments and formatting across an
+edit. YAML also supports multi-document streams.
 """
 
 from __future__ import annotations
@@ -467,8 +446,6 @@ class DocumentUtils:
     comments. The *document* methods (:meth:`read_document`,
     :meth:`write_document`, :meth:`update`) keep the backing library's own
     containers, so comments and formatting survive an edit.
-
-    All methods are static.
     """
 
     # -- plain mappings (comments discarded) --------------------------------

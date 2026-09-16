@@ -34,11 +34,7 @@ _DJANGO_AUTH = cast(DjangoAuthProtocol, django_auth)
 
 
 class BaseLoginViewMixin[_UserT]:
-    """Session-oriented login/logout helpers for DRF views.
-
-    This mixin is intentionally token-agnostic. Subclasses can override
-    :meth:`build_login_response` to add JWTs or provider-specific metadata.
-    """
+    """Token-agnostic session login and logout helpers for DRF views."""
 
     auto_create_user = False
     user_lookup_param = "email"

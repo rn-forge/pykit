@@ -1,12 +1,4 @@
-"""Classification: what applying an artifact *would* do, before anything is written.
-
-:func:`classify` maps (rendered content, disk content, last-applied state) to
-an :class:`~rn_forge.tooling.generation.artifacts.Action`. :func:`plan`
-collects those into a :class:`~rn_forge.tooling.generation.artifacts.Plan`;
-actions that mean "the working tree disagrees with what I last wrote" (drift,
-conflict, missing) are *blocking*, and abort the whole plan before anything is
-written unless the caller has explicitly approved that path.
-"""
+"""Classify generated artifacts without modifying the working tree."""
 
 from __future__ import annotations
 
@@ -110,8 +102,7 @@ def plan(
         entries: The state recorded by the previous apply, keyed by
             :attr:`Artifact.key`.
         force: Repo-relative paths (or artifact keys) whose blocking action the
-            caller has explicitly approved. Approving a path approves only that
-            path; there is deliberately no "force everything" value here.
+            caller has explicitly approved.
     """
     root = Path(root)
     approved = set(force)

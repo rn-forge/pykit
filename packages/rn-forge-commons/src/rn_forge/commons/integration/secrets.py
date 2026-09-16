@@ -1,17 +1,7 @@
 """Secret-access protocols: fail fast on a missing secret, never on a silent default.
 
-Provides:
-
-- :class:`SecretStore` / :class:`AsyncSecretStore` — a minimal
-  get-secret-by-key protocol, satisfied structurally by any adapter (Azure Key
-  Vault, AWS Secrets Manager, ...).
-- :class:`EnvSecretStore` — reads secrets from the process environment. The
-  local/dev default.
-- :class:`SecretNotFound` — raised on a missing secret, never a silent
-  ``None``: an ``Optional`` return invites ``or "default"``, which is how a
-  service silently starts up unauthenticated.
-
-This module has no optional dependency.
+Missing keys raise :class:`SecretNotFound`; they never return ``None`` and risk
+silently substituting an insecure default.
 """
 
 from __future__ import annotations

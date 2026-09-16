@@ -1,15 +1,4 @@
-"""DRF-specific exception helpers.
-
-Two handlers, and a consumer picks one through its own
-``REST_FRAMEWORK["EXCEPTION_HANDLER"]``; this package wires neither:
-
-- :func:`drf_exception_handler` — this package's original
-  ``{"path", "error", "message"}`` body.
-- :func:`problem_details_exception_handler` — RFC 9457
-  ``application/problem+json``, the wire contract shared with
-  ``rn-forge-fastapi`` and specified in ``rn-forge-web``'s
-  ``api-conventions.md``. Choose this one for any new API.
-"""
+"""DRF exception handlers for legacy JSON and RFC 9457 responses."""
 
 from __future__ import annotations
 
@@ -63,13 +52,7 @@ def drf_exception_handler(
 
 
 def problem_registry(*, type_base: str = "") -> ProblemRegistry:
-    """Return a fresh :func:`rn_forge.web.default_registry` with DRF's one extra row.
-
-    DRF's ``ValidationError`` is registered against ``validation-error``/422 —
-    the status the shared contract gives a validation failure, where DRF alone
-    would say 400. Every other DRF ``APIException`` needs no row: it resolves
-    by the status DRF gives it, through
-    :meth:`rn_forge.web.ProblemRegistry.problem_for_status`.
+    """Return the default problem registry with DRF validation mapped to 422.
 
     Args:
         type_base: Forwarded to :func:`rn_forge.web.default_registry`.
@@ -90,23 +73,8 @@ def problem_details_exception_handler(
 ) -> JsonResponse:
     """Render an exception as an RFC 9457 ``application/problem+json`` response.
 
-    DRF's default ``exception_handler`` runs first, so DRF keeps doing what it
-    does well — turning ``Http404`` into a 404, attaching the authenticator's
-    ``WWW-Authenticate`` challenge and a throttle's ``Retry-After``, rolling
-    back an atomic request. Its status and headers are then re-clothed as a
-    problem; its ``{"detail": ...}`` body is discarded.
-
-    - An exception with a row on the registry (by MRO) renders from that row.
-    - Any other DRF ``APIException`` renders from the row for the status DRF
-      gave it.
-    - Anything else is the registry's fallback: a 500 whose detail says nothing.
-
-    Field errors are normalized with :func:`rn_forge.web.errors_from_field_map`
-    into the ``errors`` extension, present only when non-empty.
-
-    Use it as ``REST_FRAMEWORK["EXCEPTION_HANDLER"]``. To register an
-    application's own exceptions, or set a ``type`` URI base, wrap it with a
-    :func:`problem_registry` of your own passed as *registry*.
+    DRF determines the status and headers first; the registry then supplies the
+    problem body. Validation field errors appear in the ``errors`` extension.
 
     Args:
         exc: The exception DRF caught.

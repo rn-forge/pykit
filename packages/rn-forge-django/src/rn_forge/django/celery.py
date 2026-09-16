@@ -1,25 +1,4 @@
-"""A Celery app factory and a retryable-task preset.
-
-Requires the ``celery`` extra. Not imported by any facade, so
-``import rn_forge.django`` works without Celery installed.
-
-This is convenience, not extraction: it is the handful of lines every Django +
-Celery project writes in ``celery.py``, plus the retry settings the outbox relay
-task wants, so a project wiring :func:`rn_forge.django.messaging.make_outbox_relay`
-does not re-derive them::
-
-    # myproject/celery.py
-    from rn_forge.django.celery import RETRYABLE_TASK_KWARGS, make_app
-
-    app = make_app("myproject")
-
-    @app.task(**RETRYABLE_TASK_KWARGS)
-    def publish_outbox() -> int:
-        return relay()
-
-Deliberately absent: a ``make_outbox_relay_task`` wrapper. The relay is a plain
-callable, and wrapping it is the two lines above.
-"""
+"""Celery app factory and retryable-task defaults."""
 
 from __future__ import annotations
 

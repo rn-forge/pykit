@@ -424,3 +424,29 @@ class TestForcedStaleDrift:
         assert KILN_BLOCK.extract(final) == ".out/\n"
         assert final.startswith("repo line\n")
         assert set(state.load()) == {".gitignore#rn-forge kiln"}
+
+
+class TestStateEntryParsing:
+    """The state file is hand-editable, so an entry is validated on load."""
+
+    def test_round_trips_through_dict(self):
+        entry = StateEntry(
+            path="tasks/x.yml", kind=ArtifactKind.MANAGED, content_hash="abc"
+        )
+        assert StateEntry.from_dict(entry.as_dict()) == entry
+
+    def test_kind_is_rebuilt_as_the_enum_member(self):
+        entry = StateEntry.from_dict({"path": "p", "kind": "managed"})
+        assert entry.kind is ArtifactKind.MANAGED
+
+    def test_a_mistyped_field_is_rejected(self):
+        with pytest.raises(AppException, match="Invalid StateEntry"):
+            StateEntry.from_dict({"path": "p", "kind": "managed", "content_hash": 7})
+
+    def test_an_unknown_kind_is_rejected(self):
+        with pytest.raises(AppException, match="Invalid StateEntry"):
+            StateEntry.from_dict({"path": "p", "kind": "sideways"})
+
+    def test_a_missing_required_field_is_rejected(self):
+        with pytest.raises(AppException, match="Invalid StateEntry"):
+            StateEntry.from_dict({"path": "p"})

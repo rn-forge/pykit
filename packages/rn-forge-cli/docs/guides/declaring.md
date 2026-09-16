@@ -74,9 +74,9 @@ returns an exit code.
 
 ## The table is validated
 
-`CliSurface` is a
-`StrictDataclassMixin`, so a value whose type does not match its field is
-rejected by name rather than surfacing later as an attribute error:
+`CliSurface` is parsed strictly, as every `DataclassMixin` is, so a value whose
+type does not match its field is rejected by name rather than surfacing later
+as an attribute error:
 
 ```text
 AppException: Invalid CliSurface: wrong value type for field "commands.target"

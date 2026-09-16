@@ -1,40 +1,6 @@
-"""The repository policy the structure checks are run against.
+"""Repository-specific conventions for documentation structure checks.
 
-:mod:`~rn_forge.tooling.docs.structure` knows how to check that a numbered
-document series has no gaps, that a status line says something the series
-allows, and that container directories and their pages are named consistently.
-It must not know that the series is called ``adr``, that its numbers are four
-digits, or that ``superseded by adr-0004`` is a legal status — those are one
-organisation's decisions, and a general-purpose library that hardcodes them is
-a library only that organisation can use (kiln ADR-0001).
-
-So the caller supplies a :class:`DocsPolicy` describing its own conventions,
-and the checks supply the mechanics. There is deliberately **no default policy
-here**: a default would be exactly the hardcoded rn-forge policy this module
-exists to remove, wearing a keyword argument.
-
-This is one injected object, not a validation framework. It describes three
-shapes, because three are what the checks mechanically decide:
-
-- a **numbered series** — gapless numbers, one status line per page;
-- a **sequence area** — numbered sibling directories, each with an index;
-- a **nested area** — named container directories holding named pages.
-
-An organisation with none of these passes a policy with none of them set, and
-the naming and link checks still run.
-
-Example — the policy an rn-forge repository supplies::
-
-    DocsPolicy(
-        instruction_files=("CLAUDE.md", "AGENTS.md"),
-        numbered=NumberedArea(
-            path="adr",
-            filename=re.compile(r"^(\\d{4})-[a-z0-9-]+\\.md$"),
-            statuses=re.compile(r"^(proposed|accepted|deprecated|superseded by adr-\\d{4})"),
-            label="ADR",
-            shape="<nnnn>-<slug>.md",
-        ),
-    )
+Callers must supply a policy; this module defines no organizational defaults.
 """
 
 from __future__ import annotations
@@ -45,15 +11,10 @@ from dataclasses import dataclass, field
 __all__ = ["DocsPolicy", "NestedArea", "NumberedArea", "SequenceArea", "KEBAB_NAME"]
 
 KEBAB_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\.md$")
-"""Kebab-case page names — the default :attr:`DocsPolicy.page_name`.
-
-This one *is* a default, because it is a property of readable URLs rather than
-of any organisation's decision record. Override it to allow something else.
-"""
+"""Default :attr:`DocsPolicy.page_name` pattern."""
 
 STATUS_LINE = re.compile(r"^\*\*Status:\*\*\s*(.+)$", re.MULTILINE)
-"""How a status is written on a page. The vocabulary is the policy's; the
-syntax is Markdown's, and is a mechanic."""
+"""Markdown status-line syntax."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,10 +24,7 @@ class NumberedArea:
     Args:
         path: The series' directory, relative to the docs root.
         filename: Page-name pattern with one capturing group: the number.
-        statuses: Allowed statuses, matched against the lowercased status
-            value. Lowercased because a status that names another document
-            (``superseded by adr-0004``) is otherwise compared case-sensitively
-            against a token nobody types consistently.
+        statuses: Allowed statuses, matched against the lowercased value.
         label: What the series is called, in check messages.
         shape: The naming rule in human form, in check messages.
     """

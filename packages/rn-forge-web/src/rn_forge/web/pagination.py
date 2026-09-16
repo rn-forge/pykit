@@ -1,39 +1,7 @@
-"""Cursor pagination: opaque tokens, in Google AIP-158's spelling.
+"""Opaque cursor pagination using Google AIP-158 field names.
 
-There is no IETF standard for pagination. `AIP-158 <https://google.aip.dev/158>`_
-is the de facto convention for modern REST APIs and the OpenAPI generators that
-read them, and it is adopted here wholesale rather than inventing a spelling —
-for one specific reason. AIP-158 says that a ``page_size`` above the maximum
-"should coerce down to the maximum": **clamp, never reject**, which is exactly
-what the surveyed implementation independently arrived at, and exactly what a
-FastAPI ``Query(le=...)`` would violate. When a standard and an independent
-implementation agree, the standard wins the naming.
-
-The contract, normative for every framework package in this kit:
-
-| Direction | JSON / query name | Python name | Meaning |
-| --- | --- | --- | --- |
-| request | `pageSize` | `page_size` | clamped server-side to the cap, never rejected |
-| request | `pageToken` | `page_token` | opaque continuation token; absent means the first page |
-| response | `nextPageToken` | `next_page_token` | opaque; absent or `null` means the last page |
-| response | `items` | `items` | the page's elements |
-| response | `totalSize` | `total_size` | **optional, off by default** |
-
-Three notes that stop this drifting:
-
-- **The token is opaque and a client must not parse it.** That is what lets the
-  codec change without a client change, and it is why nothing is signed: a
-  cursor is opaque, not secret, and signing means key management.
-- **AIP-158 names the response array after the resource** (``users``,
-  ``builds``). A library cannot, so this package fixes it at ``items`` and
-  records the deviation. A generated client then has one page type rather than
-  one per resource, which is the better trade for a shared kit.
-- **``totalSize`` is off by default.** Page-number pagination gives a total for
-  free and keyset does not; a UI that needs one opts in per endpoint and pays
-  for the count.
-
-Not here: the keyset SQL. Turning a :class:`Cursor` into
-``WHERE (sort_key, id) > (?, ?)`` is ORM-specific.
+Page sizes are clamped to the configured cap. Responses use ``items``,
+``nextPageToken``, and the optional ``totalSize`` field.
 """
 
 from __future__ import annotations
@@ -46,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 from urllib.parse import quote
 
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
 from rn_forge.web.exceptions import InvalidCursor
 
 __all__ = [
@@ -118,13 +86,12 @@ def decode_cursor(raw: str) -> Cursor:
 
 
 @dataclass(frozen=True)
-class Page[T](DataclassMixin):
+class Page[T](LenientDataclassMixin):
     """One page of results, in the AIP-158 envelope.
 
-    ``total_size`` is omitted from :meth:`as_body` when ``None`` rather than
-    serialized as ``null``: a keyset query cannot cheaply count, and a ``null``
-    total invites a client to render "of ?" where the field should simply not
-    be there.
+    ``total_size`` is omitted from :meth:`as_body` when absent. Lenient parsing
+    is required because dacite cannot type-check the unbound ``T`` in
+    ``Sequence[T]``.
     """
 
     items: Sequence[T]
@@ -145,8 +112,7 @@ class Page[T](DataclassMixin):
 def clamp_page_size(requested: int | None, *, default: int, cap: int) -> int:
     """Return a usable page size, clamping rather than rejecting.
 
-    AIP-158: an over-large ``pageSize`` coerces down to the maximum. Rejecting
-    it is a 400 the client cannot act on beyond guessing the cap.
+    Per AIP-158, an over-large ``pageSize`` is coerced to the maximum.
 
     Args:
         requested: What the client asked for. ``None`` or a non-positive value

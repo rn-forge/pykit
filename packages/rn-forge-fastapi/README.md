@@ -80,7 +80,10 @@ overrides the URL with the local checkout, for local development only.
   `ServerErrorMiddleware` sits outside user middleware, so a 500 skips the
   header stamp — is handled where the 500 is rendered, in `problem`.
 - **A token verifier.** The auth binding takes any `rn_forge.web.Authenticator`;
-  verifying a JWT against a JWKS is that authenticator's job.
+  verifying a JWT against a JWKS is that authenticator's job. For OIDC that
+  authenticator already exists — `rn_forge.web.oidc.OidcAuthenticator`, via this
+  package's `oidc` extra — and is shared with `rn-forge-django` so both stacks
+  accept the same tokens. Nothing here wraps it; pass it to `bearer_auth`.
 - **Code generation.** A future `[codegen]` extra lives in
   `rn_forge.fastapi.codegen` only; its import fence is already in
   `.importlinter`.
@@ -125,13 +128,22 @@ there rather than worked around here:
   hang `/readyz`. A check still running when it expires is reported as `fail`,
   `timed out after <n>s`; `health_router(timeout=...)` passes it through.
 
-Two are **open** and recorded rather than decided here:
+Two were open and are now **decided**, in `api-conventions.md` §9 and
+implemented in `rn_forge.web.openapi` so the DRF binding applies the same rule:
 
-- `Page[T]` is generic, so FastAPI names its component `Page_UserOut_`, not
-  `Page`. The web conventions' "identical component names" cannot hold literally
-  for a generic envelope; the naming rule needs restating there.
-- The `operationId` convention in `api-conventions.md` covers CRUD only. Action
-  routes need an explicit `operation_id=` until the convention says otherwise.
+- `Page[T]` is generic, and OpenAPI has no generics, so it cannot be one `Page`
+  component. `install_problem_schema` renames pydantic's `Page_UserOut_` to the
+  convention's `PageUserOut`, rewriting the references with it. A flattened name
+  that would collide with an existing component is left alone.
+- An operation outside the six CRUD verbs is a custom method, spelled AIP-136
+  style as `POST /orders/{orderId}:cancel` and named `ordersCancel`. Spelled as
+  a plain path segment it still gets a mechanical name and still wants an
+  explicit `operation_id=` — nothing in that path marks it as an action.
+
+One asymmetry is worth knowing: `operationId` must be unique across the
+document, and drf-spectacular warns and appends a numeral on a collision while
+FastAPI does neither. Two routes ending in the same literal segment collide
+silently here.
 
 ## Documentation
 

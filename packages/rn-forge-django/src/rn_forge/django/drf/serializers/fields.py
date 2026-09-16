@@ -103,15 +103,8 @@ class NestedReadPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
 class RawPassthroughField(serializers.JSONField):
     """A JSON value whose keys stay verbatim under camelCase rendering and parsing.
 
-    Global casing recurses into every nested mapping, which mangles a value
-    whose keys are data rather than names — a vendor payload, a mapping keyed
-    by SKU. On the way out the value is marked so
-    :class:`~rn_forge.django.drf.casing.CamelCaseJSONRenderer` skips it; on the
-    way in :class:`~rn_forge.django.drf.casing.CamelCaseJSONParser` skips any
-    key with this field's name in the view's serializer tree.
-
-    The parser matches by *name*, at any depth: a same-named ordinary field
-    elsewhere in the same request body is passed through too.
+    The parser matches field names at any depth, so another field with the same
+    name in the request body is also passed through.
     """
 
     raw_passthrough: ClassVar[bool] = True

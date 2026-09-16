@@ -1,54 +1,8 @@
-"""The authentication *contract*: who the caller is, and what a refusal looks like.
+"""Framework-independent authentication and authorization contracts.
 
-Token verification is not here. The concern splits across three layers, and
-this is the middle one:
-
-| Layer | Owns | Standards |
-| --- | --- | --- |
-| `rn-forge-commons` | Verification: JWKS fetch/cache/rotation, JWT signature and claims validation, OIDC discovery. No HTTP-server concept. | RFC 7519, 7517, 8414, OIDC Discovery 1.0 |
-| **`rn-forge-web` (here)** | The contract: `Principal`, the authenticator/authorizer protocols, and the failure wire shape. | RFC 6750 §3, RFC 7617, RFC 9457 |
-| `rn-forge-django` / `rn-forge-fastapi` | The binding only: a DRF `BaseAuthentication` / a FastAPI `Security` dependency, each producing the same `Principal`. | — |
-
-The earlier reasoning — "OIDC/JWKS verification is framework-agnostic, so send
-auth to commons" — is correct and incomplete: it covers *verifying a token* and
-says nothing about *what a caller sees when verification fails*. A 401 body, the
-``WWW-Authenticate`` challenge and the 401-vs-403 boundary are wire semantics in
-exactly the sense the other modules are, and they are the part a UI cannot paper
-over.
-
-The failure contract, which is the reason this module exists
-------------------------------------------------------------
-
-- **401 vs 403 is not a judgement call.** No credentials, or credentials that
-  fail verification → **401** with a ``WWW-Authenticate`` challenge. Valid
-  credentials lacking the required scope or role → **403** with no challenge.
-  RFC 6750 §3 is unambiguous.
-- **The challenge is constructed, never hand-written.** :func:`challenge_header`
-  builds both the Bearer (RFC 6750 §3) and Basic (RFC 7617) forms. A
-  hand-assembled challenge string is how two services end up differing on a
-  header a browser actually parses.
-- **The problem body is the ordinary one.**
-  :class:`~rn_forge.web.exceptions.AuthenticationFailed` → 401 slug
-  ``unauthorized``, :class:`~rn_forge.web.exceptions.PermissionDenied` → 403
-  slug ``forbidden``, both already in
-  :func:`~rn_forge.web.problem.default_registry`. Nothing new on the wire
-  beyond the header.
-- **Never leak why verification failed.** The 401 detail says "authentication
-  failed"; the reason — expired, bad signature, unknown ``kid`` — goes to the
-  injected ``log``. Same policy as the 5xx rule in
-  :mod:`rn_forge.web.problem`, and for the same reason.
-
-What this module deliberately does not unify
---------------------------------------------
-
-**SAML flows.** SAML 2.0 terminates in an assertion and a session, not a bearer
-token, and the bindings, metadata and signature handling are the SP library's
-job. Web defines only the assertion → :class:`Principal` mapping; each package
-keeps its own flow. **Login endpoints, token issuance, refresh, session
-cookies** are application concerns — pykit is not an authorization server.
-**Basic auth** ships in both framework packages because local development and
-simple internal deployments genuinely need it, and both must document it as
-such and emit the identical 401 challenge.
+Missing or invalid credentials produce a 401 challenge; an authenticated
+principal without sufficient access produces 403. Verification details must
+not be exposed in the 401 response.
 """
 
 from __future__ import annotations
@@ -75,7 +29,7 @@ __all__ = [
 ]
 
 AUTH_FAILED_DETAIL: Final = "Authentication failed."
-"""The 401 ``detail``. It says nothing about *why*; see the module docstring."""
+"""The non-sensitive detail returned for authentication failures."""
 
 type BearerErrorCode = Literal["invalid_request", "invalid_token", "insufficient_scope"]
 """The ``error`` codes RFC 6750 §3 defines for a Bearer challenge."""
@@ -99,19 +53,8 @@ class Credentials:
 class Principal(DataclassMixin):
     """The verified caller.
 
-    ``subject`` is the only required field — it is ``sub`` for OIDC, the
-    username for Basic, the ``NameID`` for SAML. Everything else is optional
-    because no single mechanism supplies all of it.
-
-    ``scopes`` and ``roles`` are **separate** and both are frozensets: OAuth
-    issues scopes, enterprise directories issue roles or groups, and conflating
-    them forces one to be encoded as the other.
-
-    ``claims`` carries the raw verified claim set so an application can read
-    something this library never modelled, without the dataclass growing a
-    field per deployment. ``mechanism`` exists so a problem body and an audit
-    log can say *how* the caller authenticated without each framework layer
-    inventing its own vocabulary for it.
+    ``subject`` is the only required field. ``claims`` retains verified values
+    not represented by the common fields.
     """
 
     subject: str
@@ -164,11 +107,7 @@ class Authenticator(Protocol):
 
 @runtime_checkable
 class AsyncAuthenticator(Protocol):
-    """The async counterpart of :class:`Authenticator`.
-
-    Both exist for the same reason the idempotency store has both: a
-    JWKS-backed verifier does network I/O, and Django's authenticator is sync.
-    """
+    """Asynchronous counterpart of :class:`Authenticator`."""
 
     async def authenticate(self, *, credentials: Credentials) -> Principal:
         """See :meth:`Authenticator.authenticate`."""
@@ -191,12 +130,11 @@ class Authorizer(Protocol):
 
 
 class ScopeAuthorizer:
-    """The default :class:`Authorizer`: evaluates a :class:`Requirement` and nothing else.
+    """An :class:`Authorizer` that evaluates a :class:`Requirement`.
 
     Args:
         log: Optional sink called as ``log(message, context)`` when access is
-            refused. When ``None`` the authorizer stays silent — a library that
-            logs where the consumer did not ask is worse than one that does not.
+            refused. ``None`` disables logging.
     """
 
     def __init__(
@@ -232,21 +170,18 @@ def challenge_header(
 ) -> str:
     """Build a ``WWW-Authenticate`` challenge.
 
-    RFC 6750 §3 defines the Bearer syntax and its ``error`` codes; RFC 7617
-    defines the ``Basic realm="..."`` form. Parameters are emitted in the order
-    the RFCs use in their own examples, and omitted entirely when ``None``.
+    Parameters follow RFC 6750 for Bearer and RFC 7617 for Basic. ``None``
+    values are omitted.
 
     Args:
         scheme: ``Bearer`` or ``Basic``.
         realm: The protection space.
         error: One of RFC 6750's three codes. Bearer only.
-        error_description: Human-readable text. **Never say why verification
-            failed** — see the module docstring.
+        error_description: Non-sensitive human-readable text.
         scope: The scope required, for ``insufficient_scope``.
 
     Returns:
-        A complete header value, e.g.
-        ``Bearer realm="example", error="invalid_token", error_description="The access token expired"``.
+        A complete challenge header value.
 
     Example::
 
@@ -280,19 +215,19 @@ def principal_from_claims(
 ) -> Principal:
     """The default mapping from verified token claims to a :class:`Principal`.
 
-    Shared so a Django service and a FastAPI service reading the same token
-    produce the same principal. Claims are read as the common IdPs issue them:
+    Claims are read as the common IdPs issue them:
 
     | Principal | Claim |
     | --- | --- |
     | `subject` | `sub` (required) |
     | `issuer` | `iss` |
-    | `scopes` | `scope` (RFC 8693 §4.2, space-delimited) or `scp` (Entra; string or list) |
-    | `roles` | `roles` (Entra app roles; a list) |
-    | `tenant` | `tid` (Entra) |
+    | `scopes` | `scope` (RFC 8693 §4.2, space-delimited) or `scp` (string or list) |
+    | `roles` | `roles` (a list) |
+    | `tenant` | `tid` |
 
-    Anything else — Keycloak's nested ``realm_access.roles``, an Okta group
-    claim — is a deployment's shape: override the mapping and read ``claims``.
+    Any other shape — a nested ``realm_access.roles``, a custom group claim —
+    is deployment-specific: override the mapping and read
+    :attr:`Principal.claims`, which retains every verified claim.
 
     Args:
         claims: Claims already verified by the caller.

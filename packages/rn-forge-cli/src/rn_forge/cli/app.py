@@ -1,29 +1,4 @@
-"""The application class, and the error-to-exit-code mapping it runs under.
-
-Provides:
-
-- :class:`CliApp` — a :class:`typer.Typer` subclass whose root callback wires
-  ``--log-level``/``--log-file`` into :meth:`AppLogger.initialize` and
-  ``--quiet``/``--json`` into the shared
-  :data:`~rn_forge.commons.runtime.console.console`, and which builds itself
-  from a declared ``[cli]`` surface via :meth:`CliApp.from_config`.
-- :class:`ExitCode` — the exit codes an ``rn-forge`` CLI returns.
-- :func:`run` — invoke *any* Typer app and turn whatever escapes it into a
-  reported error and an exit code.
-
-**Why a subclass rather than a factory.** A console script generated from
-``[project.scripts]`` is literally ``sys.exit(app())``, and
-:meth:`CliApp.__call__` returns an exit code — so a repository that writes the
-ordinary ``mypkg.cli:app`` entry point gets the error mapping without knowing
-it exists. kiln ADR-0009 says a repo never writes exit-code handling; a
-factory can only *offer* that, and the one CLI in this workspace proved the
-point by shipping a bare Typer app and silently losing the mapping.
-
-Every CLI needs this mapping and every CLI wrote it slightly differently
-(ADR-0009): one printed a traceback for an application error, another
-swallowed ``KeyboardInterrupt`` into a generic failure. It is small enough
-that duplicating it looks harmless and large enough that the copies disagree.
-"""
+"""Typer application setup and error-to-exit-code handling."""
 
 from __future__ import annotations
 
@@ -64,13 +39,7 @@ _LOGGER = AppLogger.get_logger(__name__)
 
 
 class ExitCode(IntEnum):
-    """Exit codes an ``rn-forge`` CLI returns.
-
-    ``USAGE`` and ``INTERRUPTED`` are not ours to choose: ``2`` is what Click
-    already returns for a bad invocation, and ``130`` is the shell's
-    convention for a process killed by ``SIGINT``. A wrapper script checking
-    for either would be wrong if we renumbered them.
-    """
+    """Exit codes returned by an ``rn-forge`` CLI."""
 
     OK = 0
     """The command succeeded."""
@@ -85,11 +54,8 @@ class ExitCode(IntEnum):
     def for_error(cls, error: BaseException) -> int:
         """Return the exit code *error* maps to.
 
-        A :class:`click.exceptions.Exit` or :class:`SystemExit` carries its own
-        code and is honoured **as given**, even when it is not an
-        :class:`ExitCode` member: a command that deliberately exits 3 means 3,
-        and flattening that to a generic failure would throw away the only
-        thing it said.
+        Explicit exit signals retain their supplied code, including codes not
+        represented by :class:`ExitCode`.
         """
         if isinstance(error, typer.Exit):
             return error.exit_code
@@ -107,16 +73,8 @@ class ExitCode(IntEnum):
 def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> int:
     """Invoke *app*, reporting whatever escapes it, and return an exit code.
 
-    Takes any :class:`typer.Typer`, not only a :class:`CliApp` — a repository
-    that dropped down to constructing its own application still gets the
-    mapping, which is what ADR-0009's escape hatch means by "the same
-    primitives". A :class:`CliApp` calls this for you.
-
-    An :class:`~rn_forge.commons.exceptions.AppException` is a diagnosed
-    failure: it prints as one line, with the traceback logged at debug level
-    for whoever asked for one. Anything else is a defect in the command, and
-    its traceback is logged in full — losing the stack of an unexpected error
-    is what makes a CLI hard to debug from a bug report.
+    Diagnosed :class:`~rn_forge.commons.exceptions.AppException` instances are
+    reported without a traceback; unexpected exceptions are logged in full.
 
     Args:
         app: The Typer application to run.
@@ -155,21 +113,21 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
 
 
 class CliApp(typer.Typer):
-    """The Typer application every ``rn-forge`` CLI is.
+    """Typer application with standard logging, output, and exit handling.
 
-    Construct one directly for full control, or build it from a repository's
-    declared ``[cli]`` surface::
+    Construct one directly, or build it from a repository's declared ``[cli]``
+    surface::
 
-        app = CliApp("golden-app", "Do the thing.")        # explicit
-        app = CliApp.from_config(".rn-forge/kiln/config.toml")  # declared
+        app = CliApp("golden-app", "Do the thing.")            # explicit
+        app = CliApp.from_config(Path(__file__).parent / "config.toml")
 
     Either way the root callback already takes ``--log-level``/``--log-file``
-    and ``--quiet``/``--json``, and ``sys.exit(app())`` produces a mapped exit
-    code — so ``[project.scripts]`` needs nothing but ``mypkg.cli:app``.
+    and ``--quiet``/``--json``, and :meth:`__call__` returns a mapped exit code
+    — so ``[project.scripts]`` needs nothing but ``mypkg.cli:app``, with no
+    ``main()``.
 
-    The underlying Typer is not wrapped but *inherited*, so every Typer
-    facility (``@app.command()``, ``app.add_typer``, the constructor's full
-    keyword set) is reachable unchanged.
+    Typer is inherited rather than wrapped, so ``@app.command()``,
+    ``add_typer`` and the full constructor keyword set remain available.
     """
 
     def __init__(
@@ -183,9 +141,7 @@ class CliApp(typer.Typer):
         """Initialize the application and register its root callback.
 
         ``no_args_is_help=True`` and ``pretty_exceptions_show_locals=False``
-        are set by default (overridable via *typer_kwargs*) — the latter for
-        the same credential-leak reason :meth:`AppLogger.initialize`'s
-        ``rich_tracebacks`` defaults to ``show_locals=False``.
+        are set by default and may be overridden through *typer_kwargs*.
 
         Args:
             name: The app name, also used (lowercased, spaces replaced with
@@ -227,10 +183,6 @@ class CliApp(typer.Typer):
         **typer_kwargs: Any,
     ) -> Self:
         """Build the application a repository's ``[cli]`` table describes.
-
-        The one-liner a repository's ``main`` module is expected to contain::
-
-            app = CliApp.from_config(Path(__file__).parent / "config.toml")
 
         Args:
             source: A path to the configuration document, or an already-parsed
@@ -294,11 +246,8 @@ class CliApp(typer.Typer):
     def add_lifecycle(self, lifecycle: LifecycleSurface) -> None:
         """Mount the declared lifecycle verbs at the root of this application.
 
-        Imports the product and the factory by name, calls
-        ``factory(product, verbs)``, and merges the :class:`typer.Typer` it
-        returns into this one — so the verbs are ``golden-tool doctor``, not
-        a namespace. Knowing the factory only by name is what keeps this
-        package from importing the tooling that implements it.
+        The target factory is called as ``factory(product, verbs)`` and must
+        return a :class:`typer.Typer`.
 
         Raises:
             AppException: Either import fails, the factory is not callable,
@@ -334,13 +283,11 @@ class CliApp(typer.Typer):
         return run(self, args, **kwargs)
 
     def __call__(self, *args: Any, **kwargs: Any) -> int:
-        """Return an exit code rather than raising, so ``sys.exit(app())`` works.
+        """Invoke the application and return its exit code.
 
-        This is the one place :class:`CliApp` changes an inherited behaviour
-        rather than adding to it: ``typer.Typer.__call__`` runs Click in
-        standalone mode, which prints and raises :exc:`SystemExit`. Returning
-        the code instead is what lets a repository's ``[project.scripts]``
-        entry point be the plain ``mypkg.cli:app`` and still get the mapping
-        in :func:`run` — the generated console script is ``sys.exit(app())``.
+        Unlike :meth:`typer.Typer.__call__`, which runs Click in standalone
+        mode and raises :exc:`SystemExit`, this returns the code — so a
+        generated console script (``sys.exit(app())``) gets the mapping in
+        :func:`run` for free.
         """
         return self.run(*args, **kwargs)

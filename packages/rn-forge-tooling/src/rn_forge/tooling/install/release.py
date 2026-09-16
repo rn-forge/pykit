@@ -1,19 +1,4 @@
-"""Where a release comes from, and turning one into an extracted tree.
-
-Provides:
-
-- :class:`ReleaseSource` — the protocol a product's releases are fetched
-  through: the latest version, the archive for a version, and the checksum
-  that archive must match when one is published.
-- :class:`GitHubReleases` — the default: tags of a GitHub repository.
-- :class:`LocalArchive` — one archive already on disk, for an offline install
-  or an unreleased build.
-- :func:`fetch_release` — download, verify, extract.
-
-A source is deliberately three small methods rather than a URL template: the
-coordinates differ per host, and a product that publishes somewhere else
-implements the protocol instead of configuring this module.
-"""
+"""Release sources, download verification, and extraction."""
 
 from __future__ import annotations
 

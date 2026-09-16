@@ -1,20 +1,9 @@
 """Object-storage protocols: put/get/delete/exists plus a pre-signed URL.
 
-Provides:
-
-- :class:`ObjectStore` / :class:`AsyncObjectStore` — a minimal blob-storage
-  protocol, satisfied structurally by any adapter (Azure Blob Storage, S3,
-  GCS, ...).
-- :class:`InMemoryObjectStore` — dict-backed store for tests.
-- :class:`ObjectNotFound` — raised by ``get``/``delete`` on a missing key
-  (``get`` only — ``delete`` is idempotent, see its docstring).
-
 ``url_for`` returns a time-limited pre-signed URL (a SAS URL on Azure, a
 presigned URL on S3) so a client downloads directly instead of streaming
 bytes through the application. ``expires_in`` is required, not defaulted — a
 pre-signed URL with a forgotten expiry is a leak with a long tail.
-
-This module has no optional dependency.
 """
 
 from __future__ import annotations

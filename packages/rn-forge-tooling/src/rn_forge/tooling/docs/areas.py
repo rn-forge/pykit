@@ -1,9 +1,4 @@
-"""The docs area model: `docs/_areas.yml` and what it declares.
-
-An *area* is one top-level directory under `docs/`. The manifest names it,
-titles it, says how it appears in the nav and whether it is optional or
-generated. Everything else about the tree is derived from the filesystem.
-"""
+"""Models for the documentation areas declared in `docs/_areas.yml`."""
 
 from __future__ import annotations
 
@@ -13,6 +8,7 @@ from typing import Any, cast
 
 from rn_forge.commons.fs.documents import YamlUtils
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = ["Area", "NAV_VALUES", "load_areas"]
 
@@ -21,7 +17,7 @@ NAV_VALUES = frozenset({"children", "index-only"})
 
 
 @dataclass(frozen=True, slots=True)
-class Area:
+class Area(DataclassMixin):
     """One declared documentation area.
 
     Args:
@@ -44,13 +40,10 @@ class Area:
 def load_areas(docs_root: str | Path) -> list[Area]:
     """Load `docs/_areas.yml`.
 
-    A missing manifest raises rather than defaulting: a repo with no declared
-    area model is a finding for the caller to report, not something to paper
-    over with a built-in list that may not match the tree.
-
     Raises:
-        AppException: The manifest is absent, is not a mapping, or declares an
-            area with an unknown ``nav`` value.
+        AppException: The manifest is absent, is not a mapping, declares an
+            area whose fields do not match :class:`Area`, or declares one with
+            an unknown ``nav`` value.
     """
     manifest = Path(docs_root) / "_areas.yml"
     if not manifest.is_file():
@@ -64,19 +57,23 @@ def load_areas(docs_root: str | Path) -> list[Area]:
     areas: list[Area] = []
     declared = cast(list[dict[str, Any]], document.get("areas") or [])
     for entry in declared:
-        key = str(entry["key"])
-        nav = str(entry.get("nav", "children"))
-        if nav not in NAV_VALUES:
+        values = dict(entry)
+        # `title` defaults from `key`, so it cannot be a dataclass default.
+        key = values.get("key")
+        if isinstance(key, str):
+            values.setdefault("title", key.title())
+        try:
+            area = Area.from_dict(values)
+        except AppException as error:
+            # The class-level message names the field; only this frame knows
+            # which file the author has to open.
+            raise AppException("{}: {}", manifest, error) from error
+        if area.nav not in NAV_VALUES:
             raise AppException(
-                "{}: invalid nav value for area {!r}: {!r}", manifest, key, nav
+                "{}: invalid nav value for area {!r}: {!r}",
+                manifest,
+                area.key,
+                area.nav,
             )
-        areas.append(
-            Area(
-                key=key,
-                title=str(entry.get("title", key.title())),
-                nav=nav,
-                optional=bool(entry.get("optional", False)),
-                generated=bool(entry.get("generated", False)),
-            )
-        )
+        areas.append(area)
     return areas

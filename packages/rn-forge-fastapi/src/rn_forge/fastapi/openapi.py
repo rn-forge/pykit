@@ -1,26 +1,7 @@
-"""OpenAPI repair: put the error type back in the schema, and name operations once.
+"""Repair FastAPI OpenAPI documents to match the shared wire contract.
 
-**The non-obvious module.** FastAPI builds ``components/schemas`` from the
-``response_model``\\ s routes declare. The problem handlers build error bodies by
-hand, so schema collection never sees ``ProblemDetail`` — and a TypeScript
-client generated from the schema ends up with no error type at all. Worse,
-every route with a parameter advertises FastAPI's own 422 shape
-(``HTTPValidationError``), which the handlers have replaced.
-
-Three conventions from ``api-conventions.md`` §9, implemented here:
-
-- **OpenAPI 3.1.0**, pinned by :func:`install_problem_schema` rather than
-  inherited from whatever the installed FastAPI emits.
-- **Identical component names** — ``ProblemDetail``, ``CheckResult``,
-  ``HealthReport`` — which is why the mirrors in :mod:`rn_forge.fastapi.schemas`
-  are named for the wire.
-- **One ``operationId`` convention**, :func:`operation_id`: a generator turns
-  ``operationId`` into the client's method name, so two stacks that differ here
-  differ at every call site even when every byte of JSON agrees.
-
-This is the one module expected to exceed forty lines: it works around schema
-collection rather than adapting a primitive, and that workaround stays here
-rather than in the handlers.
+The repair adds problem schemas and responses, removes FastAPI's replaced
+validation schema, normalizes generic component names, and pins OpenAPI 3.1.
 """
 
 from __future__ import annotations
@@ -28,11 +9,10 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from http import HTTPStatus
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from pydantic.alias_generators import to_camel
 
 from rn_forge.fastapi.schemas import ProblemDetail
 from rn_forge.web import (
@@ -42,48 +22,26 @@ from rn_forge.web import (
     ProblemRegistry,
     default_registry,
 )
+from rn_forge.web.openapi import operation_id as wire_operation_id
 
 __all__ = ["OPENAPI_VERSION", "install_problem_schema", "operation_id"]
 
 OPENAPI_VERSION: Final = "3.1.0"
 """The OpenAPI version both stacks emit. 3.0 and 3.1 differ in nullability."""
 
-_PROBLEM_REF: Final = "#/components/schemas/ProblemDetail"
+_SCHEMA_REF_PREFIX: Final = "#/components/schemas/"
+_PROBLEM_REF: Final = f"{_SCHEMA_REF_PREFIX}ProblemDetail"
 _FASTAPI_VALIDATION_SCHEMAS: Final = ("HTTPValidationError", "ValidationError")
-_VERBS: Final[Mapping[str, str]] = {
-    "POST": "Create",
-    "PUT": "Update",
-    "PATCH": "PartialUpdate",
-    "DELETE": "Delete",
-}
 
 
 def operation_id(route: APIRoute) -> str:
-    """Return the ``operationId`` for *route*: ``<resource><Verb>`` in lowerCamelCase.
+    """Return the ``operationId`` for *route*, per :func:`rn_forge.web.operation_id`.
 
-    Pass it as ``FastAPI(generate_unique_id_function=operation_id)``.
-
-    - **resource** is the last literal path segment, camelCased:
-      ``/api/v1/work-items/{id}`` → ``workItems``.
-    - **Verb** is ``List`` for a ``GET`` on a collection and ``Get`` for one on
-      an item (the path ends in a parameter); ``Create`` for ``POST``,
-      ``Update`` for ``PUT``, ``PartialUpdate`` for ``PATCH`` (distinct, so a
-      resource serving both gets two operation IDs), ``Delete`` for ``DELETE``.
-
-    The convention covers CRUD and nothing else. A route outside it — an action
-    such as ``POST /orders/{id}/cancel`` — gets a mechanical name
-    (``cancelCreate``); give it an explicit ``operation_id=``, which FastAPI
-    uses in preference to this function.
+    Pass it as ``FastAPI(generate_unique_id_function=operation_id)``. Use an
+    explicit ``operation_id=`` for routes that cannot follow the shared rule.
     """
-    segments = [segment for segment in route.path_format.split("/") if segment]
-    literals = [segment for segment in segments if not segment.startswith("{")]
-    resource = to_camel(literals[-1].replace("-", "_")) if literals else "root"
     method = min(route.methods) if route.methods else "GET"
-    if method == "GET":
-        verb = "Get" if segments and segments[-1].startswith("{") else "List"
-    else:
-        verb = _VERBS.get(method, method.capitalize())
-    return f"{resource}{verb}"
+    return wire_operation_id(route.path_format, method)
 
 
 def install_problem_schema(
@@ -127,7 +85,8 @@ def install_problem_schema(
 
 
 def _repair(schema: dict[str, Any], statuses: list[int]) -> None:
-    """Inject the ``ProblemDetail`` component and the problem responses."""
+    """Rename generic components, inject ``ProblemDetail``, add the responses."""
+    _rename_generic_components(schema)
     components: dict[str, Any] = schema.setdefault("components", {}).setdefault(
         "schemas", {}
     )
@@ -149,6 +108,43 @@ def _repair(schema: dict[str, Any], statuses: list[int]) -> None:
     ):
         for name in _FASTAPI_VALIDATION_SCHEMAS:
             components.pop(name, None)
+
+
+def _rename_generic_components(schema: dict[str, Any]) -> None:
+    """``Page_OrderOut_`` → ``PageOrderOut``, references included.
+
+    Colliding component names are left unchanged.
+    """
+    components: dict[str, Any] = schema.get("components", {}).get("schemas", {})
+    renames: dict[str, str] = {}
+    for name in components:
+        if not name.endswith("_"):
+            continue
+        flattened = "".join(
+            part[:1].upper() + part[1:] for part in name.split("_") if part
+        )
+        if flattened != name and flattened not in components:
+            renames[name] = flattened
+    if not renames:
+        return
+    for old_name, new_name in renames.items():
+        components[new_name] = components.pop(old_name)
+    _rewrite_refs(schema, renames)
+
+
+def _rewrite_refs(node: Any, renames: Mapping[str, str]) -> None:
+    """Repoint every ``$ref`` in *node* that names a renamed component."""
+    if isinstance(node, dict):
+        for key, value in cast(dict[str, Any], node).items():
+            if key == "$ref" and isinstance(value, str):
+                name = value.removeprefix(_SCHEMA_REF_PREFIX)
+                if name != value and name in renames:
+                    node[key] = f"{_SCHEMA_REF_PREFIX}{renames[name]}"
+            else:
+                _rewrite_refs(value, renames)
+    elif isinstance(node, list):
+        for item in cast(list[Any], node):
+            _rewrite_refs(item, renames)
 
 
 def _problem_response(status: int) -> dict[str, Any]:

@@ -1,26 +1,4 @@
-"""The seam between a tool and the lifecycle verbs: :class:`ToolProduct`.
-
-A tool describes itself; :mod:`~rn_forge.tooling.install.lifecycle` owns every
-algorithm around that description. Every member but the name and version has
-a default, so the smallest tool is one line::
-
-    PRODUCT = ToolProduct(name="golden-tool", version=__version__, repo="rn-forge/golden-tool")
-
-and a tool with something to put in place, or to check, subclasses and
-overrides only that::
-
-    class GoldenTool(ToolProduct):
-        def artifacts(self) -> Sequence[Link]:
-            return (Link("bin/golden-tool", "bin/golden-tool"),)
-
-        def checks(self) -> Sequence[Check]:
-            return (check_config_readable,)
-
-This is the same adapter shape a kiln module has — ``artifacts()`` and
-``checks()`` — and deliberately nothing more. The risk this module guards
-against is growing into an installer framework: a new member needs a second
-tool that cannot be written without it.
-"""
+"""Product description consumed by tool lifecycle operations."""
 
 from __future__ import annotations
 
@@ -74,8 +52,6 @@ class Link:
 class ToolProduct:
     """An installable tool, as the lifecycle verbs see it.
 
-    Not slotted, so a subclass can override the methods and add fields freely.
-
     Args:
         name: The product's name, and its directory under ``$RNF_HOME``.
         version: The version of the running code — normally the package's
@@ -121,11 +97,8 @@ class ToolProduct:
     def build(self, release_root: Path, version_dir: Path) -> None:
         """Turn an extracted release into an installed version directory.
 
-        Default: copy the tree. A Python tool overrides this to build an
-        environment **in** *version_dir* — not elsewhere and then move it,
-        because a virtual environment bakes its own path into its scripts.
-        *version_dir* is not observed by anything until the install activates
-        it, so building in place is safe.
+        The default copies the release tree. Implementations that create
+        path-dependent artifacts must build them directly in *version_dir*.
 
         Args:
             release_root: The extracted release's root directory.

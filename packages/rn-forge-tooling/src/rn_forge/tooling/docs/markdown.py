@@ -1,16 +1,4 @@
-"""The small amount of Markdown parsing the docs checkers agree on.
-
-Links, headings and the anchor slugs a rendered page will actually carry.
-
-Link extraction is deliberately regex-based: the checkers need link targets
-out of otherwise-arbitrary prose, and a full parse would make the result depend
-on which extensions the site happens to enable. Anchors are the opposite case —
-what a heading's anchor *is* is decided by the renderer, so
-:func:`slugify` and :func:`headings` call Python-Markdown's own ``toc``
-slugify and unique-id functions rather than reimplementing them. A checker
-whose idea of an anchor differs from the renderer's reports links that work and
-passes links that do not.
-"""
+"""Markdown link, heading, and anchor parsing for documentation checks."""
 
 from __future__ import annotations
 

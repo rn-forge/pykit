@@ -1,39 +1,4 @@
-"""camelCase on the wire, ``snake_case`` in Python.
-
-The rule, normative for every ``rn-forge-*`` framework package: **camelCase
-out, both spellings accepted in.** A client posting ``pageSize`` and an internal
-caller posting ``page_size`` both work, which matches the FastAPI side's
-``populate_by_name``.
-
-Name these in ``REST_FRAMEWORK`` so the rule holds by default rather than per
-serializer::
-
-    REST_FRAMEWORK = {
-        "DEFAULT_RENDERER_CLASSES": ["rn_forge.django.drf.casing.CamelCaseJSONRenderer"],
-        "DEFAULT_PARSER_CLASSES": ["rn_forge.django.drf.casing.CamelCaseJSONParser"],
-    }
-
-``RN_FORGE_DJANGO["DRF"]["CASING"]["ENABLED"] = False`` makes both behave as
-DRF's plain JSON renderer and parser, for a consumer with a reason.
-
-Opaque values
--------------
-
-Global casing recurses into every nested mapping, which mangles a JSON value
-whose keys must stay verbatim — a vendor payload, a mapping keyed by SKU.
-Declare such a field as
-:class:`~rn_forge.django.drf.serializers.fields.RawPassthroughField`: the
-renderer leaves its value alone, and the parser skips it, by field name, for
-the view's serializer.
-
-Why this is hand-written
-------------------------
-
-``djangorestframework-camel-case`` was evaluated as the dependency and not
-taken: its last release is 1.4.2 (2023-02), its classifiers stop at Python
-3.10, and it is marked pre-alpha. The two key transforms and the two recursive
-walks below are the whole of what an API needs from it.
-"""
+"""camelCase JSON rendering and snake_case parsing for DRF."""
 
 from __future__ import annotations
 

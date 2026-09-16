@@ -1,14 +1,9 @@
-"""Structured logging utilities for Python applications.
+"""Configured application logging with custom levels and record enrichment.
 
-- Explicit, idempotent initialisation via :meth:`AppLogger.initialize`.
-- Uses the more recommended approach of configuring logging via ``dictConfig``.
-- Inherits from :class:`~verboselogs.VerboseLogger` and adds custom levels (``TRACE``),
-  ``{}``-style formatting, and method-audit decorators.
-- Safe record enrichment via :class:`EnrichFilter` (caller / service / env +
-  optional OpenTelemetry correlation placeholders).
-- Console output renders through ``rich.logging.RichHandler`` when colour is
-  enabled and stdout is a TTY; the file handler is always a plain
-  :class:`logging.FileHandler` with the full format string.
+:class:`AppLogger` uses ``{}``-style messages and idempotent ``dictConfig``
+initialization. Console output uses Rich when color is enabled on a TTY; file
+output retains the full plain-text format. :class:`EnrichFilter` adds caller,
+service, environment, and optional OpenTelemetry fields.
 """
 
 from __future__ import annotations

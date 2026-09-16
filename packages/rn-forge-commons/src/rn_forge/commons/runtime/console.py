@@ -1,27 +1,7 @@
 """Console output: a Rich-based, quiet/JSON-aware output facade.
 
-Provides:
-
-- :class:`OutputMode` — ``RICH`` / ``PLAIN`` / ``QUIET`` / ``JSON`` output modes.
-- :class:`AppConsole` — thin facade over :class:`rich.console.Console` with
-  tri-mode dispatch, semantic helpers (``success``/``info``/``warning``/``error``),
-  a one-call table builder, a diff renderer, and confirm/prompt/status
-  interaction helpers.
-- :data:`console` — a module-level default :class:`AppConsole` singleton.
-
-**Why this lives in commons.** Console output is a property of the *process*,
-like :mod:`~rn_forge.commons.runtime.environment` beside it — not of the
-command-line parser. This module imports no ``typer`` and no ``click``, so a
-Django management command, a worker entry point, a plain script or a pytest
-run can all use it; ``rn_forge.django`` in particular is forbidden by
-``.importlinter`` from importing ``rn_forge.cli`` at all, so a console living
-there would have been unreachable from the framework packages that want it.
-Rich is already a commons dependency for the logging handler, which writes to
-**stderr** for the same reason :meth:`emit` writes payloads to stdout: a
-machine-readable result and a human-readable log must not share a stream.
-
-:mod:`rn_forge.cli` builds on this — it is the Typer layer, and it wires
-``--quiet``/``--json`` into the :data:`console` singleton below.
+Human-readable logs use stderr; :meth:`AppConsole.emit` writes command output
+to stdout so machine-readable output remains separate.
 
 Typical usage::
 
@@ -72,13 +52,10 @@ def _format(msg: Any, args: tuple[Any, ...]) -> Any:
 
 
 class AppConsole:
-    """Thin facade over :class:`rich.console.Console` with quiet/JSON output modes.
+    """Facade over :class:`rich.console.Console` with quiet and JSON modes.
 
-    The underlying :class:`~rich.console.Console` is always reachable via
-    :attr:`rich` — this facade standardizes the common cases, it does not
-    replace the library. For anything beyond a one-off table or a status
-    spinner (progress bars, live displays, custom renderables), build against
-    :attr:`rich` directly.
+    Access :attr:`rich` for unsupported Rich features such as progress bars,
+    live displays, and custom renderables.
     """
 
     def __init__(
@@ -138,7 +115,7 @@ class AppConsole:
 
     @property
     def rich(self) -> Console:
-        """The underlying :class:`rich.console.Console` — the escape hatch."""
+        """The underlying :class:`rich.console.Console`."""
         return self._out
 
     # -- core -----------------------------------------------------------

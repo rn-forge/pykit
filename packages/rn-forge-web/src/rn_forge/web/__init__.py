@@ -1,49 +1,4 @@
-"""Public API for ``rn_forge.web``.
-
-Framework-agnostic HTTP/API primitives: the wire semantics an application
-*promises its callers*, shared by Django/DRF, FastAPI/Starlette and anything
-else that speaks HTTP::
-
-    from rn_forge.web import (
-        CorrelationIdMiddleware,
-        ProblemDetail,
-        check_precondition,
-        default_registry,
-    )
-
-    registry = default_registry()
-    body = registry.build(exc, instance=request.path).as_body()
-
-Nine modules, all one kind of mechanism — inbound HTTP wire semantics — which
-is why the package stays flat rather than grouping by sub-package the way
-``rn_forge.commons`` does. That is a decision, not an accident (kiln D55): this
-curated ``__init__`` is what would make a later regrouping cheap, because
-moving a module would not move a public name.
-
-Where the boundaries are
-------------------------
-
-- This package imports **``rn-forge-commons`` and nothing else in the
-  workspace**, and no web framework: not ``django``, not ``fastapi``, not
-  ``starlette``, not ``rest_framework``. Nor ``rn_forge.cli`` or
-  ``rn_forge.tooling`` — a package that ships into an ASGI server has no
-  business reaching the command-line or file-owning layers.
-  ``uv run lint-imports`` proves all of it.
-- **Inbound, not outbound.** A circuit breaker, a retry policy and a token
-  bucket are transport-agnostic and live in ``rn_forge.commons.integration.resilience``
-  — a worker retrying a database call needs them and serves no HTTP. The one
-  concern that runs the other way is :func:`~rn_forge.web.problem.problem_from_body`,
-  which parses an *upstream's* problem body; it is a pure function over a
-  mapping precisely so no client library is pulled in either direction.
-- **Protocols here, adapters elsewhere.** This package declares
-  :class:`~rn_forge.web.idempotency.IdempotencyStore` and implements only an
-  in-memory test double. Django implements it over the cache; a SQLAlchemy app
-  over its outbox table.
-- **Logging is injected, always.** Nothing here imports ``AppLogger``. Anything
-  that logs takes a ``log`` callable and stays silent when it is ``None``.
-
-There are deliberately no compatibility re-exports in any direction.
-"""
+"""Framework-agnostic HTTP primitives and wire contracts."""
 
 from rn_forge.web.asgi import (
     ASGIApp,
@@ -122,6 +77,10 @@ from rn_forge.web.idempotency import (
     InMemoryIdempotencyStore,
     StoredResponse,
     request_hash,
+)
+from rn_forge.web.openapi import (
+    operation_id,
+    page_component_name,
 )
 from rn_forge.web.pagination import (
     DEFAULT_PAGE_SIZE_PARAM,
@@ -239,6 +198,8 @@ __all__ = [
     "get_correlation_id",
     "new_correlation_id",
     "next_link_header",
+    "operation_id",
+    "page_component_name",
     "principal_from_claims",
     "problem_from_body",
     "redact",

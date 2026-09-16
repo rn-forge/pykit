@@ -110,15 +110,8 @@ class ExceptionContextViewMixin(GenericAPIView):
 class PermissionByMethodMixin(GenericAPIView):
     """Select DRF permission classes per HTTP method.
 
-    ``PERMISSION_CLASSES_BY_METHOD`` maps an upper-cased method to the classes
-    it requires. **A method not in the map falls back to the view's own
-    ``permission_classes``** — never to "no permissions", which would silently
-    open every unmapped method. A method mapped to an empty sequence is
-    explicitly unguarded.
-
-    This is a different axis from the ``PERMISSION_ACTION_MAP`` setting, which
-    maps viewset *actions* to permission names; both can be active at once and
-    neither supersedes the other.
+    Unmapped methods use the view's ``permission_classes``. An explicitly empty
+    sequence leaves that method unguarded.
     """
 
     PERMISSION_CLASSES_BY_METHOD: ClassVar[

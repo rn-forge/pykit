@@ -1,17 +1,4 @@
-"""A locked, atomically-written, JSON-backed key -> entry state store.
-
-Provides :class:`StateStore`, generic over a
-:class:`~rn_forge.commons.lang.dataclasses.DataclassMixin` entry type — the "what
-did I last write where" file both a CLI and a long-running process use to
-detect drift between recorded and current state.
-
-Entry validation is the entry type's job: :class:`StateStore` round-trips
-entries through ``entry_type.from_dict``/``entry.as_dict``, so a
-``__dacite_config__ = dacite.Config(check_types=True)`` entry class gets
-strict field validation on load for free — a hand-edited or truncated state
-file surfaces as an immediate, clear error instead of an ``AttributeError``
-deep inside a later apply.
-"""
+"""Locked, atomically written, JSON-backed state storage."""
 
 from __future__ import annotations
 
@@ -40,8 +27,7 @@ class StateStore(Generic[E]):
     Args:
         path: The state file.
         entry_type: A :class:`~rn_forge.commons.lang.dataclasses.DataclassMixin`
-            subclass; entries round-trip through its ``from_dict``/``as_dict``,
-            so validation is the dataclass's job.
+            subclass used to serialize and validate entries.
         schema_version: Written to the file and checked on load.
         metadata: Envelope fields written beside ``schema_version`` and
             ``entries`` — the generator's own version, a config hash, anything
@@ -67,9 +53,7 @@ class StateStore(Generic[E]):
     def metadata(self) -> dict[str, JsonValue]:
         """The envelope metadata on disk, or the configured metadata if absent.
 
-        Reads the file rather than returning the constructor argument, so a
-        caller can ask what the *last writer* recorded — which is the question
-        a freshness check is actually asking.
+        When the state file exists, this returns the last writer's metadata.
 
         Raises:
             AppException: The file is unreadable or is not the expected shape.
@@ -86,10 +70,6 @@ class StateStore(Generic[E]):
 
     def load(self) -> dict[str, E]:
         """Load and validate every entry, returning ``{}`` when the file is absent.
-
-        Every entry is validated, not just the JSON root — a hand-edited or
-        truncated state file that happens to parse would otherwise surface
-        far later as an unrelated error deep inside a caller's apply logic.
 
         Raises:
             AppException: The file is unreadable, is not the expected shape,
@@ -157,26 +137,14 @@ class StateStore(Generic[E]):
         self.record_many({key: entry})
 
     def record_many(self, entries: Mapping[str, E]) -> None:
-        """Record several entries in a single read-modify-write cycle.
-
-        One write per *operation* rather than per entry keeps the window in
-        which a concurrent process can clobber entries as small as the file
-        lock allows, and leaves the file consistent if the process dies
-        mid-write.
-        """
+        """Record several entries in a single read-modify-write cycle."""
         with self.locked():
             data = self.load()
             data.update(entries)
             self._write(data)
 
     def replace_all(self, entries: Mapping[str, E]) -> None:
-        """Replace the whole entry set with *entries* in one write.
-
-        A generator that owns a committed baseline needs the file to end up
-        exactly matching what it just applied — entries it no longer produces
-        must disappear, and doing that as read-modify-write plus a series of
-        :meth:`remove` calls leaves the file briefly inconsistent.
-        """
+        """Replace the whole entry set with *entries* in one write."""
         with self.locked():
             self._write(dict(entries))
 
@@ -211,25 +179,14 @@ class StateStore(Generic[E]):
 
     @staticmethod
     def render(payload: Mapping[str, Any]) -> str:
-        """Serialise *payload* canonically: sorted keys, two-space indent, one newline.
-
-        The state file is committed and diffed in review, so two runs that
-        recorded the same thing must produce the same bytes regardless of
-        mapping insertion order.
-        """
+        """Serialise *payload* with sorted keys, two-space indent, and one newline."""
         return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
     @contextmanager
     def locked(self) -> Generator[None]:
         """Serialize read-modify-write cycles against other processes.
 
-        Advisory and best-effort: on a platform/filesystem without ``flock``
-        support the update proceeds unserialized rather than failing the
-        caller — a personal dev tool must not fail a command because the
-        filesystem underneath it is unusual. Use this (rather than
-        :class:`~rn_forge.tooling.install.DirectoryLock`) when a failed lock
-        should degrade to unlocked; use ``DirectoryLock`` when the lock must
-        actually hold.
+        If ``flock`` is unavailable, the update proceeds without a lock.
         """
         self.path.parent.mkdir(parents=True, exist_ok=True)
         lock_path = self.path.with_suffix(".lock")

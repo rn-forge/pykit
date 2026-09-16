@@ -1,25 +1,4 @@
-"""The WSGI correlation-ID middleware.
-
-The ContextVar, its accessors and the structlog processor are
-:mod:`rn_forge.web.context`'s; this module binds the variable for the length of
-a Django request and nothing else. Read the bound value with
-:func:`rn_forge.web.get_correlation_id`.
-
-It binds with :func:`rn_forge.web.bind_correlation_id`, **the form that resets
-on exit**: a WSGI worker thread is reused across requests, so a value left bound
-leaks into the next one. (The ASGI middleware in ``rn_forge.web`` deliberately
-does not reset; do not copy that half here.)
-
-Put it **first** in ``MIDDLEWARE`` so everything downstream — including the
-problem-details exception handler — sees the binding::
-
-    MIDDLEWARE = ["rn_forge.django.middleware.CorrelationIdMiddleware", ...]
-
-Customization is by subclassing, since ``MIDDLEWARE`` names a class: set
-``header`` for infrastructure that stamps a different header, and override
-:meth:`CorrelationIdMiddleware.log` to send ``request.complete`` somewhere other
-than ``AppLogger``.
-"""
+"""WSGI middleware for binding and propagating correlation IDs."""
 
 from __future__ import annotations
 
@@ -42,10 +21,8 @@ type Log = Callable[[str, Mapping[str, Any]], None]
 class CorrelationIdMiddleware:
     """Assign and propagate a correlation ID for every request.
 
-    Reads the inbound header, or generates an ID when it is absent or blank;
-    binds it for the request and as ``request.correlation_id``; echoes it on the
-    response; and emits one ``request.complete`` event carrying ``method``,
-    ``path``, ``status``, ``duration_ms`` and ``correlation_id``.
+    Place it first in ``MIDDLEWARE`` so downstream code sees the binding. The
+    response echoes the ID and a ``request.complete`` event records the result.
 
     Args:
         get_response: The next layer, as Django passes it.

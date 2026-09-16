@@ -1,10 +1,4 @@
-"""Validate the built site's graph: broken links, broken anchors, nav, orphans.
-
-`mkdocs.yml`'s `nav` is the single source of page structure, so a page nobody
-navigates to and nobody links to is a page nobody reads. Generated-and-
-gitignored subtrees under `docs/` (mkdocstrings or TypeDoc output) are detected
-from `.gitignore` and skipped — they do not exist until the generators run.
-"""
+"""Validate documentation links, anchors, navigation targets, and reachability."""
 
 from __future__ import annotations
 

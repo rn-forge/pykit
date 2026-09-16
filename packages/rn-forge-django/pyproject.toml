@@ -29,10 +29,12 @@ jwt = [
   "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 # JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
-# simplejwt against a local User; verification is commons' `auth` extra.
+# simplejwt against a local User. The authenticator itself is web's `auth`
+# extra (`rn_forge.web.oidc`), which brings commons' `auth` extra with it.
 oidc = [
   "djangorestframework>=3.17.1",
   "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
 celery = ["celery>=5.6.3"]
 # drf-spectacular only. djangorestframework-camel-case was evaluated and not

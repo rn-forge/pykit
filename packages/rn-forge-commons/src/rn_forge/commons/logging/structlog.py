@@ -1,26 +1,14 @@
-"""A thin structlog front-end over :class:`AppLogger`'s stdlib handlers.
-
-Provides :class:`StructLogger` — context binding (``bind``/``unbind``/``new``)
-and structured keyword fields on top of whatever
-:meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` already configured
-(Rich console, file, JSON). Every record still flows through those same
-handlers: this module renders the bound context into the ``{}``-style message
-:class:`~rn_forge.commons.logging.logger.BraceLogRecord` already expects, then calls
-through to the same :class:`~rn_forge.commons.logging.logger.AppLogger` instance
-:meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` would return — it does
-not call ``dictConfig`` or install its own formatter.
+"""Structlog context binding over :class:`AppLogger` handlers.
 
 Use :meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` directly for
-ordinary unstructured logging; reach for :class:`StructLogger` when you want
-context (a request id, a tenant) bound once and carried across a chain of log
-calls.
+unstructured logging. :class:`StructLogger` binds context carried across a
+chain of calls while retaining the configured Rich, file, or JSON handlers.
 
 **Call** :meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` **before the
 first** :class:`StructLogger` **log call** (not necessarily before
 constructing one — the underlying logger is resolved lazily, on first use).
-verboselogs' custom levels (``TRACE``, ``SPAM``, ``VERBOSE``, ``NOTICE``,
-``SUCCESS``) are not stdlib levels, so this module adds them to structlog's
-level machinery itself rather than assuming structlog knows about them.
+The custom ``TRACE``, ``SPAM``, ``VERBOSE``, ``NOTICE``, and ``SUCCESS`` levels
+are available alongside the standard levels.
 
 Requires the ``structlog`` extra — this module is not imported by
 ``rn_forge.commons``'s curated ``__init__.py``, so ``import rn_forge.commons``
@@ -42,20 +30,14 @@ _configured = False
 
 
 def _app_logger_factory(*args: Any) -> AppLogger:
-    """structlog logger factory: resolve through AppLogger.get_logger, not a bare stdlib logger."""
+    """Return the named :class:`AppLogger` for structlog."""
     return AppLogger.get_logger(args[0] if args else __name__)
 
 
 def _render_event(
     _logger: Any, _method_name: str, event_dict: MutableMapping[str, Any]
 ) -> str:
-    """Final processor: render the event dict into a single ``{}``-ready message string.
-
-    This — not a ``ProcessorFormatter`` on the handler — is what keeps
-    rendering owned by ``AppLogger.initialize()``'s existing formatters: the
-    result becomes an ordinary log message, indistinguishable from one a
-    plain ``AppLogger.get_logger(__name__).info(...)`` call would produce.
-    """
+    """Render an event and its context as an :class:`AppLogger` message."""
     event = str(event_dict.pop("event", ""))
     context = " | ".join(
         f"{key}={value!r}" for key, value in sorted(event_dict.items())
@@ -64,7 +46,7 @@ def _render_event(
 
 
 class _AppBoundLogger(structlog.stdlib.BoundLogger):
-    """Adds verboselogs' custom level methods, delegating exactly like ``.info()`` does."""
+    """Add verboselogs' custom level methods to a bound logger."""
 
     def trace(self, event: str | None = None, *args: Any, **kw: Any) -> Any:
         return self._proxy_to_logger("trace", event, *args, **kw)
@@ -103,14 +85,10 @@ def _configure_once() -> None:
 
 
 class StructLogger:
-    """Thin structlog front-end over AppLogger's stdlib handlers.
+    """Structlog front end over :class:`AppLogger` handlers.
 
-    Every record still flows through whatever ``AppLogger.initialize()``
-    configured (Rich console, file, JSON) — this only adds context binding
-    and structured key-value fields on top. Use
-    ``AppLogger.get_logger(__name__)`` directly for ordinary unstructured
-    logging; use ``StructLogger`` when you want persistent bound context
-    (``request_id``, ``tenant``, etc.) across a chain of log calls.
+    Bound context and structured fields flow through the handlers configured by
+    :meth:`AppLogger.initialize`.
     """
 
     def __init__(self, name: str, **initial_context: Any) -> None:
@@ -140,7 +118,7 @@ class StructLogger:
 
     @property
     def structlog(self) -> structlog.stdlib.BoundLogger:
-        """The underlying ``structlog.stdlib.BoundLogger`` — the escape hatch."""
+        """The underlying ``structlog.stdlib.BoundLogger``."""
         return self._bound
 
     def trace(self, event: str, **kwargs: Any) -> None:

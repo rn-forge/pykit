@@ -5,13 +5,13 @@ Framework-agnostic HTTP/API primitives, built on `rn-forge-commons`.
 These are the wire semantics an application *promises its callers* — the
 correlation ID, the error body, the precondition contract, the pagination
 envelope, the idempotency contract, the readiness aggregate, the ASGI
-correlation middleware, the authentication contract, and the conformance table
-the framework packages are tested against.
+correlation middleware, the authentication contract, the OpenAPI naming rules,
+and the conformance table the framework packages are tested against.
 
-Nine modules, all one kind of mechanism — **inbound** HTTP wire semantics — so
-the package is deliberately flat rather than grouped into sub-packages the way
-`rn-forge-commons` is (kiln D55). The curated `__init__.py` is what would make
-a later regrouping cheap.
+Eleven modules, all one kind of mechanism — **inbound** HTTP wire semantics —
+so the package is deliberately flat rather than grouped into sub-packages the
+way `rn-forge-commons` is (kiln D55). The curated `__init__.py` is what would
+make a later regrouping cheap.
 
 ## Where it sits
 
@@ -65,7 +65,22 @@ override is for local development only and does not survive into a built wheel.
 
 **`rn-forge-commons`** — `AppException` (every exception here subclasses it, so
 a consumer already catching that catches these) and `DataclassMixin` (the wire
-shapes are frozen dataclasses and serialize through it).
+shapes are frozen dataclasses and serialize through it). `Page`, `CheckResult`
+and `HealthReport` sit on `LenientDataclassMixin` instead: each has a field
+dacite's type check cannot see through — a generic `Sequence[T]`, a PEP 695
+`type` alias — and each is built here rather than parsed from a document. Their
+docstrings say so.
+
+**`rn-forge-commons[auth]`, behind this package's own `auth` extra** — and
+only for `rn_forge.web.oidc`. `OidcAuthenticator` is the single implementation
+that joins commons' `JwtVerifier` to the `Authenticator` contract, so the two
+framework packages stop hand-writing the same verifier-to-`Principal` glue. It
+sits here rather than in commons because its signature is `Credentials` in and
+`Principal` out — both web types, and commons cannot depend on web.
+
+Behind an extra, and excluded from the curated `__init__.py`, so the rest of
+the package keeps the property below: install `rn-forge-web` without extras and
+nothing but commons comes with it. Import `rn_forge.web.oidc` directly.
 
 **Nothing else.** That is a result, not a policy: the workspace principle is
 *depend on a proven library rather than reimplement it*, and this package was

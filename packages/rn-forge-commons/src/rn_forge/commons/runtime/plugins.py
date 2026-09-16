@@ -1,17 +1,7 @@
 """Failure-isolated plugin discovery via Python entry points.
 
-Provides :class:`EntryPointLoader`, generic over the expected plugin type. A
-third-party entry point runs arbitrary code at import time — one broken
-plugin must never take down the host process, so each is loaded in isolation
-and its failure recorded as a :class:`PluginError` rather than raised.
-
-What stays out of this module (and belongs in the consumer instead): name
-validation rules, "is this name reserved" policy, and any domain-specific
-compatibility checks between plugins — those are the consumer's contract, not
-a generic plugin-loading concern. This loader also generalizes to isolating
-other late-bound extension points (e.g. a CLI's own extension-mounting step)
-beyond entry points specifically, though only the entry-point case is
-implemented here.
+Each entry point is loaded independently. Failures are returned as
+:class:`PluginError` values instead of taking down the host process.
 """
 
 from __future__ import annotations
@@ -36,12 +26,7 @@ class PluginError(DataclassMixin):
 
 
 class EntryPointLoader(Generic[T]):
-    """Load an entry-point group, isolating each plugin's failure.
-
-    A third-party entry point runs arbitrary code at import time. One broken
-    plugin must never take down the host process, so each is loaded in
-    isolation and its failure recorded rather than raised.
-    """
+    """Load an entry-point group, returning each failure separately."""
 
     def __init__(self, group: str, *, expected_type: type[T]) -> None:
         """Initialize :class:`EntryPointLoader`.

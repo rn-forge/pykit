@@ -16,6 +16,7 @@ from rn_forge.tooling.docs.policy import (
 )
 from rn_forge.tooling.docs import (
     NAV_BLOCK,
+    Area,
     build_nav,
     check_site,
     check_structure,
@@ -149,6 +150,25 @@ class TestAreas:
 
     def test_unknown_nav_value_raises(self, tmp_path):
         write(tmp_path / "_areas.yml", "areas:\n  - key: guides\n    nav: sideways\n")
+        with pytest.raises(AppException):
+            load_areas(tmp_path)
+
+    def test_area_round_trips_through_dict(self, repo):
+        for area in load_areas(repo / "docs"):
+            assert Area.from_dict(area.as_dict()) == area
+
+    def test_a_mistyped_field_names_the_manifest_and_the_field(self, tmp_path):
+        write(
+            tmp_path / "_areas.yml",
+            "areas:\n  - key: guides\n    optional: sometimes\n",
+        )
+        with pytest.raises(AppException) as error:
+            load_areas(tmp_path)
+        assert "_areas.yml" in str(error.value)
+        assert "optional" in str(error.value)
+
+    def test_a_missing_key_is_rejected(self, tmp_path):
+        write(tmp_path / "_areas.yml", "areas:\n  - title: Guides\n")
         with pytest.raises(AppException):
             load_areas(tmp_path)
 

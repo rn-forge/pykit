@@ -1,19 +1,4 @@
-"""The ``/healthz`` and ``/readyz`` router factory.
-
-Plumbing over :func:`rn_forge.web.run_checks`; the semantics are the web
-package's:
-
-- **``/healthz`` — liveness.** 200 while the process serves, and it runs no
-  check. A liveness probe that queries the database restarts a healthy pod
-  when the database blips.
-- **``/readyz`` — readiness.** Runs the checks concurrently and serves the
-  report with the status the report carries: 503 when a *required* check
-  fails, 200 otherwise. ``application/json`` even at 503 — the report is the
-  endpoint's normal representation, and the 503 is its verdict.
-
-A factory, not a module-level router: two applications in one process, and
-tests that need no monkeypatching.
-"""
+"""Build ``/healthz`` liveness and ``/readyz`` readiness routes."""
 
 from __future__ import annotations
 

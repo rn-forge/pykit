@@ -15,6 +15,7 @@ What the package replaced, so a reader of an older application recognises it:
 | the camelCase alias generator on each model | `WireModel` |
 | the `ProblemDetail` injection into `components/schemas` | `install_problem_schema(app)` |
 | the `operationId` convention | `operation_id`, passed as `generate_unique_id_function` |
+| the `Page<Item>` component name | `install_problem_schema`, which renames pydantic's `Page_OrderOut_` |
 
 Two rules still apply to any ASGI application, framework or not, and they are
 this package's: install `CorrelationIdMiddleware` directly rather than inside a

@@ -1,13 +1,6 @@
-"""Pandas utilities for DataFrame and Series manipulation.
+"""Typed field extraction from pandas rows.
 
-Provides:
-
-- :class:`PandasUtils` — static helpers for extracting typed field values
-  from ``pandas.Series`` rows (with NaN handling and required-field
-  validation).
-
-Requires ``pandas``.
-Install with ``pip install rn-forge-commons[pandas]``.
+Requires the ``pandas`` extra.
 """
 
 from __future__ import annotations
@@ -26,7 +19,7 @@ _LOGGER = AppLogger.get_logger(__name__)
 
 
 class PandasUtils:
-    """Static helpers for pandas DataFrame and Series operations.
+    """Field extraction from pandas DataFrame and Series rows.
 
     Requires ``pandas`` — install with ``rn-forge-commons[pandas]``.
 

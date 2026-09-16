@@ -1,23 +1,4 @@
-"""The lifecycle verbs of an installed tool, over a :class:`ToolProduct`.
-
-``install``, ``upgrade``, ``uninstall``, ``cleanup``, ``status`` and ``doctor``.
-Each takes the product and an optional :class:`ToolHome` (defaulting to the
-product's home under ``$RNF_HOME``) and returns a record, so a command renders
-it as text or ``--json`` without the verb knowing which.
-
-``install`` is transactional in the shape of
-:func:`rn_forge.tooling.generation.apply`: fetch and verify into scratch space,
-build the version, put links in place, migrate, and swap ``current`` **last**.
-Every step registers how to undo itself before it runs; anything raised —
-an interruption included — undoes the steps taken so far, in reverse, and the
-previous version is active again. An :exc:`Exception` is re-raised as an
-:class:`~rn_forge.commons.exceptions.AppException`; a
-:exc:`KeyboardInterrupt` is re-raised unchanged, so a caller cannot mistake it
-for an ordinary failure and carry on.
-
-Confirmation is not here. Removing versions is a decision for the command in
-front of a person; these functions do what they are asked.
-"""
+"""Transactional install, upgrade, removal, status, and diagnostic operations."""
 
 from __future__ import annotations
 

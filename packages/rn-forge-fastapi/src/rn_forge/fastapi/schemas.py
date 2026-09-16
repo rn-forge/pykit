@@ -1,24 +1,4 @@
-"""pydantic mirrors of the :mod:`rn_forge.web` wire shapes, and the camelCase base.
-
-``rn-forge-web`` ships its wire shapes as frozen dataclasses so a Django
-consumer carries no pydantic. A FastAPI route needs a ``BaseModel`` to name as
-its ``response_model``; these are those models, written once.
-
-Each mirror has the JSON shape of its dataclass's wire body — a test
-round-trips every one — and converts both ways with ``from_wire`` and
-``to_wire``. Each is **named for the wire, not for this package**: FastAPI
-names ``components/schemas`` after the class, and both stacks must emit
-``ProblemDetail``, ``CheckResult`` and ``HealthReport`` verbatim.
-
-``from __future__ import annotations`` holds here
--------------------------------------------------
-
-The known friction — stringified annotations, pydantic, a PEP 695 generic and
-FastAPI's runtime introspection — was checked rather than assumed: pydantic
-resolves every field annotation against this module's globals, so the names
-they use (``CheckStatus``, ``Any``) are imported at runtime and never under
-``TYPE_CHECKING``.
-"""
+"""Pydantic mirrors of the web wire types and their camel-case model base."""
 
 from __future__ import annotations
 
@@ -39,17 +19,8 @@ __all__ = ["CheckResult", "HealthReport", "Page", "ProblemDetail", "WireModel"]
 class WireModel(BaseModel):
     """Base for every model that crosses the wire: camelCase out, either spelling in.
 
-    Derive an application's own request and response models from this too. A
-    casing rule held by per-model discipline holds until the first hurried
-    endpoint; one held by a base class holds.
-
-    - **Out:** ``serialize_by_alias`` makes ``model_dump()`` camelCase without
-      being asked, so a hand-built ``JSONResponse(model.model_dump(mode="json"))``
-      is camelCase too — not only a ``response_model``.
-    - **In:** both the camelCase alias and the Python name validate, so an
-      internal caller posting ``snake_case`` needs no client change.
-    - RFC 9457's core members are single lowercase words, which ``to_camel``
-      leaves alone.
+    Serialization uses aliases by default; validation accepts aliases and
+    Python field names.
     """
 
     model_config = ConfigDict(
@@ -149,8 +120,7 @@ class CheckResult(WireModel):
 class HealthReport(WireModel):
     """Mirror of :class:`rn_forge.web.HealthReport`.
 
-    ``http_status`` is not a field: the web report deliberately keeps it off the
-    wire, so :meth:`to_wire` takes it as an argument.
+    ``http_status`` is a transport value and is supplied to :meth:`to_wire`.
     """
 
     status: CheckStatus

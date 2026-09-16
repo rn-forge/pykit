@@ -42,6 +42,12 @@ user = User.from_dict({"name": "Alice"})
 payload = user.to_json()
 ```
 
+`from_dict()` is strict: `User.from_dict({"name": "Alice", "active": "yes"})`
+raises `AppException: Invalid User: wrong value type for field "active"`.
+Subclass `LenientDataclassMixin` for the record that wants the value through
+instead — and see that class's docstring for the two annotations dacite cannot
+check, which force the same choice.
+
 ## Pandas and Excel
 
 ```python
