@@ -26,7 +26,7 @@ from rn_forge.commons.logging.logger import (
 from rn_forge.commons.lang.reflection import ReflectUtils
 import rn_forge.commons.logging.logger as logging_module
 
-from conftest import raise_
+from rn_forge.commons.testing import raise_
 
 
 # -- configuration helpers -------------------------------------------------

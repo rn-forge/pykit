@@ -1,7 +1,7 @@
 [project]
 name = "rn-forge-tooling"
 version = "0.2.0"
-description = "File-owning developer tooling for the rn-forge-* CLIs: generation, templates, local state, install mechanics and docs checks"
+description = "File-owning developer tooling for the rn-forge-* CLIs: generation, templates, local state and install mechanics"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
@@ -13,14 +13,7 @@ dependencies = [
   "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
   "rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli",
   "jinja2>=3.1.6",
-  # The docs checkers ask Python-Markdown what anchor a heading gets rather
-  # than guessing; mkdocs already brings it, but a checker that only works
-  # inside a docs build is not a checker.
-  "markdown>=3.7",
 ]
-
-[project.scripts]
-rn-forge-docs = "rn_forge.tooling.cli.docs:app"
 
 [project.optional-dependencies]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]

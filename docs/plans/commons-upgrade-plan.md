@@ -1760,7 +1760,8 @@ class DocumentUtils:
 - **Do not port taskkit's `parse_config`/`ConfigFinding`.** That is Pydantic validation of
   taskkit's own schema; commons must not take a Pydantic dependency for it. The *pattern* (report
   every validation failure with a dotted field path, not just the first) is worth keeping in
-  taskkit.
+  taskkit. **Narrowed by Part G (2026-09-16):** commons still takes no *base* Pydantic
+  dependency; the pattern now ships behind the opt-in `pydantic` extra.
 
 #### 11.4 — SUPERSEDED: one YAML backend, one serialisation module
 
@@ -2827,6 +2828,51 @@ re-raised unchanged. Confirmation lives in the commands, not the functions.
 - [x] Tooling guide `guides/lifecycle.md`; cli `declaring.md` documents the table
 - [ ] kiln F3.3 — `golden/python-tool` declares the table and implements
       `ToolProduct` (kiln's work, now unblocked)
+
+---
+
+## Part G — strict pydantic models, as an opt-in extra (kiln F4.2)
+
+**Status: done in the working tree (2026-09-16).** Consumer: kiln F4.2, whose
+`config.toml` schema and per-module config sections are strict pydantic models
+(kiln ADR-0004, ADR-0011). No package boundary moves: `.importlinter` still
+holds 7 contracts.
+
+**The decision (owner, 2026-09-16).** Commons provides the pydantic
+boilerplate — the strict base model, its initialization, and the translation of
+a validation failure into an `AppException` — **as an extra**, so the base
+package adds no import-time cost for a program that never validates a document.
+This narrows, and does not reverse, Phase 11.2 and Phase 14's "commons must not
+depend on Pydantic": that stays true of the base dependency set.
+
+| Module | Holds |
+| --- | --- |
+| `commons/lang/models.py` (`pydantic` extra) | `StrictModel` (strict, frozen, `extra="forbid"`, `parse`), `parse_model` for any `BaseModel`, `ModelValidationError(AppException)` with `errors`, `FieldError(path, message, kind)` |
+
+Two things the design settled:
+
+- **Every failure, one exception.** The message lists each failing key by its
+  dotted path (`repository.name`, `packages.1`), and `error_data["paths"]`
+  carries the same list for a caller that reports them itself. pydantic already
+  collects every error; the extra only names them.
+- **Not on the facade.** `rn_forge/commons/__init__.py` does not import it, like
+  every other extra-gated module. A test runs `import rn_forge.commons` in a
+  clean interpreter and asserts `pydantic` never loaded.
+
+agentkit's `json_schema_extra`-driven `append_paths` adapter (Phase 14) is
+unchanged: it stays in agentkit and can now sit on `StrictModel`.
+
+### Part G checklist
+
+- [x] `pydantic` extra (`pydantic>=2.12`), also in `all`; `uv.lock` updated
+- [x] `lang/models.py`, with tests for a missing key, a wrong type, an unknown
+      key and a bad list element reported together; the source in the message;
+      frozen instances; `parse_model` on a plain `BaseModel`; the facade never
+      loading pydantic
+- [x] README extras table and `lang/` section, installation guide, config guide
+      section, API page and nav
+- [ ] kiln F4.2 — the config manager parses through `StrictModel` (kiln's work,
+      now unblocked once this is on `feature/upgrade`)
 
 ---
 

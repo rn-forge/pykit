@@ -22,7 +22,7 @@ which kiln archetype each consumer is). Read that section before the plan it hea
 
 | Document | Scope | Status |
 | --- | --- | --- |
-| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–F committed; the strict-dataclass follow-ups done (E.1a, 2026-09-15).** Open: D.8 release (last). D.9 and F3.3 are kiln acceptance |
+| [`commons-upgrade-plan.md`](./commons-upgrade-plan.md) | `rn-forge-commons` runtime foundation + the split of the development layer into `rn-forge-cli` and `rn-forge-tooling` | **Parts A–F committed; the strict-dataclass follow-ups done (E.1a, 2026-09-15); Part G, the `pydantic` extra, in the working tree (2026-09-16).** Open: D.8 release (last). D.9 and F3.3 are kiln acceptance |
 | The standardization plan (retired; outside this repo) | Workspace-wide: the library layering, the kiln generator, the archetypes and golden repos, the rebuilds of agentkit and intellibuild | **Retired at revision 14** (2026-09-12), replaced by kiln's `docs/specs/` and `docs/adr/`. D-numbers resolve through kiln's `docs/plans/context.md` §2.2, phases through §2.1, and the pykit-side sections through [`kiln-dependencies.md`](./kiln-dependencies.md) |
 | [`kiln-dependencies.md`](./kiln-dependencies.md) | What kiln needs from pykit: the lifecycle surface (kiln C.3), `rn-forge-fastapi` for kiln's web archetypes, and the release trigger | **Handoff, 2026-09-12; updated 2026-09-13.** Lifecycle surface done (commons Part F); fastapi implemented, its acceptance is kiln's; releases follow kiln's in-progress work |
 | [`web-library-plan.md`](./web-library-plan.md) | `rn-forge-web` — framework-agnostic HTTP primitives | **All eleven phases implemented; committed at `8b5160b`**, plus §9.1 (the OpenAPI naming rules) and §10's `OidcAuthenticator` (both 2026-09-15). Open: the release tag |
@@ -138,6 +138,10 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
    `JWKSAuthenticator` was moved into it rather than aliased, so `JWKSBearerAuthentication` and
    FastAPI's `bearer_auth()` now share one implementation; a test on each stack drives the same
    token through it. **Nothing pykit-side is left before the release.**
+4. ~~**Strict pydantic models as a commons extra**~~ — **done in the working tree 2026-09-16**
+   (commons Part G), for kiln F4.2. `rn_forge.commons.lang.models` behind the `pydantic` extra:
+   `StrictModel` and `ModelValidationError`, which names every failing key by dotted path. The base
+   package still takes no pydantic dependency, and a test proves the facade never loads it.
 
 ### Last: the release
 

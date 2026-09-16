@@ -32,6 +32,16 @@ reportUnnecessaryTypeIgnoreComment = "error"
 venvPath = "."
 venv = ".venv"
 
+[tool.pytest.ini_options]
+# A root-level run reads only this table, not the packages' own. importlib mode
+# lets every package keep a plain `tests/` with no __init__.py, and same-named
+# test modules in different packages do not collide.
+addopts = "-ra --import-mode=importlib"
+markers = [
+  "unit: fast isolated tests",
+  "integration: tests that exercise database-backed behavior",
+]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
 

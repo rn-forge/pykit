@@ -12,7 +12,11 @@ import pytest
 
 import rn_forge.commons.lang.dataclasses as dataclasses_module
 from rn_forge.commons.exceptions import AppException
-from rn_forge.commons.lang.dataclasses import DataclassMixin, LenientDataclassMixin
+from rn_forge.commons.lang.dataclasses import (
+    DataclassMixin,
+    LenientDataclassMixin,
+    StrictDataclassMixin,
+)
 from rn_forge.commons.findings import Finding, Severity
 
 
@@ -533,3 +537,104 @@ class TestDaciteCannotCheck:
 
     def test_an_unbound_type_var_parses_under_the_lenient_mixin(self) -> None:
         assert LenientGenericRecord.from_dict({"items": [1, 2]}).items == [1, 2]
+
+
+# -- StrictDataclassMixin ------------------------------------------------------
+
+
+class Profile(StrEnum):
+    MKDOCS = "mkdocs"
+    NONE = "none"
+
+
+@dataclass(frozen=True, slots=True)
+class RepositorySection(DataclassMixin):
+    name: str
+    archetype: Literal["python-tool", "python-lib"] = "python-tool"
+    topics: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class DocsSection(StrictDataclassMixin):
+    profile: Profile = Profile.MKDOCS
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectDocument(StrictDataclassMixin):
+    repository: RepositorySection
+    docs: DocsSection = field(default_factory=DocsSection)
+    extras: list[DocsSection] = field(default_factory=list)
+    named: dict[str, RepositorySection] = field(default_factory=dict)
+    maybe: RepositorySection | None = None
+
+
+PROJECT_TOML = """
+[repository]
+name = "kiln"
+archetype = "python-lib"
+topics = ["a", "b"]
+
+[docs]
+profile = "none"
+"""
+
+
+class TestStrictDataclassMixin:
+    def test_nested_toml_round_trips(self) -> None:
+        import tomllib
+
+        doc = ProjectDocument.from_dict(tomllib.loads(PROJECT_TOML))
+        assert doc.repository == RepositorySection("kiln", "python-lib", ("a", "b"))
+        assert doc.docs.profile is Profile.NONE
+        assert ProjectDocument.from_dict(doc.as_dict()) == doc
+
+    def test_nested_defaults_apply(self) -> None:
+        doc = ProjectDocument.from_dict({"repository": {"name": "kiln"}})
+        assert doc.repository.archetype == "python-tool"
+        assert doc.repository.topics == ()
+        assert doc.docs.profile is Profile.MKDOCS
+
+    def test_rejects_unknown_top_level_keys(self) -> None:
+        with pytest.raises(
+            AppException,
+            match="Invalid ProjectDocument: unknown key\\(s\\) bogus, other",
+        ):
+            ProjectDocument.from_dict(
+                {"repository": {"name": "x"}, "bogus": 1, "other": 2}
+            )
+
+    def test_rejects_unknown_nested_key_by_path(self) -> None:
+        # `RepositorySection` itself is not strict: the document's class decides.
+        with pytest.raises(AppException, match="repository\\.archtype"):
+            ProjectDocument.from_dict({"repository": {"name": "x", "archtype": "lib"}})
+
+    def test_rejects_unknown_keys_inside_containers_and_unions(self) -> None:
+        data = {
+            "repository": {"name": "x"},
+            "extras": [{"profile": "none"}, {"profil": "none"}],
+            "named": {"one": {"name": "y", "nme": "z"}},
+            "maybe": {"name": "m", "extra": True},
+        }
+        with pytest.raises(AppException) as excinfo:
+            ProjectDocument.from_dict(data)
+        message = str(excinfo.value)
+        for path in ("extras.1.profil", "named.one.nme", "maybe.extra"):
+            assert path in message
+        assert "extras.0" not in message
+
+    def test_still_type_checks(self) -> None:
+        with pytest.raises(AppException, match="Invalid ProjectDocument"):
+            ProjectDocument.from_dict({"repository": {"name": 1}})
+
+    def test_rejects_literal_outside_its_values(self) -> None:
+        with pytest.raises(AppException, match="Invalid ProjectDocument"):
+            ProjectDocument.from_dict({"repository": {"name": "x", "archetype": "go"}})
+
+    def test_from_yaml_rejects_unknown_keys(self) -> None:
+        with pytest.raises(AppException, match="docs\\.profle"):
+            ProjectDocument.from_yaml("repository:\n  name: x\ndocs:\n  profle: none\n")
+
+    def test_base_mixin_still_ignores_unknown_nested_keys(self) -> None:
+        assert Nested.from_dict(
+            {"inner": {"name": "a", "value": 1, "zzz": 0}, "label": "l"}
+        )

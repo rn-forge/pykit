@@ -22,6 +22,7 @@ Optional extras:
 | `json` | JSON-formatted log output (`python-json-logger`) |
 | `excel` | `openpyxl` + `pandas`-backed Excel helpers |
 | `pandas` | `pandas`-backed DataFrame/Series helpers |
+| `pydantic` | Strict pydantic models for configuration documents, with every failure named by dotted path |
 | `otel` | OpenTelemetry logging instrumentation |
 | `testing` | `assertpy` + `pytest` integration helpers |
 | `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
@@ -48,15 +49,21 @@ holds it.
 
 **`lang/`** — Python objects themselves; no filesystem, no outside world.
 
-- **`collections`** — `DictUtils`, `ListUtils`: dot-path get/set, layered merge with provenance,
-  flatten, structural comparison, sorting, filtering, grouping.
+- **`collections`** — `DictUtils`, `ListUtils`: dot-path get/set, typed dot-path reads that treat
+  a wrong-shaped value as absent (`get_mapping`, `get_list`, `get_strings`, `get_str`,
+  `get_bool`), layered merge with provenance, flatten, structural comparison, sorting, filtering, grouping.
 - **`dataclasses`** — `DataclassMixin`: adds `as_dict()`, `to_json()`, `to_yaml()`, `from_dict()`
   to any `@dataclass`, reconstructing nested dataclasses and enum members on the way back.
   `from_dict()` is **strict**: a value whose type does not match its field is rejected as an
   `AppException` naming the offending field. `LenientDataclassMixin`: the same surface with type
   checking off — for a record whose input is known-ragged, and for the two annotations dacite
   cannot see through (a PEP 695 `type` alias, an unbound type variable), which the module
-  docstring spells out.
+  docstring spells out. `StrictDataclassMixin`: type checking plus rejection of unknown keys at
+  every nesting level, named by dotted path (`repository.archtype`) — for configuration documents.
+- **`models`** (`pydantic` extra) — `StrictModel`, `parse_model`, `ModelValidationError`: pydantic
+  models that are strict, frozen and reject unknown keys, raising one `AppException` that names
+  every failing key by its dotted path. Not on the facade, so `import rn_forge.commons` never loads
+  pydantic.
 - **`reflection`** — `ReflectUtils`: fully-qualified name resolution, error-message formatting,
   and stack-frame variable inspection.
 - **`types`** — the recursive `JsonValue` alias.

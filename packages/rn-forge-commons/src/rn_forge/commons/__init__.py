@@ -59,7 +59,11 @@ from rn_forge.commons.lang.collections import (
     ListUtils,
     MergeResult,
 )
-from rn_forge.commons.lang.dataclasses import DataclassMixin, LenientDataclassMixin
+from rn_forge.commons.lang.dataclasses import (
+    DataclassMixin,
+    LenientDataclassMixin,
+    StrictDataclassMixin,
+)
 from rn_forge.commons.lang.reflection import ReflectUtils
 from rn_forge.commons.lang.types import JsonValue
 from rn_forge.commons.lang.utils import AppUtils, Base64
@@ -115,6 +119,7 @@ __all__ = [
     "SecretNotFound",
     "SecretStore",
     "Severity",
+    "StrictDataclassMixin",
     "Task",
     "TaskPool",
     "YamlUtils",

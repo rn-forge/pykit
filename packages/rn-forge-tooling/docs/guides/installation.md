@@ -16,9 +16,8 @@ It is a **development** dependency. Add it to a `dev` group, or to a CLI's own
 `dependencies` when the CLI *is* the developer tool.
 
 `rn-forge-cli` and `rn-forge-commons` come with it, pinned the same way.
-`jinja2` and `markdown` are hard dependencies: a tool that generates files
-renders templates on every run, and the docs checkers ask Python-Markdown what
-anchor a heading gets rather than guessing.
+`jinja2` is a hard dependency: a tool that generates files renders templates on
+every run.
 
 ## Upgrading
 
@@ -33,7 +32,7 @@ calls it today:
 | Concern | Package |
 | --- | --- |
 | Typer app factory, standard options, `AppConsole`, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| Generation, templates, state, install, docs checkers | `rn-forge-tooling` |
+| Generation, templates, state, install | `rn-forge-tooling` |
 | Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols | `rn-forge-commons` |
 
 There are deliberately **no compatibility re-exports** in any direction: a shim

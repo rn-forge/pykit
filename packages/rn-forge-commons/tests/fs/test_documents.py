@@ -18,7 +18,7 @@ from rn_forge.commons.fs.documents import (
     YamlUtils,
 )
 
-from conftest import raise_
+from rn_forge.commons.testing import raise_
 
 
 class TestConfigFormat:

@@ -19,6 +19,7 @@ Targeted extras:
 - `excel` for `openpyxl` and `pandas`
 - `otel` for OpenTelemetry log correlation
 - `pandas` for dataframe helpers
+- `pydantic` for strict configuration models (`rn_forge.commons.lang.models`)
 - `testing` for `assertpy` test helpers
 
 Docs commands:

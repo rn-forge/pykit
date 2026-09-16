@@ -190,6 +190,26 @@ them, port nothing.
 `golden-tool doctor` and `golden-tool status`, and nothing in v1 self-installs
 except kiln.
 
+### 2.1a Strict pydantic models (kiln F4.2) — done in the working tree
+
+**Blocks:** kiln F4.2 (the config manager and the module contract). kiln's
+ADR-0004 and ADR-0011 make `config.toml` and each module's config section a
+strict pydantic model. The owner decided on 2026-09-16 that the pydantic
+boilerplate comes from commons **as an extra**, not as a base dependency, so a
+program that never validates a document pays no import cost. Recorded as
+`commons-upgrade-plan.md` Part G.
+
+kiln declares `rn-forge-commons[pydantic]` and subclasses
+`rn_forge.commons.lang.models.StrictModel`; `ModelValidationError` names every
+failing key by dotted path, which is F4.2's first acceptance bullet. kiln sees
+it once it is committed and pushed to `feature/upgrade`.
+
+```bash
+cd rn-forge/pykit
+uv run pytest -q packages/rn-forge-commons/tests/lang/test_models.py
+uv run lint-imports && uv run pyright && uv run ruff check .
+```
+
 ### 2.2 `rn-forge-fastapi` — implemented; the acceptance is kiln's
 
 **Blocks:** kiln E5 (the web archetypes), release-2. kiln starts E5 when

@@ -19,11 +19,8 @@ a developer's filesystem and a tool that owns files in it. It owns:
   sources and verification, archive extraction, the `ToolProduct` seam, and the
   transactional `install`/`upgrade`/`uninstall`/`cleanup`/`status`/`doctor`
   verbs.
-- `docs` — the documentation-tree checkers (link, Markdown and nav mechanics),
-  which take the repository's own conventions as an injected
-  `DocsPolicy` rather than hardcoding anyone's.
-- `cli` — this package's own command surfaces: `rn-forge-docs`, and the
-  lifecycle commands a `[cli.lifecycle]` table mounts.
+- `cli` — this package's own command surfaces: the lifecycle commands a
+  `[cli.lifecycle]` table mounts.
 
 A repository that only needs a command line takes `rn-forge-cli` and stops
 there. A package that ships into a deployed runtime (`rn-forge-django`,

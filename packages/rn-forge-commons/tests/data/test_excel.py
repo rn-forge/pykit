@@ -20,7 +20,7 @@ from rn_forge.commons.data.excel import (
     WorkbookTemplate,
 )
 
-from conftest import raise_
+from rn_forge.commons.testing import raise_
 
 
 # ---------------------------------------------------------------------------

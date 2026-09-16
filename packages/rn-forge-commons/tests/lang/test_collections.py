@@ -421,3 +421,70 @@ class TestListUtils:
 
     def test_group_by_empty_returns_empty_dict(self) -> None:
         assert ListUtils.group_by([], key_fn=str) == {}
+
+
+# -- DictUtils typed reads -------------------------------------------------
+
+
+class TestDictTypedReads:
+    DOC = {
+        "repository": {"name": "kiln", "private": True, "tags": ["a", 1, "b"]},
+        "docs": "mkdocs",
+        "tasks": {"build": {"cmds": "echo hi"}, "a.b": {"cmds": None}},
+        "items": [{"name": "first"}],
+    }
+
+    def test_get_mapping(self) -> None:
+        assert DictUtils.get_mapping(self.DOC, "repository")["name"] == "kiln"
+
+    def test_get_mapping_through_list_index(self) -> None:
+        assert DictUtils.get_mapping(self.DOC, "items.0") == {"name": "first"}
+
+    def test_get_mapping_stringifies_keys(self) -> None:
+        assert DictUtils.get_mapping({"m": {1: "x"}}, "m") == {"1": "x"}
+
+    def test_get_mapping_returns_a_copy(self) -> None:
+        DictUtils.get_mapping(self.DOC, "repository")["name"] = "changed"
+        assert self.DOC["repository"]["name"] == "kiln"
+
+    @pytest.mark.parametrize("path", ["docs", "missing", "repository.tags", ""])
+    def test_get_mapping_wrong_shape_is_empty(self, path: str) -> None:
+        assert DictUtils.get_mapping(self.DOC, path) == {}
+
+    def test_get_list(self) -> None:
+        assert DictUtils.get_list(self.DOC, "repository.tags") == ["a", 1, "b"]
+
+    def test_get_list_scalar_is_one_element(self) -> None:
+        assert DictUtils.get_list(self.DOC, "tasks.build.cmds") == ["echo hi"]
+
+    def test_get_list_mapping_is_one_element(self) -> None:
+        assert DictUtils.get_list(self.DOC, "items.0") == [{"name": "first"}]
+
+    def test_get_list_none_is_empty(self) -> None:
+        assert DictUtils.get_list(self.DOC, r"tasks.a\.b.cmds") == []
+
+    def test_get_list_missing_is_empty(self) -> None:
+        assert DictUtils.get_list(self.DOC, "nope.nope") == []
+
+    def test_get_strings_drops_non_strings(self) -> None:
+        assert DictUtils.get_strings(self.DOC, "repository.tags") == ["a", "b"]
+
+    def test_get_strings_scalar(self) -> None:
+        assert DictUtils.get_strings(self.DOC, "docs") == ["mkdocs"]
+
+    def test_get_strings_missing(self) -> None:
+        assert DictUtils.get_strings(self.DOC, "missing") == []
+
+    def test_get_str(self) -> None:
+        assert DictUtils.get_str(self.DOC, "repository.name") == "kiln"
+
+    def test_get_str_wrong_shape_is_default(self) -> None:
+        assert DictUtils.get_str(self.DOC, "repository.private") == ""
+        assert DictUtils.get_str(self.DOC, "missing", default="x") == "x"
+
+    def test_get_bool(self) -> None:
+        assert DictUtils.get_bool(self.DOC, "repository.private") is True
+
+    def test_get_bool_does_not_coerce(self) -> None:
+        assert DictUtils.get_bool({"a": 1, "b": "true"}, "a") is False
+        assert DictUtils.get_bool({"a": 1, "b": "true"}, "b", default=True) is True

@@ -3,6 +3,8 @@
 :class:`DataclassMixin` rejects values that do not match their declared field
 types. :class:`LenientDataclassMixin` disables that check for records whose
 annotations dacite cannot validate, or whose input is intentionally ragged.
+:class:`StrictDataclassMixin` keeps the check and also rejects keys that name
+no field, at every nesting level.
 
 Dacite cannot validate PEP 695 ``type`` aliases or unbound type variables,
 including when nested in a container. Classes with those annotations must use
@@ -23,6 +25,9 @@ Mark a field with ``metadata={"exclude": True}`` to omit it from
 from __future__ import annotations
 
 import dataclasses
+import types
+import typing
+from collections.abc import Mapping
 from enum import Enum
 from typing import Any, ClassVar, Self, cast
 
@@ -150,7 +155,8 @@ class DataclassMixin:
 
         Args:
             data: A dict whose keys correspond to dataclass field names.
-                Unrecognised keys are silently ignored.
+                Unrecognised keys are silently ignored, or rejected when the
+                class's ``__dacite_config__`` sets ``strict``.
 
         Returns:
             A new instance of this class populated with matching field values.
@@ -158,7 +164,9 @@ class DataclassMixin:
         Raises:
             AppException: A value does not match its field's declared type, a
                 required field is absent, or an enum-typed field names a member
-                the enum does not define.
+                the enum does not define. Under ``strict``, also a key that
+                names no field, at any nesting level; the message lists every
+                such key by its dotted path (``repository.archtype``).
             TypeError: If the subclass was not decorated with
                 ``@dataclasses.dataclass``.
         """
@@ -169,6 +177,19 @@ class DataclassMixin:
             raise TypeError(
                 f"{cls.__name__} is not a dataclass — DataclassMixin requires @dataclass"
             )
+        if cls.__dacite_config__.strict:
+            unknown_keys = _unknown_key_paths(cls, data, "")
+            if unknown_keys:
+                _LOGGER.debug(
+                    "DataclassMixin.from_dict: unknown keys | cls={} | keys={}",
+                    cls.__name__,
+                    unknown_keys,
+                )
+                raise AppException(
+                    "Invalid {}: unknown key(s) {}",
+                    cls.__name__,
+                    ", ".join(unknown_keys),
+                )
         field_names = {field.name for field in dataclasses.fields(cls)}
         ignored_keys = sorted(set(data) - field_names)
         if ignored_keys:
@@ -309,7 +330,113 @@ class LenientDataclassMixin(DataclassMixin):
     )
 
 
-__all__ = ["DataclassMixin", "LenientDataclassMixin"]
+class StrictDataclassMixin(DataclassMixin):
+    """A :class:`DataclassMixin` that also rejects keys naming no field.
+
+    Type checking, container coercion and ``StrEnum`` reconstruction are
+    unchanged. :meth:`~DataclassMixin.from_dict` additionally raises
+    :class:`~rn_forge.commons.exceptions.AppException` when *data* — or any
+    nested mapping that becomes a dataclass field — carries a key the target
+    dataclass does not declare. The message names every such key by its dotted
+    path. Nested dataclass fields are checked whether or not their own class
+    uses this mixin.
+
+    Example::
+
+        @dataclass(frozen=True, slots=True)
+        class Repository(StrictDataclassMixin):
+            name: str
+            archetype: str = "python-tool"
+
+        @dataclass(frozen=True, slots=True)
+        class ProjectConfig(StrictDataclassMixin):
+            repository: Repository
+
+        ProjectConfig.from_dict({"repository": {"name": "x", "archtype": "lib"}})
+        # AppException: Invalid ProjectConfig: unknown key(s) repository.archtype
+    """
+
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=True, cast=[Enum, tuple, set], strict=True
+    )
+
+
+__all__ = ["DataclassMixin", "LenientDataclassMixin", "StrictDataclassMixin"]
+
+
+def _unknown_key_paths(cls: type, data: Mapping[str, Any], prefix: str) -> list[str]:
+    """Dotted paths of every key in *data* that no field of *cls* declares.
+
+    Descends into each field whose annotation (directly, or through a union or
+    container) is a dataclass, so a nested mapping is held to the same rule.
+    """
+    field_names = {field.name for field in dataclasses.fields(cls)}
+    hints = typing.get_type_hints(cls)
+    paths: list[str] = []
+    for key, value in data.items():
+        path = f"{prefix}.{key}" if prefix else str(key)
+        if key not in field_names:
+            paths.append(path)
+            continue
+        paths.extend(_unknown_in_value(hints[key], value, path))
+    return paths
+
+
+def _unknown_in_value(annotation: object, value: object, path: str) -> list[str]:
+    """Unknown key paths inside *value*, read against its field *annotation*."""
+    origin = typing.get_origin(annotation)
+    args = typing.get_args(annotation)
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        if not isinstance(value, Mapping):
+            return []
+        return _unknown_key_paths(annotation, cast(Mapping[str, Any], value), path)
+    if origin in (typing.Union, types.UnionType):
+        # Only arms that could hold this value's shape count, so `None` in
+        # `Section | None` cannot mask unknown keys; report the closest fit.
+        candidates = [
+            _unknown_in_value(arm, value, path)
+            for arm in args
+            if _could_hold(arm, value)
+        ]
+        return min(candidates, key=len) if candidates else []
+    if origin in (list, tuple, set, frozenset) and isinstance(value, list):
+        items = cast(list[object], value)
+        return [
+            unknown
+            for index, item in enumerate(items)
+            for unknown in _unknown_in_value(
+                _element_annotation(origin, args, index), item, f"{path}.{index}"
+            )
+        ]
+    if origin is dict and len(args) == 2 and isinstance(value, Mapping):
+        entries = cast(Mapping[object, object], value)
+        return [
+            unknown
+            for key, item in entries.items()
+            for unknown in _unknown_in_value(args[1], item, f"{path}.{key}")
+        ]
+    return []
+
+
+def _could_hold(annotation: object, value: object) -> bool:
+    """Whether a union arm *annotation* could structure *value*'s shape."""
+    origin = typing.get_origin(annotation)
+    if origin in (typing.Union, types.UnionType):
+        return True
+    if isinstance(value, Mapping):
+        return origin is dict or (
+            isinstance(annotation, type) and dataclasses.is_dataclass(annotation)
+        )
+    if isinstance(value, list):
+        return origin in (list, tuple, set, frozenset)
+    return False
+
+
+def _element_annotation(origin: object, args: tuple[object, ...], index: int) -> object:
+    """The annotation of element *index* of a ``list``/``tuple``/``set`` field."""
+    if origin is tuple and not (len(args) == 2 and args[1] is Ellipsis):
+        return args[index] if index < len(args) else object
+    return args[0] if args else object
 
 
 def _dataclass_to_dict(obj: Any, *, exclude_hidden: bool) -> dict[str, Any]:

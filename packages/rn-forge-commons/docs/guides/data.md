@@ -10,6 +10,20 @@ name = DictUtils.get(data, "users.1.name")
 grouped = ListUtils.group_by(["aa", "ab", "ba"], key_fn=lambda item: item[0])
 ```
 
+`get` returns `Any`. To read a parsed TOML/YAML/JSON document under a strict type
+checker, use the typed reads instead. They never raise: a missing path or a
+value of the wrong shape reads as empty (or the given default).
+
+```python
+doc = {"tasks": {"build": {"cmds": "echo hi"}}, "dev": ["pytest", {"include-group": "lint"}]}
+
+DictUtils.get_mapping(doc, "tasks.build")      # {"cmds": "echo hi"}  (dict[str, object])
+DictUtils.get_list(doc, "tasks.build.cmds")    # ["echo hi"]  a lone scalar is one element
+DictUtils.get_strings(doc, "dev")              # ["pytest"]   non-strings dropped
+DictUtils.get_str(doc, "tasks.build.cmds")     # "echo hi"
+DictUtils.get_bool(doc, "strict", default=True)  # True
+```
+
 ## Documents
 
 `JsonUtils` and `YamlUtils` cover plain (de)serialization and file I/O.
@@ -47,6 +61,13 @@ raises `AppException: Invalid User: wrong value type for field "active"`.
 Subclass `LenientDataclassMixin` for the record that wants the value through
 instead — and see that class's docstring for the two annotations dacite cannot
 check, which force the same choice.
+
+Unknown keys are ignored by default. Subclass `StrictDataclassMixin` for a
+document whose author should hear about a typo: it rejects any key that names
+no field, in nested sections too — whether or not the nested section's own
+class is strict, since strictness belongs to the document being read — and
+names each one by its dotted path —
+`AppException: Invalid ProjectConfig: unknown key(s) repository.archtype`.
 
 ## Pandas and Excel
 

@@ -73,7 +73,7 @@ rn-forge-django = { workspace = true }
 rn-forge-web = { workspace = true }
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra --import-mode=importlib"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",

@@ -52,7 +52,7 @@ Optional extras:
 
 The HTTP wire semantics — problem bodies, preconditions, pagination tokens, idempotency keys,
 readiness reports, the auth contract — are `rn-forge-web`'s. Everything here that touches them is an
-adapter, and `tests/test_django_conformance.py` drives the shared conformance table through a Django
+adapter, and `tests/test_conformance.py` drives the shared conformance table through a Django
 application wired from them.
 
 ## Dependencies and why

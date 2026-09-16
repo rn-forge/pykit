@@ -51,6 +51,7 @@ nav:
       - Language:
           - Collections: api/lang/collections.md
           - Dataclasses: api/lang/dataclasses.md
+          - Models: api/lang/models.md
           - Reflection: api/lang/reflection.md
           - Types: api/lang/types.md
           - Utils: api/lang/utils.md

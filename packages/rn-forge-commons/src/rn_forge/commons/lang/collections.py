@@ -125,6 +125,112 @@ class DictUtils:
         _LOGGER.trace("UNKNOWN_CONDITION: {} | {} | {}", token, type(current), current)
         raise _PathNotFound
 
+    # -- typed reads: a value of the wrong shape reads as absent -----------
+
+    @staticmethod
+    def get_mapping(data: Mapping[str, Any], key_path: str) -> dict[str, object]:
+        """Return the mapping at *key_path* as a string-keyed dict.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-delimited path, as for :meth:`get`.
+
+        Returns:
+            A shallow copy of the mapping with its keys converted to ``str``,
+            or an empty dict if the path is missing or holds a non-mapping.
+
+        Example::
+
+            doc = {"repository": {"name": "kiln"}, "docs": "mkdocs"}
+            DictUtils.get_mapping(doc, "repository")  # {"name": "kiln"}
+            DictUtils.get_mapping(doc, "docs")        # {}
+        """
+        value = DictUtils.get(data, key_path)
+        if not isinstance(value, Mapping):
+            return {}
+        items = cast(Mapping[object, object], value).items()
+        return {str(key): item for key, item in items}
+
+    @staticmethod
+    def get_list(data: Mapping[str, Any], key_path: str) -> list[object]:
+        """Return the list at *key_path*; a lone scalar reads as one element.
+
+        Only a ``list`` is spread — a mapping or string is a single element.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-delimited path, as for :meth:`get`.
+
+        Returns:
+            A shallow copy of the list, ``[value]`` for any other non-``None``
+            value, or an empty list if the path is missing or holds ``None``.
+
+        Example::
+
+            DictUtils.get_list({"cmds": "echo hi"}, "cmds")  # ["echo hi"]
+            DictUtils.get_list({"cmds": None}, "cmds")       # []
+        """
+        value = DictUtils.get(data, key_path)
+        if isinstance(value, list):
+            return list(cast(list[object], value))
+        return [] if value is None else [value]
+
+    @staticmethod
+    def get_strings(data: Mapping[str, Any], key_path: str) -> list[str]:
+        """Return the string elements at *key_path*, ignoring anything else.
+
+        Reads through :meth:`get_list`, so a lone string is a one-element list.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-delimited path, as for :meth:`get`.
+
+        Returns:
+            The ``str`` elements, in order; non-strings are dropped.
+
+        Example::
+
+            doc = {"dev": ["pytest", {"include-group": "lint"}]}
+            DictUtils.get_strings(doc, "dev")  # ["pytest"]
+        """
+        return [
+            item for item in DictUtils.get_list(data, key_path) if isinstance(item, str)
+        ]
+
+    @staticmethod
+    def get_str(data: Mapping[str, Any], key_path: str, *, default: str = "") -> str:
+        """Return the string at *key_path*, or *default* if it is not a ``str``.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-delimited path, as for :meth:`get`.
+            default: Returned when the path is missing or holds a non-string.
+
+        Returns:
+            The string value, or *default*.
+        """
+        value = DictUtils.get(data, key_path)
+        return value if isinstance(value, str) else default
+
+    @staticmethod
+    def get_bool(
+        data: Mapping[str, Any], key_path: str, *, default: bool = False
+    ) -> bool:
+        """Return the boolean at *key_path*, or *default* if it is not a ``bool``.
+
+        No truthiness coercion: ``"false"``, ``0`` and ``1`` read as absent.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-delimited path, as for :meth:`get`.
+            default: Returned when the path is missing or holds a non-boolean.
+
+        Returns:
+            The boolean value, or *default*.
+        """
+        value = DictUtils.get(data, key_path)
+        return value if isinstance(value, bool) else default
+
     @staticmethod
     def set(
         data: dict[str, Any],

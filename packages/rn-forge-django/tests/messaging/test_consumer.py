@@ -4,8 +4,20 @@ import pytest
 
 from rn_forge.commons.integration.messaging import HandlerRegistry
 from rn_forge.django.messaging.consumer import UnknownMessageType, process_event
+from rn_forge.django.messaging.models import AbstractInboxMessage
 
-from tests.messaging.models import InboxMessage, Ledger
+
+class InboxMessage(AbstractInboxMessage):
+    class Meta(AbstractInboxMessage.Meta):
+        app_label = "rn_forge_django"
+
+
+class Ledger(AbstractInboxMessage):
+    """Any table a handler writes to; reuses the inbox shape for brevity."""
+
+    class Meta(AbstractInboxMessage.Meta):
+        app_label = "rn_forge_django"
+
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 

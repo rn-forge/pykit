@@ -42,11 +42,19 @@ This package is blocked on web Phases 1–8 in their entirety; see Phase 0.
 open, and both follow kiln's in-progress work.** The package, its README, docs site and tests are at
 `packages/rn-forge-fastapi`; the checklist at the end marks each item.
 
+**Updated 2026-09-16** — decision 0.3's `test_fastapi_*` basenames are gone: the root
+`pyproject.toml` now sets `--import-mode=importlib` in `[tool.pytest.ini_options]`, which already
+resolves same-named test modules across packages (django and web both have `test_models.py`-style
+duplicates today). The prefix no longer does anything; `rn-forge-fastapi`'s test modules were
+renamed to match their `rn-forge-web` counterparts (`test_auth.py`, `test_conformance.py`, etc.),
+and django's `tests/test_django_conformance.py` was renamed to `tests/test_conformance.py` for the
+same reason.
+
 **Updated 2026-09-13** — three statements below were true on 2026-09-12 and no longer are:
 
 - The commons `auth/` module exists (`rn_forge/commons/integration/auth.py`). Phase 6b's binding
   needed no change: an application puts the commons verifier behind `rn_forge.web.Authenticator`.
-- `rn-forge-django` has its conformance driver (`tests/test_django_conformance.py`), so step 14a is
+- `rn-forge-django` has its conformance driver (`tests/test_conformance.py`), so step 14a is
   done and the two drivers together now prove the stacks agree.
 - `run_checks` has a per-check timeout, and `health_router(timeout=...)` passes it through; the
   timeout test is written (`test_a_hung_required_check_times_out_as_503`).
@@ -58,10 +66,10 @@ docstring named:
   tag it will get, the same convention web's own `rn-forge-commons-v0.5.0` pin follows. Cutting it
   is web plan step 12 and needs a decision to push.
 - **0.2 — `rn_forge.fastapi` is kept.** Reasons in the README's "The namespace decision";
-  `tests/test_fastapi_namespace.py` asserts the disjoint `__path__`.
-- **0.3 — no `tests/__init__.py`, and `test_fastapi_*` basenames.** `CLAUDE.md` forbids the first
-  (it collides with django's `tests` package from the root); the second is forced by the same root
-  collection, since `test_problem.py` etc. already exist in `rn-forge-web`.
+  `tests/test_namespace.py` asserts the disjoint `__path__`.
+- **0.3 — no `tests/__init__.py`.** `CLAUDE.md` forbids it: it collides with django's `tests`
+  package from the root. (Originally this also forced `test_fastapi_*` basenames to dodge
+  same-named modules in `rn-forge-web`; superseded 2026-09-16 below.)
 - **`rn-forge-commons` is not a declared dependency** — nothing imports it directly.
 - **Phase 1 registers a handler per registry type**, not one on `Exception`: Starlette's
   `ServerErrorMiddleware` re-raises after rendering, which would turn every 409 into a logged

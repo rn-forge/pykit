@@ -85,6 +85,35 @@ the repo root for the combined site. Per-package builds are strict, so a cross-p
 the build — reference the other package by name instead of linking into it. Docstrings are the doc
 source, not just IDE hints; keep them accurate.
 
+**Docstrings describe the contract, nothing else.** What a symbol does, its arguments, return
+value, raised exceptions, and a short example where it helps. Keep out of them:
+
+- design justification and motivation ("so that…", "rather than…", "for a document whose author
+  should…"), history, plan or ADR references, and self-assessment of the code;
+- examples tied to a specific consumer (go-task, kiln) when a generic one reads the same.
+
+Where that material belongs:
+
+- **Why a user would choose it, and how subsystems fit together** → the package's
+  `docs/guides/`.
+- **Why a non-obvious piece of code is written the way it is** → a `#` comment beside that code,
+  for maintainers. Straightforward logic needs no comment at all.
+- **How the workspace got its shape** → `docs/plans/`.
+
+**Code comments explain the non-obvious *why*, and stay smaller than the code they explain.**
+
+- Comment a constraint the code cannot show: an ordering that matters, a library quirk, a
+  deliberately rejected alternative that looks simpler. Do not narrate what the next line does.
+- One or two lines is the norm. A comment longer than the block it sits on means the reasoning
+  belongs in `docs/` (link or name the guide) or the code should be clearer — rename, extract a
+  well-named helper — rather than explained.
+- No history ("previously…", "after the review…"), plan references or TODO essays; those go in
+  `docs/plans/` or an issue.
+- When code changes, fix or delete its comment in the same edit. A stale comment is worse than none.
+
+Apply both rules to every docstring and comment you add or change, and check for them when
+reviewing a diff.
+
 Each package has a curated `src/rn_forge/<pkg>/__init__.py` facade — re-export new public symbols
 there. Modules gated behind an optional extra are deliberately excluded from the facade; import
 them directly. Public class names do not encode their module grouping, so moving a module never
@@ -96,21 +125,19 @@ moves a class name.
   `tests/fs/test_paths.py` tests `src/rn_forge/commons/fs/paths.py`). When a module moves, its
   test module moves with it.
 - A test module that has to be imported *by name* (a `--policy` reference, say) needs an
-  unambiguous alias rather than `tests.<...>` — see `rn-forge-tooling/tests/docs/test_docs.py`.
-- Only `rn-forge-django` ships a `tests/__init__.py`. Do **not** add one to another package: a
-  root-level `uv run pytest` reads no per-package `[tool.pytest.ini_options]`, so it collects
-  without `--import-mode=importlib`, and a second directory importable as `tests` collides with
-  django's and fails collection for the whole workspace.
-- For the same reason, a test module's **basename must be unique across every package without a
-  `tests/__init__.py`**: from the root, two `test_problem.py` files are one module name and both
-  fail collection. `rn-forge-fastapi` prefixes its test modules `test_fastapi_*` for this, since its
-  modules share names with `rn-forge-web`'s.
-- For the same reason, `rn-forge-web` marks its async tests with an explicit
-  `@pytest.mark.asyncio` rather than relying on its own `asyncio_mode = "auto"`, which is not in
-  effect when the suite runs from the repo root.
-- `rn-forge-django` defines `unit` and `integration` markers; `rn-forge-web` and
-  `rn-forge-fastapi` define `unit`. All emit `PytestUnknownMarkWarning` from the repo root, since
-  the root has no pytest config to register them in. The warnings are cosmetic.
+  unambiguous alias rather than `tests.<...>` — see
+  `rn-forge-tooling/tests/cli/test_lifecycle_commands.py`.
+- Tests run in pytest's `importlib` import mode, set in the root `pyproject.toml` and in every
+  package's. No `tests/` directory has an `__init__.py`, and test module basenames need not be
+  unique across packages. Do **not** add an `__init__.py` under `tests/`: it makes that package's
+  tests importable as `tests`, which collides with any other package that does the same.
+- A test module cannot import another test module or `conftest.py`. A helper shared by several
+  test modules is a fixture in `conftest.py`, or, if it is generic, belongs in
+  `rn_forge.commons.testing`. A test-only Django model is declared in the test module that uses it.
+- A root-level `uv run pytest` reads only the root `[tool.pytest.ini_options]`, not a package's.
+  That is why `rn-forge-web` marks its async tests with an explicit `@pytest.mark.asyncio` rather
+  than relying on its own `asyncio_mode = "auto"`, and why the `unit` and `integration` markers are
+  registered at the root as well as in the packages that use them.
 - `pytest-randomly` randomizes order in every package — do not rely on cross-test ordering.
 - Tests are excluded from ruff's lint rules (`per-file-ignores` = `ALL` for `**/tests/*`) and from
   Pyright's strict checking.

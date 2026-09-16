@@ -64,7 +64,8 @@ Decisions recorded while implementing, each with its reason in the module docstr
   classifiers stop at Python 3.10) and was not added: `drf/casing.py` carries the renderer, parser and
   schema hook instead. `RawPassthroughField` ships (it was on the deferred list). The DRF mirrors
   round-trip against the web dataclasses; `ProblemDetail` is appended to every schema.
-- **Phase 13.** `tests/test_django_conformance.py` runs every case in `CASES` with no skips; all pass.
+- **Phase 13.** `tests/test_conformance.py` (renamed 2026-09-16 from `test_django_conformance.py`,
+  see the fastapi plan's 2026-09-16 update) runs every case in `CASES` with no skips; all pass.
 
 Completed in a second pass, on the owner's instruction to finish the remaining phases:
 

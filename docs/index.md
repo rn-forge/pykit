@@ -12,8 +12,8 @@
   application, developer tool or not: a Rich console facade, the Typer application factory, the
   standard option set, the error-to-exit-code mapping, and the declared `[cli]` surface.
 - [rn-forge-tooling](rn-forge-tooling/index.md) — the file-owning developer tooling: a locked JSON
-  state store, a strict Jinja engine, the generation engine, release-bundle extraction and the
-  documentation-tree checkers. Depends on `rn-forge-cli`.
+  state store, a strict Jinja engine, the generation engine and release-bundle extraction.
+  Depends on `rn-forge-cli`.
 - [rn-forge-web](rn-forge-web/index.md) — framework-agnostic HTTP/API primitives: the correlation
   ID, RFC 9457 problem details and the exception registry, ETag preconditions, AIP-158 cursor
   pagination, the idempotency-store protocol, readiness aggregation, a pure-ASGI correlation
