@@ -18,8 +18,9 @@ see "Changes made to rn-forge-web" below.
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
 | `auth` | `bearer_auth`, `basic_auth`, `requires` — `Security` dependencies over the web auth contract |
+| `app` | `create_app(config)` — standard application assembly, returning a normal `FastAPI` instance |
 
-Six flat modules, all one kind of mechanism, so the package is flat (kiln D55).
+Seven flat modules, all one kind of mechanism, so the package is flat (kiln D55).
 
 ## Where it sits
 
@@ -66,10 +67,9 @@ overrides the URL with the local checkout, for local development only.
 
 ## What this package deliberately does not ship
 
-- **An application factory.** The shape worth sharing — a factory that takes a
-  constructed `Settings` and its dependencies and builds nothing — is a
-  convention, documented in the wiring guide. A shipped `create_app` is one
-  every application would immediately need to escape.
+- **Settings, infrastructure, or application policy.** `create_app` wires the
+  standard adapters from an explicit `AppConfig`; applications still construct
+  their settings, clients, authenticators, stores and product routes.
 - **A dependency-injection container, a settings facade, any store.** FastAPI's
   `Depends` is the DI framework; configuration arrives as function arguments;
   an `AsyncIdempotencyStore` is SQL- or Redis-backed and belongs to the

@@ -21,17 +21,17 @@ from fastapi.testclient import TestClient
 from rn_forge.fastapi import (
     Page,
     WireModel,
+    AppConfig,
     bearer_auth,
+    create_app,
     health_router,
     page_params,
-    register_problem_handlers,
     require_idempotency_key,
     require_if_match,
     requires,
 )
 from rn_forge.web import (
     CheckResult,
-    CorrelationIdMiddleware,
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
@@ -67,14 +67,6 @@ class Named(WireModel):
 
 def build_app(*, failing: str | None) -> FastAPI:
     """A fresh application: the idempotency store must not carry over between cases."""
-    app = FastAPI()
-    app.add_middleware(CorrelationIdMiddleware)
-    register_problem_handlers(app, realm="conformance")
-    store = InMemoryIdempotencyStore()
-    private = requires(
-        bearer_auth(authenticator=AnyToken()),
-        Requirement(all_scopes=frozenset({"read"})),
-    )
 
     def check(name):
         return lambda: CheckResult(
@@ -82,9 +74,18 @@ def build_app(*, failing: str | None) -> FastAPI:
             reason="unreachable" if name == failing else None,
         )
 
+    checks = {"db": check("db"), "queue": check("queue")}
+    app = create_app(
+        AppConfig(checks=checks, required_checks=("db",), realm="conformance")
+    )
+    store = InMemoryIdempotencyStore()
+    private = requires(
+        bearer_auth(authenticator=AnyToken()),
+        Requirement(all_scopes=frozenset({"read"})),
+    )
     app.include_router(
         health_router(
-            checks={"db": check("db"), "queue": check("queue")},
+            checks=checks,
             required=["db"],
             prefix="/conformance",
         )
@@ -197,8 +198,14 @@ def test_fastapi_conforms(case):
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()
 
 
+@pytest.mark.filterwarnings("ignore:Duplicate Operation ID:UserWarning")
 def test_the_fixture_serves_every_path_the_table_uses():
-    """A case added for an endpoint this driver does not serve must fail here."""
+    """A case added for an endpoint this driver does not serve must fail here.
+
+    The fixture mounts `health_router` twice — once via `create_app`'s standard
+    `/healthz`/`/readyz`, once prefixed for the CASES table — so both share an
+    operationId derived from their last path segment; expected, not a wiring bug.
+    """
     paths = build_app(failing=None).openapi()["paths"]
     served = {path.replace("{pk}", "1") for path in paths}
     used = {case.request.path for case in CASES}

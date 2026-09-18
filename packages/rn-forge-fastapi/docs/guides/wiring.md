@@ -8,47 +8,49 @@ application genuinely owns.
 ## The wiring module
 
 ```python
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from rn_forge.fastapi import (
-    health_router,
-    install_problem_schema,
-    operation_id,
-    register_problem_handlers,
+    AppConfig,
+    create_app,
 )
-from rn_forge.web import CorrelationIdMiddleware, ProblemType, default_registry
+from rn_forge.web import ProblemType, default_registry
 
 from myapp.errors import OrderLocked
 from myapp.settings import Settings
 
 
-def create_app(*, settings: Settings, checks) -> FastAPI:
+def build_app(*, settings: Settings, checks) -> FastAPI:
     registry = default_registry(type_base=settings.problem_type_base)
     registry.register(OrderLocked, ProblemType("order-locked", 409, "Order Locked"))
 
-    app = FastAPI(title="Orders", generate_unique_id_function=operation_id)
-    app.add_middleware(CorrelationIdMiddleware)
-    register_problem_handlers(app, registry=registry, realm="orders", log=settings.log)
-    install_problem_schema(app, registry=registry)
-    app.include_router(health_router(checks=checks, required=["db"]))
-    app.include_router(orders.router, prefix="/api/v1")
-    return app
+    return create_app(
+        AppConfig(
+            registry=registry,
+            checks=checks,
+            required_checks=("db",),
+            realm="orders",
+            log=settings.log,
+        ),
+        routers=(orders.router,),
+        title="Orders",
+    )
 ```
 
-`create_app` is the application's, not this package's. Its shape is the
-convention worth copying: it takes a constructed `Settings` and its
-dependencies and constructs nothing itself, so a test builds it with fakes and
-the composition root is the only place that touches real infrastructure.
+`create_app` installs the common adapters only. The application's composition
+root constructs `Settings`, checks, routers and infrastructure explicitly, so
+tests can pass fakes and the factory never reads the environment or starts a
+resource.
 
 ## The rules the wiring depends on
 
-1. **Register domain exceptions on the registry before
-   `register_problem_handlers`.** Handlers are registered per exception type,
+1. **Register domain exceptions on the registry before creating `AppConfig`.** Handlers are registered per exception type,
    because Starlette re-raises anything handled by an `Exception` handler. A row
    added later still renders correctly, but as a logged, re-raised server error.
-2. **Pass the same registry to `install_problem_schema`.** Its statuses are the
-   problem responses the schema declares on every operation.
-3. **Install `CorrelationIdMiddleware` directly.** Never wrap it in a
+2. **Pass that registry to `AppConfig`.** Its statuses are the problem responses
+   the schema declares on every operation.
+3. **Set `correlation_header` on `AppConfig` when needed.** The factory installs
+   `CorrelationIdMiddleware` directly. Never wrap it in a
    `BaseHTTPMiddleware` (a ContextVar set in its spawned task does not reliably
    reach exception handlers), and never reset the ContextVar on the way out
    (Starlette's `ServerErrorMiddleware` sits outside it and needs the value).

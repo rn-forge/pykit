@@ -1,5 +1,6 @@
 """FastAPI adapters for :mod:`rn_forge.web` contracts."""
 
+from rn_forge.fastapi.app import AppConfig, create_app
 from rn_forge.fastapi.auth import basic_auth, bearer_auth, requires
 from rn_forge.fastapi.dependencies import (
     page_params,
@@ -23,6 +24,7 @@ from rn_forge.fastapi.schemas import (
 
 __all__ = [
     "OPENAPI_VERSION",
+    "AppConfig",
     "CheckResult",
     "HealthReport",
     "Log",
@@ -31,6 +33,7 @@ __all__ = [
     "WireModel",
     "basic_auth",
     "bearer_auth",
+    "create_app",
     "health_router",
     "install_problem_schema",
     "operation_id",

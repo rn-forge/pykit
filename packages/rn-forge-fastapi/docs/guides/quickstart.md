@@ -1,26 +1,25 @@
 # Quickstart
 
 ```python
-from fastapi import Depends, FastAPI
+from fastapi import Depends
 
 from rn_forge.fastapi import (
     Page,
     WireModel,
-    health_router,
-    install_problem_schema,
-    operation_id,
+    AppConfig,
     page_params,
-    register_problem_handlers,
+    create_app,
 )
-from rn_forge.web import CorrelationIdMiddleware, default_registry
+from rn_forge.web import default_registry
 
-registry = default_registry()
-
-app = FastAPI(generate_unique_id_function=operation_id)
-app.add_middleware(CorrelationIdMiddleware)
-register_problem_handlers(app, registry=registry)
-install_problem_schema(app, registry=registry)
-app.include_router(health_router(checks={"db": db_reachable}, required=["db"]))
+app = create_app(
+    AppConfig(
+        registry=default_registry(),
+        checks={"db": db_reachable},
+        required_checks=("db",),
+    ),
+    title="Orders",
+)
 
 
 class OrderOut(WireModel):

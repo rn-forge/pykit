@@ -39,6 +39,7 @@ nav:
       - Wiring an application: guides/wiring.md
   - API Reference:
       - api/index.md
+      - Application: api/app.md
       - Problem: api/problem.md
       - Schemas: api/schemas.md
       - OpenAPI: api/openapi.md

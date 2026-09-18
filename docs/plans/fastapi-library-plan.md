@@ -1,5 +1,9 @@
 # `rn-forge-fastapi` — new package plan
 
+**Follow-up scope (2026-09-18):** [standard application layer](fastapi-app-layer-plan.md)
+implements the standard `create_app` assembly in the existing package. The
+original adapter implementation status below is unchanged.
+
 Scope: a **new** workspace package, `packages/rn-forge-fastapi` (import path `rn_forge.fastapi`),
 holding the FastAPI/Starlette adapter layer over [`rn-forge-web`](./web-library-plan.md). It is the
 mirror of [`django-upgrade-plan.md`](./django-upgrade-plan.md)'s Part A: the same seven wire concerns,

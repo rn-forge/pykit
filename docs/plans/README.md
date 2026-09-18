@@ -1,6 +1,6 @@
 # pykit plans
 
-Six pykit documents plus the workspace-wide standardization plan. This page is the **execution
+The pykit plans and the retired workspace-wide standardization plan. This page is the **execution
 order** and the **status board** — read it before picking up any plan, because several phases are
 blocked on phases in other documents and none of the plans repeats the whole graph.
 
@@ -18,6 +18,11 @@ The web, azure and django plans were drafted before `rn-forge/kiln` existed and 
 (three library layers, pinned-git-tag releases, the D55 layout rule, import-linter contracts, and
 which kiln archetype each consumer is). Read that section before the plan it heads.
 
+**Implemented, 2026-09-18:** the
+[standard FastAPI application layer](fastapi-app-layer-plan.md) adds the
+standard `create_app` assembly. It is not a new release blocker. The completed
+close-out work above remains historical.
+
 ## The documents
 
 | Document | Scope | Status |
@@ -28,6 +33,7 @@ which kiln archetype each consumer is). Read that section before the plan it hea
 | [`web-library-plan.md`](./web-library-plan.md) | `rn-forge-web` — framework-agnostic HTTP primitives | **All eleven phases implemented; committed at `8b5160b`**, plus §9.1 (the OpenAPI naming rules) and §10's `OidcAuthenticator` (both 2026-09-15). Open: the release tag |
 | [`django-upgrade-plan.md`](./django-upgrade-plan.md) | `rn-forge-django` — adapters over web/commons + new Django-only modules | **All phases (0–13) implemented; committed at `9d8588c`**; the PostgreSQL suite was run locally on 2026-09-13. Open: the release tag, and `golden/python-web-app-django` (kiln) |
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
+| [`fastapi-app-layer-plan.md`](./fastapi-app-layer-plan.md) | Standard FastAPI app construction over the existing adapters | **Implemented (2026-09-18).** `AppConfig` and `create_app` |
 | [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
 
 ## Dependency direction
