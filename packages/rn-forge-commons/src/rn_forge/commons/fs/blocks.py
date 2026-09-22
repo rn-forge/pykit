@@ -5,9 +5,9 @@ rest of the file.
 
 Example::
 
-    block = ManagedBlock("rn-forge kiln")
-    text = block.render(gitignore_text, ".rn-forge/kiln/backups/\\n")
-    block.extract(text)   # -> '.rn-forge/kiln/backups/\\n'
+    block = ManagedBlock("my-tool")
+    text = block.render(gitignore_text, ".my-tool/backups/\\n")
+    block.extract(text)   # -> '.my-tool/backups/\\n'
     block.remove(text)    # -> the original text
 """
 

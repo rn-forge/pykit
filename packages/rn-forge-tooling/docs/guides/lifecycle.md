@@ -106,18 +106,48 @@ and nothing is wrong. The product's own checks run either way.
 
 ## Exposing the verbs on a command line
 
-The verbs are declared, not written. Add a `[cli.lifecycle]` table beside the
-repository's `[cli]` table:
+The verbs are declared, not written. Add a `[lifecycle]` table beside the
+repository's `[cli]` table, and build the application with `build_tool_app`
+instead of `rn-forge-cli`'s own `CliApp.from_config`:
 
 ```toml
-[cli.lifecycle]
+[cli]
+name = "golden-tool"
+
+[lifecycle]
 product = "golden_tool.product:PRODUCT"
-target = "rn_forge.tooling.cli.lifecycle:lifecycle_commands"
 verbs = ["status", "doctor"]    # optional; default: all six
+namespace = "self"              # optional; default: mounted at the root
 ```
 
-`CliApp.from_config` mounts the verbs at the root, which gives
-`golden-tool doctor` and `golden-tool status --json`. `rn-forge-cli` is not
-allowed to import this package, so `target` names the factory by string.
-The table itself is documented with the rest of the declared surface in
-`rn-forge-cli`.
+```python
+from pathlib import Path
+
+from rn_forge.tooling.cli.lifecycle import build_tool_app
+
+app = build_tool_app(Path(__file__).parent / "cli.toml")
+```
+
+| Key | Meaning |
+| --- | --- |
+| `product` | import path of the `ToolProduct` |
+| `verbs` | any of `install`, `upgrade`, `uninstall`, `cleanup`, `status`, `doctor` |
+| `namespace` | optional sub-command group the verbs are mounted under |
+
+Without `namespace`, `build_tool_app` mounts the verbs at the root:
+`golden-tool doctor`, not `golden-tool lifecycle doctor`. With `namespace =
+"self"`, they mount as a group instead: `golden-tool self doctor`, the same
+shape as `uv self update` or `rustup self update`.
+
+Whether a verb collides with a `[[cli.commands]]` name depends on the
+namespace: without one, the verbs and the commands share the root, so a verb
+may not repeat a command's name. With a namespace, only the namespace itself
+occupies the root — a command may share a verb's name (e.g. a root `doctor`
+next to `self doctor`), but not the namespace's own name. Either way, an
+unknown verb, a blank or whitespace-containing namespace, or an unimportable
+product raises before the application is built.
+
+`build_tool_app` builds the application from `[cli]` with `CliSurface.load` and
+`CliApp.from_surface`, then adds the verbs with `CliApp.add_typer`. A repository
+that declares `[lifecycle]` depends on `rn-forge-tooling`; one that only needs
+`[cli]` uses `CliApp.from_config` and does not.

@@ -1,8 +1,8 @@
 # rn-forge-tooling
 
-`rn-forge-tooling` is the file-owning half of the developer-tooling stack for
-the `rn-forge-*` command-line tools — `kiln`, `agentkit`, and the framework code
-generators that ship as `[codegen]` extras.
+`rn-forge-tooling` is the file-owning half of the developer-tooling stack: for
+command-line tools that install themselves and write files into a repository,
+and for the framework code generators that ship as `[codegen]` extras.
 
 It provides:
 

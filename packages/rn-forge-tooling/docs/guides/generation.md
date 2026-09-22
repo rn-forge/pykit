@@ -24,7 +24,7 @@ ignore = Artifact(
     path=".gitignore",
     kind=ArtifactKind.BLOCK,
     content=".out/\n",
-    block=ManagedBlock("rn-forge kiln"),
+    block=ManagedBlock("golden-tool"),
 )
 ```
 
@@ -38,9 +38,9 @@ from rn_forge.tooling.generation import StateEntry, apply, plan
 from rn_forge.tooling.state import StateStore
 
 store = StateStore(
-    root / ".rn-forge/kiln/state.json",
+    root / ".golden-tool/state.json",
     entry_type=StateEntry,
-    metadata={"kiln_version": version, "config_hash": config_hash},
+    metadata={"tool_version": version, "config_hash": config_hash},
 )
 entries = store.load()
 planned = plan(root, artifacts, entries, force=approved_paths)
@@ -69,8 +69,8 @@ result = apply(
     root,
     planned,
     store,
-    staging_dir=root / ".rn-forge/kiln/rendered",
-    backup_dir=root / ".rn-forge/kiln/backups",
+    staging_dir=root / ".golden-tool/rendered",
+    backup_dir=root / ".golden-tool/backups",
     entries=entries,
     verify=run_post_apply_checks,
     dry_run=options.dry_run,

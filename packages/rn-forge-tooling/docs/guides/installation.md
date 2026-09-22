@@ -3,7 +3,7 @@
 These packages are not published to PyPI. A release is a **git tag**, and a
 consumer depends on a tag by pinned direct URL — a bare `uv add
 rn-forge-tooling` would not resolve, and a floating branch reference would
-silently change what a build produced (kiln D46).
+silently change what a build produced.
 
 ```toml
 [project]

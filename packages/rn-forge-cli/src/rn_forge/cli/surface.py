@@ -14,16 +14,11 @@ from rn_forge.commons.lang.dataclasses import DataclassMixin
 __all__ = [
     "CliSurface",
     "CommandSurface",
-    "LIFECYCLE_VERBS",
-    "LifecycleSurface",
     "SURFACE_KEY",
 ]
 
 SURFACE_KEY = "cli"
 """The table a declared surface is read from."""
-
-LIFECYCLE_VERBS = ("install", "upgrade", "uninstall", "cleanup", "status", "doctor")
-"""Every lifecycle verb a ``[cli.lifecycle]`` table may list."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,35 +40,6 @@ class CommandSurface(DataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
-class LifecycleSurface(DataclassMixin):
-    """The lifecycle verbs of an installable tool.
-
-    Args:
-        product: Import path of the product object the verbs act on.
-        target: Import path of the factory that builds the verb commands,
-            called as ``factory(product, verbs)`` and returning a
-            :class:`typer.Typer`.
-        verbs: Which of :data:`LIFECYCLE_VERBS` to expose. Default: all.
-    """
-
-    product: str
-    target: str
-    verbs: tuple[str, ...] = LIFECYCLE_VERBS
-
-    def __post_init__(self) -> None:
-        unknown = [verb for verb in self.verbs if verb not in LIFECYCLE_VERBS]
-        if unknown:
-            raise AppException(
-                "Unknown lifecycle verb(s): {} (expected any of {})",
-                ", ".join(unknown),
-                ", ".join(LIFECYCLE_VERBS),
-            )
-        duplicates = _duplicates(self.verbs)
-        if duplicates:
-            raise AppException("Duplicate lifecycle verb(s): {}", ", ".join(duplicates))
-
-
-@dataclass(frozen=True, slots=True)
 class CliSurface(DataclassMixin):
     """A whole declared command line.
 
@@ -82,7 +48,6 @@ class CliSurface(DataclassMixin):
         help: The application's ``--help`` description.
         default_log_level: The default value of ``--log-level``.
         commands: The commands and namespaces the app exposes.
-        lifecycle: The lifecycle verbs, for an installable tool.
     """
 
     name: str
@@ -91,13 +56,11 @@ class CliSurface(DataclassMixin):
     commands: tuple[CommandSurface, ...] = field(
         default_factory=tuple[CommandSurface, ...]
     )
-    lifecycle: LifecycleSurface | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise AppException("A declared CLI needs a name")
-        verbs = self.lifecycle.verbs if self.lifecycle is not None else ()
-        duplicates = _duplicates([*(command.name for command in self.commands), *verbs])
+        duplicates = _duplicates(command.name for command in self.commands)
         if duplicates:
             raise AppException("Duplicate command name(s): {}", ", ".join(duplicates))
 

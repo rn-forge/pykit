@@ -1,10 +1,9 @@
 # Declaring a CLI
 
-A repository can describe its command line rather than construct it. The
-description lives in whatever configuration document the repository already
-has, and `CliApp.from_config` builds the application from it. The repository
-writes command functions; it never writes app construction, flag plumbing or
-exit-code handling (kiln ADR-0009).
+`CliApp.from_config` builds a Typer application from a `[cli]` table in a
+TOML, YAML or JSON document. You write the command functions; the table names
+them, and `CliApp` supplies the app, the standard options and exit-code
+handling.
 
 ## The `[cli]` table
 
@@ -24,39 +23,17 @@ help = "Database maintenance."
 target = "golden_app.commands.db:app"
 ```
 
-A `target` naming a `typer.Typer` becomes a subcommand namespace; a target
-naming a function becomes a single command. Either way the target is imported
-by name, so nothing here learns what a command does.
-
-## Lifecycle verbs: `[cli.lifecycle]`
-
-An installable tool also declares its lifecycle verbs. The table names the
-product object the verbs act on and the factory that builds them:
-
-```toml
-[cli.lifecycle]
-product = "golden_tool.product:PRODUCT"
-target = "rn_forge.tooling.cli.lifecycle:lifecycle_commands"
-verbs = ["status", "doctor"]    # optional; default: all six
-```
-
 | Key | Meaning |
 | --- | --- |
-| `product` | import path of the product object |
-| `target` | import path of a factory called as `factory(product, verbs)` that returns a `typer.Typer` |
-| `verbs` | any of `install`, `upgrade`, `uninstall`, `cleanup`, `status`, `doctor` |
+| `name` | application name, also the root logger name |
+| `help` | the application's `--help` text |
+| `default_log_level` | default value of `--log-level` (default `verbose`) |
+| `commands[].name` | the name the command is invoked by |
+| `commands[].target` | import path, as `module:attribute` or a dotted path |
+| `commands[].help` | help text; defaults to the target's docstring |
 
-The verbs are mounted at the root of the application: `golden-tool doctor`,
-not `golden-tool lifecycle doctor`. A verb that repeats a `[[cli.commands]]`
-name, an unknown verb, or a factory that does not return a Typer app is
-rejected when the application is built.
-
-`target` is a string, not a default, on purpose. The factory and the product
-protocol live in `rn-forge-tooling`, the file-owning layer, and this package
-may not import it. A repository that declares lifecycle verbs depends on
-`rn-forge-tooling`; one that does not never loads it. Whether a repository has
-the table at all is its manager's decision — kiln renders it for a repository
-whose config sets `lifecycle = true`.
+A `target` that is a `typer.Typer` becomes a subcommand group; a target that is
+a function becomes a single command.
 
 ## The whole of `cli.py`
 
@@ -65,33 +42,31 @@ from pathlib import Path
 
 from rn_forge.cli import CliApp
 
-app = CliApp.from_config(Path(__file__).parent.parent / ".rn-forge/kiln/config.toml")
+app = CliApp.from_config(Path(__file__).parent / "cli.toml")
 ```
 
-with `my-tool = "golden_app.cli:app"` under `[project.scripts]`. There is no
+with `golden-app = "golden_app.cli:app"` under `[project.scripts]`. There is no
 `main()` — the generated console script is `sys.exit(app())`, and `CliApp`
 returns an exit code.
 
-## The table is validated
+## Validation
 
-`CliSurface` is parsed strictly, as every `DataclassMixin` is, so a value whose
-type does not match its field is rejected by name rather than surfacing later
-as an attribute error:
+The table is validated when it is loaded. A value of the wrong type is rejected
+with the offending key named:
 
 ```text
 AppException: Invalid CliSurface: wrong value type for field "commands.target"
               - should be "str" instead of value "1" of type "int"
 ```
 
-A missing `[cli]` table, a blank name and duplicate command names are rejected
-the same way. This matters because the table is written by hand.
+A missing `[cli]` table, a blank name, duplicate command names and a target
+that cannot be imported are rejected the same way.
 
-## Reading a surface without a file
+## Loading from a mapping
 
-`CliSurface.load` also accepts an already-parsed mapping, which is what a test
-or an application with its own config loader passes. Because the record and the
-application are separate, a configuration can be *checked* without building a
-Typer app to do it:
+`CliSurface.load` also accepts an already-parsed mapping, for a test or an
+application with its own config loader. Loading and building are separate
+steps, so a configuration can be validated without building the app:
 
 ```python
 from rn_forge.cli import CliApp, CliSurface
@@ -100,9 +75,8 @@ surface = CliSurface.load({"name": "demo", "commands": [...]})   # validates
 app = CliApp.from_surface(surface)                                # builds
 ```
 
-## The escape hatch
+## Building the app in code
 
-A repository whose application this cannot describe constructs `CliApp`
-directly — or drops to a plain `typer.Typer` and wraps it in
-[`run`](cli.md#exit-codes), using the same primitives. Dropping down costs
-nothing and is not a fork; no generated file is involved either way.
+When a table is not enough, construct `CliApp` directly, or use a plain
+`typer.Typer` and wrap it in [`run`](cli.md#exit-codes) to get the same
+exit-code handling.

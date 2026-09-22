@@ -141,8 +141,8 @@ class DictUtils:
 
         Example::
 
-            doc = {"repository": {"name": "kiln"}, "docs": "mkdocs"}
-            DictUtils.get_mapping(doc, "repository")  # {"name": "kiln"}
+            doc = {"repository": {"name": "demo"}, "docs": "mkdocs"}
+            DictUtils.get_mapping(doc, "repository")  # {"name": "demo"}
             DictUtils.get_mapping(doc, "docs")        # {}
         """
         value = DictUtils.get(data, key_path)

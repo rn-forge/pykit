@@ -1,8 +1,8 @@
 # rn-forge-tooling
 
-The file-owning half of the developer-tooling stack for the `rn-forge-*`
-command-line tools (`kiln`, `agentkit`) and for framework code generators
-shipped as `[codegen]` extras.
+The file-owning half of the developer-tooling stack: for command-line tools
+that install themselves and write files into a repository, and for framework
+code generators shipped as `[codegen]` extras.
 
 Where [`rn-forge-commons`](../rn-forge-commons/README.md) is runtime-neutral —
 safe in a web server, a worker or a container — and
@@ -19,8 +19,8 @@ a developer's filesystem and a tool that owns files in it. It owns:
   sources and verification, archive extraction, the `ToolProduct` seam, and the
   transactional `install`/`upgrade`/`uninstall`/`cleanup`/`status`/`doctor`
   verbs.
-- `cli` — this package's own command surfaces: the lifecycle commands a
-  `[cli.lifecycle]` table mounts.
+- `cli` — `build_tool_app`, which builds an `rn-forge-cli` application from a
+  `[cli]` table and adds the lifecycle verbs declared in a `[lifecycle]` table.
 
 A repository that only needs a command line takes `rn-forge-cli` and stops
 there. A package that ships into a deployed runtime (`rn-forge-django`,
@@ -31,7 +31,7 @@ extra. Tooling may import cli and commons; neither may import tooling, and
 ## Install
 
 Not published to PyPI: a release is a git tag, and a consumer pins one by
-direct URL (kiln D46).
+direct URL.
 
 ```toml
 [project]

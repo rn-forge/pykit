@@ -16,9 +16,9 @@ files, installs and rendering. It owns:
   points straight at the app object.
 - `options` — `--log-level`, `--log-file`, `--quiet`, `--json`, `--dry-run`,
   `--yes`, `--set`, `CliOptions` and `parse_overrides`.
-- `surface` — `CliSurface`/`CommandSurface`, the records behind a declared
-  `[cli]` table, so a repository describes its command line instead of writing
-  it (kiln ADR-0009). Validated on load: a wrong type names the offending key.
+- `surface` — `CliSurface`/`CommandSurface`, the records behind a `[cli]`
+  table in a config file, from which `CliApp.from_config` builds the app.
+  Validated on load: a wrong type names the offending key.
 
 Console output is **not** here — `AppConsole` lives in `rn-forge-commons`,
 because it is a property of the process rather than of the command-line parser,
@@ -63,8 +63,8 @@ golden-app = "golden_app.cli:app"
 There is no `main()`: a generated console script is `sys.exit(app())`, and
 `CliApp.__call__` returns the mapped exit code.
 
-Or declare the whole surface in configuration instead (kiln ADR-0009):
+Or declare the commands in a `[cli]` table and build the app from it:
 
 ```python
-app = CliApp.from_config(".rn-forge/kiln/config.toml")
+app = CliApp.from_config("cli.toml")
 ```

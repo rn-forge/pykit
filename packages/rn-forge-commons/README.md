@@ -5,7 +5,7 @@ Shared, framework-agnostic utilities for Python programming. Part of the [pykit]
 ## Install
 
 Not published to PyPI: a release is a git tag, and a consumer pins one by
-direct URL (kiln D46).
+direct URL.
 
 ```toml
 [project]

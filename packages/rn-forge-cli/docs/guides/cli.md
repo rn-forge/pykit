@@ -43,8 +43,7 @@ An `AppException` is a diagnosed failure: it prints as one line, with its traceb
 level. Anything else is a defect, and its traceback is logged in full. A command that raises
 `typer.Exit(3)` exits `3` — an explicit code is honoured as given.
 
-To apply the same mapping to a hand-built `typer.Typer` — the ADR-0009 escape hatch — call the free
-function:
+To apply the same mapping to a hand-built `typer.Typer`, call the free function:
 
 ```python
 from rn_forge.cli import run
