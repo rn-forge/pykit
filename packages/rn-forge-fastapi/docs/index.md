@@ -9,8 +9,6 @@ It provides:
 
 - **`problem`** — `register_problem_handlers`: every error, including FastAPI's
   own 404, 405 and 422, rendered as an RFC 9457 `application/problem+json` body
-- **`schemas`** — `WireModel`, the camelCase base for every model, and pydantic
-  mirrors of the web wire shapes for use as `response_model`s
 - **`openapi`** — the problem-response repair `FastApiApp.openapi()` applies,
   so the document declares the error responses the app sends, and
   `operation_id`, the shared `operationId` convention

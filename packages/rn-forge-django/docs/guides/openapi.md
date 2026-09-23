@@ -62,9 +62,11 @@ class OrderSerializer(serializers.Serializer):
 
 ## The shared components
 
-`ProblemDetailSerializer`, `PageSerializer`, `CheckResultSerializer` and `HealthReportSerializer`
-(in `rn_forge.django.drf.serializers`) are the DRF mirrors of the `rn_forge.web` wire shapes. Name
-them in `@extend_schema(responses=...)` so the component appears under its shared name.
+`ProblemDetail` and `HealthReport` (and its `CheckResult`) are the `rn_forge.web` pydantic models.
+Name one in `@extend_schema(responses=...)` and drf-spectacular's pydantic extension emits the
+component under its shared name, camelCase properties included. The `ProblemDetail` component is
+always present. A page is described by the paginator's own `get_paginated_response_schema`, not by
+`Page`.
 
 ## Why there is no camelCase dependency
 

@@ -11,7 +11,6 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 | Module | What it adapts |
 | --- | --- |
 | `problem` | `register_problem_handlers(app)` — every error the app produces, including FastAPI's own 404/405/422, as `application/problem+json` |
-| `schemas` | `WireModel` (camelCase out, either spelling in) and pydantic mirrors of the web wire shapes: `ProblemDetail`, `Page[T]`, `CheckResult`, `HealthReport` |
 | `openapi` | `FastApiApp.openapi()` repairs the cached document — adds `ProblemDetail` and the problem responses it can actually produce, accuracy only; `operation_id` — the shared `operationId` convention |
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
@@ -82,7 +81,7 @@ arrives pinned through `rn-forge-web`.
 documented, not abstracted away — an application
 keeps `APIRouter`, `Depends`, `Header` and `response_model` exactly as FastAPI
 defines them. `pydantic` (2.13 resolved) and `starlette` arrive with it; the
-`WireModel` configuration uses `validate_by_name`/`serialize_by_alias`, which
+`rn_forge.web.WireModel` configuration uses `validate_by_name`/`serialize_by_alias`, which
 need pydantic ≥ 2.11.
 
 **Not wrapped:** FastAPI's `HTTPBearer`/`HTTPBasic` are used with

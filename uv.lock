@@ -2170,7 +2170,7 @@ version = "0.1.0"
 source = { editable = "packages/rn-forge-web" }
 dependencies = [
     { name = "opentelemetry-api" },
-    { name = "rn-forge-commons" },
+    { name = "rn-forge-commons", extra = ["pydantic"] },
 ]
 
 [package.optional-dependencies]
@@ -2211,8 +2211,8 @@ requires-dist = [
     { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
     { name = "opentelemetry-api", specifier = ">=1.44" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
-    { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'auth'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["pydantic"], editable = "packages/rn-forge-commons" },
     { name = "secure", marker = "extra == 'security'", specifier = ">=2.0.1" },
 ]
 provides-extras = ["testing", "auth", "security"]

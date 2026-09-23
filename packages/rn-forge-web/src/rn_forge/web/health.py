@@ -10,11 +10,12 @@ import asyncio
 import inspect
 from collections.abc import Awaitable, Callable, Collection, Mapping
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
+from pydantic import ConfigDict, Field
+
 from rn_forge.web.exceptions import WebError
+from rn_forge.web.models import WireModel
 
 __all__ = [
     "LEGACY_LIVENESS_PATH",
@@ -42,50 +43,36 @@ type CheckStatus = Literal["pass", "warn", "fail", "skipped"]
 """The four outcomes a single check may report."""
 
 
-@dataclass(frozen=True)
-class CheckResult(LenientDataclassMixin):
-    """One dependency's verdict.
+class CheckResult(WireModel):
+    """One dependency's verdict."""
 
-    Lenient parsing is required because dacite cannot type-check the PEP 695
-    :data:`CheckStatus` alias.
-    """
+    model_config = ConfigDict(frozen=True)
 
     status: CheckStatus
     reason: str | None = None
     remediation: str | None = None
-    details: Mapping[str, Any] = field(default_factory=dict[str, Any])
+    details: dict[str, Any] = Field(default_factory=dict[str, Any])
 
 
 type Check = Callable[[], CheckResult | bool | Awaitable[CheckResult | bool]]
 """A named check: a zero-argument callable, sync or async, returning a result or a bool."""
 
 
-@dataclass(frozen=True)
-class HealthReport(LenientDataclassMixin):
+class HealthReport(WireModel):
     """The aggregate of one readiness run.
 
-    Lenient parsing is required because dacite cannot type-check the PEP 695
-    :data:`CheckStatus` alias.
+    ``http_status`` is the transport status to serve; it is not part of the body.
     """
 
+    model_config = ConfigDict(frozen=True)
+
     status: CheckStatus
-    checks: Mapping[str, CheckResult]
-    http_status: int
+    checks: dict[str, CheckResult]
+    http_status: int = Field(exclude=True)
 
     def as_body(self) -> dict[str, Any]:
         """Return ``status`` and ``checks`` without the transport status."""
-        return {
-            "status": self.status,
-            "checks": {
-                name: {
-                    "status": result.status,
-                    "reason": result.reason,
-                    "remediation": result.remediation,
-                    "details": dict(result.details),
-                }
-                for name, result in self.checks.items()
-            },
-        }
+        return self.model_dump()
 
 
 def liveness_body() -> dict[str, str]:
@@ -138,7 +125,7 @@ def _aggregate(
     )
     return HealthReport(
         status=overall,
-        checks=results,
+        checks=dict(results),
         http_status=_UNAVAILABLE if unavailable else _OK,
     )
 

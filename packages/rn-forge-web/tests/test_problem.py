@@ -77,6 +77,20 @@ def test_core_members_win_a_collision_with_an_extension():
     assert_that(body["title"]).is_equal_to("Conflict")
 
 
+def test_a_body_round_trips_and_extensions_are_a_property():
+    body = {
+        "type": "about:blank",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "nope",
+        "instance": "/orders/1",
+        "traceId": "abc",
+    }
+    problem = ProblemDetail.model_validate(body)
+    assert_that(problem.as_body()).is_equal_to(body)
+    assert_that(problem.extensions).is_equal_to({"traceId": "abc"})
+
+
 # --- the registry ---------------------------------------------------------
 
 

@@ -7,8 +7,8 @@ from collections.abc import Collection, Mapping
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from rn_forge.fastapi.schemas import HealthReport
 from rn_forge.web import (
+    HealthReport,
     LEGACY_LIVENESS_PATH,
     LIVENESS_PATH,
     READINESS_PATH,

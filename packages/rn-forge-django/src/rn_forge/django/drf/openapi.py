@@ -45,6 +45,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rn_forge.django.drf.casing import camelize_key
 from rn_forge.django.drf.exceptions import problem_registry
 from rn_forge.web import (
+    ProblemDetail,
     API_CATALOG_PATH,
     DOCS_PATH,
     LINKSET_MEDIA_TYPE,
@@ -53,7 +54,6 @@ from rn_forge.web import (
     api_catalog_body,
 )
 from rn_forge.web.openapi import (
-    PROBLEM_DETAIL_SCHEMA,
     add_problem_responses,
     operation_id,
 )
@@ -75,7 +75,11 @@ OPENAPI_VERSION: Final = "3.1.0"
 SPECTACULAR_SETTINGS: Final[Mapping[str, Any]] = {
     "OAS_VERSION": OPENAPI_VERSION,
     "CAMELIZE_NAMES": True,
-    "APPEND_COMPONENTS": {"schemas": {"ProblemDetail": PROBLEM_DETAIL_SCHEMA}},
+    "APPEND_COMPONENTS": {
+        "schemas": {
+            "ProblemDetail": ProblemDetail.model_json_schema(mode="serialization")
+        }
+    },
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "rn_forge.django.drf.openapi.camelize_schema_hook",

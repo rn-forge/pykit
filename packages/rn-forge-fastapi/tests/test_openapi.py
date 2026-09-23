@@ -8,12 +8,10 @@ from fastapi.testclient import TestClient
 from rn_forge.fastapi import (
     AppConfig,
     FastApiApp,
-    Page,
-    WireModel,
     health_router,
     operation_id,
 )
-from rn_forge.web import ProblemRegistry, ProblemType
+from rn_forge.web import Page, ProblemRegistry, ProblemType, WireModel
 
 pytestmark = pytest.mark.unit
 

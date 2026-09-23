@@ -41,7 +41,6 @@ nav:
       - api/index.md
       - Application: api/app.md
       - Problem: api/problem.md
-      - Schemas: api/schemas.md
       - OpenAPI: api/openapi.md
       - Dependencies: api/dependencies.md
       - Health: api/health.md

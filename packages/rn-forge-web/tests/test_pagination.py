@@ -119,11 +119,19 @@ def test_total_size_is_included_when_opted_into():
     assert_that(page.as_body()["totalSize"]).is_equal_to(3)
 
 
-def test_page_serializes_through_the_dataclass_mixin():
+def test_page_body_is_camel_case_and_omits_an_absent_total():
     page = Page(items=["a"], next_page_token="tok")
-    assert_that(page.as_dict()).is_equal_to(
-        {"items": ["a"], "next_page_token": "tok", "total_size": None}
-    )
+    assert_that(page.as_body()).is_equal_to({"items": ["a"], "nextPageToken": "tok"})
+
+
+def test_page_body_keeps_a_null_next_page_token():
+    page: Page[str] = Page(items=[], next_page_token=None)
+    assert_that(page.as_body()).is_equal_to({"items": [], "nextPageToken": None})
+
+
+def test_page_round_trips_through_its_body():
+    page = Page[str](items=["a"], next_page_token="tok", total_size=1)
+    assert_that(Page[str].model_validate(page.as_body())).is_equal_to(page)
 
 
 def test_page_is_generic():

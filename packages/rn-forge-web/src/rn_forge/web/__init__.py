@@ -92,6 +92,7 @@ from rn_forge.web.idempotency import (
     run_idempotent,
     run_idempotent_async,
 )
+from rn_forge.web.models import WireModel
 from rn_forge.web.openapi import (
     API_CATALOG_PATH,
     DOCS_PATH,
@@ -258,4 +259,5 @@ __all__ = [
     "run_idempotent",
     "run_idempotent_async",
     "unmapped_exceptions",
+    "WireModel",
 ]

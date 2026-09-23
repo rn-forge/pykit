@@ -121,9 +121,9 @@ def test_warn_beats_pass_and_skipped():
     assert_that(report.status).is_equal_to("warn")
 
 
-def test_the_report_serializes_through_the_dataclass_mixin():
+def test_the_report_body_omits_the_transport_status():
     report = run_checks_sync({"db": ok})
-    assert_that(report.as_dict()).is_equal_to(
+    assert_that(report.as_body()).is_equal_to(
         {
             "status": "pass",
             "checks": {
@@ -134,7 +134,6 @@ def test_the_report_serializes_through_the_dataclass_mixin():
                     "details": {},
                 }
             },
-            "http_status": 200,
         }
     )
 

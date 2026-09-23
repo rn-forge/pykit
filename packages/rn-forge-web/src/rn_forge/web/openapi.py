@@ -15,7 +15,6 @@ __all__ = [
     "LINKSET_MEDIA_TYPE",
     "OPENAPI_PATH",
     "PROBLEM_DETAIL_REF",
-    "PROBLEM_DETAIL_SCHEMA",
     "add_problem_responses",
     "api_catalog_body",
     "operation_id",
@@ -37,21 +36,6 @@ LINKSET_MEDIA_TYPE: Final = "application/linkset+json"
 
 PROBLEM_DETAIL_REF: Final = "#/components/schemas/ProblemDetail"
 """The ``$ref`` every declared problem response points at."""
-
-PROBLEM_DETAIL_SCHEMA: Final[Mapping[str, Any]] = {
-    "type": "object",
-    "description": "An RFC 9457 problem. Extension members appear at the top level.",
-    "required": ["type", "title", "status", "detail", "instance"],
-    "properties": {
-        "type": {"type": "string"},
-        "title": {"type": "string"},
-        "status": {"type": "integer"},
-        "detail": {"type": "string"},
-        "instance": {"type": "string"},
-    },
-    "additionalProperties": True,
-}
-"""The JSON Schema of :class:`~rn_forge.web.problem.ProblemDetail`'s wire body."""
 
 
 def api_catalog_body(

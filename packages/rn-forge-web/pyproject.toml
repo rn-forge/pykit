@@ -10,11 +10,11 @@ requires-python = ">=3.14"
 # the workspace checkout for local development only — the declaration here is
 # what a consumer outside the workspace actually resolves.
 #
-# One third-party dependency beyond commons: `opentelemetry-api`, following
-# OpenTelemetry's own library guidance (a no-op until the application
-# configures the SDK). See "Dependencies and why" in README.md.
+# Beyond commons (with its `pydantic` extra, for the wire models),
+# `opentelemetry-api`, following OpenTelemetry's own library guidance (a no-op
+# until the application configures the SDK). See "Dependencies and why" in README.md.
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[pydantic] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
   "opentelemetry-api>=1.44",
 ]
 

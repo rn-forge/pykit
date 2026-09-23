@@ -20,8 +20,6 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import (
-    Page,
-    WireModel,
     AppConfig,
     CorsPolicy,
     FastApiApp,
@@ -35,6 +33,8 @@ from rn_forge.fastapi import (
 )
 from rn_forge.web import (
     API_CATALOG_PATH,
+    Page,
+    WireModel,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,

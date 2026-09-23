@@ -57,7 +57,7 @@ resource.
    application that configures its own response propagator first is left
    alone. Configure a `TracerProvider` and exporter in the application, or run
    under `opentelemetry-instrument`; `FastApiApp` never does either.
-4. **Derive every model from `WireModel`.** camelCase on the wire is enforced by
+4. **Derive every model from `rn_forge.web.WireModel`.** camelCase on the wire is enforced by
    the base class, including in a hand-built
    `JSONResponse(model.model_dump(mode="json"))`.
 5. **Spell a non-CRUD route as a custom method.** `POST /orders/{order_id}:cancel`
@@ -72,8 +72,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from rn_forge.fastapi import Page, bearer_auth, page_params, require_if_match, requires
-from rn_forge.web import Cursor, Principal, Requirement, check_precondition
+from rn_forge.fastapi import bearer_auth, page_params, require_if_match, requires
+from rn_forge.web import Cursor, Page, Principal, Requirement, check_precondition
 
 router = APIRouter()
 caller = bearer_auth(authenticator=jwt_authenticator, log=log)

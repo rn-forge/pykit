@@ -6,7 +6,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from rn_forge.fastapi import WireModel, register_problem_handlers
+from rn_forge.fastapi import register_problem_handlers
+from rn_forge.web import WireModel
 from rn_forge.fastapi.problem import _validation_errors
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,

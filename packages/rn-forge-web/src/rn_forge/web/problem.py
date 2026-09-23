@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from http import HTTPStatus
 from types import MappingProxyType
-from typing import Any, Final, Protocol, Self, runtime_checkable
+from typing import Any, Final, Protocol, Self, cast, runtime_checkable
 
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from pydantic import ConfigDict, model_validator
+
+from rn_forge.web.models import WireModel
 from rn_forge.web.auth import AUTH_FAILED_DETAIL, challenge_header
 from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 from rn_forge.web.exceptions import (
@@ -99,43 +101,40 @@ class HasResponseHeaders(Protocol):
     def response_headers(self) -> Mapping[str, str]: ...
 
 
-@dataclass(frozen=True)
-class ProblemDetail(DataclassMixin):
-    """An RFC 9457 problem, as it is modelled in Python.
+class ProblemDetail(WireModel):
+    """An RFC 9457 problem.
 
-    ``extensions`` is nested here and **flattened at the top level on the
-    wire** — RFC 9457 §3.2 puts extension members directly on the object.
-    Keeping them nested in the dataclass is what makes :meth:`as_body` the
-    single place that knows the rule.
+    Extension members are **flattened at the top level on the wire** (RFC 9457
+    §3.2): the model allows extra members, and ``ProblemDetail(...,
+    extensions={...})`` merges a mapping in as extras. Core members win a
+    collision with an extension of the same name.
     """
+
+    model_config = ConfigDict(frozen=True, extra="allow")
 
     type: str
     title: str
     status: int
     detail: str
     instance: str
-    extensions: Mapping[str, Any] = field(default_factory=dict[str, Any])
+
+    @model_validator(mode="before")
+    @classmethod
+    def _merge_extensions(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "extensions" in data:
+            merged = dict(cast("dict[str, Any]", data))
+            extensions = cast("Mapping[str, Any] | None", merged.pop("extensions"))
+            return {**(extensions or {}), **merged}
+        return cast(Any, data)
+
+    @property
+    def extensions(self) -> dict[str, Any]:
+        """The extension members, as a fresh mapping."""
+        return dict(self.model_extra or {})
 
     def as_body(self) -> dict[str, Any]:
-        """Flatten to the wire body, extensions merged at the top level.
-
-        Core members win a collision with an extension of the same name: a
-        problem whose ``status`` extension disagreed with its ``status`` member
-        would be unparseable by any conforming client.
-        """
-        body: dict[str, Any] = {
-            k: v for k, v in self.extensions.items() if k not in _CORE_MEMBERS
-        }
-        body.update(
-            {
-                "type": self.type,
-                "title": self.title,
-                "status": self.status,
-                "detail": self.detail,
-                "instance": self.instance,
-            }
-        )
-        return body
+        """Return the wire body, extensions merged at the top level."""
+        return self.model_dump()
 
 
 @dataclass(frozen=True)
@@ -305,13 +304,15 @@ class ProblemRegistry:
         if row.status < 500 and isinstance(exc, HasProblemExtensions):
             merged.update(exc.problem_extensions())
         merged.update(extensions or {})
-        return ProblemDetail(
-            type=self.type_uri(row),
-            title=row.title if self._type_base else _status_phrase(row.status),
-            status=row.status,
-            detail=resolved,
-            instance=instance,
-            extensions=merged,
+        return ProblemDetail.model_validate(
+            {
+                "type": self.type_uri(row),
+                "title": row.title if self._type_base else _status_phrase(row.status),
+                "status": row.status,
+                "detail": resolved,
+                "instance": instance,
+                "extensions": merged,
+            }
         )
 
 
@@ -536,11 +537,13 @@ def problem_from_body(status: int, body: Mapping[str, Any]) -> ProblemDetail:
         The parsed problem.
     """
     parsed_status = body.get("status")
-    return ProblemDetail(
-        type=str(body.get("type") or BLANK_TYPE),
-        title=str(body.get("title") or ""),
-        status=parsed_status if isinstance(parsed_status, int) else status,
-        detail=str(body.get("detail") or ""),
-        instance=str(body.get("instance") or ""),
-        extensions={k: v for k, v in body.items() if k not in _CORE_MEMBERS},
+    return ProblemDetail.model_validate(
+        {
+            "type": str(body.get("type") or BLANK_TYPE),
+            "title": str(body.get("title") or ""),
+            "status": parsed_status if isinstance(parsed_status, int) else status,
+            "detail": str(body.get("detail") or ""),
+            "instance": str(body.get("instance") or ""),
+            "extensions": {k: v for k, v in body.items() if k not in _CORE_MEMBERS},
+        }
     )

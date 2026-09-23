@@ -9,13 +9,14 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Final
 from urllib.parse import quote
 
-from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
+from pydantic import ConfigDict, Field
+
 from rn_forge.web.exceptions import InvalidCursor
+from rn_forge.web.models import WireModel
 
 __all__ = [
     "DEFAULT_PAGE_SIZE_PARAM",
@@ -85,28 +86,26 @@ def decode_cursor(raw: str) -> Cursor:
         raise InvalidCursor("Malformed page token", error_code=400) from exc
 
 
-@dataclass(frozen=True)
-class Page[T](LenientDataclassMixin):
+def _is_none(value: object) -> bool:
+    return value is None
+
+
+class Page[T](WireModel):
     """One page of results, in the AIP-158 envelope.
 
-    ``total_size`` is omitted from :meth:`as_body` when absent. Lenient parsing
-    is required because dacite cannot type-check the unbound ``T`` in
-    ``Sequence[T]``.
+    ``nextPageToken`` is always present and ``null`` on the last page;
+    ``totalSize`` is omitted from the body when absent.
     """
 
-    items: Sequence[T]
+    model_config = ConfigDict(frozen=True)
+
+    items: list[T]
     next_page_token: str | None
-    total_size: int | None = None
+    total_size: int | None = Field(default=None, exclude_if=_is_none)
 
     def as_body(self) -> dict[str, Any]:
         """Return the wire body, camelCase, omitting an absent ``totalSize``."""
-        body: dict[str, Any] = {
-            "items": list(self.items),
-            "nextPageToken": self.next_page_token,
-        }
-        if self.total_size is not None:
-            body["totalSize"] = self.total_size
-        return body
+        return self.model_dump()
 
 
 def clamp_page_size(requested: int | None, *, default: int, cap: int) -> int:

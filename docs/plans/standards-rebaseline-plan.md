@@ -10,8 +10,8 @@ disagree: [web-library-plan §9.1](web-library-plan.md), and
 reviewed and committed, 2026-09-22 (`373d6bc`).** **R3 (W3C Trace Context
 through OpenTelemetry, replacing `X-Correlation-ID`) implemented 2026-09-23,
 ahead of R4 — see the R3 section for why.** **R4 (the shared wire types become
-pydantic models in `rn-forge-web`) decided by the owner, 2026-09-22, and
-specified for handoff.** R5 follows them; R6 is
+pydantic models in `rn-forge-web`) decided 2026-09-22, implemented
+2026-09-23.** R5 follows them; R6 is
 still gated on the owner. **R7 (tabular transfer and bulk operations, adopting
 `tablib` and `django-import-export`) is ready to implement**: dependencies
 approved and the DRF router probed, 2026-09-22; three open questions are
@@ -147,7 +147,8 @@ pagination and camelCase JSON are all as published. These are not:
 - **Each shared wire type is modelled three times.** `ProblemDetail`, `Page`,
   `CheckResult` and `HealthReport` exist as `rn-forge-web` dataclasses, as
   pydantic copies in `rn_forge.fastapi.schemas` with `from_wire`/`to_wire`
-  converters, and again on the DRF side.
+  converters, and again on the DRF side. R4 (2026-09-23) collapsed them to
+  one pydantic model per type in `rn-forge-web`.
 - **Libraries were rejected because pykit owned the format.** This covers
   `fastapi-problem` and `fastapi-pagination` (see the premise).
   `asgi-correlation-id` was rightly kept out of `rn-forge-web`, which is
@@ -907,7 +908,7 @@ Acceptance, in addition to the block:
 - `uv sync --extra drf` in `rn-forge-django` does not install
   `opentelemetry-instrumentation-django`.
 
-### R4: one model per stack — decided 2026-09-22, next to implement (R5 done)
+### R4: one model per stack — decided 2026-09-22, implemented 2026-09-23
 
 **Sequencing (owner, 2026-09-23, R10):** R5's four evaluations run first; R4
 then covers only the types no library takes, in the shape below.

@@ -40,8 +40,8 @@ the two stacks' documents would read alike. See the
 where older plans disagree. The Account Portal and IntelliBuild are **parked**
 as acceptance consumers (both are work in progress). **R1 and R2 are
 implemented (2026-09-21); R2.5 was implemented and committed on 2026-09-22
-(`373d6bc`).** R3 and R4 were decided on 2026-09-22 and are specified for
-handoff. R5 follows them, and R6 is still open. On 2026-09-22, R7
+(`373d6bc`).** R3, R4, R5 and R10 are done as of 2026-09-23 (R3, R4 and R10
+uncommitted; R5 is evaluation only). R6 is still open. On 2026-09-22, R7
 (tabular transfer and bulk, adopting `tablib` and `django-import-export`) was
 specified and R8 (AIP adoption) planned. R9 (SQLAlchemy and `tablib` across both
 stacks) is open for ideation in a new session. See "What is open" below.
@@ -58,7 +58,7 @@ stacks) is open for ideation in a new session. See "What is open" below.
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
 | [`fastapi-app-layer-plan.md`](./fastapi-app-layer-plan.md) | Standard FastAPI app construction over the existing adapters | **Implemented (2026-09-18).** `AppConfig` and `create_app` |
 | [`web-api-reuse-plan.md`](./web-api-reuse-plan.md) | What four FastAPI applications re-derive: `FastApiApp`, OpenAPI helpers, log redaction, SSE, problem extensions, correlation-ID validation and an opt-in CORS module | **Phases 0, 4 and 5 in the working tree; Phase 1 implemented, then withdrawn (2026-09-21)** by the re-baseline (R1). Phases 2, 3 and 6 planned. The Account Portal and IntelliBuild acceptances are parked |
-| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** **R2.5 (shared logic moved into web, plus the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers via `secure`, CORS, access log, idempotency runner, and a per-host deployment guide) implemented and committed (2026-09-22, `373d6bc`).** **R3 (W3C Trace Context through OpenTelemetry; `X-Correlation-ID` removed) implemented 2026-09-23, uncommitted.** R4 (the shared wire types become pydantic models in web) decided 2026-09-22; it now follows R5's library evaluations. R6 (django scope) is gated on the owner. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) ready to implement** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape) planned 2026-09-22.** **R9 (SQLAlchemy + `tablib` standardization across stacks) open for ideation**. **R10 (simplification pass after R3) implemented 2026-09-23, uncommitted, except R10.3 (Starlette's body limit), which was rejected at its probe.** **R5 (library evaluations) done 2026-09-23: all four exempt.** Next is R4 |
+| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** **R2.5 (shared logic moved into web, plus the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers via `secure`, CORS, access log, idempotency runner, and a per-host deployment guide) implemented and committed (2026-09-22, `373d6bc`).** **R3 (W3C Trace Context through OpenTelemetry; `X-Correlation-ID` removed) implemented 2026-09-23, uncommitted.** **R4 (the shared wire types become pydantic models in web) implemented 2026-09-23, uncommitted.** R6 (django scope) is gated on the owner. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) ready to implement** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape) planned 2026-09-22.** **R9 (SQLAlchemy + `tablib` standardization across stacks) open for ideation**. **R10 (simplification pass after R3) implemented 2026-09-23, uncommitted, except R10.3 (Starlette's body limit), which was rejected at its probe.** **R5 (library evaluations) done 2026-09-23: all four exempt.** |
 | [`cli-lifecycle-namespace-plan.md`](./cli-lifecycle-namespace-plan.md) | `rn-forge-cli` — an optional `namespace` for `[cli.lifecycle]`, so a tool can mount its verbs as `<tool> self …` | **Superseded (2026-09-21)** by `cli-lifecycle-retirement-plan.md`; the `namespace` design carries over into it unchanged |
 | [`cli-lifecycle-retirement-plan.md`](./cli-lifecycle-retirement-plan.md) | Moves the whole `[cli.lifecycle]` mechanism out of `rn-forge-cli` into `rn-forge-tooling`, which now owns `LifecycleSurface` and `build_tool_app`; `rn-forge-cli` goes back to knowing only the generic `[cli]` shape | **Implemented (2026-09-21).** kiln's generator template updates in the same change (owner's tool) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
@@ -211,7 +211,15 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   with a plain-text 413 that replaces the app's response, so the kit's
   problem body is lost. The kit's `BodySizeLimitMiddleware` and
   `rn_forge.web.asgi` stay. The plan's "R10 status" section has the detail.
-- **Then R4** (R5's evaluations are done, 2026-09-23).
+- **Next session, in order:** (1) write the four R5 exemption texts into the
+  module docstrings (`rn_forge.web.problem`, `rn_forge.web.pagination`, the DRF
+  problem handler, `rn_forge.django.views`), the only R5 item left; (2) find
+  the order-dependent flake in Django's conformance cases (`tracing.*` and
+  `cors.exposed-headers-are-comma-joined`, roughly one full run in ten, from the
+  once-only global OpenTelemetry response propagator, unrelated to R4); (3) R7
+  (ready); R6 and R9 need the owner. Releases still follow kiln's work.
+- **R4** is implemented and complete (2026-09-23), uncommitted; nothing left
+  in its scope.
   `ProblemDetail`, `Page`, `CheckResult` and `HealthReport`
   become pydantic models in `rn-forge-web`, deleting the FastAPI mirrors and
   the DRF wire serializers. It was verified against drf-spectacular's pydantic

@@ -8,7 +8,7 @@ pagination envelope, the idempotency contract, the readiness aggregate, the
 authentication contract, the OpenAPI naming rules, and the conformance table
 the framework packages are tested against.
 
-Thirteen flat modules, all one kind of mechanism: **inbound** HTTP wire
+Fourteen flat modules, all one kind of mechanism: **inbound** HTTP wire
 semantics.
 
 ## Where it sits
@@ -72,12 +72,14 @@ override is for local development only and does not survive into a built wheel.
 ## Dependencies and why
 
 **`rn-forge-commons`** — `AppException` (every exception here subclasses it, so
-a consumer already catching that catches these) and `DataclassMixin` (the wire
-shapes are frozen dataclasses and serialize through it). `Page`, `CheckResult`
-and `HealthReport` sit on `LenientDataclassMixin` instead: each has a field
-dacite's type check cannot see through — a generic `Sequence[T]`, a PEP 695
-`type` alias — and each is built here rather than parsed from a document. Their
-docstrings say so.
+a consumer already catching that catches these), through its `pydantic` extra.
+
+**`pydantic`, through that extra** — `models.py` holds `WireModel`, the
+camelCase base, and `ProblemDetail`, `Page[T]`, `CheckResult` and
+`HealthReport` are `WireModel` subclasses. Both framework packages use them
+directly: FastAPI as request and response models, Django for its OpenAPI
+components and health bodies. `rn-forge-django` therefore installs pydantic
+transitively.
 
 **`rn-forge-commons[auth]`, behind this package's own `auth` extra** — and
 only for `rn_forge.web.oidc`. `OidcAuthenticator` is the single implementation
@@ -103,7 +105,7 @@ OpenTelemetry's own library guidance: a library depends on the API only,
 which is a no-op until the application configures the SDK. This package never
 configures a `TracerProvider` or an exporter.
 
-**Nothing else beyond that and commons.** The problem shape, ETag
+**Nothing else beyond those.** The problem shape, ETag
 preconditions, cursor pagination, idempotency and health aggregation are
 implemented here: the maintained libraries for each either depend on a web
 framework or fix a different wire shape.

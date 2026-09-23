@@ -7,6 +7,7 @@ pytest.importorskip("drf_spectacular")
 from django.urls import path, re_path  # noqa: E402
 from drf_spectacular.generators import SchemaGenerator  # noqa: E402
 from drf_spectacular.settings import patched_settings  # noqa: E402
+from drf_spectacular.utils import extend_schema  # noqa: E402
 from rest_framework import serializers  # noqa: E402
 from rest_framework.generics import GenericAPIView, ListAPIView  # noqa: E402
 from rest_framework.response import Response  # noqa: E402
@@ -17,8 +18,7 @@ from rn_forge.django.auth.drf.principal import (  # noqa: E402
 )
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, WireAutoSchema  # noqa: E402
 from rn_forge.django.drf.pagination import CursorPagination  # noqa: E402
-from rn_forge.django.drf.serializers import HealthReportSerializer  # noqa: E402
-from rn_forge.web import Requirement  # noqa: E402
+from rn_forge.web import HealthReport, Requirement  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -85,9 +85,8 @@ class _CancelView(_Base):
         return Response({})
 
 
+@extend_schema(responses=HealthReport)
 class _ReadyView(_Base):
-    serializer_class = HealthReportSerializer
-
     def get(self, request):
         return Response({})
 
@@ -131,7 +130,10 @@ def test_problem_detail_component_is_always_present(schema) -> None:
 
 
 def test_shared_component_names(schema) -> None:
-    assert {"HealthReport", "CheckResult"} <= set(schema["components"]["schemas"])
+    components = schema["components"]["schemas"]
+    assert {"HealthReport", "CheckResult"} <= set(components)
+    assert set(components["HealthReport"]["properties"]) == {"status", "checks"}
+    assert "remediation" in components["CheckResult"]["properties"]
 
 
 def test_operation_ids_follow_the_resource_verb_convention(schema) -> None:

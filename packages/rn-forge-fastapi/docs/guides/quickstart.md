@@ -4,13 +4,11 @@
 from fastapi import Depends
 
 from rn_forge.fastapi import (
-    Page,
-    WireModel,
     AppConfig,
     FastApiApp,
     page_params,
 )
-from rn_forge.web import default_registry
+from rn_forge.web import Page, WireModel, default_registry
 
 app = FastApiApp(
     AppConfig(

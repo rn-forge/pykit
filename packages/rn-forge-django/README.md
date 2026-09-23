@@ -37,7 +37,7 @@ Optional extras:
   issued bearer tokens).
 - **`drf`** — DRF integration outside the auth app: `drf.views` (base view classes, bulk operations,
   Excel/transfer import-export, parsers/renderers, `PermissionByMethodMixin`), `drf.serializers` (base
-  serializer, custom fields, wire mirrors), `drf.exceptions` (the RFC 9457 problem handler and the
+  serializer, custom fields), `drf.exceptions` (the RFC 9457 problem handler and the
   legacy handler), `drf.pagination` (AIP-158 cursor pagination), `drf.idempotency`, `drf.concurrency`,
   `drf.casing` (camelCase renderer/parser) and `drf.openapi` (drf-spectacular; `openapi` extra).
 - **`tracing`** (`otel` extra) — `instrument()`: OpenTelemetry instrumentation for Django, called once
