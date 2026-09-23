@@ -23,7 +23,7 @@ type ConformanceArea = Literal[
     "health",
     "auth",
     "casing",
-    "correlation",
+    "tracing",
     "deprecation",
     "discovery",
     "security",
@@ -34,11 +34,12 @@ type ConformanceArea = Literal[
 REDACTED: Final = "<redacted>"
 """What :func:`redact` substitutes for a member that legitimately varies."""
 
-VARIABLE_MEMBERS: Final = frozenset({"instance", "correlation_id", "timestamp"})
+VARIABLE_MEMBERS: Final = frozenset({"instance", "trace_id", "timestamp"})
 """Body members that differ per request and must not be compared literally.
 
 ``instance`` is the request path plus, in practice, an id the driver chose;
-``correlation_id`` is generated; ``timestamp`` is the clock. Everything else in
+``trace_id`` is generated per request (or per trace, when a caller's
+``traceparent`` continues one); ``timestamp`` is the clock. Everything else in
 a response body is part of the contract and is compared exactly.
 """
 
@@ -76,6 +77,11 @@ class ConformanceCase:
     expect_headers: Mapping[str, str] = field(default_factory=dict[str, str])
     expect_absent_headers: frozenset[str] = frozenset()
     expect_body: Mapping[str, Any] = field(default_factory=dict[str, Any])
+    expect_header_patterns: Mapping[str, str] = field(default_factory=dict[str, str])
+    """Header name → regular expression, matched with ``re.fullmatch`` against
+    the header value. Header names are compared case-insensitively, as for
+    :attr:`expect_headers`. Used where the exact value is not deterministic
+    (a generated span id in ``traceresponse``)."""
 
 
 def redact(body: Mapping[str, Any]) -> dict[str, Any]:

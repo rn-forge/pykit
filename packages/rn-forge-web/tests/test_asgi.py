@@ -8,8 +8,7 @@ untested.
 import pytest
 from assertpy import assert_that
 
-from rn_forge.web.asgi import CorrelationIdMiddleware, Message, Receive, Scope, Send
-from rn_forge.web.context import correlation_id_var, get_correlation_id
+from rn_forge.web.asgi import AccessLogMiddleware, Message, Receive, Scope, Send
 
 pytestmark = [pytest.mark.unit, pytest.mark.asyncio]
 
@@ -20,11 +19,9 @@ class StubApp:
     def __init__(self, *, response_headers: list[tuple[bytes, bytes]] | None = None):
         self.response_headers = response_headers or []
         self.seen_scopes: list[Scope] = []
-        self.seen_correlation_ids: list[str | None] = []
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         self.seen_scopes.append(scope)
-        self.seen_correlation_ids.append(get_correlation_id())
         await send(
             {
                 "type": "http.response.start",
@@ -62,67 +59,18 @@ def header_value(sent: list[Message], name: bytes) -> bytes | None:
     return next((v for k, v in response_headers(sent) if k == name), None)
 
 
-@pytest.fixture(autouse=True)
-def _clean_contextvar():
-    token = correlation_id_var.set(None)
-    yield
-    correlation_id_var.reset(token)
-
-
-async def test_an_inbound_id_is_preserved_through_to_the_response():
-    """Never replace a caller-supplied ID — that is the whole contract."""
+async def test_a_non_http_scope_passes_through_untouched():
     stub = StubApp()
-    sent = await call(
-        CorrelationIdMiddleware(stub),
-        http_scope([(b"x-correlation-id", b"abc123")]),
-    )
-    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"abc123")
-    assert_that(stub.seen_correlation_ids).is_equal_to(["abc123"])
-
-
-async def test_an_absent_id_is_generated_and_stamped():
-    stub = StubApp()
-    sent = await call(CorrelationIdMiddleware(stub), http_scope())
-    stamped = header_value(sent, b"x-correlation-id")
-    assert_that(stamped).is_not_none()
-    assert_that(stub.seen_correlation_ids[0]).is_equal_to(stamped.decode())
-
-
-async def test_the_header_is_matched_case_insensitively():
-    stub = StubApp()
+    events: list[tuple[str, dict]] = []
+    scope: Scope = {"type": "lifespan"}
     await call(
-        CorrelationIdMiddleware(stub), http_scope([(b"X-CoRrElAtIoN-Id", b"abc123")])
+        AccessLogMiddleware(
+            stub, log=lambda event, ctx: events.append((event, dict(ctx)))
+        ),
+        scope,
     )
-    assert_that(stub.seen_correlation_ids).is_equal_to(["abc123"])
-
-
-async def test_the_context_var_is_readable_from_inside_the_wrapped_app():
-    stub = StubApp()
-    await call(CorrelationIdMiddleware(stub), http_scope())
-    assert_that(stub.seen_correlation_ids[0]).is_not_none()
-
-
-@pytest.mark.parametrize("scope_type", ["websocket", "lifespan"])
-async def test_a_non_http_scope_passes_through_untouched(scope_type):
-    stub = StubApp()
-    scope: Scope = {"type": scope_type}
-    await call(CorrelationIdMiddleware(stub), scope)
     assert_that(stub.seen_scopes).is_equal_to([scope])
-    assert_that(get_correlation_id()).is_none()
-
-
-async def test_a_custom_header_name_is_honoured():
-    stub = StubApp()
-    sent = await call(
-        CorrelationIdMiddleware(stub, header_name="X-Request-ID"),
-        http_scope([(b"x-request-id", b"abc123")]),
-    )
-    assert_that(header_value(sent, b"x-request-id")).is_equal_to(b"abc123")
-
-
-async def test_no_log_sink_means_nothing_is_logged():
-    stub = StubApp()
-    await call(CorrelationIdMiddleware(stub), http_scope())
+    assert_that(events).is_empty()
 
 
 async def test_the_log_sink_is_called_once_with_otel_field_names():
@@ -132,10 +80,10 @@ async def test_the_log_sink_is_called_once_with_otel_field_names():
         "type": "http",
         "method": "POST",
         "path": "/orders",
-        "headers": [(b"x-correlation-id", b"c1")],
+        "headers": [],
     }
     await call(
-        CorrelationIdMiddleware(
+        AccessLogMiddleware(
             stub, log=lambda event, ctx: events.append((event, dict(ctx)))
         ),
         scope,
@@ -146,34 +94,20 @@ async def test_the_log_sink_is_called_once_with_otel_field_names():
     assert_that(fields["http.request.method"]).is_equal_to("POST")
     assert_that(fields["url.path"]).is_equal_to("/orders")
     assert_that(fields["http.response.status_code"]).is_equal_to(200)
-    assert_that(fields["correlation_id"]).is_equal_to("c1")
     assert_that(fields).contains_key("duration_ms")
-
-
-async def test_a_custom_generator_is_honoured():
-    stub = StubApp()
-    sent = await call(
-        CorrelationIdMiddleware(stub, generator=lambda: "fixed"), http_scope()
-    )
-    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"fixed")
-
-
-async def test_the_header_is_not_duplicated_when_the_app_already_set_one():
-    stub = StubApp(response_headers=[(b"x-correlation-id", b"inner")])
-    sent = await call(CorrelationIdMiddleware(stub), http_scope())
-    matching = [k for k, _ in response_headers(sent) if k == b"x-correlation-id"]
-    assert_that(matching).is_length(1)
+    assert_that(fields).contains_key("trace_id")
+    assert_that(fields).contains_key("span_id")
 
 
 async def test_other_response_headers_are_preserved():
     stub = StubApp(response_headers=[(b"content-type", b"application/json")])
-    sent = await call(CorrelationIdMiddleware(stub), http_scope())
+    sent = await call(AccessLogMiddleware(stub, log=lambda *a: None), http_scope())
     assert_that(header_value(sent, b"content-type")).is_equal_to(b"application/json")
 
 
 async def test_the_response_body_message_is_passed_through_unmodified():
     stub = StubApp()
-    sent = await call(CorrelationIdMiddleware(stub), http_scope())
+    sent = await call(AccessLogMiddleware(stub, log=lambda *a: None), http_scope())
     assert_that([m["type"] for m in sent]).is_equal_to(
         ["http.response.start", "http.response.body"]
     )
@@ -181,53 +115,7 @@ async def test_the_response_body_message_is_passed_through_unmodified():
 
 async def test_a_scope_with_no_headers_key_does_not_crash():
     stub = StubApp()
-    sent = await call(CorrelationIdMiddleware(stub), {"type": "http", "path": "/"})
-    assert_that(header_value(sent, b"x-correlation-id")).is_not_none()
-
-
-async def test_the_context_var_survives_after_the_app_returns():
-    """The no-reset design: an outer error handler must still see the value."""
-    stub = StubApp()
-    await call(CorrelationIdMiddleware(stub, generator=lambda: "fixed"), http_scope())
-    assert_that(get_correlation_id()).is_equal_to("fixed")
-
-
-@pytest.mark.parametrize(
-    "inbound",
-    [
-        b"",
-        b"a" * 129,
-        b"has space",
-        b"has%percent",
-        b"has\nnewline",
-    ],
-)
-async def test_a_malformed_inbound_id_is_replaced_by_a_generated_one(inbound):
-    stub = StubApp()
     sent = await call(
-        CorrelationIdMiddleware(stub, generator=lambda: "fixed"),
-        http_scope([(b"x-correlation-id", inbound)]),
+        AccessLogMiddleware(stub, log=lambda *a: None), {"type": "http", "path": "/"}
     )
-    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"fixed")
-    assert_that(stub.seen_correlation_ids).is_equal_to(["fixed"])
-
-
-async def test_a_custom_validator_is_honoured():
-    stub = StubApp()
-    sent = await call(
-        CorrelationIdMiddleware(
-            stub, generator=lambda: "fixed", validator=lambda _: True
-        ),
-        http_scope([(b"x-correlation-id", b"has space")]),
-    )
-    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"has space")
-
-
-async def test_the_response_header_always_carries_the_id_that_was_bound():
-    stub = StubApp()
-    sent = await call(
-        CorrelationIdMiddleware(stub, generator=lambda: "fixed"),
-        http_scope([(b"x-correlation-id", b"has space")]),
-    )
-    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"fixed")
-    assert_that(stub.seen_correlation_ids).is_equal_to(["fixed"])
+    assert_that(response_headers(sent)).is_equal_to([])

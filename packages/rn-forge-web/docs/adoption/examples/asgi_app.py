@@ -10,7 +10,11 @@ Deliberately no framework: no routing library, no serialization library, no
 dependency injection. Everything below is either `rn_forge.web` or the standard
 library, which is what makes it a fair test of the package boundary. A real
 application would use a framework for the parts that are tedious here — routing
-and body parsing — and would keep this shape for everything else.
+and body parsing — and would keep this shape for everything else. The one
+exception is `opentelemetry.instrumentation.asgi.OpenTelemetryMiddleware`,
+which wraps the app below to bind the current trace — OpenTelemetry is not a
+framework, and `rn_forge.web` never configures its `TracerProvider` or an
+exporter.
 """
 
 from __future__ import annotations
@@ -21,6 +25,8 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qs
 
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+
 from rn_forge.web import (
     EXPOSED_HEADERS,
     PROBLEM_MEDIA_TYPE,
@@ -28,7 +34,6 @@ from rn_forge.web import (
     AuthenticationFailed,
     BodySizeLimitMiddleware,
     CheckResult,
-    CorrelationIdMiddleware,
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
@@ -216,7 +221,7 @@ def private(request: Request) -> Response:
 
 
 def echo(request: Request) -> Response:
-    """The correlation contract, and (when CORS-fetched) the kit's exposed headers.
+    """The tracing contract, and (when CORS-fetched) the kit's exposed headers.
 
     A real CORS policy is a framework binding's job (`rn_forge.fastapi.cors`,
     `rn_forge.django.cors`); this is the minimum needed to prove the contract
@@ -394,7 +399,8 @@ async def _send(send: Send, response: Response) -> None:
     await send({"type": "http.response.body", "body": payload})
 
 
-app = SecurityHeadersMiddleware(
-    CorrelationIdMiddleware(BodySizeLimitMiddleware(application, max_bytes=200))
+app = OpenTelemetryMiddleware(
+    SecurityHeadersMiddleware(BodySizeLimitMiddleware(application, max_bytes=200))
 )
-"""The application, with correlation bound and stamped. This is what a server runs."""
+"""The application, with the current trace bound by the OTel ASGI instrumentation.
+This is what a server runs."""

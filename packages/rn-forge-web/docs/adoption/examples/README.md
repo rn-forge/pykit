@@ -40,4 +40,4 @@ framework's own behaviour.
 | `POST /conformance/charges` | idempotency keys with body hashing |
 | `GET /conformance/readyz` | readiness aggregation and the 503 rule |
 | `GET /conformance/private` | the 401/403 boundary and the challenge |
-| `GET /conformance/echo` | correlation echo |
+| `GET /conformance/echo` | tracing and CORS echo |

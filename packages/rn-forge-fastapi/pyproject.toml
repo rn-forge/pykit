@@ -19,6 +19,9 @@ dependencies = [
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",
+  # `FastApiApp` instruments itself by default (`AppConfig.tracing`). Brings
+  # `opentelemetry-instrumentation`, which holds `TraceResponsePropagator`.
+  "opentelemetry-instrumentation-fastapi>=0.65b0",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +54,7 @@ markers = ["unit: fast isolated tests"]
 dev = [
   "assertpy>=1.1",
   "httpx>=0.28.1",
+  "opentelemetry-sdk>=1.44",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

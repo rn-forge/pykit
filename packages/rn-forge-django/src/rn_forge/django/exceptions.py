@@ -98,7 +98,7 @@ def problem_details_response(
 ) -> JsonResponse:
     """Render *exc* as an ``application/problem+json`` response.
 
-    Includes the bound correlation ID. A 401 uses a generic detail and adds a
+    Includes the current trace id. A 401 uses a generic detail and adds a
     ``WWW-Authenticate`` challenge unless *headers* already contains one.
 
     Args:

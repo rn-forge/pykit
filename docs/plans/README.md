@@ -39,7 +39,9 @@ the two stacks' documents would read alike. See the
 [standards re-baseline plan](standards-rebaseline-plan.md); it takes precedence
 where older plans disagree. The Account Portal and IntelliBuild are **parked**
 as acceptance consumers (both are work in progress). **R1 and R2 are
-implemented (2026-09-21)**; R3, R4, R5 and R6 remain open. On 2026-09-22, R7
+implemented (2026-09-21); R2.5 was implemented and committed on 2026-09-22
+(`373d6bc`).** R3 and R4 were decided on 2026-09-22 and are specified for
+handoff. R5 follows them, and R6 is still open. On 2026-09-22, R7
 (tabular transfer and bulk, adopting `tablib` and `django-import-export`) was
 specified and R8 (AIP adoption) planned. R9 (SQLAlchemy and `tablib` across both
 stacks) is open for ideation in a new session. See "What is open" below.
@@ -56,7 +58,7 @@ stacks) is open for ideation in a new session. See "What is open" below.
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
 | [`fastapi-app-layer-plan.md`](./fastapi-app-layer-plan.md) | Standard FastAPI app construction over the existing adapters | **Implemented (2026-09-18).** `AppConfig` and `create_app` |
 | [`web-api-reuse-plan.md`](./web-api-reuse-plan.md) | What four FastAPI applications re-derive: `FastApiApp`, OpenAPI helpers, log redaction, SSE, problem extensions, correlation-ID validation and an opt-in CORS module | **Phases 0, 4 and 5 in the working tree; Phase 1 implemented, then withdrawn (2026-09-21)** by the re-baseline (R1). Phases 2, 3 and 6 planned. The Account Portal and IntelliBuild acceptances are parked |
-| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** R2.5 Part A (shared logic moved into web) implemented (2026-09-22); **R2.5 Part B (the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers, CORS, access log, idempotency runner, and a per-host deployment mapping for Kubernetes, Azure App Service and App Engine) specified and ready to implement.** R3 (correlation), R4 (one model per stack) and R6 (django scope) are gated on the owner; R5 (library re-evaluations) follows R3 and R4. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) ready to implement** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape) planned 2026-09-22.** **R9 (SQLAlchemy + `tablib` standardization across stacks) open for ideation** |
+| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** **R2.5 (shared logic moved into web, plus the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers via `secure`, CORS, access log, idempotency runner, and a per-host deployment guide) implemented and committed (2026-09-22, `373d6bc`).** **R3 (W3C Trace Context through OpenTelemetry; `X-Correlation-ID` removed) implemented 2026-09-23, uncommitted.** R4 (the shared wire types become pydantic models in web) decided 2026-09-22; it now follows R5's library evaluations. R6 (django scope) is gated on the owner. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) ready to implement** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape) planned 2026-09-22.** **R9 (SQLAlchemy + `tablib` standardization across stacks) open for ideation**. **R10 (simplification pass after R3) decided 2026-09-23 and next; then R5's evaluations, then R4** |
 | [`cli-lifecycle-namespace-plan.md`](./cli-lifecycle-namespace-plan.md) | `rn-forge-cli` — an optional `namespace` for `[cli.lifecycle]`, so a tool can mount its verbs as `<tool> self …` | **Superseded (2026-09-21)** by `cli-lifecycle-retirement-plan.md`; the `namespace` design carries over into it unchanged |
 | [`cli-lifecycle-retirement-plan.md`](./cli-lifecycle-retirement-plan.md) | Moves the whole `[cli.lifecycle]` mechanism out of `rn-forge-cli` into `rn-forge-tooling`, which now owns `LifecycleSurface` and `build_tool_app`; `rn-forge-cli` goes back to knowing only the generic `[cli]` shape | **Implemented (2026-09-21).** kiln's generator template updates in the same change (owner's tool) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
@@ -167,11 +169,52 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   `pyright` and `lint-imports` are all green. Full notes, including the two
   implementation judgment calls (the repair function's naming and Django's
   still-necessary `OPENAPI_VERSION` pin), are in the plan's R1/R2 sections.
-- **Owner decisions:** R3 (W3C Trace Context vs `X-Correlation-ID`), R4 (one
-  model per stack instead of dataclass plus pydantic copy) and R6 (the Excel
-  transfer views and the rest of django's non-API scope).
+- **R2.5 is implemented and committed (2026-09-22, `373d6bc`).** Part A moved
+  the duplicated logic into `rn-forge-web`. Part B added the standard service
+  surface on both stacks:
+  - `/livez`, `/readyz` and a deprecated `/healthz`, with a 2 s check timeout;
+  - RFC 9727 `/.well-known/api-catalog`;
+  - RFC 9745/8594 deprecation headers;
+  - `If-None-Match` → 304;
+  - 429/503 with `Retry-After`, and 413;
+  - the OWASP security headers, through the `secure` library;
+  - CORS with the kit's exposed headers;
+  - one access-log event in OTel names;
+  - a framework-free idempotency runner;
+  - `deployment.md`, which maps the probes onto each host.
+
+  The deviations from the spec are in the plan's "Part B implementation
+  notes".
+- **R3 is implemented (2026-09-23).** `X-Correlation-ID` is removed outright
+  and replaced by W3C Trace Context through OpenTelemetry: `traceparent` in,
+  `traceresponse` out, and a `trace_id` problem extension read from the
+  active span. `rn_forge.web.context` is now `rn_forge.web.tracing`;
+  `CorrelationIdMiddleware` is `AccessLogMiddleware` on both ASGI and Django,
+  carrying no header handling. `FastApiApp` instruments itself by default
+  (`AppConfig.tracing`); Django gets a new `rn_forge.django.tracing.instrument()`
+  (the `otel` extra), called once before Django loads. New dependencies:
+  `opentelemetry-api` (base, web), `opentelemetry-instrumentation-fastapi`
+  (base, fastapi), `opentelemetry-instrumentation-django` (django's `otel`
+  extra, verified not pulled in by `drf`). web-api-reuse Phase 5 is withdrawn.
+  Landed ahead of R4 in the handoff order — see the plan's R3 section for why
+  that was safe here. All validation green at the repo root.
+- **R10 is next: decided 2026-09-23, ready to hand off.** A simplification
+  pass after R3, under the new standing rule "adopted first". It deletes the
+  access-log middleware on both stacks (the OTel server span already records
+  it), replaces web's body-size middleware with Starlette 1.6's
+  `RequestBodyLimitMiddleware` (behind a probe), removes `rn_forge.web.asgi`,
+  moves the structlog trace processor to commons, renames the problem member
+  `trace_id` to `traceId`, and fixes R3's docs, which currently fail the strict
+  build. The plan's R10 section has the phases, decisions and handoff notes.
+- **Then R5's evaluations, then R4** (reordered by R10, 2026-09-23).
+  `ProblemDetail`, `Page`, `CheckResult` and `HealthReport`
+  become pydantic models in `rn-forge-web`, deleting the FastAPI mirrors and
+  the DRF wire serializers. It was verified against drf-spectacular's pydantic
+  extension and is wire-neutral.
+- **Owner decision:** R6 (the rest of django's non-API scope: SAML, Celery,
+  fixtures and messaging; transfer is settled by R7).
 - **R5** re-runs the library evaluations that were rejected because "the wire
-  shape is `rn-forge-web`'s". Follows R3 and R4.
+  shape is `rn-forge-web`'s". Follows R10, and now runs before R4.
 - **R7 (planned 2026-09-22)** replaces the ~2,200-line `drf/views/` transfer
   and bulk code with `django-import-export` `Resource`s over `tablib`, gives
   FastAPI a thin equivalent (`tablib` + pydantic, persistence left to the
@@ -293,6 +336,10 @@ fences exist; the generators and kiln files do not.
 
 - The workspace **design principles** (README / CLAUDE.md) bind all of these: don't reimplement a
   proven library; wrap it thinly for one design language; keep package boundaries; pykit is upstream.
+- **Adopted first** (2026-09-23). When a library or the framework is adopted for a concern,
+  everything it already emits or enforces is deleted from the kit, including code that predates
+  the adoption. A conformance case only the deleted code satisfied is re-pointed or dropped, with
+  the reason recorded in the plan.
 - **Wire conventions come from published standards where one exists, not from house taste.** Settled
   and normative for both framework packages: RFC 9457 for errors, RFC 9110/6585 for preconditions
   (412/428), [AIP-158](https://google.aip.dev/158) for pagination (`pageSize`/`pageToken`/

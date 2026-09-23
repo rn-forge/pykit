@@ -4,6 +4,7 @@ import pytest
 from assertpy import assert_that
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from rn_forge.fastapi import WireModel, register_problem_handlers
 from rn_forge.fastapi.problem import _validation_errors
@@ -13,7 +14,6 @@ from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
     AuthenticationFailed,
-    CorrelationIdMiddleware,
     DomainConflict,
     PermissionDenied,
     ProblemType,
@@ -22,7 +22,8 @@ from rn_forge.web import (
 
 pytestmark = pytest.mark.unit
 
-CORE_MEMBERS = {"type", "title", "status", "detail", "instance", "correlation_id"}
+CORE_MEMBERS = {"type", "title", "status", "detail", "instance", "trace_id"}
+TRACEPARENT = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
 
 class Payload(WireModel):
@@ -33,10 +34,8 @@ class OrderLocked(Exception):
     pass
 
 
-def build(*, middleware=True, registry=None, log=None, raise_server_exceptions=False):
+def build(*, tracing=True, registry=None, log=None, raise_server_exceptions=False):
     app = FastAPI()
-    if middleware:
-        app.add_middleware(CorrelationIdMiddleware)
     register_problem_handlers(app, registry=registry, realm="api", log=log)
 
     @app.get("/conflict")
@@ -67,6 +66,8 @@ def build(*, middleware=True, registry=None, log=None, raise_server_exceptions=F
     async def forbidden():
         raise PermissionDenied("The authenticated principal lacks the required access")
 
+    if tracing:
+        FastAPIInstrumentor.instrument_app(app)
     return TestClient(app, raise_server_exceptions=raise_server_exceptions)
 
 
@@ -80,11 +81,11 @@ def assert_problem(response, status):
 
 
 def test_a_registered_exception_renders_its_row():
-    response = build().get("/conflict", headers={"X-Correlation-ID": "abc"})
+    response = build().get("/conflict", headers={"traceparent": TRACEPARENT})
     body = assert_problem(response, 409)
     assert_that(body["detail"]).is_equal_to("Order already dispatched")
     assert_that(body["instance"]).is_equal_to("/conflict")
-    assert_that(body["correlation_id"]).is_equal_to("abc")
+    assert_that(body["trace_id"]).is_equal_to("4bf92f3577b34da6a3ce929d0e0e4736")
 
 
 def test_a_registered_exception_is_handled_not_re_raised():
@@ -132,7 +133,7 @@ def test_a_validation_error_is_rfc6901_pointers():
 def test_an_unhandled_exception_is_a_500_that_leaks_nothing():
     records = []
     response = build(log=lambda event, context: records.append((event, context))).get(
-        "/boom", headers={"X-Correlation-ID": "abc"}
+        "/boom", headers={"traceparent": TRACEPARENT}
     )
     body = assert_problem(response, 500)
     assert_that(body["detail"]).is_equal_to(GENERIC_SERVER_DETAIL)
@@ -140,25 +141,20 @@ def test_an_unhandled_exception_is_a_500_that_leaks_nothing():
     [(event, context)] = records
     assert_that(event).is_equal_to("problem.server_error")
     assert_that(context["exc"]).is_instance_of(ZeroDivisionError)
-    assert_that(context["correlation_id"]).is_equal_to("abc")
+    assert_that(context["trace_id"]).is_equal_to("4bf92f3577b34da6a3ce929d0e0e4736")
 
 
-def test_the_500_path_still_stamps_the_correlation_header():
-    """ServerErrorMiddleware sits outside the correlation middleware."""
-    response = build().get("/boom", headers={"X-Correlation-ID": "abc"})
-    assert_that(response.headers["x-correlation-id"]).is_equal_to("abc")
-
-
-def test_a_generated_correlation_id_reaches_both_body_and_header():
-    response = build().get("/boom")
-    assert_that(response.json()["correlation_id"]).is_equal_to(
-        response.headers["x-correlation-id"]
+def test_the_500_path_still_carries_the_trace_id():
+    """ServerErrorMiddleware sits inside the OTel instrumentation's span."""
+    response = build().get("/boom", headers={"traceparent": TRACEPARENT})
+    assert_that(response.json()["trace_id"]).is_equal_to(
+        "4bf92f3577b34da6a3ce929d0e0e4736"
     )
 
 
-def test_without_the_middleware_the_body_is_still_a_valid_problem():
-    body = assert_problem(build(middleware=False).get("/conflict"), 409)
-    assert_that(body["correlation_id"]).is_none()
+def test_without_tracing_the_body_still_carries_a_null_trace_id():
+    body = assert_problem(build(tracing=False).get("/conflict"), 409)
+    assert_that(body["trace_id"]).is_none()
 
 
 def test_a_401_carries_the_challenge_and_not_the_reason():

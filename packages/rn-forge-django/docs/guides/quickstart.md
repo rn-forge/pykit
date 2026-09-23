@@ -38,14 +38,23 @@ class OrderViewSet(BaseModelViewSet):
 
 ## Wire it to the shared API contract
 
-Errors as RFC 9457 problems, a correlation ID on every request, AIP-158 cursor pagination and
+Errors as RFC 9457 problems, W3C Trace Context on every request, AIP-158 cursor pagination and
 camelCase JSON — the same wire an `rn-forge-fastapi` service speaks:
+
+```python
+# manage.py, wsgi.py, asgi.py — before Django loads
+from rn_forge.django.tracing import instrument  # the `otel` extra
+
+instrument()
+```
 
 ```python
 from rn_forge.django.security import SECURITY_SETTINGS
 
 MIDDLEWARE = [
-    "rn_forge.django.middleware.CorrelationIdMiddleware",  # first, so everything sees the ID
+    # DjangoInstrumentor (from instrument(), above) inserts its own middleware
+    # at position 0 here, ahead of everything below.
+    "rn_forge.django.middleware.AccessLogMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",  # If-None-Match -> 304 on any ETag response
     "django.middleware.security.SecurityMiddleware",  # nosniff, Referrer-Policy, X-Frame-Options, HSTS
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

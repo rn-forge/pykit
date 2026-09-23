@@ -11,7 +11,7 @@ from typing import Any, Final, Protocol, Self, runtime_checkable
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.web.auth import AUTH_FAILED_DETAIL, challenge_header
-from rn_forge.web.context import CORRELATION_ID_KEY, get_correlation_id
+from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     ContentTooLarge,
@@ -372,21 +372,18 @@ def render_problem(
     extensions: Mapping[str, Any] | None = None,
     headers: Mapping[str, str] | None = None,
     realm: str | None = None,
-    correlation_header: str | None = None,
 ) -> ProblemResponse:
     """Render *exc* as a complete problem response: body and headers.
 
     On top of :meth:`ProblemRegistry.build`:
 
-    - the bound correlation ID is the ``correlation_id`` extension (``null``
-      when none is bound);
+    - the current span's trace id is the ``trace_id`` extension (``null``
+      when no span is recording);
     - a 401 carries :data:`~rn_forge.web.auth.AUTH_FAILED_DETAIL` as its
       detail, whatever *detail* says, and a ``WWW-Authenticate`` challenge
       unless *headers* already carries one;
     - when *exc* implements :class:`HasResponseHeaders`, its headers are
-      merged beneath *headers*, so an explicit *headers* entry wins;
-    - when *correlation_header* is given and an ID is bound, the ID is
-      stamped on that header.
+      merged beneath *headers*, so an explicit *headers* entry wins.
 
     Args:
         registry: The rows to render with.
@@ -397,19 +394,17 @@ def render_problem(
         extensions: Extra members, flattened onto the body.
         headers: Response headers to carry, e.g. a framework-built challenge.
         realm: The ``realm`` of the challenge added to a 401.
-        correlation_header: The header to stamp the correlation ID on.
 
     Returns:
         The response. Logging a 5xx is the caller's job.
     """
     row = problem if problem is not None else registry.problem_for(exc)
-    correlation_id = get_correlation_id()
     body = registry.build(
         exc,
         instance=instance,
         detail=AUTH_FAILED_DETAIL if row.status == 401 else detail,
         problem=row,
-        extensions={CORRELATION_ID_KEY: correlation_id, **(extensions or {})},
+        extensions={TRACE_ID_KEY: current_trace_id(), **(extensions or {})},
     )
     out: dict[str, str] = {}
     if isinstance(exc, HasResponseHeaders):
@@ -419,8 +414,6 @@ def render_problem(
         name.lower() == "www-authenticate" for name in out
     ):
         out["WWW-Authenticate"] = challenge_header(realm=realm)
-    if correlation_header is not None and correlation_id is not None:
-        out[correlation_header] = correlation_id
     return ProblemResponse(problem=body, headers=out)
 
 

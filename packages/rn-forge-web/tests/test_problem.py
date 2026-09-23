@@ -28,8 +28,12 @@ from rn_forge.web.problem import (
     render_problem,
     unmapped_exceptions,
 )
+from opentelemetry import trace
+
 from rn_forge.web.auth import AUTH_FAILED_DETAIL
-from rn_forge.web.context import bind_correlation_id
+from rn_forge.web.tracing import current_trace_id
+
+_TRACER = trace.get_tracer(__name__)
 
 pytestmark = pytest.mark.unit
 
@@ -44,7 +48,7 @@ def test_as_body_flattens_extensions_to_the_top_level():
         status=409,
         detail="nope",
         instance="/orders/1",
-        extensions={"correlation_id": "abc", "errors": [{"pointer": "/x"}]},
+        extensions={"trace_id": "abc", "errors": [{"pointer": "/x"}]},
     )
     assert_that(problem.as_body()).is_equal_to(
         {
@@ -53,7 +57,7 @@ def test_as_body_flattens_extensions_to_the_top_level():
             "status": 409,
             "detail": "nope",
             "instance": "/orders/1",
-            "correlation_id": "abc",
+            "trace_id": "abc",
             "errors": [{"pointer": "/x"}],
         }
     )
@@ -183,10 +187,10 @@ def test_an_empty_message_below_500_falls_back_to_the_title():
 
 def test_build_carries_instance_and_extensions():
     problem = default_registry().build(
-        DomainConflict("x"), instance="/orders/9", extensions={"correlation_id": "abc"}
+        DomainConflict("x"), instance="/orders/9", extensions={"trace_id": "abc"}
     )
     assert_that(problem.instance).is_equal_to("/orders/9")
-    assert_that(problem.as_body()["correlation_id"]).is_equal_to("abc")
+    assert_that(problem.as_body()["trace_id"]).is_equal_to("abc")
 
 
 # --- exception-carried extensions and table audit -------------------------
@@ -316,23 +320,19 @@ def test_field_error_escapes_rfc6901_reserved_characters():
 # --- the rendered response ------------------------------------------------
 
 
-def test_render_problem_stamps_the_bound_correlation_id():
-    with bind_correlation_id("abc") as cid:
+def test_render_problem_carries_the_current_trace_id():
+    with _TRACER.start_as_current_span("test-span"):
+        trace_id = current_trace_id()
         rendered = render_problem(
-            default_registry(),
-            DomainConflict("taken"),
-            instance="/x",
-            correlation_header="X-Correlation-ID",
+            default_registry(), DomainConflict("taken"), instance="/x"
         )
     assert_that(rendered.status).is_equal_to(409)
-    assert_that(rendered.body["correlation_id"]).is_equal_to(cid)
-    assert_that(rendered.headers).is_equal_to({"X-Correlation-ID": "abc"})
+    assert_that(rendered.body["trace_id"]).is_equal_to(trace_id)
 
 
-def test_render_problem_leaves_the_correlation_header_off_by_default():
-    with bind_correlation_id("abc"):
-        rendered = render_problem(default_registry(), DomainConflict("x"), instance="/")
-    assert_that(rendered.headers).is_empty()
+def test_render_problem_carries_null_outside_a_span():
+    rendered = render_problem(default_registry(), DomainConflict("x"), instance="/")
+    assert_that(rendered.body["trace_id"]).is_none()
 
 
 def test_render_problem_masks_a_401_detail_and_adds_a_challenge():

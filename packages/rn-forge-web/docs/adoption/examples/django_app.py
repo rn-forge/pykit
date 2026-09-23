@@ -33,7 +33,6 @@ from rn_forge.web import (
     Requirement,
     ScopeAuthorizer,
     StoredResponse,
-    bind_correlation_id,
     check_idempotency_key,
     check_precondition,
     clamp_page_size,
@@ -43,7 +42,6 @@ from rn_forge.web import (
     field_error,
     render_problem,
     request_hash,
-    resolve_correlation_id,
     run_checks_sync,
 )
 
@@ -56,21 +54,11 @@ ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
 ITEM_VERSION, PAGE_DEFAULT, PAGE_CAP, REALM = 7, 2, 2, "conformance"
 
 
-# --- 1. correlation: the WSGI form, which resets ---------------------------
-
-
-class CorrelationIdMiddleware:
-    """First in MIDDLEWARE, so the exception handler below sees the binding."""
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request: HttpRequest):
-        inbound = resolve_correlation_id(request.headers.get("X-Correlation-ID"))
-        with bind_correlation_id(inbound) as cid:
-            response = self.get_response(request)
-            response["X-Correlation-ID"] = cid
-            return response
+# --- 1. tracing: rn_forge.django.tracing.instrument(), called once from
+# wsgi.py/asgi.py and manage.py, before Django loads — not a middleware.
+# DjangoInstrumentor inserts its own middleware into MIDDLEWARE at position 0.
+# Left out of this endpoint-only example — see `rn-forge-django`'s own
+# `docs/guides/quickstart.md`.
 
 
 # --- 2. errors: one handler, set as REST_FRAMEWORK["EXCEPTION_HANDLER"] ----

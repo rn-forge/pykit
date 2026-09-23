@@ -43,9 +43,14 @@ async def ah_start() -> dict[str, str]:
   application's, and it should sit at or below the host's.
 - **Port.** The server binds to the host's port variable (`PORT` on App Engine and Cloud Run,
   `WEBSITES_PORT` for Azure custom containers). That is server configuration, not kit code.
-- **Logs and traces.** All four hosts collect JSON logs from stdout. W3C `traceparent` is
-  understood by Cloud Trace and Azure Monitor alike, which is one reason OpenTelemetry is the
-  host-neutral choice for distributed tracing when the workspace adopts it.
+- **Logs and traces.** All four hosts collect JSON logs from stdout. Tracing is W3C Trace
+  Context through OpenTelemetry: the application configures a `TracerProvider`, a span
+  processor and an exporter of its choice — `azure-monitor-opentelemetry` on Azure,
+  `opentelemetry-exporter-gcp-trace` on GCP hosts, or OTLP to a collector — or runs under
+  `opentelemetry-instrument`. `rn_forge.web`, `rn_forge.fastapi` and `rn_forge.django` never
+  configure an exporter themselves (B12's own rule: exporters are host-specific). W3C
+  `traceparent` is understood by Cloud Trace and Azure Monitor alike, which is why it is the
+  host-neutral choice.
 
 ## Not built
 

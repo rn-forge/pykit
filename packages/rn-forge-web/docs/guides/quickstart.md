@@ -5,38 +5,33 @@ imports a web framework; the framework-specific glue is one page per stack in
 [Wiring into Django](../adoption/wiring-django.md) and
 [Wiring into FastAPI](../adoption/wiring-fastapi.md).
 
-## 1. A correlation ID on every request
+## 1. Tracing: W3C Trace Context through OpenTelemetry
+
+There is no house correlation header. `traceparent` in, `traceresponse` out,
+through OpenTelemetry's own ASGI/WSGI instrumentation (or
+`opentelemetry-instrument`) — `rn_forge.web` reads the current span, and never
+configures a `TracerProvider` or an exporter itself:
 
 ```python
-from rn_forge.web import CorrelationIdMiddleware   # ASGI
-app = CorrelationIdMiddleware(app)
+from rn_forge.web import current_trace_id, current_span_id
+
+current_trace_id()   # 32 lowercase hex chars, or None with no span recording
+current_span_id()    # 16 lowercase hex chars, or None
 ```
-
-```python
-from rn_forge.web import bind_correlation_id        # WSGI / sync
-
-with bind_correlation_id(request.headers.get("X-Correlation-ID")) as cid:
-    response = get_response(request)
-    response["X-Correlation-ID"] = cid
-```
-
-The two are not interchangeable. The ASGI form deliberately does **not** reset
-the ContextVar; the WSGI one must, because a worker thread is reused.
-`rn_forge.web.context` explains why in full.
 
 For structured logs, add the processor — it needs no structlog import here:
 
 ```python
 import structlog
-from rn_forge.web import correlation_log_processor
+from rn_forge.web import trace_log_processor
 
-structlog.configure(processors=[correlation_log_processor, ...])
+structlog.configure(processors=[trace_log_processor, ...])
 ```
 
 ## 2. Every error as an RFC 9457 problem
 
 ```python
-from rn_forge.web import default_registry, get_correlation_id
+from rn_forge.web import current_trace_id, default_registry
 
 registry = default_registry()          # a fresh instance; never a shared singleton
 
@@ -44,7 +39,7 @@ def to_response(exc, path):
     problem = registry.build(
         exc,
         instance=path,
-        extensions={"correlation_id": get_correlation_id()},
+        extensions={"trace_id": current_trace_id()},
     )
     return problem.status, problem.as_body()   # Content-Type: application/problem+json
 ```

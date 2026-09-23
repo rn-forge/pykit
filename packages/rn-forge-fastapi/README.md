@@ -60,11 +60,12 @@ overrides the URL with the local checkout, for local development only.
   `Depends` is the DI framework; configuration arrives as function arguments;
   an `AsyncIdempotencyStore` is SQL- or Redis-backed and belongs to the
   application.
-- **A middleware module.** `rn_forge.web.CorrelationIdMiddleware` is pure ASGI
-  and installs with `app.add_middleware(CorrelationIdMiddleware)` with no
-  adaptation at all. The one FastAPI-specific concern — Starlette's
-  `ServerErrorMiddleware` sits outside user middleware, so a 500 skips the
-  header stamp — is handled where the 500 is rendered, in `problem`.
+- **A tracing middleware.** Tracing is W3C Trace Context through OpenTelemetry's
+  own `FastAPIInstrumentor`, not a house middleware — `FastApiApp` calls it by
+  default (`AppConfig.tracing`). The current trace id reaches a 500 the same
+  way it reaches any other response: `render_problem` reads it from the active
+  span, and `ServerErrorMiddleware` sits inside the instrumentation's span, not
+  outside it.
 - **A token verifier.** The auth binding takes any `rn_forge.web.Authenticator`;
   verifying a JWT against a JWKS is that authenticator's job. For OIDC that
   authenticator already exists — `rn_forge.web.oidc.OidcAuthenticator`, via this

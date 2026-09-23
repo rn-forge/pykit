@@ -11,24 +11,32 @@ specification as a normative section as it stands.
 
 ---
 
-## 1. Correlation
+## 1. Tracing
 
-Every request carries a correlation ID, and every response returns one.
+Every request is part of a trace, per **W3C Trace Context**.
 
-- The header is **`X-Correlation-ID`**, in both directions.
-- A caller-supplied ID is **never replaced when it is well-formed** — 1–128
-  characters of `[A-Za-z0-9._:-]`. A malformed one is replaced by a generated
-  one, never sanitized. — `correlation.inbound-id-is-echoed-never-replaced`
-- When the caller supplies none, the server generates one (a UUID4 hex string),
-  binds it for the request and stamps it on the response.
-  — `correlation.generated-id-reaches-the-problem-body`
-- Every error body carries it as the `correlation_id` **extension member**. It
-  is what makes a user-reported error id findable in the logs, and it is the
-  one documented exception to the casing rule in §7.
-- Every structured log line emitted while handling the request carries it.
+- The request headers are **`traceparent`** and **`tracestate`**, read by the
+  OpenTelemetry instrumentation. A malformed `traceparent` is never an error:
+  it is discarded and the server starts a new trace.
+  — `tracing.inbound-traceparent-continues-the-trace`,
+  `tracing.malformed-traceparent-starts-a-new-trace`
+- Every response carries **`traceresponse`**
+  (`00-<trace-id>-<span-id>-<flags>`, W3C Trace Context Level 2) when a
+  `TracerProvider` is configured.
+- Every error body carries the current trace id as the `trace_id`
+  **extension member** (`null` when no span is recording). It is what makes a
+  user-reported error findable in the trace backend and the logs, and it is
+  the one documented exception to the casing rule in §7.
+  — `tracing.problem-body-carries-the-trace-id`
+- Every structured log line emitted while handling the request carries
+  `trace_id` and `span_id`.
+- **`X-Correlation-ID` is not read and not sent.** There is no house
+  correlation header; a caller that still sends one is ignored, and it is
+  never echoed. — `tracing.house-header-is-not-echoed`
 
-A deployment fronted by infrastructure that stamps a different header
-configures the header name; it does not add a second one.
+`rn_forge.web` never configures a `TracerProvider` or an exporter. The
+application does, or runs under `opentelemetry-instrument`; see
+`deployment.md`, "Logs and traces".
 
 ## 2. Errors
 
@@ -255,8 +263,8 @@ Four exemptions, and only four:
 - **RFC 9457's core members** (`type`, `title`, `status`, `detail`, `instance`)
   are single lowercase words and are unaffected. Problem *extensions* follow
   the rule.
-- **`correlation_id`** as a problem extension, which matches the log field name
-  it exists to be joined against.
+- **`trace_id`** as a problem extension, which matches the log field name it
+  exists to be joined against.
 - **Headers.** HTTP field names are case-insensitive and hyphenated.
 - **RFC 9264 linkset member names** (`anchor`, `service-desc`, `service-doc`,
   `status`, `href`) in the §14 api-catalog body — they are the RFC's own
@@ -456,14 +464,13 @@ one at all, and whether credentials are allowed. Neither stack picks a
 default.
 
 - **`EXPOSED_HEADERS`** is the one thing only this kit can supply: a browser
-  cannot read `ETag`, `Link`, `Location`, the correlation header,
-  `Retry-After`, `Deprecation` or `Sunset` unless they are named in
-  `Access-Control-Expose-Headers`, comma-joined in that order.
+  cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation` or
+  `Sunset` unless they are named in `Access-Control-Expose-Headers`,
+  comma-joined in that order. `traceresponse` is not in this list — the
+  OpenTelemetry response propagator exposes it itself.
   — `cors.exposed-headers-are-comma-joined`
 - **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's
-  own `CORSMiddleware`. `None` installs nothing. Installed **after** the
-  correlation middleware, so it is outermost and an error response still
-  carries CORS headers.
+  own `CORSMiddleware`. `None` installs nothing.
 - **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the
   `cors` extra, `django-cors-headers`) sets `CORS_ALLOWED_ORIGINS` and
   `CORS_EXPOSE_HEADERS`; the application adds `corsheaders` to
@@ -475,15 +482,15 @@ default.
 
 One `request.complete` event per request, on both stacks, in OpenTelemetry
 HTTP semantic-convention names: `http.request.method`, `url.path`,
-`http.response.status_code`, plus `duration_ms` and `correlation_id`.
+`http.response.status_code`, plus `duration_ms`, `trace_id` and `span_id`.
 
 - **web.** `request_log_fields(...)` builds the event's fields. The ASGI
-  `CorrelationIdMiddleware` takes an optional `log=` sink and emits the event
-  once per request, after the response completes.
+  `AccessLogMiddleware` takes a required `log=` sink and emits the event once
+  per request, after the response completes.
 - **FastAPI.** `AppConfig.log` feeds it — the same sink `register_problem_handlers`
   uses for server-error events.
-- **Django.** `CorrelationIdMiddleware`'s `request.complete` event uses the
-  same field names.
+- **Django.** The middleware's `request.complete` event uses the same field
+  names.
 
 Not a conformance case: the event goes to a log sink, not the wire.
 

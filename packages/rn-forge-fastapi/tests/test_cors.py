@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
-from rn_forge.web import DEFAULT_CORRELATION_HEADER, EXPOSED_HEADERS, WebError
+from rn_forge.web import EXPOSED_HEADERS, WebError
 
 pytestmark = pytest.mark.unit
 
@@ -45,12 +45,11 @@ def test_a_preflight_returns_the_configured_methods_and_headers():
     assert_that(response.headers["access-control-allow-methods"]).contains("GET")
 
 
-def test_the_correlation_header_is_appended_without_duplication():
+def test_expose_headers_is_taken_from_the_policy_verbatim():
     app = FastAPI()
     apply_cors(
         app,
         CorsPolicy(allow_origins=("https://example.com",), expose_headers=("ETag",)),
-        correlation_header=DEFAULT_CORRELATION_HEADER,
     )
 
     @app.get("/thing")
@@ -59,7 +58,7 @@ def test_the_correlation_header_is_appended_without_duplication():
 
     response = TestClient(app).get("/thing", headers={"Origin": "https://example.com"})
     exposed = response.headers["access-control-expose-headers"].split(", ")
-    assert_that(exposed).is_equal_to(["ETag", DEFAULT_CORRELATION_HEADER])
+    assert_that(exposed).is_equal_to(["ETag"])
 
 
 def test_credentials_with_a_wildcard_origin_is_rejected():

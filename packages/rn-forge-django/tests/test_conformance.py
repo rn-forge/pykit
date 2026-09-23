@@ -1,10 +1,11 @@
 """The Django conformance driver: every case in `rn_forge.web.conformance.CASES`.
 
 The fixture application is wired from this package's adapters: the problem
-handler and the routing-404 handler, the correlation middleware, the camelCase
-renderer and parser, `CursorPagination`, `CacheIdempotencyStore`,
-`enforce_version`, `readiness_view` and the principal authentication binding.
-If a case needs more than a line or two over them, the adapter is missing.
+handler and the routing-404 handler, the access-log middleware, OpenTelemetry
+instrumentation, the camelCase renderer and parser, `CursorPagination`,
+`CacheIdempotencyStore`, `enforce_version`, `readiness_view` and the principal
+authentication binding. If a case needs more than a line or two over them, the
+adapter is missing.
 
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
@@ -40,6 +41,7 @@ from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination
 from rn_forge.django.security import SECURITY_SETTINGS
+from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
 from rn_forge.web import (
     CheckResult,
@@ -60,10 +62,10 @@ DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"correlation_id", "service-desc", "service-doc"} | set(
-    VARIABLE_MEMBERS
-)
+CASING_EXEMPT = {"trace_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 URLCONF = __name__
+
+instrument()
 
 
 class _ConformanceItem(models.Model):
@@ -242,7 +244,11 @@ WIRING = {
         "corsheaders",
     ],
     "MIDDLEWARE": [
-        "rn_forge.django.middleware.CorrelationIdMiddleware",
+        # `instrument()` (called once, above) inserts this middleware into the
+        # *default* settings.MIDDLEWARE at position 0; override_settings
+        # replaces the whole list, so the fixture re-declares it explicitly.
+        "opentelemetry.instrumentation.django.middleware.otel_middleware._DjangoMiddleware",
+        "rn_forge.django.middleware.AccessLogMiddleware",
         "django.middleware.http.ConditionalGetMiddleware",
         "django.middleware.security.SecurityMiddleware",
         "corsheaders.middleware.CorsMiddleware",
@@ -317,6 +323,12 @@ def test_django_conforms(client, case):
         assert_that(response.headers.get(name)).described_as(name).is_equal_to(value)
     for name in case.expect_absent_headers:
         assert_that(name in response.headers).described_as(name).is_false()
+    for name, pattern in case.expect_header_patterns.items():
+        value = response.headers.get(name)
+        assert_that(value).described_as(name).is_not_none()
+        assert_that(re.fullmatch(pattern, value)).described_as(
+            f"{name}={value!r} ~ {pattern!r}"
+        ).is_not_none()
     body = json.loads(response.content) if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()

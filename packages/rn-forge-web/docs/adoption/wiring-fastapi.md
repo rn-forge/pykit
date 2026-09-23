@@ -16,8 +16,10 @@ What the package replaced, so a reader of an older application recognises it:
 | the `ProblemDetail` injection into `components/schemas` | `FastApiApp.openapi()`, which also declares the problem responses |
 | the `operationId` convention | `operation_id`, passed as `generate_unique_id_function` |
 
-Two rules still apply to any ASGI application, framework or not, and they are
-this package's: install `CorrelationIdMiddleware` directly rather than inside a
-`BaseHTTPMiddleware`, and never reset the correlation ContextVar on the way out.
+Tracing is W3C Trace Context through OpenTelemetry: `FastApiApp` calls
+`FastAPIInstrumentor.instrument_app(self)` by default, which wraps the whole
+middleware stack. Configure a `TracerProvider` and exporter in the
+application, or run under `opentelemetry-instrument`; `rn_forge.web` and
+`rn_forge.fastapi` never do either.
 The [API conventions](api-conventions.md) remain the normative wire contract for
 both stacks.

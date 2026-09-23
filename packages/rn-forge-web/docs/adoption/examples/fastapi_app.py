@@ -26,7 +26,6 @@ from rn_forge.web import (
     REQUIRED_FIELD_DETAIL,
     AuthenticationFailed,
     CheckResult,
-    CorrelationIdMiddleware,
     Cursor,
     DomainConflict,
     EntityVersionETagCodec,
@@ -55,16 +54,17 @@ ITEM_VERSION, PAGE_DEFAULT, PAGE_CAP, REALM = 7, 2, 2, "conformance"
 
 app = FastAPI()
 
-# --- 1. correlation: pure ASGI. Never wrap this in a BaseHTTPMiddleware. ---
-
-app.add_middleware(CorrelationIdMiddleware)
+# --- 1. tracing: FastAPIInstrumentor.instrument_app(app), not a middleware. -
+# `rn_forge.fastapi.FastApiApp` does this by default; a hand-assembled `FastAPI`
+# calls it directly. Left out of this endpoint-only example — see
+# `rn-forge-fastapi`'s own `docs/guides/wiring.md`.
 
 
 # --- 2. errors: three handlers, because three things produce an error ------
 
 
 def _respond(request: Request, exc: BaseException, **extensions: Any) -> JSONResponse:
-    # Correlation extension, the masked 401 detail and the challenge (never on
+    # The trace_id extension, the masked 401 detail and the challenge (never on
     # a 403) all come from render_problem.
     rendered = render_problem(
         REGISTRY, exc, instance=request.url.path, extensions=extensions, realm=REALM

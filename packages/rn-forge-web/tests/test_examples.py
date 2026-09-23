@@ -19,6 +19,7 @@ import ast
 import importlib.util
 import json
 import pathlib
+import re
 
 import pytest
 from assertpy import assert_that
@@ -81,7 +82,13 @@ async def call(app, case):
     payload = b"".join(
         m.get("body", b"") for m in sent if m["type"] == "http.response.body"
     )
-    headers = {k.decode().lower(): v.decode() for k, v in start["headers"]}
+    # A real client folds repeated header lines with ", " (RFC 9110 §5.3) —
+    # relevant here because the OTel ASGI instrumentation adds its own
+    # Access-Control-Expose-Headers line alongside the application's.
+    headers: dict[str, str] = {}
+    for k, v in start["headers"]:
+        name, value = k.decode().lower(), v.decode()
+        headers[name] = f"{headers[name]}, {value}" if name in headers else value
     return start["status"], headers, json.loads(payload) if payload else {}
 
 
@@ -104,6 +111,13 @@ async def test_the_asgi_example_conforms(asgi_app, case):
 
     for name in case.expect_absent_headers:
         assert_that(headers).described_as(name).does_not_contain_key(name.lower())
+
+    for name, pattern in case.expect_header_patterns.items():
+        value = headers.get(name.lower())
+        assert_that(value).described_as(name).is_not_none()
+        assert_that(re.fullmatch(pattern, value)).described_as(
+            f"{name}={value!r} ~ {pattern!r}"
+        ).is_not_none()
 
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
 

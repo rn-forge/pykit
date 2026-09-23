@@ -4,15 +4,14 @@ For an application's own review. Each item is phrased so the answer is
 checkable in the codebase rather than in someone's memory — the failure mode
 this catches is an application that uses the primitives *almost* everywhere.
 
-## Correlation
+## Tracing
 
-- [ ] The correlation middleware is registered, and it is **first** in the
-      chain — nothing downstream runs before the binding exists.
+- [ ] `traceparent`/`tracestate` are the only trace headers read or written.
+      `grep -rn "X-Correlation-ID"` returns nothing.
+- [ ] The application configures a `TracerProvider` (or runs under
+      `opentelemetry-instrument`); `rn_forge.web` never does.
+- [ ] The log configuration includes `trace_log_processor`.
 - [ ] No module defines its own request-id ContextVar or header constant.
-      `grep -rn "X-Request-ID\|request_id_var"` returns nothing.
-- [ ] The log configuration includes `correlation_log_processor`.
-- [ ] Sync code uses `bind_correlation_id`; ASGI code uses
-      `set_correlation_id`. Neither has been "fixed" into the other.
 
 ## Errors
 

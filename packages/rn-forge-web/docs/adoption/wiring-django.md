@@ -7,32 +7,23 @@ Some of what follows ships in `rn-forge-django`; where it does, use that rather
 than pasting these. They are written out so the boundary is legible, and so an
 application on plain Django/DRF is not blocked on that package.
 
-## 1. Correlation — a WSGI middleware
+## 1. Tracing — instrument once, before Django loads
 
-Django is sync and its worker threads are reused, so this is the
-**`bind_correlation_id`** case, not `set_correlation_id`.
+Tracing is W3C Trace Context, propagated and read through OpenTelemetry —
+not a house header or a WSGI middleware.
 
 ```python
-# myapp/middleware.py
-from rn_forge.web import (
-    DEFAULT_CORRELATION_HEADER, bind_correlation_id, resolve_correlation_id,
-)
+# manage.py, wsgi.py, asgi.py — before Django loads
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 
-class CorrelationIdMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        # A malformed caller ID is replaced, never echoed.
-        inbound = resolve_correlation_id(request.headers.get(DEFAULT_CORRELATION_HEADER))
-        with bind_correlation_id(inbound) as correlation_id:
-            response = self.get_response(request)
-            response[DEFAULT_CORRELATION_HEADER] = correlation_id
-            return response
+DjangoInstrumentor().instrument()
 ```
 
-Put it **first** in `MIDDLEWARE`, so everything downstream — including the
-exception handler — sees the binding.
+`DjangoInstrumentor` inserts its own middleware into `MIDDLEWARE` at position
+0, so it wraps everything downstream — including the exception handler.
+`rn_forge.django.tracing.instrument()` (the `otel` extra) does this call and
+also installs a `TraceResponsePropagator` when the application has not
+already set one.
 
 ## 2. Errors — a DRF exception handler
 
@@ -69,7 +60,7 @@ def problem_exception_handler(exc, context):
     return response
 ```
 
-`render_problem` adds the correlation ID, masks a 401's detail and adds its
+`render_problem` adds the current trace id, masks a 401's detail and adds its
 challenge. `rn-forge-django`'s handler also walks nested serializer errors.
 
 Set `EXCEPTION_HANDLER` to it in `REST_FRAMEWORK`. Register DRF's own

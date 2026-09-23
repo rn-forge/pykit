@@ -5,10 +5,10 @@ directly.
 
 **The application owns its CORS policy** — which origins, and whether there
 is one at all. What this module adds is not a policy but the one default only
-this kit can supply: a browser cannot read ``ETag``, ``Link`` or the
-correlation header unless they are named in
-``Access-Control-Expose-Headers``, and an application-owned CORS block does
-not know what headers the kit emits.
+this kit can supply: a browser cannot read ``ETag`` or ``Link`` unless they
+are named in ``Access-Control-Expose-Headers``, and an application-owned CORS
+block does not know what headers the kit emits. ``traceresponse`` needs no
+entry here — the OpenTelemetry response propagator exposes it itself.
 """
 
 from __future__ import annotations

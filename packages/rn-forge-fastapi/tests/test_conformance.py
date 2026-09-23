@@ -57,9 +57,7 @@ DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"correlation_id", "service-desc", "service-doc"} | set(
-    VARIABLE_MEMBERS
-)
+CASING_EXEMPT = {"trace_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
 
 class AnyToken:
@@ -246,6 +244,12 @@ def test_fastapi_conforms(case):
         assert_that(response.headers.get(name)).described_as(name).is_equal_to(value)
     for name in case.expect_absent_headers:
         assert_that(name in response.headers).described_as(name).is_false()
+    for name, pattern in case.expect_header_patterns.items():
+        value = response.headers.get(name)
+        assert_that(value).described_as(name).is_not_none()
+        assert_that(re.fullmatch(pattern, value)).described_as(
+            f"{name}={value!r} ~ {pattern!r}"
+        ).is_not_none()
     body = response.json() if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()

@@ -501,10 +501,12 @@ its base's row.
 
 ## Phase 5 — correlation ID validation (`rn-forge-web`)
 
-> **Re-baseline 2026-09-21:** the validator stands. Whether the header stays
-> `X-Correlation-ID` or becomes W3C `traceparent`, and whether
-> `rn-forge-fastapi` adopts `asgi-correlation-id`, is the owner's decision in
-> [R3](standards-rebaseline-plan.md#r3-correlation-gated-owner-decision).
+> **Withdrawn by R3, 2026-09-22.** R3 replaced `X-Correlation-ID` with W3C
+> Trace Context through OpenTelemetry. The hand-written validator below is
+> gone: the W3C propagator already validates the inbound `traceparent` — a
+> malformed value is discarded and a new trace starts — so there is nothing
+> left for this phase to build. See
+> [R3](standards-rebaseline-plan.md#r3-correlation-through-w3c-trace-context--decided-2026-09-22-ready-to-implement).
 
 **Evidence.** Apollo parses the inbound `X-Request-ID` as a UUID and generates a
 fresh one when it does not parse. IntelliBuild and

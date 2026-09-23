@@ -10,11 +10,12 @@ requires-python = ">=3.14"
 # the workspace checkout for local development only — the declaration here is
 # what a consumer outside the workspace actually resolves.
 #
-# There is deliberately no third-party dependency beyond commons. The two
-# candidates this package was planned around were both evaluated and both
-# rejected; see "Dependencies and why" in README.md for the reasons.
+# One third-party dependency beyond commons: `opentelemetry-api`, following
+# OpenTelemetry's own library guidance (a no-op until the application
+# configures the SDK). See "Dependencies and why" in README.md.
 dependencies = [
   "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "opentelemetry-api>=1.44",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +50,8 @@ markers = ["unit: fast isolated tests"]
 [dependency-groups]
 dev = [
   "assertpy>=1.1",
+  "opentelemetry-instrumentation-asgi>=0.65b0",
+  "opentelemetry-sdk>=1.44",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-asyncio>=1.3.0",
@@ -61,5 +64,6 @@ docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocstrings[python]>=1.0.6",
+  "opentelemetry-instrumentation-asgi>=0.65b0",
   "rn-forge-web[auth,security]",
 ]

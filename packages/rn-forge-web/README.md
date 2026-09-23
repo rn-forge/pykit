@@ -97,10 +97,16 @@ it is wrapped rather than hand-rolled. Behind an extra and excluded from the
 curated `__init__.py` for the same reason as `auth`; import
 `rn_forge.web.security` directly.
 
-**Nothing else.** The correlation middleware, the problem shape, ETag
-preconditions, cursor pagination, idempotency and health aggregation are
-implemented here: the maintained libraries for each either depend on a web
-framework or fix a different wire shape.
+**`opentelemetry-api`, a base dependency** — and only for `rn_forge.web.tracing`.
+W3C Trace Context is read through OpenTelemetry's active-span API, following
+OpenTelemetry's own library guidance: a library depends on the API only,
+which is a no-op until the application configures the SDK. This package never
+configures a `TracerProvider` or an exporter.
+
+**Nothing else beyond that and commons.** The access-log middleware, the
+problem shape, ETag preconditions, cursor pagination, idempotency and health
+aggregation are implemented here: the maintained libraries for each either
+depend on a web framework or fix a different wire shape.
 
 ## Documentation
 

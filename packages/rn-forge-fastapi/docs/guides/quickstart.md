@@ -32,7 +32,7 @@ async def orders_list(page=Depends(page_params(cap=100, default=20))) -> Page[Or
     ...
 ```
 
-That is an application with problem-details errors, a correlation ID, a
+That is an application with problem-details errors, W3C trace context, a
 generated client that has an error type, readiness checks and AIP-158
 pagination. The [wiring guide](wiring.md) explains each line and the rules they
 depend on.

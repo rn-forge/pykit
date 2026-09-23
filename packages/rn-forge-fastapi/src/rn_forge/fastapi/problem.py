@@ -2,7 +2,7 @@
 
 Register application exception mappings before installing the handlers so
 Starlette dispatches them through its typed exception middleware. The fallback
-handler also stamps the current correlation ID.
+handler also logs the current trace id.
 """
 
 from __future__ import annotations
@@ -16,18 +16,17 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from rn_forge.web import (
-    DEFAULT_CORRELATION_HEADER,
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
+    TRACE_ID_KEY,
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemType,
+    current_trace_id,
     default_registry,
     field_error,
-    get_correlation_id,
     render_problem,
 )
-from rn_forge.web.context import CORRELATION_ID_KEY
 
 __all__ = ["Log", "register_problem_handlers"]
 
@@ -40,7 +39,6 @@ def register_problem_handlers(
     *,
     registry: ProblemRegistry | None = None,
     realm: str | None = None,
-    correlation_header: str = DEFAULT_CORRELATION_HEADER,
     log: Log | None = None,
 ) -> None:
     """Render every error *app* produces as ``application/problem+json``.
@@ -55,8 +53,6 @@ def register_problem_handlers(
         realm: The ``realm`` of the ``WWW-Authenticate`` challenge a 401
             carries when the exception brought none of its own. A 403 never
             carries one.
-        correlation_header: The header the correlation ID is stamped on. Match
-            the middleware's ``header_name``.
         log: Called as ``log("problem.server_error", context)`` for every 5xx,
             with the exception under ``"exc"``. The body carries no detail, so
             this is the only place the cause goes.
@@ -83,7 +79,6 @@ def register_problem_handlers(
             extensions=extensions,
             headers=headers,
             realm=realm,
-            correlation_header=correlation_header,
         )
         if rendered.status >= 500 and log is not None:
             log(
@@ -92,7 +87,7 @@ def register_problem_handlers(
                     "exc": exc,
                     "status": rendered.status,
                     "instance": rendered.problem.instance,
-                    CORRELATION_ID_KEY: get_correlation_id(),
+                    TRACE_ID_KEY: current_trace_id(),
                 },
             )
         return JSONResponse(

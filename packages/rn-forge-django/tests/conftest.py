@@ -28,6 +28,12 @@ from urllib.parse import unquote, urlsplit
 import django
 import pytest
 from django.conf import settings
+from opentelemetry import trace
+from opentelemetry.instrumentation.propagators import (
+    TraceResponsePropagator,
+    set_global_response_propagator,
+)
+from opentelemetry.sdk.trace import TracerProvider
 
 DATABASE_URL_ENV = "RN_FORGE_DJANGO_TEST_DATABASE_URL"
 
@@ -76,6 +82,20 @@ def pytest_configure(config: pytest.Config) -> None:
             USE_TZ=False,
         )
         django.setup()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _otel_sdk() -> None:
+    """Configure a `TracerProvider` and response propagator once per process.
+
+    `set_tracer_provider` can only be called once per process; a second call
+    logs a warning and is ignored. Under a root-level `uv run pytest`, every
+    package's conftest calls this, and the first call wins — harmless, since
+    they are identical. Tests must not rely on replacing the provider between
+    runs.
+    """
+    trace.set_tracer_provider(TracerProvider())
+    set_global_response_propagator(TraceResponsePropagator())
 
 
 @pytest.fixture(autouse=True)

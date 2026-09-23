@@ -8,6 +8,12 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.propagators import (
+    TraceResponsePropagator,
+    get_global_response_propagator,
+    set_global_response_propagator,  # pyright: ignore[reportUnknownVariableType]
+)
 from starlette.types import Lifespan
 
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
@@ -16,15 +22,14 @@ from rn_forge.fastapi.openapi import operation_id, repair_problem_schema
 from rn_forge.fastapi.problem import Log, register_problem_handlers
 from rn_forge.web import (
     API_CATALOG_PATH,
-    DEFAULT_CORRELATION_HEADER,
     LEGACY_LIVENESS_PATH,
     LINKSET_MEDIA_TYPE,
     LIVENESS_PATH,
     OPENAPI_PATH,
     READINESS_PATH,
+    AccessLogMiddleware,
     BodySizeLimitMiddleware,
     Check,
-    CorrelationIdMiddleware,
     ProblemRegistry,
     api_catalog_body,
     default_registry,
@@ -50,7 +55,10 @@ class AppConfig:
             readiness path.
         check_timeout: Maximum seconds a single readiness check may run.
         realm: Optional Bearer authentication realm for problem responses.
-        correlation_header: The correlation request and response header name.
+        tracing: Instrument the application with
+            ``FastAPIInstrumentor.instrument_app`` and, when nothing else has,
+            set a :class:`~opentelemetry.instrumentation.propagators.TraceResponsePropagator`
+            as the global response propagator.
         log: Optional sink for server-error problem events and the
             ``request.complete`` access-log event.
         liveness_path: The liveness path.
@@ -76,7 +84,7 @@ class AppConfig:
     required_checks: Collection[str] = ()
     check_timeout: float | None = 2.0
     realm: str | None = None
-    correlation_header: str = DEFAULT_CORRELATION_HEADER
+    tracing: bool = True
     log: Log | None = None
     liveness_path: str = LIVENESS_PATH
     readiness_path: str = READINESS_PATH
@@ -138,22 +146,21 @@ class FastApiApp(FastAPI):
             self.add_middleware(
                 BodySizeLimitMiddleware, max_bytes=resolved.max_body_bytes
             )
-        self.add_middleware(
-            CorrelationIdMiddleware,
-            header_name=resolved.correlation_header,
-            log=resolved.log,
-        )
+        if resolved.log is not None:
+            self.add_middleware(AccessLogMiddleware, log=resolved.log)
         if resolved.cors is not None:
-            apply_cors(
-                self, resolved.cors, correlation_header=resolved.correlation_header
-            )
+            apply_cors(self, resolved.cors)
         register_problem_handlers(
             self,
             registry=resolved.registry,
             realm=resolved.realm,
-            correlation_header=resolved.correlation_header,
             log=resolved.log,
         )
+        if resolved.tracing:
+            FastAPIInstrumentor.instrument_app(self)
+            if get_global_response_propagator() is None:
+                # Process-global state, set only when nobody else set it.
+                set_global_response_propagator(TraceResponsePropagator())
         self.include_router(
             health_router(
                 checks=resolved.checks,

@@ -2,10 +2,10 @@
 
 **The application owns its CORS policy** — which origins, and whether there is
 one at all. What this module adds is not a policy but the one default only
-this kit can supply: a browser cannot read ``ETag``, ``Link`` or the
-correlation header unless they are named in
-``Access-Control-Expose-Headers``, and an application-owned CORS block does
-not know what headers the kit emits.
+this kit can supply: a browser cannot read ``ETag`` or ``Link`` unless they
+are named in ``Access-Control-Expose-Headers``, and an application-owned CORS
+block does not know what headers the kit emits. ``traceresponse`` needs no
+entry here — the OpenTelemetry response propagator exposes it itself.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from rn_forge.web import DEFAULT_CORRELATION_HEADER, EXPOSED_HEADERS, WebError
+from rn_forge.web import EXPOSED_HEADERS, WebError
 
 __all__ = ["CorsPolicy", "apply_cors"]
 
@@ -63,39 +63,19 @@ class CorsPolicy:
             raise WebError("CorsPolicy cannot allow credentials with a wildcard origin")
 
 
-def apply_cors(
-    app: FastAPI,
-    policy: CorsPolicy,
-    *,
-    correlation_header: str = DEFAULT_CORRELATION_HEADER,
-) -> None:
+def apply_cors(app: FastAPI, policy: CorsPolicy) -> None:
     """Install Starlette's ``CORSMiddleware`` configured from *policy*.
-
-    Appends *correlation_header* to both ``allow_headers`` and
-    ``expose_headers`` (deduplicated), so a renamed correlation header stays
-    consistent with the policy. Call this **after** installing the
-    correlation middleware: Starlette's ``add_middleware`` prepends to
-    ``user_middleware``, so the last one added is outermost, and CORS must be
-    outermost for an error response to carry its headers too.
 
     Args:
         app: The application to install onto.
         policy: The CORS policy.
-        correlation_header: The header to add to *policy*'s header lists.
     """
-    allow_headers = _dedupe((*policy.allow_headers, correlation_header))
-    expose_headers = _dedupe((*policy.expose_headers, correlation_header))
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(policy.allow_origins),
         allow_credentials=policy.allow_credentials,
         allow_methods=list(policy.allow_methods),
-        allow_headers=allow_headers,
-        expose_headers=expose_headers,
+        allow_headers=list(policy.allow_headers),
+        expose_headers=list(policy.expose_headers),
         max_age=policy.max_age,
     )
-
-
-def _dedupe(values: tuple[str, ...]) -> list[str]:
-    """Return *values* with duplicates dropped, first occurrence kept."""
-    return list(dict.fromkeys(values))

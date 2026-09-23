@@ -23,7 +23,7 @@ def test_problem_detail_round_trips_through_the_web_dataclass():
         detail="nope",
         instance="/orders/1",
         extensions={
-            "correlation_id": "abc",
+            "trace_id": "abc",
             "errors": [{"pointer": "/x", "detail": "m"}],
         },
     )

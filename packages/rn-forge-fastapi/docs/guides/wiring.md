@@ -49,13 +49,14 @@ resource.
    added later still renders correctly, but as a logged, re-raised server error.
 2. **Pass that registry to `AppConfig`.** Its statuses are the problem responses
    the schema declares on every operation.
-3. **Set `correlation_header` on `AppConfig` when needed.** The constructor installs
-   `CorrelationIdMiddleware` directly. Never wrap it in a
-   `BaseHTTPMiddleware` (a ContextVar set in its spawned task does not reliably
-   reach exception handlers), and never reset the ContextVar on the way out
-   (Starlette's `ServerErrorMiddleware` sits outside it and needs the value).
-   If infrastructure stamps a different header, pass the same `header_name` to
-   the middleware and `correlation_header` to `register_problem_handlers`.
+3. **Tracing.** `FastApiApp` instruments itself with
+   `FastAPIInstrumentor.instrument_app` by default (`AppConfig.tracing`), after
+   the kit's own middleware, so the instrumentation wraps the whole stack
+   regardless of add order. It also sets a `TraceResponsePropagator` as the
+   global response propagator, but only when nothing else has — an
+   application that configures its own response propagator first is left
+   alone. Configure a `TracerProvider` and exporter in the application, or run
+   under `opentelemetry-instrument`; `FastApiApp` never does either.
 4. **Derive every model from `WireModel`.** camelCase on the wire is enforced by
    the base class, including in a hand-built
    `JSONResponse(model.model_dump(mode="json"))`.
@@ -131,7 +132,8 @@ config = AppConfig(cors=CorsPolicy(allow_origins=("https://app.example.com",)))
 
 `CorsPolicy.expose_headers` defaults to `rn_forge.web.EXPOSED_HEADERS` — the
 response headers this kit emits that a browser cannot read unless a CORS
-policy names them (`ETag`, `Link`, the correlation header, and so on).
+policy names them (`ETag`, `Link`, and so on). `traceresponse` needs no entry
+here — the OpenTelemetry response propagator exposes it itself.
 `allow_origins` has no default; naming them is the application's decision.
 `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises — browsers
 reject that combination.

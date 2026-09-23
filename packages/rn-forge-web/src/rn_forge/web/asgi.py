@@ -1,8 +1,7 @@
-"""Framework-independent correlation-ID ASGI middleware and type aliases.
+"""Framework-independent ASGI middleware and type aliases.
 
 The middleware wraps any ASGI application — FastAPI, Starlette, or Django
-served over ASGI. It leaves the request-local context value bound so outer
-exception handlers can read it after the application raises.
+served over ASGI.
 """
 
 from __future__ import annotations
@@ -12,23 +11,14 @@ import time
 from collections.abc import Awaitable, Callable, Mapping, MutableMapping
 from typing import Any
 
-from rn_forge.web.context import (
-    CORRELATION_ID_KEY,
-    DEFAULT_CORRELATION_HEADER,
-    get_correlation_id,
-    is_valid_correlation_id,
-    new_correlation_id,
-    request_log_fields,
-    resolve_correlation_id,
-    set_correlation_id,
-)
 from rn_forge.web.exceptions import ContentTooLarge
 from rn_forge.web.problem import BLANK_TYPE, PROBLEM_MEDIA_TYPE, CONTENT_TOO_LARGE
+from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id, request_log_fields
 
 __all__ = [
     "ASGIApp",
+    "AccessLogMiddleware",
     "BodySizeLimitMiddleware",
-    "CorrelationIdMiddleware",
     "Log",
     "Message",
     "Receive",
@@ -74,67 +64,30 @@ def _get_header(headers: object, name: str) -> str | None:
     return None
 
 
-def _set_header(message: Message, name: str, value: str) -> None:
-    """Set *name* on an ``http.response.start`` message, replacing any existing value.
+class AccessLogMiddleware:
+    """Time each request and emit one ``request.complete`` access-log event.
 
-    Replacing rather than appending is what stops the header being emitted
-    twice when an inner application already set one.
-    """
-    raw = message.get("headers")
-    existing: list[tuple[bytes, bytes]] = []
-    if isinstance(raw, list):
-        for entry in raw:  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(entry, (tuple, list)) and len(entry) == 2:  # pyright: ignore[reportUnknownArgumentType]
-                key, val = entry  # pyright: ignore[reportUnknownVariableType]
-                if isinstance(key, bytes) and isinstance(val, bytes):
-                    existing.append((key, val))
-    wanted = name.lower().encode("latin-1")
-    kept = [(k, v) for k, v in existing if k.lower() != wanted]
-    kept.append((wanted, value.encode("latin-1")))
-    message["headers"] = kept
-
-
-class CorrelationIdMiddleware:
-    """Bind a correlation ID for the request and stamp it on the response.
+    This middleware carries no header handling: tracing is W3C Trace Context,
+    propagated and read through OpenTelemetry (:mod:`rn_forge.web.tracing`),
+    not a house header this middleware would own.
 
     Args:
         app: The downstream ASGI application.
-        header_name: The header read on the way in and written on the way out.
-        generator: Produces an ID when the caller supplied none, or supplied
-            one that *validator* rejects.
-        validator: Returns whether a caller-supplied ID is well-formed.
-        log: A sink for a ``request.complete`` event
-            (:func:`~rn_forge.web.context.request_log_fields`), emitted once
-            per request. ``None`` (the default) logs nothing.
+        log: A sink for the ``request.complete`` event
+            (:func:`~rn_forge.web.tracing.request_log_fields`), emitted once
+            per request. Required: a caller with no sink does not install
+            this middleware.
 
     Example::
 
-        app = CorrelationIdMiddleware(app)
+        app = AccessLogMiddleware(app, log=log)
 
-    A caller-supplied ID is **never replaced when it is well-formed** — that
-    is the whole contract. A malformed one (by default: empty, over
-    :data:`~rn_forge.web.context.MAX_CORRELATION_ID_LENGTH` characters, or
-    containing anything outside ``[A-Za-z0-9._:-]``) is replaced by
-    *generator*, never sanitized: rewriting a caller's ID would produce one
-    that matches neither end's logs. Pass ``validator=lambda _: True`` to
-    restore the old always-echo behavior. Non-``http`` scopes (``websocket``,
-    ``lifespan``) pass straight through untouched, before anything else
-    happens.
+    Non-``http`` scopes (``websocket``, ``lifespan``) pass straight through
+    untouched, before anything else happens.
     """
 
-    def __init__(
-        self,
-        app: ASGIApp,
-        *,
-        header_name: str = DEFAULT_CORRELATION_HEADER,
-        generator: Callable[[], str] = new_correlation_id,
-        validator: Callable[[str], bool] = is_valid_correlation_id,
-        log: Log | None = None,
-    ) -> None:
+    def __init__(self, app: ASGIApp, *, log: Log) -> None:
         self.app = app
-        self.header_name = header_name
-        self.generator = generator
-        self.validator = validator
         self.log = log
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -143,18 +96,11 @@ class CorrelationIdMiddleware:
             await self.app(scope, receive, send)
             return
 
-        inbound = _get_header(scope.get("headers"), self.header_name)
-        correlation_id = resolve_correlation_id(
-            inbound, validator=self.validator, generator=self.generator
-        )
-        set_correlation_id(correlation_id)
-
         started = time.perf_counter()
         status: list[int] = []
 
         async def send_wrapper(message: Message) -> None:
             if message.get("type") == "http.response.start":
-                _set_header(message, self.header_name, correlation_id)
                 raw_status = message.get("status")
                 if isinstance(raw_status, int):
                     status.append(raw_status)
@@ -162,17 +108,15 @@ class CorrelationIdMiddleware:
 
         await self.app(scope, receive, send_wrapper)
 
-        if self.log is not None:
-            self.log(
-                "request.complete",
-                request_log_fields(
-                    method=str(scope.get("method", "")),
-                    path=str(scope.get("path", "")),
-                    status=status[-1] if status else 0,
-                    duration_ms=round((time.perf_counter() - started) * 1000, 3),
-                    correlation_id=correlation_id,
-                ),
-            )
+        self.log(
+            "request.complete",
+            request_log_fields(
+                method=str(scope.get("method", "")),
+                path=str(scope.get("path", "")),
+                status=status[-1] if status else 0,
+                duration_ms=round((time.perf_counter() - started) * 1000, 3),
+            ),
+        )
 
 
 class BodySizeLimitMiddleware:
@@ -245,7 +189,7 @@ async def _send_413(send: Send, path: str) -> None:
             "status": CONTENT_TOO_LARGE.status,
             "detail": "Request body exceeds the configured limit",
             "instance": path,
-            CORRELATION_ID_KEY: get_correlation_id(),
+            TRACE_ID_KEY: current_trace_id(),
         }
     ).encode()
     await send(

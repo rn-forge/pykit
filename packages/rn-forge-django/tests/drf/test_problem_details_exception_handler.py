@@ -18,6 +18,8 @@ from rn_forge.django.drf.exceptions import (  # noqa: E402
     problem_details_exception_handler,
     problem_registry,
 )
+from opentelemetry import trace  # noqa: E402
+
 from rn_forge.django.exceptions import problem_details_handler404  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     PROBLEM_MEDIA_TYPE,
@@ -25,8 +27,9 @@ from rn_forge.web import (  # noqa: E402
     ProblemType,
     PreconditionRequired,
     VersionConflict,
-    bind_correlation_id,
 )
+
+_TRACER = trace.get_tracer(__name__)
 
 pytestmark = pytest.mark.unit
 
@@ -108,14 +111,15 @@ class TestBody:
         _, body = _handle(DomainConflict("x"))
         assert body["instance"] == "/orders/7/"
 
-    def test_correlation_id_present_when_bound(self) -> None:
-        with bind_correlation_id("abc123"):
+    def test_trace_id_present_when_a_span_is_recording(self) -> None:
+        with _TRACER.start_as_current_span("test-span") as span:
+            trace_id = format(span.get_span_context().trace_id, "032x")
             _, body = _handle(DomainConflict("x"))
-        assert body["correlation_id"] == "abc123"
+        assert body["trace_id"] == trace_id
 
-    def test_correlation_id_null_when_unbound(self) -> None:
+    def test_trace_id_null_when_no_span_is_recording(self) -> None:
         _, body = _handle(DomainConflict("x"))
-        assert body["correlation_id"] is None
+        assert body["trace_id"] is None
 
 
 class TestServerErrors:

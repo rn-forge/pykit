@@ -11,7 +11,7 @@ from rn_forge.web.conformance.types import (
     ConformanceCase,
     RequestSpec,
 )
-from rn_forge.web.context import EXPOSED_HEADERS
+from rn_forge.web.tracing import EXPOSED_HEADERS
 from rn_forge.web.pagination import encode_cursor
 from rn_forge.web.problem import (
     BAD_REQUEST,
@@ -37,6 +37,9 @@ _JSON: Final = {"Content-Type": "application/json"}
 _PROBLEM: Final = {"Content-Type": "application/problem+json"}
 _LINKSET: Final = {"Content-Type": "application/linkset+json"}
 
+_TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+"""A well-formed W3C traceparent, from the standard's own example."""
+
 
 def _problem_body(
     row: ProblemType, detail: str, **extensions: object
@@ -53,7 +56,7 @@ def _problem_body(
         "status": row.status,
         "detail": detail,
         "instance": REDACTED,
-        "correlation_id": REDACTED,
+        "trace_id": REDACTED,
         **extensions,
     }
 
@@ -475,7 +478,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "Asserted structurally by the driver rather than per case: every key in "
             "every response body above, at every depth, matches ^[a-z][a-zA-Z0-9]*$ "
             "or is an RFC 9457 core member. RFC 9457's own members are single "
-            "lowercase words and are unaffected; `correlation_id` is the one "
+            "lowercase words and are unaffected; `trace_id` is the one "
             "documented exception, and the driver's checker exempts it by name."
         ),
         request=RequestSpec("GET", "/conformance/items", query={"pageSize": "2"}),
@@ -486,30 +489,75 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "nextPageToken": PAGE_1_NEXT_TOKEN,
         },
     ),
-    # --- Correlation (context.py, asgi.py) ------------------------------
+    # --- Tracing (tracing.py, asgi.py) -----------------------------------
     ConformanceCase(
-        id="correlation.inbound-id-is-echoed-never-replaced",
-        area="correlation",
-        description="A caller-supplied X-Correlation-ID comes back verbatim.",
+        id="tracing.inbound-traceparent-continues-the-trace",
+        area="tracing",
+        description=(
+            "A caller-supplied W3C traceparent continues that trace: the "
+            "response's traceresponse carries the same trace id with a new "
+            "span id."
+        ),
+        request=RequestSpec(
+            "GET",
+            "/conformance/echo",
+            headers={
+                "traceparent": _TRACEPARENT,
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_header_patterns={
+            "traceresponse": r"00-4bf92f3577b34da6a3ce929d0e0e4736-[0-9a-f]{16}-[0-9a-f]{2}",
+        },
+        expect_body={},
+    ),
+    ConformanceCase(
+        id="tracing.malformed-traceparent-starts-a-new-trace",
+        area="tracing",
+        description=(
+            "A malformed traceparent is never an error: the server discards "
+            "it and starts a new trace."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/echo", headers={"traceparent": "garbage"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_header_patterns={
+            "traceresponse": r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}",
+        },
+        expect_body={},
+    ),
+    ConformanceCase(
+        id="tracing.problem-body-carries-the-trace-id",
+        area="tracing",
+        description=(
+            "The current trace id reaches the problem body as the trace_id "
+            "extension, which is what makes a user-reported error findable in "
+            "the trace backend and the logs."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/boom", headers={"traceparent": _TRACEPARENT}
+        ),
+        expect_status=500,
+        expect_headers=_PROBLEM,
+        expect_header_patterns={
+            "traceresponse": r"00-4bf92f3577b34da6a3ce929d0e0e4736-[0-9a-f]{16}-[0-9a-f]{2}",
+        },
+        expect_body=_problem_body(INTERNAL_ERROR, GENERIC_SERVER_DETAIL),
+    ),
+    ConformanceCase(
+        id="tracing.house-header-is-not-echoed",
+        area="tracing",
+        description="X-Correlation-ID is a removed house header: not read, and never sent back.",
         request=RequestSpec(
             "GET", "/conformance/echo", headers={"X-Correlation-ID": "abc123"}
         ),
         expect_status=200,
-        expect_headers={**_JSON, "X-Correlation-ID": "abc123"},
+        expect_headers=_JSON,
+        expect_absent_headers=frozenset({"X-Correlation-ID"}),
         expect_body={},
-    ),
-    ConformanceCase(
-        id="correlation.generated-id-reaches-the-problem-body",
-        area="correlation",
-        description=(
-            "With no inbound header the server generates one, stamps it on the "
-            "response, and carries it as a problem extension — which is what makes "
-            "a user-reported error id findable in the logs."
-        ),
-        request=RequestSpec("GET", "/conformance/boom"),
-        expect_status=500,
-        expect_headers=_PROBLEM,
-        expect_body=_problem_body(INTERNAL_ERROR, GENERIC_SERVER_DETAIL),
     ),
     # --- Deprecation (deprecation.py) -----------------------------------
     ConformanceCase(
@@ -568,13 +616,14 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         },
         expect_body={},
     ),
-    # --- CORS (context.py: EXPOSED_HEADERS) --------------------------------
+    # --- CORS (tracing.py: EXPOSED_HEADERS) --------------------------------
     ConformanceCase(
         id="cors.exposed-headers-are-comma-joined",
         area="cors",
         description=(
             "A CORS response exposes the kit's own headers to a browser, in "
-            "configured order."
+            "configured order. traceresponse is exposed by the OpenTelemetry "
+            "response propagator itself, not by this list."
         ),
         request=RequestSpec(
             "GET", "/conformance/echo", headers={"Origin": "https://example.com"}
@@ -583,7 +632,9 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers={
             **_JSON,
             "Access-Control-Allow-Origin": "https://example.com",
-            "Access-Control-Expose-Headers": ", ".join(EXPOSED_HEADERS),
+            "Access-Control-Expose-Headers": ", ".join(
+                (*EXPOSED_HEADERS, "traceresponse")
+            ),
         },
         expect_body={},
     ),
