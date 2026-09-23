@@ -2,13 +2,13 @@
 
 Framework-agnostic HTTP/API primitives, built on `rn-forge-commons`.
 
-These are the wire semantics an application *promises its callers* — the
-correlation ID, the error body, the precondition contract, the pagination
-envelope, the idempotency contract, the readiness aggregate, the ASGI
-correlation middleware, the authentication contract, the OpenAPI naming rules,
-and the conformance table the framework packages are tested against.
+These are the wire semantics an application *promises its callers* — W3C
+Trace Context propagation, the error body, the precondition contract, the
+pagination envelope, the idempotency contract, the readiness aggregate, the
+authentication contract, the OpenAPI naming rules, and the conformance table
+the framework packages are tested against.
 
-Eleven flat modules, all one kind of mechanism: **inbound** HTTP wire
+Thirteen flat modules, all one kind of mechanism: **inbound** HTTP wire
 semantics.
 
 ## Where it sits
@@ -47,7 +47,7 @@ client library is pulled in either direction.
 
 Logic that both framework packages need lives here, as framework-free
 functions: rendering a problem response (`render_problem`), the field-error
-entry (`field_error`), resolving an inbound correlation ID, parsing an
+entry (`field_error`), reading the current trace id, parsing an
 `Authorization` header, requiring an idempotency key, the liveness body and
 the OpenAPI problem-response declarations. `rn-forge-django` and
 `rn-forge-fastapi` keep only the code that reads their framework's native
@@ -103,10 +103,10 @@ OpenTelemetry's own library guidance: a library depends on the API only,
 which is a no-op until the application configures the SDK. This package never
 configures a `TracerProvider` or an exporter.
 
-**Nothing else beyond that and commons.** The access-log middleware, the
-problem shape, ETag preconditions, cursor pagination, idempotency and health
-aggregation are implemented here: the maintained libraries for each either
-depend on a web framework or fix a different wire shape.
+**Nothing else beyond that and commons.** The problem shape, ETag
+preconditions, cursor pagination, idempotency and health aggregation are
+implemented here: the maintained libraries for each either depend on a web
+framework or fix a different wire shape.
 
 ## Documentation
 

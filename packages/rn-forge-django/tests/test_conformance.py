@@ -1,11 +1,10 @@
 """The Django conformance driver: every case in `rn_forge.web.conformance.CASES`.
 
 The fixture application is wired from this package's adapters: the problem
-handler and the routing-404 handler, the access-log middleware, OpenTelemetry
-instrumentation, the camelCase renderer and parser, `CursorPagination`,
-`CacheIdempotencyStore`, `enforce_version`, `readiness_view` and the principal
-authentication binding. If a case needs more than a line or two over them, the
-adapter is missing.
+handler and the routing-404 handler, OpenTelemetry instrumentation, the
+camelCase renderer and parser, `CursorPagination`, `CacheIdempotencyStore`,
+`enforce_version`, `readiness_view` and the principal authentication binding.
+If a case needs more than a line or two over them, the adapter is missing.
 
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
@@ -62,7 +61,7 @@ DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"trace_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
+CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 URLCONF = __name__
 
 instrument()
@@ -248,7 +247,6 @@ WIRING = {
         # *default* settings.MIDDLEWARE at position 0; override_settings
         # replaces the whole list, so the fixture re-declares it explicitly.
         "opentelemetry.instrumentation.django.middleware.otel_middleware._DjangoMiddleware",
-        "rn_forge.django.middleware.AccessLogMiddleware",
         "django.middleware.http.ConditionalGetMiddleware",
         "django.middleware.security.SecurityMiddleware",
         "corsheaders.middleware.CorsMiddleware",

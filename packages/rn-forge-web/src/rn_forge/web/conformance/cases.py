@@ -56,7 +56,7 @@ def _problem_body(
         "status": row.status,
         "detail": detail,
         "instance": REDACTED,
-        "trace_id": REDACTED,
+        "traceId": REDACTED,
         **extensions,
     }
 
@@ -478,8 +478,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "Asserted structurally by the driver rather than per case: every key in "
             "every response body above, at every depth, matches ^[a-z][a-zA-Z0-9]*$ "
             "or is an RFC 9457 core member. RFC 9457's own members are single "
-            "lowercase words and are unaffected; `trace_id` is the one "
-            "documented exception, and the driver's checker exempts it by name."
+            "lowercase words and are unaffected."
         ),
         request=RequestSpec("GET", "/conformance/items", query={"pageSize": "2"}),
         expect_status=200,
@@ -533,7 +532,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="tracing.problem-body-carries-the-trace-id",
         area="tracing",
         description=(
-            "The current trace id reaches the problem body as the trace_id "
+            "The current trace id reaches the problem body as the traceId "
             "extension, which is what makes a user-reported error findable in "
             "the trace backend and the logs."
         ),

@@ -22,8 +22,7 @@ def instrument() -> None:
     Call this once, from ``wsgi.py``/``asgi.py`` and ``manage.py``, before
     Django loads — the native pattern: `DjangoInstrumentor` inserts its own
     middleware into ``MIDDLEWARE`` at position 0 itself, so it wraps
-    everything downstream, including :class:`rn_forge.django.middleware.AccessLogMiddleware`
-    and the DRF exception handler.
+    everything downstream, including the DRF exception handler.
 
     Idempotent: `DjangoInstrumentor().instrument()` is a no-op on a second
     call. A `TraceResponsePropagator` is set as the global response

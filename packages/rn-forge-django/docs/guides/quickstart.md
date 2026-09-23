@@ -54,7 +54,6 @@ from rn_forge.django.security import SECURITY_SETTINGS
 MIDDLEWARE = [
     # DjangoInstrumentor (from instrument(), above) inserts its own middleware
     # at position 0 here, ahead of everything below.
-    "rn_forge.django.middleware.AccessLogMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",  # If-None-Match -> 304 on any ETag response
     "django.middleware.security.SecurityMiddleware",  # nosniff, Referrer-Policy, X-Frame-Options, HSTS
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -108,8 +107,8 @@ urlpatterns = [
 deprecated alias of `/livez`), each with no trailing slash — a probe on every host fails on a
 redirect, and `APPEND_SLASH` would send one.
 
-To give the middleware a different header, subclass it and set `header`; to send its
-`request.complete` event somewhere other than `AppLogger`, override `log`.
+With the `otel` extra and `instrument()`, the request span is the access record: method, path,
+status and duration.
 
 ### Deprecating a view
 

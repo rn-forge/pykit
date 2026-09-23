@@ -22,7 +22,7 @@ from rn_forge.web import (
 
 pytestmark = pytest.mark.unit
 
-CORE_MEMBERS = {"type", "title", "status", "detail", "instance", "trace_id"}
+CORE_MEMBERS = {"type", "title", "status", "detail", "instance", "traceId"}
 TRACEPARENT = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
 
@@ -85,7 +85,7 @@ def test_a_registered_exception_renders_its_row():
     body = assert_problem(response, 409)
     assert_that(body["detail"]).is_equal_to("Order already dispatched")
     assert_that(body["instance"]).is_equal_to("/conflict")
-    assert_that(body["trace_id"]).is_equal_to("4bf92f3577b34da6a3ce929d0e0e4736")
+    assert_that(body["traceId"]).is_equal_to("4bf92f3577b34da6a3ce929d0e0e4736")
 
 
 def test_a_registered_exception_is_handled_not_re_raised():
@@ -147,14 +147,14 @@ def test_an_unhandled_exception_is_a_500_that_leaks_nothing():
 def test_the_500_path_still_carries_the_trace_id():
     """ServerErrorMiddleware sits inside the OTel instrumentation's span."""
     response = build().get("/boom", headers={"traceparent": TRACEPARENT})
-    assert_that(response.json()["trace_id"]).is_equal_to(
+    assert_that(response.json()["traceId"]).is_equal_to(
         "4bf92f3577b34da6a3ce929d0e0e4736"
     )
 
 
 def test_without_tracing_the_body_still_carries_a_null_trace_id():
     body = assert_problem(build(tracing=False).get("/conflict"), 409)
-    assert_that(body["trace_id"]).is_none()
+    assert_that(body["traceId"]).is_none()
 
 
 def test_a_401_carries_the_challenge_and_not_the_reason():

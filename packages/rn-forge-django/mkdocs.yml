@@ -48,7 +48,6 @@ nav:
       - Settings: api/settings.md
       - Models: api/models.md
       - Exceptions: api/exceptions.md
-      - Middleware: api/middleware.md
       - Messaging: api/messaging.md
       - Celery: api/celery.md
       - Fixtures: api/fixtures.md

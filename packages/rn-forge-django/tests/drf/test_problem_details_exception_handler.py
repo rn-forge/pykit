@@ -115,11 +115,11 @@ class TestBody:
         with _TRACER.start_as_current_span("test-span") as span:
             trace_id = format(span.get_span_context().trace_id, "032x")
             _, body = _handle(DomainConflict("x"))
-        assert body["trace_id"] == trace_id
+        assert body["traceId"] == trace_id
 
     def test_trace_id_null_when_no_span_is_recording(self) -> None:
         _, body = _handle(DomainConflict("x"))
-        assert body["trace_id"] is None
+        assert body["traceId"] is None
 
 
 class TestServerErrors:

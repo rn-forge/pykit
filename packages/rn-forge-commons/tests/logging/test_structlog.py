@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 import pytest
 
 pytest.importorskip("structlog")
 
 from rn_forge.commons.logging import TRACE, AppLogger  # noqa: E402
-from rn_forge.commons.logging.structlog import StructLogger  # noqa: E402
+from rn_forge.commons.logging.structlog import StructLogger, otel_processor  # noqa: E402
 
 
 class _ListHandler(logging.Handler):
@@ -148,6 +149,58 @@ class TestSameSink:
             message = handler.records[0].getMessage()
             assert "request_id='r1'" in message
             assert "extra=1" in message
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+
+class TestOtelProcessor:
+    _TRACE_ID = 0x4BF92F3577B34DA6A3CE929D0E0E4736
+    _SPAN_ID = 0x00F067AA0BA902B7
+
+    def test_a_valid_span_adds_its_ids(self):
+        trace = pytest.importorskip("opentelemetry.trace")
+        span = trace.NonRecordingSpan(
+            trace.SpanContext(
+                trace_id=self._TRACE_ID,
+                span_id=self._SPAN_ID,
+                is_remote=False,
+                trace_flags=trace.TraceFlags(trace.TraceFlags.SAMPLED),
+            )
+        )
+        with trace.use_span(span):
+            result = otel_processor(None, "info", {"event": "hello"})
+        assert result == {
+            "event": "hello",
+            "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+            "span_id": "00f067aa0ba902b7",
+        }
+
+    def test_no_span_leaves_the_event_untouched(self):
+        pytest.importorskip("opentelemetry.trace")
+        assert otel_processor(None, "info", {"event": "hello"}) == {"event": "hello"}
+
+    def test_unimportable_opentelemetry_leaves_the_event_untouched(self, monkeypatch):
+        monkeypatch.setitem(sys.modules, "opentelemetry", None)
+        assert otel_processor(None, "info", {"event": "hello"}) == {"event": "hello"}
+
+    def test_the_configured_chain_renders_the_span_ids(self):
+        trace = pytest.importorskip("opentelemetry.trace")
+        _configure()
+        handler = _ListHandler()
+        logging.getLogger().addHandler(handler)
+        span = trace.NonRecordingSpan(
+            trace.SpanContext(
+                trace_id=self._TRACE_ID,
+                span_id=self._SPAN_ID,
+                is_remote=False,
+                trace_flags=trace.TraceFlags(trace.TraceFlags.SAMPLED),
+            )
+        )
+        try:
+            with trace.use_span(span):
+                StructLogger("structlog_test.otel").info("hello")
+            message = handler.records[0].getMessage()
+            assert "trace_id='4bf92f3577b34da6a3ce929d0e0e4736'" in message
         finally:
             logging.getLogger().removeHandler(handler)
 

@@ -377,7 +377,7 @@ def render_problem(
 
     On top of :meth:`ProblemRegistry.build`:
 
-    - the current span's trace id is the ``trace_id`` extension (``null``
+    - the current span's trace id is the ``traceId`` extension (``null``
       when no span is recording);
     - a 401 carries :data:`~rn_forge.web.auth.AUTH_FAILED_DETAIL` as its
       detail, whatever *detail* says, and a ``WWW-Authenticate`` challenge

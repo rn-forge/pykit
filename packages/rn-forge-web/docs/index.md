@@ -7,8 +7,7 @@ shared by Django/DRF, FastAPI/Starlette and anything else that speaks HTTP.
 It provides:
 
 - **`tracing`** — W3C Trace Context: reading the current OpenTelemetry span's
-  trace and span ids, the access-log field builder, and a structlog-shaped log
-  processor
+  trace and span ids
 - **`problem`** — RFC 9457 problem details, plus an exception→problem registry
   that resolves by MRO, the 5xx detail policy, the two validation-error
   normalizers, and the parse direction for consuming an upstream's problem body
@@ -22,7 +21,7 @@ It provides:
   an in-memory double
 - **`health`** — readiness-check aggregation with four statuses, and the HTTP
   status derived once rather than per framework
-- **`asgi`** — the access-log middleware, pure ASGI and Starlette-free
+- **`asgi`** — the request-body size limit, pure ASGI and Starlette-free
 - **`auth`** — `Principal`, the authenticator/authorizer protocols, and the
   401/403 + `WWW-Authenticate` contract
 - **`conformance`** — the scenario table both framework packages are tested

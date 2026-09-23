@@ -27,7 +27,6 @@ from rn_forge.web import (
     LIVENESS_PATH,
     OPENAPI_PATH,
     READINESS_PATH,
-    AccessLogMiddleware,
     BodySizeLimitMiddleware,
     Check,
     ProblemRegistry,
@@ -59,8 +58,8 @@ class AppConfig:
             ``FastAPIInstrumentor.instrument_app`` and, when nothing else has,
             set a :class:`~opentelemetry.instrumentation.propagators.TraceResponsePropagator`
             as the global response propagator.
-        log: Optional sink for server-error problem events and the
-            ``request.complete`` access-log event.
+        log: Optional sink for ``problem.server_error`` events, called for
+            every 5xx problem response with the exception under ``"exc"``.
         liveness_path: The liveness path.
         readiness_path: The readiness path.
         legacy_liveness_path: An alias of *liveness_path*, marked deprecated
@@ -146,8 +145,6 @@ class FastApiApp(FastAPI):
             self.add_middleware(
                 BodySizeLimitMiddleware, max_bytes=resolved.max_body_bytes
             )
-        if resolved.log is not None:
-            self.add_middleware(AccessLogMiddleware, log=resolved.log)
         if resolved.cors is not None:
             apply_cors(self, resolved.cors)
         register_problem_handlers(

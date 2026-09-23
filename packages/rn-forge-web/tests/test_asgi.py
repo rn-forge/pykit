@@ -5,117 +5,93 @@ dependency would leave the boundary this whole module exists to protect
 untested.
 """
 
+import json
+
 import pytest
 from assertpy import assert_that
 
-from rn_forge.web.asgi import AccessLogMiddleware, Message, Receive, Scope, Send
+from rn_forge.web.asgi import BodySizeLimitMiddleware, Message, Receive, Scope, Send
 
 pytestmark = [pytest.mark.unit, pytest.mark.asyncio]
 
 
-class StubApp:
-    """Records what it saw, and emits one response with the headers it was given."""
+class ReadingApp:
+    """Drains the request body, then answers 200."""
 
-    def __init__(self, *, response_headers: list[tuple[bytes, bytes]] | None = None):
-        self.response_headers = response_headers or []
-        self.seen_scopes: list[Scope] = []
+    def __init__(self) -> None:
+        self.calls = 0
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        self.seen_scopes.append(scope)
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": list(self.response_headers),
-            }
-        )
+        self.calls += 1
+        while (await receive()).get("more_body"):
+            pass
+        await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b""})
 
 
-async def _noop_receive() -> Message:
-    return {"type": "http.request"}
-
-
 def http_scope(headers: list[tuple[bytes, bytes]] | None = None) -> Scope:
-    return {"type": "http", "method": "GET", "path": "/", "headers": headers or []}
+    return {"type": "http", "method": "POST", "path": "/x", "headers": headers or []}
 
 
-async def call(app, scope: Scope) -> list[Message]:
+def chunked(*chunks: bytes) -> Receive:
+    remaining = list(chunks)
+
+    async def receive() -> Message:
+        body = remaining.pop(0)
+        return {"type": "http.request", "body": body, "more_body": bool(remaining)}
+
+    return receive
+
+
+async def call(app, scope: Scope, receive: Receive) -> list[Message]:
     sent: list[Message] = []
 
     async def send(message: Message) -> None:
         sent.append(message)
 
-    await app(scope, _noop_receive, send)
+    await app(scope, receive, send)
     return sent
 
 
-def response_headers(sent: list[Message]) -> list[tuple[bytes, bytes]]:
-    start = next(m for m in sent if m["type"] == "http.response.start")
-    return start["headers"]
-
-
-def header_value(sent: list[Message], name: bytes) -> bytes | None:
-    return next((v for k, v in response_headers(sent) if k == name), None)
+def status_of(sent: list[Message]) -> int:
+    return next(m for m in sent if m["type"] == "http.response.start")["status"]
 
 
 async def test_a_non_http_scope_passes_through_untouched():
-    stub = StubApp()
-    events: list[tuple[str, dict]] = []
-    scope: Scope = {"type": "lifespan"}
+    stub = ReadingApp()
     await call(
-        AccessLogMiddleware(
-            stub, log=lambda event, ctx: events.append((event, dict(ctx)))
-        ),
-        scope,
+        BodySizeLimitMiddleware(stub, max_bytes=1),
+        {"type": "lifespan"},
+        chunked(b"toolong"),
     )
-    assert_that(stub.seen_scopes).is_equal_to([scope])
-    assert_that(events).is_empty()
+    assert_that(stub.calls).is_equal_to(1)
 
 
-async def test_the_log_sink_is_called_once_with_otel_field_names():
-    events = []
-    stub = StubApp()
-    scope = {
-        "type": "http",
-        "method": "POST",
-        "path": "/orders",
-        "headers": [],
-    }
-    await call(
-        AccessLogMiddleware(
-            stub, log=lambda event, ctx: events.append((event, dict(ctx)))
-        ),
-        scope,
-    )
-    assert_that(events).is_length(1)
-    event, fields = events[0]
-    assert_that(event).is_equal_to("request.complete")
-    assert_that(fields["http.request.method"]).is_equal_to("POST")
-    assert_that(fields["url.path"]).is_equal_to("/orders")
-    assert_that(fields["http.response.status_code"]).is_equal_to(200)
-    assert_that(fields).contains_key("duration_ms")
-    assert_that(fields).contains_key("trace_id")
-    assert_that(fields).contains_key("span_id")
-
-
-async def test_other_response_headers_are_preserved():
-    stub = StubApp(response_headers=[(b"content-type", b"application/json")])
-    sent = await call(AccessLogMiddleware(stub, log=lambda *a: None), http_scope())
-    assert_that(header_value(sent, b"content-type")).is_equal_to(b"application/json")
-
-
-async def test_the_response_body_message_is_passed_through_unmodified():
-    stub = StubApp()
-    sent = await call(AccessLogMiddleware(stub, log=lambda *a: None), http_scope())
-    assert_that([m["type"] for m in sent]).is_equal_to(
-        ["http.response.start", "http.response.body"]
-    )
-
-
-async def test_a_scope_with_no_headers_key_does_not_crash():
-    stub = StubApp()
+async def test_a_body_within_the_limit_reaches_the_application():
+    stub = ReadingApp()
     sent = await call(
-        AccessLogMiddleware(stub, log=lambda *a: None), {"type": "http", "path": "/"}
+        BodySizeLimitMiddleware(stub, max_bytes=10), http_scope(), chunked(b"12345")
     )
-    assert_that(response_headers(sent)).is_equal_to([])
+    assert_that(status_of(sent)).is_equal_to(200)
+
+
+async def test_a_declared_content_length_over_the_limit_never_reaches_the_application():
+    stub = ReadingApp()
+    scope = http_scope([(b"Content-Length", b"11")])
+    sent = await call(BodySizeLimitMiddleware(stub, max_bytes=10), scope, chunked(b""))
+    assert_that(status_of(sent)).is_equal_to(413)
+    assert_that(stub.calls).is_zero()
+
+
+async def test_a_streamed_body_over_the_limit_is_cut_off_with_a_problem_body():
+    stub = ReadingApp()
+    sent = await call(
+        BodySizeLimitMiddleware(stub, max_bytes=10),
+        http_scope(),
+        chunked(b"123456", b"789012"),
+    )
+    assert_that(status_of(sent)).is_equal_to(413)
+    body = json.loads(
+        next(m for m in sent if m["type"] == "http.response.body")["body"]
+    )
+    assert_that(body["status"]).is_equal_to(413)

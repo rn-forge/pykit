@@ -3,6 +3,7 @@
 Use :meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` directly for
 unstructured logging. :class:`StructLogger` binds context carried across a
 chain of calls while retaining the configured Rich, file, or JSON handlers.
+:func:`otel_processor` adds the active OpenTelemetry span's ids to every event.
 
 **Call** :meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` **before the
 first** :class:`StructLogger` **log call** (not necessarily before
@@ -24,7 +25,7 @@ import structlog
 
 from rn_forge.commons.logging.logger import AppLogger
 
-__all__ = ["StructLogger"]
+__all__ = ["StructLogger", "otel_processor"]
 
 _configured = False
 
@@ -32,6 +33,36 @@ _configured = False
 def _app_logger_factory(*args: Any) -> AppLogger:
     """Return the named :class:`AppLogger` for structlog."""
     return AppLogger.get_logger(args[0] if args else __name__)
+
+
+def otel_processor(
+    logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
+    """Add the active OpenTelemetry span's ids to a structlog event dict.
+
+    Usable as a structlog processor in any chain.
+
+    Args:
+        logger: The bound logger. Unused; part of the processor signature.
+        method_name: The log method's name. Unused; part of the signature.
+        event_dict: The event dictionary, mutated in place and returned.
+
+    Returns:
+        *event_dict*, with ``trace_id`` (32 hex digits) and ``span_id`` (16 hex
+        digits) set when a valid span is active, and unchanged when none is or
+        when ``opentelemetry`` is not installed.
+    """
+    del logger, method_name
+    try:
+        # Imported here: the ``structlog`` extra does not depend on opentelemetry.
+        from opentelemetry import trace
+    except ImportError:
+        return event_dict
+    span_context = trace.get_current_span().get_span_context()
+    if span_context.is_valid:
+        event_dict["trace_id"] = format(span_context.trace_id, "032x")
+        event_dict["span_id"] = format(span_context.span_id, "016x")
+    return event_dict
 
 
 def _render_event(
@@ -76,7 +107,11 @@ def _configure_once() -> None:
     if _configured:
         return
     structlog.configure(
-        processors=[structlog.contextvars.merge_contextvars, _render_event],
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            otel_processor,
+            _render_event,
+        ],
         logger_factory=_app_logger_factory,
         wrapper_class=_AppBoundLogger,
         cache_logger_on_first_use=True,

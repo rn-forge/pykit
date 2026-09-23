@@ -220,19 +220,6 @@ def test_cors_is_applied_and_is_outermost():
     )
 
 
-def test_the_configured_log_sink_receives_request_complete_events():
-    events = []
-    app = FastApiApp(
-        AppConfig(log=lambda event, ctx: events.append((event, dict(ctx))))
-    )
-    TestClient(app).get("/healthz")
-    assert_that([event for event, _ in events]).contains("request.complete")
-    fields = next(ctx for event, ctx in events if event == "request.complete")
-    assert_that(fields["http.request.method"]).is_equal_to("GET")
-    assert_that(fields["url.path"]).is_equal_to("/healthz")
-    assert_that(fields["http.response.status_code"]).is_equal_to(200)
-
-
 def test_a_subclass_can_extend_openapi_through_super():
     """R1.2's composition: extend the repair rather than patch an attribute."""
 

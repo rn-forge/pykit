@@ -47,7 +47,7 @@ nav:
       - Worked examples: adoption/examples/README.md
   - API Reference:
       - api/index.md
-      - Context: api/context.md
+      - Tracing: api/tracing.md
       - Problem: api/problem.md
       - Exceptions: api/exceptions.md
       - Concurrency: api/concurrency.md

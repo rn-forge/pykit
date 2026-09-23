@@ -18,7 +18,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
-    TRACE_ID_KEY,
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemType,
@@ -87,7 +86,7 @@ def register_problem_handlers(
                     "exc": exc,
                     "status": rendered.status,
                     "instance": rendered.problem.instance,
-                    TRACE_ID_KEY: current_trace_id(),
+                    "trace_id": current_trace_id(),
                 },
             )
         return JSONResponse(

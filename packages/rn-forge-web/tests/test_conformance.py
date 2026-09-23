@@ -148,7 +148,7 @@ def test_every_problem_body_status_matches_its_http_status(case):
 @pytest.mark.parametrize("case", PROBLEM_CASES, ids=lambda c: c.id)
 def test_every_problem_body_carries_the_trace_id_extension(case):
     """A user-reported error id is only findable in the logs if it is in the body."""
-    assert_that(case.expect_body).contains_key("trace_id")
+    assert_that(case.expect_body).contains_key("traceId")
 
 
 def test_the_readiness_503_is_a_health_report_not_a_problem():
@@ -159,7 +159,7 @@ def test_the_readiness_503_is_a_health_report_not_a_problem():
 
 def test_response_body_keys_are_camel_case():
     """The casing rule, asserted structurally over the whole table."""
-    exempt = {"trace_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
+    exempt = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
     def walk(node, case_id):
         if isinstance(node, dict):

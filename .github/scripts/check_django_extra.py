@@ -28,7 +28,7 @@ from packaging.requirements import Requirement
 
 BASE = "base"
 MODULES: dict[str, list[str]] = {
-    BASE: ["rn_forge.django", "rn_forge.django.models", "rn_forge.django.middleware"],
+    BASE: ["rn_forge.django", "rn_forge.django.models"],
     "drf": [
         "rn_forge.django.drf",
         "rn_forge.django.drf.views",

@@ -40,7 +40,6 @@ Optional extras:
   serializer, custom fields, wire mirrors), `drf.exceptions` (the RFC 9457 problem handler and the
   legacy handler), `drf.pagination` (AIP-158 cursor pagination), `drf.idempotency`, `drf.concurrency`,
   `drf.casing` (camelCase renderer/parser) and `drf.openapi` (drf-spectacular; `openapi` extra).
-- **`middleware`** — the WSGI access-log middleware.
 - **`tracing`** (`otel` extra) — `instrument()`: OpenTelemetry instrumentation for Django, called once
   before Django loads.
 - **`messaging`** — transactional outbox/inbox: abstract models, `make_outbox_relay`, `process_event`

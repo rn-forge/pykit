@@ -2,7 +2,7 @@
 
 This is the **consumer context pack**: what an application's specification is
 written against, so that two applications built on this kit do not each
-re-derive correlation IDs, error bodies, cursors and idempotency semantics in
+re-derive trace propagation, error bodies, cursors and idempotency semantics in
 their own dialect.
 
 | Page | What it is for | Status |

@@ -34,11 +34,11 @@ type ConformanceArea = Literal[
 REDACTED: Final = "<redacted>"
 """What :func:`redact` substitutes for a member that legitimately varies."""
 
-VARIABLE_MEMBERS: Final = frozenset({"instance", "trace_id", "timestamp"})
+VARIABLE_MEMBERS: Final = frozenset({"instance", "traceId", "timestamp"})
 """Body members that differ per request and must not be compared literally.
 
 ``instance`` is the request path plus, in practice, an id the driver chose;
-``trace_id`` is generated per request (or per trace, when a caller's
+``traceId`` is generated per request (or per trace, when a caller's
 ``traceparent`` continues one); ``timestamp`` is the clock. Everything else in
 a response body is part of the contract and is compared exactly.
 """

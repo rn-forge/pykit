@@ -23,10 +23,9 @@ Every request is part of a trace, per **W3C Trace Context**.
 - Every response carries **`traceresponse`**
   (`00-<trace-id>-<span-id>-<flags>`, W3C Trace Context Level 2) when a
   `TracerProvider` is configured.
-- Every error body carries the current trace id as the `trace_id`
+- Every error body carries the current trace id as the `traceId`
   **extension member** (`null` when no span is recording). It is what makes a
-  user-reported error findable in the trace backend and the logs, and it is
-  the one documented exception to the casing rule in §7.
+  user-reported error findable in the trace backend and the logs.
   — `tracing.problem-body-carries-the-trace-id`
 - Every structured log line emitted while handling the request carries
   `trace_id` and `span_id`.
@@ -258,13 +257,11 @@ rule, and what proto3's JSON mapping produces — which is also why AIP-158's
 client and every popular UI framework's HTTP layer expects, and picking either
 casing is far better than letting it vary per application.
 
-Four exemptions, and only four:
+Three exemptions, and only three:
 
 - **RFC 9457's core members** (`type`, `title`, `status`, `detail`, `instance`)
   are single lowercase words and are unaffected. Problem *extensions* follow
   the rule.
-- **`trace_id`** as a problem extension, which matches the log field name it
-  exists to be joined against.
 - **Headers.** HTTP field names are case-insensitive and hyphenated.
 - **RFC 9264 linkset member names** (`anchor`, `service-desc`, `service-doc`,
   `status`, `href`) in the §14 api-catalog body — they are the RFC's own
@@ -477,22 +474,6 @@ default.
   `INSTALLED_APPS` and `CorsMiddleware` to `MIDDLEWARE` itself.
 - `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises: browsers
   reject that combination outright.
-
-## 17. Access logging
-
-One `request.complete` event per request, on both stacks, in OpenTelemetry
-HTTP semantic-convention names: `http.request.method`, `url.path`,
-`http.response.status_code`, plus `duration_ms`, `trace_id` and `span_id`.
-
-- **web.** `request_log_fields(...)` builds the event's fields. The ASGI
-  `AccessLogMiddleware` takes a required `log=` sink and emits the event once
-  per request, after the response completes.
-- **FastAPI.** `AppConfig.log` feeds it — the same sink `register_problem_handlers`
-  uses for server-error events.
-- **Django.** The middleware's `request.complete` event uses the same field
-  names.
-
-Not a conformance case: the event goes to a log sink, not the wire.
 
 ---
 

@@ -64,7 +64,7 @@ app = FastAPI()
 
 
 def _respond(request: Request, exc: BaseException, **extensions: Any) -> JSONResponse:
-    # The trace_id extension, the masked 401 detail and the challenge (never on
+    # The traceId extension, the masked 401 detail and the challenge (never on
     # a 403) all come from render_problem.
     rendered = render_problem(
         REGISTRY, exc, instance=request.url.path, extensions=extensions, realm=REALM

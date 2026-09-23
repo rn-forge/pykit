@@ -7,10 +7,10 @@ this catches is an application that uses the primitives *almost* everywhere.
 ## Tracing
 
 - [ ] `traceparent`/`tracestate` are the only trace headers read or written.
-      `grep -rn "X-Correlation-ID"` returns nothing.
 - [ ] The application configures a `TracerProvider` (or runs under
       `opentelemetry-instrument`); `rn_forge.web` never does.
-- [ ] The log configuration includes `trace_log_processor`.
+- [ ] The log configuration includes
+      `rn_forge.commons.logging.structlog.otel_processor`.
 - [ ] No module defines its own request-id ContextVar or header constant.
 
 ## Errors

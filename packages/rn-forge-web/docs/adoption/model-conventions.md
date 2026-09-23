@@ -41,7 +41,7 @@ Every persisted entity carries four:
   `updated_at` being null. A null there forces every reader to write
   `updated_at or created_at`.
 - The actor is the `Principal.subject` from `rn_forge.web.auth`, so the audit
-  trail and the access log name the caller the same way.
+  trail names the caller the same way on every stack.
 
 `rn-forge-django` maps these to camelCase database columns for legacy reasons.
 **That mapping is a Django-side detail and must not leak into this

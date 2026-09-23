@@ -7,27 +7,21 @@ served over ASGI.
 from __future__ import annotations
 
 import json
-import time
-from collections.abc import Awaitable, Callable, Mapping, MutableMapping
+from collections.abc import Awaitable, Callable, MutableMapping
 from typing import Any
 
 from rn_forge.web.exceptions import ContentTooLarge
 from rn_forge.web.problem import BLANK_TYPE, PROBLEM_MEDIA_TYPE, CONTENT_TOO_LARGE
-from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id, request_log_fields
+from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 
 __all__ = [
     "ASGIApp",
-    "AccessLogMiddleware",
     "BodySizeLimitMiddleware",
-    "Log",
     "Message",
     "Receive",
     "Scope",
     "Send",
 ]
-
-type Log = Callable[[str, Mapping[str, Any]], None]
-"""A sink for a structured log event: an event name and its fields."""
 
 type Scope = MutableMapping[str, Any]
 """The ASGI connection scope."""
@@ -62,61 +56,6 @@ def _get_header(headers: object, name: str) -> str | None:
             if isinstance(value, bytes):
                 return value.decode("latin-1")
     return None
-
-
-class AccessLogMiddleware:
-    """Time each request and emit one ``request.complete`` access-log event.
-
-    This middleware carries no header handling: tracing is W3C Trace Context,
-    propagated and read through OpenTelemetry (:mod:`rn_forge.web.tracing`),
-    not a house header this middleware would own.
-
-    Args:
-        app: The downstream ASGI application.
-        log: A sink for the ``request.complete`` event
-            (:func:`~rn_forge.web.tracing.request_log_fields`), emitted once
-            per request. Required: a caller with no sink does not install
-            this middleware.
-
-    Example::
-
-        app = AccessLogMiddleware(app, log=log)
-
-    Non-``http`` scopes (``websocket``, ``lifespan``) pass straight through
-    untouched, before anything else happens.
-    """
-
-    def __init__(self, app: ASGIApp, *, log: Log) -> None:
-        self.app = app
-        self.log = log
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        """Run the middleware for one connection."""
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
-
-        started = time.perf_counter()
-        status: list[int] = []
-
-        async def send_wrapper(message: Message) -> None:
-            if message.get("type") == "http.response.start":
-                raw_status = message.get("status")
-                if isinstance(raw_status, int):
-                    status.append(raw_status)
-            await send(message)
-
-        await self.app(scope, receive, send_wrapper)
-
-        self.log(
-            "request.complete",
-            request_log_fields(
-                method=str(scope.get("method", "")),
-                path=str(scope.get("path", "")),
-                status=status[-1] if status else 0,
-                duration_ms=round((time.perf_counter() - started) * 1000, 3),
-            ),
-        )
 
 
 class BodySizeLimitMiddleware:

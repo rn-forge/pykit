@@ -18,11 +18,10 @@ approved and the DRF router probed, 2026-09-22; three open questions are
 listed at its end. **R8 (AIP adoption where no RFC applies) planned
 2026-09-22.** **R9 (SQLAlchemy and `tablib` across both stacks) is open for
 ideation.** **R10 (a simplification pass after R3: delete what the adopted
-OpenTelemetry instrumentation and Starlette already provide) decided
-2026-09-23 and ready to hand off; it runs next, then R5's evaluations, then
-R4.** Full validation
-block below is green except the `rn-forge-web` strict docs build (R10.1); see "What is open" on the [status board](README.md) for
-detail.
+OpenTelemetry instrumentation and Starlette already provide) implemented
+2026-09-23, except R10.3, which stopped at its probe; R5's evaluations run
+next, then R4.** Full validation block below is green, including the strict
+docs builds; see "What is open" on the [status board](README.md) for detail.
 
 ## The premise
 
@@ -636,8 +635,10 @@ pydantic models for correctness — `ProblemDetail` is still the
 apply, and every validation in "R3 order and validation" below passed
 (`uv run pytest`, `ruff check`, `ruff format --check`, `pyright`,
 `lint-imports`, all green at the repo root; all three drivers pass the four
-`tracing.*` cases with no skips). Two deviations from the acceptance checks as
-literally written:
+`tracing.*` cases with no skips). That list did not include
+`mkdocs build --strict`, which the block also requires and which failed in
+`rn-forge-web` (a stale `api/context.md`) until R10.1 fixed it on 2026-09-23.
+Two deviations from the acceptance checks as literally written:
 
 - `rg -i "correlation" packages --type py` is not fully empty:
   `rn_forge.web.conformance.cases` and its regression test
@@ -711,8 +712,8 @@ This replaces `api-conventions.md` §1, "Correlation", which becomes "Tracing".
 | --- | --- | --- |
 | Inbound | `traceparent` and `tracestate` continue the caller's trace. A malformed value starts a new trace; it is never an error | W3C Trace Context |
 | Outbound | Every response carries `traceresponse` when a `TracerProvider` is configured | Trace Context Level 2 |
-| Problem body | `trace_id` extension member: the current trace id, 32 lowercase hex characters, or `null` when no span is recording. It replaces `correlation_id`. It stays snake_case, the documented exception in §2, because it matches the log field | RFC 9457 §3.2; OTel log data model |
-| Access log | The `request.complete` event carries `trace_id` and `span_id` instead of `correlation_id` | OTel log data model |
+| Problem body (member renamed `traceId` by R10.5) | `trace_id` extension member: the current trace id, 32 lowercase hex characters, or `null` when no span is recording. It replaces `correlation_id`. It stays snake_case, the documented exception in §2, because it matches the log field | RFC 9457 §3.2; OTel log data model |
+| Access log (deleted by R10.2) | The `request.complete` event carries `trace_id` and `span_id` instead of `correlation_id` | OTel log data model |
 | `X-Correlation-ID` | Not read and not sent | none; removed |
 | CORS | `EXPOSED_HEADERS` drops the correlation header and does **not** list `traceresponse`, because the propagator exposes it itself (probe) | Fetch standard |
 
@@ -906,7 +907,7 @@ Acceptance, in addition to the block:
 - `uv sync --extra drf` in `rn-forge-django` does not install
   `opentelemetry-instrumentation-django`.
 
-### R4: one model per stack — decided 2026-09-22, runs after R5's evaluations
+### R4: one model per stack — decided 2026-09-22, next to implement (R5 done)
 
 **Sequencing (owner, 2026-09-23, R10):** R5's four evaluations run first; R4
 then covers only the types no library takes, in the shape below.
@@ -1033,7 +1034,7 @@ The plan's block, plus:
 - `pyright` strict passes over the four models, including `Page[T]`'s
   PEP 695 generic.
 
-### R5: re-run the withdrawn library evaluations
+### R5: re-run the withdrawn library evaluations — done 2026-09-23, all four exempt
 
 Re-run every evaluation rejected on wire-ownership grounds. A library is
 adopted when it implements the standard, can be configured to
@@ -1050,7 +1051,39 @@ the module docstring, as principle 1 requires.
 **Reordered by R10 (owner, 2026-09-23):** the four evaluations run after R10
 and **before** R4, each as a probe with a written verdict here, judged by the
 criteria above plus rule 6. A candidate must fit two things: `ProblemDetail` and `Page` as `rn-forge-web`
-pydantic models (R4), and the `trace_id` problem extension (R3).
+pydantic models (R4), and the `traceId` problem extension (R3, renamed by R10.5).
+
+#### R5 verdicts (probed 2026-09-23, throwaway venvs, repo untouched)
+
+Every candidate is **exempt**: none can be configured to `api-conventions.md`
+without replacing most of its own machinery, so adopting one would add a
+dependency and delete no kit code (rule 6).
+
+| Candidate | Verdict | Evidence |
+| --- | --- | --- |
+| `fastapi-problem` 0.12.1 (released 2026-02-10; sits on `starlette-problem` and `rfc9457`) | **Exempt** | Emits no `instance`. The default 500 `detail` was `str(exc)` (avoidable only through `unhandled_wrappers`). `type` and `title` are the library's own, not `about:blank` and the status phrase. 422 `errors` are raw pydantic dicts that echo the input, not `{pointer, detail}`. No exception-to-status registry, no `Retry-After` protocol. `traceId` works only through a post hook that rebuilds the response. Its `Problem` is an `Exception` subclass, not a pydantic model, so it cannot be R4's `ProblemDetail`. Other candidates (`fastapi-problem-details` 0.1.5, `fastapi-rfc9457` 0.2.1, `fastapi-faults` 0.1.0) were judged on release metadata only, not probed |
+| `fastapi-pagination` 0.16.0 (released 2026-09-16) | **Exempt** | In-memory `paginate()` raises `ValueError` for cursor params; cursor works only through a DB extension or a hand-built `CursorPage`. Stock `CursorPage`, camelCased, returns `{items, total, currentPage, currentPageBackwards, previousPage, nextPage}`: no `nextPageToken`, `total` required (the kit's `totalSize` is off by default). A custom `AbstractPage` and params class reach `{items, nextPageToken}`, but that discards the library's model, and clamping stays the kit's. Stock `CursorParams` uses `le=100` (a 422, which the conventions forbid). `pageToken=%%%` returned 200 with the first page, not 400; its 400 for hard base64 errors is not problem+json. Its SQLAlchemy keyset extension is not evaluated here; revisit under R8 item 5 |
+| `drf-standardized-errors` 0.16.0 (released 2026-04-29; runs on the locked Django 6.0.7 and DRF 3.17.1) | **Exempt** | No RFC 9457: `application/json`, `{type, errors[{code, detail, attr}]}`, `type` one of three fixed words, no `title`, `status` or `instance`. No `traceId`, members not camelCase, `errors` not RFC 6901 pointers, `RequestDataTooBig` gives 500 not 413. Meeting the conventions needs a custom `ExceptionHandler`, `ErrorResponseSerializer` and renderer, which replaces the library's output. Its 5xx detail is generic, and status codes follow DRF |
+| `django-health-check` 4.6.1 (released 2026-09-18; Django 5.2 to 6.1) | **Exempt** | Follows no published contract (`OK` or an error string, not `pass`/`warn`/`fail`). A failing check returns **500**, hard-coded, not 503; a warning also returns 500, so "warn never changes status" fails. No required versus optional, so `health.optional-failure-is-200-degraded` cannot be met. Flat body keyed by `repr(check)`, no `status`. No timeout (a 5 s check took 5 s; the kit's default is 2 s). No liveness endpoint. Default checks include database, cache, DNS, mail and storage. HTML by default. The shared web health model must stay for FastAPI regardless |
+
+**Consequences.**
+
+- R4 proceeds as decided: `ProblemDetail`, `Page`, `CheckResult` and
+  `HealthReport` become pydantic models in `rn-forge-web`. Nothing in R5 changes
+  its scope.
+- No dependency was added and no kit code changed.
+- The exemption text still has to be written into the module docstrings, as
+  principle 1 requires: `rn_forge.web.problem` (fastapi-problem),
+  `rn_forge.web.pagination` (fastapi-pagination), the Django DRF problem
+  handler (drf-standardized-errors) and `rn_forge.django.views`
+  (django-health-check). Root `CLAUDE.md` keeps design justification out of
+  docstrings, so each is one sentence naming the library, the date and the
+  blocking fact, with the detail left here.
+- **Revisit triggers.** `fastapi-problem`: when it emits `instance`, defaults to
+  a generic 5xx `detail` and offers a status registry. `fastapi-pagination`:
+  when its page model is configurable to `{items, nextPageToken}` without
+  `total`. `drf-standardized-errors`: when it ships an RFC 9457 mode.
+  `django-health-check`: when failure status and JSON body are configurable.
 
 ### R6: `rn-forge-django` scope, **gated**
 
@@ -1399,7 +1432,7 @@ and names AIP-151.
 together. 132 is the one code item. 151's dataclass waits for its first
 consumer. 148 and 164 wait on the owner.
 
-### R10: simplification pass after R3 — decided 2026-09-23, ready to hand off
+### R10: simplification pass after R3 — implemented 2026-09-23 (R10.3 stopped at its probe)
 
 **Why this section exists.** Reviewing R3's `asgi.py`, `problem.py` and
 `tracing.py`, the owner asked why request timing and W3C trace handling, which
@@ -1408,7 +1441,8 @@ the kit rather than taken from a library. The question is the premise's own
 test, applied to R2.5 and R3 together: the kit is plumbing that wires the
 standard way of doing things, and a developer should only write functional
 logic. This section is the answer, the owner's decisions, and the handoff
-spec. Nothing in it is implemented yet.
+spec. R10.1, R10.2, R10.4 and R10.5 are implemented; R10.3 stopped at its
+probe, see "R10 status" below.
 
 **Short answer.** R3 did adopt the library: `traceparent`/`tracestate`
 parsing, validation, the new-trace fallback, `traceresponse`, and the span
@@ -1431,10 +1465,10 @@ behaviour, or dropped with the reason recorded in the plan.
 | # | Kit code | Verdict | Evidence, read 2026-09-23 |
 | --- | --- | --- | --- |
 | 1 | `AccessLogMiddleware` (web ASGI and `rn_forge.django.middleware`), `request_log_fields`, `api-conventions.md` §17, `AppConfig.log`'s access-log role (R2.5 B9) | **Delete** (R10.2) | The OTel server span that R3 installs already carries `http.request.method`, `url.path`, `http.response.status_code` and the request duration, in exactly B9's names, and `opentelemetry-instrumentation-asgi` 0.65b0 (locked) records the `http.server.request.duration` histogram beside it. uvicorn and gunicorn write an access log by default for the no-SDK case. B9 was written before R3 chose option a; with option a its requirement is met by the instrumentation itself |
-| 2 | `BodySizeLimitMiddleware`, `_send_413` and `_get_header` in `rn_forge.web.asgi` (R2.5 B7) | **Delete; adopt Starlette's** (R10.3) | Starlette 1.6.0 (locked) ships `starlette.middleware.body_limit.RequestBodyLimitMiddleware` with B7's semantics: a `Content-Length` pre-check plus counted streaming, 413 on breach. It raises an `HTTPException(413)` out of `receive()`, which the kit's `StarletteHTTPException` handler renders as a problem, subject to the probe in R10.3. Django keeps `DATA_UPLOAD_MAX_MEMORY_SIZE` → `RequestDataTooBig` → `CONTENT_TOO_LARGE`, as today |
+| 2 | `BodySizeLimitMiddleware`, `_send_413` and `_get_header` in `rn_forge.web.asgi` (R2.5 B7) | **Keep** (R10.3 rejected) | Starlette 1.6.0 (locked) ships `starlette.middleware.body_limit.RequestBodyLimitMiddleware` with B7's semantics: a `Content-Length` pre-check plus counted streaming, 413 on breach. It raises an `HTTPException(413)` out of `receive()`, but for a declared oversized `Content-Length` its `send` wrapper discards the app's response and sends a plain-text 413, so the kit's problem body is lost (**the probe failed, 2026-09-23; the kit's middleware stays**, see "R10 status"). Rule 6 does not apply: the library enforces the limit but not the kit's wire format. Django keeps `DATA_UPLOAD_MAX_MEMORY_SIZE` → `RequestDataTooBig` → `CONTENT_TOO_LARGE`, as today |
 | 3 | `trace_log_processor` in `rn_forge.web.tracing` (R3 web item 3) | **Move to commons** (R10.4) | It is not an HTTP concern: any process under a span wants its log lines to carry the ids. `rn-forge-commons` already owns OTel log correlation for the stdlib path (`enable_otel_correlation`, the `otel` extra) and the structlog integration (`rn_forge.commons.logging.structlog`). No maintained library packages this processor (structlog's docs give it as a snippet), so hand-rolling is right, but in the package whose subject is logging |
 | 4 | `trace_id` problem extension, the documented snake_case exception to §7 | **Rename to `traceId`** (R10.5; decision 2 below) | ASP.NET Core's problem-details factory emits `traceId`; §7 then has no exception |
-| 5 | `rn_forge.web.security` (`secure` wrapper, `SecurityHeadersMiddleware`) | **Keep** | The library is adopted; the middleware is the setdefault merge that `secure`'s own ASGI helper does not do. After R10.2 and R10.3 it is the only ASGI middleware left in web (decision 3 below) |
+| 5 | `rn_forge.web.security` (`secure` wrapper, `SecurityHeadersMiddleware`) | **Keep** | The library is adopted; the middleware is the setdefault merge that `secure`'s own ASGI helper does not do. After R10.2 it is one of two ASGI middlewares left in web, beside `BodySizeLimitMiddleware` |
 | 6 | `FastApiApp` and `rn_forge.django.tracing.instrument()` setting `TraceResponsePropagator` as process-global state | **Keep, flagged** | `traceresponse` is Trace Context Level 2 (Candidate Recommendation) and OTel marks the propagator experimental. Revisit when OTel graduates or removes it; if removed, `AppConfig.tracing` keeps instrumenting and the `traceresponse` expectations move to `expect_absent_headers` |
 | 7 | `current_trace_id`, `current_span_id`, `TRACE_ID_KEY`, `render_problem`'s use of them | **Keep** | The glue between the adopted instrumentation and the problem body; no library offers it, because the problem body is the kit's rendering |
 | 8 | R3's documentation | **Defects** (R10.1) | See "R3 docs defects". R3's "all validation green" is not true of the plan's validation block: `mkdocs build --strict` fails in `rn-forge-web` |
@@ -1455,6 +1489,70 @@ behaviour, or dropped with the reason recorded in the plan.
   teaches the caller to add a member `render_problem` already adds; the
   example should call `render_problem`, or drop the extension.
 
+#### R10 status (2026-09-23)
+
+- **R10.1: done, 2026-09-23.** `api/context.md` replaced by `api/tracing.md`
+  and the nav entry fixed; the README, root README, quickstart, adoption index
+  and checklist wording corrected. `mkdocs build --strict` passes in
+  `rn-forge-web`, `rn-forge-fastapi` and `rn-forge-django`. The R3 section's
+  validation claim is corrected above. Deviation: the plan's defect list did not
+  name `docs/adoption/index.md`, `docs/guides/quickstart.md`'s "house
+  correlation header" line or the checklist's `X-Correlation-ID` grep item; all
+  three matched the R10 validation's `rg -i "correlation"` and were reworded.
+  The web README's module count is now thirteen, not eleven.
+- **R10.2: done, 2026-09-23.** Removed `AccessLogMiddleware` and `Log` from
+  `rn_forge.web.asgi`, `request_log_fields` from `rn_forge.web.tracing`, and
+  their facade entries and tests; dropped the FastAPI install and test and
+  narrowed `AppConfig.log`'s docstring to the server-error event; deleted
+  `rn_forge/django/middleware.py`, its test, `docs/api/middleware.md` and the
+  nav entry; removed api-conventions §17. Deviations, none affecting the spec's
+  intent: `.github/scripts/check_django_extra.py` listed
+  `rn_forge.django.middleware` in its base import check, so it was dropped
+  there; `docs/index.md` and `docs/adoption/model-conventions.md` in web and the
+  Django README also named the access log and were corrected; the web
+  checklist had no access-log item to remove. Because R10.3 did not land,
+  `tests/test_asgi.py` was rewritten to cover the retained
+  `BodySizeLimitMiddleware` (four tests) instead of being deleted.
+- **R10.3: stopped at the probe, 2026-09-23. Nothing landed.** Probe: Starlette
+  1.6.0's `RequestBodyLimitMiddleware` under `FastApiApp`'s handlers, against a
+  route with a pydantic body, limit 200 bytes.
+  - (a) A declared oversized `Content-Length` (a real 261-byte body, header
+    matching): **fails.** The response is Starlette's plain-text `413 Content
+    Too Large` (`text/plain`), not the kit's RFC 9457 problem.
+    Corrected mechanism: `receive_with_limit` does raise
+    `_RequestBodyTooLarge` (an `HTTPException` subclass) and the kit's handler
+    renders a problem, but `send_with_limit` then sees `http.response.start`
+    with the declared length over the limit, discards the app's response and
+    sends a `PlainTextResponse`. The kit cannot intercept that.
+  - (b) A streamed body with no `Content-Length` (10-byte limit): produced the
+    RFC 9457 413 through `on_http_exception`. The "known risk" of FastAPI
+    wrapping the exception in a 400 did not occur.
+  - (c) Any route, including ones that never read a body, hits the plain-text
+    413 when the declared `Content-Length` is over the limit, because that
+    check runs before the application. A `GET` with `Content-Length: 0`
+    passed.
+  Per the stop condition, the kit's `BodySizeLimitMiddleware`, `_send_413`,
+  `_get_header` and `rn_forge.web.asgi` stay, as do the ASGI type aliases in
+  the web facade, the 413 `detail` and Django's `RequestDataTooBig` detail. No
+  workaround was written. R10 decision 3 (remove `asgi.py`) depends on this
+  phase and is deferred with it; **Decision 3 is withdrawn**: `asgi.py` still holds the middleware. Revisit
+  only if Starlette lets the declared-length rejection go through the app's
+  exception handlers, or offers a hook for the response.
+- **R10.4: done, 2026-09-23.** `rn_forge.commons.logging.structlog` gains
+  `otel_processor` (in `__all__`, installed in `_configure_once` before
+  `_render_event`); web's `trace_log_processor`, its facade entry and tests are
+  deleted; web's quickstart and checklist name the commons processor. Tests
+  cover a valid span, no span, an unimportable `opentelemetry`, and the
+  configured chain. Deviation: `SPAN_ID_KEY` (unused after this step) was
+  deleted in R10.5 as specified, so its docstring was reworded in between.
+- **R10.5: done, 2026-09-23.** `TRACE_ID_KEY = "traceId"`; `SPAN_ID_KEY` and
+  its facade entry deleted; the `problem.server_error` log context keeps the
+  literal `"trace_id"`; `VARIABLE_MEMBERS` and the conformance table use
+  `traceId`; api-conventions §1 names `traceId` and the casing section drops
+  its exception (it is section 8 in the file, not 7, and now lists three
+  exemptions); the drivers' `CASING_EXEMPT` no longer names `trace_id`. All
+  three drivers pass every case with no skips.
+
 #### R10 decisions (owner, 2026-09-23)
 
 1. **Rule 6: adopted.** See above.
@@ -1470,7 +1568,7 @@ behaviour, or dropped with the reason recorded in the plan.
    widely deployed precedent (ASP.NET Core). The log field stays `trace_id`:
    logs and the wire are different surfaces, each following its own standard.
    It is a wire change, and cheap only before the release tags.
-3. **`rn_forge.web.asgi`: remove it.** *Checked for a fluent-surface role,
+3. **`rn_forge.web.asgi`: withdrawn (R10.3 rejected); it stays.** *Original reasoning, now moot:* *Checked for a fluent-surface role,
    2026-09-23:* neither framework package imports its type aliases.
    `rn-forge-fastapi` uses Starlette's own ASGI types and never touches web's,
    and `rn-forge-django` has no ASGI code. The only importers are
@@ -1497,7 +1595,7 @@ behaviour, or dropped with the reason recorded in the plan.
 #### R10 phases
 
 Ordered, each with its tests, docs and a green validation run before the
-next. R10.1 to R10.4 are wire-neutral except the 413 `detail` (R10.3); R10.5
+next. R10.1 to R10.4 are wire-neutral; R10.5
 is a wire change. All five land before R5's evaluations and R4.
 
 **R10.1 Fix the R3 docs defects.**
@@ -1539,6 +1637,8 @@ is a wire change. All five land before R5's evaluations and R4.
 - No conformance case changes: §17 never had one.
 
 **R10.3 Adopt Starlette's body limit.**
+
+**Result, 2026-09-23: stopped at the probe; nothing in this phase landed.** See "R10 status".
 
 - *Probe first, before editing.* Under `FastApiApp` with Starlette's
   `RequestBodyLimitMiddleware` in place of the kit's, against a route with a
@@ -1678,7 +1778,7 @@ The plan's validation block, plus:
   finds only `api-conventions.md` §1's "`X-Correlation-ID` is not read" line
   and commons' `enable_otel_correlation`;
 - all three drivers pass every conformance case with no skips, including the
-  new 413 `detail` and `traceId`;
+  `traceId`;
 - `uv run pytest packages/rn-forge-commons` passes, including R10.4's
   unimportable-`opentelemetry` test.
 

@@ -327,12 +327,12 @@ def test_render_problem_carries_the_current_trace_id():
             default_registry(), DomainConflict("taken"), instance="/x"
         )
     assert_that(rendered.status).is_equal_to(409)
-    assert_that(rendered.body["trace_id"]).is_equal_to(trace_id)
+    assert_that(rendered.body["traceId"]).is_equal_to(trace_id)
 
 
 def test_render_problem_carries_null_outside_a_span():
     rendered = render_problem(default_registry(), DomainConflict("x"), instance="/")
-    assert_that(rendered.body["trace_id"]).is_none()
+    assert_that(rendered.body["traceId"]).is_none()
 
 
 def test_render_problem_masks_a_401_detail_and_adds_a_challenge():

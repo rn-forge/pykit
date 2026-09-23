@@ -7,7 +7,7 @@ imports a web framework; the framework-specific glue is one page per stack in
 
 ## 1. Tracing: W3C Trace Context through OpenTelemetry
 
-There is no house correlation header. `traceparent` in, `traceresponse` out,
+There is no house request-id header. `traceparent` in, `traceresponse` out,
 through OpenTelemetry's own ASGI/WSGI instrumentation (or
 `opentelemetry-instrument`) — `rn_forge.web` reads the current span, and never
 configures a `TracerProvider` or an exporter itself:
@@ -19,29 +19,21 @@ current_trace_id()   # 32 lowercase hex chars, or None with no span recording
 current_span_id()    # 16 lowercase hex chars, or None
 ```
 
-For structured logs, add the processor — it needs no structlog import here:
-
-```python
-import structlog
-from rn_forge.web import trace_log_processor
-
-structlog.configure(processors=[trace_log_processor, ...])
-```
+For structured logs, `rn_forge.commons.logging.structlog.otel_processor` adds `trace_id` and
+`span_id` to every event. `StructLogger` installs it itself; in a `structlog` chain of your own,
+list it as a processor.
 
 ## 2. Every error as an RFC 9457 problem
 
 ```python
-from rn_forge.web import current_trace_id, default_registry
+from rn_forge.web import default_registry, render_problem
 
 registry = default_registry()          # a fresh instance; never a shared singleton
 
 def to_response(exc, path):
-    problem = registry.build(
-        exc,
-        instance=path,
-        extensions={"trace_id": current_trace_id()},
-    )
-    return problem.status, problem.as_body()   # Content-Type: application/problem+json
+    rendered = render_problem(registry, exc, instance=path)
+    # Content-Type: application/problem+json; the body carries the current trace id
+    return rendered.status, rendered.body, rendered.headers
 ```
 
 Register your own domain exceptions once, and subclasses resolve for free:

@@ -57,7 +57,7 @@ DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"trace_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
+CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
 
 class AnyToken:
