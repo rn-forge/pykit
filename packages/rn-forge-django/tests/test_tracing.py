@@ -22,10 +22,11 @@ def test_instrument_sets_a_response_propagator_when_none_is_set() -> None:
 
 
 def test_instrument_leaves_an_existing_response_propagator_alone() -> None:
+    previous = get_global_response_propagator()
     sentinel = object()
     set_global_response_propagator(sentinel)
     try:
         instrument()
         assert get_global_response_propagator() is sentinel
     finally:
-        set_global_response_propagator(None)
+        set_global_response_propagator(previous)

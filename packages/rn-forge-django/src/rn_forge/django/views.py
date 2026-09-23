@@ -1,4 +1,9 @@
-"""Standalone Django views that can be included directly from URLconf."""
+"""Standalone Django views that can be included directly from URLconf.
+
+No health-check library is adopted: ``django-health-check`` 4.6.1 (checked 2026-09-23) answers a
+failing or warning check with a hard-coded 500, has no required-versus-optional distinction and no
+timeout.
+"""
 
 from __future__ import annotations
 

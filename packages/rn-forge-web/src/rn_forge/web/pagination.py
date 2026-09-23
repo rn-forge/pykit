@@ -2,6 +2,10 @@
 
 Page sizes are clamped to the configured cap. Responses use ``items``,
 ``nextPageToken``, and the optional ``totalSize`` field.
+
+No pagination library is adopted: ``fastapi-pagination`` 0.16.0 (checked 2026-09-23) cannot produce
+``{items, nextPageToken}`` without ``total`` from its stock cursor page, and its ``CursorParams``
+reject an oversized page size with a 422 where AIP-158 clamps.
 """
 
 from __future__ import annotations

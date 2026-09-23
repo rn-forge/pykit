@@ -1,4 +1,9 @@
-"""DRF exception handlers for legacy JSON and RFC 9457 responses."""
+"""DRF exception handlers for legacy JSON and RFC 9457 responses.
+
+No error library is adopted: ``drf-standardized-errors`` 0.16.0 (checked 2026-09-23) has no RFC 9457
+mode, so its ``application/json`` body lacks ``title``, ``status``, ``instance`` and pointer-based
+``errors``.
+"""
 
 from __future__ import annotations
 

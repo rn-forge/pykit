@@ -211,13 +211,13 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   with a plain-text 413 that replaces the app's response, so the kit's
   problem body is lost. The kit's `BodySizeLimitMiddleware` and
   `rn_forge.web.asgi` stay. The plan's "R10 status" section has the detail.
-- **Next session, in order:** (1) write the four R5 exemption texts into the
-  module docstrings (`rn_forge.web.problem`, `rn_forge.web.pagination`, the DRF
-  problem handler, `rn_forge.django.views`), the only R5 item left; (2) find
-  the order-dependent flake in Django's conformance cases (`tracing.*` and
-  `cors.exposed-headers-are-comma-joined`, roughly one full run in ten, from the
-  once-only global OpenTelemetry response propagator, unrelated to R4); (3) R7
-  (ready); R6 and R9 need the owner. Releases still follow kiln's work.
+- **The conformance flake is fixed (2026-09-23).** `tracing.*` and
+  `cors.exposed-headers-are-comma-joined` failed in roughly one full run in ten,
+  on Django and on web's ASGI example, because
+  `rn-forge-django/tests/test_tracing.py` reset the process-global response
+  propagator to `None` instead of restoring it. Seed `1707347094` reproduced it;
+  25 full runs pass after the fix.
+- **Next session, in order:** R7 (ready); R6 and R9 need the owner. Releases still follow kiln's work.
 - **R4** is implemented and complete (2026-09-23), uncommitted; nothing left
   in its scope.
   `ProblemDetail`, `Page`, `CheckResult` and `HealthReport`
@@ -230,8 +230,7 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   `fastapi-pagination`, `drf-standardized-errors` and `django-health-check`
   each fail `api-conventions.md` without replacing their own machinery, so no
   dependency was added and no kit code deleted. Verdicts and revisit triggers
-  are in the plan's R5 section. The module-docstring exemptions are still to
-  be written.
+  are in the plan's R5 section. The module-docstring exemptions are written.
 - **R7 (planned 2026-09-22)** replaces the ~2,200-line `drf/views/` transfer
   and bulk code with `django-import-export` `Resource`s over `tablib`, gives
   FastAPI a thin equivalent (`tablib` + pydantic, persistence left to the

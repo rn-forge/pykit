@@ -1073,7 +1073,7 @@ dependency and delete no kit code (rule 6).
   `HealthReport` become pydantic models in `rn-forge-web`. Nothing in R5 changes
   its scope.
 - No dependency was added and no kit code changed.
-- The exemption text still has to be written into the module docstrings, as
+- The exemption text is written into the module docstrings (2026-09-23), as
   principle 1 requires: `rn_forge.web.problem` (fastapi-problem),
   `rn_forge.web.pagination` (fastapi-pagination), the Django DRF problem
   handler (drf-standardized-errors) and `rn_forge.django.views`

@@ -1,4 +1,9 @@
-"""RFC 9457 problem details and exception-to-problem mapping."""
+"""RFC 9457 problem details and exception-to-problem mapping.
+
+No RFC 9457 library is adopted: ``fastapi-problem`` 0.12.1 (checked 2026-09-23) emits no ``instance``,
+sets its own ``type`` and ``title`` instead of ``about:blank`` and the status phrase, and has no
+exception-to-status registry.
+"""
 
 from __future__ import annotations
 
