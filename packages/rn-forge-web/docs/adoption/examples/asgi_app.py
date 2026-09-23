@@ -17,13 +17,16 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qs
 
 from rn_forge.web import (
-    AUTH_FAILED_DETAIL,
+    EXPOSED_HEADERS,
     PROBLEM_MEDIA_TYPE,
+    REQUIRED_FIELD_DETAIL,
     AuthenticationFailed,
+    BodySizeLimitMiddleware,
     CheckResult,
     CorrelationIdMiddleware,
     DomainConflict,
@@ -38,16 +41,23 @@ from rn_forge.web import (
     Scope,
     ScopeAuthorizer,
     Send,
-    challenge_header,
+    ServiceUnavailable,
+    TooManyRequests,
     check_precondition,
     clamp_page_size,
     decode_cursor,
     default_registry,
+    deprecation_headers,
     encode_cursor,
-    errors_from_field_map,
-    get_correlation_id,
+    field_error,
+    is_not_modified,
+    liveness_body,
+    render_problem,
     run_checks,
+    run_idempotent,
 )
+from rn_forge.web.openapi import LINKSET_MEDIA_TYPE, api_catalog_body
+from rn_forge.web.security import SecurityHeadersMiddleware
 
 # --- application state, all of it a fixture -------------------------------
 
@@ -65,6 +75,9 @@ ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
 ITEM_VERSION = 7
 PAGE_DEFAULT, PAGE_CAP = 2, 2
 REALM = "conformance"
+DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
+SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
+DEPRECATION_LINK = "https://example.com/deprecated"
 
 
 # --- the handlers ---------------------------------------------------------
@@ -103,6 +116,14 @@ def patch_item(request: Request) -> Response:
     )
 
 
+def get_item(request: Request) -> Response:
+    """Conditional GET: a matching `If-None-Match` short-circuits to 304."""
+    etag = CODEC.format(entity_id="1", version=ITEM_VERSION)
+    if is_not_modified(request.header("If-None-Match"), etag):
+        return Response(304, {}, headers={"ETag": etag})
+    return Response(200, {"id": "1", "version": ITEM_VERSION}, headers={"ETag": etag})
+
+
 def list_items(request: Request) -> Response:
     """AIP-158 pagination. Note what is *not* here: any rejection of pageSize."""
     raw_size = request.query("pageSize")
@@ -131,23 +152,21 @@ def list_items(request: Request) -> Response:
 
 
 def create_charge(request: Request) -> Response:
-    """An idempotent unsafe endpoint."""
-    key = request.header("Idempotency-Key")
-    if key is None:
-        raise ValueError("Idempotency-Key is required")
-
+    """An idempotent unsafe endpoint, over `run_idempotent`."""
     body = request.json()
-    stored = IDEMPOTENCY.record_or_replay(  # raises IdempotencyKeyReuse → 409
-        scope="charges", key=key, request_body=body
-    )
-    if stored is not None:
-        return Response(stored.status, {**stored.body, "replayed": True})
 
-    payload = {"charged": body["amount"], "replayed": False}
-    IDEMPOTENCY.complete(
-        scope="charges", key=key, status=201, response_body={"charged": body["amount"]}
+    def execute() -> tuple[int, dict[str, Any]]:
+        return 201, {"charged": body["amount"]}
+
+    result = run_idempotent(
+        IDEMPOTENCY,
+        scope="charges",
+        key=request.header("Idempotency-Key"),
+        method="POST",
+        body=body,
+        execute=execute,
     )
-    return Response(201, payload)
+    return Response(result.status, {**result.body, "replayed": result.replayed})
 
 
 async def readyz(request: Request) -> Response:
@@ -166,6 +185,21 @@ async def readyz(request: Request) -> Response:
     return Response(report.http_status, report.as_body())
 
 
+def livez(request: Request) -> Response:
+    """Liveness. Touches no dependency."""
+    return Response(200, liveness_body())
+
+
+def throttled(request: Request) -> Response:
+    """RFC 6585 §4: 429 with `Retry-After`."""
+    raise TooManyRequests("Too many requests", retry_after=30)
+
+
+def unavailable(request: Request) -> Response:
+    """RFC 9110 §15.6.4: 503 with `Retry-After`."""
+    raise ServiceUnavailable("Service unavailable", retry_after=5)
+
+
 def private(request: Request) -> Response:
     """The 401/403 boundary — the two failures must not look alike."""
     header = request.header("Authorization")
@@ -182,8 +216,43 @@ def private(request: Request) -> Response:
 
 
 def echo(request: Request) -> Response:
-    """Nothing but the correlation contract, which the middleware already served."""
-    return Response(200, {})
+    """The correlation contract, and (when CORS-fetched) the kit's exposed headers.
+
+    A real CORS policy is a framework binding's job (`rn_forge.fastapi.cors`,
+    `rn_forge.django.cors`); this is the minimum needed to prove the contract
+    on bare ASGI, not a reusable middleware.
+    """
+    headers: dict[str, str] = {}
+    origin = request.header("Origin")
+    if origin is not None:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Expose-Headers"] = ", ".join(EXPOSED_HEADERS)
+    return Response(200, {}, headers=headers)
+
+
+def legacy(request: Request) -> Response:
+    """A deprecated endpoint: RFC 9745/RFC 8594 headers on every response."""
+    return Response(
+        200,
+        {"legacy": True},
+        headers=deprecation_headers(
+            deprecated_at=DEPRECATED_AT, sunset=SUNSET, link=DEPRECATION_LINK
+        ),
+    )
+
+
+def api_catalog(request: Request) -> Response:
+    """RFC 9727's `/.well-known/api-catalog`."""
+    return Response(
+        200,
+        api_catalog_body(
+            anchor="/",
+            service_desc="/openapi.json",
+            service_doc="/docs",
+            status="/readyz",
+        ),
+        media_type=LINKSET_MEDIA_TYPE,
+    )
 
 
 ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
@@ -191,11 +260,17 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/conflict"): conflict,
     ("POST", "/conformance/validate"): validate,
     ("PATCH", "/conformance/items/1"): patch_item,
+    ("GET", "/conformance/items/1"): get_item,
     ("GET", "/conformance/items"): list_items,
     ("POST", "/conformance/charges"): create_charge,
     ("GET", "/conformance/readyz"): readyz,
+    ("GET", "/conformance/livez"): livez,
+    ("GET", "/conformance/throttled"): throttled,
+    ("GET", "/conformance/unavailable"): unavailable,
     ("GET", "/conformance/private"): private,
     ("GET", "/conformance/echo"): echo,
+    ("GET", "/conformance/legacy"): legacy,
+    ("GET", "/.well-known/api-catalog"): api_catalog,
 }
 
 
@@ -275,46 +350,40 @@ async def application(scope: Scope, receive: Receive, send: Send) -> None:
 
 def _problem_response(exc: BaseException, request: Request) -> Response:
     """The single place an exception becomes a response. There is no other."""
-    row = REGISTRY.problem_for(exc)
-    problem = REGISTRY.build(
+    rendered = render_problem(
+        REGISTRY,
         exc,
         instance=request.path,
-        # A 401 says only that authentication failed. Expired, bad signature
-        # and unknown key must be indistinguishable on the wire.
-        detail=AUTH_FAILED_DETAIL if row.status == 401 else None,
         extensions=_error_extensions(exc),
-    )
-    # 401 carries a challenge; 403 must not. See the API conventions, §7.
-    headers = (
-        {"WWW-Authenticate": challenge_header(realm=REALM)}
-        if problem.status == 401
-        else {}
+        realm=REALM,
     )
     return Response(
-        problem.status,
-        problem.as_body(),
-        headers=headers,
+        rendered.status,
+        rendered.body,
+        headers=dict(rendered.headers),
         media_type=PROBLEM_MEDIA_TYPE,
     )
 
 
 def _error_extensions(exc: BaseException) -> dict[str, Any]:
-    """Correlation always; field errors when there are any."""
-    extensions: dict[str, Any] = {"correlation_id": get_correlation_id()}
+    """Field errors, when there are any."""
     if isinstance(exc, RequestValidationError):
-        extensions["errors"] = errors_from_field_map(
-            {"name": ["This field is required."]}
-        )
-    return extensions
+        return {"errors": [field_error(("name",), REQUIRED_FIELD_DETAIL)]}
+    return {}
 
 
 async def _send(send: Send, response: Response) -> None:
-    """Serialize one response onto the ASGI send channel."""
-    payload = json.dumps(response.body).encode()
+    """Serialize one response onto the ASGI send channel.
+
+    RFC 9110 §15.4.5: a 304 carries no body, so it gets no `Content-Type`
+    either.
+    """
+    payload = b"" if response.status == 304 else json.dumps(response.body).encode()
     headers: list[tuple[bytes, bytes]] = [
-        (b"content-type", response.media_type.encode()),
         (b"content-length", str(len(payload)).encode()),
     ]
+    if response.status != 304:
+        headers.insert(0, (b"content-type", response.media_type.encode()))
     headers += [(k.lower().encode(), v.encode()) for k, v in response.headers.items()]
     start: Message = {
         "type": "http.response.start",
@@ -325,5 +394,7 @@ async def _send(send: Send, response: Response) -> None:
     await send({"type": "http.response.body", "body": payload})
 
 
-app = CorrelationIdMiddleware(application)
+app = SecurityHeadersMiddleware(
+    CorrelationIdMiddleware(BodySizeLimitMiddleware(application, max_bytes=200))
+)
 """The application, with correlation bound and stamped. This is what a server runs."""

@@ -51,13 +51,23 @@ saml = [
   "python3-saml>=1.16.0",
   "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
+# `rn_forge.django.security` only, for the OWASP header preset
+# (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
+security = [
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
+# `rn_forge.django.cors` only. The application still owns its origins;
+# `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
+cors = ["django-cors-headers>=4.9.0"]
 all = [
   "celery>=5.6.3",
+  "django-cors-headers>=4.9.0",
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "drf-spectacular>=0.30.0",
   "python3-saml>=1.16.0",
   "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
 
 [build-system]

@@ -1,4 +1,4 @@
-"""Build ``/healthz`` liveness and ``/readyz`` readiness routes."""
+"""Build liveness and readiness routes."""
 
 from __future__ import annotations
 
@@ -8,7 +8,14 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from rn_forge.fastapi.schemas import HealthReport
-from rn_forge.web import Check, run_checks
+from rn_forge.web import (
+    LEGACY_LIVENESS_PATH,
+    LIVENESS_PATH,
+    READINESS_PATH,
+    Check,
+    liveness_body,
+    run_checks,
+)
 
 __all__ = ["health_router"]
 
@@ -19,27 +26,40 @@ def health_router(
     required: Collection[str] = (),
     prefix: str = "",
     timeout: float | None = None,
+    liveness_path: str = LIVENESS_PATH,
+    readiness_path: str = READINESS_PATH,
+    legacy_liveness_path: str | None = LEGACY_LIVENESS_PATH,
 ) -> APIRouter:
-    """Return a router serving ``/healthz`` and ``/readyz``.
+    """Return a router serving the liveness and readiness paths.
 
     Args:
         checks: Name → check, sync or async, returning a
             :class:`rn_forge.web.CheckResult` or a ``bool``. A check that raises
             is reported as ``fail``; it never fails the endpoint.
         required: The names whose failure makes the service unavailable (503).
-        prefix: Mounted in front of both paths.
+        prefix: Mounted in front of every path.
         timeout: Seconds each check may run before it is reported as ``fail``,
-            so a hung dependency cannot hang ``/readyz``. ``None`` waits
-            indefinitely.
+            so a hung dependency cannot hang the readiness path. ``None``
+            waits indefinitely.
+        liveness_path: The liveness path.
+        readiness_path: The readiness path.
+        legacy_liveness_path: An alias of *liveness_path*, marked deprecated
+            in the OpenAPI document. ``None`` serves no alias.
     """
     router = APIRouter(prefix=prefix, tags=["health"])
 
-    @router.get("/healthz")
-    async def healthz() -> dict[str, str]:
-        return {"status": "pass"}
+    @router.get(liveness_path)
+    async def livez() -> dict[str, str]:
+        return liveness_body()
+
+    if legacy_liveness_path is not None:
+
+        @router.get(legacy_liveness_path, deprecated=True)
+        async def healthz() -> dict[str, str]:
+            return liveness_body()
 
     @router.get(
-        "/readyz",
+        readiness_path,
         response_model=HealthReport,
         responses={
             503: {"model": HealthReport, "description": "A required check failed"}

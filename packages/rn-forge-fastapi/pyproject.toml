@@ -13,7 +13,9 @@ requires-python = ">=3.14"
 # `rn-forge-commons` is not declared: nothing here imports it directly, and it
 # arrives pinned through `rn-forge-web`.
 dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
+  # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",

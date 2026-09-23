@@ -49,17 +49,17 @@ class TestCorrelationIdMiddleware:
         event, context = events[0]
         assert event == "request.complete"
         assert set(context) == {
-            "method",
-            "path",
-            "status",
+            "http.request.method",
+            "url.path",
+            "http.response.status_code",
             "duration_ms",
             "correlation_id",
         }
-        assert (context["method"], context["path"], context["status"]) == (
-            "POST",
-            "/orders",
-            204,
-        )
+        assert (
+            context["http.request.method"],
+            context["url.path"],
+            context["http.response.status_code"],
+        ) == ("POST", "/orders", 204)
         assert context["correlation_id"] == "c1"
 
     def test_binding_is_reset_after_the_request(self) -> None:
@@ -97,3 +97,11 @@ class TestCorrelationIdMiddleware:
             RequestFactory().get("/x")
         )
         assert response.status_code == 200
+
+
+def test_a_malformed_inbound_id_is_replaced() -> None:
+    seen, events = [], []
+    request = RequestFactory().get("/x", headers={"X-Correlation-ID": "bad id!"})
+    response = _middleware(seen, events)(request)
+    assert response["X-Correlation-ID"] != "bad id!"
+    assert seen[0][0] == response["X-Correlation-ID"]

@@ -15,21 +15,17 @@ from the prose.
 `asgi_app.py` is the strong case: it is imported and run through every case in
 `rn_forge.web.conformance.CASES` by `tests/test_examples.py`. If a primitive
 changes shape, or a conformance case is added that the example does not serve,
-that test fails. It is also the first of the three independent proofs the
-conformance table is designed to collect.
+that test fails.
 
-The other two cannot be executed here. Installing Django or FastAPI as a test
-dependency of `rn-forge-web` would put a web framework in this package's
-dependency graph, which is exactly the boundary the package exists to hold —
-so their end-to-end proof is the driver each framework package ships, and the
-golden repo each archetype gets.
+The other two are not executed here, because `rn-forge-web` does not install
+Django or FastAPI. `rn-forge-django` and `rn-forge-fastapi` each run the
+conformance table against their own adapters.
 
 What *is* enforced here: `tests/test_examples.py` parses all three files and
 asserts that every name they import from `rn_forge.web` actually exists in its
 public API. That catches the realistic rot — a renamed or removed symbol —
 without importing a framework. It does not catch a semantic change in a
-framework's own behaviour, and this paragraph is here so nobody mistakes the
-one guarantee for the other.
+framework's own behaviour.
 
 ## The ten endpoints
 

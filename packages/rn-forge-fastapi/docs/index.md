@@ -11,9 +11,9 @@ It provides:
   own 404, 405 and 422, rendered as an RFC 9457 `application/problem+json` body
 - **`schemas`** — `WireModel`, the camelCase base for every model, and pydantic
   mirrors of the web wire shapes for use as `response_model`s
-- **`openapi`** — `install_problem_schema`, which puts the error type back into
-  the schema a client is generated from, and `operation_id`, the shared
-  `operationId` convention
+- **`openapi`** — the problem-response repair `FastApiApp.openapi()` applies,
+  so the document declares the error responses the app sends, and
+  `operation_id`, the shared `operationId` convention
 - **`dependencies`** — `page_params`, `require_idempotency_key` and
   `require_if_match`
 - **`health`** — `health_router`, serving `/healthz` and `/readyz`

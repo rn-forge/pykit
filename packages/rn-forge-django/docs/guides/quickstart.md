@@ -42,10 +42,37 @@ Errors as RFC 9457 problems, a correlation ID on every request, AIP-158 cursor p
 camelCase JSON — the same wire an `rn-forge-fastapi` service speaks:
 
 ```python
+from rn_forge.django.security import SECURITY_SETTINGS
+
 MIDDLEWARE = [
     "rn_forge.django.middleware.CorrelationIdMiddleware",  # first, so everything sees the ID
+    "django.middleware.http.ConditionalGetMiddleware",  # If-None-Match -> 304 on any ETag response
+    "django.middleware.security.SecurityMiddleware",  # nosniff, Referrer-Policy, X-Frame-Options, HSTS
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "rn_forge.django.security.SecurityHeadersMiddleware",  # Cache-Control, CSP frame-ancestors
     # ... the rest of your middleware
 ]
+
+globals().update(SECURITY_SETTINGS)  # or assign SECURE_CONTENT_TYPE_NOSNIFF etc. yourself
+```
+
+### CORS
+
+Opt-in (the `cors` extra, `django-cors-headers`), and the application owns the origins:
+
+```python
+from rn_forge.django.cors import cors_settings
+
+INSTALLED_APPS = [
+    "corsheaders",
+    # ...
+]
+MIDDLEWARE = [
+    # ... CorsMiddleware goes above CommonMiddleware, if you use one
+    "corsheaders.middleware.CorsMiddleware",
+    # ...
+]
+globals().update(cors_settings(["https://app.example.com"]))
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler",
@@ -58,20 +85,44 @@ REST_FRAMEWORK = {
 And in the root URLconf:
 
 ```python
-from django.urls import path
-from rn_forge.django.views import healthcheck_view, readiness_view
+from rn_forge.django.views import health_urlpatterns
 
 handler404 = "rn_forge.django.exceptions.problem_details_handler404"
 handler500 = "rn_forge.django.exceptions.problem_details_handler500"
 
 urlpatterns = [
-    path("healthz", healthcheck_view),
-    path("readyz", readiness_view({"database": ping_database}, required=["database"])),
+    *health_urlpatterns(checks={"database": ping_database}, required=["database"]),
 ]
 ```
 
+`health_urlpatterns` serves `/livez` (liveness), `/readyz` (readiness) and `/healthz` (a
+deprecated alias of `/livez`), each with no trailing slash — a probe on every host fails on a
+redirect, and `APPEND_SLASH` would send one.
+
 To give the middleware a different header, subclass it and set `header`; to send its
 `request.complete` event somewhere other than `AppLogger`, override `log`.
+
+### Deprecating a view
+
+```python
+from datetime import UTC, datetime
+
+from drf_spectacular.utils import extend_schema
+from rn_forge.django.deprecation import deprecated
+
+SUNSET_ANNOUNCED = datetime(2026, 1, 1, tzinfo=UTC)
+SUNSET_DATE = datetime(2026, 7, 1, tzinfo=UTC)
+
+
+class LegacySummaryView(APIView):
+    @extend_schema(deprecated=True)  # marks the OpenAPI operation
+    @deprecated(deprecated_at=SUNSET_ANNOUNCED, sunset=SUNSET_DATE)
+    def get(self, request): ...
+```
+
+`@extend_schema(deprecated=True)` and `@deprecated(...)` are both needed: one marks the
+document, the other stamps the `Deprecation`/`Sunset`/`Link` headers on the wire (RFC 9745,
+RFC 8594).
 
 Common imports:
 
@@ -84,3 +135,6 @@ from rn_forge.django.drf.serializers import BaseModelSerializer
 
 See [Settings](settings.md), [Auth](auth.md), [DRF Views](drf-views.md), and
 [Fixtures](fixtures.md) for the rest of the surface.
+
+`rn-forge-web`'s "Deployment" guide maps `/livez`, `/readyz`, the security headers' `hsts`
+setting, CORS and body-size limits onto Kubernetes, App Engine and Azure App Service.

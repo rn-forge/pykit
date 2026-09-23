@@ -21,28 +21,28 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from rn_forge.web import (
-    AUTH_FAILED_DETAIL,
+    IDEMPOTENCY_KEY_HEADER,
     PROBLEM_MEDIA_TYPE,
+    REQUIRED_FIELD_DETAIL,
     AuthenticationFailed,
     CheckResult,
     CorrelationIdMiddleware,
     Cursor,
     DomainConflict,
     EntityVersionETagCodec,
-    IdempotencyKeyRequired,
     InMemoryIdempotencyStore,
     Page,
     Principal,
     Requirement,
     ScopeAuthorizer,
-    challenge_header,
+    check_idempotency_key,
     check_precondition,
     clamp_page_size,
     decode_cursor,
     default_registry,
     encode_cursor,
-    errors_from_pointer_list,
-    get_correlation_id,
+    field_error,
+    render_problem,
     run_checks,
 )
 
@@ -64,31 +64,29 @@ app.add_middleware(CorrelationIdMiddleware)
 
 
 def _respond(request: Request, exc: BaseException, **extensions: Any) -> JSONResponse:
-    row = REGISTRY.problem_for(exc)
-    problem = REGISTRY.build(
-        exc,
-        instance=request.url.path,
-        # A 401 says only that authentication failed; the reason goes to the log.
-        detail=AUTH_FAILED_DETAIL if row.status == 401 else None,
-        extensions={"correlation_id": get_correlation_id(), **extensions},
-    )
-    # 401 carries a challenge; 403 must not.
-    headers = (
-        {"WWW-Authenticate": challenge_header(realm=REALM)}
-        if problem.status == 401
-        else None
+    # Correlation extension, the masked 401 detail and the challenge (never on
+    # a 403) all come from render_problem.
+    rendered = render_problem(
+        REGISTRY, exc, instance=request.url.path, extensions=extensions, realm=REALM
     )
     return JSONResponse(
-        problem.as_body(),
-        status_code=problem.status,
+        rendered.body,
+        status_code=rendered.status,
         media_type=PROBLEM_MEDIA_TYPE,
-        headers=headers,
+        headers=dict(rendered.headers),
     )
 
 
 @app.exception_handler(RequestValidationError)
 async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:
-    return _respond(request, exc, errors=errors_from_pointer_list(exc.errors()))
+    errors = [
+        field_error(
+            e["loc"][1:] if e["loc"][:1] == ("body",) else e["loc"],
+            REQUIRED_FIELD_DETAIL if e["type"] == "missing" else e["msg"],
+        )
+        for e in exc.errors()
+    ]
+    return _respond(request, exc, errors=errors)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -117,11 +115,9 @@ def page_params(
 
 
 def require_idempotency_key(
-    key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    key: Annotated[str | None, Header(alias=IDEMPOTENCY_KEY_HEADER)] = None,
 ) -> str:
-    if key is None:
-        raise IdempotencyKeyRequired("Idempotency-Key is required", error_code=400)
-    return key
+    return check_idempotency_key(key)
 
 
 # --- 4. the endpoints ------------------------------------------------------

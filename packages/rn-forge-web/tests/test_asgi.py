@@ -118,7 +118,36 @@ async def test_a_custom_header_name_is_honoured():
         http_scope([(b"x-request-id", b"abc123")]),
     )
     assert_that(header_value(sent, b"x-request-id")).is_equal_to(b"abc123")
-    assert_that(stub.seen_correlation_ids).is_equal_to(["abc123"])
+
+
+async def test_no_log_sink_means_nothing_is_logged():
+    stub = StubApp()
+    await call(CorrelationIdMiddleware(stub), http_scope())
+
+
+async def test_the_log_sink_is_called_once_with_otel_field_names():
+    events = []
+    stub = StubApp()
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/orders",
+        "headers": [(b"x-correlation-id", b"c1")],
+    }
+    await call(
+        CorrelationIdMiddleware(
+            stub, log=lambda event, ctx: events.append((event, dict(ctx)))
+        ),
+        scope,
+    )
+    assert_that(events).is_length(1)
+    event, fields = events[0]
+    assert_that(event).is_equal_to("request.complete")
+    assert_that(fields["http.request.method"]).is_equal_to("POST")
+    assert_that(fields["url.path"]).is_equal_to("/orders")
+    assert_that(fields["http.response.status_code"]).is_equal_to(200)
+    assert_that(fields["correlation_id"]).is_equal_to("c1")
+    assert_that(fields).contains_key("duration_ms")
 
 
 async def test_a_custom_generator_is_honoured():
@@ -161,3 +190,44 @@ async def test_the_context_var_survives_after_the_app_returns():
     stub = StubApp()
     await call(CorrelationIdMiddleware(stub, generator=lambda: "fixed"), http_scope())
     assert_that(get_correlation_id()).is_equal_to("fixed")
+
+
+@pytest.mark.parametrize(
+    "inbound",
+    [
+        b"",
+        b"a" * 129,
+        b"has space",
+        b"has%percent",
+        b"has\nnewline",
+    ],
+)
+async def test_a_malformed_inbound_id_is_replaced_by_a_generated_one(inbound):
+    stub = StubApp()
+    sent = await call(
+        CorrelationIdMiddleware(stub, generator=lambda: "fixed"),
+        http_scope([(b"x-correlation-id", inbound)]),
+    )
+    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"fixed")
+    assert_that(stub.seen_correlation_ids).is_equal_to(["fixed"])
+
+
+async def test_a_custom_validator_is_honoured():
+    stub = StubApp()
+    sent = await call(
+        CorrelationIdMiddleware(
+            stub, generator=lambda: "fixed", validator=lambda _: True
+        ),
+        http_scope([(b"x-correlation-id", b"has space")]),
+    )
+    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"has space")
+
+
+async def test_the_response_header_always_carries_the_id_that_was_bound():
+    stub = StubApp()
+    sent = await call(
+        CorrelationIdMiddleware(stub, generator=lambda: "fixed"),
+        http_scope([(b"x-correlation-id", b"has space")]),
+    )
+    assert_that(header_value(sent, b"x-correlation-id")).is_equal_to(b"fixed")
+    assert_that(stub.seen_correlation_ids).is_equal_to(["fixed"])

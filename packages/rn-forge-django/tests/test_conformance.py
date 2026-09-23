@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from urllib.parse import urlencode
 
@@ -32,25 +33,36 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication, requires
+from rn_forge.django.cors import cors_settings
+from rn_forge.django.deprecation import deprecated
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore
+from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination
-from rn_forge.django.views import readiness_view
+from rn_forge.django.security import SECURITY_SETTINGS
+from rn_forge.django.views import liveness_view, readiness_view
 from rn_forge.web import (
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
-    IdempotencyKeyRequired,
     Principal,
     Requirement,
+    ServiceUnavailable,
+    TooManyRequests,
+    run_idempotent,
 )
 from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
 ITEM_VERSION = 7
+DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
+SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
+DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"correlation_id"} | set(VARIABLE_MEMBERS)
+CASING_EXEMPT = {"correlation_id", "service-desc", "service-doc"} | set(
+    VARIABLE_MEMBERS
+)
 URLCONF = __name__
 
 
@@ -94,12 +106,22 @@ class _Named(serializers.Serializer):
 
 class _Validate(_Open):
     def post(self, request):
+        # DRF's JSONParser reads via HttpRequest.read(), which Django's
+        # DATA_UPLOAD_MAX_MEMORY_SIZE check does not guard (only .body does).
+        _ = request.body
         serializer = _Named(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
 
 
 class _Item(_Open):
+    def get(self, request, pk):
+        row = SimpleNamespace(pk=pk, version=ITEM_VERSION)
+        codec = EntityVersionETagCodec()
+        response = Response({"id": pk, "version": ITEM_VERSION})
+        response["ETag"] = etag_for(row, codec=codec)
+        return response
+
     def patch(self, request, pk):
         row = SimpleNamespace(pk=pk, version=ITEM_VERSION)
         codec = EntityVersionETagCodec()
@@ -133,17 +155,20 @@ _STORE = CacheIdempotencyStore()
 
 class _Charges(_Open):
     def post(self, request):
-        key = request.headers.get("Idempotency-Key")
-        if not key:
-            raise IdempotencyKeyRequired("Idempotency-Key is required", error_code=400)
-        stored = _STORE.record_or_replay(
-            scope="charges", key=key, request_body=request.data
+        def execute():
+            return 201, {"charged": request.data["amount"]}
+
+        result = run_idempotent(
+            _STORE,
+            scope="charges",
+            key=request.headers.get("Idempotency-Key"),
+            method=request.method,
+            body=request.data,
+            execute=execute,
         )
-        if stored is not None:
-            return Response({**stored.body, "replayed": True}, status=stored.status)
-        result = {"charged": request.data["amount"]}
-        _STORE.complete(scope="charges", key=key, status=201, response_body=result)
-        return Response({**result, "replayed": False}, status=201)
+        return Response(
+            {**result.body, "replayed": result.replayed}, status=result.status
+        )
 
 
 class _Private(APIView):
@@ -157,6 +182,22 @@ class _Private(APIView):
 class _Echo(_Open):
     def get(self, request):
         return Response({})
+
+
+class _Legacy(_Open):
+    @deprecated(deprecated_at=DEPRECATED_AT, sunset=SUNSET, link=DEPRECATION_LINK)
+    def get(self, request):
+        return Response({"legacy": True})
+
+
+class _Throttled(_Open):
+    def get(self, request):
+        raise TooManyRequests("Too many requests", retry_after=30)
+
+
+class _Unavailable(_Open):
+    def get(self, request):
+        raise ServiceUnavailable("Service unavailable", retry_after=5)
 
 
 def _readyz(request):
@@ -181,21 +222,45 @@ urlpatterns = [
     path("conformance/items", _Items.as_view()),
     path("conformance/charges", _Charges.as_view()),
     path("conformance/readyz", _readyz),
+    path("conformance/livez", liveness_view),
+    path("conformance/throttled", _Throttled.as_view()),
+    path("conformance/unavailable", _Unavailable.as_view()),
     path("conformance/private", _Private.as_view()),
     path("conformance/echo", _Echo.as_view()),
+    path("conformance/legacy", _Legacy.as_view()),
+    *openapi_urlpatterns(),
 ]
 handler404 = "rn_forge.django.exceptions.problem_details_handler404"
 
 WIRING = {
     "ROOT_URLCONF": URLCONF,
-    "MIDDLEWARE": ["rn_forge.django.middleware.CorrelationIdMiddleware"],
+    "INSTALLED_APPS": [
+        "django.contrib.contenttypes",
+        "django.contrib.auth",
+        "rn_forge.django.auth",
+        "rn_forge.django.messaging",
+        "corsheaders",
+    ],
+    "MIDDLEWARE": [
+        "rn_forge.django.middleware.CorrelationIdMiddleware",
+        "django.middleware.http.ConditionalGetMiddleware",
+        "django.middleware.security.SecurityMiddleware",
+        "corsheaders.middleware.CorsMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        "rn_forge.django.security.SecurityHeadersMiddleware",
+    ],
+    "DATA_UPLOAD_MAX_MEMORY_SIZE": 200,
+    **SECURITY_SETTINGS,
+    **cors_settings(["https://example.com"]),
     "REST_FRAMEWORK": {
         "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler",
         "DEFAULT_RENDERER_CLASSES": [
             "rn_forge.django.drf.casing.CamelCaseJSONRenderer"
         ],
         "DEFAULT_PARSER_CLASSES": ["rn_forge.django.drf.casing.CamelCaseJSONParser"],
+        "DEFAULT_SCHEMA_CLASS": "rn_forge.django.drf.openapi.WireAutoSchema",
     },
+    "SPECTACULAR_SETTINGS": SPECTACULAR_SETTINGS,
 }
 
 
@@ -252,7 +317,7 @@ def test_django_conforms(client, case):
         assert_that(response.headers.get(name)).described_as(name).is_equal_to(value)
     for name in case.expect_absent_headers:
         assert_that(name in response.headers).described_as(name).is_false()
-    body = json.loads(response.content)
+    body = json.loads(response.content) if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()
 

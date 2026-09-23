@@ -11,8 +11,9 @@ from django.test import RequestFactory  # noqa: E402
 
 from rn_forge.django.views import (  # noqa: E402
     debug_request_view,
-    healthcheck_view,
+    health_urlpatterns,
     index_view,
+    liveness_view,
     readiness_view,
 )
 from rn_forge.web import CheckResult, WebError  # noqa: E402
@@ -21,12 +22,12 @@ pytestmark = pytest.mark.unit
 
 
 class TestHelperViews:
-    def test_healthcheck_view(self) -> None:
+    def test_liveness_view(self) -> None:
         request = HttpRequest()
         request.method = "GET"
-        response = healthcheck_view(request)
+        response = liveness_view(request)
         assert response.status_code == 200
-        assert response.content == b"healthy"
+        assert json.loads(response.content) == {"status": "pass"}
 
     def test_debug_request_view(self) -> None:
         request = HttpRequest()
@@ -107,3 +108,17 @@ class TestReadinessView:
     def test_only_get_is_allowed(self) -> None:
         response = readiness_view({})(RequestFactory().post("/readyz"))
         assert response.status_code == 405
+
+
+class TestHealthUrlpatterns:
+    def test_default_paths_have_no_trailing_slash(self) -> None:
+        patterns = health_urlpatterns(checks={})
+        names = [str(p.pattern) for p in patterns]
+        assert "livez" in names
+        assert "readyz" in names
+        assert "healthz" in names
+
+    def test_legacy_alias_can_be_dropped(self) -> None:
+        patterns = health_urlpatterns(checks={}, legacy_liveness_path=None)
+        names = [str(p.pattern) for p in patterns]
+        assert "healthz" not in names

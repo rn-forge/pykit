@@ -16,7 +16,9 @@ specification as a normative section as it stands.
 Every request carries a correlation ID, and every response returns one.
 
 - The header is **`X-Correlation-ID`**, in both directions.
-- A caller-supplied ID is **never replaced**. — `correlation.inbound-id-is-echoed-never-replaced`
+- A caller-supplied ID is **never replaced when it is well-formed** — 1–128
+  characters of `[A-Za-z0-9._:-]`. A malformed one is replaced by a generated
+  one, never sanitized. — `correlation.inbound-id-is-echoed-never-replaced`
 - When the caller supplies none, the server generates one (a UUID4 hex string),
   binds it for the request and stamps it on the response.
   — `correlation.generated-id-reaches-the-problem-body`
@@ -38,6 +40,10 @@ application code runs — is an RFC 9457 problem.
   present. Extension members are **flattened at the top level**, not nested.
 - `type` is `about:blank` unless the application configures a type-URI base, in
   which case it is that base plus the slug.
+- **`title` is the HTTP status phrase** (`"Unprocessable Content"`, not
+  `"Validation Error"`) when `type` is `about:blank` — RFC 9457 §4.2.1's rule
+  for that case. A configured `type_base` makes `type` a real URI, and only
+  then is `title` the kit's own row title, since it is describing that URI.
 - `instance` is the request path.
 - **A 5xx `detail` never contains `str(exc)`.** It is a fixed generic string.
   The real reason goes to the log. — `problem.unregistered-is-500-without-detail`
@@ -55,21 +61,50 @@ application code runs — is an RFC 9457 problem.
 | `unauthorized` | 401 | no credentials, or credentials that failed verification |
 | `forbidden` | 403 | valid credentials lacking the required scope or role |
 | `not-found` | 404 | a missing resource |
-| `conflict` | 409 | a conflict with the resource's state; idempotency-key reuse |
+| `conflict` | 409 | a conflict with the resource's state; a duplicate idempotency key still in flight |
 | `precondition-failed` | 412 | an `If-Match` that evaluated to false |
-| `validation-error` | 422 | a request body that failed validation |
+| `content-too-large` | 413 | a request body over the configured limit |
+| `validation-error` | 422 | a request body that failed validation; an idempotency key reused with a different body |
 | `precondition-required` | 428 | a required `If-Match` that was absent |
 | `internal-error` | 500 | anything unregistered |
 | `bad-gateway` | 502 | an upstream returned a problem |
+| `too-many-requests` | 429 | `TooManyRequests`, raised by the application |
+| `service-unavailable` | 503 | `ServiceUnavailable`, raised by the application |
+
+`TooManyRequests` and `ServiceUnavailable` (RFC 6585 §4, RFC 9110 §15.6.4) each
+take a `retry_after` in seconds, sent as the `Retry-After` header
+(RFC 9110 §10.2.3) — `problem.too-many-requests-carries-retry-after`,
+`problem.service-unavailable-carries-retry-after`. Enforcing a rate limit is
+not pykit's job: it is a gateway's, or a maintained library's (`slowapi`,
+`limits`); pykit only renders the response once the application decides to
+send one.
 
 ### Validation errors
 
 A `validation-error` body carries an `errors` extension: a list of
-`{"pointer": ..., "message": ...}`, where `pointer` is an **RFC 6901 JSON
-pointer**. Both frameworks produce the identical list for the identical
-failure — DRF's `{field: [messages]}` and pydantic's `loc`/`msg` list are both
-normalized, and nested serializers recurse rather than being dropped.
-— `problem.validation-errors-are-rfc6901-pointers`
+`{"pointer": ..., "detail": ...}` — RFC 9457 §3's own validation example,
+`pointer` an **RFC 6901 JSON pointer**. Both frameworks produce the identical
+list for the identical failure — DRF's `{field: [messages]}` and pydantic's
+`loc`/`msg` list are both normalized, and nested serializers recurse rather
+than being dropped. — `problem.validation-errors-are-rfc6901-pointers`
+
+### Exception-carried extension members
+
+A domain exception that wants extra members on its problem body implements
+`HasProblemExtensions.problem_extensions()`. `ProblemRegistry.build` merges the
+result beneath an explicit `extensions=` argument, and only for a row below
+500 — a 5xx body says nothing about the cause, so nothing an exception carries
+reaches the wire for one. An application does **not** get this by putting
+arbitrary context on `AppException.error_data`: that dict routinely carries
+credentials and internal identifiers and is never published automatically:
+the application chooses what to expose by implementing the protocol.
+
+### Proving the exception table is total
+
+An unregistered domain exception silently resolves to `internal-error`/500,
+which is easy to miss. `unmapped_exceptions(registry, *bases)` walks every
+subclass of *bases* and returns the ones that resolve to the registry's
+fallback, so a test or a readiness check can assert the list is empty.
 
 ## 3. Optimistic concurrency
 
@@ -86,6 +121,10 @@ An endpoint that mutates a versioned resource uses ETag preconditions.
 
 Whether a given route *requires* a precondition is the application's choice,
 made per route and stated in its specification.
+
+`VersionConflict` (412) subclasses `WebError` directly, not `DomainConflict`
+(409) — the two are different failures on the wire, and catching the 409 class
+must not also catch a 412.
 
 ## 4. Pagination
 
@@ -124,8 +163,11 @@ Unsafe endpoints that a client may retry accept an `Idempotency-Key` header.
 - The specification says, per endpoint, whether the key is required or
   optional. Where required and absent → **400**.
 - **The request body is hashed.** The same key with a different body is
-  **409**, not a silently-wrong replay.
-  — `idempotency.same-key-different-body-is-409`
+  **422** — `draft-ietf-httpapi-idempotency-key-header-07` §2.7, not a
+  silently-wrong replay. — `idempotency.same-key-different-body-is-422`
+- **A duplicate while the original request is still in flight is 409.** The
+  store signals this distinctly from first sight (`IdempotencyKeyInFlight`,
+  not a silent re-execution) — same section of the draft.
 - A replay returns the **stored status and body**, unchanged.
   — `idempotency.replay-returns-the-stored-response`
 - The claim is atomic — a uniqueness constraint or an atomic set-if-absent, not
@@ -134,28 +176,51 @@ Unsafe endpoints that a client may retry accept an `Idempotency-Key` header.
 - Keys are namespaced by an opaque `scope`, so the same key on two endpoints,
   or in two tenants, does not collide.
 
+**The flow is framework-free.** `run_idempotent`/`run_idempotent_async` hold
+all of the above — safe-method bypass, claim, replay, complete, and the
+409/422 from the store — over `IdempotencyStore`/`AsyncIdempotencyStore`. Both
+stacks build on it: FastAPI's `idempotent` route decorator wraps the async
+twin; Django's `@idempotent` wraps the sync one, its public signature
+unchanged.
+
 ## 6. Health
 
-Two endpoints, and they are not the same thing.
+Two endpoints, and they are not the same thing. The paths are platform-neutral
+defaults, not a standard: no published spec names `/livez` or `/readyz`, but
+Kubernetes deprecated `/healthz` in v1.16 in favour of them (kubernetes.io
+"Kubernetes API health endpoints"), and no other host defines a default. See
+`deployment.md` for how each host maps its own probes onto liveness and
+readiness.
 
-- **`/healthz` — liveness.** Returns 200 unconditionally as long as the process
+- **`/livez` — liveness.** Returns 200 unconditionally as long as the process
   is running. It touches no dependency. A liveness probe that checks the
   database restarts a healthy process when the database blips.
+  `/healthz` is a deprecated alias of `/livez`, kept for hosts still probing
+  it. — `health.liveness-is-200`
 - **`/readyz` — readiness.** Runs a named check per dependency and returns
   `{"status": ..., "checks": {...}}`.
   - A check reports `pass`, `warn`, `fail` or **`skipped`**. `skipped` is for a
     check group that is not configured or not yet implemented, so its absence
-    is visible rather than silent.
+    is visible rather than silent. This vocabulary comes from
+    `draft-inadarei-api-health-check` (expired at -06, 2022); pykit keeps
+    `checks` as an object keyed by name rather than the draft's
+    `application/health+json` arrays.
   - A failing **required** check → **503**. — `health.required-failure-is-503`
   - A failing non-required check degrades the reported `status` but the
     endpoint stays **200**. — `health.optional-failure-is-200-degraded`
   - A `warn` never changes the HTTP status.
   - A check that raises is reported as a failure. `/readyz` never 500s: a
     readiness endpoint that 500s tells a load balancer nothing.
+  - Each check runs with a 2-second timeout by default — below every host's
+    probe timeout — and a check still running at the timeout is reported
+    `fail` with `"timed out after Ns"`.
   - The response is `application/json`, **not** problem+json, even at 503 — a
     readiness report is the endpoint's normal representation and the 503 is its
     verdict, not an error.
   - The HTTP status is not repeated in the body.
+- Every host judges a probe by its **status code and response time only**, never
+  the body, so neither endpoint ever redirects (a trailing-slash 301 would mark
+  the instance unhealthy).
 
 ## 7. Authentication and authorization
 
@@ -185,7 +250,7 @@ rule, and what proto3's JSON mapping produces — which is also why AIP-158's
 client and every popular UI framework's HTTP layer expects, and picking either
 casing is far better than letting it vary per application.
 
-Three exemptions, and only three:
+Four exemptions, and only four:
 
 - **RFC 9457's core members** (`type`, `title`, `status`, `detail`, `instance`)
   are single lowercase words and are unaffected. Problem *extensions* follow
@@ -193,6 +258,9 @@ Three exemptions, and only three:
 - **`correlation_id`** as a problem extension, which matches the log field name
   it exists to be joined against.
 - **Headers.** HTTP field names are case-insensitive and hyphenated.
+- **RFC 9264 linkset member names** (`anchor`, `service-desc`, `service-doc`,
+  `status`, `href`) in the §14 api-catalog body — they are the RFC's own
+  vocabulary, verbatim.
 
 **Both framework packages enforce this in code, not in a recipe** — a renderer
 and a parser wired through the framework's own settings. A convention that only
@@ -201,38 +269,41 @@ a guide enforces is a convention that holds until the first hurried endpoint.
 ## 9. OpenAPI
 
 The generated client is the real interface, so the schema is part of the
-contract and not a by-product.
+contract and not a by-product. But **two compliant OpenAPI documents
+describing the same JSON are not required to be the same document** — OpenAPI
+*describes* an API; it does not *prescribe* one. What this kit holds identical
+across stacks is narrower than "the document": wire behaviour, always; a
+generated client's method names and declared error types; nothing about a
+generated client's model, page or enum type names.
 
-Neither a component name nor an `operationId` is on the wire — no request or
-response carries either. A **generator** reads them, turning one into a client
-type name and the other into a client method name, so two stacks that disagree
-here produce two different call sites for the same endpoint even when every byte
-of JSON matches. OpenAPI 3.1 standardises neither, so the rules below are house
-conventions rather than compliance with a specification. They live in code, in
-`rn_forge.web.openapi`, and both framework packages call that rather than
-deriving names themselves.
+| Layer | Identical across stacks? |
+| --- | --- |
+| Wire behaviour: status codes, headers, body shapes | **Yes, required** |
+| Schema semantics: which JSON a schema accepts | **Yes**, when the application declares the same model |
+| Document text: component names, `operationId`s, nullability spelling, enum hoisting | **No, not a goal**, except `operationId` (below) |
 
-- Both stacks emit **OpenAPI 3.1.0** (JSON Schema 2020-12).
+- Both stacks emit **OpenAPI 3.1.0** (JSON Schema 2020-12) — each framework's
+  own default; nothing pins it.
 - The shared **non-generic** shapes are named identically in
   `components/schemas`: **`ProblemDetail`**, **`CheckResult`**,
   **`HealthReport`**. A handler that builds an error body by hand is invisible to
   schema collection, so each framework package injects `ProblemDetail`
   explicitly — without it a generated TypeScript client has no error type at all.
-- **The paginated envelope is named `Page<Item>`** — `PageOrderOut`, not a
-  single `Page`. It cannot be a single component, because OpenAPI has no
-  generics: a component is one concrete schema, so a page of orders and a page of
-  users are two of them. The only way to have one `Page` component is to leave
-  `items` untyped, which destroys the client typing this section exists to
-  protect. Left to themselves the two stacks disagree — pydantic mangles the type
-  parameters into `Page_OrderOut_`, drf-spectacular emits `PaginatedOrderOutList`
-  — so each framework package renames its own output to `Page<Item>`. The names
-  then match as far as `<Item>` does, which is the application's side of the
-  bargain: a resource's wire model carries the same name on both stacks.
+- **The paginated envelope's component name is not held identical.**
+  Left to themselves the two stacks disagree — pydantic mangles the type
+  parameters into `Page_OrderOut_`, drf-spectacular emits
+  `PaginatedOrderOutList` — and neither is renamed. A resource's wire *model*
+  (`OrderOut`) still carries the same name on both stacks; only its page
+  wrapper's name differs, and a generated client's page type was never going
+  to be identical across two different generators regardless.
 - **One `operationId` convention across both stacks**, `<resource><Verb>` in
   lowerCamelCase: `ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate` for
   `PUT`, `ordersPartialUpdate` for `PATCH`, `ordersDelete`. `PUT` and `PATCH` get
   distinct verbs so a resource serving both never produces a duplicate
-  `operationId`.
+  `operationId`. This is the one piece of document text held identical, because
+  it is what a generated client's method names are made from — read from
+  `rn_forge.web.openapi.operation_id`, which both framework packages call
+  rather than deriving names themselves.
 - **An operation outside those six is a custom method, spelled
   [AIP-136](https://google.aip.dev/136)-style as `:action` on the resource it
   acts on**, and named `<resource><Action>`: `POST /orders/{orderId}:cancel` →
@@ -247,8 +318,34 @@ deriving names themselves.
   warns and appends a numeral; FastAPI does neither, so on that stack a
   collision is silent. Two routes ending in the same literal segment
   (`/orders/{id}/items` and `/invoices/{id}/items`) are the case to watch.
-- Every operation that can return an error declares the problem responses it
-  can produce, by status.
+- **Every operation that can return an error declares the problem responses it
+  can produce, by status** — an `application/problem+json` response
+  referencing `ProblemDetail`, for each status the application's registry can
+  render plus 500. This is an *accuracy* repair, not a naming convention: the
+  document must describe what the service actually returns, and neither
+  framework's own schema collection sees a hand-built error body.
+  `FastApiApp.openapi()` does it on FastAPI by overriding `openapi()` and
+  repairing the cached document; `rn_forge.django.drf.openapi`'s
+  `problem_responses_hook` does the identical thing through drf-spectacular's
+  postprocessing hooks.
+
+### What a generated client shares across stacks, and what it does not
+
+| Generated client | Same on both stacks? |
+| --- | --- |
+| Method names (`operationId`) | **Yes** |
+| Declared error responses | **Yes** |
+| Model, page and enum type names | No |
+| Model structure (`-Input`/`-Output` split vs. `readOnly`/`writeOnly`) | No |
+| Nullable field types | Generator-dependent |
+| Path-parameter names | Only when the application spells them the same |
+
+Forcing textual identity beyond this means post-processing each generator's
+output to normalize away its own idioms, which buys nothing until an API must
+be re-implemented on another stack behind a client that cannot change. If that
+need arises, the standard way to get it is spec-first — one owned OpenAPI
+document, each implementation contract-tested against it — not generator
+post-processing.
 
 ## 10. HTTP methods and status codes
 
@@ -265,6 +362,130 @@ Unremarkable, and worth stating so it does not vary:
 `PUT` replaces, `PATCH` merges. A `DELETE` on an already-absent resource is
 404, not 204 — an idempotent *outcome* is not the same as a silent one, and a
 client that deleted something twice usually wants to know.
+
+## 11. Request body size
+
+RFC 9110 §15.5.14: a body over the configured limit is **413** —
+`problem.content-too-large-is-413`.
+
+- **FastAPI.** `AppConfig.max_body_bytes` (default 1 MiB; `None` disables it)
+  installs a pure-ASGI `BodySizeLimitMiddleware`, ahead of the router: a
+  declared `Content-Length` over the limit is rejected before the application
+  runs, and a streamed body without one is cut off as it arrives. Uvicorn
+  itself sets no limit.
+- **Django.** Django's own `DATA_UPLOAD_MAX_MEMORY_SIZE` maps to 413 through
+  `problem_registry()`, instead of Django's default 400. It guards
+  `request.body` and form/multipart parsing (`request.POST`), but **not** a
+  raw stream read — DRF's `JSONParser` reads via `HttpRequest.read()`, which
+  the check does not cover. A view that must enforce the limit on a JSON body
+  touches `request.body` itself before the parser runs.
+- Each host's own front end has its own cap too (see `deployment.md`); this
+  limit is the application's and should sit at or below it.
+
+## 12. Deprecation and Sunset
+
+An endpoint scheduled for removal announces it on every response.
+
+- `Deprecation` (RFC 9745) carries the date it became deprecated, as a
+  structured-field date: `@<epoch-seconds>`.
+- `Sunset` (RFC 8594) carries the date it stops being served, as an HTTP-date,
+  when one is scheduled.
+- `Link: <...>; rel="deprecation"` names the deprecation notice, when there is
+  one. — `deprecation.endpoint-carries-rfc9745-headers`
+- **FastAPI** pairs the `deprecated(...)` dependency with the route's own
+  `deprecated=True`, so the OpenAPI document marks the operation deprecated
+  too.
+- **Django** pairs the `@deprecated(...)` view decorator with
+  drf-spectacular's `@extend_schema(deprecated=True)` for the same reason.
+
+## 13. Conditional GET
+
+A `GET`/`HEAD` on a resource that carries an `ETag` honors an inbound
+`If-None-Match` (RFC 9110 §13.1.2, §15.4.5).
+
+- A weak match — `*`, or any validator in a comma-separated list, compared
+  ignoring a leading `W/` on either side — answers **304**, with no body and
+  the `ETag` repeated. —
+  `concurrency.if-none-match-matches-is-304`
+- A miss is an ordinary 200 carrying the current representation and `ETag`. —
+  `concurrency.if-none-match-mismatch-is-200`
+- **Django** gets this from its own `ConditionalGetMiddleware`, which does
+  weak `If-None-Match` comparison against any response carrying an `ETag` — no
+  kit code is involved.
+
+## 14. Service discovery
+
+- The OpenAPI document and the docs UI stay each framework's own defaults:
+  `/openapi.json` and `/docs`. Document text is not held identical across
+  stacks (§9); only the *paths* are, so a client always knows where to look.
+- **`/.well-known/api-catalog`** (RFC 9727) is an RFC 9264 linkset,
+  `application/linkset+json`, naming the OpenAPI document (`service-desc`,
+  RFC 8631), the docs UI (`service-doc`) and readiness (`status`).
+  — `discovery.api-catalog-is-an-rfc9264-linkset`
+- **FastAPI** serves it by default (`AppConfig.api_catalog: bool = True`),
+  answering `GET` and `HEAD`, excluded from the OpenAPI document itself.
+- **Django** serves it, plus the OpenAPI document and docs UI, from
+  `rn_forge.django.drf.openapi.openapi_urlpatterns()` (the `openapi` extra).
+
+## 15. Security headers
+
+The OWASP REST Security Cheat Sheet's response headers, on every response:
+`Cache-Control: no-store`, `Content-Security-Policy: frame-ancestors 'none'`,
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`. — `security.owasp-headers-are-present`
+
+- **`Strict-Transport-Security` is excluded from the default preset** and is
+  opt-in (`hsts`) on both stacks: sending it over plain HTTP tells a browser
+  to refuse a future connection that isn't HTTPS, which is wrong unless this
+  service terminates TLS itself rather than behind a front end that already
+  sets it (see `deployment.md`).
+- **A route's own header wins.** Both stacks apply the preset with `setdefault`
+  semantics.
+- **web** (the `security` extra, wrapping the `secure` library): `rn_forge.web.security.API_SECURITY_HEADERS`
+  and a pure-ASGI `SecurityHeadersMiddleware`.
+- **FastAPI** installs it by default (`AppConfig.security_headers: bool = True`, `AppConfig.hsts: bool = False`).
+- **Django**: `rn_forge.django.security.SECURITY_SETTINGS` configures Django's own
+  `SecurityMiddleware` and `XFrameOptionsMiddleware` for three of the five headers plus HSTS;
+  `rn_forge.django.security.SecurityHeadersMiddleware` adds the two Django has no setting for
+  (`Cache-Control`, the CSP directive).
+
+## 16. CORS
+
+**The application owns its CORS policy** — which origins, whether there is
+one at all, and whether credentials are allowed. Neither stack picks a
+default.
+
+- **`EXPOSED_HEADERS`** is the one thing only this kit can supply: a browser
+  cannot read `ETag`, `Link`, `Location`, the correlation header,
+  `Retry-After`, `Deprecation` or `Sunset` unless they are named in
+  `Access-Control-Expose-Headers`, comma-joined in that order.
+  — `cors.exposed-headers-are-comma-joined`
+- **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's
+  own `CORSMiddleware`. `None` installs nothing. Installed **after** the
+  correlation middleware, so it is outermost and an error response still
+  carries CORS headers.
+- **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the
+  `cors` extra, `django-cors-headers`) sets `CORS_ALLOWED_ORIGINS` and
+  `CORS_EXPOSE_HEADERS`; the application adds `corsheaders` to
+  `INSTALLED_APPS` and `CorsMiddleware` to `MIDDLEWARE` itself.
+- `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises: browsers
+  reject that combination outright.
+
+## 17. Access logging
+
+One `request.complete` event per request, on both stacks, in OpenTelemetry
+HTTP semantic-convention names: `http.request.method`, `url.path`,
+`http.response.status_code`, plus `duration_ms` and `correlation_id`.
+
+- **web.** `request_log_fields(...)` builds the event's fields. The ASGI
+  `CorrelationIdMiddleware` takes an optional `log=` sink and emits the event
+  once per request, after the response completes.
+- **FastAPI.** `AppConfig.log` feeds it — the same sink `register_problem_handlers`
+  uses for server-error events.
+- **Django.** `CorrelationIdMiddleware`'s `request.complete` event uses the
+  same field names.
+
+Not a conformance case: the event goes to a log sink, not the wire.
 
 ---
 

@@ -6,8 +6,9 @@ Use :func:`set_correlation_id` for task-local ASGI contexts and
 
 from __future__ import annotations
 
+import re
 import uuid
-from collections.abc import Generator, MutableMapping
+from collections.abc import Callable, Generator, MutableMapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Final
@@ -16,12 +17,17 @@ from rn_forge.web.exceptions import WebError
 
 __all__ = [
     "DEFAULT_CORRELATION_HEADER",
+    "EXPOSED_HEADERS",
+    "MAX_CORRELATION_ID_LENGTH",
     "bind_correlation_id",
     "correlation_id_var",
     "correlation_log_processor",
     "get_correlation_id",
+    "is_valid_correlation_id",
     "new_correlation_id",
+    "request_log_fields",
     "require_correlation_id",
+    "resolve_correlation_id",
     "set_correlation_id",
 ]
 
@@ -30,6 +36,41 @@ DEFAULT_CORRELATION_HEADER: Final = "X-Correlation-ID"
 
 CORRELATION_ID_KEY: Final = "correlation_id"
 """The key :func:`correlation_log_processor` writes, and the problem-body extension name."""
+
+MAX_CORRELATION_ID_LENGTH: Final = 128
+"""The longest correlation ID :func:`is_valid_correlation_id` accepts."""
+
+EXPOSED_HEADERS: Final[tuple[str, ...]] = (
+    "ETag",
+    "Link",
+    "Location",
+    DEFAULT_CORRELATION_HEADER,
+    "Retry-After",
+    "Deprecation",
+    "Sunset",
+)
+"""Response headers this kit emits that a browser can read only when a CORS
+policy names them in ``Access-Control-Expose-Headers``.
+
+An application's own CORS configuration does not know what the kit emits; a
+CORS binding passes this list so the kit's own concurrency, discovery and
+retry contracts survive a browser client.
+"""
+
+_CORRELATION_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+
+def is_valid_correlation_id(value: str) -> bool:
+    """Return whether *value* is a well-formed correlation ID.
+
+    True for 1–:data:`MAX_CORRELATION_ID_LENGTH` characters of
+    ``[A-Za-z0-9._:-]``.
+    """
+    return (
+        1 <= len(value) <= MAX_CORRELATION_ID_LENGTH
+        and _CORRELATION_ID_PATTERN.match(value) is not None
+    )
+
 
 correlation_id_var: ContextVar[str | None] = ContextVar(
     "rn_forge_correlation_id", default=None
@@ -40,6 +81,25 @@ correlation_id_var: ContextVar[str | None] = ContextVar(
 def new_correlation_id() -> str:
     """Return a fresh correlation ID (a UUID4 hex string)."""
     return uuid.uuid4().hex
+
+
+def resolve_correlation_id(
+    inbound: str | None,
+    *,
+    validator: Callable[[str], bool] = is_valid_correlation_id,
+    generator: Callable[[], str] = new_correlation_id,
+) -> str:
+    """Return the correlation ID to bind for a request.
+
+    A well-formed caller-supplied ID is kept verbatim; an absent or malformed
+    one is replaced by *generator*, never sanitized.
+
+    Args:
+        inbound: The request header's value, or ``None`` when absent.
+        validator: Returns whether a caller-supplied ID is well-formed.
+        generator: Produces a fresh ID.
+    """
+    return inbound if inbound is not None and validator(inbound) else generator()
 
 
 def set_correlation_id(value: str) -> None:
@@ -86,6 +146,40 @@ def bind_correlation_id(value: str | None = None) -> Generator[str]:
         yield bound
     finally:
         correlation_id_var.reset(token)
+
+
+def request_log_fields(
+    *,
+    method: str,
+    path: str,
+    status: int,
+    duration_ms: float,
+    correlation_id: str | None,
+) -> dict[str, Any]:
+    """Return one access-log event's fields.
+
+    Method, path and status follow the OpenTelemetry HTTP semantic
+    conventions' attribute names, so a log pipeline and a trace span agree on
+    what to call them.
+
+    Args:
+        method: The request method.
+        path: The request path.
+        status: The response status code.
+        duration_ms: How long the request took, in milliseconds.
+        correlation_id: The bound correlation ID, or ``None``.
+
+    Returns:
+        ``http.request.method``, ``url.path``, ``http.response.status_code``,
+        ``duration_ms``, ``correlation_id``.
+    """
+    return {
+        "http.request.method": method,
+        "url.path": path,
+        "http.response.status_code": status,
+        "duration_ms": duration_ms,
+        CORRELATION_ID_KEY: correlation_id,
+    }
 
 
 def correlation_log_processor(

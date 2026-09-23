@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AuthenticationFailed",
+    "ContentTooLarge",
     "DomainConflict",
+    "IdempotencyKeyInFlight",
     "IdempotencyKeyRequired",
     "IdempotencyKeyReuse",
     "InvalidCursor",
@@ -19,6 +21,8 @@ __all__ = [
     "PermissionDenied",
     "PreconditionRequired",
     "RemoteProblem",
+    "ServiceUnavailable",
+    "TooManyRequests",
     "VersionConflict",
     "WebError",
 ]
@@ -32,7 +36,7 @@ class DomainConflict(WebError):
     """The request conflicts with the current state of the resource (409)."""
 
 
-class VersionConflict(DomainConflict):
+class VersionConflict(WebError):
     """The client's precondition did not match the current version (412)."""
 
 
@@ -48,12 +52,20 @@ class InvalidCursor(WebError):
     """The pagination token was absent from, or malformed in, the request (400)."""
 
 
+class ContentTooLarge(WebError):
+    """The request body exceeds the configured size limit (413)."""
+
+
 class IdempotencyKeyRequired(WebError):
     """The endpoint requires an ``Idempotency-Key`` and none was sent (400)."""
 
 
 class IdempotencyKeyReuse(WebError):
-    """The idempotency key was replayed with a different request body (409)."""
+    """The idempotency key was replayed with a different request body (422)."""
+
+
+class IdempotencyKeyInFlight(WebError):
+    """The idempotency key was claimed and its original request has not completed (409)."""
 
 
 class AuthenticationFailed(WebError):
@@ -66,6 +78,62 @@ class AuthenticationFailed(WebError):
 
 class PermissionDenied(WebError):
     """Credentials verified, but the principal lacks the required access (403)."""
+
+
+class TooManyRequests(WebError):
+    """The client has sent too many requests in a given time (429).
+
+    Args:
+        *message_args: Forwarded to ``AppException``.
+        retry_after: Seconds the client should wait before retrying, carried
+            as a ``Retry-After`` response header. ``None`` sends no header.
+        **error_data: Forwarded to ``AppException``.
+    """
+
+    retry_after: int | None
+
+    def __init__(
+        self,
+        *message_args: Any,
+        retry_after: int | None = None,
+        **error_data: Any,
+    ) -> None:
+        super().__init__(*message_args, **error_data)
+        self.retry_after = retry_after
+
+    def response_headers(self) -> dict[str, str]:
+        """Return the ``Retry-After`` header, or nothing when unset."""
+        return (
+            {} if self.retry_after is None else {"Retry-After": str(self.retry_after)}
+        )
+
+
+class ServiceUnavailable(WebError):
+    """The service cannot handle the request right now (503).
+
+    Args:
+        *message_args: Forwarded to ``AppException``.
+        retry_after: Seconds the client should wait before retrying, carried
+            as a ``Retry-After`` response header. ``None`` sends no header.
+        **error_data: Forwarded to ``AppException``.
+    """
+
+    retry_after: int | None
+
+    def __init__(
+        self,
+        *message_args: Any,
+        retry_after: int | None = None,
+        **error_data: Any,
+    ) -> None:
+        super().__init__(*message_args, **error_data)
+        self.retry_after = retry_after
+
+    def response_headers(self) -> dict[str, str]:
+        """Return the ``Retry-After`` header, or nothing when unset."""
+        return (
+            {} if self.retry_after is None else {"Retry-After": str(self.retry_after)}
+        )
 
 
 class RemoteProblem(WebError):

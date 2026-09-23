@@ -2,10 +2,11 @@
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import (
+    conditional_get,
     page_params,
     register_problem_handlers,
     require_idempotency_key,
@@ -38,6 +39,11 @@ def build_app():
     @app.patch("/things/{pk}")
     async def patch_thing(pk: str, if_match: str = Depends(require_if_match())):
         return {"ifMatch": if_match}
+
+    @app.get("/cached")
+    async def cached(request: Request):
+        not_modified = conditional_get(request, 'W/"1:7"')
+        return not_modified if not_modified is not None else {"id": "1"}
 
     return app
 
@@ -130,3 +136,25 @@ def test_a_malformed_if_match_is_a_400_problem(client):
 def test_a_valid_if_match_passes_through_unchanged(client, value):
     response = client.patch("/things/1", headers={"If-Match": value})
     assert_that(response.json()).is_equal_to({"ifMatch": value})
+
+
+# --- conditional_get ---------------------------------------------------------
+
+
+def test_a_matching_if_none_match_is_304(client):
+    response = client.get("/cached", headers={"If-None-Match": 'W/"1:7"'})
+    assert_that(response.status_code).is_equal_to(304)
+    assert_that(response.headers["etag"]).is_equal_to('W/"1:7"')
+    assert_that(response.content).is_equal_to(b"")
+
+
+def test_a_mismatched_if_none_match_returns_the_representation(client):
+    response = client.get("/cached", headers={"If-None-Match": 'W/"1:6"'})
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to({"id": "1"})
+
+
+def test_no_if_none_match_returns_the_representation(client):
+    response = client.get("/cached")
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to({"id": "1"})

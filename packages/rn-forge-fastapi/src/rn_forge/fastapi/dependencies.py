@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from fastapi import Header, Query
+from fastapi import Header, Query, Request
+from fastapi.responses import Response
 
 from rn_forge.web import (
     ANY_ETAG,
@@ -16,14 +17,21 @@ from rn_forge.web import (
     DEFAULT_PAGE_TOKEN_PARAM,
     Cursor,
     EntityVersionETagCodec,
+    IDEMPOTENCY_KEY_HEADER,
     ETagCodec,
-    IdempotencyKeyRequired,
+    check_idempotency_key,
     check_precondition,
     clamp_page_size,
     decode_cursor,
+    is_not_modified,
 )
 
-__all__ = ["page_params", "require_idempotency_key", "require_if_match"]
+__all__ = [
+    "conditional_get",
+    "page_params",
+    "require_idempotency_key",
+    "require_if_match",
+]
 
 
 def page_params(*, cap: int, default: int) -> Callable[..., tuple[int, Cursor | None]]:
@@ -57,7 +65,9 @@ def page_params(*, cap: int, default: int) -> Callable[..., tuple[int, Cursor | 
     return dependency
 
 
-def require_idempotency_key(*, header: str = "Idempotency-Key") -> Callable[..., str]:
+def require_idempotency_key(
+    *, header: str = IDEMPOTENCY_KEY_HEADER
+) -> Callable[..., str]:
     """Return a dependency yielding the idempotency key, or raising a 400 without one.
 
     Args:
@@ -65,11 +75,26 @@ def require_idempotency_key(*, header: str = "Idempotency-Key") -> Callable[...,
     """
 
     def dependency(key: str | None = Header(default=None, alias=header)) -> str:
-        if not key:
-            raise IdempotencyKeyRequired("{} is required", header, error_code=400)
-        return key
+        return check_idempotency_key(key, header=header)
 
     return dependency
+
+
+def conditional_get(request: Request, etag: str) -> Response | None:
+    """Return the 304 to send for *request*'s ``If-None-Match``, or ``None``.
+
+    Call once the resource's current ETag is known. ``None`` means the caller
+    proceeds with its normal 200 response; a non-``None`` result is a
+    :class:`~fastapi.responses.Response` to return as-is — 304, no body, the
+    ``ETag`` repeated (RFC 9110 §13.1.2, §15.4.5).
+
+    Args:
+        request: The inbound request.
+        etag: The resource's current ETag validator.
+    """
+    if is_not_modified(request.headers.get("if-none-match"), etag):
+        return Response(status_code=304, headers={"ETag": etag})
+    return None
 
 
 def require_if_match(*, codec: ETagCodec | None = None) -> Callable[..., str]:

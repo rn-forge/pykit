@@ -11,6 +11,7 @@ from rn_forge.web.auth import (
     Requirement,
     ScopeAuthorizer,
     challenge_header,
+    parse_authorization,
 )
 from rn_forge.web.exceptions import AuthenticationFailed, PermissionDenied
 from rn_forge.web.problem import default_registry
@@ -216,3 +217,14 @@ def test_omitted_parameters_do_not_appear():
     assert_that(challenge_header(error="invalid_request")).is_equal_to(
         'Bearer error="invalid_request"'
     )
+
+
+def test_parse_authorization_matches_the_scheme_case_insensitively():
+    assert_that(parse_authorization("bearer  tok ", "Bearer")).is_equal_to(
+        Credentials("Bearer", "tok")
+    )
+
+
+@pytest.mark.parametrize("header", [None, "", "Basic dXNlcjpwdw=="])
+def test_parse_authorization_is_none_when_absent_or_another_scheme(header):
+    assert_that(parse_authorization(header, "Bearer")).is_none()

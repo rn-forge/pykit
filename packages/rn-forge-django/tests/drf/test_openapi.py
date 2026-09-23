@@ -163,14 +163,21 @@ def test_a_custom_method_is_named_resource_action(schema) -> None:
     assert "ordersCancel" in _operation_ids(schema)
 
 
-def test_the_paginated_component_follows_the_page_item_convention(schema) -> None:
-    """drf-spectacular's own name is `PaginatedOrderList`; the convention is not."""
+def test_the_paginated_component_keeps_drf_spectaculars_own_name(schema) -> None:
+    """Document text is not held identical across stacks (re-baseline, R1)."""
     schemas = schema["components"]["schemas"]
-    assert "PageOrder" in schemas
-    assert not [name for name in schemas if name.startswith("Paginated")]
+    assert "PaginatedOrderList" in schemas
 
 
-def test_the_paginated_component_is_what_the_list_response_references(schema) -> None:
-    response = schema["paths"]["/api/orders"]["get"]["responses"]["200"]
-    reference = response["content"]["application/json"]["schema"]["$ref"]
-    assert reference == "#/components/schemas/PageOrder"
+def test_every_operation_declares_a_problem_response(schema) -> None:
+    """R1.3's acceptance check: the Django document gets the same repair FastAPI does."""
+    for path_item in schema["paths"].values():
+        for operation in path_item.values():
+            responses = operation["responses"]
+            assert "500" in responses
+            problem_statuses = {
+                status
+                for status, response in responses.items()
+                if response.get("content", {}).get("application/problem+json")
+            }
+            assert problem_statuses

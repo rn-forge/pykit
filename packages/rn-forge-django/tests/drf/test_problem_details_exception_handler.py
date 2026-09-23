@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from assertpy import assert_that
 
 rest_framework = pytest.importorskip("rest_framework")
 
@@ -13,6 +14,7 @@ from rest_framework.request import Request  # noqa: E402
 from rest_framework.test import APIRequestFactory  # noqa: E402
 
 from rn_forge.django.drf.exceptions import (  # noqa: E402
+    _field_errors,
     problem_details_exception_handler,
     problem_registry,
 )
@@ -89,20 +91,18 @@ class TestBody:
         assert response.status_code == 422
         assert body["detail"] == "Validation Error"
         assert body["errors"] == [
-            {"pointer": "/name", "message": "This field is required."}
+            {"pointer": "/name", "detail": "This field is required."}
         ]
 
     def test_nested_field_errors_are_normalized(self) -> None:
         _, body = _handle(
             drf_exceptions.ValidationError({"lines": [{"sku": ["Unknown sku."]}, {}]})
         )
-        assert body["errors"] == [
-            {"pointer": "/lines/0/sku", "message": "Unknown sku."}
-        ]
+        assert body["errors"] == [{"pointer": "/lines/0/sku", "detail": "Unknown sku."}]
 
     def test_non_field_validation_list(self) -> None:
         _, body = _handle(drf_exceptions.ValidationError("Totals do not add up."))
-        assert body["errors"] == [{"pointer": "", "message": "Totals do not add up."}]
+        assert body["errors"] == [{"pointer": "", "detail": "Totals do not add up."}]
 
     def test_instance_is_the_request_path(self) -> None:
         _, body = _handle(DomainConflict("x"))
@@ -147,3 +147,43 @@ class TestHandler404:
         assert response["Content-Type"] == PROBLEM_MEDIA_TYPE
         assert body["detail"] == "Not Found"
         assert body["instance"] == "/nope/"
+
+
+# --- DRF error trees to field errors --------------------------------------
+
+
+def test_field_errors_flat():
+    assert_that(_field_errors({"name": ["This field is required."]})).is_equal_to(
+        [{"pointer": "/name", "detail": "This field is required."}]
+    )
+
+
+def test_field_errors_multiple_messages_share_a_pointer():
+    assert_that(_field_errors({"name": ["too short", "not unique"]})).is_equal_to(
+        [
+            {"pointer": "/name", "detail": "too short"},
+            {"pointer": "/name", "detail": "not unique"},
+        ]
+    )
+
+
+def test_field_errors_recurse_into_a_nested_serializer():
+    assert_that(_field_errors({"address": {"postcode": ["invalid"]}})).is_equal_to(
+        [{"pointer": "/address/postcode", "detail": "invalid"}]
+    )
+
+
+def test_field_errors_index_a_list_of_nested_serializers():
+    assert_that(_field_errors({"items": [{}, {"qty": ["must be > 0"]}]})).is_equal_to(
+        [{"pointer": "/items/1/qty", "detail": "must be > 0"}]
+    )
+
+
+def test_field_errors_of_a_top_level_message_list_point_at_the_root():
+    assert_that(_field_errors(["bad", "worse"])).is_equal_to(
+        [{"pointer": "", "detail": "bad"}, {"pointer": "", "detail": "worse"}]
+    )
+
+
+def test_field_errors_of_a_scalar_are_empty():
+    assert_that(_field_errors("plain")).is_empty()

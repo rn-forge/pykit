@@ -360,6 +360,7 @@ conventions the commons plan states, adjusted for this package's layout.
   cims's middleware module is extracted (Phase 7).
 - **`drf/views/transfer.py`.** Its ~1,200 lines substantially overlap `django-import-export` +
   `tablib`, which is worth revisiting — but it is not a cims extraction and it is not in this plan.
+  **Resolved 2026-09-22:** [standards-rebaseline-plan R7](./standards-rebaseline-plan.md) adopts both.
 - **The `RequestUtils` name collision** between `django/utils.py:40` and `django/drf/utils.py:49`
   (different APIs, no shared logic). Known, recorded, out of scope — renaming either is a breaking
   change that needs its own plan.
@@ -1509,7 +1510,7 @@ Items marked from the status record rather than a fresh run say so.
 - **Lowering the Python floor.** Dropped as a prerequisite entirely — see the Python-floor note
   above. If a future consumer needs it, it is a project-wide decision with its own gate.
 - **`drf/views/transfer.py` vs `django-import-export`+`tablib`.** Real overlap, ~1,200 lines, needs
-  its own plan.
+  its own plan. **Planned 2026-09-22** as [standards-rebaseline-plan R7](./standards-rebaseline-plan.md).
 - **The `RequestUtils` name collision** between `django/utils.py:40` and `django/drf/utils.py:49`.
   Breaking to fix; needs its own plan.
 - **cims's adoption of any of this.** cims is being respecified and reimplemented; that work happens

@@ -6,11 +6,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import (
-    OPENAPI_VERSION,
+    AppConfig,
+    FastApiApp,
     Page,
     WireModel,
     health_router,
-    install_problem_schema,
     operation_id,
 )
 from rn_forge.web import ProblemRegistry, ProblemType
@@ -24,21 +24,18 @@ DEFAULT_PROBLEM_STATUSES = {
     404: "Not Found",
     409: "Conflict",
     412: "Precondition Failed",
+    413: "Content Too Large",
     422: "Unprocessable Content",
     428: "Precondition Required",
+    429: "Too Many Requests",
     500: "Internal Server Error",
     502: "Bad Gateway",
+    503: "Service Unavailable",
 }
 
 
 class OrderOut(WireModel):
     order_id: str
-
-
-class PageOrderOut(WireModel):
-    """A hand-written model whose name collides with the flattened generic."""
-
-    decoy: str
 
 
 def problem_response(description):
@@ -52,9 +49,8 @@ def problem_response(description):
     }
 
 
-def build(**install_kwargs):
-    app = FastAPI(generate_unique_id_function=operation_id)
-    install_problem_schema(app, **install_kwargs)
+def build(**config_kwargs):
+    app = FastApiApp(AppConfig(**config_kwargs))
 
     @app.get("/orders/{order_id}")
     async def get_order(order_id: str) -> OrderOut: ...
@@ -66,9 +62,8 @@ def build(**install_kwargs):
 
 
 def test_the_document_is_openapi_3_1_0():
-    assert_that(build().openapi()["openapi"]).is_equal_to(OPENAPI_VERSION).is_equal_to(
-        "3.1.0"
-    )
+    """3.1.0 is FastAPI's own default; nothing here pins it."""
+    assert_that(build().openapi()["openapi"]).is_equal_to("3.1.0")
 
 
 def test_problem_detail_is_injected_and_the_schema_stays_cached():
@@ -79,13 +74,6 @@ def test_problem_detail_is_injected_and_the_schema_stays_cached():
     assert_that(problem["properties"]).contains_key(
         "type", "title", "status", "detail", "instance"
     )
-
-
-def test_installing_twice_changes_nothing():
-    once = build().openapi()
-    app = build()
-    install_problem_schema(app)
-    assert_that(app.openapi()).is_equal_to(once)
 
 
 def test_a_declared_response_is_never_overwritten():
@@ -104,12 +92,13 @@ def test_fastapis_422_is_replaced_and_its_schemas_removed():
     )
 
 
-def test_without_default_responses_only_the_422_is_repaired():
-    responses = build(default_responses=False).openapi()["paths"]["/orders/{order_id}"][
-        "get"
-    ]["responses"]
-    assert_that(set(responses)).is_equal_to({"200", "422"})
-    assert_that(responses["422"]).is_equal_to(problem_response("Unprocessable Content"))
+def test_every_operation_declares_the_registrys_problem_responses():
+    """R1.3's acceptance check: no operation is missing a declared error type."""
+    schema = build().openapi()
+    for path_item in schema["paths"].values():
+        for operation in path_item.values():
+            for status in DEFAULT_PROBLEM_STATUSES:
+                assert_that(operation["responses"]).contains_key(str(status))
 
 
 def test_the_declared_statuses_are_the_registrys_plus_500():
@@ -159,6 +148,25 @@ def test_one_operation_snapshot():
             },
         }
     )
+
+
+def test_a_subclass_extends_openapi_through_super():
+    """The composition R1.2 relies on: a consumer subclass adds its own repair."""
+
+    class MyApp(FastApiApp):
+        def openapi(self):
+            schema = super().openapi()
+            schema["info"]["x-extra"] = True
+            return schema
+
+    app = MyApp()
+
+    @app.get("/orders/{order_id}")
+    async def get_order(order_id: str) -> OrderOut: ...
+
+    schema = TestClient(app).get("/openapi.json").json()
+    assert_that(schema["info"]["x-extra"]).is_true()
+    assert_that(schema["components"]["schemas"]).contains_key("ProblemDetail")
 
 
 @pytest.mark.parametrize(
@@ -215,45 +223,12 @@ def test_a_custom_method_route_still_matches_a_request():
     assert_that(response.json()).is_equal_to({"orderId": "123"})
 
 
-class TestPageComponentNaming:
-    """Pydantic names a parametrized generic `Page_OrderOut_`; the convention does not."""
+def test_a_paged_component_keeps_pydantics_own_name():
+    """Document text is not held identical across stacks (re-baseline, 'What identical means')."""
+    app = FastApiApp()
 
-    @staticmethod
-    def _paged_app():
-        app = FastAPI(generate_unique_id_function=operation_id)
-        install_problem_schema(app)
+    @app.get("/orders")
+    async def list_orders() -> Page[OrderOut]: ...
 
-        @app.get("/orders")
-        async def list_orders() -> Page[OrderOut]: ...
-
-        return app
-
-    def test_the_component_is_flattened(self):
-        schemas = self._paged_app().openapi()["components"]["schemas"]
-        assert_that(schemas).contains_key("PageOrderOut")
-        assert_that(schemas).does_not_contain_key("Page_OrderOut_")
-
-    def test_the_response_reference_is_rewritten(self):
-        operation = self._paged_app().openapi()["paths"]["/orders"]["get"]
-        schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
-        assert_that(schema).is_equal_to({"$ref": "#/components/schemas/PageOrderOut"})
-
-    def test_the_item_reference_inside_the_page_survives(self):
-        schemas = self._paged_app().openapi()["components"]["schemas"]
-        assert_that(
-            schemas["PageOrderOut"]["properties"]["items"]["items"]
-        ).is_equal_to({"$ref": "#/components/schemas/OrderOut"})
-
-    def test_a_name_that_would_collide_is_left_alone(self):
-        """A wrong name is recoverable; two schemas under one key are not."""
-        app = FastAPI(generate_unique_id_function=operation_id)
-        install_problem_schema(app)
-
-        @app.get("/orders")
-        async def list_orders() -> Page[OrderOut]: ...
-
-        @app.get("/pages")
-        async def page_order_out() -> PageOrderOut: ...
-
-        schemas = app.openapi()["components"]["schemas"]
-        assert_that(schemas).contains_key("PageOrderOut", "Page_OrderOut_")
+    schemas = app.openapi()["components"]["schemas"]
+    assert_that(schemas).contains_key("Page_OrderOut_")

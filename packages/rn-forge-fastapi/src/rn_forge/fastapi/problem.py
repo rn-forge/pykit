@@ -7,7 +7,7 @@ handler also stamps the current correlation ID.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, cast
 
 from fastapi import FastAPI, Request
@@ -16,16 +16,16 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from rn_forge.web import (
-    AUTH_FAILED_DETAIL,
     DEFAULT_CORRELATION_HEADER,
     PROBLEM_MEDIA_TYPE,
+    REQUIRED_FIELD_DETAIL,
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemType,
-    challenge_header,
     default_registry,
-    errors_from_pointer_list,
+    field_error,
     get_correlation_id,
+    render_problem,
 )
 from rn_forge.web.context import CORRELATION_ID_KEY
 
@@ -52,8 +52,9 @@ def register_problem_handlers(
             :func:`rn_forge.web.default_registry`. ``RequestValidationError`` is
             registered on it against ``validation-error``/422 unless it already
             has a row.
-        realm: The ``realm`` of the ``WWW-Authenticate`` challenge every 401
-            carries. A 403 never carries one.
+        realm: The ``realm`` of the ``WWW-Authenticate`` challenge a 401
+            carries when the exception brought none of its own. A 403 never
+            carries one.
         correlation_header: The header the correlation ID is stamped on. Match
             the middleware's ``header_name``.
         log: Called as ``log("problem.server_error", context)`` for every 5xx,
@@ -73,37 +74,32 @@ def register_problem_handlers(
         extensions: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> JSONResponse:
-        row = problem if problem is not None else rows.problem_for(exc)
-        correlation_id = get_correlation_id()
-        body = rows.build(
+        rendered = render_problem(
+            rows,
             exc,
             instance=request.url.path,
-            # A 401 says only that authentication failed; the reason was logged
-            # where the credentials were checked.
-            detail=AUTH_FAILED_DETAIL if row.status == 401 else detail,
-            problem=row,
-            extensions={CORRELATION_ID_KEY: correlation_id, **(extensions or {})},
+            problem=problem,
+            detail=detail,
+            extensions=extensions,
+            headers=headers,
+            realm=realm,
+            correlation_header=correlation_header,
         )
-        if row.status >= 500 and log is not None:
+        if rendered.status >= 500 and log is not None:
             log(
                 "problem.server_error",
                 {
                     "exc": exc,
-                    "status": row.status,
-                    "instance": body.instance,
-                    CORRELATION_ID_KEY: correlation_id,
+                    "status": rendered.status,
+                    "instance": rendered.problem.instance,
+                    CORRELATION_ID_KEY: get_correlation_id(),
                 },
             )
-        response_headers = dict(headers or {})
-        if row.status == 401:
-            response_headers["WWW-Authenticate"] = challenge_header(realm=realm)
-        if correlation_id is not None:
-            response_headers[correlation_header] = correlation_id
         return JSONResponse(
-            body.as_body(),
-            status_code=body.status,
+            rendered.body,
+            status_code=rendered.status,
             media_type=PROBLEM_MEDIA_TYPE,
-            headers=response_headers,
+            headers=dict(rendered.headers),
         )
 
     async def on_exception(request: Request, exc: Exception) -> JSONResponse:
@@ -126,7 +122,7 @@ def register_problem_handlers(
             request,
             exc,
             detail=rows.problem_for(exc).title,
-            extensions={"errors": errors_from_pointer_list(errors)},
+            extensions={"errors": _validation_errors(errors)},
         )
 
     for exc_type in rows.rows():
@@ -135,3 +131,24 @@ def register_problem_handlers(
     app.add_exception_handler(StarletteHTTPException, on_http_exception)
     app.add_exception_handler(RequestValidationError, on_validation_error)
     app.add_exception_handler(Exception, on_exception)
+
+
+def _validation_errors(raw: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
+    """Map pydantic's ``errors()`` list to :func:`rn_forge.web.field_error` entries.
+
+    FastAPI's leading ``"body"`` location is dropped, and a missing field reads
+    :data:`rn_forge.web.REQUIRED_FIELD_DETAIL` as it does on DRF.
+    """
+    return [
+        field_error(
+            _body_relative(entry.get("loc") or ()),
+            REQUIRED_FIELD_DETAIL
+            if entry.get("type") == "missing"
+            else str(entry.get("msg", "")),
+        )
+        for entry in raw
+    ]
+
+
+def _body_relative(loc: Sequence[Any]) -> Sequence[Any]:
+    return loc[1:] if loc and loc[0] == "body" else loc

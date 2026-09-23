@@ -14,14 +14,17 @@ Django is sync and its worker threads are reused, so this is the
 
 ```python
 # myapp/middleware.py
-from rn_forge.web import DEFAULT_CORRELATION_HEADER, bind_correlation_id
+from rn_forge.web import (
+    DEFAULT_CORRELATION_HEADER, bind_correlation_id, resolve_correlation_id,
+)
 
 class CorrelationIdMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        inbound = request.headers.get(DEFAULT_CORRELATION_HEADER)
+        # A malformed caller ID is replaced, never echoed.
+        inbound = resolve_correlation_id(request.headers.get(DEFAULT_CORRELATION_HEADER))
         with bind_correlation_id(inbound) as correlation_id:
             response = self.get_response(request)
             response[DEFAULT_CORRELATION_HEADER] = correlation_id
@@ -37,32 +40,37 @@ exception handler — sees the binding.
 # myapp/handlers.py
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.views import exception_handler as drf_default
 
-from rn_forge.web import (
-    PROBLEM_MEDIA_TYPE, default_registry, errors_from_field_map, get_correlation_id,
-)
+from rn_forge.web import PROBLEM_MEDIA_TYPE, default_registry, field_error, render_problem
 
 REGISTRY = default_registry()   # register your domain exceptions here, once
 
 def problem_exception_handler(exc, context):
     request = context.get("request")
-    instance = request.path if request is not None else ""
-    extensions = {"correlation_id": get_correlation_id()}
-
-    if isinstance(exc, ValidationError):
-        extensions["errors"] = errors_from_field_map(exc.detail)
-
-    # Let DRF map its own exceptions to a status first, then re-clothe it.
-    drf_response = drf_default(exc, context)
-    if drf_response is not None and not REGISTRY.problem_for(exc):
-        ...  # register DRF's exceptions on REGISTRY rather than special-casing here
-
-    problem = REGISTRY.build(exc, instance=instance, extensions=extensions)
-    return Response(
-        problem.as_body(), status=problem.status, content_type=PROBLEM_MEDIA_TYPE
+    extensions = {}
+    if isinstance(exc, ValidationError) and isinstance(exc.detail, dict):
+        # The DRF-shaped part: {field: [messages]} to RFC 9457 field errors.
+        extensions["errors"] = [
+            field_error((name,), str(message))
+            for name, messages in exc.detail.items()
+            for message in messages
+        ]
+    rendered = render_problem(
+        REGISTRY,
+        exc,
+        instance=request.path if request is not None else "",
+        extensions=extensions,
     )
+    response = Response(
+        rendered.body, status=rendered.status, content_type=PROBLEM_MEDIA_TYPE
+    )
+    for name, value in rendered.headers.items():
+        response[name] = value
+    return response
 ```
+
+`render_problem` adds the correlation ID, masks a 401's detail and adds its
+challenge. `rn-forge-django`'s handler also walks nested serializer errors.
 
 Set `EXCEPTION_HANDLER` to it in `REST_FRAMEWORK`. Register DRF's own
 exception classes (`NotFound`, `PermissionDenied`, ...) on `REGISTRY` once,

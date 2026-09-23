@@ -1303,6 +1303,11 @@ Ship, under `packages/rn-forge-web/docs/adoption/`:
 
 ### §9.1 — the naming rules, in code (2026-09-15)
 
+> **Re-baseline 2026-09-21:** the `Page<Item>` rule is withdrawn, because
+> identical document text across stacks is no longer a goal. The `operationId`
+> rule is kept as a default for client ergonomics. See
+> [standards re-baseline R1](standards-rebaseline-plan.md#r1-openapi-accuracy-only-fastapi-django-web).
+
 Naming them in this document and letting each package implement it was the original instruction, and
 it produced two identical `operationId` functions in two packages — which is one edit away from drift,
 and which is how the CRUD-only gap went unnoticed on both sides at once. They now live in

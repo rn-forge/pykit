@@ -42,6 +42,10 @@ Health and readiness are the initial shared utility endpoints. Additional
 utility endpoints require their own contract and are outside this scope.
 Application-file generation and a `[codegen]` extra are also outside scope.
 
+**Superseded, 2026-09-19:** `create_app` was replaced by the `FastApiApp`
+subclass — see [web-api-reuse-plan.md, Phase 0](web-api-reuse-plan.md#phase-0--fastapiapp-rn-forge-fastapi).
+This section stays as the historical record of the factory it replaced.
+
 ## Implementation surface
 
 - Add the factory and configuration in the package's flat module layout and

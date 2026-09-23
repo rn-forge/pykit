@@ -39,6 +39,7 @@ nav:
   - Adoption:
       - adoption/index.md
       - API conventions: adoption/api-conventions.md
+      - Deployment: adoption/deployment.md
       - Model conventions: adoption/model-conventions.md
       - Wiring into Django: adoption/wiring-django.md
       - Wiring into FastAPI: adoption/wiring-fastapi.md

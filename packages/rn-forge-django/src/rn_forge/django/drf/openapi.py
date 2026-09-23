@@ -3,16 +3,23 @@
 **Requires the ``openapi`` extra.** Not re-exported from any facade; import it
 directly.
 
-Three things an application otherwise gets wrong, each shipped as code:
+Four things an application otherwise gets wrong, each shipped as code:
 
 - :data:`SPECTACULAR_SETTINGS` — OpenAPI **3.1.0**, camelCase names, the
-  ``ProblemDetail`` component always present, and the camelCase schema hook.
-  Spread it into your own ``SPECTACULAR_SETTINGS`` and override what you must.
-- :class:`WireAutoSchema` — the ``operationId`` and paginated-component naming
-  conventions, read from :mod:`rn_forge.web.openapi` so that this stack and the
-  FastAPI one apply one rule rather than two copies of it. A generated client
-  gets the same method names and the same page type on either. Name it as
+  ``ProblemDetail`` component always present, and the camelCase and
+  problem-response schema hooks. Spread it into your own
+  ``SPECTACULAR_SETTINGS`` and override what you must.
+- :class:`WireAutoSchema` — the ``operationId`` convention, read from
+  :mod:`rn_forge.web.openapi` so that this stack and the FastAPI one apply one
+  rule rather than two copies of it. A generated client gets the same method
+  names on either — document text otherwise is not held identical across
+  stacks; drf-spectacular's own paginated-component name is kept. Name it as
   ``REST_FRAMEWORK["DEFAULT_SCHEMA_CLASS"]``.
+- :func:`problem_responses_hook` — declares an ``application/problem+json``
+  response, referencing ``ProblemDetail``, for every status the problem
+  handler can render, on every operation that does not already declare one.
+  The FastAPI binding's ``FastApiApp.openapi()`` closes the identical gap on
+  its side.
 - The security-scheme extensions for
   :class:`~rn_forge.django.auth.drf.principal.PrincipalBearerAuthentication` and
   its Basic twin. drf-spectacular discovers extensions by import, so importing
@@ -29,44 +36,41 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Final, cast, override
 
+from django.http import HttpRequest, JsonResponse
+from django.urls import URLPattern, path
+from django.views.decorators.http import require_http_methods
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rn_forge.django.drf.casing import camelize_key
-from rn_forge.web.openapi import operation_id, page_component_name
+from rn_forge.django.drf.exceptions import problem_registry
+from rn_forge.web import (
+    API_CATALOG_PATH,
+    DOCS_PATH,
+    LINKSET_MEDIA_TYPE,
+    OPENAPI_PATH,
+    READINESS_PATH,
+    api_catalog_body,
+)
+from rn_forge.web.openapi import (
+    PROBLEM_DETAIL_SCHEMA,
+    add_problem_responses,
+    operation_id,
+)
 
 __all__ = [
     "OPENAPI_VERSION",
-    "PROBLEM_DETAIL_SCHEMA",
     "SPECTACULAR_SETTINGS",
     "PrincipalBasicAuthenticationScheme",
     "PrincipalBearerAuthenticationScheme",
     "WireAutoSchema",
     "camelize_schema_hook",
+    "openapi_urlpatterns",
+    "problem_responses_hook",
 ]
 
 OPENAPI_VERSION: Final = "3.1.0"
 """The OpenAPI version both stacks emit. 3.0 and 3.1 differ in nullability."""
-
-PROBLEM_DETAIL_SCHEMA: Final[Mapping[str, Any]] = {
-    "type": "object",
-    "description": "An RFC 9457 problem. Extension members appear at the top level.",
-    "required": ["type", "title", "status", "detail", "instance"],
-    "properties": {
-        "type": {"type": "string"},
-        "title": {"type": "string"},
-        "status": {"type": "integer"},
-        "detail": {"type": "string"},
-        "instance": {"type": "string"},
-    },
-    "additionalProperties": True,
-}
-"""The ``ProblemDetail`` component, appended whether or not a view names it.
-
-The problem handler builds error bodies by hand, so schema collection never
-meets a ``ProblemDetail`` serializer — without this the shared error type is
-absent from the document, which is the gap ``rn-forge-fastapi``'s
-``install_problem_schema`` closes on its side.
-"""
 
 SPECTACULAR_SETTINGS: Final[Mapping[str, Any]] = {
     "OAS_VERSION": OPENAPI_VERSION,
@@ -75,6 +79,7 @@ SPECTACULAR_SETTINGS: Final[Mapping[str, Any]] = {
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "rn_forge.django.drf.openapi.camelize_schema_hook",
+        "rn_forge.django.drf.openapi.problem_responses_hook",
     ],
 }
 """drf-spectacular settings every ``rn-forge-django`` API starts from.
@@ -101,6 +106,20 @@ def camelize_schema_hook(
     return result
 
 
+def problem_responses_hook(
+    result: dict[str, Any], generator: Any, request: Any, public: bool
+) -> dict[str, Any]:
+    """Add an ``application/problem+json`` response, by status, to every operation.
+
+    Accuracy only, mirroring ``FastApiApp.openapi()``'s repair on the FastAPI
+    side: an author's own ``responses=`` entry for that status is never
+    overwritten.
+    """
+    del generator, request, public
+    add_problem_responses(result, problem_registry())
+    return result
+
+
 def _camelize_schema(schema: dict[str, Any]) -> None:
     properties = schema.get("properties")
     if isinstance(properties, Mapping):
@@ -123,28 +142,22 @@ def _camelize_schema(schema: dict[str, Any]) -> None:
 
 
 class WireAutoSchema(AutoSchema):
-    """drf-spectacular's ``AutoSchema``, named by the kit's OpenAPI conventions.
+    """drf-spectacular's ``AutoSchema``, named by the kit's ``operationId`` convention.
 
-    Both rules come from :mod:`rn_forge.web.openapi`, which the FastAPI binding
-    reads too:
+    Read from :mod:`rn_forge.web.openapi`, which the FastAPI binding reads too:
+    ``<resource><Verb>`` in lowerCamelCase for CRUD, and ``<resource><Action>``
+    for an AIP-136 custom method spelled ``/orders/<str:pk>:cancel``. An action
+    spelled as a plain path segment gets a mechanical name; give it an explicit
+    ``@extend_schema(operation_id=...)``.
 
-    - **``operationId``** — ``<resource><Verb>`` in lowerCamelCase for CRUD, and
-      ``<resource><Action>`` for an AIP-136 custom method spelled
-      ``/orders/<str:pk>:cancel``. An action spelled as a plain path segment
-      gets a mechanical name; give it an explicit
-      ``@extend_schema(operation_id=...)``.
-    - **The paginated component** — ``PageOrderOut`` rather than
-      drf-spectacular's ``PaginatedOrderOutList``, so the two stacks put the same
-      type name in a generated client.
+    The paginated component keeps drf-spectacular's own name
+    (``PaginatedOrderOutList``) — document text is not held identical across
+    stacks; only wire behaviour and ``operationId`` are.
     """
 
     @override
     def get_operation_id(self) -> str:
         return operation_id(self.path, self.method)
-
-    @override
-    def get_paginated_name(self, serializer_name: str) -> str:
-        return page_component_name(serializer_name)
 
 
 class PrincipalBearerAuthenticationScheme(OpenApiAuthenticationExtension):
@@ -169,3 +182,49 @@ class PrincipalBasicAuthenticationScheme(OpenApiAuthenticationExtension):
     @override
     def get_security_definition(self, auto_schema: Any) -> dict[str, Any]:
         return {"type": "http", "scheme": "basic"}
+
+
+def openapi_urlpatterns(*, readiness_path: str = READINESS_PATH) -> list[URLPattern]:
+    """Return URL patterns serving the OpenAPI document, the docs UI, and the API catalog.
+
+    Mounts drf-spectacular's :class:`~drf_spectacular.views.SpectacularAPIView`
+    at :data:`~rn_forge.web.OPENAPI_PATH` (JSON) and
+    :class:`~drf_spectacular.views.SpectacularSwaggerView` at
+    :data:`~rn_forge.web.DOCS_PATH`, plus RFC 9727's
+    :data:`~rn_forge.web.API_CATALOG_PATH`, which points at both and at
+    *readiness_path*.
+
+    Args:
+        readiness_path: The path the catalog's ``status`` relation points at.
+    """
+
+    @require_http_methods(["GET", "HEAD"])
+    def api_catalog(request: HttpRequest) -> JsonResponse:
+        del request
+        return JsonResponse(
+            api_catalog_body(
+                anchor="/",
+                service_desc=OPENAPI_PATH,
+                service_doc=DOCS_PATH,
+                status=readiness_path,
+            ),
+            content_type=LINKSET_MEDIA_TYPE,
+        )
+
+    return [
+        path(
+            OPENAPI_PATH.lstrip("/"),
+            SpectacularAPIView.as_view(),
+            name="rn-forge-openapi",
+        ),
+        path(
+            DOCS_PATH.lstrip("/"),
+            SpectacularSwaggerView.as_view(url_name="rn-forge-openapi"),
+            name="rn-forge-docs",
+        ),
+        path(
+            API_CATALOG_PATH.lstrip("/"),
+            api_catalog,
+            name="rn-forge-api-catalog",
+        ),
+    ]

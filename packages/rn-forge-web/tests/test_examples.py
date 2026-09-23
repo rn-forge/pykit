@@ -82,7 +82,7 @@ async def call(app, case):
         m.get("body", b"") for m in sent if m["type"] == "http.response.body"
     )
     headers = {k.decode().lower(): v.decode() for k, v in start["headers"]}
-    return start["status"], headers, json.loads(payload)
+    return start["status"], headers, json.loads(payload) if payload else {}
 
 
 # --- the executed proof ---------------------------------------------------

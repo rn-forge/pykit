@@ -27,9 +27,25 @@ That is the whole of it. What each piece does:
 | Setting | Effect |
 | --- | --- |
 | `CamelCaseJSONRenderer` / `CamelCaseJSONParser` | camelCase out; camelCase **or** `snake_case` in. Switch off with `RN_FORGE_DJANGO["DRF"]["CASING"]["ENABLED"] = False` |
-| `WireAutoSchema` | `operationId` = `<resource><Verb>` (`workItemsList`, `workItemsGet`, `workItemsCreate`, ...), `<resource><Action>` for an AIP-136 custom method (`/orders/<str:pk>:cancel` → `ordersCancel`), and `Page<Item>` for the paginated component in place of drf-spectacular's `Paginated<Item>List`. Both rules come from `rn_forge.web.openapi`, which the FastAPI binding reads too |
-| `SPECTACULAR_SETTINGS` | pins OAS 3.1.0, always emits `ProblemDetail`, camelizes component property names |
+| `WireAutoSchema` | `operationId` = `<resource><Verb>` (`workItemsList`, `workItemsGet`, `workItemsCreate`, ...), `<resource><Action>` for an AIP-136 custom method (`/orders/<str:pk>:cancel` → `ordersCancel`). Read from `rn_forge.web.openapi`, which the FastAPI binding reads too. The paginated component keeps drf-spectacular's own name (`Paginated<Item>List`) — document text is not held identical across stacks |
+| `SPECTACULAR_SETTINGS` | pins OAS 3.1.0, always emits `ProblemDetail`, camelizes component property names, and declares an `application/problem+json` response for every status the problem handler can render, on every operation |
 | importing `rn_forge.django.drf.openapi` | registers `bearerAuth` / `basicAuth` security schemes for the principal authentication classes |
+
+## Serving the document, the docs UI, and the API catalog
+
+```python
+from rn_forge.django.drf.openapi import openapi_urlpatterns
+
+urlpatterns = [
+    *openapi_urlpatterns(),
+    # ... your own routes
+]
+```
+
+Mounts drf-spectacular's `SpectacularAPIView` at `/openapi.json`,
+`SpectacularSwaggerView` at `/docs`, and RFC 9727's
+`/.well-known/api-catalog` — an RFC 9264 linkset naming both, plus
+`/readyz`. Pass `readiness_path=` if yours differs.
 
 ## Opaque JSON values
 

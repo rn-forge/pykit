@@ -6,10 +6,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import WireModel, register_problem_handlers
+from rn_forge.fastapi.problem import _validation_errors
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,
     GENERIC_SERVER_DETAIL,
     PROBLEM_MEDIA_TYPE,
+    REQUIRED_FIELD_DETAIL,
     AuthenticationFailed,
     CorrelationIdMiddleware,
     DomainConflict,
@@ -120,10 +122,10 @@ def test_a_routing_405_keeps_its_allow_header():
 
 def test_a_validation_error_is_rfc6901_pointers():
     body = assert_problem(build().post("/validate", json={}), 422)
-    assert_that(body["title"]).is_equal_to("Validation Error")
+    assert_that(body["title"]).is_equal_to("Unprocessable Content")
     assert_that(body["detail"]).is_equal_to("Validation Error")
     assert_that(body["errors"]).is_equal_to(
-        [{"pointer": "/displayName", "message": "This field is required."}]
+        [{"pointer": "/displayName", "detail": "This field is required."}]
     )
 
 
@@ -178,3 +180,33 @@ def test_nothing_is_registered_until_asked():
     before = dict(app.exception_handlers)
     register_problem_handlers(app)
     assert_that(len(app.exception_handlers)).is_greater_than(len(before))
+
+
+# --- pydantic errors to field errors ---------------------------------------
+
+
+def test_validation_errors_from_pydantic():
+    """A missing field reads the same detail DRF gives it."""
+    raw = [
+        {"loc": ("body", "name"), "msg": "Field required", "type": "missing"},
+        {"loc": ("body", "items", 0, "qty"), "msg": "must be > 0"},
+    ]
+    assert_that(_validation_errors(raw)).is_equal_to(
+        [
+            {"pointer": "/name", "detail": REQUIRED_FIELD_DETAIL},
+            {"pointer": "/items/0/qty", "detail": "must be > 0"},
+        ]
+    )
+
+
+def test_validation_errors_keep_the_prefix_of_a_non_body_location():
+    raw = [{"loc": ("query", "pageSize"), "msg": "Input should be a valid integer"}]
+    assert_that(_validation_errors(raw)).is_equal_to(
+        [{"pointer": "/query/pageSize", "detail": "Input should be a valid integer"}]
+    )
+
+
+def test_validation_errors_handle_an_empty_loc():
+    assert_that(_validation_errors([{"loc": (), "msg": "bad"}])).is_equal_to(
+        [{"pointer": "", "detail": "bad"}]
+    )

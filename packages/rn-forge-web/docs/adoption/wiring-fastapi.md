@@ -13,9 +13,8 @@ What the package replaced, so a reader of an older application recognises it:
 | `page_params`, `require_idempotency_key`, `require_if_match` | the same names, as factories |
 | the `/healthz` + `/readyz` router | `health_router(checks=..., required=..., timeout=...)` |
 | the camelCase alias generator on each model | `WireModel` |
-| the `ProblemDetail` injection into `components/schemas` | `install_problem_schema(app)` |
+| the `ProblemDetail` injection into `components/schemas` | `FastApiApp.openapi()`, which also declares the problem responses |
 | the `operationId` convention | `operation_id`, passed as `generate_unique_id_function` |
-| the `Page<Item>` component name | `install_problem_schema`, which renames pydantic's `Page_OrderOut_` |
 
 Two rules still apply to any ASGI application, framework or not, and they are
 this package's: install `CorrelationIdMiddleware` directly rather than inside a

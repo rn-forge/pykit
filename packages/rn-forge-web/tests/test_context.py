@@ -7,12 +7,17 @@ from assertpy import assert_that
 
 from rn_forge.web.context import (
     DEFAULT_CORRELATION_HEADER,
+    EXPOSED_HEADERS,
+    MAX_CORRELATION_ID_LENGTH,
     bind_correlation_id,
     correlation_id_var,
     correlation_log_processor,
     get_correlation_id,
+    is_valid_correlation_id,
     new_correlation_id,
+    request_log_fields,
     require_correlation_id,
+    resolve_correlation_id,
     set_correlation_id,
 )
 from rn_forge.web.exceptions import WebError
@@ -29,6 +34,26 @@ def _clean_contextvar():
 
 def test_default_header_is_x_correlation_id():
     assert_that(DEFAULT_CORRELATION_HEADER).is_equal_to("X-Correlation-ID")
+
+
+def test_exposed_headers_carries_the_correlation_header():
+    assert_that(EXPOSED_HEADERS).contains(DEFAULT_CORRELATION_HEADER)
+    assert_that(EXPOSED_HEADERS).contains("ETag", "Link", "Location", "Retry-After")
+
+
+def test_request_log_fields_uses_otel_semantic_convention_names():
+    fields = request_log_fields(
+        method="GET", path="/orders", status=200, duration_ms=1.5, correlation_id="c1"
+    )
+    assert_that(fields).is_equal_to(
+        {
+            "http.request.method": "GET",
+            "url.path": "/orders",
+            "http.response.status_code": 200,
+            "duration_ms": 1.5,
+            "correlation_id": "c1",
+        }
+    )
 
 
 def test_set_and_get_round_trip():
@@ -95,6 +120,29 @@ def test_processor_leaves_the_event_dict_untouched_when_unbound():
     )
 
 
+def test_is_valid_accepts_a_conforming_id():
+    assert_that(is_valid_correlation_id("abc-123_ok:v1.0")).is_true()
+
+
+def test_is_valid_rejects_an_empty_string():
+    assert_that(is_valid_correlation_id("")).is_false()
+
+
+def test_is_valid_rejects_an_over_long_id():
+    assert_that(
+        is_valid_correlation_id("a" * (MAX_CORRELATION_ID_LENGTH + 1))
+    ).is_false()
+
+
+def test_is_valid_accepts_the_maximum_length():
+    assert_that(is_valid_correlation_id("a" * MAX_CORRELATION_ID_LENGTH)).is_true()
+
+
+@pytest.mark.parametrize("value", ["has space", "has\nnewline", "has%percent"])
+def test_is_valid_rejects_disallowed_characters(value):
+    assert_that(is_valid_correlation_id(value)).is_false()
+
+
 def test_contextvar_is_isolated_across_tasks():
     """The property the no-reset ASGI design depends on. Asserted, not assumed."""
     seen: dict[str, str | None] = {}
@@ -111,3 +159,14 @@ def test_contextvar_is_isolated_across_tasks():
     assert_that(seen).is_equal_to({"one": "one", "two": "two"})
     # And nothing leaked back into the parent context.
     assert_that(get_correlation_id()).is_none()
+
+
+def test_resolve_keeps_a_well_formed_inbound_id():
+    assert_that(resolve_correlation_id("abc-123")).is_equal_to("abc-123")
+
+
+@pytest.mark.parametrize("inbound", [None, "", "bad id\r\n"])
+def test_resolve_replaces_an_absent_or_malformed_id(inbound):
+    assert_that(resolve_correlation_id(inbound, generator=lambda: "fresh")).is_equal_to(
+        "fresh"
+    )

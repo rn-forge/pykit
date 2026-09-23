@@ -7,12 +7,12 @@ from rn_forge.fastapi import (
     Page,
     WireModel,
     AppConfig,
+    FastApiApp,
     page_params,
-    create_app,
 )
 from rn_forge.web import default_registry
 
-app = create_app(
+app = FastApiApp(
     AppConfig(
         registry=default_registry(),
         checks={"db": db_reachable},

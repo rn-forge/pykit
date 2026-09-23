@@ -1,28 +1,61 @@
 """Idempotency store protocols, request hashing, and in-memory test doubles.
 
 Stores must claim keys atomically. Reusing a key with a different request hash
-is an error; a completed key replays its stored response.
+is an error (422); a claim still in flight is a distinct error (409); a
+completed key replays its stored response.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Final, Protocol, runtime_checkable
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
-from rn_forge.web.exceptions import IdempotencyKeyReuse
+from rn_forge.web.exceptions import (
+    IdempotencyKeyInFlight,
+    IdempotencyKeyRequired,
+    IdempotencyKeyReuse,
+)
 
 __all__ = [
+    "IDEMPOTENCY_KEY_HEADER",
+    "SAFE_METHODS",
     "AsyncIdempotencyStore",
     "IdempotencyStore",
     "InMemoryAsyncIdempotencyStore",
     "InMemoryIdempotencyStore",
     "StoredResponse",
+    "check_idempotency_key",
     "request_hash",
+    "run_idempotent",
+    "run_idempotent_async",
 ]
+
+IDEMPOTENCY_KEY_HEADER: Final = "Idempotency-Key"
+"""The request header carrying the key (draft-ietf-httpapi-idempotency-key-header)."""
+
+SAFE_METHODS: Final = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
+"""Methods :func:`run_idempotent` bypasses the store for."""
+
+
+def check_idempotency_key(
+    value: str | None, *, header: str = IDEMPOTENCY_KEY_HEADER
+) -> str:
+    """Return *value*, the request's idempotency key, raising when it is absent.
+
+    Args:
+        value: The header's value, or ``None`` when absent.
+        header: The header's name, for the error detail.
+
+    Raises:
+        IdempotencyKeyRequired: *value* is ``None`` or empty (400).
+    """
+    if not value:
+        raise IdempotencyKeyRequired("{} is required", header, error_code=400)
+    return value
 
 
 def request_hash(body: Any) -> str:
@@ -74,12 +107,12 @@ class IdempotencyStore(Protocol):
         Returns:
             ``None`` on first sight — the caller executes and then calls
             :meth:`complete`. The stored response (with ``replayed=True``) when
-            this key has already completed. ``None`` again when the key is
-            claimed but still in flight; see :class:`InMemoryIdempotencyStore`
-            for why that is the specified behaviour.
+            this key has already completed.
 
         Raises:
             IdempotencyKeyReuse: *key* was seen with a different body.
+            IdempotencyKeyInFlight: *key* was claimed and its original request
+                has not completed.
         """
         ...
 
@@ -119,9 +152,7 @@ class InMemoryIdempotencyStore:
     """A dict-backed :class:`IdempotencyStore` for tests.
 
     It holds everything forever and is not shared between processes, so it is a
-    test double, not a production store. A claimed but incomplete key returns
-    ``None``; implementations that distinguish in-flight duplicates must define
-    their own lease behavior.
+    test double, not a production store.
     """
 
     def __init__(self) -> None:
@@ -140,10 +171,14 @@ class InMemoryIdempotencyStore:
             raise IdempotencyKeyReuse(
                 "Idempotency key {} was replayed with a different request body",
                 key,
-                error_code=409,
+                error_code=422,
             )
         if entry.response is None:
-            return None
+            raise IdempotencyKeyInFlight(
+                "Idempotency key {} is still processing its original request",
+                key,
+                error_code=409,
+            )
         return StoredResponse(
             status=entry.response.status, body=entry.response.body, replayed=True
         )
@@ -180,3 +215,82 @@ class InMemoryAsyncIdempotencyStore:
         self._inner.complete(
             scope=scope, key=key, status=status, response_body=response_body
         )
+
+
+def run_idempotent(
+    store: IdempotencyStore,
+    *,
+    scope: str,
+    key: str | None,
+    method: str,
+    body: Any,
+    execute: Callable[[], tuple[int, Mapping[str, Any]]],
+    header: str = IDEMPOTENCY_KEY_HEADER,
+) -> StoredResponse:
+    """Run *execute* under the idempotency-key protocol.
+
+    A safe method (:data:`SAFE_METHODS`) bypasses the store entirely and just
+    runs *execute*. An unsafe method requires *key*, claims it, replays a
+    completed key's stored response, and stores what *execute* returns on
+    first sight.
+
+    Args:
+        store: The idempotency store.
+        scope: An opaque namespace for the key — see
+            :meth:`IdempotencyStore.record_or_replay`.
+        key: The client's ``Idempotency-Key`` header value, or ``None``.
+        method: The request's HTTP method, any case.
+        body: The request body, hashed for reuse detection.
+        execute: Runs the handler, returning ``(status, response_body)``.
+        header: The header's name, for :exc:`IdempotencyKeyRequired`'s detail.
+
+    Returns:
+        The response to send. ``replayed`` is ``True`` only for a stored
+        replay.
+
+    Raises:
+        IdempotencyKeyRequired: An unsafe method and *key* is absent (400).
+        IdempotencyKeyReuse: *key* was seen with a different body (422).
+        IdempotencyKeyInFlight: *key* is claimed and still in flight (409).
+    """
+    if method.upper() in SAFE_METHODS:
+        status, response_body = execute()
+        return StoredResponse(status=status, body=dict(response_body))
+
+    resolved_key = check_idempotency_key(key, header=header)
+    stored = store.record_or_replay(scope=scope, key=resolved_key, request_body=body)
+    if stored is not None:
+        return stored
+    status, response_body = execute()
+    store.complete(
+        scope=scope, key=resolved_key, status=status, response_body=response_body
+    )
+    return StoredResponse(status=status, body=dict(response_body))
+
+
+async def run_idempotent_async(
+    store: AsyncIdempotencyStore,
+    *,
+    scope: str,
+    key: str | None,
+    method: str,
+    body: Any,
+    execute: Callable[[], Awaitable[tuple[int, Mapping[str, Any]]]],
+    header: str = IDEMPOTENCY_KEY_HEADER,
+) -> StoredResponse:
+    """See :func:`run_idempotent`; identical semantics over the async store and *execute*."""
+    if method.upper() in SAFE_METHODS:
+        status, response_body = await execute()
+        return StoredResponse(status=status, body=dict(response_body))
+
+    resolved_key = check_idempotency_key(key, header=header)
+    stored = await store.record_or_replay(
+        scope=scope, key=resolved_key, request_body=body
+    )
+    if stored is not None:
+        return stored
+    status, response_body = await execute()
+    await store.complete(
+        scope=scope, key=resolved_key, status=status, response_body=response_body
+    )
+    return StoredResponse(status=status, body=dict(response_body))

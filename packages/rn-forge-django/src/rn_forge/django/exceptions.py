@@ -12,15 +12,12 @@ from django.http import HttpRequest, JsonResponse
 from django.urls.exceptions import Resolver404
 from rn_forge.commons.logging import AppLogger
 from rn_forge.web import (
-    AUTH_FAILED_DETAIL,
     PROBLEM_MEDIA_TYPE,
     ProblemRegistry,
     ProblemType,
-    challenge_header,
     default_registry,
-    get_correlation_id,
+    render_problem,
 )
-from rn_forge.web.context import CORRELATION_ID_KEY
 
 __all__ = [
     "django_exception_handler",
@@ -113,28 +110,27 @@ def problem_details_response(
         extensions: Extra members, flattened onto the body.
         headers: Response headers to carry, e.g. a DRF-built challenge.
     """
-    row = problem if problem is not None else registry.problem_for(exc)
-    body = registry.build(
+    rendered = render_problem(
+        registry,
         exc,
         instance=instance,
-        detail=AUTH_FAILED_DETAIL if row.status == 401 else detail,
-        problem=row,
-        extensions={CORRELATION_ID_KEY: get_correlation_id(), **(extensions or {})},
+        problem=problem,
+        detail=detail,
+        extensions=extensions,
+        headers=headers,
     )
-    if row.status >= 500:
+    if rendered.status >= 500:
         _LOGGER.error(
             "Problem response: status={} instance={}",
-            row.status,
+            rendered.status,
             instance,
             exc_info=exc,
         )
     response = JsonResponse(
-        body.as_body(), status=body.status, content_type=PROBLEM_MEDIA_TYPE
+        rendered.body, status=rendered.status, content_type=PROBLEM_MEDIA_TYPE
     )
-    for name, value in (headers or {}).items():
+    for name, value in rendered.headers.items():
         response[name] = value
-    if row.status == 401 and not response.has_header("WWW-Authenticate"):
-        response["WWW-Authenticate"] = challenge_header()
     return response
 
 

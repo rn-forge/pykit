@@ -29,6 +29,7 @@ from rn_forge.web import (
     Principal,
     Requirement,
     ScopeAuthorizer,
+    parse_authorization,
 )
 
 __all__ = ["basic_auth", "bearer_auth", "requires"]
@@ -76,10 +77,10 @@ def basic_auth(
         request: Request,
         basic: HTTPBasicCredentials | None = Security(scheme),
     ) -> Principal:
-        if basic is None:
+        credentials = parse_authorization(request.headers.get("Authorization"), "Basic")
+        if basic is None or credentials is None:
             raise AuthenticationFailed("No credentials were supplied", error_code=401)
-        token = request.headers["Authorization"].partition(" ")[2].strip()
-        return await _authenticate(authenticator, Credentials("Basic", token), log)
+        return await _authenticate(authenticator, credentials, log)
 
     return dependency
 

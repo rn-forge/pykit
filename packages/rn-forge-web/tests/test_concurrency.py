@@ -7,6 +7,7 @@ from rn_forge.web.concurrency import (
     EntityVersionETagCodec,
     VersionETagCodec,
     check_precondition,
+    is_not_modified,
 )
 from rn_forge.web.exceptions import (
     MalformedPrecondition,
@@ -134,3 +135,30 @@ def test_the_version_is_checked_before_the_entity():
     assert_that(check_precondition).raises(VersionConflict).when_called_with(
         'W/"other:6"', current_version=7, entity_id="a1"
     )
+
+
+# --- is_not_modified -------------------------------------------------------
+
+
+def test_no_header_is_always_modified():
+    assert_that(is_not_modified(None, 'W/"a1:7"')).is_false()
+
+
+def test_matching_validator_is_not_modified():
+    assert_that(is_not_modified('W/"a1:7"', 'W/"a1:7"')).is_true()
+
+
+def test_star_always_matches():
+    assert_that(is_not_modified("*", 'W/"a1:7"')).is_true()
+
+
+def test_mismatched_validator_is_modified():
+    assert_that(is_not_modified('W/"a1:6"', 'W/"a1:7"')).is_false()
+
+
+def test_comparison_is_weak_on_both_sides():
+    assert_that(is_not_modified('"a1:7"', 'W/"a1:7"')).is_true()
+
+
+def test_a_comma_list_matches_if_any_member_matches():
+    assert_that(is_not_modified('W/"other:1", W/"a1:7"', 'W/"a1:7"')).is_true()

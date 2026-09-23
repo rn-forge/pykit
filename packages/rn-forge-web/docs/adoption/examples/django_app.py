@@ -21,13 +21,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rn_forge.web import (
-    AUTH_FAILED_DETAIL,
+    IDEMPOTENCY_KEY_HEADER,
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
-    IdempotencyKeyRequired,
     IdempotencyKeyReuse,
     Page,
     Principal,
@@ -35,15 +34,16 @@ from rn_forge.web import (
     ScopeAuthorizer,
     StoredResponse,
     bind_correlation_id,
-    challenge_header,
+    check_idempotency_key,
     check_precondition,
     clamp_page_size,
     decode_cursor,
     default_registry,
     encode_cursor,
-    errors_from_field_map,
-    get_correlation_id,
+    field_error,
+    render_problem,
     request_hash,
+    resolve_correlation_id,
     run_checks_sync,
 )
 
@@ -66,7 +66,8 @@ class CorrelationIdMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest):
-        with bind_correlation_id(request.headers.get("X-Correlation-ID")) as cid:
+        inbound = resolve_correlation_id(request.headers.get("X-Correlation-ID"))
+        with bind_correlation_id(inbound) as cid:
             response = self.get_response(request)
             response["X-Correlation-ID"] = cid
             return response
@@ -77,24 +78,26 @@ class CorrelationIdMiddleware:
 
 def problem_exception_handler(exc: BaseException, context: dict[str, Any]) -> Response:
     request = context.get("request")
-    row = REGISTRY.problem_for(exc)
-
-    extensions: dict[str, Any] = {"correlation_id": get_correlation_id()}
-    if detail := getattr(exc, "detail", None):
-        if isinstance(detail, dict):
-            extensions["errors"] = errors_from_field_map(detail)
-
-    problem = REGISTRY.build(
+    extensions: dict[str, Any] = {}
+    if isinstance(detail := getattr(exc, "detail", None), dict):
+        # Flat serializers only; rn_forge.django also walks nested ones.
+        extensions["errors"] = [
+            field_error((name,), str(message))
+            for name, messages in detail.items()
+            for message in messages
+        ]
+    rendered = render_problem(
+        REGISTRY,
         exc,
         instance=request.path if request is not None else "",
-        detail=AUTH_FAILED_DETAIL if row.status == 401 else None,
         extensions=extensions,
+        realm=REALM,
     )
     response = Response(
-        problem.as_body(), status=problem.status, content_type=PROBLEM_MEDIA_TYPE
+        rendered.body, status=rendered.status, content_type=PROBLEM_MEDIA_TYPE
     )
-    if problem.status == 401:
-        response["WWW-Authenticate"] = challenge_header(realm=REALM)
+    for name, value in rendered.headers.items():
+        response[name] = value
     return response
 
 
@@ -186,9 +189,7 @@ class ChargeView(APIView):
     store = CacheIdempotencyStore()
 
     def post(self, request):
-        key = request.headers.get("Idempotency-Key")
-        if key is None:
-            raise IdempotencyKeyRequired("Idempotency-Key is required", error_code=400)
+        key = check_idempotency_key(request.headers.get(IDEMPOTENCY_KEY_HEADER))
         stored = self.store.record_or_replay(
             scope="charges", key=key, request_body=request.data
         )

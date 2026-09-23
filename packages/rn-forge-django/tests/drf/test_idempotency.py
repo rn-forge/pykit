@@ -17,6 +17,7 @@ from rn_forge.django.drf.idempotency import (  # noqa: E402
     idempotent,
 )
 from rn_forge.web import (  # noqa: E402
+    IdempotencyKeyInFlight,
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
     IdempotencyStore,
@@ -45,10 +46,11 @@ class TestCacheIdempotencyStore:
             True,
         )
 
-    def test_in_flight_claim_returns_none(self) -> None:
+    def test_a_duplicate_while_in_flight_raises(self) -> None:
         store = CacheIdempotencyStore()
         store.record_or_replay(scope="s", key="k", request_body={"a": 1})
-        assert store.record_or_replay(scope="s", key="k", request_body={"a": 1}) is None
+        with pytest.raises(IdempotencyKeyInFlight):
+            store.record_or_replay(scope="s", key="k", request_body={"a": 1})
 
     def test_same_key_different_body_raises_reuse(self) -> None:
         store = CacheIdempotencyStore()

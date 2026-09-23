@@ -25,6 +25,7 @@ __all__ = [
     "Requirement",
     "ScopeAuthorizer",
     "challenge_header",
+    "parse_authorization",
     "principal_from_claims",
 ]
 
@@ -203,6 +204,28 @@ def challenge_header(
         return scheme
     rendered = ", ".join(f'{k}="{_quote(v)}"' for k, v in params)
     return f"{scheme} {rendered}"
+
+
+def parse_authorization(header: str | None, scheme: str) -> Credentials | None:
+    """Return the *scheme* credentials in an ``Authorization`` header value.
+
+    The scheme is matched case-insensitively (RFC 9110 §11.1) and the token
+    is returned verbatim apart from surrounding whitespace — it may be empty.
+
+    Args:
+        header: The ``Authorization`` header value, or ``None`` when absent.
+        scheme: The expected scheme, e.g. ``"Bearer"``.
+
+    Returns:
+        ``Credentials(scheme, token)``, or ``None`` when *header* is absent or
+        names another scheme.
+    """
+    if not header:
+        return None
+    sent, _, token = header.partition(" ")
+    if sent.lower() != scheme.lower():
+        return None
+    return Credentials(scheme, token.strip())
 
 
 def _quote(value: str) -> str:

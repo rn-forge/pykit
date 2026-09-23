@@ -3,7 +3,7 @@
 import pytest
 from assertpy import assert_that
 
-from rn_forge.web.openapi import operation_id, page_component_name
+from rn_forge.web.openapi import operation_id
 
 pytestmark = pytest.mark.unit
 
@@ -67,8 +67,3 @@ class TestOperationIdForCustomMethods:
         assert_that(operation_id("/orders/{id}/cancel", "POST")).is_equal_to(
             "cancelCreate"
         )
-
-
-class TestPageComponentName:
-    def test_prefixes_the_item_name(self) -> None:
-        assert_that(page_component_name("OrderOut")).is_equal_to("PageOrderOut")

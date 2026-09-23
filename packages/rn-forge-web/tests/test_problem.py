@@ -23,10 +23,13 @@ from rn_forge.web.problem import (
     ProblemRegistry,
     ProblemType,
     default_registry,
-    errors_from_field_map,
-    errors_from_pointer_list,
+    field_error,
     problem_from_body,
+    render_problem,
+    unmapped_exceptions,
 )
+from rn_forge.web.auth import AUTH_FAILED_DETAIL
+from rn_forge.web.context import bind_correlation_id
 
 pytestmark = pytest.mark.unit
 
@@ -129,7 +132,7 @@ def test_default_registry_returns_independent_instances():
         (DomainConflict("x"), 409),
         (VersionConflict("x"), 412),
         (PreconditionRequired("x"), 428),
-        (IdempotencyKeyReuse("x"), 409),
+        (IdempotencyKeyReuse("x"), 422),
         (AuthenticationFailed("x"), 401),
         (PermissionDenied("x"), 403),
         (KeyError("x"), 404),
@@ -186,6 +189,67 @@ def test_build_carries_instance_and_extensions():
     assert_that(problem.as_body()["correlation_id"]).is_equal_to("abc")
 
 
+# --- exception-carried extensions and table audit -------------------------
+
+
+def test_extensions_are_merged_from_the_exception():
+    class TaggedConflict(DomainConflict):
+        def problem_extensions(self):
+            return {"current_version": 7}
+
+    problem = default_registry().build(TaggedConflict("clash"), instance="/x")
+    assert_that(problem.as_body()["current_version"]).is_equal_to(7)
+
+
+def test_an_explicit_extension_overrides_the_exceptions_own():
+    class TaggedConflict(DomainConflict):
+        def problem_extensions(self):
+            return {"current_version": 7}
+
+    problem = default_registry().build(
+        TaggedConflict("clash"), instance="/x", extensions={"current_version": 9}
+    )
+    assert_that(problem.as_body()["current_version"]).is_equal_to(9)
+
+
+def test_nothing_is_merged_for_a_5xx_row():
+    class TaggedError(RuntimeError):
+        def problem_extensions(self):
+            return {"leaked": "internal"}
+
+    problem = default_registry().build(TaggedError("boom"), instance="/x")
+    assert_that(problem.as_body()).does_not_contain_key("leaked")
+
+
+def test_an_exception_without_the_method_is_unaffected():
+    problem = default_registry().build(DomainConflict("clash"), instance="/x")
+    assert_that(problem.as_body()).does_not_contain_key("current_version")
+
+
+def test_unmapped_exceptions_finds_a_subclass_resolving_to_the_fallback():
+    class Unregistered(RuntimeError):
+        pass
+
+    registry = ProblemRegistry().register(ValueError, CONFLICT)
+    found = unmapped_exceptions(registry, RuntimeError, ValueError)
+    assert_that(found).contains(Unregistered)
+
+
+def test_unmapped_exceptions_excludes_a_subclass_resolving_through_its_base():
+    class RegisteredChild(ValueError):
+        pass
+
+    registry = ProblemRegistry().register(ValueError, CONFLICT)
+    found = unmapped_exceptions(registry, ValueError)
+    assert_that(found).does_not_contain(RegisteredChild)
+
+
+def test_fallback_property_returns_the_registrys_fallback_row():
+    row = ProblemType("teapot", 418, "I'm a teapot")
+    registry = ProblemRegistry(fallback=row)
+    assert_that(registry.fallback).is_equal_to(row)
+
+
 # --- the two normalizers --------------------------------------------------
 
 
@@ -235,70 +299,67 @@ def test_build_uses_an_explicit_row_instead_of_resolving_one():
     assert_that(problem.detail).is_equal_to("Not Found")
 
 
-def test_pointer_list_from_pydantic_errors():
-    """Normalized to the same list DRF's field map produces for the same failure."""
-    raw = [
-        {"loc": ("body", "name"), "msg": "Field required", "type": "missing"},
-        {"loc": ("body", "items", 0, "qty"), "msg": "must be > 0"},
-    ]
-    assert_that(errors_from_pointer_list(raw)).is_equal_to(
-        [
-            {"pointer": "/name", "message": "This field is required."},
-            {"pointer": "/items/0/qty", "message": "must be > 0"},
-        ]
-    )
-    assert_that(errors_from_pointer_list(raw)[0]).is_equal_to(
-        errors_from_field_map({"name": ["This field is required."]})[0]
+def test_field_error_builds_an_rfc6901_pointer():
+    assert_that(field_error(("items", 1, "qty"), "must be > 0")).is_equal_to(
+        {"pointer": "/items/1/qty", "detail": "must be > 0"}
     )
 
 
-def test_pointer_list_keeps_the_prefix_of_a_non_body_location():
-    raw = [{"loc": ("query", "pageSize"), "msg": "Input should be a valid integer"}]
-    assert_that(errors_from_pointer_list(raw)).is_equal_to(
-        [{"pointer": "/query/pageSize", "message": "Input should be a valid integer"}]
+def test_field_error_with_an_empty_path_points_at_the_root():
+    assert_that(field_error((), "bad")).is_equal_to({"pointer": "", "detail": "bad"})
+
+
+def test_field_error_escapes_rfc6901_reserved_characters():
+    assert_that(field_error(("a/b~c",), "bad")["pointer"]).is_equal_to("/a~1b~0c")
+
+
+# --- the rendered response ------------------------------------------------
+
+
+def test_render_problem_stamps_the_bound_correlation_id():
+    with bind_correlation_id("abc") as cid:
+        rendered = render_problem(
+            default_registry(),
+            DomainConflict("taken"),
+            instance="/x",
+            correlation_header="X-Correlation-ID",
+        )
+    assert_that(rendered.status).is_equal_to(409)
+    assert_that(rendered.body["correlation_id"]).is_equal_to(cid)
+    assert_that(rendered.headers).is_equal_to({"X-Correlation-ID": "abc"})
+
+
+def test_render_problem_leaves_the_correlation_header_off_by_default():
+    with bind_correlation_id("abc"):
+        rendered = render_problem(default_registry(), DomainConflict("x"), instance="/")
+    assert_that(rendered.headers).is_empty()
+
+
+def test_render_problem_masks_a_401_detail_and_adds_a_challenge():
+    rendered = render_problem(
+        default_registry(),
+        AuthenticationFailed("signature expired"),
+        instance="/x",
+        detail="signature expired",
+        realm="api",
     )
+    assert_that(rendered.body["detail"]).is_equal_to(AUTH_FAILED_DETAIL)
+    assert_that(rendered.headers["WWW-Authenticate"]).contains('realm="api"')
 
 
-def test_pointer_list_handles_an_empty_loc():
-    assert_that(errors_from_pointer_list([{"loc": (), "msg": "bad"}])).is_equal_to(
-        [{"pointer": "", "message": "bad"}]
+def test_render_problem_keeps_a_challenge_the_caller_supplied():
+    rendered = render_problem(
+        default_registry(),
+        AuthenticationFailed("x"),
+        instance="/x",
+        headers={"www-authenticate": 'Basic realm="own"'},
     )
+    assert_that(rendered.headers).is_equal_to({"www-authenticate": 'Basic realm="own"'})
 
 
-def test_field_map_flat():
-    assert_that(
-        errors_from_field_map({"name": ["This field is required."]})
-    ).is_equal_to([{"pointer": "/name", "message": "This field is required."}])
-
-
-def test_field_map_multiple_messages_share_a_pointer():
-    result = errors_from_field_map({"name": ["too short", "not unique"]})
-    assert_that(result).is_equal_to(
-        [
-            {"pointer": "/name", "message": "too short"},
-            {"pointer": "/name", "message": "not unique"},
-        ]
-    )
-
-
-def test_field_map_recurses_into_a_nested_serializer():
-    """The bug being fixed on the way through: cims's handler drops these."""
-    result = errors_from_field_map({"address": {"postcode": ["invalid"]}})
-    assert_that(result).is_equal_to(
-        [{"pointer": "/address/postcode", "message": "invalid"}]
-    )
-
-
-def test_field_map_indexes_a_list_of_nested_serializers():
-    result = errors_from_field_map({"items": [{}, {"qty": ["must be > 0"]}]})
-    assert_that(result).is_equal_to(
-        [{"pointer": "/items/1/qty", "message": "must be > 0"}]
-    )
-
-
-def test_field_map_escapes_rfc6901_reserved_characters():
-    result = errors_from_field_map({"a/b~c": ["bad"]})
-    assert_that(result).is_equal_to([{"pointer": "/a~1b~0c", "message": "bad"}])
+def test_render_problem_never_challenges_a_403():
+    rendered = render_problem(default_registry(), PermissionDenied("no"), instance="/")
+    assert_that(rendered.headers).does_not_contain_key("WWW-Authenticate")
 
 
 # --- the client-side direction --------------------------------------------

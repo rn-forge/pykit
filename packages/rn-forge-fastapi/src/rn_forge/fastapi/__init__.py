@@ -1,18 +1,18 @@
 """FastAPI adapters for :mod:`rn_forge.web` contracts."""
 
-from rn_forge.fastapi.app import AppConfig, create_app
+from rn_forge.fastapi.app import AppConfig, FastApiApp
 from rn_forge.fastapi.auth import basic_auth, bearer_auth, requires
+from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.fastapi.dependencies import (
+    conditional_get,
     page_params,
     require_idempotency_key,
     require_if_match,
 )
+from rn_forge.fastapi.deprecation import deprecated
 from rn_forge.fastapi.health import health_router
-from rn_forge.fastapi.openapi import (
-    OPENAPI_VERSION,
-    install_problem_schema,
-    operation_id,
-)
+from rn_forge.fastapi.idempotency import idempotent
+from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.problem import Log, register_problem_handlers
 from rn_forge.fastapi.schemas import (
     CheckResult,
@@ -23,19 +23,22 @@ from rn_forge.fastapi.schemas import (
 )
 
 __all__ = [
-    "OPENAPI_VERSION",
     "AppConfig",
     "CheckResult",
+    "CorsPolicy",
+    "FastApiApp",
     "HealthReport",
     "Log",
     "Page",
     "ProblemDetail",
     "WireModel",
+    "apply_cors",
     "basic_auth",
     "bearer_auth",
-    "create_app",
+    "conditional_get",
+    "deprecated",
     "health_router",
-    "install_problem_schema",
+    "idempotent",
     "operation_id",
     "page_params",
     "register_problem_handlers",

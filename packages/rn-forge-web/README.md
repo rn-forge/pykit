@@ -8,10 +8,8 @@ envelope, the idempotency contract, the readiness aggregate, the ASGI
 correlation middleware, the authentication contract, the OpenAPI naming rules,
 and the conformance table the framework packages are tested against.
 
-Eleven modules, all one kind of mechanism — **inbound** HTTP wire semantics —
-so the package is deliberately flat rather than grouped into sub-packages the
-way `rn-forge-commons` is (kiln D55). The curated `__init__.py` is what would
-make a later regrouping cheap.
+Eleven flat modules, all one kind of mechanism: **inbound** HTTP wire
+semantics.
 
 ## Where it sits
 
@@ -26,9 +24,8 @@ the command-line and file-owning layers, and a package that ships into an ASGI
 server has no business reaching either. It never imports a web framework:
 not `django`, not `fastapi`, not `starlette`, not `rest_framework`.
 
-That is not a matter of discipline. `.importlinter` at the repo root carries
-the `web-is-framework-free` and `web-layers` contracts, `uv run lint-imports`
-proves them, and CI gates every other job on it.
+`.importlinter` at the repo root carries the `web-is-framework-free` and
+`web-layers` contracts, and `uv run lint-imports` proves them.
 
 ## Inbound, not outbound
 
@@ -46,10 +43,21 @@ The one concern that runs the other way is `problem_from_body`, which parses an
 parsed mapping and a status — not a response object — precisely so no HTTP
 client library is pulled in either direction.
 
+## What stays in a framework package
+
+Logic that both framework packages need lives here, as framework-free
+functions: rendering a problem response (`render_problem`), the field-error
+entry (`field_error`), resolving an inbound correlation ID, parsing an
+`Authorization` header, requiring an idempotency key, the liveness body and
+the OpenAPI problem-response declarations. `rn-forge-django` and
+`rn-forge-fastapi` keep only the code that reads their framework's native
+shapes (a DRF error tree, a pydantic error list, a Starlette exception) and
+writes their framework's native response.
+
 ## Installation
 
 None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag**, and a consumer declares it as a pinned direct URL (kiln D46):
+tag**, and a consumer declares it as a pinned direct URL:
 
 ```toml
 dependencies = [
@@ -82,77 +90,17 @@ Behind an extra, and excluded from the curated `__init__.py`, so the rest of
 the package keeps the property below: install `rn-forge-web` without extras and
 nothing but commons comes with it. Import `rn_forge.web.oidc` directly.
 
-**Nothing else.** That is a result, not a policy: the workspace principle is
-*depend on a proven library rather than reimplement it*, and this package was
-planned around two candidates. Both were evaluated on 2026-09-11 and both were
-rejected.
+**`secure` (2.0.1), behind this package's own `security` extra** — and only
+for `rn_forge.web.security`. It is framework-agnostic (no dependencies of its
+own) and emits the OWASP REST Security Cheat Sheet header preset exactly, so
+it is wrapped rather than hand-rolled. Behind an extra and excluded from the
+curated `__init__.py` for the same reason as `auth`; import
+`rn_forge.web.security` directly.
 
-### `asgi-correlation-id` 5.0.1 — rejected
-
-Evaluated for the correlation ContextVar and the ASGI middleware
-(`context.py`, `asgi.py`).
-
-| Criterion | Outcome |
-| --- | --- |
-| Pure-ASGI middleware, not `BaseHTTPMiddleware` | pass |
-| ContextVar readable from a plain sync function | pass |
-| Header name, generator and validator configurable | pass |
-| Transitive dependency set is `starlette`-free | **fail** |
-
-`asgi-correlation-id` 5.0.1 declares `starlette>=0.18` as a **hard runtime
-dependency**, not an extra. Adopting it would make every Django/WSGI consumer
-install Starlette in order to read a ContextVar — which is precisely the
-boundary rule this package exists to hold, so the failure is disqualifying
-regardless of how good the rest of it is. The middleware is therefore
-hand-written; it is about sixty lines, and the six ASGI type aliases it needs
-are declared locally for the same reason.
-
-Revisit if the library ever moves Starlette behind an extra.
-
-### `rfc9457` 0.4.1 — rejected
-
-Evaluated for the RFC 9457 problem shape (`problem.py`).
-
-| Criterion | Outcome |
-| --- | --- |
-| No framework dependency | pass (only `multidict`) |
-| Composes with `AppException` | **fail** |
-| Extension members flatten at the top level | pass |
-| Ships `py.typed` | pass (though its public signatures use untyped `**kwargs`) |
-
-Its `Problem` is an `Exception` subclass carrying its own `__init__`, `__str__`
-and `__repr__`. Multiply inheriting it alongside `AppException` gives two
-incompatible constructors and two string representations, and one of the two
-contracts has to lose. Two further gaps make the wrapper larger than the
-implementation: it models no `instance` member at all (an RFC 9457 core
-member), and it has no parse direction, so `problem_from_body` would be
-hand-written anyway.
-
-Separately, it conflates the exception with the wire shape. This package keeps
-them apart on purpose — `ProblemDetail` is a frozen dataclass, and
-`ProblemRegistry` maps *any* exception class to a problem row by walking its
-MRO — which is the part no library provides and the part that makes an adapter
-subclass resolve to its base's row without anyone remembering to register it.
-
-### The negative results — searched 2026-09-11, nothing found
-
-For four concerns the search found no maintained, framework-agnostic library,
-so hand-rolling them is the exception the workspace principle allows rather
-than the default. Recorded with the date so the next person does not redo the
-search, and so that if something appears later the decision is visibly
-revisitable:
-
-- **ETag / `If-Match` preconditions** (`concurrency.py`) — what exists is
-  bound to Flask, Django or DRF.
-- **Opaque cursor pagination** (`pagination.py`) — every candidate is an ORM
-  or framework plugin, which is the layer *below* the wire spelling this
-  module fixes.
-- **Idempotency-key stores** (`idempotency.py`) — the maintained options are
-  framework middleware, and the part worth sharing is the protocol, not an
-  adapter.
-- **Health-check aggregation** (`health.py`) — likewise: the libraries ship
-  endpoints, and the endpoints are exactly what belongs in the framework
-  packages rather than here.
+**Nothing else.** The correlation middleware, the problem shape, ETag
+preconditions, cursor pagination, idempotency and health aggregation are
+implemented here: the maintained libraries for each either depend on a web
+framework or fix a different wire shape.
 
 ## Documentation
 

@@ -4,7 +4,6 @@ from django.urls import path
 
 from rn_forge.django.views import (
     debug_request_view,
-    healthcheck_view,
     index_view,
 )
 
@@ -12,6 +11,5 @@ __all__ = ["urlpatterns"]
 
 urlpatterns = [
     path("", index_view, name="rn-forge-index"),
-    path("healthcheck/", healthcheck_view, name="rn-forge-healthcheck"),
     path("debug-request/", debug_request_view, name="rn-forge-debug-request"),
 ]

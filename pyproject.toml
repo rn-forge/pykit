@@ -70,7 +70,7 @@ workspace = [
   "rn-forge-django[all]",
   "rn-forge-fastapi",
   "rn-forge-tooling",
-  "rn-forge-web",
+  "rn-forge-web[security]",
 ]
 
 docs = [

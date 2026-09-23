@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 from collections.abc import Callable, Mapping
-from typing import Any, Concatenate, Final, cast
+from typing import Any, Concatenate, cast
 
 from django.core.cache import caches
 from django.http import StreamingHttpResponse
@@ -12,17 +12,16 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.commons.exceptions import AppException
 from rn_forge.web import (
-    IdempotencyKeyRequired,
+    IDEMPOTENCY_KEY_HEADER,
+    IdempotencyKeyInFlight,
     IdempotencyKeyReuse,
     IdempotencyStore,
     StoredResponse,
     request_hash,
+    run_idempotent,
 )
 
 __all__ = ["CacheIdempotencyStore", "idempotent"]
-
-DEFAULT_IDEMPOTENCY_HEADER: Final = "Idempotency-Key"
-_SAFE_METHODS: Final = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
 
 class CacheIdempotencyStore:
@@ -61,11 +60,15 @@ class CacheIdempotencyStore:
             raise IdempotencyKeyReuse(
                 "Idempotency key {} was replayed with a different request body",
                 key,
-                error_code=409,
+                error_code=422,
             )
         stored = cast(Mapping[str, Any] | None, entry["response"])
-        if stored is None:  # claimed, still in flight
-            return None
+        if stored is None:
+            raise IdempotencyKeyInFlight(
+                "Idempotency key {} is still processing its original request",
+                key,
+                error_code=409,
+            )
         return StoredResponse(
             status=int(stored["status"]), body=stored["body"], replayed=True
         )
@@ -88,7 +91,7 @@ def idempotent[V, **P](
     store: IdempotencyStore,
     *,
     scope: str,
-    header: str = DEFAULT_IDEMPOTENCY_HEADER,
+    header: str = IDEMPOTENCY_KEY_HEADER,
 ) -> Callable[
     [Callable[Concatenate[V, Request, P], Response]],
     Callable[Concatenate[V, Request, P], Response],
@@ -98,7 +101,9 @@ def idempotent[V, **P](
     Safe methods bypass the store. A missing key on an unsafe method raises
     :class:`rn_forge.web.IdempotencyKeyRequired` (400); a replay returns the
     stored status and body verbatim; the same key with a different body raises
-    :class:`rn_forge.web.IdempotencyKeyReuse` (409).
+    :class:`rn_forge.web.IdempotencyKeyReuse` (422); a duplicate while the
+    original is still in flight raises
+    :class:`rn_forge.web.IdempotencyKeyInFlight` (409).
 
     Example::
 
@@ -118,27 +123,31 @@ def idempotent[V, **P](
         def wrapper(
             view: V, request: Request, *args: P.args, **kwargs: P.kwargs
         ) -> Response:
-            if request.method in _SAFE_METHODS:
-                return handler(view, request, *args, **kwargs)
-            key = cast(str | None, request.headers.get(header))
-            if not key:
-                raise IdempotencyKeyRequired("{} is required", header, error_code=400)
-            body = cast(object, request.data)  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data partially untyped
-            stored = store.record_or_replay(scope=scope, key=key, request_body=body)
-            if stored is not None:
-                return Response(dict(stored.body), status=stored.status)
-            response = handler(view, request, *args, **kwargs)
-            AppException.check(
-                not isinstance(response, StreamingHttpResponse),
-                "Streaming responses cannot be stored against an idempotency key",
-            )
-            store.complete(
+            # The runner returns (status, body); the original Response object
+            # — headers included — is kept here for the non-replayed case.
+            executed: list[Response] = []
+
+            def execute() -> tuple[int, Mapping[str, Any]]:
+                response = handler(view, request, *args, **kwargs)
+                AppException.check(
+                    not isinstance(response, StreamingHttpResponse),
+                    "Streaming responses cannot be stored against an idempotency key",
+                )
+                executed.append(response)
+                return response.status_code, cast(Mapping[str, Any], response.data)  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data untyped
+
+            result = run_idempotent(
+                store,
                 scope=scope,
-                key=key,
-                status=response.status_code,
-                response_body=cast(Mapping[str, Any], response.data),  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data untyped
+                key=cast(str | None, request.headers.get(header)),
+                method=request.method or "",
+                body=cast(object, request.data),  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data partially untyped
+                execute=execute,
+                header=header,
             )
-            return response
+            if result.replayed:
+                return Response(dict(result.body), status=result.status)
+            return executed[0]
 
         return wrapper
 

@@ -25,6 +25,10 @@ testing = ["assertpy>=1.1", "pytest>=9.1.1"]
 auth = [
   "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
+# `rn_forge.web.security` only. `secure` is framework-agnostic (no dependencies
+# of its own) and emits the OWASP header preset directly, so it is wrapped
+# rather than hand-rolled.
+security = ["secure>=2.0.1"]
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]
@@ -50,12 +54,12 @@ dev = [
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-web[auth]",
+  "rn-forge-web[auth,security]",
   "ruff>=0.15.21",
 ]
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocstrings[python]>=1.0.6",
-  "rn-forge-web[auth]",
+  "rn-forge-web[auth,security]",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import Final
 
 from rn_forge.web.conformance.types import (
@@ -10,16 +11,20 @@ from rn_forge.web.conformance.types import (
     ConformanceCase,
     RequestSpec,
 )
+from rn_forge.web.context import EXPOSED_HEADERS
 from rn_forge.web.pagination import encode_cursor
 from rn_forge.web.problem import (
     BAD_REQUEST,
     BLANK_TYPE,
     CONFLICT,
+    CONTENT_TOO_LARGE,
     GENERIC_SERVER_DETAIL,
     INTERNAL_ERROR,
     NOT_FOUND,
     PRECONDITION_FAILED,
     PRECONDITION_REQUIRED,
+    SERVICE_UNAVAILABLE,
+    TOO_MANY_REQUESTS,
     UNAUTHORIZED,
     VALIDATION_ERROR,
     FORBIDDEN,
@@ -30,15 +35,21 @@ __all__ = ["CASES", "case_by_id", "cases_for"]
 
 _JSON: Final = {"Content-Type": "application/json"}
 _PROBLEM: Final = {"Content-Type": "application/problem+json"}
+_LINKSET: Final = {"Content-Type": "application/linkset+json"}
 
 
 def _problem_body(
     row: ProblemType, detail: str, **extensions: object
 ) -> dict[str, object]:
-    """The problem body a driver must produce, already in redacted form."""
+    """The problem body a driver must produce, already in redacted form.
+
+    Every case here uses ``about:blank`` (no ``type_base`` configured), so per
+    RFC 9457 §4.2.1 the title is the HTTP status phrase, not *row*'s
+    kit-specific title.
+    """
     return {
         "type": BLANK_TYPE,
-        "title": row.title,
+        "title": HTTPStatus(row.status).phrase,
         "status": row.status,
         "detail": detail,
         "instance": REDACTED,
@@ -58,7 +69,7 @@ way no client-visible field would show.
 
 
 CASES: Final[tuple[ConformanceCase, ...]] = (
-    # --- Problem bodies (problem.py §2.2, §2.3) -------------------------------
+    # --- Problem bodies (problem.py) -------------------------------
     ConformanceCase(
         id="problem.unregistered-is-500-without-detail",
         area="problem",
@@ -105,10 +116,10 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body=_problem_body(
             VALIDATION_ERROR,
             "Validation Error",
-            errors=[{"pointer": "/name", "message": "This field is required."}],
+            errors=[{"pointer": "/name", "detail": "This field is required."}],
         ),
     ),
-    # --- Concurrency (concurrency.py §3.1, §3.3) ------------------------------
+    # --- Concurrency (concurrency.py) ------------------------------
     ConformanceCase(
         id="concurrency.absent-if-match-on-required-route-is-428",
         area="concurrency",
@@ -124,8 +135,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="concurrency.stale-if-match-is-412-not-409",
         area="concurrency",
         description=(
-            "RFC 9110 §15.5.13: the precondition evaluated to false. 409 is the "
-            "resolved disagreement — see the web plan §3.1."
+            "RFC 9110 §15.5.13: the precondition evaluated to false. 412, not 409."
         ),
         request=RequestSpec(
             "PATCH",
@@ -169,7 +179,32 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             BAD_REQUEST, "Malformed If-Match validator: not-an-etag"
         ),
     ),
-    # --- Pagination (pagination.py §4.1) --------------------------------------
+    ConformanceCase(
+        id="concurrency.if-none-match-matches-is-304",
+        area="concurrency",
+        description=(
+            "RFC 9110 §13.1.2, §15.4.5: a GET whose If-None-Match weakly matches "
+            "the current ETag gets 304, no body, ETag repeated."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/items/1", headers={"If-None-Match": 'W/"1:7"'}
+        ),
+        expect_status=304,
+        expect_headers={"ETag": 'W/"1:7"'},
+        expect_body={},
+    ),
+    ConformanceCase(
+        id="concurrency.if-none-match-mismatch-is-200",
+        area="concurrency",
+        description="A stale If-None-Match is an ordinary 200 with the current ETag.",
+        request=RequestSpec(
+            "GET", "/conformance/items/1", headers={"If-None-Match": 'W/"1:1"'}
+        ),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:7"'},
+        expect_body={"id": "1", "version": 7},
+    ),
+    # --- Pagination (pagination.py) --------------------------------------
     ConformanceCase(
         id="pagination.first-page-carries-a-next-token",
         area="pagination",
@@ -224,7 +259,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(BAD_REQUEST, "Malformed page token"),
     ),
-    # --- Idempotency (idempotency.py §5.2) ------------------------------------
+    # --- Idempotency (idempotency.py) ------------------------------------
     ConformanceCase(
         id="idempotency.first-call-executes",
         area="idempotency",
@@ -258,11 +293,12 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body={"charged": 100, "replayed": True},
     ),
     ConformanceCase(
-        id="idempotency.same-key-different-body-is-409",
+        id="idempotency.same-key-different-body-is-422",
         area="idempotency",
         description=(
             "Body hashing is the whole point of the module: a replayed key with a "
-            "different body is a detectable client bug, not a silently-wrong replay."
+            "different body is a detectable client bug, not a silently-wrong replay. "
+            "422 per draft-ietf-httpapi-idempotency-key-header §2.7."
         ),
         depends_on=("idempotency.first-call-executes",),
         request=RequestSpec(
@@ -271,14 +307,14 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             headers={**_JSON, "Idempotency-Key": "k-1"},
             body={"amount": 999},
         ),
-        expect_status=409,
+        expect_status=422,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
-            CONFLICT,
+            VALIDATION_ERROR,
             "Idempotency key k-1 was replayed with a different request body",
         ),
     ),
-    # --- Health (health.py §6) ------------------------------------------------
+    # --- Health (health.py) ------------------------------------------------
     ConformanceCase(
         id="health.all-pass-is-200",
         area="health",
@@ -359,7 +395,45 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             },
         },
     ),
-    # --- Auth (auth.py §10.4) -------------------------------------------------
+    ConformanceCase(
+        id="problem.content-too-large-is-413",
+        area="problem",
+        description="RFC 9110 §15.5.14. A body over the configured limit is 413.",
+        request=RequestSpec("POST", "/conformance/validate", body={"name": "x" * 250}),
+        expect_status=413,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            CONTENT_TOO_LARGE, "Request body exceeds the configured limit"
+        ),
+    ),
+    ConformanceCase(
+        id="problem.too-many-requests-carries-retry-after",
+        area="problem",
+        description="RFC 6585 §4. A 429 carries `Retry-After` in seconds.",
+        request=RequestSpec("GET", "/conformance/throttled"),
+        expect_status=429,
+        expect_headers={**_PROBLEM, "Retry-After": "30"},
+        expect_body=_problem_body(TOO_MANY_REQUESTS, "Too many requests"),
+    ),
+    ConformanceCase(
+        id="problem.service-unavailable-carries-retry-after",
+        area="problem",
+        description="RFC 9110 §15.6.4. A 503 problem carries `Retry-After` in seconds.",
+        request=RequestSpec("GET", "/conformance/unavailable"),
+        expect_status=503,
+        expect_headers={**_PROBLEM, "Retry-After": "5"},
+        expect_body=_problem_body(SERVICE_UNAVAILABLE, GENERIC_SERVER_DETAIL),
+    ),
+    ConformanceCase(
+        id="health.liveness-is-200",
+        area="health",
+        description="Liveness touches no dependency and always answers 200.",
+        request=RequestSpec("GET", "/conformance/livez"),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"status": "pass"},
+    ),
+    # --- Auth (auth.py) -------------------------------------------------
     ConformanceCase(
         id="auth.no-credentials-is-401-with-a-challenge",
         area="auth",
@@ -412,7 +486,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "nextPageToken": PAGE_1_NEXT_TOKEN,
         },
     ),
-    # --- Correlation (context.py §1, asgi.py §7) ------------------------------
+    # --- Correlation (context.py, asgi.py) ------------------------------
     ConformanceCase(
         id="correlation.inbound-id-is-echoed-never-replaced",
         area="correlation",
@@ -436,6 +510,82 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=500,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(INTERNAL_ERROR, GENERIC_SERVER_DETAIL),
+    ),
+    # --- Deprecation (deprecation.py) -----------------------------------
+    ConformanceCase(
+        id="deprecation.endpoint-carries-rfc9745-headers",
+        area="deprecation",
+        description=(
+            "RFC 9745's Deprecation (a structured-field date) and RFC 8594's "
+            "Sunset (an HTTP-date), plus a Link rel=deprecation."
+        ),
+        request=RequestSpec("GET", "/conformance/legacy"),
+        expect_status=200,
+        expect_headers={
+            **_JSON,
+            "Deprecation": "@1767225600",
+            "Sunset": "Wed, 01 Jul 2026 00:00:00 GMT",
+            "Link": '<https://example.com/deprecated>; rel="deprecation"',
+        },
+        expect_body={"legacy": True},
+    ),
+    # --- Discovery (openapi.py) ------------------------------------------
+    ConformanceCase(
+        id="discovery.api-catalog-is-an-rfc9264-linkset",
+        area="discovery",
+        description=(
+            "RFC 9727's /.well-known/api-catalog: an RFC 9264 linkset naming the "
+            "OpenAPI document, the docs UI, and the readiness path."
+        ),
+        request=RequestSpec("GET", "/.well-known/api-catalog"),
+        expect_status=200,
+        expect_headers=_LINKSET,
+        expect_body={
+            "linkset": [
+                {
+                    "anchor": "/",
+                    "service-desc": [{"href": "/openapi.json"}],
+                    "service-doc": [{"href": "/docs"}],
+                    "status": [{"href": "/readyz"}],
+                }
+            ]
+        },
+    ),
+    # --- Security headers (security.py) -----------------------------------
+    ConformanceCase(
+        id="security.owasp-headers-are-present",
+        area="security",
+        description="The OWASP REST Security Cheat Sheet response headers, on every response.",
+        request=RequestSpec("GET", "/conformance/echo"),
+        expect_status=200,
+        expect_headers={
+            **_JSON,
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": "frame-ancestors 'none'",
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Referrer-Policy": "no-referrer",
+        },
+        expect_body={},
+    ),
+    # --- CORS (context.py: EXPOSED_HEADERS) --------------------------------
+    ConformanceCase(
+        id="cors.exposed-headers-are-comma-joined",
+        area="cors",
+        description=(
+            "A CORS response exposes the kit's own headers to a browser, in "
+            "configured order."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/echo", headers={"Origin": "https://example.com"}
+        ),
+        expect_status=200,
+        expect_headers={
+            **_JSON,
+            "Access-Control-Allow-Origin": "https://example.com",
+            "Access-Control-Expose-Headers": ", ".join(EXPOSED_HEADERS),
+        },
+        expect_body={},
     ),
 )
 

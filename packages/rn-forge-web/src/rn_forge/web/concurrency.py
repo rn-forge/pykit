@@ -22,6 +22,7 @@ __all__ = [
     "EntityVersionETagCodec",
     "VersionETagCodec",
     "check_precondition",
+    "is_not_modified",
 ]
 
 ANY_ETAG: Final = "*"
@@ -167,3 +168,33 @@ def check_precondition(
                 entity_id,
                 error_code=412,
             )
+
+
+def is_not_modified(if_none_match: str | None, etag: str) -> bool:
+    """Return whether *etag* satisfies an inbound ``If-None-Match`` (RFC 9110 §13.1.2).
+
+    For a ``GET``/``HEAD`` whose caller already holds a cached representation:
+    a match means the caller sends 304 with no body and the ``ETag`` repeated
+    (RFC 9110 §15.4.5). Comparison is **weak** — a leading ``W/`` is ignored on
+    both sides — unlike :func:`check_precondition`'s ``If-Match``, which RFC
+    9110 requires to compare strongly by default; ETags in this kit are always
+    weak, so the distinction is moot here but the rule is still the caller's
+    to get right for a strong validator from elsewhere.
+
+    Args:
+        if_none_match: The raw ``If-None-Match`` header value, or ``None``.
+        etag: The resource's current ETag validator.
+
+    Returns:
+        ``True`` when *if_none_match* is ``*``, or any validator in its
+        comma-separated list weakly matches *etag*.
+    """
+    if if_none_match is None:
+        return False
+    candidate = if_none_match.strip()
+    if candidate == ANY_ETAG:
+        return True
+    target = etag.strip().removeprefix("W/")
+    return any(
+        part.strip().removeprefix("W/") == target for part in candidate.split(",")
+    )

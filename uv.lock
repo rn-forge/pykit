@@ -410,6 +410,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-cors-headers"
+version = "4.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/39/55822b15b7ec87410f34cd16ce04065ff390e50f9e29f31d6d116fc80456/django_cors_headers-4.9.0.tar.gz", hash = "sha256:fe5d7cb59fdc2c8c646ce84b727ac2bca8912a247e6e68e1fb507372178e59e8", size = 21458, upload-time = "2025-09-18T10:40:52.326Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/d8/19ed1e47badf477d17fb177c1c19b5a21da0fd2d9f093f23be3fb86c5fab/django_cors_headers-4.9.0-py3-none-any.whl", hash = "sha256:15c7f20727f90044dcee2216a9fd7303741a864865f0c3657e28b7056f61b449", size = 12809, upload-time = "2025-09-18T10:40:50.843Z" },
+]
+
+[[package]]
 name = "django-stubs"
 version = "6.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1324,7 +1337,7 @@ dev = [
     { name = "rn-forge-django", extra = ["all"] },
     { name = "rn-forge-fastapi" },
     { name = "rn-forge-tooling" },
-    { name = "rn-forge-web" },
+    { name = "rn-forge-web", extra = ["security"] },
     { name = "ruff" },
 ]
 docs = [
@@ -1339,7 +1352,7 @@ workspace = [
     { name = "rn-forge-django", extra = ["all"] },
     { name = "rn-forge-fastapi" },
     { name = "rn-forge-tooling" },
-    { name = "rn-forge-web" },
+    { name = "rn-forge-web", extra = ["security"] },
 ]
 
 [package.metadata]
@@ -1367,7 +1380,7 @@ dev = [
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
     { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
-    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
     { name = "ruff", specifier = ">=0.15.21" },
 ]
 docs = [
@@ -1382,7 +1395,7 @@ workspace = [
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
     { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
-    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
 ]
 
 [[package]]
@@ -1802,14 +1815,19 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "celery" },
+    { name = "django-cors-headers" },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
     { name = "python3-saml" },
     { name = "rn-forge-commons", extra = ["auth", "excel"] },
+    { name = "rn-forge-web", extra = ["security"] },
 ]
 celery = [
     { name = "celery" },
+]
+cors = [
+    { name = "django-cors-headers" },
 ]
 drf = [
     { name = "djangorestframework" },
@@ -1839,6 +1857,9 @@ saml = [
     { name = "python3-saml" },
     { name = "rn-forge-commons", extra = ["excel"] },
 ]
+security = [
+    { name = "rn-forge-web", extra = ["security"] },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1865,6 +1886,8 @@ requires-dist = [
     { name = "celery", marker = "extra == 'all'", specifier = ">=5.6.3" },
     { name = "celery", marker = "extra == 'celery'", specifier = ">=5.6.3" },
     { name = "django", specifier = ">=6.0.7" },
+    { name = "django-cors-headers", marker = "extra == 'all'", specifier = ">=4.9.0" },
+    { name = "django-cors-headers", marker = "extra == 'cors'", specifier = ">=4.9.0" },
     { name = "djangorestframework", marker = "extra == 'all'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'jwt'", specifier = ">=3.17.1" },
@@ -1888,8 +1911,10 @@ requires-dist = [
     { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'saml'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["security"], marker = "extra == 'all'", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["security"], marker = "extra == 'security'", editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["drf", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "all"]
+provides-extras = ["drf", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "security", "cors", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1917,7 +1942,7 @@ version = "0.1.0"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },
-    { name = "rn-forge-web" },
+    { name = "rn-forge-web", extra = ["security"] },
 ]
 
 [package.optional-dependencies]
@@ -1954,8 +1979,8 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "httpx", marker = "extra == 'testing'", specifier = ">=0.28.1" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
-    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
 ]
 provides-extras = ["testing", "oidc"]
 
@@ -2049,6 +2074,9 @@ dependencies = [
 auth = [
     { name = "rn-forge-commons", extra = ["auth"] },
 ]
+security = [
+    { name = "secure" },
+]
 testing = [
     { name = "assertpy" },
     { name = "pytest" },
@@ -2062,14 +2090,14 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
-    { name = "rn-forge-web", extra = ["auth"] },
+    { name = "rn-forge-web", extra = ["auth", "security"] },
     { name = "ruff" },
 ]
 docs = [
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
-    { name = "rn-forge-web", extra = ["auth"] },
+    { name = "rn-forge-web", extra = ["auth", "security"] },
 ]
 
 [package.metadata]
@@ -2078,8 +2106,9 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'auth'", editable = "packages/rn-forge-commons" },
+    { name = "secure", marker = "extra == 'security'", specifier = ">=2.0.1" },
 ]
-provides-extras = ["testing", "auth"]
+provides-extras = ["testing", "auth", "security"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2089,14 +2118,14 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
-    { name = "rn-forge-web", extras = ["auth"], editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth", "security"], editable = "packages/rn-forge-web" },
     { name = "ruff", specifier = ">=0.15.21" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
-    { name = "rn-forge-web", extras = ["auth"], editable = "packages/rn-forge-web" },
+    { name = "rn-forge-web", extras = ["auth", "security"], editable = "packages/rn-forge-web" },
 ]
 
 [[package]]
@@ -2197,6 +2226,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/3c/37d0ecb729a7cc2d393ea7dce316fc585680f35d93b8d62139d7d0a3700c/ruff-0.15.21-py3-none-win32.whl", hash = "sha256:01f8d5be84823c172b389e123174f781f9daf86d6c58719d603f941932195cdd", size = 10896555, upload-time = "2026-07-09T20:01:26.941Z" },
     { url = "https://files.pythonhosted.org/packages/c0/b8/e43466b2a6067ce91e669068f6e28d6c719a920f014b070d5c8731725de3/ruff-0.15.21-py3-none-win_amd64.whl", hash = "sha256:d4b8d9a2f0f12b816b50447f6eccb9f4bb01a6b82c86b50fb3b5354b458dc6d3", size = 12038772, upload-time = "2026-07-09T20:01:29.497Z" },
     { url = "https://files.pythonhosted.org/packages/dd/75/e90ab9aeece218a9fc5a5bc3ec97d0ee6bb3c4ff95869463c1de58e29a1c/ruff-0.15.21-py3-none-win_arm64.whl", hash = "sha256:6e83115d4b9377c1cbc13abf0e051f069fab0ef815ea0504a8a008cee24dd0a8", size = 11375265, upload-time = "2026-07-09T20:01:31.772Z" },
+]
+
+[[package]]
+name = "secure"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/88/84b861346a6a23d75900b493de7458cf89605262e6e19876dc0b576b11ff/secure-2.0.1.tar.gz", hash = "sha256:bb492b9ca2ae66d04f4718675a18de1d1a29217aaded3d6cb5bd8b4ba2e2a645", size = 39787, upload-time = "2026-04-22T09:49:07.225Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/16/b5040aa7644a99f9bd0b08d393b49edaa8d48062ae4757ee107737b60030/secure-2.0.1-py3-none-any.whl", hash = "sha256:12794037e2c4d0b54697045b50285a37faf26ba026cb34a68cd55e96d472898b", size = 53983, upload-time = "2026-04-22T09:49:05.8Z" },
 ]
 
 [[package]]

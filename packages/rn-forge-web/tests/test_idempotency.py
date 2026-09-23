@@ -3,14 +3,21 @@
 import pytest
 from assertpy import assert_that
 
-from rn_forge.web.exceptions import IdempotencyKeyReuse
+from rn_forge.web.exceptions import (
+    IdempotencyKeyInFlight,
+    IdempotencyKeyRequired,
+    IdempotencyKeyReuse,
+)
 from rn_forge.web.idempotency import (
     AsyncIdempotencyStore,
     IdempotencyStore,
     InMemoryAsyncIdempotencyStore,
     InMemoryIdempotencyStore,
     StoredResponse,
+    check_idempotency_key,
     request_hash,
+    run_idempotent,
+    run_idempotent_async,
 )
 
 pytestmark = pytest.mark.unit
@@ -103,6 +110,7 @@ def test_reuse_is_detected_before_completion_too(store):
 
 def test_a_reordered_body_is_not_reuse(store):
     store.record_or_replay(scope="charges", key="k1", request_body={"a": 1, "b": 2})
+    store.complete(scope="charges", key="k1", status=201, response_body={})
     store.record_or_replay(scope="charges", key="k1", request_body={"b": 2, "a": 1})
 
 
@@ -116,12 +124,12 @@ def test_distinct_scopes_do_not_collide(store):
     ).is_none()
 
 
-def test_an_in_flight_replay_returns_none(store):
-    """Documented behaviour, not an oversight — see the class docstring."""
+def test_a_duplicate_while_in_flight_raises(store):
+    """A retry before the original completes is a distinct 409, not a silent re-execution."""
     store.record_or_replay(scope="charges", key="k1", request_body={"amount": 1})
-    assert_that(
-        store.record_or_replay(scope="charges", key="k1", request_body={"amount": 1})
-    ).is_none()
+    assert_that(store.record_or_replay).raises(IdempotencyKeyInFlight).when_called_with(
+        scope="charges", key="k1", request_body={"amount": 1}
+    )
 
 
 def test_the_stored_body_is_copied_not_aliased(store):
@@ -167,3 +175,143 @@ def test_stored_response_serializes_through_the_dataclass_mixin():
     assert_that(StoredResponse(status=201, body={"id": 1}).as_dict()).is_equal_to(
         {"status": 201, "body": {"id": 1}, "replayed": False}
     )
+
+
+def test_check_idempotency_key_returns_a_present_key():
+    assert_that(check_idempotency_key("k1")).is_equal_to("k1")
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_check_idempotency_key_raises_without_one(value):
+    with pytest.raises(IdempotencyKeyRequired, match="X-Key is required"):
+        check_idempotency_key(value, header="X-Key")
+
+
+# --- run_idempotent ---------------------------------------------------------
+
+
+def test_a_safe_method_bypasses_the_store_entirely():
+    calls = []
+
+    def execute():
+        calls.append(1)
+        return 200, {"ok": True}
+
+    result = run_idempotent(
+        InMemoryIdempotencyStore(),
+        scope="s",
+        key=None,
+        method="GET",
+        body=None,
+        execute=execute,
+    )
+    assert_that(result).is_equal_to(StoredResponse(status=200, body={"ok": True}))
+    assert_that(calls).is_length(1)
+
+
+def test_an_unsafe_method_with_no_key_raises():
+    with pytest.raises(IdempotencyKeyRequired):
+        run_idempotent(
+            InMemoryIdempotencyStore(),
+            scope="s",
+            key=None,
+            method="POST",
+            body={},
+            execute=lambda: (200, {}),
+        )
+
+
+def test_first_sight_executes_and_stores():
+    store = InMemoryIdempotencyStore()
+    result = run_idempotent(
+        store,
+        scope="s",
+        key="k1",
+        method="POST",
+        body={"amount": 1},
+        execute=lambda: (201, {"charged": 1}),
+    )
+    assert_that(result).is_equal_to(
+        StoredResponse(status=201, body={"charged": 1}, replayed=False)
+    )
+
+
+def test_a_replay_returns_the_stored_response_without_re_executing():
+    store = InMemoryIdempotencyStore()
+    calls = []
+
+    def execute():
+        calls.append(1)
+        return 201, {"charged": 1}
+
+    run_idempotent(
+        store, scope="s", key="k1", method="POST", body={"amount": 1}, execute=execute
+    )
+    result = run_idempotent(
+        store, scope="s", key="k1", method="POST", body={"amount": 1}, execute=execute
+    )
+    assert_that(result).is_equal_to(
+        StoredResponse(status=201, body={"charged": 1}, replayed=True)
+    )
+    assert_that(calls).is_length(1)
+
+
+def test_a_replayed_key_with_a_different_body_raises():
+    store = InMemoryIdempotencyStore()
+    run_idempotent(
+        store,
+        scope="s",
+        key="k1",
+        method="POST",
+        body={"amount": 1},
+        execute=lambda: (201, {}),
+    )
+    with pytest.raises(IdempotencyKeyReuse):
+        run_idempotent(
+            store,
+            scope="s",
+            key="k1",
+            method="POST",
+            body={"amount": 2},
+            execute=lambda: (201, {}),
+        )
+
+
+# --- run_idempotent_async ----------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_idempotent_async_has_the_same_semantics():
+    store = InMemoryAsyncIdempotencyStore()
+
+    async def execute():
+        return 201, {"charged": 1}
+
+    first = await run_idempotent_async(
+        store, scope="s", key="k1", method="POST", body={"amount": 1}, execute=execute
+    )
+    assert_that(first).is_equal_to(
+        StoredResponse(status=201, body={"charged": 1}, replayed=False)
+    )
+    second = await run_idempotent_async(
+        store, scope="s", key="k1", method="POST", body={"amount": 1}, execute=execute
+    )
+    assert_that(second).is_equal_to(
+        StoredResponse(status=201, body={"charged": 1}, replayed=True)
+    )
+
+
+@pytest.mark.asyncio
+async def test_run_idempotent_async_bypasses_the_store_for_a_safe_method():
+    async def execute():
+        return 200, {"ok": True}
+
+    result = await run_idempotent_async(
+        InMemoryAsyncIdempotencyStore(),
+        scope="s",
+        key=None,
+        method="HEAD",
+        body=None,
+        execute=execute,
+    )
+    assert_that(result).is_equal_to(StoredResponse(status=200, body={"ok": True}))

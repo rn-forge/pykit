@@ -24,6 +24,10 @@ type ConformanceArea = Literal[
     "auth",
     "casing",
     "correlation",
+    "deprecation",
+    "discovery",
+    "security",
+    "cors",
 ]
 """Areas covered by the conformance suite."""
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable, Collection, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
@@ -16,13 +17,26 @@ from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
 from rn_forge.web.exceptions import WebError
 
 __all__ = [
+    "LEGACY_LIVENESS_PATH",
+    "LIVENESS_PATH",
+    "READINESS_PATH",
     "Check",
     "CheckResult",
     "CheckStatus",
     "HealthReport",
+    "liveness_body",
     "run_checks",
     "run_checks_sync",
 ]
+
+LIVENESS_PATH: Final = "/livez"
+"""Default liveness path (kubernetes.io "Kubernetes API health endpoints")."""
+
+READINESS_PATH: Final = "/readyz"
+"""Default readiness path."""
+
+LEGACY_LIVENESS_PATH: Final = "/healthz"
+"""Deprecated alias of :data:`LIVENESS_PATH`, kept for hosts still probing it."""
 
 type CheckStatus = Literal["pass", "warn", "fail", "skipped"]
 """The four outcomes a single check may report."""
@@ -72,6 +86,15 @@ class HealthReport(LenientDataclassMixin):
                 for name, result in self.checks.items()
             },
         }
+
+
+def liveness_body() -> dict[str, str]:
+    """Return the liveness body: ``{"status": "pass"}``, served with 200.
+
+    Liveness runs no checks: it answers whether the process can serve a
+    request at all.
+    """
+    return {"status": "pass"}
 
 
 _OK: Final = 200
@@ -173,14 +196,38 @@ async def run_checks(
     return _aggregate(dict(zip(names, results, strict=True)), required)
 
 
+def _run_one_sync(check: Check) -> CheckResult:
+    """Run one synchronous check, mirroring :func:`_run_one`'s error handling.
+
+    Raises:
+        WebError: The check returned an awaitable.
+    """
+    try:
+        outcome = check()
+    except Exception as exc:  # noqa: BLE001 - a check must never crash the run
+        return _failed(exc)
+    if inspect.isawaitable(outcome):
+        if inspect.iscoroutine(outcome):
+            # Close it, or the "coroutine was never awaited" warning lands on
+            # an unrelated line whenever the GC gets round to it.
+            outcome.close()
+        raise WebError("Health check is asynchronous; use run_checks() instead")
+    return _coerce(outcome)
+
+
 def run_checks_sync(
-    checks: Mapping[str, Check], *, required: Collection[str] = ()
+    checks: Mapping[str, Check],
+    *,
+    required: Collection[str] = (),
+    timeout: float | None = None,
 ) -> HealthReport:
-    """Run *checks* sequentially and aggregate them.
+    """Run *checks* concurrently in a thread pool and aggregate them.
 
     Args:
         checks: Name → check. Every check must be synchronous.
         required: Names whose failure makes the service unavailable (503).
+        timeout: Seconds each check may run before it is reported as
+            ``fail``. ``None`` (the default) waits indefinitely.
 
     Returns:
         The aggregate report, including the HTTP status to serve.
@@ -191,20 +238,15 @@ def run_checks_sync(
             caller's code, not a sick dependency — and reporting it as a
             failing check would hide it behind a red dependency.
     """
+    names = list(checks)
     results: dict[str, CheckResult] = {}
-    for name, check in checks.items():
-        try:
-            outcome = check()
-        except Exception as exc:  # noqa: BLE001 - a check must never crash the run
-            results[name] = _failed(exc)
-            continue
-        if inspect.isawaitable(outcome):
-            if inspect.iscoroutine(outcome):
-                # Close it, or the "coroutine was never awaited" warning lands
-                # on an unrelated line whenever the GC gets round to it.
-                outcome.close()
-            raise WebError(
-                "Health check {!r} is asynchronous; use run_checks() instead", name
-            )
-        results[name] = _coerce(outcome)
+    with ThreadPoolExecutor(max_workers=len(names) or 1) as executor:
+        futures = {name: executor.submit(_run_one_sync, checks[name]) for name in names}
+        for name in names:
+            try:
+                results[name] = futures[name].result(timeout=timeout)
+            except TimeoutError:
+                results[name] = CheckResult(
+                    status="fail", reason=f"timed out after {timeout:g}s"
+                )
     return _aggregate(results, required)

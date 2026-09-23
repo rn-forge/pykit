@@ -24,7 +24,7 @@ def test_problem_detail_round_trips_through_the_web_dataclass():
         instance="/orders/1",
         extensions={
             "correlation_id": "abc",
-            "errors": [{"pointer": "/x", "message": "m"}],
+            "errors": [{"pointer": "/x", "detail": "m"}],
         },
     )
     mirror = ProblemDetail.from_wire(wire)

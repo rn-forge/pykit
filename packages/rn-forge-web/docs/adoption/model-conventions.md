@@ -21,7 +21,7 @@ application needs something the intersection lacks.
 
 What *is* shared is the **vocabulary** each ORM's base class conforms to
 without sharing code. Writing it down is what stops `rn_forge.django.BaseModel`
-and its eventual SQLAlchemy counterpart drifting into two dialects of the same
+and a SQLAlchemy counterpart drifting into two dialects of the same
 idea.
 
 ## Audit columns

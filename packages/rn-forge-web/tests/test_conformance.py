@@ -26,6 +26,10 @@ AREAS = (
     "auth",
     "casing",
     "correlation",
+    "deprecation",
+    "discovery",
+    "security",
+    "cors",
 )
 
 
@@ -40,7 +44,7 @@ def test_every_id_is_unique():
 
 @pytest.mark.parametrize("area", AREAS)
 def test_every_area_has_at_least_one_case(area):
-    """§11.2 requires coverage in each of the eight areas."""
+    """Every area named in ConformanceArea needs at least one case."""
     assert_that(cases_for(area)).described_as(area).is_not_empty()
 
 
@@ -111,7 +115,10 @@ PROBLEM_CASES = tuple(
 
 
 def test_every_case_declares_a_content_type():
+    """304 is the one status RFC 9110 §15.4.5 forbids a body, hence a type, for."""
     for case in CASES:
+        if case.expect_status == 304:
+            continue
         assert_that(case.expect_headers).described_as(case.id).contains_key(
             "Content-Type"
         )
@@ -152,7 +159,7 @@ def test_the_readiness_503_is_a_health_report_not_a_problem():
 
 def test_response_body_keys_are_camel_case():
     """The casing rule, asserted structurally over the whole table."""
-    exempt = {"correlation_id"} | set(VARIABLE_MEMBERS)
+    exempt = {"correlation_id", "service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
     def walk(node, case_id):
         if isinstance(node, dict):

@@ -11,10 +11,11 @@ the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 """
 
 import re
+from datetime import UTC, datetime
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 
@@ -22,23 +23,29 @@ from rn_forge.fastapi import (
     Page,
     WireModel,
     AppConfig,
+    CorsPolicy,
+    FastApiApp,
     bearer_auth,
-    create_app,
+    conditional_get,
+    deprecated,
     health_router,
     page_params,
-    require_idempotency_key,
     require_if_match,
     requires,
 )
 from rn_forge.web import (
+    API_CATALOG_PATH,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
-    InMemoryIdempotencyStore,
+    InMemoryAsyncIdempotencyStore,
     Principal,
     Requirement,
+    ServiceUnavailable,
+    TooManyRequests,
     check_precondition,
     encode_cursor,
+    run_idempotent_async,
 )
 from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
 
@@ -46,8 +53,13 @@ pytestmark = pytest.mark.unit
 
 ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
 ITEM_VERSION = 7
+DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
+SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
+DEPRECATION_LINK = "https://example.com/deprecated"
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
-CASING_EXEMPT = {"correlation_id"} | set(VARIABLE_MEMBERS)
+CASING_EXEMPT = {"correlation_id", "service-desc", "service-doc"} | set(
+    VARIABLE_MEMBERS
+)
 
 
 class AnyToken:
@@ -75,10 +87,16 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
 
     checks = {"db": check("db"), "queue": check("queue")}
-    app = create_app(
-        AppConfig(checks=checks, required_checks=("db",), realm="conformance")
+    app = FastApiApp(
+        AppConfig(
+            checks=checks,
+            required_checks=("db",),
+            realm="conformance",
+            max_body_bytes=200,
+            cors=CorsPolicy(allow_origins=("https://example.com",)),
+        )
     )
-    store = InMemoryIdempotencyStore()
+    store = InMemoryAsyncIdempotencyStore()
     private = requires(
         bearer_auth(authenticator=AnyToken()),
         Requirement(all_scopes=frozenset({"read"})),
@@ -111,6 +129,16 @@ def build_app(*, failing: str | None) -> FastAPI:
         etag = EntityVersionETagCodec().format(entity_id=pk, version=ITEM_VERSION)
         return JSONResponse({"id": pk, "version": ITEM_VERSION}, headers={"ETag": etag})
 
+    @app.get("/conformance/items/1")
+    async def get_item(request: Request):
+        etag = EntityVersionETagCodec().format(entity_id="1", version=ITEM_VERSION)
+        not_modified = conditional_get(request, etag)
+        if not_modified is not None:
+            return not_modified
+        return JSONResponse(
+            {"id": "1", "version": ITEM_VERSION}, headers={"ETag": etag}
+        )
+
     @app.get("/conformance/items")
     async def list_items(
         params=Depends(page_params(cap=2, default=2)),
@@ -127,18 +155,21 @@ def build_app(*, failing: str | None) -> FastAPI:
         return Page[dict[str, str]](items=window, next_page_token=token)
 
     @app.post("/conformance/charges", status_code=201)
-    async def create_charge(
-        body: Charge, key: str = Depends(require_idempotency_key())
-    ):
-        payload = body.model_dump()
-        stored = store.record_or_replay(scope="charges", key=key, request_body=payload)
-        if stored is not None:
-            return JSONResponse(
-                {**stored.body, "replayed": True}, status_code=stored.status
-            )
-        result = {"charged": body.amount}
-        store.complete(scope="charges", key=key, status=201, response_body=result)
-        return JSONResponse({**result, "replayed": False}, status_code=201)
+    async def create_charge(request: Request, body: Charge):
+        async def execute():
+            return 201, {"charged": body.amount}
+
+        result = await run_idempotent_async(
+            store,
+            scope="charges",
+            key=request.headers.get("Idempotency-Key"),
+            method="POST",
+            body=body.model_dump(),
+            execute=execute,
+        )
+        return JSONResponse(
+            {**result.body, "replayed": result.replayed}, status_code=result.status
+        )
 
     @app.get("/conformance/private")
     async def private_route(principal: Principal = Depends(private)):
@@ -147,6 +178,28 @@ def build_app(*, failing: str | None) -> FastAPI:
     @app.get("/conformance/echo")
     async def echo():
         return {}
+
+    @app.get(
+        "/conformance/legacy",
+        deprecated=True,
+        dependencies=[
+            Depends(
+                deprecated(
+                    deprecated_at=DEPRECATED_AT, sunset=SUNSET, link=DEPRECATION_LINK
+                )
+            )
+        ],
+    )
+    async def legacy():
+        return {"legacy": True}
+
+    @app.get("/conformance/throttled")
+    async def throttled_route():
+        raise TooManyRequests("Too many requests", retry_after=30)
+
+    @app.get("/conformance/unavailable")
+    async def unavailable_route():
+        raise ServiceUnavailable("Service unavailable", retry_after=5)
 
     return app
 
@@ -193,7 +246,7 @@ def test_fastapi_conforms(case):
         assert_that(response.headers.get(name)).described_as(name).is_equal_to(value)
     for name in case.expect_absent_headers:
         assert_that(name in response.headers).described_as(name).is_false()
-    body = response.json()
+    body = response.json() if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()
 
@@ -202,11 +255,14 @@ def test_fastapi_conforms(case):
 def test_the_fixture_serves_every_path_the_table_uses():
     """A case added for an endpoint this driver does not serve must fail here.
 
-    The fixture mounts `health_router` twice — once via `create_app`'s standard
+    The fixture mounts `health_router` twice — once via `FastApiApp`'s standard
     `/healthz`/`/readyz`, once prefixed for the CASES table — so both share an
     operationId derived from their last path segment; expected, not a wiring bug.
+
+    The api-catalog path is added by hand: it is deliberately
+    `include_in_schema=False`, so it never appears in the OpenAPI document.
     """
     paths = build_app(failing=None).openapi()["paths"]
-    served = {path.replace("{pk}", "1") for path in paths}
+    served = {path.replace("{pk}", "1") for path in paths} | {API_CATALOG_PATH}
     used = {case.request.path for case in CASES}
     assert_that(used - served - {"/conformance/missing"}).is_empty()

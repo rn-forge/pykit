@@ -20,6 +20,7 @@ from rn_forge.web import (
     Requirement,
     ScopeAuthorizer,
     challenge_header,
+    parse_authorization,
 )
 
 __all__ = [
@@ -40,13 +41,12 @@ class _PrincipalAuthentication(BaseAuthentication):
 
     @override
     def authenticate(self, request: Request) -> tuple[Principal, Credentials] | None:
-        header = RequestUtils.get_django_request(request).headers.get("Authorization")
-        if not header:
+        credentials = parse_authorization(
+            RequestUtils.get_django_request(request).headers.get("Authorization"),
+            self.scheme,
+        )
+        if credentials is None:
             return None
-        scheme, _, token = header.partition(" ")
-        if scheme.lower() != self.scheme.lower():
-            return None
-        credentials = Credentials(self.scheme, token.strip())
         try:
             if not credentials.token:
                 raise AuthenticationFailed("Empty {} credentials", self.scheme)

@@ -9,15 +9,24 @@ from typing import Any
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.urls import URLPattern, path
 from django.views.decorators.http import require_GET
-from rn_forge.web import Check, run_checks_sync
+from rn_forge.web import (
+    LEGACY_LIVENESS_PATH,
+    LIVENESS_PATH,
+    READINESS_PATH,
+    Check,
+    liveness_body,
+    run_checks_sync,
+)
 
 from rn_forge.django.utils import RequestUtils
 
 __all__ = [
     "debug_request_view",
-    "healthcheck_view",
+    "health_urlpatterns",
     "index_view",
+    "liveness_view",
     "readiness_view",
 ]
 
@@ -54,9 +63,9 @@ def index_view(request: HttpRequest) -> HttpResponse:
 
 
 @require_GET
-def healthcheck_view(request: HttpRequest) -> HttpResponse:
-    """Return a lightweight liveness response."""
-    return HttpResponse(b"healthy", status=200)
+def liveness_view(request: HttpRequest) -> JsonResponse:
+    """Return the liveness response, :func:`rn_forge.web.liveness_body` with 200."""
+    return JsonResponse(liveness_body())
 
 
 @require_GET
@@ -86,3 +95,49 @@ def readiness_view(
         return JsonResponse(report.as_body(), status=report.http_status)
 
     return view
+
+
+def health_urlpatterns(
+    *,
+    checks: Mapping[str, Check],
+    required: Collection[str] = (),
+    timeout: float | None = 2.0,
+    liveness_path: str = LIVENESS_PATH,
+    readiness_path: str = READINESS_PATH,
+    legacy_liveness_path: str | None = LEGACY_LIVENESS_PATH,
+) -> list[URLPattern]:
+    """Return liveness and readiness URL patterns, with no trailing slash.
+
+    A probe on every host fails on a redirect, so these paths are served
+    exactly as configured — a trailing-slash ``APPEND_SLASH`` 301 would mark
+    the instance unhealthy.
+
+    Args:
+        checks: Name → synchronous readiness check.
+        required: Names whose failure makes the service unavailable (503).
+        timeout: Seconds each readiness check may run before it is reported
+            as ``fail``. ``None`` waits indefinitely.
+        liveness_path: The liveness path.
+        readiness_path: The readiness path.
+        legacy_liveness_path: An alias of *liveness_path*. ``None`` serves no
+            alias.
+    """
+
+    @require_GET
+    def readyz(request: HttpRequest) -> JsonResponse:
+        report = run_checks_sync(checks, required=required, timeout=timeout)
+        return JsonResponse(report.as_body(), status=report.http_status)
+
+    patterns = [
+        path(liveness_path.lstrip("/"), liveness_view, name="rn-forge-liveness"),
+        path(readiness_path.lstrip("/"), readyz, name="rn-forge-readiness"),
+    ]
+    if legacy_liveness_path is not None:
+        patterns.append(
+            path(
+                legacy_liveness_path.lstrip("/"),
+                liveness_view,
+                name="rn-forge-liveness-legacy",
+            )
+        )
+    return patterns
