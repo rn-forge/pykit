@@ -78,3 +78,17 @@ frames = ExcelAdapter.read_dataframe("orders.xlsx")
 workbook = ExcelAdapter.from_dataframe(frames)
 ExcelUtils.write_workbook(workbook, "build/orders-copy.xlsx")
 ```
+
+`ExcelAdapter` needs the `pandas` extra as well as `excel`.
+
+`write_xlsx` writes a `tablib.Dataset` to `.xlsx` bytes with per-column number
+formats, which tablib's own xlsx writer does not offer:
+
+```python
+import tablib
+from rn_forge.commons.data.excel import write_xlsx
+
+dataset = tablib.Dataset(headers=["name", "due", "total"])
+dataset.append(["alice", date(2026, 1, 31), 42.5])
+payload = write_xlsx(dataset, column_formats={"due": "yyyy-mm-dd", "total": "#,##0.00"})
+```

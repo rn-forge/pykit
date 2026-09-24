@@ -636,6 +636,196 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             ),
         },
         expect_body={},
+    ),  # --- Tabular transfer and bulk operations (transfer.py) ----------------
+    ConformanceCase(
+        id="transfer.export-is-negotiated-from-accept",
+        area="transfer",
+        description=(
+            "RFC 9110 §12: a list asked for as text/csv is answered as CSV, "
+            "as an attachment (RFC 6266)."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/orders", headers={"Accept": "text/csv"}
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_headers={
+            "Content-Disposition": (
+                "attachment; filename=\"orders.csv\"; filename*=UTF-8''orders.csv"
+            ),
+        },
+        expect_text="id,name\r\n1,widget\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.export-format-param-is-the-fallback",
+        area="transfer",
+        description="?format=csv selects CSV for a plain link that cannot send Accept.",
+        request=RequestSpec("GET", "/conformance/orders", query={"format": "csv"}),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_headers={
+            "Content-Disposition": (
+                "attachment; filename=\"orders.csv\"; filename*=UTF-8''orders.csv"
+            ),
+        },
+        expect_text="id,name\r\n1,widget\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.export-filename-carries-rfc8187-encoding",
+        area="transfer",
+        description=(
+            "A non-ASCII filename gets an ASCII fallback in filename= and the "
+            "percent-encoded UTF-8 in filename*= (RFC 8187)."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/orders/named", headers={"Accept": "text/csv"}
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_headers={
+            "Content-Disposition": (
+                'attachment; filename="Ord_rs 2026.csv"; '
+                "filename*=UTF-8''Ord%C3%A9rs%202026.csv"
+            ),
+        },
+        expect_text="id,name\r\n1,widget\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.export-over-the-cap-is-422",
+        area="transfer",
+        description="An export above the configured cap is a 422 problem naming the cap.",
+        request=RequestSpec(
+            "GET", "/conformance/orders/over-cap", headers={"Accept": "text/csv"}
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "The export exceeds the limit of 1 rows; narrow the filter.",
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.import-report-counts-and-validate-only",
+        area="transfer",
+        description=(
+            "AIP-136/AIP-163: a multipart upload with validateOnly=true is 200 "
+            "with the counts it would produce."
+        ),
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:import",
+            headers={"Content-Type": "multipart/form-data"},
+            query={"validateOnly": "true"},
+            body={"file": "id,name,Quantity\n2,gadget,3\n"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"created": 1, "updated": 0, "skipped": 0, "validateOnly": True},
+    ),
+    ConformanceCase(
+        id="transfer.import-row-errors-are-422-pointers",
+        area="transfer",
+        description=(
+            "Any row error fails the whole import as a 422 whose errors[].pointer "
+            "is /rows/<row>/<column>."
+        ),
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:import",
+            headers={"Content-Type": "multipart/form-data"},
+            body={"file": "id,name,Quantity\n2,gadget,three\n"},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[{"pointer": "/rows/0/Quantity", "detail": "Enter a whole number."}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-item-failure-is-422-pointer",
+        area="transfer",
+        description=(
+            "AIP-233: one invalid item fails the whole batch; the pointer names "
+            "the item in the requests array."
+        ),
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "ok"}, {}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[
+                {"pointer": "/requests/1/name", "detail": "This field is required."}
+            ],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.failed-batch-create-persists-nothing",
+        area="transfer",
+        description="All or nothing: after the failed batch, the collection still has one order.",
+        request=RequestSpec("GET", "/conformance/orders/count"),
+        depends_on=("transfer.batch-create-item-failure-is-422-pointer",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"count": 1},
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-returns-the-created-resources",
+        area="transfer",
+        description="AIP-233: a successful batch is 200 with the created resources under the plural name.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "gadget"}]},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"orders": [{"id": "2", "name": "gadget"}]},
+    ),
+    ConformanceCase(
+        id="transfer.batch-delete-with-unknown-id-is-404",
+        area="transfer",
+        description="AIP-235: one id that does not exist fails the whole batch.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchDelete",
+            headers=_JSON,
+            body={"ids": ["1", "missing"]},
+        ),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Order missing not found"),
+    ),
+    ConformanceCase(
+        id="transfer.failed-batch-delete-deletes-nothing",
+        area="transfer",
+        description="All or nothing: the order named alongside the unknown id is still there.",
+        request=RequestSpec("GET", "/conformance/orders/1"),
+        depends_on=("transfer.batch-delete-with-unknown-id-is-404",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"id": "1", "name": "widget"},
+    ),
+    ConformanceCase(
+        id="transfer.batch-delete-is-204",
+        area="transfer",
+        description="AIP-235: a successful batch delete is 204 with no body.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchDelete",
+            headers=_JSON,
+            body={"ids": ["1"]},
+        ),
+        expect_status=204,
+        expect_body={},
     ),
 )
 

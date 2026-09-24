@@ -253,7 +253,7 @@ class TestExcelAdapter:
 
     def test_read_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
-            excel_module.pandas,
+            pd,
             "read_excel",
             lambda *a, **k: raise_(RuntimeError("read failed")),
         )
@@ -262,7 +262,7 @@ class TestExcelAdapter:
 
     def test_load_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
-            excel_module.pandas,
+            pd,
             "read_excel",
             lambda *a, **k: raise_(RuntimeError("load failed")),
         )
@@ -283,9 +283,7 @@ class TestExcelAdapter:
         def fail(*args, **kwargs):
             raise RuntimeError("to_excel failed")
 
-        monkeypatch.setattr(
-            excel_module.pandas, "ExcelWriter", lambda *a, **k: FakeWriter()
-        )
+        monkeypatch.setattr(pd, "ExcelWriter", lambda *a, **k: FakeWriter())
         monkeypatch.setattr(frame, "to_excel", fail)
         with pytest.raises(RuntimeError, match="to_excel failed"):
             ExcelAdapter.from_dataframe(frame)
@@ -451,3 +449,29 @@ class TestAutoAdjustColumnWidth:
 # Coverage ROI notes:
 # - openpyxl internals (table style serialization, cell object implementations)
 #   are exercised via public behavior rather than mocked exhaustively.
+
+
+class TestWriteXlsx:
+    def test_writes_headers_rows_and_formats(self):
+        import datetime
+
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["name", "due", "total"])
+        dataset.append(["alice", datetime.date(2026, 1, 31), 42.5])
+
+        payload = excel_module.write_xlsx(
+            dataset, column_formats={"due": "yyyy-mm-dd", "total": "#,##0.00"}
+        )
+
+        sheet = ExcelUtils.load_workbook(BytesIO(payload)).active
+        assert [c.value for c in sheet[1]] == ["name", "due", "total"]
+        assert sheet["A2"].value == "alice"
+        assert sheet["B2"].number_format == "yyyy-mm-dd"
+        assert sheet["C2"].number_format == "#,##0.00"
+        assert sheet["A2"].number_format == "General"
+
+    def test_unknown_column_raises(self):
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["a"])
+        with pytest.raises(KeyError):
+            excel_module.write_xlsx(dataset, column_formats={"b": "0"})

@@ -37,6 +37,7 @@ nav:
       - Installation: guides/installation.md
       - Quickstart: guides/quickstart.md
       - Wiring an application: guides/wiring.md
+      - Tabular export and import: guides/transfer.md
   - API Reference:
       - api/index.md
       - Application: api/app.md
@@ -44,4 +45,5 @@ nav:
       - OpenAPI: api/openapi.md
       - Dependencies: api/dependencies.md
       - Health: api/health.md
+      - Transfer: api/transfer.md
       - Auth: api/auth.md

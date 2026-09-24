@@ -1,28 +1,35 @@
-"""Excel workbook, formatting, and pandas adapters built on ``openpyxl``.
+"""Excel workbook, formatting, and tabular export helpers built on ``openpyxl``.
 
-Requires the ``excel`` extra.
+Requires the ``excel`` extra. :class:`ExcelAdapter` additionally needs the
+``pandas`` extra.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import openpyxl
-import pandas
+from openpyxl.cell import WriteOnlyCell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.logging import AppLogger
 
+if TYPE_CHECKING:
+    import pandas
+    import tablib
+
 __all__ = [
     "CellFormat",
     "ExcelAdapter",
     "ExcelUtils",
     "WorkbookTemplate",
+    "write_xlsx",
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)
@@ -360,7 +367,7 @@ class ExcelUtils:
 class ExcelAdapter:
     """Adapters between workbook primitives and pandas DataFrames.
 
-    Use this layer when the calling code wants ``pandas`` for transformation
+    Requires the ``pandas`` extra. Use this layer when the calling code wants ``pandas`` for transformation
     but ``openpyxl`` for workbook-level formatting or templating.
 
     Example::
@@ -373,9 +380,11 @@ class ExcelAdapter:
     @staticmethod
     def read_dataframe(path: str | Path) -> dict[str, "pandas.DataFrame"]:
         """Read a workbook file into a sheet-name keyed DataFrame mapping."""
+        import pandas
+
         _LOGGER.debug("ExcelAdapter.read_dataframe | path={}", path)
         try:
-            workbook: dict[str, pandas.DataFrame] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+            workbook: dict[str, "pandas.DataFrame"] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
                 path, sheet_name=None
             )
         except Exception:
@@ -391,9 +400,11 @@ class ExcelAdapter:
     @staticmethod
     def load_dataframe(source: BytesIO) -> dict[str, "pandas.DataFrame"]:
         """Load an in-memory workbook into a sheet-name keyed DataFrame mapping."""
+        import pandas
+
         _LOGGER.debug("ExcelAdapter.load_dataframe")
         try:
-            workbook: dict[str, pandas.DataFrame] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+            workbook: dict[str, "pandas.DataFrame"] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
                 source, sheet_name=None
             )
         except Exception:
@@ -410,6 +421,8 @@ class ExcelAdapter:
         data: "pandas.DataFrame | dict[str, pandas.DataFrame]",
     ) -> Workbook:
         """Convert DataFrame data to an in-memory workbook."""
+        import pandas
+
         buf = BytesIO()
         sheets = data if isinstance(data, dict) else {"Sheet1": data}
         _LOGGER.debug(
@@ -461,6 +474,52 @@ class ExcelAdapter:
     def workbook_to_bytes(workbook: Workbook) -> BytesIO:
         """Serialise a workbook to an in-memory byte buffer."""
         return ExcelUtils.write_workbook_bytes(workbook)
+
+
+def write_xlsx(
+    dataset: "tablib.Dataset",
+    column_formats: Mapping[str, str] | None = None,
+    sheet_title: str = "Sheet1",
+) -> bytes:
+    """Serialise *dataset* to ``.xlsx`` bytes, with per-column number formats.
+
+    Args:
+        dataset: Data to write. Its headers form the first row; without headers
+            only data rows are written.
+        column_formats: Excel number format per header name, for example
+            ``{"due": "yyyy-mm-dd", "total": "#,##0.00"}``. Columns not named
+            keep the default format.
+        sheet_title: Worksheet title.
+
+    Returns:
+        The workbook as bytes.
+
+    Raises:
+        KeyError: A *column_formats* key is not a dataset header.
+    """
+    formats = column_formats or {}
+    headers = cast("list[str]", dataset.headers or [])  # pyright: ignore[reportUnknownMemberType]  # tablib is untyped
+    unknown = sorted(set(formats) - set(headers))
+    if unknown:
+        raise KeyError(f"column_formats names unknown columns: {unknown}")
+    by_index = {headers.index(name): fmt for name, fmt in formats.items()}
+
+    workbook = openpyxl.Workbook(write_only=True)
+    sheet = workbook.create_sheet(sheet_title)
+    if headers:
+        sheet.append(headers)
+    rows = cast(
+        "list[tuple[Any, ...]]", list(cast("Any", dataset))
+    )  # tablib is untyped
+    for row in rows:
+        cells: list[Any] = []
+        for index, value in enumerate(row):
+            cell = WriteOnlyCell(sheet, value=value)
+            if index in by_index:
+                cell.number_format = by_index[index]
+            cells.append(cell)
+        sheet.append(cells)
+    return ExcelUtils.write_workbook_bytes(workbook).getvalue()
 
 
 # ---------------------------------------------------------------------------

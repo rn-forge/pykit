@@ -12,10 +12,10 @@ RN_FORGE_DJANGO = {
     },
     "DRF": {
         "VIEWS": {
-            "DEFAULT_TRANSFER_FORMAT": "xlsx",
-            "EXPORT_MAX_ROWS": 10_000,
-            "IMPORT_MAX_ROWS": 10_000,
             "PERMISSION_ACTION_MAP": {"list": "read"},
+        },
+        "TRANSFER": {
+            "MAX_ROWS": 10_000,  # rows per export, import or batch request; None = no cap
         },
         "PAGINATION": {
             "PAGE_SIZE": 50,  # default page size
@@ -38,7 +38,7 @@ Read the resolved, typed settings at runtime via the module-level facade:
 ```python
 from rn_forge.django.settings import rn_forge_django_settings
 
-max_rows = rn_forge_django_settings.drf.views.export_max_rows
+max_rows = rn_forge_django_settings.drf.transfer.max_rows
 saml_settings = rn_forge_django_settings.auth.saml.settings
 ```
 

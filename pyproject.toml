@@ -68,7 +68,7 @@ workspace = [
   "rn-forge-cli",
   "rn-forge-commons[all]",
   "rn-forge-django[all]",
-  "rn-forge-fastapi",
+  "rn-forge-fastapi[transfer]",
   "rn-forge-tooling",
   "rn-forge-web[security]",
 ]

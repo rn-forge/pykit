@@ -143,6 +143,6 @@ The JWKS endpoint an authenticator fetches is IdP configuration:
 ## Built-in auth management viewsets
 
 `rn_forge.django.auth.drf.views` ships ready-to-mount viewsets for the standard Django auth
-models, wired through `AuthorizedExportModelViewSet` / `AuthorizedUpsertImportModelViewSet`:
-`PermissionViewSet`, `GroupViewSet`, `UserViewSet`, `UserUpsertImportViewSet`. Mount them (or
+models, wired through `AuthorizedModelViewSet`:
+`PermissionViewSet`, `GroupViewSet`, `UserViewSet`. Mount them (or
 `rn_forge.django.auth.urls.urlpatterns`, which already registers them) under your API root.

@@ -30,6 +30,7 @@ AREAS = (
     "discovery",
     "security",
     "cors",
+    "transfer",
 )
 
 
@@ -115,13 +116,12 @@ PROBLEM_CASES = tuple(
 
 
 def test_every_case_declares_a_content_type():
-    """304 is the one status RFC 9110 §15.4.5 forbids a body, hence a type, for."""
+    """304 and 204 are the statuses that carry no body, hence no type."""
     for case in CASES:
-        if case.expect_status == 304:
+        if case.expect_status in (204, 304):
             continue
-        assert_that(case.expect_headers).described_as(case.id).contains_key(
-            "Content-Type"
-        )
+        declared = {*case.expect_headers, *case.expect_header_patterns}
+        assert_that(declared).described_as(case.id).contains("Content-Type")
 
 
 def test_every_failure_is_a_problem_body_except_the_readiness_verdict():

@@ -40,6 +40,7 @@ nav:
       - Models: guides/models.md
       - Auth: guides/auth.md
       - DRF Views: guides/drf-views.md
+      - Transfer: guides/transfer.md
       - OpenAPI and camelCase: guides/openapi.md
       - Messaging: guides/messaging.md
       - Fixtures: guides/fixtures.md
@@ -64,6 +65,8 @@ nav:
       - DRF:
           - api/drf/index.md
           - Views: api/drf/views.md
+          - Transfer: api/drf/transfer.md
+          - Routers: api/drf/routers.md
           - Serializers: api/drf/serializers.md
           - Exceptions: api/drf/exceptions.md
           - Pagination: api/drf/pagination.md

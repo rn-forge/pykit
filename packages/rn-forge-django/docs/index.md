@@ -10,7 +10,7 @@ It provides:
 - a typed, auto-reloading settings facade for the `RN_FORGE_DJANGO` Django setting
 - an installable auth app with basic, JWT, and SAML login flows plus DRF authentication/
   permission classes
-- DRF base views and mixins: bulk create/delete, CSV/JSON/Excel import-export, audit-field
+- DRF base views and mixins: tabular export/import and batch create/delete (`transfer` extra), audit-field
   population, auth-aware permissions
 - Excel-to-fixture generation for Django `loaddata`
 

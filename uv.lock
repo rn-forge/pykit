@@ -396,6 +396,15 @@ wheels = [
 ]
 
 [[package]]
+name = "diff-match-patch"
+version = "20241021"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/ad/32e1777dd57d8e85fa31e3a243af66c538245b8d64b7265bec9a61f2ca33/diff_match_patch-20241021.tar.gz", hash = "sha256:beae57a99fa48084532935ee2968b8661db861862ec82c6f21f4acdd6d835073", size = 39962, upload-time = "2024-10-21T19:41:21.094Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/bb/2aa9b46a01197398b901e458974c20ed107935c26e44e37ad5b0e5511e44/diff_match_patch-20241021-py3-none-any.whl", hash = "sha256:93cea333fb8b2bc0d181b0de5e16df50dd344ce64828226bda07728818936782", size = 43252, upload-time = "2024-10-21T19:41:19.914Z" },
+]
+
+[[package]]
 name = "django"
 version = "6.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -420,6 +429,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/21/39/55822b15b7ec87410f34cd16ce04065ff390e50f9e29f31d6d116fc80456/django_cors_headers-4.9.0.tar.gz", hash = "sha256:fe5d7cb59fdc2c8c646ce84b727ac2bca8912a247e6e68e1fb507372178e59e8", size = 21458, upload-time = "2025-09-18T10:40:52.326Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/30/d8/19ed1e47badf477d17fb177c1c19b5a21da0fd2d9f093f23be3fb86c5fab/django_cors_headers-4.9.0-py3-none-any.whl", hash = "sha256:15c7f20727f90044dcee2216a9fd7303741a864865f0c3657e28b7056f61b449", size = 12809, upload-time = "2025-09-18T10:40:50.843Z" },
+]
+
+[[package]]
+name = "django-import-export"
+version = "4.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "diff-match-patch" },
+    { name = "django" },
+    { name = "tablib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/92/32/5b83cc46a70ac94c1d17144097bf8aee7d9bb401d0863652c8d5ce1d2e50/django_import_export-4.4.1.tar.gz", hash = "sha256:165dc7fdcd56a6356342eef3f88f3f3682b64b6f67e9a259a137e8b57aeff10c", size = 2238690, upload-time = "2026-05-05T12:42:44.295Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/d1/110aeb2acffea56d4222861b5678c2643f0bda00081e40d687077348bb7c/django_import_export-4.4.1-py3-none-any.whl", hash = "sha256:8be2782e505ae303ccb02070a1b4c528995922126fca9ee449eb28666835dd4b", size = 157691, upload-time = "2026-05-05T12:42:42.554Z" },
+]
+
+[package.optional-dependencies]
+xlsx = [
+    { name = "tablib", extra = ["xlsx"] },
 ]
 
 [[package]]
@@ -1423,7 +1451,7 @@ dev = [
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all", "excel"] },
     { name = "rn-forge-django", extra = ["all"] },
-    { name = "rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extra = ["transfer"] },
     { name = "rn-forge-tooling" },
     { name = "rn-forge-web", extra = ["security"] },
     { name = "ruff" },
@@ -1438,7 +1466,7 @@ workspace = [
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all"] },
     { name = "rn-forge-django", extra = ["all"] },
-    { name = "rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extra = ["transfer"] },
     { name = "rn-forge-tooling" },
     { name = "rn-forge-web", extra = ["security"] },
 ]
@@ -1468,7 +1496,7 @@ dev = [
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["excel"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
-    { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
     { name = "ruff", specifier = ">=0.15.21" },
@@ -1483,7 +1511,7 @@ workspace = [
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
-    { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
 ]
@@ -1599,6 +1627,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/21/25/5473e46b179f8e8b4ad3aeeb36773d1701b7770eaf5e5bc2025c7303b598/python_json_logger-4.2.0.tar.gz", hash = "sha256:e371ebe22ec01e289850102091a2b1f6fc9e655c7f1f5f29073936756c290afa", size = 18211, upload-time = "2026-08-15T11:36:38.232Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/55/6467fde553886cb293e41538f3a8b4e4fd4688c6df242cf982162d8367fb/python_json_logger-4.2.0-py3-none-any.whl", hash = "sha256:158a52126fcd6869e09574d2b66272666f3dc8f468c62637ef9a1fa883719cb9", size = 14988, upload-time = "2026-08-15T11:36:36.821Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.32"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/42/55c32bb9b12693c092ad250a0e82edb5b31ddeda6eb772de5f308b3804ad/python_multipart-0.0.32.tar.gz", hash = "sha256:be54b7f3fa167bb83e4fcd936b887b708f4e57fe75911c02aebf53efaf8d938e", size = 46881, upload-time = "2026-06-04T16:18:58.647Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl", hash = "sha256:ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23", size = 30042, upload-time = "2026-06-04T16:18:57.319Z" },
 ]
 
 [[package]]
@@ -1790,13 +1827,14 @@ all = [
     { name = "python-json-logger" },
     { name = "stamina" },
     { name = "structlog" },
+    { name = "tablib", extra = ["xlsx"] },
 ]
 auth = [
     { name = "pyjwt", extra = ["crypto"] },
 ]
 excel = [
     { name = "openpyxl" },
-    { name = "pandas" },
+    { name = "tablib", extra = ["xlsx"] },
 ]
 json = [
     { name = "python-json-logger" },
@@ -1852,7 +1890,6 @@ requires-dist = [
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'all'", specifier = ">=0.64b0" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'otel'", specifier = ">=0.64b0" },
     { name = "pandas", marker = "extra == 'all'", specifier = ">=3.0.3" },
-    { name = "pandas", marker = "extra == 'excel'", specifier = ">=3.0.3" },
     { name = "pandas", marker = "extra == 'pandas'", specifier = ">=3.0.3" },
     { name = "purgatory", marker = "extra == 'all'", specifier = ">=3.0.1" },
     { name = "purgatory", marker = "extra == 'resilience'", specifier = ">=3.0.1" },
@@ -1869,6 +1906,8 @@ requires-dist = [
     { name = "stamina", marker = "extra == 'resilience'", specifier = ">=25.2.0" },
     { name = "structlog", marker = "extra == 'all'", specifier = ">=25.1.0" },
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=25.1.0" },
+    { name = "tablib", extras = ["xlsx"], marker = "extra == 'all'", specifier = ">=3.8" },
+    { name = "tablib", extras = ["xlsx"], marker = "extra == 'excel'", specifier = ">=3.8" },
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "verboselogs", specifier = ">=1.7" },
 ]
@@ -1906,12 +1945,13 @@ dependencies = [
 all = [
     { name = "celery" },
     { name = "django-cors-headers" },
+    { name = "django-import-export", extra = ["xlsx"] },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
-    { name = "rn-forge-commons", extra = ["auth", "excel"] },
+    { name = "rn-forge-commons", extra = ["auth", "excel", "pandas"] },
     { name = "rn-forge-web", extra = ["security"] },
 ]
 celery = [
@@ -1922,25 +1962,22 @@ cors = [
 ]
 drf = [
     { name = "djangorestframework" },
-    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 fixtures = [
-    { name = "rn-forge-commons", extra = ["excel"] },
+    { name = "rn-forge-commons", extra = ["excel", "pandas"] },
 ]
 jwt = [
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
-    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 oidc = [
     { name = "djangorestframework" },
-    { name = "rn-forge-commons", extra = ["auth", "excel"] },
+    { name = "rn-forge-commons", extra = ["auth"] },
     { name = "rn-forge-web", extra = ["auth"] },
 ]
 openapi = [
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
-    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 otel = [
     { name = "opentelemetry-instrumentation-django" },
@@ -1949,10 +1986,13 @@ saml = [
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "python3-saml" },
-    { name = "rn-forge-commons", extra = ["excel"] },
 ]
 security = [
     { name = "rn-forge-web", extra = ["security"] },
+]
+transfer = [
+    { name = "django-import-export", extra = ["xlsx"] },
+    { name = "djangorestframework" },
 ]
 
 [package.dev-dependencies]
@@ -1983,12 +2023,15 @@ requires-dist = [
     { name = "django", specifier = ">=6.0.7" },
     { name = "django-cors-headers", marker = "extra == 'all'", specifier = ">=4.9.0" },
     { name = "django-cors-headers", marker = "extra == 'cors'", specifier = ">=4.9.0" },
+    { name = "django-import-export", extras = ["xlsx"], marker = "extra == 'all'", specifier = ">=4.4.1" },
+    { name = "django-import-export", extras = ["xlsx"], marker = "extra == 'transfer'", specifier = ">=4.4.1" },
     { name = "djangorestframework", marker = "extra == 'all'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'jwt'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'oidc'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'openapi'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'saml'", specifier = ">=3.17.1" },
+    { name = "djangorestframework", marker = "extra == 'transfer'", specifier = ">=3.17.1" },
     { name = "djangorestframework-simplejwt", marker = "extra == 'all'", specifier = ">=5.5.1" },
     { name = "djangorestframework-simplejwt", marker = "extra == 'jwt'", specifier = ">=5.5.1" },
     { name = "djangorestframework-simplejwt", marker = "extra == 'saml'", specifier = ">=5.5.1" },
@@ -1999,19 +2042,15 @@ requires-dist = [
     { name = "python3-saml", marker = "extra == 'all'", specifier = ">=1.16.0" },
     { name = "python3-saml", marker = "extra == 'saml'", specifier = ">=1.16.0" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth", "excel"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth", "excel"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'drf'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'jwt'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'openapi'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'saml'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["auth", "excel", "pandas"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["excel", "pandas"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'all'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'security'", editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["drf", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
+provides-extras = ["drf", "transfer", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2053,6 +2092,10 @@ testing = [
     { name = "httpx" },
     { name = "pytest" },
 ]
+transfer = [
+    { name = "python-multipart" },
+    { name = "rn-forge-commons", extra = ["excel"] },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -2063,7 +2106,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
-    { name = "rn-forge-fastapi", extra = ["oidc"] },
+    { name = "rn-forge-fastapi", extra = ["oidc", "transfer"] },
     { name = "ruff" },
 ]
 docs = [
@@ -2080,10 +2123,12 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'testing'", specifier = ">=0.28.1" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.65b0" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
+    { name = "python-multipart", marker = "extra == 'transfer'", specifier = ">=0.0.20" },
+    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'transfer'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["testing", "oidc"]
+provides-extras = ["testing", "oidc", "transfer"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2094,7 +2139,7 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
-    { name = "rn-forge-fastapi", extras = ["oidc"], editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["oidc", "transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "ruff", specifier = ">=0.15.21" },
 ]
 docs = [
@@ -2405,6 +2450,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5e/89/b4a0bcfdf4f71a3dea31379f095929613d7e4528a0996bca6aa964cd0dca/structlog-26.1.0.tar.gz", hash = "sha256:f63a716cbd1b1291cf7661de7794b455acfa4c43c5bcf1630e6ad5ddc1adb3b7", size = 1459881, upload-time = "2026-06-06T07:33:39.348Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl", hash = "sha256:e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e", size = 73764, upload-time = "2026-06-06T07:33:38.046Z" },
+]
+
+[[package]]
+name = "tablib"
+version = "3.10.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/b9/59d9c8b9c34642e7a718e8a1a7a91af3eb9b48f79bac794263702d41519c/tablib-3.10.0.tar.gz", hash = "sha256:781cfa9a42de8f33c52aff857fd0a04e483de4fd1c53eaaa9a6aeac62bad11de", size = 127128, upload-time = "2026-07-31T17:30:15.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/0f/3ae17545ff976687f679ed3a101df7017135ee04769e858a4ccea0cc3f3e/tablib-3.10.0-py3-none-any.whl", hash = "sha256:5721bf3a52d491f8f843628a3a3200db164f6ad9e92fb6eaa64dc3f945f30ad9", size = 50170, upload-time = "2026-07-31T17:30:04.925Z" },
+]
+
+[package.optional-dependencies]
+xlsx = [
+    { name = "openpyxl" },
 ]
 
 [[package]]

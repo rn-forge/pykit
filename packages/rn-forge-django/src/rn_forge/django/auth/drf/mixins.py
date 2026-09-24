@@ -28,9 +28,8 @@ DEFAULT_PERMISSION_ACTION_MAP: Mapping[str, str] = {
     "update": "update",
     "partial_update": "update",
     "destroy": "delete",
-    "bulk_create": "create",
-    "bulk_delete": "delete",
-    "export": "download",
+    "batch_create": "create",
+    "batch_delete": "delete",
     "import_items": "upload",
     "import_template": "upload",
 }

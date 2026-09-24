@@ -19,9 +19,13 @@ exporter.
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
+from email.parser import BytesParser
+from email.policy import HTTP
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -40,9 +44,11 @@ from rn_forge.web import (
     Message,
     Page,
     Principal,
+    ProblemResponse,
     ProblemType,
     Receive,
     Requirement,
+    RowError,
     Scope,
     ScopeAuthorizer,
     Send,
@@ -50,13 +56,18 @@ from rn_forge.web import (
     TooManyRequests,
     check_precondition,
     clamp_page_size,
+    content_disposition,
     decode_cursor,
     default_registry,
     deprecation_headers,
     encode_cursor,
+    export_cap_problem,
     field_error,
+    import_report_body,
     is_not_modified,
     liveness_body,
+    negotiate_tabular_format,
+    row_errors_problem,
     render_problem,
     run_checks,
     run_idempotent,
@@ -83,6 +94,8 @@ REALM = "conformance"
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
+ORDERS: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
+EXPORT_CAP = 1
 
 
 # --- the handlers ---------------------------------------------------------
@@ -260,6 +273,124 @@ def api_catalog(request: Request) -> Response:
     )
 
 
+def _from_problem(rendered: ProblemResponse) -> Response:
+    return Response(
+        rendered.status,
+        rendered.body,
+        headers=dict(rendered.headers),
+        media_type=PROBLEM_MEDIA_TYPE,
+    )
+
+
+def _export(request: Request, filename: str, rows: list[dict[str, str]]) -> Response:
+    """Export negotiation. Only CSV is written here; xlsx needs a codec."""
+    fmt = negotiate_tabular_format(
+        request.header("Accept"), request.query("format"), ["csv"]
+    )
+    if fmt is None:
+        return Response(200, {"items": rows})
+    if len(rows) > EXPORT_CAP:
+        return _from_problem(export_cap_problem(EXPORT_CAP, instance=request.path))
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=["id", "name"])
+    writer.writeheader()
+    writer.writerows(rows)
+    return Response(
+        200,
+        {},
+        headers={
+            "Content-Disposition": content_disposition(f"{filename}.{fmt.extension}")
+        },
+        media_type=fmt.media_type,
+        raw=out.getvalue().encode(),
+    )
+
+
+def export_orders(request: Request) -> Response:
+    return _export(request, "orders", list(ORDERS.values()))
+
+
+def export_named(request: Request) -> Response:
+    return _export(request, "Ordérs 2026", list(ORDERS.values()))
+
+
+def export_over_cap(request: Request) -> Response:
+    return _export(request, "orders", [*ORDERS.values(), *ORDERS.values()])
+
+
+def count_orders(request: Request) -> Response:
+    return Response(200, {"count": len(ORDERS)})
+
+
+def get_order(request: Request) -> Response:
+    return Response(200, ORDERS["1"])
+
+
+def import_orders(request: Request) -> Response:
+    """Multipart upload, all or nothing, honouring `validateOnly`."""
+    message = BytesParser(policy=HTTP).parsebytes(
+        b"Content-Type: "
+        + (request.header("Content-Type") or "").encode()
+        + b"\r\n\r\n"
+        + request.raw
+    )
+    upload = next(
+        part for part in message.iter_parts() if part.get_filename() == "file"
+    )
+    rows = list(csv.DictReader(io.StringIO(upload.get_content())))
+    errors = [
+        RowError(i, "Quantity", "Enter a whole number.")
+        for i, row in enumerate(rows)
+        if not row["Quantity"].isdigit()
+    ]
+    if errors:
+        return _from_problem(row_errors_problem(errors, instance=request.path))
+    created = sum(row["id"] not in ORDERS for row in rows)
+    validate_only = request.query("validateOnly") == "true"
+    if not validate_only:
+        ORDERS.update(
+            {row["id"]: {"id": row["id"], "name": row["name"]} for row in rows}
+        )
+    return Response(
+        200,
+        import_report_body(
+            created=created,
+            updated=len(rows) - created,
+            skipped=0,
+            validate_only=validate_only,
+        ),
+    )
+
+
+def batch_create_orders(request: Request) -> Response:
+    items = request.json()["requests"]
+    errors = [
+        RowError(i, "name", REQUIRED_FIELD_DETAIL)
+        for i, item in enumerate(items)
+        if "name" not in item
+    ]
+    if errors:
+        return _from_problem(
+            row_errors_problem(errors, instance=request.path, root="requests")
+        )
+    created: list[dict[str, str]] = []
+    for item in items:
+        order = {"id": str(len(ORDERS) + 1), "name": item["name"]}
+        ORDERS[order["id"]] = order
+        created.append(order)
+    return Response(200, {"orders": created})
+
+
+def batch_delete_orders(request: Request) -> Response:
+    ids = request.json()["ids"]
+    for order_id in ids:
+        if order_id not in ORDERS:
+            raise LookupError(f"Order {order_id} not found")
+    for order_id in ids:
+        del ORDERS[order_id]
+    return Response(204, {})
+
+
 ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/boom"): boom,
     ("GET", "/conformance/conflict"): conflict,
@@ -276,6 +407,14 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/echo"): echo,
     ("GET", "/conformance/legacy"): legacy,
     ("GET", "/.well-known/api-catalog"): api_catalog,
+    ("GET", "/conformance/orders"): export_orders,
+    ("GET", "/conformance/orders/named"): export_named,
+    ("GET", "/conformance/orders/over-cap"): export_over_cap,
+    ("GET", "/conformance/orders/count"): count_orders,
+    ("GET", "/conformance/orders/1"): get_order,
+    ("POST", "/conformance/orders:import"): import_orders,
+    ("POST", "/conformance/orders:batchCreate"): batch_create_orders,
+    ("POST", "/conformance/orders:batchDelete"): batch_delete_orders,
 }
 
 
@@ -309,6 +448,10 @@ class Request:
         return json.loads(self._body) if self._body else None
 
     @property
+    def raw(self) -> bytes:
+        return self._body
+
+    @property
     def path(self) -> str:
         return self._scope.get("path", "")
 
@@ -323,11 +466,13 @@ class Response:
         *,
         headers: Mapping[str, str] | None = None,
         media_type: str = "application/json",
+        raw: bytes | None = None,
     ) -> None:
         self.status = status
         self.body = body
         self.headers = dict(headers or {})
         self.media_type = media_type
+        self.raw = raw
 
 
 async def application(scope: Scope, receive: Receive, send: Send) -> None:
@@ -355,18 +500,14 @@ async def application(scope: Scope, receive: Receive, send: Send) -> None:
 
 def _problem_response(exc: BaseException, request: Request) -> Response:
     """The single place an exception becomes a response. There is no other."""
-    rendered = render_problem(
-        REGISTRY,
-        exc,
-        instance=request.path,
-        extensions=_error_extensions(exc),
-        realm=REALM,
-    )
-    return Response(
-        rendered.status,
-        rendered.body,
-        headers=dict(rendered.headers),
-        media_type=PROBLEM_MEDIA_TYPE,
+    return _from_problem(
+        render_problem(
+            REGISTRY,
+            exc,
+            instance=request.path,
+            extensions=_error_extensions(exc),
+            realm=REALM,
+        )
     )
 
 
@@ -381,13 +522,19 @@ async def _send(send: Send, response: Response) -> None:
     """Serialize one response onto the ASGI send channel.
 
     RFC 9110 §15.4.5: a 304 carries no body, so it gets no `Content-Type`
-    either.
+    either; nor does a 204.
     """
-    payload = b"" if response.status == 304 else json.dumps(response.body).encode()
+    bodyless = response.status in (204, 304)
+    if bodyless:
+        payload = b""
+    elif response.raw is not None:
+        payload = response.raw
+    else:
+        payload = json.dumps(response.body).encode()
     headers: list[tuple[bytes, bytes]] = [
         (b"content-length", str(len(payload)).encode()),
     ]
-    if response.status != 304:
+    if not bodyless:
         headers.insert(0, (b"content-type", response.media_type.encode()))
     headers += [(k.lower().encode(), v.encode()) for k, v in response.headers.items()]
     start: Message = {

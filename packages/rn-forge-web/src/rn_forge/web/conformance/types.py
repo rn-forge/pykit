@@ -28,6 +28,7 @@ type ConformanceArea = Literal[
     "discovery",
     "security",
     "cors",
+    "transfer",
 ]
 """Areas covered by the conformance suite."""
 
@@ -82,6 +83,9 @@ class ConformanceCase:
     the header value. Header names are compared case-insensitively, as for
     :attr:`expect_headers`. Used where the exact value is not deterministic
     (a generated span id in ``traceresponse``)."""
+    expect_text: str | None = None
+    """The exact response body, for a case whose body is not JSON (a CSV
+    export). When set, :attr:`expect_body` is not compared."""
 
 
 def redact(body: Mapping[str, Any]) -> dict[str, Any]:

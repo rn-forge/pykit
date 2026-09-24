@@ -13,27 +13,27 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-drf = [
+drf = ["djangorestframework>=3.17.1"]
+# `rn_forge.django.drf.transfer` only: tabular export and import, batch create
+# and delete. `[xlsx]` brings tablib and openpyxl, which `write_xlsx` also uses.
+transfer = [
   "djangorestframework>=3.17.1",
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "django-import-export[xlsx]>=4.4.1",
 ]
+# `fixtures.py` reads workbooks through `ExcelAdapter`, which needs pandas.
 fixtures = [
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
-# Every extra that brings DRF also brings commons' `excel`: importing any
-# `rn_forge.django.drf` module runs the `drf` facade, whose transfer views
-# import the Excel adapter.
 jwt = [
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 # JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
 # simplejwt against a local User. The authenticator itself is web's `auth`
 # extra (`rn_forge.web.oidc`), which brings commons' `auth` extra with it.
 oidc = [
   "djangorestframework>=3.17.1",
-  "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
   "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
 celery = ["celery>=5.6.3"]
@@ -43,13 +43,11 @@ celery = ["celery>=5.6.3"]
 openapi = [
   "djangorestframework>=3.17.1",
   "drf-spectacular>=0.30.0",
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 saml = [
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "python3-saml>=1.16.0",
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
 ]
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
@@ -66,12 +64,13 @@ otel = ["opentelemetry-instrumentation-django>=0.65b0"]
 all = [
   "celery>=5.6.3",
   "django-cors-headers>=4.9.0",
+  "django-import-export[xlsx]>=4.4.1",
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
-  "rn-forge-commons[auth,excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[auth,excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
   "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
 

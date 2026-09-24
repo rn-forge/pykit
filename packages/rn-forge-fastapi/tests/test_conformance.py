@@ -15,9 +15,10 @@ from datetime import UTC, datetime
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
+from pydantic import ConfigDict, Field, ValidationError, field_validator
 
 from rn_forge.fastapi import (
     AppConfig,
@@ -31,8 +32,19 @@ from rn_forge.fastapi import (
     require_if_match,
     requires,
 )
+from rn_forge.fastapi.transfer import (
+    problem_response,
+    read_rows,
+    tabular_format,
+    tabular_response,
+)
 from rn_forge.web import (
     API_CATALOG_PATH,
+    RowError,
+    TabularFormat,
+    export_cap_problem,
+    import_report_body,
+    row_errors_problem,
     Page,
     WireModel,
     CheckResult,
@@ -73,6 +85,42 @@ class Charge(WireModel):
 
 class Named(WireModel):
     name: str
+
+
+class OrderRow(WireModel):
+    id: str
+    name: str
+
+
+class OrderImport(WireModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    name: str
+    quantity: int = Field(alias="Quantity")
+
+    @field_validator("quantity", mode="before")
+    @classmethod
+    def whole_number(cls, value):
+        try:
+            return int(value)
+        except TypeError, ValueError:
+            raise ValueError("Enter a whole number.") from None
+
+
+class OrderCreate(WireModel):
+    name: str
+
+
+class BatchCreate(WireModel):
+    requests: list[dict]
+
+
+class BatchDelete(WireModel):
+    ids: list[str]
+
+
+EXPORT_CAP = 1
 
 
 def build_app(*, failing: str | None) -> FastAPI:
@@ -199,15 +247,113 @@ def build_app(*, failing: str | None) -> FastAPI:
     async def unavailable_route():
         raise ServiceUnavailable("Service unavailable", retry_after=5)
 
+    orders: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
+    tabular = Depends(tabular_format())
+
+    def export(request: Request, fmt: TabularFormat | None, filename: str, rows):
+        if fmt is None:
+            return {"items": rows}
+        if len(rows) > EXPORT_CAP:
+            return problem_response(
+                export_cap_problem(EXPORT_CAP, instance=request.url.path)
+            )
+        return tabular_response(rows, OrderRow, fmt, filename)
+
+    @app.get("/conformance/orders")
+    async def export_orders(request: Request, fmt: TabularFormat | None = tabular):
+        return export(request, fmt, "orders.csv", list(orders.values()))
+
+    @app.get("/conformance/orders/named")
+    async def export_named(request: Request, fmt: TabularFormat | None = tabular):
+        return export(request, fmt, "Ordérs 2026.csv", list(orders.values()))
+
+    @app.get("/conformance/orders/over-cap")
+    async def export_over_cap(request: Request, fmt: TabularFormat | None = tabular):
+        return export(request, fmt, "orders.csv", [*orders.values(), *orders.values()])
+
+    @app.get("/conformance/orders/count")
+    async def count_orders():
+        return {"count": len(orders)}
+
+    @app.get("/conformance/orders/1")
+    async def get_order():
+        return orders["1"]
+
+    @app.post("/conformance/orders:import")
+    async def import_orders(
+        request: Request,
+        file: UploadFile,
+        validate_only: bool = Query(False, alias="validateOnly"),
+    ):
+        result = await read_rows(file, OrderImport)
+        if result.errors:
+            return problem_response(
+                row_errors_problem(result.errors, instance=request.url.path)
+            )
+        created = sum(row.id not in orders for row in result.valid)
+        if not validate_only:
+            orders.update(
+                {row.id: {"id": row.id, "name": row.name} for row in result.valid}
+            )
+        return import_report_body(
+            created=created,
+            updated=len(result.valid) - created,
+            skipped=0,
+            validate_only=validate_only,
+        )
+
+    @app.post("/conformance/orders:batchCreate")
+    async def batch_create_orders(request: Request, body: BatchCreate):
+        errors: list[RowError] = []
+        items: list[OrderCreate] = []
+        for index, item in enumerate(body.requests):
+            try:
+                items.append(OrderCreate.model_validate(item))
+            except ValidationError as exc:
+                errors.extend(
+                    RowError(index, str(e["loc"][0]), "This field is required.")
+                    for e in exc.errors()
+                )
+        if errors:
+            return problem_response(
+                row_errors_problem(errors, instance=request.url.path, root="requests")
+            )
+        created = []
+        for item in items:
+            order = {"id": str(len(orders) + 1), "name": item.name}
+            orders[order["id"]] = order
+            created.append(order)
+        return {"orders": created}
+
+    @app.post("/conformance/orders:batchDelete", status_code=204)
+    async def batch_delete_orders(body: BatchDelete):
+        for order_id in body.ids:
+            if order_id not in orders:
+                raise LookupError(f"Order {order_id} not found")
+        for order_id in body.ids:
+            del orders[order_id]
+
     return app
 
 
 def issue(client, case):
     spec = case.request
+    headers = dict(spec.headers)
+    if headers.get("Content-Type") == "multipart/form-data":
+        del headers["Content-Type"]
+        return client.request(
+            spec.method,
+            spec.path,
+            headers=headers,
+            params=dict(spec.query),
+            files={
+                name: (name, value, "text/csv") for name, value in spec.body.items()
+            },
+        )
     return client.request(
         spec.method,
         spec.path,
-        headers=dict(spec.headers),
+        headers=headers,
         params=dict(spec.query),
         json=spec.body,
     )
@@ -250,6 +396,9 @@ def test_fastapi_conforms(case):
         assert_that(re.fullmatch(pattern, value)).described_as(
             f"{name}={value!r} ~ {pattern!r}"
         ).is_not_none()
+    if case.expect_text is not None:
+        assert_that(response.text).is_equal_to(case.expect_text)
+        return
     body = response.json() if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()

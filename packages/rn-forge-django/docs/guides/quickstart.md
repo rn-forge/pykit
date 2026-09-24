@@ -137,7 +137,7 @@ Common imports:
 ```python
 from rn_forge.django.models import BaseModel, DateModel, DateRangeModel, EnumField, Status
 from rn_forge.django.settings import rn_forge_django_settings
-from rn_forge.django.drf.views import BaseAPIView, BaseModelViewSet, ExportModelViewSet
+from rn_forge.django.drf.views import BaseAPIView, BaseModelViewSet
 from rn_forge.django.drf.serializers import BaseModelSerializer
 ```
 

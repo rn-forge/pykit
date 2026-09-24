@@ -25,10 +25,16 @@ from urllib.parse import urlencode
 import pytest
 from assertpy import assert_that
 from django.db import models
+from django.core.files.base import ContentFile
 from django.test import Client, override_settings
+from django.test.client import encode_multipart
 from django.urls import Resolver404, path, resolve
+from import_export import fields as ie_fields
+from import_export import resources as ie_resources
+from import_export import widgets as ie_widgets
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -39,6 +45,13 @@ from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination
+from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.transfer import (
+    BatchCreateMixin,
+    BatchDeleteMixin,
+    ResourceExportMixin,
+    ResourceImportMixin,
+)
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
@@ -56,6 +69,7 @@ from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
+BOUNDARY = "conformance-boundary"
 ITEM_VERSION = 7
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
@@ -72,6 +86,98 @@ class _ConformanceItem(models.Model):
 
     class Meta:
         app_label = "rn_forge_django"
+
+
+def _next_order_id():
+    return str(_Order.objects.count() + 1)
+
+
+class _Order(models.Model):
+    id = models.CharField(primary_key=True, max_length=10, default=_next_order_id)
+    name = models.CharField(max_length=20)
+    quantity = models.IntegerField(default=0)
+
+    class Meta:
+        # import-export deep-copies instances, which pickles the model by an
+        # installed app label.
+        app_label = "rn_forge_django_messaging"
+        verbose_name = "order"
+        verbose_name_plural = "orders"
+
+
+class _OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _Order
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
+
+
+class _OrderExport(ie_resources.ModelResource):
+    class Meta:
+        model = _Order
+        fields = ("id", "name")
+
+
+class _WholeNumber(ie_widgets.IntegerWidget):
+    def clean(self, value, row=None, **kwargs):
+        try:
+            return int(value)
+        except TypeError, ValueError:
+            raise ValueError("Enter a whole number.") from None
+
+
+class _OrderImport(ie_resources.ModelResource):
+    quantity = ie_fields.Field(
+        attribute="quantity", column_name="Quantity", widget=_WholeNumber()
+    )
+
+    class Meta:
+        model = _Order
+        fields = ("id", "name", "quantity")
+        import_id_fields = ("id",)
+
+
+class _Orders(
+    ResourceExportMixin,
+    ResourceImportMixin,
+    BatchCreateMixin,
+    BatchDeleteMixin,
+    ModelViewSet,
+):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _Order.objects.order_by("id")
+    serializer_class = _OrderSerializer
+    export_resource_class = _OrderExport
+    import_resource_class = _OrderImport
+
+
+class _OverCap(_Orders):
+    def filter_queryset(self, queryset):
+        # Two rows against a cap of one, without a second row in the table
+        # that the other cases count.
+        rows = super().filter_queryset(queryset).order_by()
+        return rows.union(rows, all=True)
+
+
+_over_cap_view = _OverCap.as_view({"get": "list"})
+
+
+def _over_cap(request):
+    with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+        return _over_cap_view(request)
+
+
+class _OrderCount(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        return Response({"count": _Order.objects.count()})
+
+
+_orders = CustomMethodRouter(trailing_slash=False)
+_orders.register("conformance/orders", _Orders, basename="orders")
 
 
 class _AnyToken:
@@ -228,6 +334,13 @@ urlpatterns = [
     path("conformance/unavailable", _Unavailable.as_view()),
     path("conformance/private", _Private.as_view()),
     path("conformance/echo", _Echo.as_view()),
+    path(
+        "conformance/orders/named",
+        _Orders.as_view({"get": "list"}, export_filename="Ordérs 2026"),
+    ),
+    path("conformance/orders/over-cap", _over_cap),
+    path("conformance/orders/count", _OrderCount.as_view()),
+    *_orders.urls,
     path("conformance/legacy", _Legacy.as_view()),
     *openapi_urlpatterns(),
 ]
@@ -270,7 +383,7 @@ WIRING = {
 
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(_ConformanceItem)
+    create_tables(_ConformanceItem, _Order)
 
 
 @pytest.fixture
@@ -278,6 +391,7 @@ def client():
     """A fresh application per case: rows reset, and the cache (the store) cleared by conftest."""
     for pk in ("1", "2", "3"):
         _ConformanceItem.objects.create(pk=pk)
+    _Order.objects.create(pk="1", name="widget")
     with override_settings(**WIRING):
         yield Client(raise_request_exception=False)
 
@@ -285,12 +399,20 @@ def client():
 def issue(client, case):
     spec = case.request
     target = f"{spec.path}?{urlencode(dict(spec.query))}" if spec.query else spec.path
+    headers = dict(spec.headers)
+    content_type = "application/json"
+    if spec.body is None:
+        data = ""
+    elif headers.get("Content-Type") == "multipart/form-data":
+        headers.pop("Content-Type")
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        data = encode_multipart(
+            BOUNDARY, {k: ContentFile(v, name="file.csv") for k, v in spec.body.items()}
+        )
+    else:
+        data = json.dumps(spec.body)
     return client.generic(
-        spec.method,
-        target,
-        data=json.dumps(spec.body) if spec.body is not None else "",
-        content_type="application/json",
-        headers=dict(spec.headers),
+        spec.method, target, data=data, content_type=content_type, headers=headers
     )
 
 
@@ -327,6 +449,9 @@ def test_django_conforms(client, case):
         assert_that(re.fullmatch(pattern, value)).described_as(
             f"{name}={value!r} ~ {pattern!r}"
         ).is_not_none()
+    if case.expect_text is not None:
+        assert_that(response.content.decode()).is_equal_to(case.expect_text)
+        return
     body = json.loads(response.content) if response.content else {}
     assert_that(redact(body)).is_equal_to(dict(case.expect_body))
     assert_that(casing_violations(body)).described_as("camelCase").is_empty()

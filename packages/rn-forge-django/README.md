@@ -15,13 +15,14 @@ Optional extras:
 
 | Extra | Adds |
 | --- | --- |
-| `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing), including Excel transfer support via `rn-forge-commons[excel]` |
-| `jwt` | `djangorestframework-simplejwt`-backed JWT auth — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
-| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
-| `openapi` | `drf-spectacular`, for `drf.openapi` — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
-| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth — plus `rn-forge-commons[excel]`, which every DRF-bringing extra needs because the `drf` facade loads the Excel transfer views |
+| `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
+| `transfer` | `django-import-export[xlsx]` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
+| `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
+| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
+| `openapi` | `drf-spectacular`, for `drf.openapi` |
+| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
 | `celery` | `celery`, for the `celery` app factory |
-| `fixtures` | `rn-forge-commons[excel]`, for building Django JSON fixtures from Excel workbooks |
+| `fixtures` | `rn-forge-commons[excel,pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
 ## What's inside
@@ -35,8 +36,9 @@ Optional extras:
   credentials, mixins, views), `auth.saml` (SAML login views), and `auth.drf` (shared DRF authentication
   classes, permissions, mixins, serializers, and the `rn_forge.web` principal binding for externally
   issued bearer tokens).
-- **`drf`** — DRF integration outside the auth app: `drf.views` (base view classes, bulk operations,
-  Excel/transfer import-export, parsers/renderers, `PermissionByMethodMixin`), `drf.serializers` (base
+- **`drf`** — DRF integration outside the auth app: `drf.views` (base view classes, mixins, `PermissionByMethodMixin`),
+  `drf.routers` (`CustomMethodRouter`, AIP-136 colon custom methods), `drf.transfer` (`transfer` extra: tabular
+  export/import, batch create/delete), `drf.serializers` (base
   serializer, custom fields), `drf.exceptions` (the RFC 9457 problem handler and the
   legacy handler), `drf.pagination` (AIP-158 cursor pagination), `drf.idempotency`, `drf.concurrency`,
   `drf.casing` (camelCase renderer/parser) and `drf.openapi` (drf-spectacular; `openapi` extra).
@@ -77,7 +79,7 @@ Settings are read from a single `RN_FORGE_DJANGO` dict in your Django settings m
 RN_FORGE_DJANGO = {
     "AUTH": {"SAML": {"SETTINGS": {...}, "RETURN_TO": "/"}},
     "DRF": {
-        "VIEWS": {"DEFAULT_TRANSFER_FORMAT": "xlsx", "EXPORT_MAX_ROWS": 10_000},
+        "TRANSFER": {"MAX_ROWS": 10_000},
         "PAGINATION": {"PAGE_SIZE": 50, "MAX_PAGE_SIZE": 200},
         "CASING": {"ENABLED": True},
     },

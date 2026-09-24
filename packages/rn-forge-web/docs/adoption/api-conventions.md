@@ -318,6 +318,8 @@ generated client's model, page or enum type names.
   and `POST /orders/{orderId}/items` have the same shape — so that spelling
   yields a mechanical `cancelCreate` and needs an explicit override
   (`operation_id=` on FastAPI, `@extend_schema(operation_id=...)` on DRF).
+  On DRF the colon spelling is served by `rn_forge.django.drf.routers.CustomMethodRouter`;
+  stock routers cannot express it.
 - `operationId` **must be unique across the document**; OpenAPI requires it, and
   a generator that meets a duplicate produces a broken client. drf-spectacular
   warns and appends a numeral; FastAPI does neither, so on that stack a
@@ -474,6 +476,57 @@ default.
   `INSTALLED_APPS` and `CorsMiddleware` to `MIDDLEWARE` itself.
 - `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises: browsers
   reject that combination outright.
+
+---
+
+## 17. Tabular transfer and bulk operations
+
+`rn_forge.web.transfer` holds the wire shapes; the framework packages hold the
+handlers. Every rule names its source and its conformance case.
+
+**Export.** `GET /orders` with `Accept: text/csv` or
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` returns the
+same filtered collection as the JSON list, as a file. This is proactive
+negotiation (RFC 9110 §12); a wildcard never selects a tabular format.
+`?format=csv|xlsx` is the fallback for a plain link and wins over `Accept`. The
+export is not paginated. A result above the configured cap is a `422` problem
+whose `detail` names the cap. The response carries
+`Content-Disposition: attachment` with a quoted ASCII `filename` and a UTF-8
+`filename*` (RFC 6266, RFC 8187). —
+`transfer.export-is-negotiated-from-accept`,
+`transfer.export-format-param-is-the-fallback`,
+`transfer.export-filename-carries-rfc8187-encoding`,
+`transfer.export-over-the-cap-is-422`
+
+**Import.** `POST /orders:import` is a custom method (AIP-136, §9), a
+`multipart/form-data` upload with a `file` part. `?validateOnly=true` runs the
+whole import and persists nothing (AIP-163). Success is `200` with
+`{created, updated, skipped, validateOnly}`. Any row error fails the whole
+import: `422` `application/problem+json` with
+`errors[].pointer = "/rows/12/Quantity"` (RFC 9457 §3, §2's `errors`), and
+nothing persisted. — `transfer.import-report-counts-and-validate-only`,
+`transfer.import-row-errors-are-422-pointers`
+
+**Import template.** `GET /orders:importTemplate`, negotiated like an export;
+`?prefill=true` adds the current filtered rows (AIP-136).
+
+**Bulk create.** `POST /orders:batchCreate` with `{"requests": [...]}` is all or
+nothing (AIP-233) and answers `200 {"orders": [...]}`. A per-item validation or
+authorization failure is one `422` or `403` problem with
+`errors[].pointer = "/requests/3/..."` (RFC 9457). —
+`transfer.batch-create-item-failure-is-422-pointer`,
+`transfer.failed-batch-create-persists-nothing`,
+`transfer.batch-create-returns-the-created-resources`
+
+**Bulk delete.** `POST /orders:batchDelete` with `{"ids": [...]}` is all or
+nothing and answers `204` (AIP-235); an id that does not exist fails the whole
+batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
+`transfer.failed-batch-delete-deletes-nothing`, `transfer.batch-delete-is-204`
+
+**Large files (not built).** When a consumer needs it, the pattern is
+`POST /imports` returning `202` with `Location`, then polling the operation
+(AIP-151), with an `Idempotency-Key` (§5,
+`draft-ietf-httpapi-idempotency-key-header`).
 
 ---
 

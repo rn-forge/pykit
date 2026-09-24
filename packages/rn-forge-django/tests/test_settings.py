@@ -40,7 +40,7 @@ class TestOverrideAndReload:
         with override_settings(
             RN_FORGE_DJANGO={
                 "DRF": {
-                    "VIEWS": {"EXPORT_MAX_ROWS": 5},
+                    "TRANSFER": {"MAX_ROWS": 5},
                     "PAGINATION": {"PAGE_SIZE": 10},
                     "CASING": {"ENABLED": False},
                 },
@@ -48,7 +48,7 @@ class TestOverrideAndReload:
             }
         ):
             conf = _current()
-            assert conf.drf.views.export_max_rows == 5
+            assert conf.drf.transfer.max_rows == 5
             assert conf.drf.pagination.page_size == 10
             assert conf.drf.pagination.max_page_size == 200
             assert conf.drf.casing.enabled is False

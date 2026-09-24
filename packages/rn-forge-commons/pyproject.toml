@@ -18,7 +18,7 @@ auth = ["pyjwt[crypto]>=2.14.0"]
 json = ["python-json-logger>=4.0.0"]
 structlog = ["structlog>=25.1.0"]
 resilience = ["purgatory>=3.0.1", "stamina>=25.2.0", "httpx>=0.28"]
-excel = ["openpyxl>=3.1.5", "pandas>=3.0.3"]
+excel = ["openpyxl>=3.1.5", "tablib[xlsx]>=3.8"]
 otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
 pandas = ["pandas>=3.0.3"]
 pydantic = ["pydantic>=2.12"]
@@ -34,6 +34,7 @@ all = [
   "python-json-logger>=4.0.0",
   "stamina>=25.2.0",
   "structlog>=25.1.0",
+  "tablib[xlsx]>=3.8",
 ]
 
 [build-system]

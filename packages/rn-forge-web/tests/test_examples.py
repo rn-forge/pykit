@@ -27,6 +27,7 @@ from assertpy import assert_that
 import rn_forge.web
 from rn_forge.web.conformance import CASES, case_by_id, redact
 
+BOUNDARY = "conformance-boundary"
 EXAMPLES = pathlib.Path(__file__).parent.parent / "docs" / "adoption" / "examples"
 
 pytestmark = pytest.mark.unit
@@ -50,17 +51,28 @@ def asgi_app():
 async def call(app, case):
     """Drive one conformance case through an ASGI app and collect the response."""
     query = "&".join(f"{k}={v}" for k, v in case.request.query.items()).encode()
-    body = (
-        json.dumps(case.request.body).encode() if case.request.body is not None else b""
-    )
+    headers = dict(case.request.headers)
+    if case.request.body is None:
+        body = b""
+    elif headers.get("Content-Type") == "multipart/form-data":
+        headers["Content-Type"] = f"multipart/form-data; boundary={BOUNDARY}"
+        body = (
+            "".join(
+                f"--{BOUNDARY}\r\nContent-Disposition: form-data; "
+                f'name="{name}"; filename="{name}"\r\n'
+                f"Content-Type: text/csv\r\n\r\n{value}\r\n"
+                for name, value in case.request.body.items()
+            ).encode()
+            + f"--{BOUNDARY}--\r\n".encode()
+        )
+    else:
+        body = json.dumps(case.request.body).encode()
     scope = {
         "type": "http",
         "method": case.request.method,
         "path": case.request.path,
         "query_string": query,
-        "headers": [
-            (k.lower().encode(), v.encode()) for k, v in case.request.headers.items()
-        ],
+        "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
     }
 
     received = [False]
@@ -89,7 +101,13 @@ async def call(app, case):
     for k, v in start["headers"]:
         name, value = k.decode().lower(), v.decode()
         headers[name] = f"{headers[name]}, {value}" if name in headers else value
-    return start["status"], headers, json.loads(payload) if payload else {}
+    is_json = "json" in headers.get("content-type", "")
+    return (
+        start["status"],
+        headers,
+        payload.decode(),
+        json.loads(payload) if is_json else {},
+    )
 
 
 # --- the executed proof ---------------------------------------------------
@@ -102,7 +120,7 @@ async def test_the_asgi_example_conforms(asgi_app, case):
     for prerequisite in case.depends_on:
         await call(asgi_app, case_by_id(prerequisite))
 
-    status, headers, body = await call(asgi_app, case)
+    status, headers, text, body = await call(asgi_app, case)
 
     assert_that(status).described_as("status").is_equal_to(case.expect_status)
 
@@ -119,7 +137,10 @@ async def test_the_asgi_example_conforms(asgi_app, case):
             f"{name}={value!r} ~ {pattern!r}"
         ).is_not_none()
 
-    assert_that(redact(body)).is_equal_to(dict(case.expect_body))
+    if case.expect_text is not None:
+        assert_that(text).is_equal_to(case.expect_text)
+    else:
+        assert_that(redact(body)).is_equal_to(dict(case.expect_body))
 
 
 def test_every_declared_prerequisite_resolves():

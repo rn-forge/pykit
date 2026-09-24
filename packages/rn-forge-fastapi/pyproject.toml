@@ -33,6 +33,12 @@ testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
 oidc = [
   "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
+# Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
+# package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
+transfer = [
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "python-multipart>=0.0.20",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]
@@ -59,7 +65,7 @@ dev = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[oidc]",
+  "rn-forge-fastapi[oidc,transfer]",
   "ruff>=0.15.21",
 ]
 docs = [
