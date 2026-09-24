@@ -165,10 +165,12 @@ here would be a convention that holds until the first hurried endpoint.
 
 ## 7. Pagination
 
-Subclass DRF's own `CursorPagination` for its keyset machinery — which is
-proven and is the hard part — and override only the cursor codec and
-`get_paginated_response` / `get_paginated_response_schema` to emit the AIP-158
-envelope. Do not reimplement keyset SQL.
+Subclass DRF's own `CursorPagination` and emit the AIP-158 envelope from
+`get_paginated_response` / `get_paginated_response_schema`. DRF's keyset filter
+compares one position and skips ties with an offset held in its cursor; the
+shared token carries a sort value and a primary key instead, so
+`rn_forge.django.drf.pagination.CursorPagination` overrides `paginate_queryset`
+to filter on that pair. Use it rather than writing another.
 
 ## Conformance
 

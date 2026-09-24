@@ -49,6 +49,10 @@ def _page(paginator, request):
     return json.loads(json.dumps(paginator.get_paginated_response(data).data))
 
 
+def _paginate(request):
+    return CursorPagination().paginate_queryset(_PagedRow.objects.all(), request)
+
+
 @pytest.mark.unit
 class TestPageSize:
     def test_cursor_defaults_come_from_settings(self) -> None:
@@ -96,12 +100,12 @@ class TestPageSize:
 class TestTokens:
     def test_tampered_token_raises_invalid_cursor(self) -> None:
         with pytest.raises(InvalidCursor):
-            CursorPagination().decode_cursor(_request(pageToken="!!!"))
+            _paginate(_request(pageToken="!!!"))
 
     def test_tampered_token_renders_as_a_400_problem(self) -> None:
         request = _request(pageToken="!!!")
         try:
-            CursorPagination().decode_cursor(request)
+            _paginate(request)
         except InvalidCursor as exc:
             response = problem_details_exception_handler(
                 exc, {"request": request, "view": None}
@@ -111,7 +115,7 @@ class TestTokens:
     def test_drf_encoded_cursor_is_rejected(self) -> None:
         drf_token = base64.b64encode(b"p=3").decode()
         with pytest.raises(InvalidCursor):
-            CursorPagination().decode_cursor(_request(pageToken=drf_token))
+            _paginate(_request(pageToken=drf_token))
 
 
 @pytest.mark.integration
@@ -187,3 +191,47 @@ class TestOrderBy:
     def test_unlisted_field_is_rejected(self, rows) -> None:
         with pytest.raises(InvalidOrderBy):
             self._ordered_page(_request(orderBy="secret"))
+
+
+@pytest.mark.integration
+class TestNonUniqueSortField:
+    """Rows sharing a sort value are neither skipped nor repeated across pages."""
+
+    @pytest.fixture
+    def tied(self, db):
+        _PagedRow.objects.all().delete()
+        for pk, label in enumerate("bbbaabbb", start=1):
+            _PagedRow.objects.create(pk=pk, label=label)
+
+    def _walk(self, order_by: str, page_size: int) -> list[int]:
+        seen: list[int] = []
+        token = None
+        while True:
+            query = {"pageSize": str(page_size), "orderBy": order_by}
+            if token:
+                query["pageToken"] = token
+            paginator = CursorPagination()
+            page = paginator.paginate_queryset(
+                _PagedRow.objects.all(), _request(**query), view=_OrderedView()
+            )
+            seen += [row.pk for row in page]
+            token = paginator.get_next_page_token()
+            if token is None:
+                return seen
+
+    @pytest.mark.parametrize("page_size", [1, 2, 3])
+    def test_ascending_walk_visits_every_row_once_in_order(self, tied, page_size):
+        assert self._walk("label", page_size) == [4, 5, 1, 2, 3, 6, 7, 8]
+
+    @pytest.mark.parametrize("page_size", [1, 2, 3])
+    def test_descending_walk_visits_every_row_once_in_order(self, tied, page_size):
+        assert self._walk("label desc", page_size) == [8, 7, 6, 3, 2, 1, 5, 4]
+
+    def test_token_value_that_does_not_fit_the_field_is_rejected(self, tied):
+        token = encode_cursor("not-a-number", "1", "id")
+        with pytest.raises(InvalidCursor):
+            CursorPagination().paginate_queryset(
+                _PagedRow.objects.all(),
+                _request(orderBy="id", pageToken=token),
+                view=_OrderedView(),
+            )

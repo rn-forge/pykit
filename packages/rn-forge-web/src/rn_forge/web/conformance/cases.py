@@ -292,6 +292,19 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body=_problem_body(BAD_REQUEST, "Cannot order by 'secret'; allowed: id"),
     ),
     ConformanceCase(
+        id="pagination.order-by-two-fields-is-400",
+        area="pagination",
+        description=(
+            "A list sorts by one field; a second term is a 400, never silently ignored."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/items", query={"orderBy": "id desc,id"}
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "orderBy accepts one field; got 2"),
+    ),
+    ConformanceCase(
         id="pagination.token-under-a-different-order-by-is-400",
         area="pagination",
         description="A token issued for the default order is rejected once orderBy changes.",
@@ -868,6 +881,67 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         expect_status=204,
         expect_body={},
+    ),
+    # --- Timestamps (api-conventions.md §18) -----------------------------
+    ConformanceCase(
+        id="timestamps.rfc-3339-utc-with-z",
+        area="timestamps",
+        description=(
+            "AIP-142: an instant is an RFC 3339 string in UTC with a Z suffix, "
+            "not an offset and not a zone name."
+        ),
+        request=RequestSpec("GET", "/conformance/stamped"),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"id": "1", "createTime": "2026-09-23T14:05:00Z"},
+    ),
+    # --- Long-running operations (operations.py) -------------------------
+    ConformanceCase(
+        id="operations.start-is-202-with-location",
+        area="operations",
+        description=(
+            "AIP-151: the call answers 202, names the operation in Location, and "
+            "returns it unfinished."
+        ),
+        request=RequestSpec("POST", "/conformance/exports", headers=_JSON, body={}),
+        expect_status=202,
+        expect_headers={**_JSON, "Location": "/conformance/operations/1"},
+        expect_body={"name": "operations/1", "done": False},
+    ),
+    ConformanceCase(
+        id="operations.finished-carries-its-response",
+        area="operations",
+        description="A finished operation has done=true and a response, and no error.",
+        request=RequestSpec("GET", "/conformance/operations/1"),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "name": "operations/1",
+            "done": True,
+            "response": {"id": "1"},
+        },
+    ),
+    ConformanceCase(
+        id="operations.failed-carries-a-problem",
+        area="operations",
+        description=(
+            "A failed operation has done=true and an RFC 9457 problem as its error, "
+            "never google.rpc.Status."
+        ),
+        request=RequestSpec("GET", "/conformance/operations/2"),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "name": "operations/2",
+            "done": True,
+            "error": {
+                "type": BLANK_TYPE,
+                "title": "Conflict",
+                "status": 409,
+                "detail": "Order already dispatched",
+                "instance": REDACTED,
+            },
+        },
     ),
 )
 

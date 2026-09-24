@@ -178,21 +178,22 @@ def test_a_real_token_survives_the_link_header_round_trip():
 # --- orderBy (AIP-132) ----------------------------------------------------
 
 
-def test_parse_order_by_reads_directions_and_order():
+def test_parse_order_by_reads_the_direction():
     from rn_forge.web.pagination import OrderField, parse_order_by
 
-    terms = parse_order_by(
-        "displayName desc, createTime", allowed=["displayName", "createTime"]
+    allowed = ["displayName", "createTime"]
+    assert_that(parse_order_by(" displayName desc ", allowed=allowed)).is_equal_to(
+        (OrderField("displayName", descending=True),)
     )
-    assert_that(terms).is_equal_to(
-        (OrderField("displayName", descending=True), OrderField("createTime"))
+    assert_that(parse_order_by("createTime", allowed=allowed)).is_equal_to(
+        (OrderField("createTime"),)
     )
 
 
 @pytest.mark.parametrize(
     "raw",
     ["secret", "id sideways", "id desc extra", "id,id", "id,,"],
-    ids=["unlisted", "bad-direction", "extra-word", "repeated", "empty-term"],
+    ids=["unlisted", "bad-direction", "extra-word", "two-terms", "empty-term"],
 )
 def test_parse_order_by_rejects_bad_input(raw):
     from rn_forge.web.exceptions import InvalidOrderBy

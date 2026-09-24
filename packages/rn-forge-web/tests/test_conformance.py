@@ -31,6 +31,8 @@ AREAS = (
     "security",
     "cors",
     "transfer",
+    "timestamps",
+    "operations",
 )
 
 

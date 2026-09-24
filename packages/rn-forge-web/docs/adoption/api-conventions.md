@@ -163,19 +163,23 @@ says so and says why.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 
-**Sorting** follows Google AIP-132: `orderBy=displayName desc,createTime` —
-comma-separated field names on the wire, each optionally followed by `asc`
-(the default) or `desc`.
+**Sorting** follows Google AIP-132's spelling: `orderBy=displayName desc` — a
+field name on the wire, optionally followed by `asc` (the default) or `desc`.
 
+- **A list sorts by one field.** More than one comma-separated term is 400,
+  never ignored, because the page token holds one sort value. AIP-132 allows
+  several; this convention does not yet.
+  — `pagination.order-by-two-fields-is-400`
 - **An endpoint lists the fields it can sort by.** An unlisted or malformed
-  term, or a repeated field, is 400, never ignored.
+  term is 400, never ignored.
   — `pagination.order-by-unlisted-field-is-400`
 - **The page token binds the order.** A token issued under one `orderBy` and
   presented under another is 400.
   — `pagination.order-by-descending-binds-the-token`,
   `pagination.token-under-a-different-order-by-is-400`
-- The first sortable field of a keyset query must be unique (or tie-broken by
-  the key), since the token resumes from a position, not an offset.
+- **Ties are broken by the key.** A page is ordered by the `orderBy`
+  field and then the primary key, and the token holds both, so the field need
+  not be unique. It must not be null.
 
 ## 5. Idempotency
 
@@ -541,7 +545,7 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 
 **Large files (not built).** When a consumer needs it, the pattern is
 `POST /imports` returning `202` with `Location`, then polling the operation
-(AIP-151), with an `Idempotency-Key` (§5,
+(AIP-151, §19), with an `Idempotency-Key` (§5,
 `draft-ietf-httpapi-idempotency-key-header`).
 
 ---
@@ -552,7 +556,7 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
   points to RFC 3339): `2026-09-23T14:05:00Z`. Property names end in `Time`
   for an instant and `Date` for a calendar date. On Django this needs
   `USE_TZ = True` and `TIME_ZONE = "UTC"`, which DRF's `DateTimeField` renders
-  with the `Z`.
+  with the `Z`. — `timestamps.rfc-3339-utc-with-z`
 - **The audit fields are `createTime`, `updateTime`, `createdBy` and
   `updatedBy`** (AIP-148 for the first two; `createdBy`/`updatedBy` have no
   AIP equivalent). `etag` and `requestId` are not fields: RFC 9110 headers
@@ -560,6 +564,10 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 - Errors are RFC 9457 problems, never `google.rpc.Status`.
 
 ## 19. Versioning, compatibility and operations
+
+Where no RFC or IETF draft applies, these conventions follow Google's AIPs for
+naming and shape. Nothing else from Google's stack is used, and an AIP an RFC
+already governs, or one that assumes gRPC, is not adopted (last bullet).
 
 - **Versioning** (AIP-185): a major version in the path, `/v1`, and no minor
   versions on the wire. A version is retired with the `Deprecation` and
@@ -577,7 +585,13 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 - **Long-running operations** (AIP-151): the call returns `202` with a
   `Location` naming an operation resource
   `{name, done, metadata, error | response}`; `error` is an RFC 9457 problem.
-  Specified here, built when a consumer needs it.
+  `rn_forge.web.Operation` is that body: unfinished has neither outcome,
+  finished has exactly one. Storing operations and running the work are the
+  application's. — `operations.start-is-202-with-location`,
+  `operations.finished-carries-its-response`, `operations.failed-carries-a-problem`
+- **Custom-method paths** (`:cancel`, `:import`, the batch spellings) put a
+  colon in the last path segment. It is valid in a URI, but a gateway or router
+  that treats `:` as a parameter marker must be configured to pass it through.
 - **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
   are the mechanism), AIP-122 resource names (ids stay ids), AIP-157 `readMask`
   and AIP-164 soft delete (deferred).

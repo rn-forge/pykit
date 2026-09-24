@@ -41,6 +41,7 @@ from rest_framework.views import APIView
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication, requires
 from rn_forge.django.cors import cors_settings
 from rn_forge.django.deprecation import deprecated
+from rn_forge.django.drf.casing import CamelCaseJSONRenderer
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
@@ -56,6 +57,8 @@ from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
 from rn_forge.web import (
+    Operation,
+    ProblemDetail,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
@@ -323,6 +326,47 @@ def _readyz(request):
     )(request)
 
 
+class _Stamp(serializers.Serializer):
+    id = serializers.CharField()
+    create_time = serializers.DateTimeField()
+
+
+class _Stamped(_Open):
+    # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
+    renderer_classes = [CamelCaseJSONRenderer]
+
+    def get(self, request):
+        stamp = {"id": "1", "create_time": datetime(2026, 9, 23, 14, 5, tzinfo=UTC)}
+        return Response(_Stamp(stamp).data)
+
+
+class _StartExport(_Open):
+    def post(self, request):
+        response = Response(Operation(name="operations/1").as_body(), status=202)
+        response["Location"] = "/conformance/operations/1"
+        return response
+
+
+class _OperationDone(_Open):
+    def get(self, request):
+        operation = Operation(name="operations/1", done=True, response={"id": "1"})
+        return Response(operation.as_body())
+
+
+class _OperationFailed(_Open):
+    def get(self, request):
+        problem = ProblemDetail(
+            type="about:blank",
+            title="Conflict",
+            status=409,
+            detail="Order already dispatched",
+            instance=request.path,
+        )
+        return Response(
+            Operation(name="operations/2", done=True, error=problem).as_body()
+        )
+
+
 urlpatterns = [
     path("conformance/boom", _Boom.as_view()),
     path("conformance/conflict", _Conflict.as_view()),
@@ -344,6 +388,10 @@ urlpatterns = [
     path("conformance/orders/count", _OrderCount.as_view()),
     *_orders.urls,
     path("conformance/legacy", _Legacy.as_view()),
+    path("conformance/stamped", _Stamped.as_view()),
+    path("conformance/exports", _StartExport.as_view()),
+    path("conformance/operations/1", _OperationDone.as_view()),
+    path("conformance/operations/2", _OperationFailed.as_view()),
     *openapi_urlpatterns(),
 ]
 handler404 = "rn_forge.django.exceptions.problem_details_handler404"
@@ -368,6 +416,8 @@ WIRING = {
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
         "rn_forge.django.security.SecurityHeadersMiddleware",
     ],
+    "USE_TZ": True,
+    "TIME_ZONE": "UTC",
     "DATA_UPLOAD_MAX_MEMORY_SIZE": 200,
     **SECURITY_SETTINGS,
     **cors_settings(["https://example.com"]),

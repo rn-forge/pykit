@@ -79,10 +79,12 @@ class OrderField:
 def parse_order_by(
     raw: str | None, *, allowed: Collection[str]
 ) -> tuple[OrderField, ...]:
-    """Parse an AIP-132 ``orderBy`` value such as ``displayName desc,createTime``.
+    """Parse an AIP-132 ``orderBy`` value such as ``displayName desc``.
 
-    Terms are comma-separated; each is a field name optionally followed by
-    ``asc`` or ``desc`` (default ``asc``).
+    A term is a field name optionally followed by ``asc`` or ``desc`` (default
+    ``asc``). One term is accepted: the page token holds one sort value, so a
+    list cannot yet be paged by several. The result is a tuple so that several
+    terms can be returned without changing the signature.
 
     Args:
         raw: The query parameter value. ``None`` or blank yields no terms.
@@ -90,16 +92,21 @@ def parse_order_by(
             the wire.
 
     Returns:
-        The terms in order of precedence.
+        The single term, or an empty tuple when *raw* is blank.
 
     Raises:
-        InvalidOrderBy: A term is malformed, names a field outside *allowed*,
-            or repeats a field.
+        InvalidOrderBy: *raw* has more than one term, or the term is malformed
+            or names a field outside *allowed*.
     """
     if raw is None or not raw.strip():
         return ()
+    chunks = raw.split(",")
+    if len(chunks) > 1:
+        raise InvalidOrderBy(
+            f"orderBy accepts one field; got {len(chunks)}", error_code=400
+        )
     terms: list[OrderField] = []
-    for chunk in raw.split(","):
+    for chunk in chunks:
         parts = chunk.split()
         if len(parts) not in (1, 2) or (
             len(parts) == 2 and parts[1] not in ("asc", "desc")
@@ -113,8 +120,6 @@ def parse_order_by(
                 f"Cannot order by {name!r}; allowed: {', '.join(sorted(allowed))}",
                 error_code=400,
             )
-        if any(term.field == name for term in terms):
-            raise InvalidOrderBy(f"orderBy repeats {name!r}", error_code=400)
         terms.append(
             OrderField(name, descending=len(parts) == 2 and parts[1] == "desc")
         )

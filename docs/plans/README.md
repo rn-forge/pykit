@@ -161,12 +161,18 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   they touch it): to be revisited as one piece; do not change it piecemeal.
 - **AIP-164 soft delete** (`deleteTime`, `:undelete`, `showDeleted`): only when a
   consumer needs it.
-- **R8 leftovers, each built on demand:** AIP-151's `Operation` dataclass in
-  `rn-forge-web` (first consumer); `:batchGet` and `:batchUpdate` handlers (the
-  spelling is already in `api-conventions.md` §19); the `oasdiff` CI note for
-  kiln's golden repos (AIP-180); a conformance case for AIP-142 timestamps
-  (unit tests cover it today); making `orderBy` work on a non-unique first
-  field (needs an offset in the page token).
+- **R8 leftovers, each built on demand:** `:batchGet` and `:batchUpdate` handlers
+  (the spelling is already in `api-conventions.md` §19); the `oasdiff` CI note
+  for kiln's golden repos (AIP-180). AIP-142's conformance case and
+  AIP-151's `Operation` are built.
+- **Multi-column sorting (to be ideated).** A paged list sorts by one field, and a
+  second `orderBy` term is a 400 (R8). Supporting several means a token that
+  holds a value per term, a composite keyset predicate on both stacks, a NULL
+  ordering rule, and a conformance case with a sortable field that has
+  duplicates; see R8's status for the options.
+- **AIP-136 `:verb` paths and gateways:** confirm in kiln's golden repos that
+  the target gateways and routers accept `/orders/{id}:cancel`; if one does
+  not, record the deviation in R8 rather than changing the kit.
 
 ### Standards re-baseline (first)
 
@@ -265,7 +271,8 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   shape. It rejects the AIPs an RFC already governs (193, 154, 155, 134).
   **Owner decisions:** AIP-148 adopted (`createTime`/`updateTime`); AIP-164
   soft delete **skipped, on the backlog** to revisit when a consumer needs it.
-  Nothing else is pending; the leftovers are on the backlog. R8's SQLAlchemy
+  AIPs are the tie-breaker below the RFCs, not a design commitment (premise,
+  rule 3). Nothing else is pending; the leftovers are on the backlog. R8's SQLAlchemy
   `orderBy` half is an input to R9.
 - **R7 open questions, settled (owner, 2026-09-23):** an import is all or
   nothing by default, with partial saves opt-in; an export over the row cap

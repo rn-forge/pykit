@@ -52,6 +52,7 @@ nav:
       - Exceptions: api/exceptions.md
       - Concurrency: api/concurrency.md
       - Pagination: api/pagination.md
+      - Operations: api/operations.md
       - Idempotency: api/idempotency.md
       - Health: api/health.md
       - OpenAPI naming: api/openapi.md

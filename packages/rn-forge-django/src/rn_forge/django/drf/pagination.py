@@ -5,16 +5,19 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, cast, override
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q, QuerySet
 from rest_framework import filters as drf_filters
 from rest_framework import pagination as drf_pagination
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rn_forge.commons.exceptions import AppException
 from rn_forge.django import settings as rnf_settings
 from rn_forge.django.drf.casing import camelize_key, underscore_key
 from rn_forge.web import (
     DEFAULT_PAGE_TOKEN_PARAM,
     ORDER_BY_PARAM,
+    Cursor,
+    InvalidCursor,
     OrderField,
     Page,
     check_cursor_order,
@@ -43,12 +46,12 @@ def _page_size(
 
 
 class OrderByFilter(drf_filters.OrderingFilter):
-    """AIP-132 ``orderBy`` (``displayName desc,createTime``) over the view's ``ordering_fields``.
+    """AIP-132 ``orderBy`` (``displayName desc``) over the view's ``ordering_fields``.
 
     List it in the view's ``filter_backends``; :class:`CursorPagination`
     then pages in that order. ``ordering_fields`` holds the model's
-    ``snake_case`` names, and the first sortable field must be unique. An
-    unlisted or malformed term raises :class:`rn_forge.web.InvalidOrderBy`.
+    ``snake_case`` names. An unlisted or malformed term raises
+    :class:`rn_forge.web.InvalidOrderBy`, as does more than one term.
     """
 
     ordering_param = ORDER_BY_PARAM
@@ -82,7 +85,7 @@ class OrderByFilter(drf_filters.OrderingFilter):
                 "name": self.ordering_param,
                 "required": False,
                 "in": "query",
-                "description": "Sort order, e.g. `displayName desc,createTime`.",
+                "description": "Sort order: one field, e.g. `displayName desc`.",
                 "schema": {"type": "string"},
             }
         ]
@@ -101,8 +104,9 @@ def _order_terms(request: Request, ordering: list[str]) -> list[OrderField]:
 class CursorPagination(drf_pagination.CursorPagination):
     """Keyset pagination emitting the AIP-158 envelope over the shared cursor codec.
 
-    Pagination is forward-only and the first ordering field must be unique.
-    Invalid tokens raise :class:`rn_forge.web.InvalidCursor`.
+    Rows are ordered by the first ``orderBy`` field and then the primary key, so
+    the field need not be unique. Pagination is forward-only. Invalid tokens raise
+    :class:`rn_forge.web.InvalidCursor`.
     """
 
     cursor_query_param = DEFAULT_PAGE_TOKEN_PARAM
@@ -117,33 +121,53 @@ class CursorPagination(drf_pagination.CursorPagination):
             request, page_size=self.page_size, max_page_size=self.max_page_size
         )
 
+    # DRF's own keyset filter compares one position and skips ties with an offset
+    # its cursor holds; the shared token has no offset, so this filters on
+    # (sort field, pk) instead, which is what the SQLAlchemy stack does.
     @override
-    def decode_cursor(self, request: Request) -> drf_pagination.Cursor | None:
-        terms = _order_terms(request, list(self.ordering))
+    def paginate_queryset(
+        self, queryset: QuerySet[Any], request: Request, view: Any = None
+    ) -> list[Any] | None:
+        self.page_size = self.get_page_size(request)
+        requested = self.get_ordering(request, queryset, view)  # pyright: ignore[reportUnknownMemberType]  # DRF stub
+        terms = _order_terms(request, list(requested))
         self._order_by = format_order_by(terms)
+        token = self._decode_token(request, terms)
+
+        sort = requested[0]
+        field, descending = sort.lstrip("-"), sort.startswith("-")
+        unique = field in ("pk", queryset.model._meta.pk.name)
+        self.ordering = (sort,) if unique else (sort, "-pk" if descending else "pk")
+        queryset = queryset.order_by(*self.ordering)
+        if token is not None:
+            beyond = "lt" if descending else "gt"
+            after = Q(**{f"{field}__{beyond}": token.sort_key})
+            if not unique:
+                after |= Q(**{field: token.sort_key, f"pk__{beyond}": token.entity_id})
+            try:
+                queryset = queryset.filter(after)
+            except (ValueError, TypeError, DjangoValidationError) as exc:
+                raise InvalidCursor("Malformed page token", error_code=400) from exc
+
+        results = list(queryset[: self.page_size + 1])
+        self.page = results[: self.page_size]
+        self.has_next = len(results) > self.page_size
+        return self.page
+
+    def _decode_token(self, request: Request, terms: list[OrderField]) -> Cursor | None:
         raw = request.query_params.get(self.cursor_query_param)
         if raw is None:
             return None
         token = decode_cursor(raw)
         check_cursor_order(token, terms)
-        return drf_pagination.Cursor(offset=0, reverse=False, position=token.sort_key)
+        return token
 
     def get_next_page_token(self) -> str | None:
         """Return the token for the page after this one, or ``None`` on the last."""
-        # DRF sets these in paginate_queryset and its stubs leave them untyped.
-        has_next = cast(bool, self.has_next)  # pyright: ignore[reportUnknownMemberType]
-        page = cast(list[object], self.page)  # pyright: ignore[reportUnknownMemberType]
-        if not has_next or not page:
+        if not self.has_next or not self.page:
             return None
-        next_position = cast(str | None, self.next_position)  # pyright: ignore[reportUnknownMemberType]
-        last = page[-1]
+        last = self.page[-1]
         position: str = self._get_position_from_instance(last, self.ordering)  # pyright: ignore[reportUnknownMemberType]
-        AppException.check(
-            position != next_position,
-            "Cursor pagination needs a unique first ordering field; {} repeats {!r}",
-            self.ordering[0],
-            position,
-        )
         entity_id = (
             cast(Mapping[str, object], last).get("pk", position)
             if isinstance(last, Mapping)

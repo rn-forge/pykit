@@ -65,10 +65,10 @@ rows = (await session.scalars(stmt.limit(page_size + 1))).all()
 page, more = rows[:page_size], len(rows) > page_size
 token = None
 if more:
-    last = page[-1]  # sort value: its column for the first orderBy term
+    last = page[-1]  # sort value: its column for the orderBy term
     token = next_page_token(last.name, last.id, order_by)
 ```
 
-The first `orderBy` term's column must be unique apart from the id tiebreak,
-because the token holds one position. A token issued for another `orderBy` is a
-`400`.
+The `orderBy` column need not be unique, because the id breaks ties, but it must
+be non-null. `parse_order_by` accepts one field; a second is a `400`. A token
+issued for another `orderBy` is a `400`.

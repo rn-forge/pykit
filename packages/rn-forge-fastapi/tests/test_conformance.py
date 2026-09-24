@@ -40,6 +40,8 @@ from rn_forge.fastapi.transfer import (
     tabular_response,
 )
 from rn_forge.web import (
+    Operation,
+    ProblemDetail,
     API_CATALOG_PATH,
     check_cursor_order,
     format_order_by,
@@ -88,6 +90,11 @@ class Charge(WireModel):
 
 class Named(WireModel):
     name: str
+
+
+class Stamped(WireModel):
+    id: str
+    create_time: datetime
 
 
 class OrderRow(WireModel):
@@ -291,6 +298,33 @@ def build_app(*, failing: str | None) -> FastAPI:
     @app.get("/conformance/orders/1")
     async def get_order():
         return orders["1"]
+
+    @app.get("/conformance/stamped")
+    async def stamped() -> Stamped:
+        return Stamped(id="1", create_time=datetime(2026, 9, 23, 14, 5, tzinfo=UTC))
+
+    @app.post("/conformance/exports")
+    async def start_export():
+        return JSONResponse(
+            Operation(name="operations/1").as_body(),
+            status_code=202,
+            headers={"Location": "/conformance/operations/1"},
+        )
+
+    @app.get("/conformance/operations/1")
+    async def operation_done():
+        return Operation(name="operations/1", done=True, response={"id": "1"}).as_body()
+
+    @app.get("/conformance/operations/2")
+    async def operation_failed(request: Request):
+        problem = ProblemDetail(
+            type="about:blank",
+            title="Conflict",
+            status=409,
+            detail="Order already dispatched",
+            instance=request.url.path,
+        )
+        return Operation(name="operations/2", done=True, error=problem).as_body()
 
     @app.post("/conformance/orders:import")
     async def import_orders(

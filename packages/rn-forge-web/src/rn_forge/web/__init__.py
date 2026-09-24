@@ -104,6 +104,7 @@ from rn_forge.web.idempotency import (
     run_idempotent_async,
 )
 from rn_forge.web.models import WireModel
+from rn_forge.web.operations import Operation
 from rn_forge.web.openapi import (
     API_CATALOG_PATH,
     DOCS_PATH,
@@ -230,6 +231,7 @@ __all__ = [
     "InvalidOrderBy",
     "MalformedPrecondition",
     "Message",
+    "Operation",
     "Page",
     "PermissionDenied",
     "PreconditionRequired",

@@ -20,6 +20,7 @@ import importlib.util
 import json
 import pathlib
 import re
+import sys
 
 import pytest
 from assertpy import assert_that
@@ -38,6 +39,7 @@ def load(name: str):
         f"_example_{name}", EXAMPLES / f"{name}.py"
     )
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # pydantic resolves postponed annotations here
     spec.loader.exec_module(module)
     return module
 

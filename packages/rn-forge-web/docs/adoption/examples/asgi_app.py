@@ -42,8 +42,10 @@ from rn_forge.web import (
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
     Message,
+    Operation,
     Page,
     Principal,
+    ProblemDetail,
     ProblemResponse,
     ProblemType,
     Receive,
@@ -54,6 +56,7 @@ from rn_forge.web import (
     Send,
     ServiceUnavailable,
     TooManyRequests,
+    WireModel,
     check_cursor_order,
     check_precondition,
     clamp_page_size,
@@ -337,6 +340,44 @@ def get_order(request: Request) -> Response:
     return Response(200, ORDERS["1"])
 
 
+class Stamped(WireModel):
+    id: str
+    create_time: datetime
+
+
+def get_stamped(request: Request) -> Response:
+    """AIP-142: the model renders the instant as RFC 3339 UTC with a `Z`."""
+    stamped = Stamped(id="1", create_time=datetime(2026, 9, 23, 14, 5, tzinfo=UTC))
+    return Response(200, stamped.model_dump(mode="json"))
+
+
+def start_export(request: Request) -> Response:
+    """AIP-151: `202`, the operation in `Location`, and the operation unfinished."""
+    operation = Operation(name="operations/1")
+    return Response(
+        202,
+        operation.as_body(),
+        headers={"Location": "/conformance/operations/1"},
+    )
+
+
+def get_operation(request: Request) -> Response:
+    """A finished operation with a response, and one that failed with a problem."""
+    if request.path.endswith("/2"):
+        problem = ProblemDetail(
+            type="about:blank",
+            title="Conflict",
+            status=409,
+            detail="Order already dispatched",
+            instance=request.path,
+        )
+        return Response(
+            200, Operation(name="operations/2", done=True, error=problem).as_body()
+        )
+    operation = Operation(name="operations/1", done=True, response={"id": "1"})
+    return Response(200, operation.as_body())
+
+
 def import_orders(request: Request) -> Response:
     """Multipart upload, all or nothing, honouring `validateOnly`."""
     message = BytesParser(policy=HTTP).parsebytes(
@@ -423,6 +464,10 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/orders/over-cap"): export_over_cap,
     ("GET", "/conformance/orders/count"): count_orders,
     ("GET", "/conformance/orders/1"): get_order,
+    ("GET", "/conformance/stamped"): get_stamped,
+    ("POST", "/conformance/exports"): start_export,
+    ("GET", "/conformance/operations/1"): get_operation,
+    ("GET", "/conformance/operations/2"): get_operation,
     ("POST", "/conformance/orders:import"): import_orders,
     ("POST", "/conformance/orders:batchCreate"): batch_create_orders,
     ("POST", "/conformance/orders:batchDelete"): batch_delete_orders,

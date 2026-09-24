@@ -33,12 +33,12 @@ def keyset[T: Select[Any]](
     cursor: Cursor | None,
     id_column: ColumnElement[Any],
 ) -> T:
-    """Order *stmt* by the first ``orderBy`` term and resume after *cursor*.
+    """Order *stmt* by the ``orderBy`` term and resume after *cursor*.
 
-    Rows are ordered by the first term's column, then *id_column*, both in that
-    term's direction. Later terms do not order the rows, because the token holds
-    one sort value, so the first term's column must be unique per row apart from
-    the id tiebreak, and non-null. With no terms the order is *id_column*
+    Rows are ordered by the term's column, then *id_column*, both in that
+    term's direction. :func:`rn_forge.web.parse_order_by` yields at most one
+    term, because the token holds one sort value. The term's column need not be unique, since the id
+    breaks ties, but it must be non-null. With no terms the order is *id_column*
     ascending and the token's sort key is the id.
 
     Fetch ``page_size + 1`` rows from the result to learn whether another page
@@ -79,7 +79,7 @@ def next_page_token(
 ) -> str:
     """Encode the token that resumes after the row with these values.
 
-    *sort_value* is the last row's value in the first term's column (its id
+    *sort_value* is the last row's value in the term's column (its id
     when *terms* is empty). Pass the same *terms* given to :func:`keyset`.
     """
     return encode_cursor(

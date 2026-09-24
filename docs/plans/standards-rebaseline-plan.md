@@ -49,6 +49,12 @@ carry:
    shape, and the wire shape is `rn-forge-web`'s", is withdrawn. A standard
    decides the wire shape, and a library that follows it is doing pykit's job
    for it. R5 re-runs those evaluations.
+3. **Where no standard applies, the [AIPs](https://google.aip.dev) break the
+   tie.** They are a naming and convention guide adopted for the gaps, not a
+   design commitment: nothing from Google's gRPC or protobuf stack is used, and
+   an AIP that an RFC already governs, or that only makes sense over gRPC
+   (122, 134, 154, 155, 160, 193), is rejected. Adopting or rejecting a new AIP
+   is judged by that test.
 
 ## What "identical across stacks" means
 
@@ -1381,7 +1387,7 @@ the SQLAlchemy half that R7 left to the application and R8 left to R9.
 | Q2 | One upsert contract, two ORMs | **Shared at the wire, native per ORM.** Django keeps `django-import-export` as its engine. SQLAlchemy gets a native `upsert` with a portable pre-`SELECT`. No shared Python interface across the two ORMs |
 | Q3 | One column spec, or two native idioms? | **Two native idioms**: `Resource` on Django, pydantic models on FastAPI. The conformance cases prove the wire is identical. A shared spec would be a layer in place of the framework |
 | Q4 | Async | **pykit offloads its own CPU-bound work**: `read_rows` and `tabular_response`'s xlsx build run in a worker thread. `rn-forge-sqlalchemy` is **async only** (`AsyncSession`). No streaming export: the row cap bounds it, and large files are AIP-151's path |
-| Q5 | Keyset `orderBy` on SQLAlchemy | **Own predicate over web's `Cursor`**, about 30–40 lines. `sqlakeyset` is exempt (below). R8's limitation stands on both stacks: the first sort field must be unique |
+| Q5 | Keyset `orderBy` on SQLAlchemy | **Own predicate over web's `Cursor`**, about 30–40 lines. `sqlakeyset` is exempt (below). The first sort field need not be unique on either stack (id tiebreak) |
 | Q6 | Audit fields | **Explicit.** An `AuditMixin` with Python-side UTC defaults and a `UTCDateTime` type decorator. `created_by`/`updated_by` are set by the caller; `upsert(actor=…)` stamps all four. No session events, no contextvar, no `server_default` |
 | Q7 | Library re-checks | `fastapi-import-export` is **probed in step 0** against R5's criteria, verdict written into R5's table. tablib's `Dataset` **stays the in-memory contract**; no streaming reader while `transfer.max_rows` exists (revisit with the first AIP-151 consumer). `sqlakeyset` is settled by Q5 |
 | Q8 | Dependencies and test matrix | **Approved.** Base: `sqlalchemy[asyncio]>=2.0` and `rn-forge-web`, no database driver. `dev`: `aiosqlite` (the default suite runs on SQLite) and `asyncpg` (PostgreSQL tests, marked `postgres`, run only when a DSN is set) |
@@ -1601,8 +1607,9 @@ the backlog (revisit when a consumer needs soft delete; `deleteTime`,
   `format_order_by`, `check_cursor_order`, `InvalidOrderBy` → 400; the cursor
   carries its order), DRF `OrderByFilter` with `CursorPagination`, FastAPI
   `order_by_param`. Three conformance cases, run by all five drivers.
-  Limitation: the token holds a position, not an offset, so the first sortable
-  field must be unique. FastAPI's SQLAlchemy keyset half stays with R9.
+  The token holds a sort value and the primary key, so the first sortable field
+  need not be unique (closed 2026-09-23, below). FastAPI's SQLAlchemy keyset half
+  stays with R9.
 - **AIP-148:** the Django `BaseModel` fields are now `create_time` and
   `update_time` (all four `db_column` camelCase overrides were
   then dropped, since no application is migrating), so the
@@ -1611,12 +1618,44 @@ the backlog (revisit when a consumer needs soft delete; `deleteTime`,
   `model-conventions.md` follows.
 - **AIP-142:** stated in §18, with a unit test per stack (pydantic; DRF with
   `USE_TZ`/`TIME_ZONE=UTC`) rather than a conformance case.
+- **Closed 2026-09-23.** Two points were checked against majority practice
+  and both stand, with a recorded reason:
+  - `createTime`/`updateTime` is the one adopted name that differs from the
+    common `createdAt`/`updatedAt`. It stays (owner decision above) because
+    nothing is released; changing it after the release tags is a breaking
+    change under AIP-180.
+  - The `:verb` spelling (AIP-136) is valid in a URI but some gateways and
+    routers read `:` as a parameter marker. DRF's `CustomMethodRouter` handles
+    it. A gateway check in kiln's golden repos is the handoff, and if a target
+    fails it, the deviation (`POST /orders/{id}/cancel`) is recorded here, not
+    patched in the kit.
+- **AIP-142 and AIP-151 built (2026-09-23).** `timestamps.rfc-3339-utc-with-z`
+  runs on the web, FastAPI and Django drivers (Django with `USE_TZ`/`TIME_ZONE=UTC`
+  in its wiring). `rn_forge.web.Operation` is the AIP-151 body, with three
+  `operations.*` cases on the same drivers. The Django driver sets the camelCase
+  renderer on its timestamp view, because its views bind DRF's default renderer at
+  import, before the driver's settings apply.
+- **Non-unique first sort field closed (2026-09-23).** A page orders by the first
+  `orderBy` field, then the primary key, and the token holds both. SQLAlchemy
+  already did this. DRF's `CursorPagination` now overrides `paginate_queryset` to
+  filter on that pair, because DRF's own cursor resolves ties with an offset the
+  shared token does not carry, and a second token format would break the exact
+  token parity the conformance table asserts. No conformance case: the fixtures
+  have no sortable field with duplicates, so the tie walk is a DRF integration
+  test and the SQLAlchemy one that already existed.
+- **One `orderBy` term (2026-09-23).** `parse_order_by` rejects more than one
+  comma-separated term with a 400 (`pagination.order-by-two-fields-is-400`, all
+  drivers), because later terms would otherwise be accepted and silently not
+  order the list. AIP-132 allows several; the industry standard is a composite
+  keyset (a value per term plus the key, an OR-of-ANDs predicate, an explicit
+  NULL rule, a matching composite index). That is on the status board's backlog
+  to be ideated. The function still returns a tuple, so allowing several later
+  does not change its signature.
 - **Done, verified 2026-09-23.** The `orderBy` code exists in web, DRF and
   FastAPI, and the three `pagination.order-by-*` conformance cases pass on all
   five drivers with no skips (21 tests). The leftovers are on the status board's backlog: AIP-151's
   dataclass, `:batchGet`/`:batchUpdate` handlers, the `oasdiff` kiln note for
-  AIP-180, an AIP-142 conformance case, and `orderBy` on a non-unique first
-  field. SQLAlchemy keyset `orderBy` is an R9 item, implemented there with the
+  AIP-180, and multi-term `orderBy` on a paged list. SQLAlchemy keyset `orderBy` is an R9 item, implemented there with the
   rest of the SQLAlchemy work (owner, 2026-09-23).
 
 ### R10: simplification pass after R3 — implemented 2026-09-23 (R10.3 stopped at its probe)
