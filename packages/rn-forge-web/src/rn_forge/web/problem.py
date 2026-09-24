@@ -27,6 +27,7 @@ from rn_forge.web.exceptions import (
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
     InvalidCursor,
+    InvalidOrderBy,
     MalformedPrecondition,
     PermissionDenied,
     PreconditionRequired,
@@ -439,6 +440,7 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
         .register(PreconditionRequired, PRECONDITION_REQUIRED)
         .register(MalformedPrecondition, BAD_REQUEST)
         .register(InvalidCursor, BAD_REQUEST)
+        .register(InvalidOrderBy, BAD_REQUEST)
         .register(IdempotencyKeyRequired, BAD_REQUEST)
         .register(IdempotencyKeyReuse, VALIDATION_ERROR)
         .register(IdempotencyKeyInFlight, CONFLICT)

@@ -31,19 +31,19 @@ Every persisted entity carries four:
 | Column | Type | Nullable | Meaning |
 | --- | --- | --- | --- |
 | `created_by` | string identifier | yes | The principal's `subject` at creation. Null for rows created by a migration or a system process. |
-| `created_at` | timestamp with time zone | no | Set once, on insert. Never updated. |
+| `create_time` | timestamp with time zone | no | Set once, on insert. Never updated. |
 | `updated_by` | string identifier | yes | The principal's `subject` at the last write. Null under the same conditions as `created_by`. |
-| `updated_at` | timestamp with time zone | no | Set on insert and on every update. |
+| `update_time` | timestamp with time zone | no | Set on insert and on every update. |
 
 - **Times are UTC and timezone-aware.** A naive timestamp column is a bug that
   surfaces once a year.
-- `created_at` equals `updated_at` on a freshly inserted row rather than
-  `updated_at` being null. A null there forces every reader to write
-  `updated_at or created_at`.
+- `create_time` equals `update_time` on a freshly inserted row rather than
+  `update_time` being null. A null there forces every reader to write
+  `update_time or create_time`.
 - The actor is the `Principal.subject` from `rn_forge.web.auth`, so the audit
   trail names the caller the same way on every stack.
 
-`rn-forge-django` maps these to camelCase database columns for legacy reasons.
+`rn-forge-django` uses the same names as database columns.
 **That mapping is a Django-side detail and must not leak into this
 vocabulary** — the Python names above are the contract, and a new SQLAlchemy
 model uses ordinary snake_case columns.
@@ -100,7 +100,7 @@ representations of the same fact drift, and the pair `is_deleted = false,
 deleted_at = <a time>` is a state every codebase eventually finds in
 production.
 
-- `updated_at` and `updated_by` record *when* and *by whom*, so a `deleted_at`
+- `update_time` and `updated_by` record *when* and *by whom*, so a `deleted_at`
   adds nothing a soft delete needs.
 - Default managers and default query scopes **exclude** `DELETED` rows.
   Retrieving them is explicit.

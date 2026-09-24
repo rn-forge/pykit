@@ -17,6 +17,7 @@ __all__ = [
     "IdempotencyKeyRequired",
     "IdempotencyKeyReuse",
     "InvalidCursor",
+    "InvalidOrderBy",
     "MalformedPrecondition",
     "PermissionDenied",
     "PreconditionRequired",
@@ -50,6 +51,10 @@ class MalformedPrecondition(WebError):
 
 class InvalidCursor(WebError):
     """The pagination token was absent from, or malformed in, the request (400)."""
+
+
+class InvalidOrderBy(WebError):
+    """``orderBy`` names a field the endpoint cannot sort by, or is malformed (400)."""
 
 
 class ContentTooLarge(WebError):

@@ -35,7 +35,10 @@ from rn_forge.web import (
     StoredResponse,
     check_idempotency_key,
     check_precondition,
+    check_cursor_order,
     clamp_page_size,
+    format_order_by,
+    parse_order_by,
     decode_cursor,
     default_registry,
     encode_cursor,
@@ -124,17 +127,24 @@ class ItemListView(APIView):
             default=PAGE_DEFAULT,
             cap=PAGE_CAP,
         )
+        order = parse_order_by(  # InvalidOrderBy → 400
+            request.query_params.get("orderBy"), allowed=["id"]
+        )
+        rows = ROWS[::-1] if order and order[0].descending else ROWS
         start = 0
         if token := request.query_params.get("pageToken"):
             cursor = decode_cursor(token)  # InvalidCursor → 400
+            check_cursor_order(cursor, order)
             start = next(
-                (i + 1 for i, r in enumerate(ROWS) if r["id"] == cursor.entity_id), 0
+                (i + 1 for i, r in enumerate(rows) if r["id"] == cursor.entity_id), 0
             )
-        window = ROWS[start : start + size]
-        more = start + size < len(ROWS)
+        window = rows[start : start + size]
+        more = start + size < len(rows)
         page = Page(
             items=window,
-            next_page_token=encode_cursor(window[-1]["id"], window[-1]["id"])
+            next_page_token=encode_cursor(
+                window[-1]["id"], window[-1]["id"], format_order_by(order)
+            )
             if more
             else None,
         )

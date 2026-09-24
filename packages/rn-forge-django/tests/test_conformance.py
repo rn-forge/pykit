@@ -44,7 +44,7 @@ from rn_forge.django.deprecation import deprecated
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
-from rn_forge.django.drf.pagination import CursorPagination
+from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
 from rn_forge.django.drf.routers import CustomMethodRouter
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
@@ -255,6 +255,8 @@ class _Items(ListAPIView):
     queryset = _ConformanceItem.objects.all()
     serializer_class = _ItemSerializer
     pagination_class = _TwoPerPage
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id"]
 
 
 _STORE = CacheIdempotencyStore()

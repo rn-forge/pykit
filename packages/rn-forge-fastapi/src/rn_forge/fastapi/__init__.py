@@ -5,6 +5,7 @@ from rn_forge.fastapi.auth import basic_auth, bearer_auth, requires
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.fastapi.dependencies import (
     conditional_get,
+    order_by_param,
     page_params,
     require_idempotency_key,
     require_if_match,
@@ -28,6 +29,7 @@ __all__ = [
     "health_router",
     "idempotent",
     "operation_id",
+    "order_by_param",
     "page_params",
     "register_problem_handlers",
     "require_idempotency_key",

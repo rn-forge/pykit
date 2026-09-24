@@ -15,6 +15,7 @@ from rn_forge.django.drf.idempotency import CacheIdempotencyStore, idempotent
 from rn_forge.django.drf.pagination import (
     CursorPagination,
     LegacyPageNumberPagination,
+    OrderByFilter,
 )
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "CursorPagination",
     "DRFUtils",
     "EnumChoicesAPIView",
+    "OrderByFilter",
     "LegacyPageNumberPagination",
     "PermissionAwareUser",
     "RequestUtils",

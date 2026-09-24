@@ -138,9 +138,9 @@ class ModelFilterViewMixin:
         "id": ("exact", "in"),
         "status": ("exact", "in"),
         "created_by": ("exact",),
-        "created_at": ("gte", "lte"),
+        "create_time": ("gte", "lte"),
         "updated_by": ("exact",),
-        "updated_at": ("gte", "lte"),
+        "update_time": ("gte", "lte"),
     }
     date_range_active_param = "active"
 

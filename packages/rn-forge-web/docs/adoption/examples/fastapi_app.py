@@ -36,7 +36,10 @@ from rn_forge.web import (
     ScopeAuthorizer,
     check_idempotency_key,
     check_precondition,
+    check_cursor_order,
     clamp_page_size,
+    format_order_by,
+    parse_order_by,
     decode_cursor,
     default_registry,
     encode_cursor,
@@ -162,18 +165,25 @@ async def patch_item(
 @app.get("/conformance/items")
 async def list_items(
     params: Annotated[tuple[int, Cursor | None], Depends(page_params)],
+    order_by: Annotated[str | None, Query(alias="orderBy")] = None,
 ) -> dict[str, Any]:
     size, cursor = params
+    order = parse_order_by(order_by, allowed=["id"])  # raises InvalidOrderBy → 400
+    if cursor:
+        check_cursor_order(cursor, order)
+    rows = ROWS[::-1] if order and order[0].descending else ROWS
     start = (
-        next((i + 1 for i, r in enumerate(ROWS) if r["id"] == cursor.entity_id), 0)
+        next((i + 1 for i, r in enumerate(rows) if r["id"] == cursor.entity_id), 0)
         if cursor
         else 0
     )
-    window = ROWS[start : start + size]
-    more = start + size < len(ROWS)
+    window = rows[start : start + size]
+    more = start + size < len(rows)
     page = Page(
         items=window,
-        next_page_token=encode_cursor(window[-1]["id"], window[-1]["id"])
+        next_page_token=encode_cursor(
+            window[-1]["id"], window[-1]["id"], format_order_by(order)
+        )
         if more
         else None,
     )

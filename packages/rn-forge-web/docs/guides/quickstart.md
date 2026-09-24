@@ -79,7 +79,7 @@ has_more, rows = len(rows) > size, rows[:size]
 
 page = Page(
     items=[serialize(r) for r in rows],
-    next_page_token=encode_cursor(str(rows[-1].created_at), str(rows[-1].pk))
+    next_page_token=encode_cursor(str(rows[-1].create_time), str(rows[-1].pk))
     if has_more
     else None,
 )

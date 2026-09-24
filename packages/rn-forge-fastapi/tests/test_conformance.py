@@ -28,6 +28,7 @@ from rn_forge.fastapi import (
     conditional_get,
     deprecated,
     health_router,
+    order_by_param,
     page_params,
     require_if_match,
     requires,
@@ -40,6 +41,8 @@ from rn_forge.fastapi.transfer import (
 )
 from rn_forge.web import (
     API_CATALOG_PATH,
+    check_cursor_order,
+    format_order_by,
     RowError,
     TabularFormat,
     export_cap_problem,
@@ -188,16 +191,24 @@ def build_app(*, failing: str | None) -> FastAPI:
     @app.get("/conformance/items")
     async def list_items(
         params=Depends(page_params(cap=2, default=2)),
+        order=Depends(order_by_param(allowed=["id"])),
     ) -> Page[dict[str, str]]:
         size, cursor = params
+        if cursor:
+            check_cursor_order(cursor, order)
+        rows = ROWS[::-1] if order and order[0].descending else ROWS
         start = (
-            next(i + 1 for i, row in enumerate(ROWS) if row["id"] == cursor.entity_id)
+            next(i + 1 for i, row in enumerate(rows) if row["id"] == cursor.entity_id)
             if cursor
             else 0
         )
-        window = ROWS[start : start + size]
-        more = start + size < len(ROWS)
-        token = encode_cursor(window[-1]["id"], window[-1]["id"]) if more else None
+        window = rows[start : start + size]
+        more = start + size < len(rows)
+        token = (
+            encode_cursor(window[-1]["id"], window[-1]["id"], format_order_by(order))
+            if more
+            else None
+        )
         return Page[dict[str, str]](items=window, next_page_token=token)
 
     @app.post("/conformance/charges", status_code=201)

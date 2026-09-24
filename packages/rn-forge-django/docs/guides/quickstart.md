@@ -13,7 +13,7 @@ class Order(BaseModel):
         return ["reference"]
 ```
 
-`BaseModel` adds `status`, `created_by`/`created_at`/`updated_by`/`updated_at`, and a
+`BaseModel` adds `status`, `created_by`/`create_time`/`updated_by`/`update_time`, and a
 `NaturalKeyLookupManager` default manager — see [Models](models.md).
 
 Wire a DRF viewset over it:

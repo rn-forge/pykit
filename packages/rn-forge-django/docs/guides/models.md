@@ -25,8 +25,8 @@ class Product(BaseModel):
 
 - `status` — an `EnumField` over the `Status` enum (`Active`/`Inactive`/`Error`/`Deleted`/
   `Expired`), defaulting to `Active`
-- `created_by` / `created_at` / `updated_by` / `updated_at` audit columns (snake_case Python
-  fields, camelCase DB columns for legacy compatibility)
+- `created_by` / `create_time` / `updated_by` / `update_time` audit columns (snake_case Python
+  fields and columns)
 - `objects = NaturalKeyLookupManager()` — enables `get_by_natural_key()` for fixture loading,
   driven by `natural_keys()`
 - `TruncateModelMixin.truncate()` — `TRUNCATE TABLE` (or `DELETE FROM` on SQLite), handy for

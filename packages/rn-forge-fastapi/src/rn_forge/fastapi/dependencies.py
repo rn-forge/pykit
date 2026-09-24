@@ -6,7 +6,7 @@ without relying on closure variables in evaluated annotations.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 
 from fastapi import Header, Query, Request
 from fastapi.responses import Response
@@ -15,19 +15,23 @@ from rn_forge.web import (
     ANY_ETAG,
     DEFAULT_PAGE_SIZE_PARAM,
     DEFAULT_PAGE_TOKEN_PARAM,
+    ORDER_BY_PARAM,
     Cursor,
     EntityVersionETagCodec,
     IDEMPOTENCY_KEY_HEADER,
     ETagCodec,
+    OrderField,
     check_idempotency_key,
     check_precondition,
     clamp_page_size,
     decode_cursor,
     is_not_modified,
+    parse_order_by,
 )
 
 __all__ = [
     "conditional_get",
+    "order_by_param",
     "page_params",
     "require_idempotency_key",
     "require_if_match",
@@ -61,6 +65,36 @@ def page_params(*, cap: int, default: int) -> Callable[..., tuple[int, Cursor | 
     ) -> tuple[int, Cursor | None]:
         size = clamp_page_size(page_size, default=default, cap=cap)
         return size, decode_cursor(page_token) if page_token is not None else None
+
+    return dependency
+
+
+def order_by_param(
+    *, allowed: Collection[str]
+) -> Callable[..., tuple[OrderField, ...]]:
+    """Return a dependency yielding the parsed AIP-132 ``orderBy`` terms.
+
+    A term outside *allowed*, or a malformed one, is a 400 before it reaches a
+    query. Pass the result and the decoded cursor to
+    :func:`rn_forge.web.check_cursor_order`, and the canonical order from
+    :func:`rn_forge.web.format_order_by` to :func:`rn_forge.web.encode_cursor`.
+
+    Args:
+        allowed: The field names the endpoint can sort by, as they appear on the wire.
+    """
+    names = sorted(allowed)
+
+    def dependency(
+        order_by: str | None = Query(
+            default=None,
+            alias=ORDER_BY_PARAM,
+            description=(
+                "Sort order, e.g. `displayName desc,createTime`. "
+                f"Sortable fields: {', '.join(names)}."
+            ),
+        ),
+    ) -> tuple[OrderField, ...]:
+        return parse_order_by(order_by, allowed=names)
 
     return dependency
 

@@ -5,20 +5,27 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, cast, override
 
+from rest_framework import filters as drf_filters
 from rest_framework import pagination as drf_pagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.commons.exceptions import AppException
 from rn_forge.django import settings as rnf_settings
+from rn_forge.django.drf.casing import camelize_key, underscore_key
 from rn_forge.web import (
     DEFAULT_PAGE_TOKEN_PARAM,
+    ORDER_BY_PARAM,
+    OrderField,
     Page,
+    check_cursor_order,
     clamp_page_size,
     decode_cursor,
     encode_cursor,
+    format_order_by,
+    parse_order_by,
 )
 
-__all__ = ["CursorPagination", "LegacyPageNumberPagination"]
+__all__ = ["CursorPagination", "LegacyPageNumberPagination", "OrderByFilter"]
 
 
 def _page_size(
@@ -35,6 +42,62 @@ def _page_size(
     )
 
 
+class OrderByFilter(drf_filters.OrderingFilter):
+    """AIP-132 ``orderBy`` (``displayName desc,createTime``) over the view's ``ordering_fields``.
+
+    List it in the view's ``filter_backends``; :class:`CursorPagination`
+    then pages in that order. ``ordering_fields`` holds the model's
+    ``snake_case`` names, and the first sortable field must be unique. An
+    unlisted or malformed term raises :class:`rn_forge.web.InvalidOrderBy`.
+    """
+
+    ordering_param = ORDER_BY_PARAM
+
+    @override
+    def get_ordering(
+        self, request: Request, queryset: Any, view: Any
+    ) -> tuple[str, ...] | list[str] | None:
+        terms = parse_order_by(
+            request.query_params.get(self.ordering_param),
+            allowed=[camelize_key(f) for f in self.get_valid_fields(queryset, view)],
+        )
+        if not terms:
+            return self.get_default_ordering(view)  # pyright: ignore[reportUnknownMemberType]  # DRF stub
+        return [
+            f"-{underscore_key(t.field)}" if t.descending else underscore_key(t.field)
+            for t in terms
+        ]
+
+    @override
+    def get_valid_fields(
+        self, queryset: Any, view: Any, context: Any = None
+    ) -> list[str]:
+        fields = getattr(view, "ordering_fields", None)
+        return [str(f) for f in fields] if fields else []
+
+    @override
+    def get_schema_operation_parameters(self, view: Any) -> list[dict[str, Any]]:
+        return [
+            {
+                "name": self.ordering_param,
+                "required": False,
+                "in": "query",
+                "description": "Sort order, e.g. `displayName desc,createTime`.",
+                "schema": {"type": "string"},
+            }
+        ]
+
+
+def _order_terms(request: Request, ordering: list[str]) -> list[OrderField]:
+    """The request's explicit ordering as wire terms; empty when ``orderBy`` is absent."""
+    if ORDER_BY_PARAM not in request.query_params:
+        return []
+    return [
+        OrderField(camelize_key(f.lstrip("-")), descending=f.startswith("-"))
+        for f in ordering
+    ]
+
+
 class CursorPagination(drf_pagination.CursorPagination):
     """Keyset pagination emitting the AIP-158 envelope over the shared cursor codec.
 
@@ -46,6 +109,7 @@ class CursorPagination(drf_pagination.CursorPagination):
     ordering = "pk"
     page_size: int | None = None  # None defers to the settings facade
     max_page_size: int | None = None
+    _order_by = ""
 
     @override
     def get_page_size(self, request: Request) -> int:
@@ -55,10 +119,13 @@ class CursorPagination(drf_pagination.CursorPagination):
 
     @override
     def decode_cursor(self, request: Request) -> drf_pagination.Cursor | None:
+        terms = _order_terms(request, list(self.ordering))
+        self._order_by = format_order_by(terms)
         raw = request.query_params.get(self.cursor_query_param)
         if raw is None:
             return None
         token = decode_cursor(raw)
+        check_cursor_order(token, terms)
         return drf_pagination.Cursor(offset=0, reverse=False, position=token.sort_key)
 
     def get_next_page_token(self) -> str | None:
@@ -82,7 +149,7 @@ class CursorPagination(drf_pagination.CursorPagination):
             if isinstance(last, Mapping)
             else getattr(last, "pk", position)
         )
-        return encode_cursor(position, str(entity_id))
+        return encode_cursor(position, str(entity_id), self._order_by)
 
     @override
     def get_paginated_response(self, data: Any) -> Response:

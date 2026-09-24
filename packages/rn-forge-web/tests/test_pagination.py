@@ -173,3 +173,46 @@ def test_a_real_token_survives_the_link_header_round_trip():
     url = value[1 : value.index(">")]
     recovered = parse_qs(urlparse(url).query)["pageToken"][0]
     assert_that(decode_cursor(recovered).entity_id).is_equal_to("a1")
+
+
+# --- orderBy (AIP-132) ----------------------------------------------------
+
+
+def test_parse_order_by_reads_directions_and_order():
+    from rn_forge.web.pagination import OrderField, parse_order_by
+
+    terms = parse_order_by(
+        "displayName desc, createTime", allowed=["displayName", "createTime"]
+    )
+    assert_that(terms).is_equal_to(
+        (OrderField("displayName", descending=True), OrderField("createTime"))
+    )
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["secret", "id sideways", "id desc extra", "id,id", "id,,"],
+    ids=["unlisted", "bad-direction", "extra-word", "repeated", "empty-term"],
+)
+def test_parse_order_by_rejects_bad_input(raw):
+    from rn_forge.web.exceptions import InvalidOrderBy
+    from rn_forge.web.pagination import parse_order_by
+
+    assert_that(parse_order_by).raises(InvalidOrderBy).when_called_with(
+        raw, allowed=["id"]
+    )
+
+
+@pytest.mark.parametrize("raw", [None, "", "  "])
+def test_parse_order_by_blank_means_default_order(raw):
+    from rn_forge.web.pagination import parse_order_by
+
+    assert_that(parse_order_by(raw, allowed=["id"])).is_empty()
+
+
+def test_cursor_carries_and_checks_its_order():
+    from rn_forge.web.pagination import OrderField, check_cursor_order
+
+    cursor = decode_cursor(encode_cursor("2", "2", "id desc"))
+    check_cursor_order(cursor, [OrderField("id", descending=True)])
+    assert_that(check_cursor_order).raises(InvalidCursor).when_called_with(cursor, [])

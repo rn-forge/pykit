@@ -40,13 +40,13 @@ class BaseModelSerializer(serializers.ModelSerializer):
 
     status = EnumChoiceField(enum_type=Status, required=False)
     created_by = serializers.CharField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
+    create_time = serializers.DateTimeField(read_only=True)
     updated_by = serializers.CharField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+    update_time = serializers.DateTimeField(read_only=True)
     BASE_MODEL_FIELDS: ClassVar[list[str]] = [
         "status",
         "created_by",
-        "created_at",
+        "create_time",
         "updated_by",
-        "updated_at",
+        "update_time",
     ]

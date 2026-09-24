@@ -163,6 +163,20 @@ says so and says why.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 
+**Sorting** follows Google AIP-132: `orderBy=displayName desc,createTime` —
+comma-separated field names on the wire, each optionally followed by `asc`
+(the default) or `desc`.
+
+- **An endpoint lists the fields it can sort by.** An unlisted or malformed
+  term, or a repeated field, is 400, never ignored.
+  — `pagination.order-by-unlisted-field-is-400`
+- **The page token binds the order.** A token issued under one `orderBy` and
+  presented under another is 400.
+  — `pagination.order-by-descending-binds-the-token`,
+  `pagination.token-under-a-different-order-by-is-400`
+- The first sortable field of a keyset query must be unique (or tie-broken by
+  the key), since the token resumes from a position, not an offset.
+
 ## 5. Idempotency
 
 Unsafe endpoints that a client may retry accept an `Idempotency-Key` header.
@@ -366,7 +380,9 @@ Unremarkable, and worth stating so it does not vary:
 | A successful delete | 204 |
 | An accepted asynchronous operation | 202 |
 
-`PUT` replaces, `PATCH` merges. A `DELETE` on an already-absent resource is
+`PUT` replaces; `PATCH` is RFC 7396 JSON Merge Patch (`Content-Type:
+application/merge-patch+json`), and there is no field-mask parameter (AIP-134 is
+not adopted). A `DELETE` on an already-absent resource is
 404, not 204 — an idempotent *outcome* is not the same as a silent one, and a
 client that deleted something twice usually wants to know.
 
@@ -529,6 +545,42 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 `draft-ietf-httpapi-idempotency-key-header`).
 
 ---
+
+## 18. Timestamps and standard fields
+
+- **Timestamps are RFC 3339 in UTC with a `Z` suffix**, per AIP-142 (which
+  points to RFC 3339): `2026-09-23T14:05:00Z`. Property names end in `Time`
+  for an instant and `Date` for a calendar date. On Django this needs
+  `USE_TZ = True` and `TIME_ZONE = "UTC"`, which DRF's `DateTimeField` renders
+  with the `Z`.
+- **The audit fields are `createTime`, `updateTime`, `createdBy` and
+  `updatedBy`** (AIP-148 for the first two; `createdBy`/`updatedBy` have no
+  AIP equivalent). `etag` and `requestId` are not fields: RFC 9110 headers
+  (§3) and the `Idempotency-Key` header (§5) govern.
+- Errors are RFC 9457 problems, never `google.rpc.Status`.
+
+## 19. Versioning, compatibility and operations
+
+- **Versioning** (AIP-185): a major version in the path, `/v1`, and no minor
+  versions on the wire. A version is retired with the `Deprecation` and
+  `Sunset` headers of §12.
+- **Breaking changes** (AIP-180) are the review rule: removing or renaming a
+  field, path or parameter, narrowing a type, or adding a required request
+  field. Enforce it with an OpenAPI diff (`oasdiff`) in CI of the consuming
+  repository; the kit does not run it.
+- **`validateOnly`** (AIP-163): a mutating method a UI previews accepts a
+  `validateOnly=true` query parameter, runs validation and every check the real
+  call would, and has no side effects. §17's import uses it.
+- **Batch methods** are spelled `:batchCreate`, `:batchGet` and `:batchUpdate`
+  (AIP-233, 231, 234). `:batchGet` and `:batchUpdate` are specified here and
+  built when a consumer needs them.
+- **Long-running operations** (AIP-151): the call returns `202` with a
+  `Location` naming an operation resource
+  `{name, done, metadata, error | response}`; `error` is an RFC 9457 problem.
+  Specified here, built when a consumer needs it.
+- **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
+  are the mechanism), AIP-122 resource names (ids stay ids), AIP-157 `readMask`
+  and AIP-164 soft delete (deferred).
 
 ## Conformance
 

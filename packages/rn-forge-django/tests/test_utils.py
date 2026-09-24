@@ -204,8 +204,8 @@ class TestAsDict:
     def test_datetime_field_is_isoformat_string(self) -> None:
         a = self._article("Datetime Field")
         result = ModelUtils.as_dict(a)
-        # created_at is a DateTimeField; as_dict should return ISO string
-        assert isinstance(result["created_at"], str)
+        # create_time is a DateTimeField; as_dict should return ISO string
+        assert isinstance(result["create_time"], str)
 
     def test_seen_set_prevents_mutation_of_caller_set(self) -> None:
         # Calling without _seen should work cleanly

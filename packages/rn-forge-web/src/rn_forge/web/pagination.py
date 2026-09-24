@@ -1,4 +1,4 @@
-"""Opaque cursor pagination using Google AIP-158 field names.
+"""Opaque cursor pagination and ``orderBy`` using Google AIP-158 and AIP-132.
 
 Page sizes are clamped to the configured cap. Responses use ``items``,
 ``nextPageToken``, and the optional ``totalSize`` field.
@@ -13,24 +13,30 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any, Final
 from urllib.parse import quote
 
 from pydantic import ConfigDict, Field
 
-from rn_forge.web.exceptions import InvalidCursor
+from rn_forge.web.exceptions import InvalidCursor, InvalidOrderBy
 from rn_forge.web.models import WireModel
 
 __all__ = [
     "DEFAULT_PAGE_SIZE_PARAM",
     "DEFAULT_PAGE_TOKEN_PARAM",
+    "ORDER_BY_PARAM",
     "Cursor",
+    "OrderField",
     "Page",
+    "check_cursor_order",
     "clamp_page_size",
     "decode_cursor",
     "encode_cursor",
+    "format_order_by",
     "next_link_header",
+    "parse_order_by",
 ]
 
 DEFAULT_PAGE_SIZE_PARAM: Final = "pageSize"
@@ -39,8 +45,12 @@ DEFAULT_PAGE_SIZE_PARAM: Final = "pageSize"
 DEFAULT_PAGE_TOKEN_PARAM: Final = "pageToken"
 """The query parameter carrying the continuation token."""
 
+ORDER_BY_PARAM: Final = "orderBy"
+"""The query parameter carrying the sort order."""
+
 _SORT_KEY: Final = "k"
 _ENTITY_ID: Final = "id"
+_ORDER_BY: Final = "o"
 
 
 @dataclass(frozen=True)
@@ -49,24 +59,94 @@ class Cursor:
 
     ``sort_key`` is the value of the column the query orders by; ``entity_id``
     is the tiebreaker that makes the ordering total. Together they are the
-    keyset the next page resumes from.
+    keyset the next page resumes from. ``order_by`` is the canonical
+    ``orderBy`` the token was issued for, empty for the endpoint's default order.
     """
 
     sort_key: str
     entity_id: str
+    order_by: str = ""
 
 
-def encode_cursor(sort_key: str, entity_id: str) -> str:
+@dataclass(frozen=True)
+class OrderField:
+    """One ``orderBy`` term: a field name as it appears on the wire and a direction."""
+
+    field: str
+    descending: bool = False
+
+
+def parse_order_by(
+    raw: str | None, *, allowed: Collection[str]
+) -> tuple[OrderField, ...]:
+    """Parse an AIP-132 ``orderBy`` value such as ``displayName desc,createTime``.
+
+    Terms are comma-separated; each is a field name optionally followed by
+    ``asc`` or ``desc`` (default ``asc``).
+
+    Args:
+        raw: The query parameter value. ``None`` or blank yields no terms.
+        allowed: The field names the endpoint can sort by, as they appear on
+            the wire.
+
+    Returns:
+        The terms in order of precedence.
+
+    Raises:
+        InvalidOrderBy: A term is malformed, names a field outside *allowed*,
+            or repeats a field.
+    """
+    if raw is None or not raw.strip():
+        return ()
+    terms: list[OrderField] = []
+    for chunk in raw.split(","):
+        parts = chunk.split()
+        if len(parts) not in (1, 2) or (
+            len(parts) == 2 and parts[1] not in ("asc", "desc")
+        ):
+            raise InvalidOrderBy(
+                f"Malformed orderBy term {chunk.strip()!r}", error_code=400
+            )
+        name = parts[0]
+        if name not in allowed:
+            raise InvalidOrderBy(
+                f"Cannot order by {name!r}; allowed: {', '.join(sorted(allowed))}",
+                error_code=400,
+            )
+        if any(term.field == name for term in terms):
+            raise InvalidOrderBy(f"orderBy repeats {name!r}", error_code=400)
+        terms.append(
+            OrderField(name, descending=len(parts) == 2 and parts[1] == "desc")
+        )
+    return tuple(terms)
+
+
+def format_order_by(terms: Collection[OrderField]) -> str:
+    """Return the canonical ``orderBy`` string for *terms* (``desc`` explicit, ``asc`` omitted)."""
+    return ",".join(f"{t.field} desc" if t.descending else t.field for t in terms)
+
+
+def check_cursor_order(cursor: Cursor, terms: Collection[OrderField]) -> None:
+    """Reject a page token issued for a different ordering than *terms*.
+
+    Raises:
+        InvalidCursor: The token's order differs from the request's.
+    """
+    if cursor.order_by != format_order_by(terms):
+        raise InvalidCursor("pageToken does not match orderBy", error_code=400)
+
+
+def encode_cursor(sort_key: str, entity_id: str, order_by: str = "") -> str:
     """Encode a keyset position as an opaque page token.
 
     URL-safe base64 over compact JSON — small, and safe in a query string
-    without further escaping.
+    without further escaping. *order_by* is the canonical ordering from
+    :func:`format_order_by`; it is omitted from the token when empty.
     """
-    payload = json.dumps(
-        {_SORT_KEY: sort_key, _ENTITY_ID: entity_id},
-        separators=(",", ":"),
-        sort_keys=True,
-    )
+    fields = {_SORT_KEY: sort_key, _ENTITY_ID: entity_id}
+    if order_by:
+        fields[_ORDER_BY] = order_by
+    payload = json.dumps(fields, separators=(",", ":"), sort_keys=True)
     return base64.urlsafe_b64encode(payload.encode()).decode()
 
 
@@ -84,7 +164,9 @@ def decode_cursor(raw: str) -> Cursor:
         decoded = base64.urlsafe_b64decode(raw.encode())
         payload = json.loads(decoded)
         return Cursor(
-            sort_key=str(payload[_SORT_KEY]), entity_id=str(payload[_ENTITY_ID])
+            sort_key=str(payload[_SORT_KEY]),
+            entity_id=str(payload[_ENTITY_ID]),
+            order_by=str(payload.get(_ORDER_BY, "")),
         )
     except (ValueError, KeyError, TypeError, binascii.Error) as exc:
         raise InvalidCursor("Malformed page token", error_code=400) from exc

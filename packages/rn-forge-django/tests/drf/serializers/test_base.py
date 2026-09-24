@@ -47,9 +47,9 @@ def test_base_model_serializer_base_model_fields() -> None:
     assert BaseModelSerializer.BASE_MODEL_FIELDS == [
         "status",
         "created_by",
-        "created_at",
+        "create_time",
         "updated_by",
-        "updated_at",
+        "update_time",
     ]
 
 
@@ -65,7 +65,7 @@ def test_base_model_serializer_declares_status_field() -> None:
 def test_base_model_serializer_marks_audit_fields_read_only() -> None:
     serializer = _WidgetSerializer()
 
-    for field_name in ["created_by", "created_at", "updated_by", "updated_at"]:
+    for field_name in ["created_by", "create_time", "updated_by", "update_time"]:
         assert serializer.fields[field_name].read_only is True
     assert serializer.fields["status"].read_only is False
 
@@ -106,10 +106,25 @@ def test_omit_empty_keeps_zero_false_and_empty_list() -> None:
 
 def test_omit_empty_composes_with_base_model_serializer() -> None:
     serializer = _OmitEmptyWidgetSerializer()
-    for field_name in ["created_by", "created_at", "updated_by", "updated_at"]:
+    for field_name in ["created_by", "create_time", "updated_by", "update_time"]:
         assert serializer.fields[field_name].read_only is True
     widget = _Widget(name="n", code="", created_by="u", updated_by="u")
     data = _OmitEmptyWidgetSerializer(widget).data
     assert data["name"] == "n"
     assert data["code"] == ""
-    assert "created_at" not in data
+    assert "create_time" not in data
+
+
+@pytest.mark.unit
+def test_timestamps_render_as_rfc3339_utc_with_z() -> None:
+    from datetime import UTC, datetime
+
+    from rest_framework import serializers
+
+    from django.test import override_settings
+
+    with override_settings(USE_TZ=True, TIME_ZONE="UTC"):
+        field = serializers.DateTimeField()
+        assert field.to_representation(datetime(2026, 9, 23, 14, 5, tzinfo=UTC)) == (
+            "2026-09-23T14:05:00Z"
+        )

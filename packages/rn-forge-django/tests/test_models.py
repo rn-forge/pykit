@@ -360,11 +360,11 @@ class TestBaseModelFields:
 
     def test_created_at_auto_populated(self) -> None:
         w = Widget.objects.create(name="Y", code="Y1", created_by="u", updated_by="u")
-        assert w.created_at is not None
+        assert w.create_time is not None
 
     def test_updated_at_auto_populated(self) -> None:
         w = Widget.objects.create(name="Z", code="Z1", created_by="u", updated_by="u")
-        assert w.updated_at is not None
+        assert w.update_time is not None
 
     def test_status_can_be_set_to_inactive(self) -> None:
         w = Widget.objects.create(

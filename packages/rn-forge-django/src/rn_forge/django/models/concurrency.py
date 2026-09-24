@@ -105,7 +105,7 @@ class ImmutableModelMixin(models.Model):
     """
 
     IMMUTABLE_EXCLUDE_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"created_by", "created_at", "updated_by", "updated_at"}
+        {"created_by", "create_time", "updated_by", "update_time"}
     )
 
     class Meta:

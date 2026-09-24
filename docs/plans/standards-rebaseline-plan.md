@@ -12,11 +12,11 @@ through OpenTelemetry, replacing `X-Correlation-ID`) implemented 2026-09-23,
 ahead of R4 — see the R3 section for why.** **R4 (the shared wire types become
 pydantic models in `rn-forge-web`) decided 2026-09-22, implemented
 2026-09-23.** R5 follows them; R6 is
-still gated on the owner. **R7 (tabular transfer and bulk operations, adopting
+on the backlog (owner, 2026-09-23). **R7 (tabular transfer and bulk operations, adopting
 `tablib` and `django-import-export`) is ready to implement**: dependencies
 approved and the DRF router probed, 2026-09-22; three open questions are
-listed at its end. **R8 (AIP adoption where no RFC applies) planned
-2026-09-22.** **R9 (SQLAlchemy and `tablib` across both stacks) is open for
+listed at its end. **R8 (AIP adoption where no RFC applies) implemented
+2026-09-23** (see "R8 status"). **R9 (SQLAlchemy and `tablib` across both stacks) is open for
 ideation.** **R10 (a simplification pass after R3: delete what the adopted
 OpenTelemetry instrumentation and Starlette already provide) implemented
 2026-09-23, except R10.3, which stopped at its probe; R5's evaluations run
@@ -1086,7 +1086,10 @@ dependency and delete no kit code (rule 6).
   `total`. `drf-standardized-errors`: when it ships an RFC 9457 mode.
   `django-health-check`: when failure status and JSON body are configurable.
 
-### R6: `rn-forge-django` scope, **gated**
+### R6: `rn-forge-django` scope, **backlog (owner, 2026-09-23)**
+
+The package split, and the whole auth feature, are revisited later; nothing
+here is scheduled.
 
 At minimum, stop the `drf` facade from importing the transfer views, so the
 `drf`, `jwt`, `saml`, `openapi` and `oidc` extras stop requiring `excel`.
@@ -1432,6 +1435,32 @@ and names AIP-151.
 **Order.** 142, 185, 134 (§10 wording) and 180 are convention text and land
 together. 132 is the one code item. 151's dataclass waits for its first
 consumer. 148 and 164 wait on the owner.
+
+#### R8 status (2026-09-23)
+
+Owner decisions: **AIP-148 adopted** (rename), **AIP-164 skipped** and put on
+the backlog (revisit when a consumer needs soft delete; `deleteTime`,
+`:undelete`, `showDeleted`).
+
+- **Convention text** (`api-conventions.md`): §4 sorting, §10 `PATCH` is RFC 7396,
+  new §18 (timestamps, standard fields) and §19 (versioning, compatibility,
+  `validateOnly`, batch spelling, long-running operations, rejected AIPs).
+- **AIP-132 `orderBy`:** `rn_forge.web` (`parse_order_by`, `OrderField`,
+  `format_order_by`, `check_cursor_order`, `InvalidOrderBy` → 400; the cursor
+  carries its order), DRF `OrderByFilter` with `CursorPagination`, FastAPI
+  `order_by_param`. Three conformance cases, run by all five drivers.
+  Limitation: the token holds a position, not an offset, so the first sortable
+  field must be unique. FastAPI's SQLAlchemy keyset half stays with R9.
+- **AIP-148:** the Django `BaseModel` fields are now `create_time` and
+  `update_time` (all four `db_column` camelCase overrides were
+  then dropped, since no application is migrating), so the
+  wire names are `createTime`/`updateTime`; `createdBy`/`updatedBy` stay. The
+  FastAPI package has no base model, so there was nothing to rename there.
+  `model-conventions.md` follows.
+- **AIP-142:** stated in §18, with a unit test per stack (pydantic; DRF with
+  `USE_TZ`/`TIME_ZONE=UTC`) rather than a conformance case.
+- **Not done:** AIP-151's dataclass (waits for a consumer), and the `oasdiff`
+  kiln handoff note for AIP-180.
 
 ### R10: simplification pass after R3 — implemented 2026-09-23 (R10.3 stopped at its probe)
 
@@ -1809,7 +1838,7 @@ convention items follow R7; its `orderBy` item is independent. R9 is ideation;
 its outcome may reshape R7's FastAPI half and R8's `orderBy` on SQLAlchemy, so
 settle it before implementing those two parts. **Next, decided 2026-09-23:**
 R10 (R10.1 to R10.5), then R5's evaluations, then R4 for the types no library
-takes. R6 is independent and waits only on the owner. All of it lands before the release tags:
+takes. R6 is on the backlog. All of it lands before the release tags:
 nothing is released, so there are no compatibility shims (README).
 
 ## Validation

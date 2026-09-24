@@ -62,6 +62,7 @@ def _problem_body(
 
 
 PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2")
+ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2", "id desc")
 """The token page one must return.
 
 Asserted **exactly**, not redacted. A token is opaque to a *client*; between
@@ -261,6 +262,47 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=400,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(BAD_REQUEST, "Malformed page token"),
+    ),
+    ConformanceCase(
+        id="pagination.order-by-descending-binds-the-token",
+        area="pagination",
+        description=(
+            "AIP-132: orderBy reorders the list, and the next token carries that "
+            "order so it cannot be replayed under another."
+        ),
+        request=RequestSpec(
+            "GET",
+            "/conformance/items",
+            query={"pageSize": "2", "orderBy": "id desc"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [{"id": "3"}, {"id": "2"}],
+            "nextPageToken": ORDERED_PAGE_1_NEXT_TOKEN,
+        },
+    ),
+    ConformanceCase(
+        id="pagination.order-by-unlisted-field-is-400",
+        area="pagination",
+        description="An orderBy field the endpoint does not list is a 400, never silently ignored.",
+        request=RequestSpec("GET", "/conformance/items", query={"orderBy": "secret"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "Cannot order by 'secret'; allowed: id"),
+    ),
+    ConformanceCase(
+        id="pagination.token-under-a-different-order-by-is-400",
+        area="pagination",
+        description="A token issued for the default order is rejected once orderBy changes.",
+        request=RequestSpec(
+            "GET",
+            "/conformance/items",
+            query={"orderBy": "id desc", "pageToken": PAGE_1_NEXT_TOKEN},
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "pageToken does not match orderBy"),
     ),
     # --- Idempotency (idempotency.py) ------------------------------------
     ConformanceCase(

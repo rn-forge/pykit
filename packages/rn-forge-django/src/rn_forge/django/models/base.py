@@ -117,22 +117,17 @@ class BaseModel(
 ):
     """Abstract base model with status field and audit timestamps.
 
-    Uses :class:`NaturalKeyLookupManager` and preserves camelCase database
-    column names.
+    Uses :class:`NaturalKeyLookupManager`; database columns take the field names.
     """
 
     status = EnumField.build(
         enum_type=Status,
         default=Status.Active,
     )
-    created_by: StrField = models.CharField(max_length=255, db_column="createdBy")
-    created_at: TimestampField = models.DateTimeField(
-        auto_now_add=True, db_column="createdAt"
-    )
-    updated_by: StrField = models.CharField(max_length=255, db_column="updatedBy")
-    updated_at: TimestampField = models.DateTimeField(
-        auto_now=True, db_column="updatedAt"
-    )
+    created_by: StrField = models.CharField(max_length=255)
+    create_time: TimestampField = models.DateTimeField(auto_now_add=True)
+    updated_by: StrField = models.CharField(max_length=255)
+    update_time: TimestampField = models.DateTimeField(auto_now=True)
 
     objects = NaturalKeyLookupManager()
     validate_on_save = False

@@ -16,8 +16,9 @@ from rn_forge.django.drf.exceptions import problem_details_exception_handler  # 
 from rn_forge.django.drf.pagination import (  # noqa: E402
     CursorPagination,
     LegacyPageNumberPagination,
+    OrderByFilter,
 )
-from rn_forge.web import InvalidCursor, decode_cursor, encode_cursor  # noqa: E402
+from rn_forge.web import InvalidCursor, InvalidOrderBy, decode_cursor, encode_cursor  # noqa: E402
 
 
 class _PagedRow(models.Model):
@@ -152,3 +153,37 @@ class TestCursorEnvelope:
     def test_no_previous_token_is_emitted(self, rows) -> None:
         body = _page(CursorPagination(), _request(pageSize="2"))
         assert set(body) == {"items", "nextPageToken"}
+
+
+class _OrderedView:
+    filter_backends = (OrderByFilter,)
+    ordering_fields = ("id", "label")
+
+
+@pytest.mark.integration
+class TestOrderBy:
+    def _ordered_page(self, request):
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(
+            _PagedRow.objects.all(), request, view=_OrderedView()
+        )
+        data = [{"id": row.pk} for row in page]
+        return json.loads(json.dumps(paginator.get_paginated_response(data).data))
+
+    def test_descending_order_and_token_binds_it(self, rows) -> None:
+        body = self._ordered_page(_request(pageSize="2", orderBy="id desc"))
+        assert body["items"] == [{"id": 5}, {"id": 4}]
+        assert decode_cursor(body["nextPageToken"]).order_by == "id desc"
+        follow = self._ordered_page(
+            _request(pageSize="2", orderBy="id desc", pageToken=body["nextPageToken"])
+        )
+        assert follow["items"] == [{"id": 3}, {"id": 2}]
+
+    def test_token_with_a_different_order_is_rejected(self, rows) -> None:
+        body = self._ordered_page(_request(pageSize="2", orderBy="id desc"))
+        with pytest.raises(InvalidCursor):
+            self._ordered_page(_request(pageToken=body["nextPageToken"]))
+
+    def test_unlisted_field_is_rejected(self, rows) -> None:
+        with pytest.raises(InvalidOrderBy):
+            self._ordered_page(_request(orderBy="secret"))
