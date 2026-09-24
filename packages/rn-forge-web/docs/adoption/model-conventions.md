@@ -47,6 +47,10 @@ Every persisted entity carries four:
 **That mapping is a Django-side detail and must not leak into this
 vocabulary** — the Python names above are the contract, and a new SQLAlchemy
 model uses ordinary snake_case columns.
+`rn-forge-sqlalchemy` implements the vocabulary as `AuditMixin` (the four
+columns, timestamps through a UTC-only `UTCDateTime`) and `VersionMixin` (`version`,
+starting at 1). Its `update_versioned` and `upsert` set the version and the
+actors; nothing is set by a session event.
 
 ## `status`
 

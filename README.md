@@ -14,11 +14,12 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | [`rn-forge-web`](packages/rn-forge-web) | `rn_forge.web` | Framework-agnostic HTTP/API primitives — the wire semantics an application promises its callers: W3C Trace Context, RFC 9457 problem details, ETag preconditions, AIP-158 pagination, idempotency, readiness, ASGI middleware, the auth contract, and a framework-free conformance table. Depends on `rn-forge-commons` and nothing else. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 | [`rn-forge-fastapi`](packages/rn-forge-fastapi) | `rn_forge.fastapi` | FastAPI adapters over `rn-forge-web`: problem handlers, the OpenAPI error-type repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health router and the auth binding. Makes no wire decision of its own. |
+| [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | `rn_forge.sqlalchemy` | Async SQLAlchemy models, upsert and keyset pagination over `rn-forge-web`: `Base`, `UTCDateTime`, audit and version mixins, `update_versioned`, `upsert`, `keyset`. PostgreSQL and SQLite. |
 
 ## Import boundaries
 
 The boundaries between these packages are executable, not conventional.
-[`.importlinter`](.importlinter) states seven contracts and `uv run lint-imports` proves them; CI
+[`.importlinter`](.importlinter) states eight contracts and `uv run lint-imports` proves them; CI
 gates every other job on it.
 
 1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or Jinja — it is
@@ -31,10 +32,13 @@ gates every other job on it.
 5. `rn_forge.web` imports no web framework (`django`, `fastapi`, `starlette`, `rest_framework`)
    and neither `rn_forge.cli` nor `rn_forge.tooling` — it ships into an ASGI server and has no
    business reaching the command-line or file-owning layers.
-6. The framework packages layer on top of it: `django` → `web` → `commons` and
-   `fastapi` → `web` → `commons`, as independent siblings, so neither may import the other.
+6. The framework packages layer on top of it: `django` → `web` → `commons`,
+   `fastapi` → `web` → `commons` and `sqlalchemy` → `web` → `commons`, as independent siblings, so
+   none may import another.
 7. `rn_forge.fastapi` imports neither `rn_forge.django`, `rn_forge.cli`, `rn_forge.tooling` nor
    Jinja. Only its (not yet built) `rn_forge.fastapi.codegen` may.
+8. `rn_forge.sqlalchemy` imports neither framework package nor `fastapi`, `starlette`, `django` or
+   `rest_framework`.
 
 There are deliberately **no compatibility re-exports** in any direction: a shim would satisfy a
 caller and reverse the dependency.

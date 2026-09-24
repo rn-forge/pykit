@@ -14,6 +14,7 @@ from typing import Any
 
 import tablib
 from fastapi import Header, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -91,7 +92,7 @@ def _records(
         )
 
 
-def tabular_response(
+async def tabular_response(
     rows: Iterable[Any], model: type[BaseModel], fmt: TabularFormat, filename: str
 ) -> Response:
     """Render *rows* as a file download in *fmt*.
@@ -100,8 +101,8 @@ def tabular_response(
     dumped by alias, so the model's serialization aliases are the column
     headers and its computed fields are columns. Use ``serialization_alias``
     for a header that differs from the attribute name: a plain ``alias`` would
-    also rename the attribute read from an ORM object. CSV is streamed; the other formats are
-    built in memory.
+    also rename the attribute read from an ORM object. CSV is streamed; the other
+    formats are built in memory in a worker thread.
 
     Args:
         rows: ORM objects, mappings or *model* instances.
@@ -128,15 +129,22 @@ def tabular_response(
 
         return StreamingResponse(lines(), media_type=fmt.media_type, headers=headers)
 
+    return Response(
+        await run_in_threadpool(_build_body, rows, model, fmt, columns),
+        media_type=fmt.media_type,
+        headers=headers,
+    )
+
+
+def _build_body(
+    rows: Iterable[Any], model: type[BaseModel], fmt: TabularFormat, columns: list[str]
+) -> bytes | str:
     dataset: Any = tablib.Dataset(headers=columns)
     for record in _records(rows, model, "python"):
         dataset.append([record[c] for c in columns])
-    content: bytes | str = (
-        write_xlsx(dataset)
-        if fmt.extension == "xlsx"
-        else dataset.export(fmt.tablib_name)
-    )
-    return Response(content, media_type=fmt.media_type, headers=headers)
+    if fmt.extension == "xlsx":
+        return write_xlsx(dataset)
+    return dataset.export(fmt.tablib_name)
 
 
 @dataclass
@@ -180,6 +188,12 @@ async def read_rows[T: BaseModel](upload: UploadFile, model: type[T]) -> RowsRes
             f"Unsupported file type; upload one of {', '.join(_READABLE)}."
         )
     raw = await upload.read()
+    return await run_in_threadpool(_parse_rows, raw, extension, model)
+
+
+def _parse_rows[T: BaseModel](
+    raw: bytes, extension: str, model: type[T]
+) -> RowsResult[T]:
     data: bytes | str = raw if extension == "xlsx" else raw.decode("utf-8-sig")
     try:
         dataset: Any = tablib.Dataset()

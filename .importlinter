@@ -15,6 +15,8 @@
 #   5. `rn_forge.web` is the framework-agnostic HTTP layer: it imports no web
 #      framework and neither of the development-layer packages, and the
 #      framework packages layer on top of it (web plan alignment §2).
+#   6. `rn_forge.sqlalchemy` sits beside the framework packages: it imports
+#      neither of them nor either framework.
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -29,6 +31,7 @@ root_packages =
     rn_forge.django
     rn_forge.fastapi
     rn_forge.web
+    rn_forge.sqlalchemy
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
@@ -109,11 +112,24 @@ forbidden_modules =
     rn_forge.tooling
 
 [importlinter:contract:web-layers]
-name = django and fastapi depend on web, web depends on commons, never the other way round
+name = django, fastapi and sqlalchemy depend on web, web depends on commons, never the other way round
 type = layers
-# The `:` makes django and fastapi independent siblings at one layer: neither
-# may import the other.
+# The `:` makes django, fastapi and sqlalchemy independent siblings at one
+# layer: none may import another.
 layers =
-    rn_forge.django : rn_forge.fastapi
+    rn_forge.django : rn_forge.fastapi : rn_forge.sqlalchemy
     rn_forge.web
     rn_forge.commons
+
+[importlinter:contract:sqlalchemy-is-framework-free]
+name = rn_forge.sqlalchemy never imports fastapi, django or their packages
+type = forbidden
+source_modules =
+    rn_forge.sqlalchemy
+forbidden_modules =
+    rn_forge.fastapi
+    rn_forge.django
+    fastapi
+    starlette
+    django
+    rest_framework

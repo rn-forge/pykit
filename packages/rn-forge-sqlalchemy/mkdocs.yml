@@ -1,0 +1,43 @@
+site_name: rn-forge-sqlalchemy
+site_description: Async SQLAlchemy models, upsert and keyset pagination over rn-forge-web
+site_dir: .out/site
+use_directory_urls: false
+
+theme:
+  name: material
+  highlightjs: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_style: auto
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            show_root_heading: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Guides:
+      - guides/index.md
+      - Using the package: guides/usage.md
+  - API Reference:
+      - api/index.md
+      - Models: api/models.md
+      - Concurrency: api/concurrency.md
+      - Upsert: api/upsert.md
+      - Pagination: api/pagination.md

@@ -58,30 +58,35 @@ def test_the_dependency_reads_accept_and_the_format_param():
     assert_that(c.get("/x", params={"format": "tsv"}).json()).is_equal_to({"fmt": None})
 
 
-def test_csv_headers_are_aliases_and_computed_fields():
-    response = tabular_response([Item()], Line, TABULAR_FORMATS["csv"], "l.csv")
+@pytest.mark.asyncio
+async def test_csv_headers_are_aliases_and_computed_fields():
+    response = await tabular_response([Item()], Line, TABULAR_FORMATS["csv"], "l.csv")
     assert_that(response.media_type).is_equal_to("text/csv")
     assert_that(response.headers["content-disposition"]).contains('filename="l.csv"')
 
     app = FastAPI()
-    app.get("/l")(
-        lambda: tabular_response([Item()], Line, TABULAR_FORMATS["csv"], "l.csv")
-    )
+
+    async def route():
+        return await tabular_response([Item()], Line, TABULAR_FORMATS["csv"], "l.csv")
+
+    app.get("/l")(route)
     body = TestClient(app).get("/l").text
     assert_that(body).is_equal_to("SKU,Quantity,Due,Label\r\na,2,2026-01-02,ax2\r\n")
 
 
-def test_xlsx_round_trips_through_tablib():
+@pytest.mark.asyncio
+async def test_xlsx_round_trips_through_tablib():
     import tablib
 
-    response = tabular_response([Item()], Line, TABULAR_FORMATS["xlsx"], "l.xlsx")
+    response = await tabular_response([Item()], Line, TABULAR_FORMATS["xlsx"], "l.xlsx")
     dataset = tablib.Dataset().load(bytes(response.body), format="xlsx")
     assert_that(dataset.headers).is_equal_to(["SKU", "Quantity", "Due", "Label"])
     assert_that(dataset[0][:2]).is_equal_to(("a", 2))
 
 
-def test_tsv_is_built_with_tablib():
-    response = tabular_response([Item()], Line, TABULAR_FORMATS["tsv"], "l.tsv")
+@pytest.mark.asyncio
+async def test_tsv_is_built_with_tablib():
+    response = await tabular_response([Item()], Line, TABULAR_FORMATS["tsv"], "l.tsv")
     assert_that(bytes(response.body).decode()).starts_with("SKU\tQuantity")
 
 

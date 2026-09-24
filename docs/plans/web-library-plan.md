@@ -1714,7 +1714,8 @@ plan's to report.
   ADR-0005 is authored *before* the app that copies it. The package is implemented per
   [`fastapi-library-plan.md`](./fastapi-library-plan.md); Phase 9's `wiring-fastapi.md` is now a
   pointer to it.
-- **`rn-forge-sqlalchemy` — parked (2026-09-13).** Not scheduled; picked up with intellibuild's spec.
+- **`rn-forge-sqlalchemy` — parked (2026-09-13); unparked 2026-09-23 by standards-rebaseline-plan R9**, which
+  scopes its first cut. The rest of this entry stays deferred.
   intellibench's `storage/models/base.py` (declarative base, naming
   convention, `TimestampMixin`, `ScopedModel`) and `repository.py`'s optimistic-`update`/
   `StaleVersionError` are the SQLAlchemy counterpart of `rn_forge.django.models.base`. Genuinely

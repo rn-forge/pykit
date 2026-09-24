@@ -11,7 +11,7 @@ OpenAPI naming rules (web §9.1) and `OidcAuthenticator` (web §10) — are in t
 **The original pykit close-out list is complete.** The consumer reuse follow-up
 below is newly planned and does not block the release. Golden repos in kiln are
 downstream acceptance, not pykit work.
-`rn-forge-azure` and `rn-forge-sqlalchemy` are **parked**.
+`rn-forge-azure` is **parked**. `rn-forge-sqlalchemy` was unparked by R9 (2026-09-23).
 
 The web, azure and django plans were drafted before `rn-forge/kiln` existed and each opens with an
 **"Alignment with the standardization plan"** section stating what the workspace changed around them
@@ -43,8 +43,8 @@ implemented (2026-09-21); R2.5 was implemented and committed on 2026-09-22
 (`373d6bc`).** R3, R4, R5 and R10 are done as of 2026-09-23 (R3, R4 and R10
 uncommitted; R5 is evaluation only). R6 is on the backlog. On 2026-09-22, R7
 (tabular transfer and bulk, adopting `tablib` and `django-import-export`) was
-specified and R8 (AIP adoption) planned. R9 (SQLAlchemy and `tablib` across both
-stacks) is open for ideation in a new session. See "What is open" below.
+specified and R8 (AIP adoption) planned; R8 was done on 2026-09-23. R9 (SQLAlchemy and `tablib` across both
+stacks) was decided and implemented on 2026-09-23. See "What is open" below.
 
 ## The documents
 
@@ -58,7 +58,7 @@ stacks) is open for ideation in a new session. See "What is open" below.
 | [`fastapi-library-plan.md`](./fastapi-library-plan.md) | `rn-forge-fastapi` — FastAPI adapters over `rn-forge-web` | **Phases 0–7, 6b and 6c implemented; committed at `3e80dbd`.** Open: the `rn-forge-web` release tag, and Phase 8 (`golden/python-web-api`, kiln) |
 | [`fastapi-app-layer-plan.md`](./fastapi-app-layer-plan.md) | Standard FastAPI app construction over the existing adapters | **Implemented (2026-09-18).** `AppConfig` and `create_app` |
 | [`web-api-reuse-plan.md`](./web-api-reuse-plan.md) | What four FastAPI applications re-derive: `FastApiApp`, OpenAPI helpers, log redaction, SSE, problem extensions, correlation-ID validation and an opt-in CORS module | **Phases 0, 4 and 5 in the working tree; Phase 1 implemented, then withdrawn (2026-09-21)** by the re-baseline (R1). Phases 2, 3 and 6 planned. The Account Portal and IntelliBuild acceptances are parked |
-| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** **R2.5 (shared logic moved into web, plus the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers via `secure`, CORS, access log, idempotency runner, and a per-host deployment guide) implemented and committed (2026-09-22, `373d6bc`).** **R3 (W3C Trace Context through OpenTelemetry; `X-Correlation-ID` removed) implemented 2026-09-23, uncommitted.** **R4 (the shared wire types become pydantic models in web) implemented 2026-09-23, uncommitted.** R6 (django scope) is on the backlog. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) implemented and committed** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape, `createTime`/`updateTime`) implemented 2026-09-23, uncommitted.** **R9 (SQLAlchemy + `tablib` standardization across stacks) open for ideation**. **R10 (simplification pass after R3) implemented 2026-09-23, uncommitted, except R10.3 (Starlette's body limit), which was rejected at its probe.** **R5 (library evaluations) done 2026-09-23: all four exempt.** |
+| [`standards-rebaseline-plan.md`](./standards-rebaseline-plan.md) | Standards first: which parts of web, fastapi and django follow standards and native mechanisms, and which became a layer of their own | **R1 (OpenAPI accuracy only) and R2 (five standards deviations) implemented (2026-09-21).** **R2.5 (shared logic moved into web, plus the standard service surface: probes, api-catalog, deprecation, conditional GET, 429/503/413, security headers via `secure`, CORS, access log, idempotency runner, and a per-host deployment guide) implemented and committed (2026-09-22, `373d6bc`).** **R3 (W3C Trace Context through OpenTelemetry; `X-Correlation-ID` removed) implemented 2026-09-23, uncommitted.** **R4 (the shared wire types become pydantic models in web) implemented 2026-09-23, uncommitted.** R6 (django scope) is on the backlog. **R7 (tabular transfer and bulk: `tablib` + `django-import-export` replace `drf/views/transfer.py`; a thin FastAPI equivalent; an AIP-136 `CustomMethodRouter` for DRF) implemented and committed** (dependencies approved, router probed, 2026-09-22). **R8 (AIP adoption: `orderBy`, `validateOnly`, batch spellings, RFC 3339 time, path versioning, LRO shape, `createTime`/`updateTime`) done 2026-09-23.** **R9 (SQLAlchemy + `tablib` across stacks: `rn-forge-sqlalchemy` unparked and built, with upsert, keyset `orderBy`, audit and version mixins; thread offload in FastAPI transfer) implemented 2026-09-23, uncommitted.** **R10 (simplification pass after R3) implemented 2026-09-23, uncommitted, except R10.3 (Starlette's body limit), which was rejected at its probe.** **R5 (library evaluations) done 2026-09-23: all exempt (`fastapi-import-export` added by R9).** |
 | [`cli-lifecycle-namespace-plan.md`](./cli-lifecycle-namespace-plan.md) | `rn-forge-cli` — an optional `namespace` for `[cli.lifecycle]`, so a tool can mount its verbs as `<tool> self …` | **Superseded (2026-09-21)** by `cli-lifecycle-retirement-plan.md`; the `namespace` design carries over into it unchanged |
 | [`cli-lifecycle-retirement-plan.md`](./cli-lifecycle-retirement-plan.md) | Moves the whole `[cli.lifecycle]` mechanism out of `rn-forge-cli` into `rn-forge-tooling`, which now owns `LifecycleSurface` and `build_tool_app`; `rn-forge-cli` goes back to knowing only the generic `[cli]` shape | **Implemented (2026-09-21).** kiln's generator template updates in the same change (owner's tool) |
 | [`azure-library-plan.md`](./azure-library-plan.md) | `rn-forge-azure` — Azure adapters for commons protocols | **Parked (2026-09-13).** Unblocked — the commons protocols it needs have landed — but not scheduled |
@@ -69,6 +69,7 @@ stacks) is open for ideation in a new session. See "What is open" below.
 rn-forge-commons  ←  rn-forge-cli  ←  rn-forge-tooling  ←  agentkit / kiln
 rn-forge-commons  ←  rn-forge-web  ←  rn-forge-django
 rn-forge-commons  ←  rn-forge-web  ←  rn-forge-fastapi
+rn-forge-commons  ←  rn-forge-web  ←  rn-forge-sqlalchemy                   (R9; imports neither framework)
 rn-forge-commons  ←  rn-forge-azure                        (parked; not built)
 
 rn-forge-tooling  ←  rn-forge-django[codegen]    (extra; only rn_forge.django.codegen)
@@ -160,6 +161,12 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   they touch it): to be revisited as one piece; do not change it piecemeal.
 - **AIP-164 soft delete** (`deleteTime`, `:undelete`, `showDeleted`): only when a
   consumer needs it.
+- **R8 leftovers, each built on demand:** AIP-151's `Operation` dataclass in
+  `rn-forge-web` (first consumer); `:batchGet` and `:batchUpdate` handlers (the
+  spelling is already in `api-conventions.md` §19); the `oasdiff` CI note for
+  kiln's golden repos (AIP-180); a conformance case for AIP-142 timestamps
+  (unit tests cover it today); making `orderBy` work on a non-unique first
+  field (needs an offset in the page token).
 
 ### Standards re-baseline (first)
 
@@ -228,7 +235,8 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   `rn-forge-django/tests/test_tracing.py` reset the process-global response
   propagator to `None` instead of restoring it. Seed `1707347094` reproduced it;
   25 full runs pass after the fix.
-- **Next session, in order:** R9 (ideation). R6 is on the backlog. R7 and R8 are implemented. Releases still follow kiln's work.
+- **Next session:** R9 is implemented (2026-09-23, uncommitted). R6 is on the backlog. R7 and R8 are done. Releases still follow
+  kiln's work.
 - **R4** is implemented and complete (2026-09-23), uncommitted; nothing left
   in its scope.
   `ProblemDetail`, `Page`, `CheckResult` and `HealthReport`
@@ -252,29 +260,29 @@ policy stay in agentkit and kiln. Do not create `rn-forge-selfkit`.
   `:action` (and lets `/orders/12:cancel` reach `retrieve`); a probed
   route-table override, `CustomMethodRouter`, fixes both. It also settles the
   transfer half of R6.
-- **R8 (implemented 2026-09-23, uncommitted)** adopts the AIPs that fill gaps no RFC covers:
+- **R8 (done 2026-09-23)** adopts the AIPs that fill gaps no RFC covers:
   132 `orderBy` (the one code item), 163, 231/234, 142, 185, 180, and 151's
   shape. It rejects the AIPs an RFC already governs (193, 154, 155, 134).
   **Owner decisions:** AIP-148 adopted (`createTime`/`updateTime`); AIP-164
   soft delete **skipped, on the backlog** to revisit when a consumer needs it.
-  Not done: AIP-151's dataclass (waits for a consumer) and the `oasdiff` kiln
-  handoff note.
-- **R7 open questions:**
-  - Is all or nothing the default when an import fails? `ew-loop-api` does
-    partial saves today.
-  - Which status does an export over the row cap return? `422` is
-    recommended.
-- **R9 (open, next session)** works out how SQLAlchemy and `tablib` can make
-  transfer and persistence uniform across Django and FastAPI:
-  - whether to unpark `rn-forge-sqlalchemy`;
-  - one upsert contract over Django's `bulk_create(update_conflicts=True)` and
-    SQLAlchemy's `on_conflict_do_update`;
-  - one column spec, or two native idioms;
-  - async;
-  - keyset pagination with `orderBy`;
-  - audit fields.
-
-  Seven questions and their inputs are listed in the plan. Start there.
+  Nothing else is pending; the leftovers are on the backlog. R8's SQLAlchemy
+  `orderBy` half is an input to R9.
+- **R7 open questions, settled (owner, 2026-09-23):** an import is all or
+  nothing by default, with partial saves opt-in; an export over the row cap
+  returns `422`.
+- **R9 (implemented 2026-09-23, uncommitted)** owns all SQLAlchemy work and
+  supports SQLite and PostgreSQL. The owner's decisions:
+  - `rn-forge-sqlalchemy` is unparked, scoped to R7–R9's needs: base and
+    naming convention, `UTCDateTime`, audit and version mixins, optimistic
+    `update_versioned`, a portable `upsert`, and a keyset predicate over web's
+    `Cursor`;
+  - the upsert is shared at the wire only; Django keeps `django-import-export`;
+  - two native column idioms, no shared spec;
+  - pykit offloads its own tablib work to a thread; the new package is async
+    only;
+  - `sqlakeyset` is exempt; `fastapi-import-export` is probed as step 0;
+  - dependencies approved: `sqlalchemy[asyncio]`, with `aiosqlite` and
+    `asyncpg` for tests.
 
 The rest of it (R3–R9) lands before the release tags.
 
@@ -353,12 +361,8 @@ fences exist; the generators and kiln files do not.
 
 - **`rn-forge-azure`** — [`azure-library-plan.md`](./azure-library-plan.md) is complete and unblocked;
   its Phase 4/5 gates and namespace decision are made when it is picked up.
-- **`rn-forge-sqlalchemy`** — no plan yet; its likely contents are recorded in the web plan's
-  "Deferred" section. Its trigger is unchanged (the first SQLAlchemy application rewritten on this
-  kit — intellibuild), and it is planned with that application's spec, not ahead of it.
-  **Revisit, 2026-09-22:** the owner wants to reconsider it as part of R9
-  (standards-rebaseline-plan), because R7 leaves FastAPI's transfer
-  persistence to each application until a SQLAlchemy package exists.
+- **`rn-forge-sqlalchemy`** — **unparked 2026-09-23 by R9** (standards-rebaseline-plan), scoped
+  to what R7–R9 need. The rest of the web plan's "Deferred" list stays parked until a consumer asks.
 - **Multi-tenant row scoping** stays deferred until a second application states its tenancy model.
 
 ## Standing rules for every plan
@@ -392,7 +396,7 @@ fences exist; the generators and kiln files do not.
   test, not generator post-processing.
 - **A unified model base class, repository protocol or serializer abstraction is permanently out of
   scope** — see the web plan's "The unification boundary". What is shared is vocabulary
-  (`model-conventions.md`) and wire shapes. The parked `rn-forge-sqlalchemy` is a **sibling** of the
+  (`model-conventions.md`) and wire shapes. `rn-forge-sqlalchemy` is a **sibling** of the
   two framework packages, not a step toward merging them.
 - **cims and intellibench are prior art, not compatibility constraints.** Both are being respecified
   and reimplemented against these libraries. Where a survey found a weaker design, the plans fix it.

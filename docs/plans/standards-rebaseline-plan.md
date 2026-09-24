@@ -13,11 +13,10 @@ ahead of R4 — see the R3 section for why.** **R4 (the shared wire types become
 pydantic models in `rn-forge-web`) decided 2026-09-22, implemented
 2026-09-23.** R5 follows them; R6 is
 on the backlog (owner, 2026-09-23). **R7 (tabular transfer and bulk operations, adopting
-`tablib` and `django-import-export`) is ready to implement**: dependencies
-approved and the DRF router probed, 2026-09-22; three open questions are
-listed at its end. **R8 (AIP adoption where no RFC applies) implemented
-2026-09-23** (see "R8 status"). **R9 (SQLAlchemy and `tablib` across both stacks) is open for
-ideation.** **R10 (a simplification pass after R3: delete what the adopted
+`tablib` and `django-import-export`) is implemented and committed**; its
+three open questions are settled. **R8 (AIP adoption where no RFC applies) done
+2026-09-23** (see "R8 status"). **R9 (SQLAlchemy and `tablib` across both stacks) implemented
+2026-09-23, uncommitted**: `rn-forge-sqlalchemy` is unparked and built for it. **R10 (a simplification pass after R3: delete what the adopted
 OpenTelemetry instrumentation and Starlette already provide) implemented
 2026-09-23, except R10.3, which stopped at its probe; R5's evaluations run
 next, then R4.** Full validation block below is green, including the strict
@@ -1035,7 +1034,7 @@ The plan's block, plus:
 - `pyright` strict passes over the four models, including `Page[T]`'s
   PEP 695 generic.
 
-### R5: re-run the withdrawn library evaluations — done 2026-09-23, all four exempt
+### R5: re-run the withdrawn library evaluations — done 2026-09-23, all four exempt (a fifth, `fastapi-import-export`, added by R9)
 
 Re-run every evaluation rejected on wire-ownership grounds. A library is
 adopted when it implements the standard, can be configured to
@@ -1066,6 +1065,7 @@ dependency and delete no kit code (rule 6).
 | `fastapi-pagination` 0.16.0 (released 2026-09-16) | **Exempt** | In-memory `paginate()` raises `ValueError` for cursor params; cursor works only through a DB extension or a hand-built `CursorPage`. Stock `CursorPage`, camelCased, returns `{items, total, currentPage, currentPageBackwards, previousPage, nextPage}`: no `nextPageToken`, `total` required (the kit's `totalSize` is off by default). A custom `AbstractPage` and params class reach `{items, nextPageToken}`, but that discards the library's model, and clamping stays the kit's. Stock `CursorParams` uses `le=100` (a 422, which the conventions forbid). `pageToken=%%%` returned 200 with the first page, not 400; its 400 for hard base64 errors is not problem+json. Its SQLAlchemy keyset extension is not evaluated here; revisit under R8 item 5 |
 | `drf-standardized-errors` 0.16.0 (released 2026-04-29; runs on the locked Django 6.0.7 and DRF 3.17.1) | **Exempt** | No RFC 9457: `application/json`, `{type, errors[{code, detail, attr}]}`, `type` one of three fixed words, no `title`, `status` or `instance`. No `traceId`, members not camelCase, `errors` not RFC 6901 pointers, `RequestDataTooBig` gives 500 not 413. Meeting the conventions needs a custom `ExceptionHandler`, `ErrorResponseSerializer` and renderer, which replaces the library's output. Its 5xx detail is generic, and status codes follow DRF |
 | `django-health-check` 4.6.1 (released 2026-09-18; Django 5.2 to 6.1) | **Exempt** | Follows no published contract (`OK` or an error string, not `pass`/`warn`/`fail`). A failing check returns **500**, hard-coded, not 503; a warning also returns 500, so "warn never changes status" fails. No required versus optional, so `health.optional-failure-is-200-degraded` cannot be met. Flat body keyed by `repr(check)`, no `status`. No timeout (a 5 s check took 5 s; the kit's default is 2 s). No liveness endpoint. Default checks include database, cache, DNS, mail and storage. HTML by default. The shared web health model must stay for FastAPI regardless |
+| `fastapi-import-export` 0.3.0 (released 2026-02-26; probed in R9 step 0, 2026-09-23) | **Exempt** | A two-phase service: validate returns an `import_id`, commit reads the validated rows back from parquet on disk under an optional Redis lock, which is a different wire from `validateOnly` on one request. Persistence is a caller-supplied `persist_fn(db, dataframe, allow_overwrite=...)`, so it offers no upsert and deletes none of R9's. Row errors are `{row_number, field, type}` with the library's own type codes, `ImportExportError` carries `400`/`409`/`413`/`415`, and none of it is RFC 9457 or the kit's `RowError`. Data is polars DataFrames, so tablib's `Dataset` would stop being the in-memory contract. The base install adds polars, fastexcel, xlsxwriter and uuid6. Single maintainer, four 0.x releases |
 
 **Consequences.**
 
@@ -1085,6 +1085,8 @@ dependency and delete no kit code (rule 6).
   when its page model is configurable to `{items, nextPageToken}` without
   `total`. `drf-standardized-errors`: when it ships an RFC 9457 mode.
   `django-health-check`: when failure status and JSON body are configurable.
+  `fastapi-import-export`: when it offers a single-request validate-only mode
+  and row errors that map to RFC 9457.
 
 ### R6: `rn-forge-django` scope, **backlog (owner, 2026-09-23)**
 
@@ -1331,76 +1333,226 @@ The block below, plus:
 
 #### R7 open questions
 
-The spec above stands as written unless the owner changes one of these before
-implementation.
+Settled by the owner, 2026-09-23:
 
-1. **Import failure default.** The spec is all or nothing, with an opt-in for
-   partial saves (`import_rollback_on_validation_errors = False`).
-   `ew-loop-api` does partial saves today. The owner has not confirmed which
-   should be the default.
-2. **Status for an export over the row cap.** The spec says "a problem response
-   naming the cap" and leaves the status open. Recommended: `422`, with
-   `about:blank` and the cap in `detail`. `413` is for request content, not
-   response size (RFC 9110 §15.5.14). Settle it in step 2, when the web
-   conformance case is written.
-3. **How much the transfer layer is shared across stacks** (R7 ships two native
-   idioms): see R9.
+1. **Import failure default:** all or nothing, with partial saves opt-in
+   (`import_rollback_on_validation_errors = False`).
+2. **Export over the row cap:** `422`, `about:blank`, the cap in `detail`.
+3. **How much the transfer layer is shared across stacks:** moved to R9.
 
-### R9: SQLAlchemy and tablib across both stacks, **to ideate**
+### R9: SQLAlchemy and tablib across both stacks — implemented 2026-09-23
 
-**Status:** open, 2026-09-22. The owner will work through this in a separate
-session. It is not a spec yet. R7 is deliberately shaped so that R9 can replace
-its FastAPI "application-owned" rows without changing the wire.
+**Status:** implemented 2026-09-23, uncommitted; see "R9 status" below. Every
+question was settled by the owner on 2026-09-23. R7 and R8 are done, and nothing in R9 changes their wire: R9 adds
+the SQLAlchemy half that R7 left to the application and R8 left to R9.
 
-**Questions to settle:**
+**Owner decisions, 2026-09-23 (before the questions):**
 
-1. **Unpark `rn-forge-sqlalchemy`?** Its trigger is currently "planned with
-   intellibuild's spec" (status board, "Parked"). R7 gives it a second reason:
-   the FastAPI persistence half of transfer. The contents already recorded in
-   the web plan's "Deferred" section are: declarative base, naming convention,
-   `TimestampMixin`, the optimistic `update`/`StaleVersionError` helper, and a
-   SQLAlchemy `IdempotencyStore`.
-2. **One upsert contract, two ORMs.** The semantics are: natural keys, update
-   only listed fields, skip unchanged rows, created/updated/skipped counts, and
-   roll back under `validateOnly`. The native mechanisms are:
-   - Django: `bulk_create(update_conflicts=True, unique_fields=…, update_fields=…)`
-     (Django ≥ 4.1). `django-import-export` uses per-row instance loading
-     instead;
-   - SQLAlchemy: `insert().on_conflict_do_update(…)` in the PostgreSQL and
-     SQLite dialects, with `RETURNING (xmax = 0)` for the counts.
+- **All SQLAlchemy work is ideated and implemented together in R9.** That
+  covers R7's FastAPI persistence half (the upsert row of its FastAPI mapping
+  table), R8's SQLAlchemy keyset `orderBy`, R5's deferred
+  `fastapi-pagination` SQLAlchemy keyset evaluation, and the web plan's
+  "Deferred" `rn-forge-sqlalchemy` contents. No SQLAlchemy code lands under R7
+  or R8.
+- **SQLite is supported alongside PostgreSQL**, as the default local and test
+  database. Every contract below works on both dialects.
+- **R7's settled answers carry over:** an import is all or nothing by default,
+  and an export over the row cap is `422`. The upsert contract inherits the
+  first.
 
-   Decide whether both stacks expose the same small contract, and whether
-   `django-import-export` stays the Django engine or becomes a thin layer over
-   the native upsert.
-3. **One column spec, or two native idioms?** R7 has the Django `Resource`
-   fields and FastAPI's pydantic aliases plus `computed_field`s. A single
-   framework-free declarative spec over `tablib` could feed both. It interacts
-   with R4: if web's shared types become pydantic, a pydantic-based spec is the
-   natural candidate. Weigh this against the premise's "no layer in place of the
-   framework".
-4. **Async.** FastAPI consumers are async; intellibuild is fully async.
-   `tablib` and openpyxl are synchronous and CPU-bound, so decide where
-   `run_in_threadpool` sits (in `read_rows`, or in the caller) and whether large
-   exports stream from an async session.
-5. **Keyset pagination and `orderBy` on SQLAlchemy** (R8, AIP-132). Candidates
-   are `fastapi-pagination`'s cursor mode (already in R5) and `sqlakeyset`.
-   The page token must encode the order on both stacks.
-6. **Audit fields**, tied to R8's AIP-148 decision: the `createdBy`/`updatedBy`
-   and `createTime`/`updateTime` names and how each ORM populates them.
-   Today `AuditFieldsViewMixin` is DRF-only.
-7. **Library re-checks** that feed the answers: `fastapi-import-export`, now
-   in R5; whether `tablib`'s `Dataset` is enough as the in-memory contract, or
-   whether large files need a streaming reader (openpyxl `read_only`);
-   `sqlakeyset`.
+#### R9 facts checked, 2026-09-23
 
-**Inputs:**
+| Fact | Consequence |
+| --- | --- |
+| R7 is implemented: `rn_forge.fastapi.transfer` (`read_rows`, `tabular_response`) and `rn_forge.django.drf.transfer` exist | R9 adds to working code; no wire changes |
+| `read_rows` is `async` but runs `tablib` load and pydantic validation on the event loop | Q4 |
+| `fastapi-pagination[sqlalchemy]` depends on `sqlakeyset` (2.0, released 2026-08-29) | Q5 has one library candidate, not two |
+| `rn_forge.web.pagination.Cursor` holds one `sort_key: str`, an `entity_id` and the bound `order_by` | The SQLAlchemy keyset must read and write that token |
+| `fastapi-import-export` 0.3.0 (2026-02-26) was routed to R5 by R7, but R5 evaluated only its four candidates | Still unevaluated; Q7 |
+| SQLAlchemy's `on_conflict_do_update` does not apply a column's Python-side `onupdate` | The upsert stamps `update_time` itself (Q6) |
+| SQLite stores `DateTime(timezone=True)` without a zone | Timestamps need a UTC type decorator to keep AIP-142's `Z` (Q6) |
+| Django's optimistic concurrency raises `rn_forge.web.VersionConflict` with `412` | The SQLAlchemy helper raises the same, not a package-local `StaleVersionError` |
 
-- R7's requirements table, from `ew-loop-api`;
-- R7's FastAPI mapping table;
-- the web plan's "Deferred" section;
-- `fastapi-library-plan.md` §"Things deliberately NOT in this package";
-- intellibuild as the SQLAlchemy consumer, which is parked as an acceptance
-  consumer while it is in progress.
+#### R9 decisions (owner, 2026-09-23)
+
+| # | Question | Decision |
+| --- | --- | --- |
+| Q1 | Unpark `rn-forge-sqlalchemy`? | **Unparked**, as the sibling package the web plan places (depends on `rn-forge-web`, imports neither `rn_forge.fastapi` nor `rn_forge.django`), **scoped to what R7, R8 and R9 need**. The rest of the web plan's list waits for a consumer |
+| Q2 | One upsert contract, two ORMs | **Shared at the wire, native per ORM.** Django keeps `django-import-export` as its engine. SQLAlchemy gets a native `upsert` with a portable pre-`SELECT`. No shared Python interface across the two ORMs |
+| Q3 | One column spec, or two native idioms? | **Two native idioms**: `Resource` on Django, pydantic models on FastAPI. The conformance cases prove the wire is identical. A shared spec would be a layer in place of the framework |
+| Q4 | Async | **pykit offloads its own CPU-bound work**: `read_rows` and `tabular_response`'s xlsx build run in a worker thread. `rn-forge-sqlalchemy` is **async only** (`AsyncSession`). No streaming export: the row cap bounds it, and large files are AIP-151's path |
+| Q5 | Keyset `orderBy` on SQLAlchemy | **Own predicate over web's `Cursor`**, about 30–40 lines. `sqlakeyset` is exempt (below). R8's limitation stands on both stacks: the first sort field must be unique |
+| Q6 | Audit fields | **Explicit.** An `AuditMixin` with Python-side UTC defaults and a `UTCDateTime` type decorator. `created_by`/`updated_by` are set by the caller; `upsert(actor=…)` stamps all four. No session events, no contextvar, no `server_default` |
+| Q7 | Library re-checks | `fastapi-import-export` is **probed in step 0** against R5's criteria, verdict written into R5's table. tablib's `Dataset` **stays the in-memory contract**; no streaming reader while `transfer.max_rows` exists (revisit with the first AIP-151 consumer). `sqlakeyset` is settled by Q5 |
+| Q8 | Dependencies and test matrix | **Approved.** Base: `sqlalchemy[asyncio]>=2.0` and `rn-forge-web`, no database driver. `dev`: `aiosqlite` (the default suite runs on SQLite) and `asyncpg` (PostgreSQL tests, marked `postgres`, run only when a DSN is set) |
+
+**Recorded exemption (principle 1), `sqlakeyset`:** its bookmark is its own
+serialized marker tuple, not web's `Cursor`. Adopting it means translating the
+token in both directions to replace a predicate of about ten lines, so it
+deletes no kit code (rule 6). One sentence goes in the keyset module's
+docstring, as R5's exemptions do. Revisit when it accepts a caller-supplied
+marker codec.
+
+#### R9 in `rn-forge-sqlalchemy` (new package)
+
+`packages/rn-forge-sqlalchemy`, `src/rn_forge/sqlalchemy/`, laid out like the
+other packages (README, `docs/guides/`, `mkdocs.yml`, curated facade).
+
+- **`models`**:
+  - `Base`, a `DeclarativeBase` whose `MetaData` carries the Alembic
+    constraint `NAMING_CONVENTION`;
+  - `UTCDateTime`, a `TypeDecorator` over `DateTime(timezone=True)`. It rejects
+    a naive value on write, stores UTC, and returns an aware UTC value on read
+    on both dialects;
+  - `AuditMixin`: `create_time` and `update_time` (`UTCDateTime`, Python-side
+    UTC `default`, and `onupdate` on `update_time`), `created_by` and
+    `updated_by` (`String(255)`, matching Django's `BaseModel`). Names follow
+    `model-conventions.md` and AIP-148;
+  - `VersionMixin`: a `version` integer, starting at 1.
+- **`concurrency`**: `update_versioned(session, obj, **values)`, which issues
+  `UPDATE … WHERE pk = :pk AND version = :expected`, sets `version + 1`, and
+  raises `rn_forge.web.VersionConflict` with `error_code=412` when no row
+  matched but the row exists. Same contract as Django's `VersionedModel`.
+- **`upsert`**:
+
+  ```python
+  async def upsert(
+      session: AsyncSession,
+      model: type[Base],
+      rows: Sequence[Mapping[str, Any]],
+      *,
+      key: Sequence[str],
+      fields: Sequence[str],
+      actor: str,
+  ) -> UpsertCounts  # created, updated, skipped
+  ```
+
+  1. Read the existing rows with `SELECT … WHERE (key) IN (…)`, chunked so
+     SQLite's bound-parameter limit is never reached.
+  2. Classify each input row in Python: absent is *created*, any of `fields`
+     different is *updated*, otherwise *skipped*.
+  3. Write created and updated rows with one dialect
+     `insert().on_conflict_do_update(index_elements=key, set_=fields + audit)`
+     statement (PostgreSQL or SQLite, picked from the session's dialect).
+     `create_time`/`created_by` are set on insert only; `update_time` and
+     `updated_by` are set explicitly, because `onupdate` does not apply.
+  4. Two input rows with the same natural key raise `ValueError`; the caller
+     validates before calling, as it does for every row error.
+
+  `upsert` never commits. All or nothing is the caller's transaction. For
+  `validateOnly` the caller rolls back after the call, matching
+  `django-import-export`'s `dry_run`, which writes and rolls back. No
+  SAVEPOINTs. No `RETURNING`/`xmax` optimisation until a measurement asks
+  for it.
+- **`pagination`**:
+  - `keyset(stmt, *, columns, terms, cursor, id_column)` applies web's
+    ordering to a `Select`: `ORDER BY` the first term, then `id_column`, both
+    in the first term's direction. With a cursor, it adds
+    `(col > k) OR (col = k AND id > i)`, with `<` for `desc`. `columns` maps
+    each allowed wire field name to its column. `cursor.sort_key` is
+    converted back by the column type's `python_type`, `datetime` through
+    `fromisoformat`. It calls `check_cursor_order` first, so a changed
+    `orderBy` stays a 400.
+  - `next_page_token(sort_value, entity_id, terms)` is the other direction:
+    it writes `sort_value` in the form `keyset` reads (`isoformat()` for
+    `datetime`, `str` otherwise) and calls `rn_forge.web.encode_cursor` with
+    the canonical order. The caller fetches `page_size + 1` rows; there is no
+    page-fetching helper.
+- **Not in the first cut** (the web plan's list, waiting for a consumer):
+  the SQL `AsyncIdempotencyStore`, session and unit-of-work helpers,
+  readiness checks, and multi-tenant scoping.
+
+**Workspace wiring**, in the same change that creates the package:
+
+- a root `pyproject.toml` workspace member and `[tool.uv.sources]` entry;
+  `postgres` is registered as a root pytest marker;
+- `.importlinter`: `rn_forge.sqlalchemy` in `root_packages`, and a forbidden
+  contract: `rn_forge.sqlalchemy` imports neither `rn_forge.fastapi`,
+  `rn_forge.django`, `fastapi` nor `django`;
+- the root `mkdocs.yml` nav and `docs/index.md` include the new site;
+- the status board's repo-shape rule applies: the kiln
+  `[archetype.python-lib] packages` entry and `state.json` re-seed happen only
+  once kiln Phase F.1 has created those files. They do not exist today, so
+  they are not created here;
+- the web plan's "Deferred" entry and the status board's "Parked" list mark
+  the package unparked by R9, naming this section.
+
+#### R9 in `rn-forge-fastapi`
+
+- `read_rows` runs the tablib load and the per-row validation in
+  `run_in_threadpool`; only `await upload.read()` stays on the loop.
+- `tabular_response` builds the xlsx body in `run_in_threadpool`. CSV already
+  streams.
+- No import of `rn_forge.sqlalchemy`, in either direction. The FastAPI guide
+  gains the wiring example: `read_rows` → the application's foreign-key
+  lookups → `upsert(actor=principal…)` → rollback when `validateOnly` →
+  `import_report_body`, and `keyset` behind `order_by_param`.
+
+#### R9 in `rn-forge-django`
+
+Nothing. `django-import-export` stays the engine, and audit fields stay with
+`AuditFieldsViewMixin`.
+
+#### R9 order
+
+0. Probe `fastapi-import-export` 0.3.0 in a throwaway venv against R5's
+   criteria and rule 6; add its row to R5's verdict table. The expected
+   verdict is exempt. If it is adoptable, stop and bring it to the owner
+   before step 3.
+1. FastAPI: the thread offload in `read_rows` and `tabular_response`.
+2. Scaffold `rn-forge-sqlalchemy` with the workspace wiring above.
+3. `models` and `concurrency`.
+4. `upsert`.
+5. `pagination` (`keyset`), with the `sqlakeyset` exemption sentence.
+6. Docs: the package README and guide, the FastAPI guide's wiring example,
+   `model-conventions.md` naming the SQLAlchemy mixins, the status board.
+
+#### R9 validation
+
+The block below, plus:
+
+- `uv run pytest packages/rn-forge-sqlalchemy` passes on SQLite (aiosqlite),
+  and again with the PostgreSQL DSN set, where the `postgres`-marked tests run;
+- the package's tests include a FastAPI app over SQLite (test-only; `fastapi`
+  is in the package's `dev` group, never in `src`) that passes the
+  `pagination.order-by-*` and import cases from `rn_forge.web.conformance.CASES`
+  (through `case_by_id`, as the FastAPI driver does) with no skips;
+- `upsert` tests cover created, updated and skipped counts, the audit stamps
+  on insert and on update, rollback for `validateOnly`, a duplicate key in the
+  input, and a chunked key set larger than SQLite's parameter limit, on both
+  dialects;
+- a timestamp written and read back through SQLite is aware UTC and
+  serializes with `Z`;
+- `uv run lint-imports` passes with the new contract;
+- `uv run --group docs mkdocs build --strict` passes for the new package and
+  for the combined site.
+
+
+#### R9 status, 2026-09-23
+
+Steps 0 to 6 are done and uncommitted.
+
+- **Step 0:** `fastapi-import-export` 0.3.0 is exempt; its row is in R5's table.
+  Nothing was brought to the owner.
+- **Step 1:** `read_rows` and `tabular_response` offload to
+  `run_in_threadpool`. `tabular_response` is now `async`, so callers `await` it.
+- **Steps 2 to 5:** `packages/rn-forge-sqlalchemy` (`models`, `concurrency`,
+  `upsert`, `pagination`) with the workspace wiring. `web-layers` lists
+  `sqlalchemy` as a third sibling beside `django` and `fastapi`, and a separate
+  contract forbids the frameworks.
+- **Step 6:** the package README and guide, the FastAPI transfer guide's
+  wiring and paging examples, `model-conventions.md`, the root README and
+  `docs/index.md`, and the status board.
+- **Choices the plan left open:** `keyset` with no terms orders by `id_column`
+  ascending and the token's sort key is the id (which is what the shared
+  conformance tokens hold); `update_versioned` raises `LookupError` when the row
+  is gone; `upsert` raises `TypeError` for a model without `AuditMixin`;
+  `UTCDateTime` defines `python_type` so `keyset` can convert a token value;
+  the `postgres` tests read `RN_FORGE_TEST_POSTGRES_DSN`.
+- **Verified:** the sqlalchemy suite passes on SQLite, and passes again on
+  PostgreSQL through an embedded server (67 passed, both dialects). The
+  conformance test serves the `pagination.*` and `transfer.import-*` cases with
+  no skips.
 
 ### R8: AIP adoption where no RFC applies
 
@@ -1459,8 +1611,13 @@ the backlog (revisit when a consumer needs soft delete; `deleteTime`,
   `model-conventions.md` follows.
 - **AIP-142:** stated in §18, with a unit test per stack (pydantic; DRF with
   `USE_TZ`/`TIME_ZONE=UTC`) rather than a conformance case.
-- **Not done:** AIP-151's dataclass (waits for a consumer), and the `oasdiff`
-  kiln handoff note for AIP-180.
+- **Done, verified 2026-09-23.** The `orderBy` code exists in web, DRF and
+  FastAPI, and the three `pagination.order-by-*` conformance cases pass on all
+  five drivers with no skips (21 tests). The leftovers are on the status board's backlog: AIP-151's
+  dataclass, `:batchGet`/`:batchUpdate` handlers, the `oasdiff` kiln note for
+  AIP-180, an AIP-142 conformance case, and `orderBy` on a non-unique first
+  field. SQLAlchemy keyset `orderBy` is an R9 item, implemented there with the
+  rest of the SQLAlchemy work (owner, 2026-09-23).
 
 ### R10: simplification pass after R3 — implemented 2026-09-23 (R10.3 stopped at its probe)
 
@@ -1834,9 +1991,9 @@ The plan's validation block, plus:
 
 R1, R2 and R2.5 are done. R3 is implemented (2026-09-23) and uncommitted. R7
 followed R2.5 Part B, which is now done, so R7 is unblocked. R8's
-convention items follow R7; its `orderBy` item is independent. R9 is ideation;
-its outcome may reshape R7's FastAPI half and R8's `orderBy` on SQLAlchemy, so
-settle it before implementing those two parts. **Next, decided 2026-09-23:**
+convention items follow R7; its `orderBy` item is independent. R7 and R8 are
+done. R9 is implemented (2026-09-23); it adds the
+SQLAlchemy half without changing R7's or R8's wire. **Next, decided 2026-09-23:**
 R10 (R10.1 to R10.5), then R5's evaluations, then R4 for the types no library
 takes. R6 is on the backlog. All of it lands before the release tags:
 nothing is released, so there are no compatibility shims (README).

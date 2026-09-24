@@ -40,6 +40,7 @@ addopts = "-ra --import-mode=importlib"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
+  "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -50,6 +51,7 @@ rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-fastapi = { workspace = true }
+rn-forge-sqlalchemy = { workspace = true }
 rn-forge-tooling = { workspace = true }
 rn-forge-web = { workspace = true }
 
@@ -59,6 +61,7 @@ members = [
   "packages/rn-forge-commons",
   "packages/rn-forge-django",
   "packages/rn-forge-fastapi",
+  "packages/rn-forge-sqlalchemy",
   "packages/rn-forge-tooling",
   "packages/rn-forge-web",
 ]
@@ -69,6 +72,7 @@ workspace = [
   "rn-forge-commons[all]",
   "rn-forge-django[all]",
   "rn-forge-fastapi[transfer]",
+  "rn-forge-sqlalchemy",
   "rn-forge-tooling",
   "rn-forge-web[security]",
 ]
@@ -94,6 +98,8 @@ dev = [
   "pytest>=9.1.1",
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
+  "aiosqlite>=0.21",
+  "asyncpg>=0.30",
   "pytest-django>=4.12.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-commons[excel]",

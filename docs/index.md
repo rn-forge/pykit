@@ -26,14 +26,18 @@
   handlers, pydantic mirrors of the wire shapes with a camelCase base model, the OpenAPI error-type
   repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health
   router and the auth binding. Makes no wire decision of its own.
+- [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) — async SQLAlchemy models for the web wire:
+  UTC timestamps, audit and version mixins, optimistic `update_versioned`, a bulk `upsert` for
+  imports and keyset pagination over `rn-forge-web`'s page token. PostgreSQL and SQLite; imports
+  neither framework.
 
 Pick a package above for its guides and API reference.
 
 The development layer is **two** packages, not one: `rn-forge-cli` is what any program with a command
 line takes, and `rn-forge-tooling` is what a program that installs itself, owns files in someone
 else's repo or renders templates takes. `rn-forge-web` is on the other side of the graph entirely:
-`web → commons`, with `django → web → commons` and `fastapi → web → commons` as independent
-siblings, so a package that ships into an ASGI server never
+`web → commons`, with `django → web → commons`, `fastapi → web → commons` and
+`sqlalchemy → web → commons` as independent siblings, so a package that ships into an ASGI server never
 reaches the command-line or file-owning layers. There are no compatibility re-exports in any
 direction, and `.importlinter` proves the layering. See the [plan execution order](plans/README.md) for what is
 still open.

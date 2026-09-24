@@ -261,26 +261,28 @@ def build_app(*, failing: str | None) -> FastAPI:
     orders: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
     tabular = Depends(tabular_format())
 
-    def export(request: Request, fmt: TabularFormat | None, filename: str, rows):
+    async def export(request: Request, fmt: TabularFormat | None, filename: str, rows):
         if fmt is None:
             return {"items": rows}
         if len(rows) > EXPORT_CAP:
             return problem_response(
                 export_cap_problem(EXPORT_CAP, instance=request.url.path)
             )
-        return tabular_response(rows, OrderRow, fmt, filename)
+        return await tabular_response(rows, OrderRow, fmt, filename)
 
     @app.get("/conformance/orders")
     async def export_orders(request: Request, fmt: TabularFormat | None = tabular):
-        return export(request, fmt, "orders.csv", list(orders.values()))
+        return await export(request, fmt, "orders.csv", list(orders.values()))
 
     @app.get("/conformance/orders/named")
     async def export_named(request: Request, fmt: TabularFormat | None = tabular):
-        return export(request, fmt, "Ordérs 2026.csv", list(orders.values()))
+        return await export(request, fmt, "Ordérs 2026.csv", list(orders.values()))
 
     @app.get("/conformance/orders/over-cap")
     async def export_over_cap(request: Request, fmt: TabularFormat | None = tabular):
-        return export(request, fmt, "orders.csv", [*orders.values(), *orders.values()])
+        return await export(
+            request, fmt, "orders.csv", [*orders.values(), *orders.values()]
+        )
 
     @app.get("/conformance/orders/count")
     async def count_orders():
