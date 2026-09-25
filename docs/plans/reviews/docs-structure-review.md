@@ -99,9 +99,9 @@ Starting inventory, before this report:
 | Package MkDocs configurations | 7 | Included by root `mkdocs.yml`; each also builds independently |
 | Web adoption examples | 3 Python files | Documentation with test/type-check coupling; not disposable prose |
 
-Primary pykit evidence: [status board](../README.md),
-[standards re-baseline](../standards-rebaseline-plan.md),
-[commons history](../commons-upgrade-plan.md),
+Primary pykit evidence: the archived status board (`docs/plans/archive/plan-board.md`),
+standards re-baseline (`docs/plans/archive/standards-rebaseline-plan.md`),
+commons history (`docs/plans/archive/commons-upgrade-plan.md`),
 [kiln handoff](../kiln-dependencies.md), and root `mkdocs.yml`.
 Kiln evidence paths below are relative to the sibling `../kiln` repository.
 They describe the local checkout reviewed, not a promise about its future state.

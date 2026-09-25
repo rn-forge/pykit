@@ -8,11 +8,11 @@ their own dialect.
 | Page | What it is for | Status |
 | --- | --- | --- |
 | [API conventions](api-conventions.md) | The wire contract every application must follow identically. Written so it can be pasted into a specification as a normative section. | **Normative** |
-| [Model conventions](model-conventions.md) | The persistence vocabulary each ORM's base class conforms to without sharing code. Ships no code. | **Normative** for the ORM packages, advisory for applications |
-| [Wiring into Django](wiring-django.md) | The full adapter layer for a Django/DRF application. | Guide |
-| [Wiring into FastAPI](wiring-fastapi.md) | The full adapter layer for a FastAPI application. | Guide |
+| [Model conventions](model-conventions.md) | Implemented Django and SQLAlchemy building blocks, with application design advice called out separately. | Guide |
+| [Wiring into Django](wiring-django.md) | A plain Django/DRF composition recipe. The `rn-forge-django` quickstart is the package adapter guide. | Guide |
+| [Wiring into FastAPI](wiring-fastapi.md) | A pointer to the `rn-forge-fastapi` wiring guide. | Pointer |
 | [Checklist](checklist.md) | A per-application review checklist, so divergence is caught in review rather than at integration. | Guide |
-| [Worked examples](examples/README.md) | Three applications serving the same ten endpoints — bare ASGI, Django/DRF and FastAPI. Copy one. | Guide |
+| [Worked examples](examples/index.md) | Three applications serving the same ten endpoints — bare ASGI, Django/DRF and FastAPI. Copy one. | Guide |
 
 ## What is deliberately not here
 

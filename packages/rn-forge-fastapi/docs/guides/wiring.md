@@ -200,6 +200,11 @@ class MyApp(FastApiApp):
   caller = bearer_auth(authenticator=authenticator, log=log)
   ```
 
+  Pass `caller` to `requires(caller, Requirement(all_scopes=...))`, then use the
+  returned dependency on protected routes. `FastApiApp` registers the problem
+  handlers that render authentication failures as 401 with a challenge and
+  authorization failures as 403 without one.
+
   Build it once at startup — it holds the JWKS cache. It is the same
   authenticator `rn-forge-django` uses, so both stacks accept the same tokens.
   For any other scheme, `bearer_auth` takes any `rn_forge.web.Authenticator` or

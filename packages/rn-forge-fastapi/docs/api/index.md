@@ -2,7 +2,6 @@
 
 The API reference is generated from source docstrings with `mkdocstrings`.
 
-The modules are listed in the order an application wires them: `problem` first,
-because every other adapter raises an exception it renders; `schemas` and
-`openapi` for what a generated client sees; then the request dependencies, the
-health router and the auth binding.
+Start with the [application class](app.md), [problem handlers](problem.md), and
+[OpenAPI helpers](openapi.md). The remaining pages cover request dependencies,
+health, tabular transfer, and auth.

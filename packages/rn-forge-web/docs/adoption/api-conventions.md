@@ -29,9 +29,8 @@ Every request is part of a trace, per **W3C Trace Context**.
   — `tracing.problem-body-carries-the-trace-id`
 - Every structured log line emitted while handling the request carries
   `trace_id` and `span_id`.
-- **`X-Correlation-ID` is not read and not sent.** There is no house
-  correlation header; a caller that still sends one is ignored, and it is
-  never echoed. — `tracing.house-header-is-not-echoed`
+- Proprietary request identifiers are ignored and never echoed. Trace Context
+  supplies request correlation. — `tracing.house-header-is-not-echoed`
 
 `rn_forge.web` never configures a `TracerProvider` or an exporter. The
 application does, or runs under `opentelemetry-instrument`; see

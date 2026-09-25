@@ -67,9 +67,3 @@ Name one in `@extend_schema(responses=...)` and drf-spectacular's pydantic exten
 component under its shared name, camelCase properties included. The `ProblemDetail` component is
 always present. A page is described by the paginator's own `get_paginated_response_schema`, not by
 `Page`.
-
-## Why there is no camelCase dependency
-
-`djangorestframework-camel-case` was evaluated and not taken: its last release is 1.4.2 (February
-2023), its classifiers stop at Python 3.10 and it is marked pre-alpha. The renderer, parser and
-schema hook in this package replace it.

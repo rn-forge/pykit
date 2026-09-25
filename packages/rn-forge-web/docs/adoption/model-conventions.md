@@ -1,116 +1,24 @@
 # Model conventions
 
-**Normative for the ORM packages, advisory for applications. This page ships no
-code, and that is deliberate.**
+This page compares the model vocabulary available in the Django and SQLAlchemy packages. Application teams can use the remaining proposals as design guidance, not as guarantees supplied by both packages.
 
-## Why there is no shared base class
+## Implemented building blocks
 
-There will never be a shared model base class or repository protocol across
-Django and SQLAlchemy, and this page exists instead of one.
+| Concern | `rn-forge-django` | `rn-forge-sqlalchemy` |
+| --- | --- | --- |
+| Audit fields | `BaseModel` declares `created_by`, `create_time`, `updated_by`, and `update_time`. Django updates its timestamp fields on save. | `AuditMixin` declares the same four fields. It defaults timestamps to UTC; callers set actors, while `upsert` stamps them. |
+| Optimistic concurrency | `VersionedModelMixin` starts `version` at 1. An existing model instance increments it on `save()` and raises `VersionConflict` for a stale version. | `VersionMixin` starts `version` at 1. `update_versioned` checks and increments it for that operation. |
+| Natural keys | `FixtureModelMixin.natural_keys()` and `NaturalKeyLookupManager.get_by_natural_key()` support fixture lookup. | No shared natural-key mixin is supplied. An application declares its own key and constraint. |
+| Record status | `BaseModel.status` uses Django's `Status` values: `Active`, `Inactive`, `Error`, `Deleted`, and `Expired`. | No status mixin or shared status enumeration is supplied. |
 
-Django's ORM is active-record with a metaclass-driven declarative layer and a
-global app registry; SQLAlchemy is data-mapper with a unit of work and explicit
-sessions. They differ on transaction boundaries, lazy loading, the identity map
-and migration generation — which is to say on everything a shared base class
-would have to take a position on.
+These pieces share field names where shown. They do not create a shared model base, repository protocol, or serializer. Django and SQLAlchemy retain their own persistence and transaction models.
 
-A shared *repository protocol* is worse than a shared base, not better: it
-converges on a query API that is the intersection of two ORMs, which is an API
-neither side's users will accept, and it acquires a new method every time an
-application needs something the intersection lacks.
+## Application design guidance
 
-What *is* shared is the **vocabulary** each ORM's base class conforms to
-without sharing code. Writing it down is what stops `rn_forge.django.BaseModel`
-and a SQLAlchemy counterpart drifting into two dialects of the same
-idea.
+An application may use a stable natural key for fixtures and cross-environment references. It may choose a status field and a soft-delete policy. Those choices require application-specific query, update and authorization behavior. The packages do not enforce a universal three-state lifecycle, automatic filtering of deleted rows, or reversible deletion.
 
-## Audit columns
+Keep persisted timestamps timezone-aware and use UTC in application code. `rn-forge-sqlalchemy.UTCDateTime` enforces UTC normalization for its mapped timestamps. Check the Django project's timezone settings when using `BaseModel`.
 
-Every persisted entity carries four:
+The `version` field is a useful concurrency convention. Use Django's `VersionedModelMixin.save()` or SQLAlchemy's `update_versioned()` where an endpoint promises conditional writes. Bulk writes and arbitrary SQL are outside those guarantees.
 
-| Column | Type | Nullable | Meaning |
-| --- | --- | --- | --- |
-| `created_by` | string identifier | yes | The principal's `subject` at creation. Null for rows created by a migration or a system process. |
-| `create_time` | timestamp with time zone | no | Set once, on insert. Never updated. |
-| `updated_by` | string identifier | yes | The principal's `subject` at the last write. Null under the same conditions as `created_by`. |
-| `update_time` | timestamp with time zone | no | Set on insert and on every update. |
-
-- **Times are UTC and timezone-aware.** A naive timestamp column is a bug that
-  surfaces once a year.
-- `create_time` equals `update_time` on a freshly inserted row rather than
-  `update_time` being null. A null there forces every reader to write
-  `update_time or create_time`.
-- The actor is the `Principal.subject` from `rn_forge.web.auth`, so the audit
-  trail names the caller the same way on every stack.
-
-`rn-forge-django` uses the same names as database columns.
-**That mapping is a Django-side detail and must not leak into this
-vocabulary** — the Python names above are the contract, and a new SQLAlchemy
-model uses ordinary snake_case columns.
-`rn-forge-sqlalchemy` implements the vocabulary as `AuditMixin` (the four
-columns, timestamps through a UTC-only `UTCDateTime`) and `VersionMixin` (`version`,
-starting at 1). Its `update_versioned` and `upsert` set the version and the
-actors; nothing is set by a session event.
-
-## `status`
-
-Every entity carries a `status` drawn from one shared enumeration:
-
-| Value | Meaning |
-| --- | --- |
-| `ACTIVE` | The normal state. Visible and mutable. |
-| `INACTIVE` | Retained and readable, excluded from normal listings, not mutable through ordinary endpoints. |
-| `DELETED` | Soft-deleted. See below. |
-
-An application that needs a domain lifecycle (`DRAFT`, `SUBMITTED`,
-`APPROVED`, ...) models it as its **own** column. Overloading `status` with
-domain states is how the shared vocabulary stops being shared.
-
-## Optimistic concurrency
-
-**This is the entry with teeth**, because `check_precondition` and both ORM
-packages' versioned mixins depend on it.
-
-- The column is named **`version`**.
-- It is a monotonically increasing **`int`**, starting at 1 on insert.
-- It is **bumped on every write**, by the ORM layer, not by the caller.
-- A write that supplies a stale version fails; it does not silently win.
-
-This is the only structural type this kit declares over a persisted object: a
-`Versioned` thing has a primary key and an `int` `version`, and those are
-exactly the two values `check_precondition` takes. Nothing beyond that pair is
-shared.
-
-## Natural keys
-
-Both ORMs need a natural key for fixtures, and neither agrees on the spelling
-by default.
-
-- A model declares its natural key as an **ordered list of field names**, with
-  dotted paths allowed for a key that reaches through a foreign key
-  (`["code"]`, `["organisation.code", "code"]`).
-- The list is unique together, and every field in it is non-nullable.
-- The natural key is stable: it is what a fixture, a seed script and a
-  cross-environment reference use, so a value in it is not something an
-  ordinary update endpoint changes.
-- A surrogate primary key still exists. A natural key is for *loading and
-  referencing*, not for being the primary key.
-
-## Soft delete and timestamps
-
-**Deletion is a status transition, not a column.** A soft-deleted row has
-`status = DELETED`; there is no separate `deleted_at` or `is_deleted`. Two
-representations of the same fact drift, and the pair `is_deleted = false,
-deleted_at = <a time>` is a state every codebase eventually finds in
-production.
-
-- `update_time` and `updated_by` record *when* and *by whom*, so a `deleted_at`
-  adds nothing a soft delete needs.
-- Default managers and default query scopes **exclude** `DELETED` rows.
-  Retrieving them is explicit.
-- A soft delete is reversible by a status transition, and that transition is an
-  ordinary versioned write — it bumps `version` like any other.
-- Hard deletion exists for data-retention compliance and is a deliberate,
-  separately authorized operation, not the ordinary `DELETE` endpoint.
-- A `DELETE` endpoint on an already-soft-deleted resource returns 404, per the
-  API conventions.
+This page records implemented guarantees and optional advice. A stronger cross-package model requirement would need a separate feature decision; SQLAlchemy status, natural keys, and soft delete are not required here.

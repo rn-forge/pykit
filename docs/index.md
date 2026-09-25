@@ -1,43 +1,21 @@
 # pykit
 
-`pykit` is a personal dev-kit: a uv workspace of `rn-forge-*` Python packages.
+`pykit` is a uv workspace of seven independently versioned `rn-forge-*` Python packages. Start with a package for its usage guides, or use the root guides to combine packages.
 
-- [rn-forge-commons](rn-forge-commons/index.md) — runtime-neutral Python utilities with no
-  web-framework dependency, grouped by kind of mechanism: config loading and structured logging,
-  `lang/` (collections, dataclass mixins, reflection), `fs/` (atomic writes, hashing, locks, fenced
-  blocks, round-trip documents), `runtime/` (environment guards, subprocess and task helpers, plugin
-  loading), `integration/` (messaging, secrets, object-store protocols and resilience), and optional
-  pandas/Excel adapters.
-- [rn-forge-cli](rn-forge-cli/index.md) — the shared command-line layer for every `rn-forge-*`
-  application, developer tool or not: a Rich console facade, the Typer application factory, the
-  standard option set, the error-to-exit-code mapping, and the declared `[cli]` surface.
-- [rn-forge-tooling](rn-forge-tooling/index.md) — the file-owning developer tooling: a locked JSON
-  state store, a strict Jinja engine, the generation engine and release-bundle extraction.
-  Depends on `rn-forge-cli`.
-- [rn-forge-web](rn-forge-web/index.md) — framework-agnostic HTTP/API primitives: the correlation
-  ID, RFC 9457 problem details and the exception registry, ETag preconditions, AIP-158 cursor
-  pagination, the idempotency-store protocol, readiness aggregation, a pure-ASGI correlation
-  middleware, the authentication contract, and the conformance table both framework packages are
-  tested against. Depends on `rn-forge-commons` and imports no web framework.
-- [rn-forge-django](rn-forge-django/index.md) — opinionated Django/DRF integration layer:
-  model base classes, a typed settings facade, basic/JWT/SAML auth, and DRF bulk/import/export
-  views built on top of `rn-forge-commons`.
-- [rn-forge-fastapi](rn-forge-fastapi/index.md) — FastAPI adapters over `rn-forge-web`: problem
-  handlers, pydantic mirrors of the wire shapes with a camelCase base model, the OpenAPI error-type
-  repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health
-  router and the auth binding. Makes no wire decision of its own.
-- [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) — async SQLAlchemy models for the web wire:
-  UTC timestamps, audit and version mixins, optimistic `update_versioned`, a bulk `upsert` for
-  imports and keyset pagination over `rn-forge-web`'s page token. PostgreSQL and SQLite; imports
-  neither framework.
+**Status:** done
 
-Pick a package above for its guides and API reference.
+**Owner:** pykit.
 
-The development layer is **two** packages, not one: `rn-forge-cli` is what any program with a command
-line takes, and `rn-forge-tooling` is what a program that installs itself, owns files in someone
-else's repo or renders templates takes. `rn-forge-web` is on the other side of the graph entirely:
-`web → commons`, with `django → web → commons`, `fastapi → web → commons` and
-`sqlalchemy → web → commons` as independent siblings, so a package that ships into an ASGI server never
-reaches the command-line or file-owning layers. There are no compatibility re-exports in any
-direction, and `.importlinter` proves the layering. See the [plan execution order](plans/README.md) for what is
-still open.
+| Package | Use it for |
+| --- | --- |
+| [rn-forge-commons](rn-forge-commons/index.md) | Runtime-neutral utilities, protocols and logging. |
+| [rn-forge-cli](rn-forge-cli/index.md) | Generic command-line applications. |
+| [rn-forge-tooling](rn-forge-tooling/index.md) | File-owning generation, installation and tool lifecycle work. |
+| [rn-forge-web](rn-forge-web/index.md) | Framework-neutral HTTP contracts and conformance cases. |
+| [rn-forge-django](rn-forge-django/index.md) | Django and Django REST framework adapters. |
+| [rn-forge-fastapi](rn-forge-fastapi/index.md) | FastAPI adapters and application assembly. |
+| [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) | Async SQLAlchemy models, upsert and keyset pagination. |
+
+For package choice and relationships, read [choosing packages](guides/choosing-packages.md) and [workspace boundaries](architecture/workspace.md). [Authentication](architecture/authentication.md) explains the cross-package layers; the package guides provide setup steps.
+
+Maintainers can start with the [work index](specs/index.md), [decisions](adr/index.md), [release coordination](releases/index.md), [runbooks](runbooks/index.md), or the [plan migration ledger](plans/context.md).

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code (claude.ai/code) when working in this repository.
+Agent instructions for work in this repository.
 
 This file is **agent instructions only**. Anything that describes the software itself — what a
 package holds, how a subsystem works, how to configure it — lives in that package's `README.md`
@@ -10,30 +10,23 @@ architecture here; it drifts.
 
 ## Start here in a new session
 
-[`docs/plans/README.md`](docs/plans/README.md) is the status board: what is done, what is open,
-and what is parked. Read it first.
-
-`docs/plans/commons-upgrade-plan.md` is the record of how this workspace got its current shape.
-Parts A–E are committed — Part D is the three-layer split into `rn-forge-commons`, `rn-forge-cli`
-and `rn-forge-tooling` with the Phase C review findings, Part E the `rn-forge-cli` reshape around
-`CliApp` and `StrictDataclassMixin`. Part F — the tool lifecycle surface
-(`rn_forge.tooling.install`, `[cli.lifecycle]`) — is in the working tree. The web, django and
-fastapi plans are implemented and committed. The decisions behind them are in `../kiln`
-(ADR-0002, ADR-0005, ADR-0009; plan §0.8, §2.8, §2.11 and Phase C.2).
-
-What is left is sequenced, not forgotten: the release tags and the kiln golden-repo acceptances
-follow kiln's in-progress work. `rn-forge-azure` and `rn-forge-sqlalchemy` are parked — do not
-start either without being asked.
+[The spec board](docs/specs/index.md) is the current status entry point. Read it before starting
+work. Use [root routing](docs/_structure.md) to place documentation and [the reader index](docs/index.md)
+to find published content. [Decisions](docs/adr/index.md) record durable constraints;
+[history and the migration ledger](docs/plans/context.md) preserve plan evidence.
 
 ## Orientation
 
 | Read this | For |
 | --- | --- |
-| [README.md](README.md) | The package table, the six executable import contracts, the four design principles in full, and the pinned-git-tag release model |
+| [README.md](README.md) | The package table, executable import contracts, design principles and pinned-tag distribution model |
 | [`packages/<pkg>/README.md`](packages) | What that package holds, module by module, and how to depend on it |
 | `packages/<pkg>/docs/guides/` | How to use a subsystem (Django settings, models, auth, DRF views; commons console, logging, config; the CLI's declared surface) |
 | [`.importlinter`](.importlinter) | The import boundaries, as the executable source of truth |
-| [docs/plans/](docs/plans) | Why the workspace is shaped this way, and what is still open |
+| [Root architecture](docs/architecture/index.md) | Current package relationships and cross-package behavior |
+| [Specifications](docs/specs/index.md) | Live work, acceptance, release gates and open questions |
+| [Decisions](docs/adr/index.md) | Durable cross-package choices |
+| [History](docs/plans/context.md) | Source plans, supersession and the migration ledger |
 
 Two rules from the README that constrain almost every change, repeated here because violating them
 is silent until CI:
@@ -78,8 +71,8 @@ satisfy strict mode (explicit types, no untyped `Any` leakage across public APIs
 
 ### Docs
 
-`rn-forge-commons`, `rn-forge-cli`, `rn-forge-tooling`, `rn-forge-web` and `rn-forge-fastapi` each have an mkdocs site
-(`packages/<pkg>/mkdocs.yml`), and the root `mkdocs.yml` includes them all via the monorepo
+Each of the seven packages has an MkDocs site (`packages/<pkg>/mkdocs.yml`), and the root
+`mkdocs.yml` includes them all via the monorepo
 plugin. Build with `uv run --group docs mkdocs build --strict` from a package directory, or from
 the repo root for the combined site. Per-package builds are strict, so a cross-package link fails
 the build — reference the other package by name instead of linking into it. Docstrings are the doc

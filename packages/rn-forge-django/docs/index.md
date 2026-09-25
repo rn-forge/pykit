@@ -1,7 +1,7 @@
 # rn-forge-django
 
 `rn-forge-django` is the opinionated Django/DRF integration layer built on top of
-[`rn-forge-commons`](../rn-forge-commons).
+`rn-forge-commons`.
 
 It provides:
 

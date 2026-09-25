@@ -44,7 +44,7 @@ nav:
       - Wiring into Django: adoption/wiring-django.md
       - Wiring into FastAPI: adoption/wiring-fastapi.md
       - Adoption checklist: adoption/checklist.md
-      - Worked examples: adoption/examples/README.md
+      - Worked examples: adoption/examples/index.md
   - API Reference:
       - api/index.md
       - Tracing: api/tracing.md

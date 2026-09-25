@@ -1,11 +1,9 @@
-# Wiring rn-forge-web into Django
+# Wiring rn-forge-web into plain Django
 
-The whole adapter layer, and it is intentionally about a page. If it grows much
-past this, the package boundary is wrong.
-
-Some of what follows ships in `rn-forge-django`; where it does, use that rather
-than pasting these. They are written out so the boundary is legible, and so an
-application on plain Django/DRF is not blocked on that package.
+This is a composition recipe for an application using plain Django/DRF with
+`rn-forge-web`. For the packaged adapters, use the `rn-forge-django` quickstart
+and its Django/DRF guides. Several pieces below already ship there; the
+examples show how an application can compose the shared HTTP primitives itself.
 
 ## 1. Tracing — instrument once, before Django loads
 

@@ -1,0 +1,25 @@
+# Area declaration for human-maintained root navigation. MkDocs nav remains manual.
+version: 1
+areas:
+  - key: architecture
+    title: Architecture
+    nav: children
+  - key: guides
+    title: Guides
+    nav: children
+  - key: runbooks
+    title: Runbooks
+    nav: children
+    optional: true
+  - key: releases
+    title: Releases
+    nav: index-only
+  - key: specs
+    title: Specs
+    nav: index-only
+  - key: adr
+    title: Decisions
+    nav: index-only
+  - key: plans
+    title: History
+    nav: children

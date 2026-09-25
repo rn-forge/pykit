@@ -60,7 +60,8 @@ promises its callers.
 - **Writing an application specification?** The
   [API conventions](adoption/api-conventions.md) page is normative and is meant
   to be read on its own.
-- **Wiring an existing application?** [Django](adoption/wiring-django.md) or
-  [FastAPI](adoption/wiring-fastapi.md), then the
+- **Wiring an existing application?** Use the
+  [plain Django recipe](adoption/wiring-django.md) or the
+  [FastAPI package pointer](adoption/wiring-fastapi.md), then the
   [checklist](adoption/checklist.md).
 - **Just want the code?** [Quickstart](guides/quickstart.md).

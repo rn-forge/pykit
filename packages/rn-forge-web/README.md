@@ -114,6 +114,6 @@ framework or fix a different wire shape.
 
 `uv run --directory packages/rn-forge-web --group docs mkdocs build --strict`,
 or the combined site from the repo root. The adoption pack under
-`docs/adoption/` is the normative material: `api-conventions.md` is what an
-application's specification is written against, and `model-conventions.md` is
-the persistence vocabulary both ORM packages conform to.
+`docs/adoption/api-conventions.md` is the normative wire contract for an
+application's specification. `docs/adoption/model-conventions.md` compares
+implemented ORM building blocks and optional application design advice.

@@ -58,16 +58,14 @@ readiness reports, the auth contract — are `rn-forge-web`'s. Everything here t
 adapter, and `tests/test_conformance.py` drives the shared conformance table through a Django
 application wired from them.
 
-## Dependencies and why
+## Dependencies and package behavior
 
 - **`rn-forge-web`** is a base dependency: five modules are adapters over it.
-- **`drf-spectacular`** (`openapi` extra) — maintained, supports Django 6.0 and DRF 3.17.
-- **`djangorestframework-camel-case` was evaluated and not taken** — last release 1.4.2 (2023-02),
-  classifiers stop at Python 3.10. `drf.casing` replaces it.
+- **`drf-spectacular`** (`openapi` extra) supplies the OpenAPI schema integration.
+- **`drf.casing`** supplies the camelCase renderer and parser.
 - **`oidc` extra** — JWKS verification is `rn-forge-commons[auth]` (PyJWT); `auth.drf.oidc` only
   binds it to DRF. It is separate from `jwt` so JWKS auth does not install simplejwt.
-- **`celery` extra** — Celery 5.6.3; its classifiers stop at 3.13, but it imports and runs on 3.14
-  (checked 2026-09-12, and by `tests/test_celery.py`).
+- **`celery` extra** — supplies the Celery app factory.
 - **No migrations.** `SequenceGenerator`'s counter is abstract, so installing this package adds no
   tables.
 

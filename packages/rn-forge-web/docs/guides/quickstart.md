@@ -1,9 +1,9 @@
 # Quickstart
 
 Five things nearly every application built on this kit wires. None of them
-imports a web framework; the framework-specific glue is one page per stack in
-[Wiring into Django](../adoption/wiring-django.md) and
-[Wiring into FastAPI](../adoption/wiring-fastapi.md).
+imports a web framework. For framework setup, see the
+[plain Django recipe](../adoption/wiring-django.md) or the
+[FastAPI package pointer](../adoption/wiring-fastapi.md).
 
 ## 1. Tracing: W3C Trace Context through OpenTelemetry
 

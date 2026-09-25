@@ -124,6 +124,25 @@ Verifying the JWT is the authenticator's job, and you do not have to write one:
 the shared implementation, so this stack accepts exactly the tokens a FastAPI service accepts.
 `JWKSBearerAuthentication` below builds one for you from class attributes.
 
+For the bundled JWKS binding, install `rn-forge-django[oidc]` and define one
+subclass with the provider's key-set URL, issuer and audience:
+
+```python
+from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication
+
+
+class ApiBearer(JWKSBearerAuthentication):
+    jwks_url = "https://idp.example.com/.well-known/jwks.json"
+    issuer = "https://idp.example.com/"
+    audience = "api://orders"
+```
+
+Use that class in the view's `authentication_classes`, and install
+`problem_details_exception_handler` in `REST_FRAMEWORK["EXCEPTION_HANDLER"]` for the
+shared problem response. The binding caches its authenticator and key set per
+subclass and process. Override `claims_to_principal()` when the provider uses
+nonstandard role or scope claims.
+
 Build the authenticator **once, at import or startup** — it holds the JWKS cache, so a
 per-request instance refetches the key set on every call. For an IdP whose roles or scopes sit
 somewhere non-standard (Keycloak's nested `realm_access.roles`, an Okta group claim), pass a

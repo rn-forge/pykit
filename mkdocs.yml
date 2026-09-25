@@ -2,6 +2,10 @@ site_name: pykit
 site_description: Development kit for python programming - the rn-forge-* package family
 site_dir: .out/site
 use_directory_urls: false
+exclude_docs: |
+  /_structure.md
+  /**/_structure.md
+  /plans/archive/
 
 theme:
   name: material
@@ -39,7 +43,6 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Auth overview: auth-overview.md
   - rn-forge-commons: '!include packages/rn-forge-commons/mkdocs.yml'
   - rn-forge-cli: '!include packages/rn-forge-cli/mkdocs.yml'
   - rn-forge-django: '!include packages/rn-forge-django/mkdocs.yml'
@@ -47,3 +50,22 @@ nav:
   - rn-forge-sqlalchemy: '!include packages/rn-forge-sqlalchemy/mkdocs.yml'
   - rn-forge-tooling: '!include packages/rn-forge-tooling/mkdocs.yml'
   - rn-forge-web: '!include packages/rn-forge-web/mkdocs.yml'
+  - Architecture:
+      - Overview: architecture/index.md
+      - Workspace: architecture/workspace.md
+      - Authentication: architecture/authentication.md
+  - Guides:
+      - Overview: guides/index.md
+      - Choosing packages: guides/choosing-packages.md
+      - Development: guides/development.md
+  - Runbooks:
+      - Overview: runbooks/index.md
+      - Adding a package: runbooks/adding-a-package.md
+      - Releasing packages: runbooks/releasing-packages.md
+  - Releases: releases/index.md
+  - Specs: specs/index.md
+  - Decisions: adr/index.md
+  - History:
+      - Overview: plans/index.md
+      - Migration ledger: plans/context.md
+      - Kiln handoff: plans/kiln-dependencies.md
