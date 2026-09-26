@@ -18,8 +18,8 @@ What pykit must decide, fix and prove before its first coordinated set of tags, 
 | [F9.8 — Scaffolded acceptance](F9.8-scaffolded-acceptance.md) | planned | Prove each package in an application scaffolded from built wheels. |
 | [F9.9 — Package docs](F9.9-package-docs.md) | in progress | Metadata, READMEs and changelogs done; deploy versioned package sites. |
 
-**Next step:** S9.3.3's SQLAlchemy-only pull-request run, then F9.1, F9.8 and S9.9.4.
+**Next step:** F9.1, F9.8 and S9.9.4; F9.2 is confirmed by the first merge run.
 
-**Order:** F9.1, F9.2, S9.3.3, F9.8 and S9.9.4 can land at any time. S9.7.2 and S9.6.1 follow them; F9.5 verifies after S9.6.1.
+**Order:** F9.1, F9.2, F9.8 and S9.9.4 can land at any time. S9.7.2 and S9.6.1 follow them; F9.5 verifies after S9.6.1.
 
 The [release runbook](../../../runbooks/releasing-packages.md) describes the workflow.

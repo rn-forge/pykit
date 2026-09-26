@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, feature/upgrade]
+    branches: [main]
   workflow_dispatch: # manual trigger
 
 permissions:
