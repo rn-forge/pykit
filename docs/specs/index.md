@@ -18,7 +18,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 | [E7 — Azure adapters](epics/E7-azure-adapters/index.md) | The owner schedules the package and settles its namespace. |
 | [E8 — Django scope and auth](epics/E8-django-scope-and-auth/index.md) | The owner schedules the auth review (F8.2). |
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | The owner schedules it with a concrete framework template. |
-| [E13 — On-demand features](epics/E13-on-demand-features/index.md) | Each row's own trigger. |
+| [E12 — On-demand features](epics/E12-on-demand-features/index.md) | Each row's own trigger. |
 
 ### Done
 
@@ -42,4 +42,4 @@ What pykit is made of and what is left to do. The board says what is next; the e
 - **Acceptance is checked inside pykit** ([ADR-0008](../adr/ADR-0008.md)); another repository's work never gates a feature or release.
 - **Do not start or elaborate a deferred epic unless the owner asks.**
 
-Old Phase, D and R identifiers resolve through the [migration ledger](../plans/context.md). The [decision log](../adr/index.md) records the durable constraints.
+The [decision log](../adr/index.md) records the durable constraints.

@@ -27,7 +27,6 @@ owner asks. Entry criteria describe when the owner may schedule it, not permissi
 | [`.importlinter`](.importlinter) | The import boundaries, as the executable source of truth |
 | [Root architecture](docs/architecture/index.md) | Current package relationships and cross-package behavior |
 | [Decisions](docs/adr/index.md) | Durable cross-package constraints |
-| [History](docs/plans/context.md) | Source plans, supersession and the migration ledger |
 | [Development guide](docs/guides/development.md) | Setup and validation commands (per-package and single-test forms), docs builds, test and type-check configuration |
 
 Two rules violated silently until CI:
@@ -68,7 +67,7 @@ Where that material belongs:
   `docs/guides/`.
 - **Why a non-obvious piece of code is written the way it is** → a `#` comment beside that code,
   for maintainers. Straightforward logic needs no comment at all.
-- **How the workspace got its shape** → `docs/plans/`.
+- **How the workspace got its shape** → the commit message.
 
 **Code comments explain the non-obvious *why*, and stay smaller than the code they explain.**
 
@@ -78,7 +77,7 @@ Where that material belongs:
   belongs in `docs/` (link or name the guide) or the code should be clearer — rename, extract a
   well-named helper — rather than explained.
 - No history ("previously…", "after the review…"), plan references or TODO essays; those go in
-  `docs/plans/` or an issue.
+  the commit message or an issue.
 - When code changes, fix or delete its comment in the same edit. A stale comment is worse than none.
 
 Apply both rules to every docstring and comment you add or change, and check for them when

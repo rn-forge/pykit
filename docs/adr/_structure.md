@@ -10,7 +10,7 @@ A durable architectural choice that constrains future work across pykit packages
 | --- | --- |
 | Work, status or open questions | `specs/` |
 | How implemented packages fit together | `architecture/`, or the package's docs |
-| History and evidence | `plans/context.md` |
+| History and evidence | the commit message |
 
 ## Naming and shape
 

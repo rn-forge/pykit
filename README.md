@@ -25,7 +25,7 @@ gates every other job on it.
 1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or Jinja — it is
    runtime-neutral and ships into web servers and containers.
 2. `rn_forge.cli` never imports `rn_forge.tooling` or Jinja — a batch application takes the
-   command-line layer without the file-owning machinery (kiln D52, ADR-0002).
+   command-line layer without the file-owning machinery (ADR-0002).
 3. The three libraries layer strictly: `tooling` → `cli` → `commons`.
 4. `rn_forge.django`'s runtime surface imports none of them. Only `rn_forge.django.codegen` may,
    and only with the (not yet built) `codegen` extra installed.
@@ -114,7 +114,7 @@ reference and changelog, and build as a standalone site. Start with
 **Maintaining the workspace.** [`docs/`](docs/index.md) holds what spans packages: the
 [spec board](docs/specs/index.md) of current and planned work (start here),
 [decisions](docs/adr/index.md), [architecture](docs/architecture/index.md),
-[guides](docs/guides/index.md), [runbooks](docs/runbooks/index.md),
-[releases](docs/releases/index.md) and [history](docs/plans/index.md).
+[guides](docs/guides/index.md), [runbooks](docs/runbooks/index.md)
+and [releases](docs/releases/index.md).
 [`docs/_structure.md`](docs/_structure.md) says where a new page belongs.
 [CLAUDE.md](CLAUDE.md) is the agent-instruction file; it points here rather than restating any of it.

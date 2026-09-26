@@ -20,6 +20,3 @@ areas:
   - key: adr
     title: Decisions
     nav: index-only
-  - key: plans
-    title: Plans
-    nav: children

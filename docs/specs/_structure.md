@@ -16,11 +16,11 @@
 | Behavior that already exists | `architecture/` or the package's docs |
 | A decision | an ADR under `adr/` |
 | Which stories ship in which release | `releases/`, which links here |
-| History and evidence | `plans/context.md` |
+| History and evidence | the commit message |
 
 ## Naming and status
 
-- IDs are permanent. Never renumber; a moved story keeps its ID; gaps are fine. A story that is no longer needed is removed, the ledger records it, and its ID is not reused.
+- IDs are permanent. Never renumber; a moved story keeps its ID; gaps are fine. Work that is no longer needed is removed and its ID is never reused: a retired story is listed on its feature's `**Retired:**` line, a retired epic on the board.
 - Epic and feature status is one of these:
 
 | Status | Means |
@@ -35,7 +35,7 @@
 - `done` means implemented. It does not mean a package tag exists; releases record tags.
 - Status lines appear only on epics, features, stories and releases.
 - `**Owner:**` is `pykit`.
-- `**Source:**` cites `plans/archive/<file>.md` and the heading in quotes, or another current path.
+- `**Source:**`, when present, cites a current document or the owner decision and its date.
 
 ## Changing this area
 

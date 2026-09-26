@@ -9,5 +9,3 @@ Code generators for Django and FastAPI applications, shipped as each framework p
 [Back to the work index](../../index.md)
 
 Both framework packages have a `codegen` import fence in `.importlinter`, and nothing behind it. A generator will live in `rn_forge.django.codegen` or `rn_forge.fastapi.codegen`, register under the `rn_forge.kiln.generators` entry-point group, install only with the `codegen` extra, and stay outside the runtime package's imports ([ADR-0003](../../../adr/ADR-0003.md)). The [workspace architecture](../../../architecture/workspace.md) describes the fences.
-
-**Source:** `plans/archive/plan-board.md`, "Downstream acceptance — kiln's work, not a pykit item".

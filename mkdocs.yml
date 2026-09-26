@@ -7,8 +7,6 @@ repo_url: https://github.com/rn-forge/pykit
 exclude_docs: |
   /_structure.md
   /**/_structure.md
-  /plans/archive/
-  /plans/reviews/
 
 theme:
   name: material
@@ -71,6 +69,3 @@ nav:
   - Releases: releases/index.md
   - Specs: specs/index.md
   - Decisions: adr/index.md
-  - Plans:
-      - Overview: plans/index.md
-      - Migration ledger: plans/context.md
