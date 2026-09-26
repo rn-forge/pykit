@@ -8,7 +8,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Epic | Release | Next step |
 | --- | --- | --- |
-| [E9 — Release readiness](epics/E9-release-readiness/index.md) | [release-1](../releases/release-1/index.md) | Push S9.7.1's branch pins and run its clean-install check; then S9.3.3, F9.1, F9.2, F9.8 and S9.9.4. |
+| [E9 — Release readiness](epics/E9-release-readiness/index.md) | [release-1](../releases/release-1/index.md) | Observe S9.3.3's SQLAlchemy-only pull-request run and F9.2's first merge run; then F9.1, F9.8 and S9.9.4. |
 
 ### Deferred
 
