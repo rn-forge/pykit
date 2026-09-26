@@ -233,7 +233,7 @@ jobs:
           enable-cache: true
 
       - name: Build docs
-        run: uv run --group docs mkdocs build
+        run: uv run --group docs mkdocs build --strict
 
       - uses: actions/configure-pages@v6
 

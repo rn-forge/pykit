@@ -14,7 +14,7 @@ Three consequences:
 - **A partial run is the risk.** If one package's job fails, packages that depend on it can still be tagged, pinning a tag that does not exist. Each package job waits for its prerequisites' jobs, so a failure blocks only its dependents ([S9.3.3](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A package whose job was skipped is not re-tagged, so its existing tag stays the one dependents pin.
 - **CI never proves external resolution.** Every job syncs with `--all-packages`, so internal dependencies resolve from the workspace, not from their pins. The install check after tagging is separate ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)).
 
-The docs job builds without `--strict` ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)).
+The docs job builds with `--strict`, so a broken link fails the run before deploy ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)).
 
 ## Steps
 
