@@ -29,8 +29,31 @@ jobs:
       - name: lint-imports
         run: uv run --no-sync lint-imports
 
+  # A package job runs when its files changed or a package it depends on is
+  # selected, so a dependent is always tested against its changed prerequisite.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      commons: ${{ steps.select.outputs.commons }}
+      cli: ${{ steps.select.outputs.cli }}
+      tooling: ${{ steps.select.outputs.tooling }}
+      web: ${{ steps.select.outputs.web }}
+      django: ${{ steps.select.outputs.django }}
+      fastapi: ${{ steps.select.outputs.fastapi }}
+      sqlalchemy: ${{ steps.select.outputs.sqlalchemy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: select
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || '' }}
+        run: python3 .github/scripts/changed_packages.py "$BASE" >> "$GITHUB_OUTPUT"
+
   commons-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.commons == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -39,7 +62,8 @@ jobs:
       package-dir: packages/rn-forge-commons
 
   cli-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes, commons-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.cli == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -48,7 +72,8 @@ jobs:
       package-dir: packages/rn-forge-cli
 
   tooling-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes, commons-ci, cli-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.tooling == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -57,7 +82,8 @@ jobs:
       package-dir: packages/rn-forge-tooling
 
   web-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes, commons-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.web == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -66,7 +92,8 @@ jobs:
       package-dir: packages/rn-forge-web
 
   django-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes, commons-ci, web-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -77,7 +104,8 @@ jobs:
   # sqlite has no row locks, so the outbox relay's skip_locked claim and the
   # real-sequence path of SequenceGenerator are only proven here.
   django-postgres:
-    needs: import-boundaries
+    needs: [import-boundaries, changes]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -112,7 +140,8 @@ jobs:
   # dependency another extra brings. Each extra is installed alone, from the
   # built wheel's metadata, into a clean venv and imported.
   django-extras:
-    needs: import-boundaries
+    needs: [import-boundaries, changes]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -135,7 +164,8 @@ jobs:
         run: uv run --no-project --with packaging python .github/scripts/check_django_extra.py ${{ matrix.extra }}
 
   fastapi-ci:
-    needs: import-boundaries
+    needs: [import-boundaries, changes, commons-ci, web-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.fastapi == 'true' }}
     uses: ./.github/workflows/_package-ci.yml
     permissions:
       contents: write
@@ -143,8 +173,19 @@ jobs:
       package-name: rn-forge-fastapi
       package-dir: packages/rn-forge-fastapi
 
+  sqlalchemy-ci:
+    needs: [import-boundaries, changes, web-ci, fastapi-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.sqlalchemy == 'true' }}
+    uses: ./.github/workflows/_package-ci.yml
+    permissions:
+      contents: write
+    with:
+      package-name: rn-forge-sqlalchemy
+      package-dir: packages/rn-forge-sqlalchemy
+
   sonar:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, fastapi-ci]
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -166,7 +207,7 @@ jobs:
           uv run pytest
           --cov=rn_forge.commons --cov=rn_forge.cli
           --cov=rn_forge.tooling --cov=rn_forge.web --cov=rn_forge.django
-          --cov=rn_forge.fastapi
+          --cov=rn_forge.fastapi --cov=rn_forge.sqlalchemy
           --cov-report=xml:coverage.xml
           packages
 
@@ -175,8 +216,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docs:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, fastapi-ci]
-    if: github.event_name == 'push' && github.ref_name == 'main'
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write

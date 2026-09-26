@@ -4,15 +4,17 @@ How to take a coordinated release from an approved page to verified tags. A push
 
 ## How CI tags
 
-`.github/workflows/main.yml` runs the import-boundary check first, then one reusable `_package-ci.yml` job per package, all in parallel from the same commit. Each package job verifies the package (ruff, pyright, pytest), reads its declared version and checks whether `<package>-v<version>` exists on the remote. On a push to `main`, a missing tag makes the job build the package, create and push the tag, and publish a GitHub Release with the build artifacts. A pull request builds but never tags.
+`.github/workflows/main.yml` runs the import-boundary check and a `changes` job first, then one reusable `_package-ci.yml` job per package from the same commit.
+
+`changes` (`.github/scripts/changed_packages.py`) selects the packages whose files changed plus every package that depends on one, read from the manifests' internal requirements; a change outside `packages/` and `docs/`, or a manual run, selects all seven. A package job runs only when selected and waits for its direct prerequisites' jobs: `commons` first, then `cli` and `web`, then `tooling`, `django` and `fastapi`, then `sqlalchemy` (after `web` and `fastapi`). A skipped prerequisite does not block it; a failed one does. Each package job verifies the package (ruff, pyright, pytest), reads its declared version and checks whether `<package>-v<version>` exists on the remote. On a push to `main`, a missing tag makes the job build the package, create and push the tag, and publish a GitHub Release with the build artifacts. A pull request builds but never tags.
 
 Three consequences:
 
 - **Order hardly matters.** Every tag points at the same commit and is pushed within one run.
-- **A partial run is the risk.** If one package's job fails, packages that depend on it can still be tagged, pinning a tag that does not exist. [S9.3.3](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) removes it: each package job waits for its prerequisites' jobs, so a failure blocks only its dependents, and CI runs only the packages a change affects plus their dependents. Until S9.3.3 lands, treat any failed package job as blocking the whole release.
+- **A partial run is the risk.** If one package's job fails, packages that depend on it can still be tagged, pinning a tag that does not exist. Each package job waits for its prerequisites' jobs, so a failure blocks only its dependents ([S9.3.3](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A package whose job was skipped is not re-tagged, so its existing tag stays the one dependents pin.
 - **CI never proves external resolution.** Every job syncs with `--all-packages`, so internal dependencies resolve from the workspace, not from their pins. The install check after tagging is separate ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)).
 
-`rn-forge-sqlalchemy` has no package job yet ([F9.1](../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md)), and the docs job builds without `--strict` ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)).
+The docs job builds without `--strict` ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)).
 
 ## Steps
 
