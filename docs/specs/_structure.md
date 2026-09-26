@@ -1,19 +1,62 @@
-# Spec routing
+# specs/ — what belongs here
 
-All pykit work has one epic under `epics/E<n>-<slug>/`. Active features use `F<n>.<m>-<slug>.md` beside the epic index. Deferred work has entry criteria; kiln-owned acceptance stays clearly labelled.
+## Belongs here
 
-Current behavior belongs in package docs or root `architecture/`. Decisions belong in `adr/`. Release assignments live only in `releases/`. `plans/context.md` maps old identifiers and history.
+- Every piece of pykit work as an epic, `epics/E<n>-<slug>/index.md`, done work included.
+- A feature of an unfinished epic as `F<n>.<m>-<slug>.md` beside it, holding its stories inline as `S<n>.<m>.<k>` headings, each with its own `**Status:**` and `**Acceptance:**`.
+- A done epic that predates this taxonomy keeps its features as numbered rows in its index, each with the commits that delivered it.
+- Design for unbuilt work, in the feature's `## Design`.
+- Open questions, in `## Open questions` on the epic or feature they block.
+- Work that is real but not scheduled, as a `deferred` epic or feature with entry criteria. Its items are numbered rows until promoted.
 
-## Status and readiness
+## Does not belong here
 
-Use `planned`, `elaborating`, `in progress`, `done` and `deferred` as progress status values. `done` records implementation evidence; it does not imply a package tag.
+| Instead of | Put it in |
+| --- | --- |
+| Behavior that already exists | `architecture/` or the package's docs |
+| A decision | an ADR under `adr/` |
+| Which stories ship in which release | `releases/`, which links here |
+| History and evidence | `plans/context.md` |
 
-Every unfinished epic and feature carries a separate `**Readiness:** ready` or `**Readiness:** not ready` line and a short `**Readiness basis:**`. Readiness describes whether its specification is settled enough to implement, not whether work has started or been released. Completed work does not need a readiness marker.
+## Naming and status
 
-- Unresolved scope, design or acceptance questions belong in `## Open questions` on the owning spec and make it `not ready`. Missing implementation scope or acceptance also makes it `not ready`.
-- Keep questions authoritative in one spec. Other specs link to that section instead of repeating the question. Preserve existing question IDs.
-- A feature depending on an unresolved shared decision is `not ready`; name the owning spec in its readiness basis. A settled spec may be `ready` while execution awaits a dependency, scheduling or permission recorded under `Depends on` or `Entry criteria`.
-- An epic is `not ready` if a shared decision or any unfinished feature is not ready. Its feature table summarizes each feature's readiness; ready features may proceed independently where dependencies allow.
-- The board summarizes progress and readiness only. It contains no question text, question IDs or open-question counts. Readers follow the epic to its specs.
-- Release-selection questions live in the release-scope spec. Selection alone does not make an otherwise complete implementation spec unready.
-- Resolve questions in their owning spec before marking it ready, and update epic, board and affected release readiness summaries together. Record durable decisions in ADRs; retain rejected options with the spec.
+- IDs are permanent. Never renumber; a moved story keeps its ID; gaps are fine. A story that is no longer needed is removed, the ledger records it, and its ID is not reused.
+- Epic and feature status is one of these:
+
+| Status | Means |
+| --- | --- |
+| `elaborating` | Agreed, but its stories, design or release are not settled. |
+| `planned` | Stories written and assigned to a release. |
+| `in progress` | At least one story started. |
+| `done` | Every story's acceptance holds; carries an `**Implemented:**` date and commits. |
+| `deferred` | Not scheduled; carries `**Entry criteria:**`. |
+
+- Story status is `planned`, `in progress` or `done (<date>)`. A story in a deferred feature is `deferred`.
+- `done` means implemented. It does not mean a package tag exists; releases record tags.
+- Status lines appear only on epics, features, stories and releases.
+- `**Owner:**` is `pykit`.
+- `**Source:**` cites `plans/archive/<file>.md` and the heading in quotes, or another current path.
+
+## Changing this area
+
+**Adding work:**
+
+1. Take the next free ID.
+1. Create the epic or feature with its status: `elaborating` until it has stories and a release, `deferred` with entry criteria if it is not scheduled.
+1. Put design in the feature's `## Design`, and link to `architecture/` for current behavior.
+1. Add the epic's row to the board in `index.md`, in exactly one group.
+
+**Writing acceptance:**
+
+- A story's `**Acceptance:**` lists observable results, including the tests that prove it. Every result is checkable inside this repository; when it needs a host application, a test scaffolds one ([ADR-0008](../adr/ADR-0008.md)).
+- A decision the work needs is its own story, so other work can depend on the decision alone.
+- A feature with several stories has a `## Acceptance` block that tags each line with the story it proves. A one-story feature keeps its acceptance on the story.
+- Where a line can be scripted, the block is a shell script that starts with `set -euo pipefail` and never turns a failure into output. A negative check uses `absent`, not a bare `! cmd`. What cannot be scripted, such as an approval, is listed under the block.
+
+```bash
+absent() { local rc=0; rg -q --hidden --glob '!.git' "$@" || rc=$?; [ "$rc" -eq 1 ]; }
+```
+
+**Closing work:** a story is done when its acceptance holds. When every story is done, set the feature and then the epic to `done` with the `**Implemented:**` line, and move the board row. An answered open question becomes an ADR, or a rejected option under *Considered and rejected*; then remove the question.
+
+**Checking removed behavior:** a check that a removed symbol is gone asks "does any current page describe it as present?", not "does the name appear?". A page may name removed behavior to say it is gone.

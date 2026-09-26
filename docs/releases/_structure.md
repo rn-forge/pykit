@@ -1,9 +1,28 @@
-# Release routing
+# releases/ — what belongs here
 
-Coordinated package release batches belong here as `release-<n>/index.md`. A batch records independent package versions and refs, scope IDs, entry criteria and exit evidence.
+## Belongs here
 
-Do not repeat implementation acceptance or open questions here; link to the owning specs. Release-selection questions belong to the release-scope feature. A batch is `shipped` only with tag and installability evidence.
+- One page per coordinated release, `release-<n>/index.md`: its `**Status:**` (`planned`, `in progress`, or `shipped` with the date), entry criteria, scope and exit criteria, and, once shipped, the tags and install evidence.
+- Scope named by story ID, linking to the feature that holds the story. Done epics that predate the story taxonomy are named by feature ID, and the page says so.
 
-Each unshipped batch records `**Readiness:** ready` or `**Readiness:** not ready`, separately from progress. Its scope/gates table includes progress, spec readiness and release impact for every included epic or feature. Flag any included `not ready` item as a release blocker and link to its spec; an epic-level assignment must expose its unready included features. If only selected features are included, unrelated deferred features do not block the release.
+## Does not belong here
 
-A settled spec marked ready is not evidence that its implementation, validation or approval is complete. Keep those outstanding release gates visible separately. Proposed scope must remain explicitly proposed until selected; not-ready candidate items are conditional blockers, not silently approved scope. Update readiness summaries when their authoritative specs change.
+| Instead of | Put it in |
+| --- | --- |
+| A story's text, acceptance, design or status | its feature under `specs/` |
+| Why a choice was made | an ADR under `adr/` |
+| How to run a release | `runbooks/releasing-packages.md` |
+
+## Naming and shape
+
+- `release-<n>/index.md`; the area `index.md` lists them, newest first.
+- A story belongs to one release at a time, and that assignment lives only on the release page.
+- Each package keeps its own version and tag ([ADR-0004](../adr/ADR-0004.md)). A release coordinates packages; it is not one pykit version.
+
+## Changing this area
+
+1. Cut a release page when there is scope to put on it.
+1. Give it its status, entry criteria, scope as IDs linking to their features, and exit criteria. Nothing else.
+1. List it in `index.md`, newest first.
+
+Moving a story between releases edits the release pages and nothing else. A release is `shipped`, with the date, once its exit criteria hold.

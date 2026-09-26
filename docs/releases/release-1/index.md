@@ -1,62 +1,45 @@
-# Release-1 — proposed coordinated batch
-
-This page holds the proposed first coordinated pykit release batch. Release executors use it to record approved scope, dependency prerequisites and completion evidence.
+# Release 1 — the first coordinated tags
 
 **Status:** planned
 
-**Readiness:** not ready
-
-**Readiness basis:** Scope is proposed, and required package-boundary and publication decisions are unresolved in the linked specs. No release action is authorized.
-
-**Owner:** pykit release owner.
-
-**Depends on:** Kiln E7's owner declaration that pykit is stable; the Django-scope decision [F8.1](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md); batch selection [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md).
+pykit's first coordinated set of package tags. The only tags that exist today are single-package tags for `rn-forge-commons` and `rn-forge-django`, up to `v0.2.2`.
 
 [Back to releases](../index.md) · [Release runbook](../../runbooks/releasing-packages.md)
 
-## Proposed package matrix
+## Entry criteria
 
-This matrix copies the declared versions and internal dependency edges from the seven package manifests. It is a proposal for [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md), not an approved roster or evidence that the proposed tags exist.
+- Every scope story below is done, and the owner approves the release (S9.6.1).
+- Until then, pykit stays installable outside the workspace through branch pins ([F9.7](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md), [ADR-0004](../../adr/ADR-0004.md)).
 
-| Candidate package | Declared version | Proposed tag | Direct internal prerequisites |
-| --- | --- | --- | --- |
-| `rn-forge-commons` | `0.5.0` | `rn-forge-commons-v0.5.0` | None |
-| `rn-forge-cli` | `0.1.0` | `rn-forge-cli-v0.1.0` | `rn-forge-commons` |
-| `rn-forge-tooling` | `0.2.0` | `rn-forge-tooling-v0.2.0` | `rn-forge-commons`, `rn-forge-cli` |
-| `rn-forge-web` | `0.1.0` | `rn-forge-web-v0.1.0` | `rn-forge-commons[pydantic]` |
-| `rn-forge-django` | `0.3.0` | `rn-forge-django-v0.3.0` | `rn-forge-commons`, `rn-forge-web` |
-| `rn-forge-fastapi` | `0.1.0` | `rn-forge-fastapi-v0.1.0` | `rn-forge-web[security]` |
-| `rn-forge-sqlalchemy` | `0.1.0` | `rn-forge-sqlalchemy-v0.1.0` | `rn-forge-web` |
+## Scope
 
-Optional extras add internal edges: `rn-forge-web[auth]` adds `rn-forge-commons[auth]`; Django's `fixtures` and `oidc` extras add commons capabilities, and `oidc` and `security` add web capabilities. FastAPI's `oidc` extra adds `rn-forge-web[auth]`; its `transfer` extra adds `rn-forge-commons[excel]`. These edges come from the manifests and must be checked when approving the batch. CLI and tooling are not prerequisites of web or the framework packages.
+### Decisions
 
-## Scope and gates
+- [S9.9.1](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s991-record-the-decision) — each package publishes its own versioned docs (done)
+- [S8.1.1](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md#s811-record-the-split-decision) — the Django package keeps all four optional areas (done)
+- [S9.3.2](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s932-decide-how-to-handle-a-partial-run) — a failed package job blocks only its dependents (done)
+- [S9.4.1](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#s941-select-the-packages) — all seven packages (done)
+- [S9.4.2](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#s942-decide-the-consumer-reuse-features) — F6.1 and F6.2 left out (done)
 
-The following are required release gates; the package roster remains proposed. Readiness is summarized from the linked specs, where decisions and acceptance remain authoritative.
+### Work
 
-| ID | Requirement | Progress | Spec readiness | Release impact |
-| --- | --- | --- | --- | --- |
-| [F8.1](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md) | Decide Django package boundaries | planned | **not ready** | **Blocked:** unresolved required decision |
-| [F9.1](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md) | Add SQLAlchemy CI if selected | planned | **not ready** | **Blocked if selected:** publication-policy dependency |
-| [F9.2](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md) | Make docs CI strict | planned | ready | Implementation pending |
-| [F9.3](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | Settle publication-order enforcement | planned | **not ready** | **Blocked:** unresolved required decision |
-| [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) | Select package and feature scope | planned | **not ready** | **Blocked:** batch scope unapproved |
-| [F9.5](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | Verify external installs | planned | ready | Evidence pending; execution waits for tags |
-| [F9.6](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | Approve and cut tags | planned | **not ready** | **Blocked:** required decisions and approval pending |
+- [S9.1.1](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md#s911-add-the-package-job) — SQLAlchemy package job
+- [S9.2.1](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md#s921-make-the-docs-job-strict) — strict docs build in CI
+- [S9.3.1](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s931-document-current-tagging) — the release mechanism documented (done)
+- [S9.3.3](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s933-scope-ci-jobs-to-changes-and-dependencies) — CI jobs scoped to changes and ordered by dependency
+- [S9.8.1–S9.8.4](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) — each package accepted in a scaffolded application
+- [S9.9.1–S9.9.3](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) — package metadata, landing READMEs and changelogs (done)
+- [S9.9.4](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s994-deploy-versioned-package-sites) — versioned package sites deployed
+- [S9.7.1](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s971-pin-internal-dependencies-to-featureupgrade) and [S9.7.2](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s972-restore-tag-pins-for-the-release) — branch pins now, tag pins at the cut
+- [S9.6.1](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md#s961-approve-and-cut-the-tags) — the tag cut
+- [S9.5.1](../../specs/epics/E9-release-readiness/F9.5-external-installability.md#s951-verify-remote-tags-and-clean-installs) — external install check
 
-The release scope will link the selected implemented work from [E1](../../specs/epics/E1-foundation-and-boundaries/index.md), [E2](../../specs/epics/E2-http-contract/index.md), [E3](../../specs/epics/E3-framework-adapters/index.md), [E4](../../specs/epics/E4-standards-rebaseline/index.md) and [E5](../../specs/epics/E5-tool-lifecycle/index.md) once the owner selects packages. [F6.1](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) and [F6.2](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) are planned without release assignment. Kiln owns its [golden-repo acceptance](../../specs/epics/E12-kiln-acceptance/index.md).
+### Packages
 
-## Completion evidence
+All seven, at their declared versions; [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#scope) has the matrix. They carry the delivered features of [E1](../../specs/epics/E1-foundation-and-boundaries/index.md), [E2](../../specs/epics/E2-http-contract/index.md), [E3](../../specs/epics/E3-framework-adapters/index.md), [E4](../../specs/epics/E4-standards-rebaseline/index.md) and [E5](../../specs/epics/E5-tool-lifecycle/index.md), named by feature ID because those epics predate the story taxonomy.
 
-Record each approved package's version, remote tag and commit ref, current required validation, and successful external install without a workspace source override. Record explicit release approval and the resulting GitHub Release. Until those facts are present, this page remains `planned`.
+## Exit criteria
 
-## Candidate scope readiness
-
-These features are not assigned to this release. Their unresolved specifications become release blockers only if selected; excluding them does not block this batch.
-
-| Candidate | Spec readiness | If selected |
-| --- | --- | --- |
-| [F6.1 — Log redaction](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) | **not ready** | **Blocked:** settle acceptance scope before implementation |
-| [F6.2 — SSE](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | **not ready** | **Blocked:** settle adapter contract and acceptance before implementation |
-
-[F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#open-questions) owns selection. [E12](../../specs/epics/E12-kiln-acceptance/index.md#open-questions) owns downstream kiln coordination; unrelated deferred kiln work and the whole-auth review are not added to this release by this table.
+- S9.6.1 and S9.5.1 hold: every selected package's tag and GitHub Release exist, and each installs from its tag outside the workspace.
+- S9.9.4 holds: every selected package's versioned docs site is live.
+- This page lists each package, its version, tag and commit, and the install result.

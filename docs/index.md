@@ -2,10 +2,6 @@
 
 `pykit` is a uv workspace of seven independently versioned `rn-forge-*` Python packages. Start with a package for its usage guides, or use the root guides to combine packages.
 
-**Status:** done
-
-**Owner:** pykit.
-
 | Package | Use it for |
 | --- | --- |
 | [rn-forge-commons](rn-forge-commons/index.md) | Runtime-neutral utilities, protocols and logging. |

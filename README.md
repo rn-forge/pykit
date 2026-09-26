@@ -47,35 +47,26 @@ All packages ship a `py.typed` marker and are type-checked in strict mode.
 
 ## Design principles
 
-1. **Don't reimplement a proven library.** If a maintained, widely-used package already does the job, depend on it. Zero dependencies is not a goal here — a small, deliberate dependency set is.
-2. **Wrap for one design language.** Where a library's setup or call syntax is verbose or inconsistent with the rest of the kit, ship a thin wrapper: frozen-dataclass config, `AppException`-derived errors, injected logging, curated re-exports. The wrapper standardizes; it does not extend, fork, or vendor.
-3. **Package boundaries are non-negotiable.** Framework-free packages import no web framework; heavy or situational dependencies live behind optional extras; protocols live in the lowest package that can hold them, adapters beside the technology they adapt.
-4. **pykit is upstream.** Applications are built on these libraries rather than re-deriving them, so apps sharing pykit share logic and read alike.
+1. **Standards and proven libraries first.** Depend on a maintained library rather than
+   reimplementing it; follow the RFC or W3C standard where one exists; wrap only to give one design
+   language, never to extend. ([ADR-0001](docs/adr/ADR-0001.md))
+2. **Package boundaries are non-negotiable.** Code is placed by what its API contains, protocols
+   sit low and adapters beside their technology, and runtime packages never import tooling.
+   ([ADR-0002](docs/adr/ADR-0002.md))
+3. **Situational dependencies live behind extras**, outside the package facade.
+   ([ADR-0003](docs/adr/ADR-0003.md))
+4. **Packages release independently, as pinned git tags.** Each package has its own version and
+   tag; nothing is published to PyPI. ([ADR-0004](docs/adr/ADR-0004.md))
+5. **pykit is upstream.** Applications are built on these libraries rather than re-deriving them,
+   so apps sharing pykit share logic and read alike.
 
 These hold for every existing package and for every future one — new modules, new packages, new
 extras. When a plan or a change conflicts with one of them, the principle wins unless the deviation
-is written down with its reason.
+is written down with its reason. The linked decisions state each rule in full.
 
-On #1, hand-roll only when one of these is true, and say which one in the module docstring: nothing
-maintained covers the concern (check PyPI before concluding this, not memory); the candidate drags
-in a framework that would break a package boundary; or the needed slice is genuinely a few lines
-and the candidate is unmaintained or far heavier.
+## Installing a package
 
-On #2, a wrapper means: configuration is a frozen dataclass (or a settings-facade field), never a
-kwargs soup; errors surface as `AppException` subclasses; logging is injected, never assumed;
-public symbols are re-exported from the package's curated `__init__.py`. The wrapper standardizes
-— it does not add features the library lacks, and the underlying object stays reachable as an
-escape hatch.
-
-On #4, surveys of existing applications are **prior art that informs the design**, not
-compatibility constraints to preserve — where an application got something wrong, fix it here
-rather than encoding it.
-
-## Releases are pinned git tags, not PyPI versions
-
-None of these packages is published to PyPI. A release is a tag (`rn-forge-commons-v0.5.0`), and
-every consumer — including `rn-forge-cli` and `rn-forge-tooling` depending on `rn-forge-commons`
-— declares it as a pinned direct URL (kiln D46):
+A consumer declares each package as a pinned git direct URL with its subdirectory:
 
 ```toml
 dependencies = [
@@ -83,11 +74,10 @@ dependencies = [
 ]
 ```
 
-The `[tool.uv.sources]` workspace override exists for local development only: it is what makes the
-workspace resolve to this checkout, and it is not what a consumer resolves.
-
-All packages use `uv_build` as the build backend, with `module-name` mapped to their `rn_forge.*`
-namespace package.
+No tags are cut yet. Until the first coordinated release, pin the `feature/upgrade` branch in
+place of the tag ([F9.7](docs/specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md)). The
+[release pages](docs/releases/index.md) record which tags exist. Inside this workspace,
+`[tool.uv.sources]` resolves every package to the local checkout instead.
 
 ## Requirements
 
@@ -102,16 +92,29 @@ uv sync --all-extras
 
 ## Development
 
-```bash
-uv run pytest                 # run tests across the workspace
-uv run ruff check .           # lint
-uv run ruff format .          # format
-uv run pyright                # type check (strict mode, packages/ only)
-uv run lint-imports           # enforce package import boundaries
-```
+The [development guide](docs/guides/development.md) lists the setup, test, lint, type-check,
+import-boundary and documentation commands. All packages build with `uv_build`, with
+`module-name` mapped to their `rn_forge.*` namespace package.
 
-Each package's own `README.md` and `docs/` carry its architecture: see
+## Documentation
+
+The [published site](https://rn-forge.github.io/pykit/) combines every package's docs with the
+root docs, built from `main`. Each package's docs for its released versions are published
+separately, at `https://rn-forge.github.io/pykit/packages/<package>/latest/`
+([ADR-0009](docs/adr/ADR-0009.md)).
+
+**Using the packages.** Each package's `README.md` and `docs/` hold its usage guides, API
+reference and changelog, and build as a standalone site. Start with
+[choosing packages](docs/guides/choosing-packages.md), then the package:
 [`rn-forge-commons`](packages/rn-forge-commons), [`rn-forge-cli`](packages/rn-forge-cli),
-[`rn-forge-tooling`](packages/rn-forge-tooling), [`rn-forge-web`](packages/rn-forge-web) and
-[`rn-forge-django`](packages/rn-forge-django). [CLAUDE.md](CLAUDE.md) is the agent-instruction
-file; it points here rather than restating any of it.
+[`rn-forge-tooling`](packages/rn-forge-tooling), [`rn-forge-web`](packages/rn-forge-web),
+[`rn-forge-django`](packages/rn-forge-django), [`rn-forge-fastapi`](packages/rn-forge-fastapi) or
+[`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy).
+
+**Maintaining the workspace.** [`docs/`](docs/index.md) holds what spans packages: the
+[spec board](docs/specs/index.md) of current and planned work (start here),
+[decisions](docs/adr/index.md), [architecture](docs/architecture/index.md),
+[guides](docs/guides/index.md), [runbooks](docs/runbooks/index.md),
+[releases](docs/releases/index.md) and [history](docs/plans/index.md).
+[`docs/_structure.md`](docs/_structure.md) says where a new page belongs.
+[CLAUDE.md](CLAUDE.md) is the agent-instruction file; it points here rather than restating any of it.

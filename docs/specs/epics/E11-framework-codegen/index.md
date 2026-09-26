@@ -1,19 +1,13 @@
 # E11 — Framework codegen
 
-This epic tracks deferred Django and FastAPI generator work. Kiln owns the generator integration trigger.
+**Status:** deferred · **Owner:** pykit
 
-**Status:** deferred
+Code generators for Django and FastAPI applications, shipped as each framework package's `codegen` extra and run by a scaffolding tool through an entry point.
 
-**Readiness:** not ready
-
-**Readiness basis:** Concrete templates, feature scope and executable acceptance have not been elaborated. Entry criteria do not authorize implementation.
-
-**Owner:** kiln integration with pykit framework package owners.
-
-**Entry criteria:** Kiln's generator work starts and has a concrete framework template to generate.
+**Entry criteria:** the owner schedules it with a concrete framework template to generate.
 
 [Back to the work index](../../index.md)
 
-The Django and FastAPI packages have optional `codegen` import fences. The generator implementations do not exist. They will register only through the development extra and remain outside each runtime package's imports.
+Both framework packages have a `codegen` import fence in `.importlinter`, and nothing behind it. A generator will live in `rn_forge.django.codegen` or `rn_forge.fastapi.codegen`, register under the `rn_forge.kiln.generators` entry-point group, install only with the `codegen` extra, and stay outside the runtime package's imports ([ADR-0003](../../../adr/ADR-0003.md)). The [workspace architecture](../../../architecture/workspace.md) describes the fences.
 
-**Source:** `docs/plans/README.md`, “Waiting on kiln”; kiln D2/D37. The [workspace architecture](../../../architecture/workspace.md) describes the existing fences. No release assignment is implied.
+**Source:** `plans/archive/plan-board.md`, "Downstream acceptance — kiln's work, not a pykit item".

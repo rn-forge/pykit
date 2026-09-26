@@ -2,10 +2,6 @@
 
 This guide helps application authors select pykit packages. Each package's own guide explains its setup and API.
 
-**Status:** done
-
-**Owner:** pykit.
-
 | Need | Start with | Add when needed |
 | --- | --- | --- |
 | Runtime utilities, configuration, logging or process output | [`rn-forge-commons`](../rn-forge-commons/index.md) | Its named extras for integrations |
@@ -18,4 +14,4 @@ This guide helps application authors select pykit packages. Each package's own g
 
 Use `rn-forge-web` for shared wire behavior. Django and FastAPI bind that behavior to their frameworks. SQLAlchemy is a sibling persistence package; it does not define a common object-relational mapping layer for the adapters. See the [workspace graph](../architecture/workspace.md) for direct dependencies and import boundaries.
 
-Consumers pin pykit packages to git tags. The [release guide](../runbooks/releasing-packages.md) explains how to verify a tag. A workspace source override resolves local members during development only.
+Consumers pin pykit packages to git tags; until the first coordinated release, pins name the `feature/upgrade` branch instead ([ADR-0004](../adr/ADR-0004.md)). The [release pages](../releases/index.md) record which tags exist. A workspace source override resolves local members during development only.

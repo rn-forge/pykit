@@ -1,7 +1,9 @@
 # rn-forge-django
 
-Opinionated Django/DRF integration layer built on top of [`rn-forge-commons`](../rn-forge-commons)
-and [`rn-forge-web`](../rn-forge-web). Part of the [pykit](../../README.md) workspace.
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-django/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-django/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-django) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
+Opinionated Django/DRF integration layer built on top of [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons)
+and [`rn-forge-web`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-web).
 
 ## Install
 
@@ -98,6 +100,6 @@ uv run ruff check packages/rn-forge-django
 uv run pyright
 ```
 
-Tests configure Django directly in [`tests/conftest.py`](tests/conftest.py) (sqlite in-memory database) —
+Tests configure Django directly in [`tests/conftest.py`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-django/tests/conftest.py) (sqlite in-memory database) —
 there is no separate Django settings module. Test-only models and their tables follow the convention
 in that file's docstring.

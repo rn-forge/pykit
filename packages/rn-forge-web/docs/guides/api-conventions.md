@@ -29,8 +29,9 @@ Every request is part of a trace, per **W3C Trace Context**.
   — `tracing.problem-body-carries-the-trace-id`
 - Every structured log line emitted while handling the request carries
   `trace_id` and `span_id`.
-- Proprietary request identifiers are ignored and never echoed. Trace Context
-  supplies request correlation. — `tracing.house-header-is-not-echoed`
+- **`X-Correlation-ID` is not read and not sent.** There is no house
+  correlation header; a caller that still sends one is ignored, and it is
+  never echoed. — `tracing.house-header-is-not-echoed`
 
 `rn_forge.web` never configures a `TracerProvider` or an exporter. The
 application does, or runs under `opentelemetry-instrument`; see
@@ -159,6 +160,8 @@ says so and says why.
   — `pagination.last-page-has-a-null-next-token`
 - `totalSize` is opt-in per endpoint, because a keyset query cannot cheaply
   count. Do not enable it by default to ease a migration from page numbers.
+- **Cursors are forward-only.** There is no `previousPageToken`, and no
+  response carries a token for the preceding page.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 

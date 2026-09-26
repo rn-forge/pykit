@@ -1,6 +1,8 @@
 # rn-forge-commons
 
-Shared, framework-agnostic utilities for Python programming. Part of the [pykit](../../README.md) workspace.
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-commons/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-commons/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
+Shared, framework-agnostic utilities for Python programming.
 
 ## Install
 
@@ -126,8 +128,8 @@ logger.info("database.host={}", cfg.get("database.host"))
 
 ### The developer-tooling packages
 
-The command-line layer lives in [`rn-forge-cli`](../rn-forge-cli/README.md) and the file-owning
-tooling in [`rn-forge-tooling`](../rn-forge-tooling/README.md). Both depend on this package;
+The command-line layer lives in [`rn-forge-cli`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-cli) and the file-owning
+tooling in [`rn-forge-tooling`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling). Both depend on this package;
 neither is depended on by it, and there are deliberately no compatibility re-exports in either
 direction — that would reverse the dependency. `uv run lint-imports` proves it.
 
@@ -144,7 +146,7 @@ Full API reference and guides are built with mkdocs:
 uv run --group docs mkdocs serve   # or `mkdocs build`
 ```
 
-Source lives in [`docs/`](docs), configured via [`mkdocs.yml`](mkdocs.yml).
+Source lives in [`docs/`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons/docs), configured via [`mkdocs.yml`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-commons/mkdocs.yml).
 
 ## Development
 

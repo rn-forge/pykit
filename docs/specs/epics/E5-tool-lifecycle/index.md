@@ -1,23 +1,19 @@
 # E5 — Tool lifecycle
 
-This epic records the implemented tool lifecycle surface. Users follow `rn-forge-tooling` guides for the current `[lifecycle]` contract.
+**Status:** done · **Implemented:** 2026-09-14 to 2026-09-22 · **Owner:** pykit
 
-**Status:** done
-
-**Owner:** pykit.
-
-**Implemented:** `757908e`, `1a8241b` (historical commits; no new tag implied).
+The install, upgrade and doctor lifecycle a developer tool gets from `rn-forge-tooling`. The tooling lifecycle guide describes the current `[lifecycle]` contract.
 
 [Back to the work index](../../index.md)
 
-| Legacy feature | Result |
-| --- | --- |
-| Commons Part F | Installer mechanics and lifecycle verbs implemented. |
-| Lifecycle retirement | `rn-forge-tooling` owns `LifecycleSurface` and `build_tool_app`; `rn-forge-cli` owns the generic `[cli]` declaration. |
-| Namespace proposal | Its namespace behavior survives under tooling-owned `[lifecycle]`. |
+| ID | Delivered | Source | Implemented |
+| --- | --- | --- | --- |
+| F5.1 | Installer mechanics and lifecycle verbs: `$RNF_HOME`, versioned installs, the `current` symlink, `ToolProduct`, and `install`, `upgrade`, `uninstall`, `cleanup`, `status` and `doctor` | Commons plan Part F (kiln Phase C.3) | `757908e` |
+| F5.2 | Lifecycle composition moved to tooling: `LifecycleSurface`, `build_tool_app` and the sibling `[lifecycle]` table; `[cli]` stays generic | Lifecycle retirement plan | `1a8241b` |
+| F5.3 | The optional lifecycle `namespace`, now under `[lifecycle]` | Lifecycle namespace plan | `1a8241b` |
 
-[ADR-0005](../../../adr/ADR-0005.md) states the ownership choice. Kiln's lifecycle golden repo remains [E12](../E12-kiln-acceptance/index.md). The [ledger](../../../plans/context.md) preserves old section IDs.
+Rule 3 of [ADR-0002](../../../adr/ADR-0002.md) states the ownership choice: `[cli]` stays generic and lifecycle policy belongs to tooling. A scaffolded tool exercises the lifecycle in [S9.8.2](../E9-release-readiness/F9.8-scaffolded-acceptance.md#s982-a-tool-with-a-lifecycle).
 
 ## Considered and rejected
 
-The standalone CLI lifecycle-namespace plan was superseded. The old `[cli.lifecycle]` location is not a current contract; no compatibility re-export keeps it alive.
+- The CLI-owned `[cli.lifecycle]` table and its `target` field, retired by F5.2. No compatibility re-export keeps it alive.

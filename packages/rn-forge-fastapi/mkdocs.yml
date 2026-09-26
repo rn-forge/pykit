@@ -2,6 +2,8 @@ site_name: rn-forge-fastapi
 site_description: FastAPI adapters over rn-forge-web
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -29,6 +31,9 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -38,12 +43,13 @@ nav:
       - Quickstart: guides/quickstart.md
       - Wiring an application: guides/wiring.md
       - Tabular export and import: guides/transfer.md
-  - API Reference:
-      - api/index.md
-      - Application: api/app.md
-      - Problem: api/problem.md
-      - OpenAPI: api/openapi.md
-      - Dependencies: api/dependencies.md
-      - Health: api/health.md
-      - Transfer: api/transfer.md
-      - Auth: api/auth.md
+  - Reference:
+      - reference/index.md
+      - Application: reference/app.md
+      - Problem: reference/problem.md
+      - OpenAPI: reference/openapi.md
+      - Dependencies: reference/dependencies.md
+      - Health: reference/health.md
+      - Transfer: reference/transfer.md
+      - Auth: reference/auth.md
+  - Changelog: changelog.md

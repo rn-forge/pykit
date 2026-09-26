@@ -1,9 +1,25 @@
 # Guides
 
-- [Installation](installation.md) — how a consumer declares the dependency, and
-  why `uv add` is not it.
-- [Quickstart](quickstart.md) — the five things nearly every application wires.
+These pages are what an application's specification is written against, so
+that two applications built on this kit do not each re-derive trace
+propagation, error bodies, cursors and idempotency semantics in their own
+dialect.
 
-The [adoption pack](../adoption/index.md) is the normative material: the wire
-contract an application specification is written against, the two wiring
-guides, and the per-application checklist.
+| Page | What it is for | Status |
+| --- | --- | --- |
+| [Installation](installation.md) | How a consumer declares the dependency, and why `uv add` is not it. | Guide |
+| [Quickstart](quickstart.md) | The five things nearly every application wires. | Guide |
+| [API conventions](api-conventions.md) | The wire contract every application must follow identically. Written so it can be pasted into a specification as a normative section. | **Normative** |
+| [Deployment](deployment.md) | The operator's companion to the wire contract: how health probes and the other cross-cutting points map onto each host. | **Normative** (operators) |
+| [Model conventions](model-conventions.md) | Implemented Django and SQLAlchemy building blocks, with application design advice called out separately. | Guide |
+| [Wiring into Django](wiring-django.md) | A plain Django/DRF composition recipe. The `rn-forge-django` quickstart is the package adapter guide. | Guide |
+| [Wiring into FastAPI](wiring-fastapi.md) | Where the FastAPI adapter layer moved, and how older hand-written wiring maps onto it. | Pointer |
+| [Checklist](checklist.md) | A per-application review checklist, so divergence is caught in review rather than at integration. | Guide |
+| [Worked examples](examples/index.md) | Three applications serving the same ten endpoints — bare ASGI, Django/DRF and FastAPI. Copy one. | Guide |
+
+Nothing in these guides names a specific application or assumes its domain. If
+a sentence only makes sense for one application, it belongs in that
+application's repository.
+
+[API conventions](api-conventions.md) is enough on its own to write the
+API-behaviour section of an application's specification.

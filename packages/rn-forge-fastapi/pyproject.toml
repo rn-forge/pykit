@@ -5,8 +5,9 @@ description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-# Pinned direct URL, not a bare name: these packages are not on PyPI, and a
-# release is a tag (kiln D46). `[tool.uv.sources]` below overrides this with
+# Pinned direct URL, not a bare name: these packages are not on PyPI, and
+# pre-release pins name the feature/upgrade branch (ADR-0004).
+# `[tool.uv.sources]` below overrides this with
 # the workspace checkout for local development only — the declaration here is
 # what a consumer outside the workspace actually resolves.
 #
@@ -15,7 +16,7 @@ requires-python = ">=3.14"
 dependencies = [
   # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
   # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
-  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-web",
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",
@@ -31,14 +32,20 @@ testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into web's extras.
 oidc = [
-  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-web",
 ]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
 transfer = [
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-commons",
   "python-multipart>=0.0.20",
 ]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-fastapi"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fastapi/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]

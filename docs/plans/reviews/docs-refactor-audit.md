@@ -1,6 +1,8 @@
 # Documentation refactor audit
 
-**Date:** 2026-09-25 · **Status:** open for discussion; no recommendation below has been applied.
+> **Closed 2026-09-26.** The owner answered every remaining question; `plans/context.md`, "Owner answers, 2026-09-26", records the answers, and [F10.7](../../specs/epics/E10-documentation-refactor/F10.7-close-out.md) applied them. This page is excluded from the site and kept only as evidence.
+
+**Date:** 2026-09-25 · **Status:** applied 2026-09-25 as [F10.6](../../specs/epics/E10-documentation-refactor/F10.6-refactor-audit.md). The findings below describe the tree at `472bfa4`; the [implementation log](#implementation-log) records what was done with each.
 **Compares:** `12da7f3` (before the refactor) with `472bfa4` (the refactor), on `feature/upgrade`.
 **Also read:** `rn-forge/kiln` at `feature/v1` (`a4a3541`), for its documentation rules and for what
 it expects from pykit.
@@ -368,7 +370,7 @@ F8.1, F8.2, E8, E11 and F9.6 cite `docs/plans/README.md` and `docs/auth-overview
 content). Others cite a bare `web-api-reuse-plan.md`. The files now live under `plans/archive/`,
 and `plan-board.md` replaced `README.md`.
 
-**Fix:** one form everywhere: `plans/archive/<file>.md`, "<heading>".
+**Fix:** one form everywhere: `plans/archive/<file>.md`, `"<heading>"`.
 
 ### S9 — F9.5 and F9.6 depend on each other (Medium)
 
@@ -698,3 +700,107 @@ All commands ran on 2026-09-25 against `472bfa4`.
 | Source checks | No redaction module in commons and no `sse` extra (F6.1/F6.2 unbuilt, correct). `Operation` exists (C5 correct). No batch/undelete/readMask handlers (E13 correct). `StrictDataclassMixin` exists ([L7](#l7-strictdataclassmixin-is-recorded-as-removed-but-it-exists-medium)). |
 | Commit hashes cited in E1–E5, ADR-0005, ledger | All exist; subjects match their claimed content. The `-S` history search places `FastApiApp` and `unmapped_exceptions` in `373d6bc`. |
 | Kiln `feature/v1` | Board, E5, E7 and `plans/context.md` read for pykit references; see B1, B5 and L1. |
+
+## Implementation log
+
+Applied on 2026-09-25, uncommitted. Nothing was committed, pushed or tagged, and no manifest or workflow was changed: every change is documentation.
+
+### Owner answers
+
+| Question | Answer | Where it landed |
+| --- | --- | --- |
+| AQ1 | **Not confirmed.** The owner did not answer Q1–Q3, Q7 or Q8; the refactor adopted the review's defaults. | The ledger rows say "review default adopted; not confirmed by the owner". [ADR-0007](../../adr/ADR-0007.md) is back to `proposed`. |
+| AQ2 | **Drop Readiness; use `elaborating`.** | Removed from every spec and release page; `specs/_structure.md` and `releases/_structure.md` rewritten in kiln's shape. |
+| AQ3 | **Keep model conventions advisory; preserve the old rules as a deferred spec.** This also answers review Q6, dated 2026-09-25. | [F13.13](../../specs/epics/E13-on-demand-features/index.md); the old page is archived as `plans/archive/model-conventions.md`; one ledger row per removed rule. |
+| AQ4 | **Branch pins until the stable release.** | The interim rule in [ADR-0002](../../adr/ADR-0002.md); new feature [F9.7](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md). No pin was changed. |
+| AQ5 | Not asked; the recommendation was taken. Done epics get per-row IDs. | E1–E5. |
+| AQ6 | Not asked; see judgement call 3. | [Release 1](../../releases/release-1/index.md). |
+| AQ7 | Not asked; the recommendation was taken. ADRs for Trace Context and "not an authorization server". | [ADR-0008](../../adr/ADR-0008.md), [ADR-0009](../../adr/ADR-0009.md). |
+
+### Findings
+
+| ID | Outcome |
+| --- | --- |
+| L1 | Done. The 12da7f3 text is archived as `plans/archive/kiln-dependencies.md`. The stable page carries §2.1 (the deviations, the design kiln assumed, the risk and its guard) and §3.1–§3.2 verbatim under "Design kiln relies on". Only their heading levels changed, and a short note says where today's contract differs. |
+| L2 | Done per AQ3: ledger rows for each removed rule, deferred F13.13, and conflict C13 with F13.2 (AIP-164). |
+| L3 | Done. F6.1 and F6.2 carry Build, Rules and Tests in `## Design`. F6.2's correlation-header parameter was dropped under ADR-0008, noted on the page as "Changed from the source". The open questions left are F6.1's acceptance consumer and, on F9.4, release selection. |
+| L4 | Done. Adopted-first, wire indistinguishability and AIPs-below-RFCs are in ADR-0003's Decision; the prior-art rule is in its Background; "do not create `rn-forge-selfkit`" is on F13.8. |
+| L5 | Done. `architecture/authentication.md` has the standards column, the mechanism matrix (Basic is "development and internal use only") and an "Out of scope" section; ADR-0009 records the boundary. |
+| L6 | Done. The `X-Correlation-ID` sentence is restored verbatim. |
+| L7 | Done. Ledger rows and E1 corrected; conflict C12 added. While checking, the E.1a row's commit was also wrong: it is `37fa7fc`, not `231a68e`. Fixed. |
+| L8 | Done. `CLAUDE.md` says not to start or elaborate deferred work unless asked; the board's conventions repeat it. |
+| L9 | Done, under "If your application predates rn-forge-fastapi". Each row was checked against the current `rn_forge.fastapi` source. |
+| L10 | Done: Tier 3.5, Batches 1–5 and "Shipped" fixed. The duplicate claim-check row is left as the audit allowed. |
+| D1 | Done. ADR-0006 covers extras and the facade; protocol placement moved to ADR-0001. |
+| D2 | ADR-0007 is `proposed` (AQ1). Not folded into `_structure.md`: that is the owner's call once they decide. ADR-0007's Background recommends it. |
+| D3 | Done. The four rules are numbered in the Decision, and README principles 1–2 are linked rather than restated. |
+| D4 | Done. The interim rule and its end condition are in the Decision; the Consequences sentence says CI does not enforce order. |
+| D5 | Done. All nine ADRs use kiln's one-line header, dated by decision date, with the record date in Background. |
+| D6 | Trace Context → ADR-0008; no authorization server → ADR-0009; forward-only cursor → `api-conventions.md` §4; Python floor → the development guide. One wire model per stack stays in ADR-0004's Background, now dated. |
+| D7 | Done. ADR-0001 has the placement-by-signature rule and its example. |
+| S1 | Done per AQ2; see judgement call 1 for the statuses. |
+| S2 | Done. F1.1–F1.6, F2.1–F2.5, F3.1–F3.4, F4.1–F4.8 and F5.1–F5.3, each with its own commits, taken from `git log -S` and the ledger. |
+| S3 | Done. F6.1 has 3 stories, F6.2 4, F9.4 2 and F9.7 2, with `## Acceptance` blocks tagged by story. One-story features keep their acceptance on the story, and the duplicate lists are gone, E10's included. |
+| S4 | Done. Scripted blocks on F6.1, F6.2, F9.1, F9.2, F9.5, F9.6, F9.7 and F10.6. Where a line cannot be scripted, it is listed under the block. The negative checks were run against today's tree and behave as expected: F6.2's pass, and F9.7's fails until S9.7.1 lands. |
+| S5 | Done: F7.1–F7.8 and F13.1–F13.13. E12's rows also got IDs (judgement call 7). |
+| S6 | Done. Status lines appear only on epics, features, stories and releases. |
+| S7 | Done. The owner is `pykit` or `kiln` everywhere. |
+| S8 | Done. Sources read `plans/archive/<file>.md` followed by the exact heading in quotes. |
+| S9 | Done. F9.6 no longer requires F9.5; F9.5 runs after F9.6; release-1's exit criteria require both. |
+| S10 | Done. E10 and F10.1–F10.5 cite `472bfa4`; the working-tree wording and the stale "eight warnings" line are gone. |
+| R1 | Done, as a reduced page; see judgement call 3. The matrix moved to F9.4. |
+| R2 | Done. The runbook reads: how CI tags, then before merge → merge and watch → after merge. The partial-run question is S9.3.2. |
+| R3 | Done. Release-1's entry criteria, F9.7 and the handoff's "What kiln is waiting on" record the trigger and the interim. |
+| R4 | Done via S2; release-1 names the delivered features by feature ID, as kiln's rule allows. |
+| R5 | Done. `373d6bc` is on F2.5 and F3.4. |
+| R6 | Done. F9.1 is `planned`, and F9.3 says its decision covers all seven jobs. |
+| R7 | Done. The index is a newest-first list plus the runbook link. |
+| B1 | Done: F9.7, linked from E12, the handoff and the board. |
+| B2 | Done differently; see judgement call 2. |
+| B3 | Done. E6 is `elaborating`, with S9.4.2 as its next step. |
+| B4 | Done. "Not planned" under E3; the Python floor is in the development guide. |
+| B5 | Done: F12.11, F12.12 and F12.13. |
+| W1–W6 | Done on every page rewritten above. W2's "does not" count was not re-measured; the listed disclaimers are gone (checked with `rg`). |
+| O1 | Done with a banner, not an exclusion, because the plans index links the review. |
+| O2 | Done per AQ1. The Q4, Q5 and Q10 rows no longer claim an owner answer. |
+| O3 | Done. The page is deleted, its text archived as `plans/archive/auth-overview.md`, and a ledger row added. The frozen `plans/archive/web-library-plan.md` still links the old path; that is recorded, not edited. |
+| O4 | Done. |
+| O5 | Done. The README lists all seven packages' docs, routes to the root docs areas, and states the interim pins. |
+| O6 | Done. The development guide absorbed `-k`, the markers and the per-package notes; `CLAUDE.md` links to it. The guide's old claim that CI checks formatting was wrong and is fixed. |
+| O7 | Done. A "Packages" nav section holds the seven includes; the monorepo plugin resolves them nested. |
+| O8 | Done, as the last rule in `specs/_structure.md`. |
+| O9 | Stated in the development guide: a 3.14 release candidate fails, 3.14.2 and later build. `.python-version` is not pinned (judgement call 8). |
+| O10 | Done. The quickstart and the web index name the `rn-forge-fastapi` guide; the adoption index says what the pointer page now holds. |
+
+### Judgement calls
+
+1. **Statuses.** The audit suggested `elaborating` for F8.1, F9.1, F9.3, F9.4 and F9.6. Instead, a decision story whose acceptance is settled ("the owner records X") is `planned`: its open question is what the story answers, not a gap in elaboration. So F8.1, F9.3, F9.4 and F9.6 are `planned` in release-1, F9.1 is `planned` (R6), and only E6, F6.1 and F6.2 are `elaborating`, because they have no release. E9 is `in progress`, because S9.3.1 is done.
+2. **B2 without renumbering.** Moving F8.1 into E9 or splitting E8 would change an ID, which kiln's rules forbid. F8.1 keeps its ID in release-1 instead. E8 becomes `planned`, which puts it in the board's Planned group, with F8.2 `deferred` inside it.
+3. **Release-1 reduced, not deleted.** Before starting, I said it would be deleted. Once the spec model was settled, E9's gate stories turned out to be real release scope, so the page now holds entry criteria, scope as story IDs (plus delivered features by feature ID) and exit criteria. That matches both kiln's rule and the audit's second option.
+4. **F9.7 covers every internal pin, not only the three web packages.** `rn-forge-cli`, `rn-forge-tooling` and `rn-forge-sqlalchemy` also pin uncut tags. F9.7 is release-1 scope: S9.7.1 lands now, and S9.7.2 restores tag pins before the cut.
+5. **More pages archived than asked.** The old `auth-overview.md` and `model-conventions.md` were archived like the handoff (L1), so every ledger row and `Source:` line points at a path in the repository.
+6. **Story status `deferred`.** S8.2.1 sits in a deferred feature, so it is `deferred`, and `specs/_structure.md` allows that. Deleting it would lose an ID.
+7. **E12 rows got IDs** (F12.1–F12.13), and kiln corrections are a separate table, so a correction can be cited like any other item.
+8. **O9.** The development guide states the minimum patch release. `.python-version` still says `3.14`, and uv resolves an installed patch release (3.14.2 here, which builds cleanly).
+9. **ADR headers.** The date in the status line is the decision date; Background gives the source and the date it was recorded here. ADR-0006 was retitled "…and outside the facade" to match its narrower scope.
+10. **F6.1 placement.** `RedactFilter` goes in `logging/logger.py`, where `EnrichFilter` lives today; the source plan said only "beside `EnrichFilter`".
+11. **This audit is recorded as F10.6.** It carries a date and no commit hash; add the hash when the change is committed.
+
+### Left for the owner
+
+- Q4 (S8.1.1), Q5 (S9.4.1), Q9 (S9.4.2), Q10 (E12) and S9.3.2 remain open.
+- Q1–Q3, Q7 and Q8: confirm the review defaults, and then accept ADR-0007 and decide whether to fold it into `docs/_structure.md`.
+- F6.1's acceptance consumer (S6.1.1) and the `sse-starlette` approval (S6.2.1).
+- S9.7.1 is the next piece of work; it changes the manifests, which this documentation pass did not touch.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `uv run --group docs mkdocs build --strict`, root, Python 3.14.2 | Exit 0; no warnings, no anchor diagnostics; archives and routing files absent from the output. |
+| The same, from each of the seven package directories | All exit 0. |
+| Fragment links in the built root-area pages (specs, releases, ADRs, plans, runbooks, architecture, guides) | 472 checked, 0 broken. |
+| `rg` for "Readiness", "no new tag", "working tree", "It is for", `docs/plans/README.md` and the other listed phrases, outside the ledger, reviews and archive | No matches, except the two intended "not an authorization server" statements. |
+| Owner and status values in specs and releases | Owners: `pykit` and `kiln` only. Statuses: `planned`, `elaborating`, `in progress`, `done`, `deferred`. |
+| Ledger row count | 328: 309 from the refactor plus 19 added here. |
+| `git diff --check` | Clean. |

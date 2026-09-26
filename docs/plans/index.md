@@ -1,11 +1,7 @@
 # History and plan evidence
 
-This area records how pykit's current package structure and open work arose. Maintainers can use the [migration ledger](context.md) to find an old phase or decision and its current home.
+How pykit's current package structure and open work came about. Use the [migration ledger](context.md) to find an old phase, D-number or R-item and its current home.
 
-**Status:** done
+The [spec board](../specs/index.md) owns current work. The old plans are kept in the repository under `docs/plans/archive/`, outside the published site.
 
-**Owner:** pykit
-
-The [spec board](../specs/index.md) owns current work and status. Package guides own current usage. The archived plans remain in the repository under `docs/plans/archive/`; they are historical evidence and are not published in the documentation site.
-
-The [kiln handoff](kiln-dependencies.md) keeps its existing path for downstream references. The [documentation structure review](reviews/docs-structure-review.md) records the migration rationale and the unresolved owner questions.
+The two documentation reviews behind the 2026-09-24 refactor are kept in the repository under `docs/plans/reviews/`, also outside the site; the ledger records every answer they led to.

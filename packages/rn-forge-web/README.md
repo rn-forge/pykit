@@ -1,5 +1,7 @@
 # rn-forge-web
 
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-web/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-web) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
 Framework-agnostic HTTP/API primitives, built on `rn-forge-commons`.
 
 These are the wire semantics an application *promises its callers* — W3C
@@ -113,7 +115,7 @@ framework or fix a different wire shape.
 ## Documentation
 
 `uv run --directory packages/rn-forge-web --group docs mkdocs build --strict`,
-or the combined site from the repo root. The adoption pack under
-`docs/adoption/api-conventions.md` is the normative wire contract for an
-application's specification. `docs/adoption/model-conventions.md` compares
-implemented ORM building blocks and optional application design advice.
+or the combined site from the repo root. `docs/guides/api-conventions.md` is
+the normative wire contract for an application's specification.
+`docs/guides/model-conventions.md` compares implemented ORM building blocks and
+optional application design advice.

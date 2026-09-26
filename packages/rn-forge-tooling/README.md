@@ -1,12 +1,14 @@
 # rn-forge-tooling
 
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-tooling/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
 The file-owning half of the developer-tooling stack: for command-line tools
 that install themselves and write files into a repository, and for framework
 code generators shipped as `[codegen]` extras.
 
-Where [`rn-forge-commons`](../rn-forge-commons/README.md) is runtime-neutral —
+Where [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons) is runtime-neutral —
 safe in a web server, a worker or a container — and
-[`rn-forge-cli`](../rn-forge-cli/README.md) is the command-line shape every
+[`rn-forge-cli`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-cli) is the command-line shape every
 application wants, this package is deliberately workstation-shaped: it assumes
 a developer's filesystem and a tool that owns files in it. It owns:
 
@@ -50,7 +52,7 @@ Full API reference and guides are built with mkdocs:
 uv run --group docs mkdocs serve   # or `mkdocs build`
 ```
 
-Source lives in [`docs/`](docs), configured via [`mkdocs.yml`](mkdocs.yml).
+Source lives in [`docs/`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling/docs), configured via [`mkdocs.yml`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-tooling/mkdocs.yml).
 
 ## Development
 

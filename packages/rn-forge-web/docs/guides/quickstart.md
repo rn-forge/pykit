@@ -2,8 +2,8 @@
 
 Five things nearly every application built on this kit wires. None of them
 imports a web framework. For framework setup, see the
-[plain Django recipe](../adoption/wiring-django.md) or the
-[FastAPI package pointer](../adoption/wiring-fastapi.md).
+[plain Django recipe](wiring-django.md), or the "Wiring an
+application" guide in the `rn-forge-fastapi` package.
 
 ## 1. Tracing: W3C Trace Context through OpenTelemetry
 
@@ -109,6 +109,6 @@ endpoint at 200. A check that raises becomes a failure, never a 500.
 
 ## Next
 
-The [API conventions](../adoption/api-conventions.md) page is the normative
+The [API conventions](api-conventions.md) page is the normative
 version of all of the above, written so it can be pasted into an application's
 specification.

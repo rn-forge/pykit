@@ -1,5 +1,7 @@
 # rn-forge-fastapi
 
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fastapi/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-fastapi) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
 FastAPI adapters over `rn-forge-web`.
 
 `rn-forge-web` settles the wire — the problem body, the cursor codec, the ETag

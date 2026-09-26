@@ -1,25 +1,26 @@
 # E1 — Foundation and boundaries
 
-This epic records the implemented foundation across `rn-forge-commons`, `rn-forge-cli` and `rn-forge-tooling`. Maintainers use it for implementation evidence; package guides define current use.
+**Status:** done · **Implemented:** 2026-09-09 to 2026-09-16 · **Owner:** pykit
 
-**Status:** done
-
-**Owner:** pykit.
-
-**Implemented:** `28bef7f`, `4624bfe`, `f59c40f`, `757908e`, `37fa7fc`, `231a68e` (historical commits; no new tag implied).
+The runtime foundation in `rn-forge-commons` and the split of the developer layer into `rn-forge-cli` and `rn-forge-tooling`. The package guides describe current use; [workspace architecture](../../../architecture/workspace.md) describes the boundaries.
 
 [Back to the work index](../../index.md)
 
-| Legacy feature | Result |
-| --- | --- |
-| Commons Parts A–C | Language, filesystem, runtime and integration mechanisms. |
-| Part D | Three package layers, import boundaries and pinned git dependency declarations. |
-| Part E and E.1a | `CliApp`, commons console, strict dataclass default and explicit lenient opt-out. |
-| Part F | Installer mechanics; current lifecycle composition is recorded in [E5](../E5-tool-lifecycle/index.md). |
-| Part G | Optional pydantic `StrictModel`; kiln adoption is tracked in [E12](../E12-kiln-acceptance/index.md). |
+| ID | Delivered | Source | Implemented |
+| --- | --- | --- | --- |
+| F1.1 | Commons runtime foundation: reflection, logging and console, dataclasses, environment guards, resilience, messaging, secret and object-store protocols, structured logging, atomic writes, documents, hashing, paths, merge and entry-point discovery | Commons plan Parts A–C, Phases 0–15 and 17 | `28bef7f` |
+| F1.2 | First tooling extraction: local state, the Jinja template engine and installer mechanics. F1.3 corrected its boundary. | Commons plan Phases 12, 16 and 18 | `4624bfe` |
+| F1.3 | Three-layer split and re-layout: defect fixes F1–F6, the `rn-forge-cli`/`rn-forge-tooling` split, the injected docs policy, grouped modules with unchanged public names, CI for both packages and the pinned-URL contract | Commons plan Part D (kiln D52, D55, A2) | `f59c40f` |
+| F1.4 | CLI reshape: `CliApp`, the console moved to commons, declaration helpers removed | Commons plan Part E | `f59c40f` |
+| F1.5 | Strict dataclasses: `DataclassMixin` strict by default with a `LenientDataclassMixin` opt-out; `StrictDataclassMixin` then reintroduced to reject unknown keys | Commons plan E.1a | `37fa7fc`, `231a68e` |
+| F1.6 | Optional pydantic `StrictModel` behind the `pydantic` extra. | Commons plan Part G (kiln F4.2) | `231a68e` |
 
-Current package boundaries are in [workspace architecture](../../../architecture/workspace.md). [ADR-0001](../../../adr/ADR-0001.md), [ADR-0002](../../../adr/ADR-0002.md) and [ADR-0006](../../../adr/ADR-0006.md) constrain future changes. The [ledger](../../../plans/context.md) maps each original phase.
+The installer lifecycle built on F1.2 is [E5](../E5-tool-lifecycle/index.md). [ADR-0002](../../../adr/ADR-0002.md), [ADR-0004](../../../adr/ADR-0004.md) and [ADR-0003](../../../adr/ADR-0003.md) constrain future changes. The [ledger](../../../plans/context.md) maps each original phase.
 
 ## Considered and rejected
 
-Commons Phase 6 rejected an OmegaConf resolver. Phase 5.1 did not add `mergedeep`; Phase 11.4 removed the earlier YAML extra design. `Environment.rnf_home()` was withdrawn. The old strict opt-in class was replaced by strict `DataclassMixin`. These are historical choices, not open tasks.
+- An OmegaConf resolver (commons Phase 6, rejected at its gate).
+- `mergedeep` (Phase 5.1); layered merge with provenance (Phase 14) replaced it.
+- A separate YAML `documents` extra (Phase 11.4); one ruamel backend became a base dependency.
+- `Environment.rnf_home()` (Phase 18.3); the workstation home convention stays out of commons.
+- The E.1 opt-in `StrictDataclassMixin` that made strictness optional; E.1a made strictness the default. The name returned in F1.5 with a different meaning.

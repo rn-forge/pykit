@@ -5,18 +5,25 @@ description = "File-owning developer tooling for the rn-forge-* CLIs: generation
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-# Pinned direct URLs, not bare names: these packages are not on PyPI, and a
-# release is a tag (kiln D46). `[tool.uv.sources]` below overrides these with
+# Pinned direct URLs, not bare names: these packages are not on PyPI, and
+# pre-release pins name the feature/upgrade branch (ADR-0004).
+# `[tool.uv.sources]` below overrides these with
 # the workspace checkouts for local development only — the declarations here
 # are what a consumer outside the workspace actually resolves.
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
-  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-commons",
+  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-cli",
   "jinja2>=3.1.6",
 ]
 
 [project.optional-dependencies]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-tooling/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]

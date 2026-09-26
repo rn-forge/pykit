@@ -2,6 +2,8 @@ site_name: rn-forge-cli
 site_description: The shared command-line layer for rn-forge applications
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-cli/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -29,6 +31,9 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -37,8 +42,9 @@ nav:
       - Installation: guides/installation.md
       - CLI: guides/cli.md
       - Declaring a CLI: guides/declaring.md
-  - API Reference:
-      - api/index.md
-      - App: api/app.md
-      - Options: api/options.md
-      - Surface: api/surface.md
+  - Reference:
+      - reference/index.md
+      - App: reference/app.md
+      - Options: reference/options.md
+      - Surface: reference/surface.md
+  - Changelog: changelog.md

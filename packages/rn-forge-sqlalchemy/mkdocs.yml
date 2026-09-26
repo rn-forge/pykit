@@ -2,6 +2,8 @@ site_name: rn-forge-sqlalchemy
 site_description: Async SQLAlchemy models, upsert and keyset pagination over rn-forge-web
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -29,15 +31,19 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
   - Guides:
       - guides/index.md
       - Using the package: guides/usage.md
-  - API Reference:
-      - api/index.md
-      - Models: api/models.md
-      - Concurrency: api/concurrency.md
-      - Upsert: api/upsert.md
-      - Pagination: api/pagination.md
+  - Reference:
+      - reference/index.md
+      - Models: reference/models.md
+      - Concurrency: reference/concurrency.md
+      - Upsert: reference/upsert.md
+      - Pagination: reference/pagination.md
+  - Changelog: changelog.md

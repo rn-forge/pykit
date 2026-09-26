@@ -37,6 +37,12 @@ all = [
   "tablib[xlsx]>=3.8",
 ]
 
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-commons/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-commons/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
+
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]
 build-backend = "uv_build"

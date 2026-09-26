@@ -1,5 +1,9 @@
 # Documentation structure review and refactor handoff
 
+> **Closed 2026-09-26.** The owner answered every remaining question; `plans/context.md`, "Owner answers, 2026-09-26", records the answers, and [F10.7](../../specs/epics/E10-documentation-refactor/F10.7-close-out.md) applied them. This page is excluded from the site and kept only as evidence.
+
+> **Implemented in `472bfa4` (2026-09-24); kept as evidence.** Statements below about what is missing, failing or not yet done describe the tree before that commit. The [refactor audit](docs-refactor-audit.md) checked the result, and the [spec board](../../specs/index.md) holds current status.
+
 **Date:** 2026-09-23 · **Status:** review; proposed refactor, not implemented.
 **Baseline:** pykit `feature/upgrade`, HEAD `653ac47`, plus the working tree.
 **Second review:** 2026-09-23, against HEAD `9af1705` — see

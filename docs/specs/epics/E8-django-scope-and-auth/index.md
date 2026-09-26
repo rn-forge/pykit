@@ -1,26 +1,16 @@
 # E8 — Django scope and auth
 
-This epic keeps the pre-release Django package decision and the later whole-auth review together. It is for the owner deciding scope, not an authorization to change auth behavior.
+**Status:** deferred · **Owner:** pykit
 
-**Status:** deferred
+Two questions about `rn-forge-django`'s shape: which optional areas stay in the package, and how its login, session and token flows fit together. The first was settled for release-1; both return in the auth review.
 
-**Readiness:** not ready
-
-**Readiness basis:** The package-scope decision and whole-auth design remain unsettled; feature readiness is listed below.
-
-**Owner:** pykit owner.
-
-**Entry criteria:** Decide the split before a tag cut; schedule the auth review when a consumer needs it.
+**Entry criteria:** the owner schedules the auth review (F8.2).
 
 [Back to the work index](../../index.md)
 
-| Feature | Status | Readiness | Decision needed |
-| --- | --- | --- | --- |
-| [F8.1 — Django package split](F8.1-django-split.md) | planned release gate | not ready | Whether SAML, Celery, fixtures and messaging leave `rn-forge-django`. |
-| [F8.2 — Whole-auth review](F8.2-auth-review.md) | deferred | not ready | Review Django and the web/FastAPI auth surfaces as one piece. |
+| Feature | Status | Scope |
+| --- | --- | --- |
+| [F8.1 — Django package split](F8.1-django-split.md) | done | All four optional areas stay in `rn-forge-django` for release-1. |
+| [F8.2 — Whole-auth review](F8.2-auth-review.md) | deferred | Review Django and the web and FastAPI auth surfaces as one piece, and revisit the package boundary. |
 
-## Readiness dependencies
-
-[F8.1](F8.1-django-split.md#open-questions) owns the package-split decision required before tags. [F8.2](F8.2-auth-review.md#open-questions) owns the deferred auth-design question; it is not included in the release.
-
-**Source:** `docs/plans/README.md`, Backlog; `standards-rebaseline-plan.md`, R6; `docs/auth-overview.md`, “My followup thoughts.”
+**Source:** `plans/archive/plan-board.md`, "Backlog (revisit later, not scheduled)"; `plans/archive/standards-rebaseline-plan.md`, R6; `plans/archive/auth-overview.md`, "My followup thoughts".

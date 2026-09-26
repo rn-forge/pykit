@@ -58,10 +58,10 @@ promises its callers.
 ## Where to start
 
 - **Writing an application specification?** The
-  [API conventions](adoption/api-conventions.md) page is normative and is meant
+  [API conventions](guides/api-conventions.md) page is normative and is meant
   to be read on its own.
 - **Wiring an existing application?** Use the
-  [plain Django recipe](adoption/wiring-django.md) or the
-  [FastAPI package pointer](adoption/wiring-fastapi.md), then the
-  [checklist](adoption/checklist.md).
+  [plain Django recipe](guides/wiring-django.md) or the `rn-forge-fastapi`
+  package's "Wiring an application" guide, then the
+  [checklist](guides/checklist.md).
 - **Just want the code?** [Quickstart](guides/quickstart.md).

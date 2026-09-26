@@ -20,12 +20,12 @@ include = ["packages"]
 ignore = [
   "tests",
   "**/tests",
-  # The two framework examples in rn-forge-web's adoption pack are documentation:
+  # The two framework examples in rn-forge-web's guides are documentation:
   # they import Django/DRF and FastAPI, which this workspace deliberately does not
   # install for that package. The framework-free asgi_app.py beside them is NOT
   # excluded — it is executed by the test suite and is typechecked like any source.
-  "packages/rn-forge-web/docs/adoption/examples/django_app.py",
-  "packages/rn-forge-web/docs/adoption/examples/fastapi_app.py",
+  "packages/rn-forge-web/docs/guides/examples/django_app.py",
+  "packages/rn-forge-web/docs/guides/examples/fastapi_app.py",
 ]
 reportMissingTypeStubs = false
 reportUnnecessaryTypeIgnoreComment = "error"

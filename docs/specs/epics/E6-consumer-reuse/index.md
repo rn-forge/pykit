@@ -1,30 +1,23 @@
 # E6 — Consumer reuse
 
-This epic holds two shared features that applications have asked to reuse. It is for implementers and the owner deciding when to schedule them.
+**Status:** deferred · **Owner:** pykit
 
-**Status:** planned
+Two pieces of plumbing that several applications each wrote for themselves: secret redaction in structured logs, and server-sent events. Both are designed and left out of release-1.
 
-**Readiness:** not ready
-
-**Readiness basis:** Both features need their acceptance or design settled; see their readiness rows below. Release selection alone is not an implementation blocker.
-
-**Owner:** pykit.
-
-**Depends on:** A named consuming application for acceptance.
+**Entry criteria:** the owner schedules either feature for a release.
 
 [Back to the work index](../../index.md)
 
-| Feature | Status | Readiness | Scope |
-| --- | --- | --- | --- |
-| [F6.1 — Structured-log redaction](F6.1-log-redaction.md) | planned | not ready | Secret redaction in commons logging. |
-| [F6.2 — Server-sent events](F6.2-sse.md) | planned | not ready | SSE frames over `sse-starlette` in FastAPI. |
+| Feature | Status | Scope |
+| --- | --- | --- |
+| [F6.1 — Structured-log redaction](F6.1-log-redaction.md) | deferred | Secret redaction in commons logging. |
+| [F6.2 — Server-sent events](F6.2-sse.md) | deferred | SSE responses over `sse-starlette` in FastAPI. The dependency is approved. |
 
-Implemented or withdrawn reuse proposals are recorded in [E3](../E3-framework-adapters/index.md) and [E4](../E4-standards-rebaseline/index.md). Account Portal and IntelliBuild acceptance waits for those applications to resume; this is consumer-owned acceptance, not a pykit implementation task.
+Both were left out of release-1 on 2026-09-26 ([S9.4.2](../E9-release-readiness/F9.4-batch-scope.md#s942-decide-the-consumer-reuse-features)). Each adds a module or an extra and breaks no import, so it can join any later release.
 
-## Readiness dependencies
-
-The redaction and SSE questions live in [F6.1](F6.1-log-redaction.md#open-questions) and [F6.2](F6.2-sse.md#open-questions). [F9.4](../E9-release-readiness/F9.4-batch-scope.md#open-questions) owns release selection. Neither feature has a release assignment; if deferred, retain its ID.
+The other reuse proposals were delivered or withdrawn: see [E2](../E2-http-contract/index.md) (F2.5), [E3](../E3-framework-adapters/index.md) (F3.4) and [E4](../E4-standards-rebaseline/index.md).
 
 ## Considered and rejected
 
-The hand-written SSE encoder and web-owned `sse` module were rejected during the library evaluation. Reuse findings 7–12 remain with applications. The abandoned OpenAPI helpers and correlation-ID validation are historical items in [E4](../E4-standards-rebaseline/index.md).
+- A hand-written SSE encoder and a framework-neutral `rn_forge.web.sse` module; the `sse-starlette` evaluation retired both.
+- Reuse findings 7–12 (offset pagination, work offload, SPA mounting, `serve`, a settings facade, a port container): these stay in the applications.

@@ -1,5 +1,7 @@
 # rn-forge-sqlalchemy
 
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-sqlalchemy/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-sqlalchemy) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
 Async SQLAlchemy building blocks that match the `rn-forge-web` wire: audit and
 version columns, a bulk upsert for imports, and keyset pagination over web's
 opaque page token.

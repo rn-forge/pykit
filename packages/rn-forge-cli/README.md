@@ -1,13 +1,15 @@
 # rn-forge-cli
 
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-cli/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-cli/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-cli) · [All pykit packages](https://rn-forge.github.io/pykit/)
+
 The shared command-line layer for `rn-forge-*` applications: the Typer
 application class, the standard option set and the error-to-exit-code mapping.
 
-Where [`rn-forge-commons`](../rn-forge-commons/README.md) is runtime-neutral —
+Where [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons) is runtime-neutral —
 safe in a web server, a worker or a container — this package is the
 *command-line shape*. An ordinary batch application wants it just as much as
 a developer tool does, which is why it is separate from
-[`rn-forge-tooling`](../rn-forge-tooling/README.md), the package that owns
+[`rn-forge-tooling`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling), the package that owns
 files, installs and rendering. It owns:
 
 - `app` — `CliApp`, a `typer.Typer` subclass wiring the standard options into

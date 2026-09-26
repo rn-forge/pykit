@@ -1,4 +1,4 @@
-"""The examples under docs/adoption/ are executable, and this is what proves it.
+"""The examples under docs/guides/examples/ are executable, and this is what proves it.
 
 Two levels of guarantee, and they are not the same:
 
@@ -29,7 +29,7 @@ import rn_forge.web
 from rn_forge.web.conformance import CASES, case_by_id, redact
 
 BOUNDARY = "conformance-boundary"
-EXAMPLES = pathlib.Path(__file__).parent.parent / "docs" / "adoption" / "examples"
+EXAMPLES = pathlib.Path(__file__).parent.parent / "docs" / "guides" / "examples"
 
 pytestmark = pytest.mark.unit
 

@@ -2,6 +2,8 @@ site_name: rn-forge-commons
 site_description: Shared utilities for the rn-forge-* Python package family
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-commons/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -29,6 +31,9 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -42,40 +47,41 @@ nav:
       - Config: guides/config.md
       - Data: guides/data.md
       - Processes and Tasks: guides/processes-and-tasks.md
-  - API Reference:
-      - api/index.md
-      - Config: api/config.md
-      - Exceptions: api/exceptions.md
-      - Findings: api/findings.md
-      - Testing: api/testing.md
+  - Reference:
+      - reference/index.md
+      - Config: reference/config.md
+      - Exceptions: reference/exceptions.md
+      - Findings: reference/findings.md
+      - Testing: reference/testing.md
       - Language:
-          - Collections: api/lang/collections.md
-          - Dataclasses: api/lang/dataclasses.md
-          - Models: api/lang/models.md
-          - Reflection: api/lang/reflection.md
-          - Types: api/lang/types.md
-          - Utils: api/lang/utils.md
+          - Collections: reference/lang/collections.md
+          - Dataclasses: reference/lang/dataclasses.md
+          - Models: reference/lang/models.md
+          - Reflection: reference/lang/reflection.md
+          - Types: reference/lang/types.md
+          - Utils: reference/lang/utils.md
       - Filesystem:
-          - Blocks: api/fs/blocks.md
-          - Documents: api/fs/documents.md
-          - Hashing: api/fs/hashing.md
-          - Locks: api/fs/locks.md
-          - Paths: api/fs/paths.md
+          - Blocks: reference/fs/blocks.md
+          - Documents: reference/fs/documents.md
+          - Hashing: reference/fs/hashing.md
+          - Locks: reference/fs/locks.md
+          - Paths: reference/fs/paths.md
       - Data:
-          - Excel: api/data/excel.md
-          - Pandas: api/data/pandas.md
+          - Excel: reference/data/excel.md
+          - Pandas: reference/data/pandas.md
       - Logging:
-          - Logger: api/logging/logger.md
-          - StructLogger: api/logging/structlog.md
+          - Logger: reference/logging/logger.md
+          - StructLogger: reference/logging/structlog.md
       - Runtime:
-          - Console: api/runtime/console.md
-          - Environment: api/runtime/environment.md
-          - Plugins: api/runtime/plugins.md
-          - Subprocess: api/runtime/subprocess.md
-          - Tasks: api/runtime/tasks.md
+          - Console: reference/runtime/console.md
+          - Environment: reference/runtime/environment.md
+          - Plugins: reference/runtime/plugins.md
+          - Subprocess: reference/runtime/subprocess.md
+          - Tasks: reference/runtime/tasks.md
       - Integration:
-          - Token verification: api/integration/auth.md
-          - Messaging: api/integration/messaging.md
-          - Objects: api/integration/objects.md
-          - Resilience: api/integration/resilience.md
-          - Secrets: api/integration/secrets.md
+          - Token verification: reference/integration/auth.md
+          - Messaging: reference/integration/messaging.md
+          - Objects: reference/integration/objects.md
+          - Resilience: reference/integration/resilience.md
+          - Secrets: reference/integration/secrets.md
+  - Changelog: changelog.md

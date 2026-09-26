@@ -2,6 +2,8 @@ site_name: rn-forge-tooling
 site_description: File-owning developer tooling for the rn-forge-* CLIs
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-tooling/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -29,6 +31,9 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -37,10 +42,11 @@ nav:
       - Installation: guides/installation.md
       - Generation: guides/generation.md
       - Tool lifecycle: guides/lifecycle.md
-  - API Reference:
-      - api/index.md
-      - Commands: api/commands.md
-      - Generation: api/generation.md
-      - Install: api/install.md
-      - State: api/state.md
-      - Templates: api/templates.md
+  - Reference:
+      - reference/index.md
+      - Commands: reference/commands.md
+      - Generation: reference/generation.md
+      - Install: reference/install.md
+      - State: reference/state.md
+      - Templates: reference/templates.md
+  - Changelog: changelog.md

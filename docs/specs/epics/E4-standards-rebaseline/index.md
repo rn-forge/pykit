@@ -1,29 +1,30 @@
 # E4 — Standards re-baseline
 
-This epic records the standards and native-framework decisions implemented across web, Django, FastAPI and SQLAlchemy. Package docs state the current contract.
+**Status:** done · **Implemented:** 2026-09-22 to 2026-09-23 · **Owner:** pykit
 
-**Status:** done
-
-**Owner:** pykit.
-
-**Implemented:** `373d6bc`, `630142c`, `74b36ff`, `c1979a4`, `df7a245`, `cc78e19`, `a036a50`, `9af1705`, `653ac47` (historical commits; no new tag implied).
+The standards and native-framework decisions applied across web, Django, FastAPI and SQLAlchemy. Package docs state the current contract.
 
 [Back to the work index](../../index.md)
 
-| Legacy item | Disposition |
-| --- | --- |
-| R1–R2.5 | OpenAPI accuracy, wire corrections, shared logic and service surface implemented. |
-| R3 | W3C Trace Context through OpenTelemetry implemented. |
-| R4 | Shared wire models implemented in `rn-forge-web`. |
-| R5 | Library evaluations closed with exemptions; no dependency adopted from those evaluations. |
-| R6 | Django split decision and whole-auth review live in [E8](../E8-django-scope-and-auth/index.md); transfer scope settled by R7. |
-| R7 | `tablib` and `django-import-export` transfer work implemented. |
-| R8 | API Improvement Proposal conventions implemented where chosen; on-demand tails live in [E13](../E13-on-demand-features/index.md). |
-| R9 | `rn-forge-sqlalchemy` and cross-stack tabular work implemented; remaining helpers are deferred in [E13](../E13-on-demand-features/index.md). |
-| R10 | Simplification implemented except the rejected R10.3 probe. |
+| ID | Delivered | Source | Implemented |
+| --- | --- | --- | --- |
+| F4.1 | OpenAPI accuracy, standards deviations fixed, shared web logic and the service surface (health, discovery, deprecation, conditional GET, `Retry-After`, security headers, body limit, CORS, idempotency runner) | R1, R2, R2.5 | `373d6bc` |
+| F4.2 | W3C Trace Context through OpenTelemetry as the only request correlation; `X-Correlation-ID` is neither read nor sent ([ADR-0001](../../../adr/ADR-0001.md), rule 5) | R3 | `630142c` |
+| F4.3 | One wire model per stack, as pydantic models in `rn-forge-web` | R4 | `df7a245` |
+| F4.4 | Library evaluations, each closed with a recorded exemption | R5 | `74b36ff`, `c1979a4` |
+| F4.5 | Tabular transfer over `tablib` and `django-import-export`, and FastAPI transfer | R7 | `cc78e19`, `a036a50` |
+| F4.6 | API Improvement Proposal conventions where no RFC applies: sorting, field names, timestamps, long-running operations | R8 | `9af1705` |
+| F4.7 | `rn-forge-sqlalchemy` and cross-stack tabular work | R9 | `653ac47` |
+| F4.8 | Simplification after R3: access log removed, OpenTelemetry log processor moved to commons, `traceId` rename | R10 | `74b36ff` |
 
-[ADR-0003](../../../adr/ADR-0003.md) states the order of authority. [ADR-0004](../../../adr/ADR-0004.md) states the shared HTTP and separate ORM boundary. The [ledger](../../../plans/context.md) retains each R item, its evidence and conflicts.
+R6, the Django scope review, was not delivered here: the split decision is [F8.1](../E8-django-scope-and-auth/F8.1-django-split.md), the auth review is [F8.2](../E8-django-scope-and-auth/F8.2-auth-review.md), and R7 settled transfer. The remaining R8 and R9 items are deferred in [E13](../E13-on-demand-features/index.md).
+
+[ADR-0001](../../../adr/ADR-0001.md) states the order of authority. [ADR-0005](../../../adr/ADR-0005.md) states the shared HTTP contract. F4.2 emits `traceresponse` from Trace Context Level 2, a Candidate Recommendation that OpenTelemetry Python marks experimental; that instability is accepted. The [ledger](../../../plans/context.md) keeps each R item, its evidence and conflicts.
 
 ## Considered and rejected
 
-R1 withdrew reuse Phase 1 and the `Page<Item>` renaming. R3 withdrew custom correlation-ID handling and reuse Phase 5. R10.2 removed access-log middleware. R10.3 rejected Starlette's body-limit middleware at its probe, so the kit's problem response remains. R5 and R9 library candidates were exempt. R8 rejected AIP alternatives where existing RFCs or native mechanisms govern.
+- Reuse Phase 1's OpenAPI component helpers and `Page<Item>` renaming, withdrawn by R1.
+- Custom correlation-ID handling and reuse Phase 5's validator, withdrawn by R3. Keeping `X-Correlation-ID` through `asgi-correlation-id`, or as an alias beside Trace Context, was rejected with it: no standard names the header, and two correlation values can disagree.
+- Starlette's body-limit middleware (R10.3), rejected at its probe; the kit's problem response remains.
+- The R5 and R9 library candidates, each exempt with its reason in the ledger.
+- AIP-193, 154, 155, 134, 160 and 122, where an RFC or a native mechanism already governs.
