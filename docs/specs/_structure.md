@@ -53,7 +53,7 @@
 - Where a line can be scripted, the block is a shell script that starts with `set -euo pipefail` and never turns a failure into output. A negative check uses `absent`, not a bare `! cmd`. What cannot be scripted, such as an approval, is listed under the block.
 
 ```bash
-absent() { local rc=0; rg -q --hidden --glob '!.git' "$@" || rc=$?; [ "$rc" -eq 1 ]; }
+absent() { local rc=0; rg -q --hidden --glob '!.git' "$@" </dev/null || rc=$?; [ "$rc" -eq 1 ]; }
 ```
 
 **Closing work:** a story is done when its acceptance holds. When every story is done, set the feature and then the epic to `done` with the `**Implemented:**` line, update the feature's row on its release page, and move the board row. An answered open question becomes an ADR, or a rejected option under *Considered and rejected*; then remove the question.
