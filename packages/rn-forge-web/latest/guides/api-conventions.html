@@ -1,0 +1,2495 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Framework-agnostic HTTP/API primitives built on rn-forge-commons">
+      
+      
+      
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/guides/api-conventions.html">
+      
+      
+        <link rel="prev" href="quickstart.html">
+      
+      
+        <link rel="next" href="deployment.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>API conventions - rn-forge-web</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-conventions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="rn-forge-web" class="md-header__button md-logo" aria-label="rn-forge-web" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            rn-forge-web
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API conventions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="rn-forge-web" class="md-nav__button md-logo" aria-label="rn-forge-web" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    rn-forge-web
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API conventions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="api-conventions.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Tracing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-standard-slugs-and-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The standard slugs and status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception-carried-extension-members" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exception-carried extension members
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proving-the-exception-table-is-total" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proving the exception table is total
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-optimistic-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Optimistic concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Pagination
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-idempotency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Idempotency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-authentication-and-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Authentication and authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-field-casing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Field casing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-openapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. OpenAPI
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. OpenAPI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-a-generated-client-shares-across-stacks-and-what-it-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a generated client shares across stacks, and what it does not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-http-methods-and-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. HTTP methods and status codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-request-body-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Request body size
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-deprecation-and-sunset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Deprecation and Sunset
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-conditional-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Conditional GET
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-service-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Service discovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-security-headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Security headers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. CORS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-tabular-transfer-and-bulk-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Tabular transfer and bulk operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-timestamps-and-standard-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Timestamps and standard fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-versioning-compatibility-and-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. Versioning, compatibility and operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="deployment.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="model-conventions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="wiring-django.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiring into Django
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="wiring-fastapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiring into FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="checklist.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adoption checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worked examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/tracing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/problem.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Problem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/exceptions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/concurrency.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/pagination.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pagination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/operations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/idempotency.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/health.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/openapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenAPI naming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/asgi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASGI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/oidc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OIDC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/conformance.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conformance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Tracing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-standard-slugs-and-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The standard slugs and status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception-carried-extension-members" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exception-carried extension members
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proving-the-exception-table-is-total" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proving the exception table is total
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-optimistic-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Optimistic concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Pagination
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-idempotency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Idempotency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-authentication-and-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Authentication and authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-field-casing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Field casing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-openapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. OpenAPI
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. OpenAPI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-a-generated-client-shares-across-stacks-and-what-it-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a generated client shares across stacks, and what it does not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-http-methods-and-status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. HTTP methods and status codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-request-body-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Request body size
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-deprecation-and-sunset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Deprecation and Sunset
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-conditional-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Conditional GET
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-service-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Service discovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-security-headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Security headers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. CORS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-tabular-transfer-and-bulk-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Tabular transfer and bulk operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-timestamps-and-standard-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Timestamps and standard fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-versioning-compatibility-and-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. Versioning, compatibility and operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-conventions">API conventions<a class="headerlink" href="#api-conventions" title="Permanent link">&para;</a></h1>
+<p><strong>Normative.</strong> Every HTTP API built on this kit does all of the following
+identically, on every framework. Where a rule has a conformance case, the case
+id is given: a decision stated here and absent from
+<code>rn_forge.web.conformance.CASES</code> is a decision that will drift, and the case is
+what a framework package's driver actually asserts.</p>
+<p>This page names no application and assumes no domain. It can be pasted into a
+specification as a normative section as it stands.</p>
+<hr />
+<h2 id="1-tracing">1. Tracing<a class="headerlink" href="#1-tracing" title="Permanent link">&para;</a></h2>
+<p>Every request is part of a trace, per <strong>W3C Trace Context</strong>.</p>
+<ul>
+<li>The request headers are <strong><code>traceparent</code></strong> and <strong><code>tracestate</code></strong>, read by the
+  OpenTelemetry instrumentation. A malformed <code>traceparent</code> is never an error:
+  it is discarded and the server starts a new trace.
+  — <code>tracing.inbound-traceparent-continues-the-trace</code>,
+  <code>tracing.malformed-traceparent-starts-a-new-trace</code></li>
+<li>Every response carries <strong><code>traceresponse</code></strong>
+  (<code>00-&lt;trace-id&gt;-&lt;span-id&gt;-&lt;flags&gt;</code>, W3C Trace Context Level 2) when a
+  <code>TracerProvider</code> is configured.</li>
+<li>Every error body carries the current trace id as the <code>traceId</code>
+  <strong>extension member</strong> (<code>null</code> when no span is recording). It is what makes a
+  user-reported error findable in the trace backend and the logs.
+  — <code>tracing.problem-body-carries-the-trace-id</code></li>
+<li>Every structured log line emitted while handling the request carries
+  <code>trace_id</code> and <code>span_id</code>.</li>
+<li><strong><code>X-Correlation-ID</code> is not read and not sent.</strong> There is no house
+  correlation header; a caller that still sends one is ignored, and it is
+  never echoed. — <code>tracing.house-header-is-not-echoed</code></li>
+</ul>
+<p><code>rn_forge.web</code> never configures a <code>TracerProvider</code> or an exporter. The
+application does, or runs under <code>opentelemetry-instrument</code>; see
+<code>deployment.md</code>, "Logs and traces".</p>
+<h2 id="2-errors">2. Errors<a class="headerlink" href="#2-errors" title="Permanent link">&para;</a></h2>
+<p><strong>Every</strong> error response — including ones the framework raises before
+application code runs — is an RFC 9457 problem.</p>
+<ul>
+<li><code>Content-Type: application/problem+json</code>.</li>
+<li>Core members <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code> are always
+  present. Extension members are <strong>flattened at the top level</strong>, not nested.</li>
+<li><code>type</code> is <code>about:blank</code> unless the application configures a type-URI base, in
+  which case it is that base plus the slug.</li>
+<li><strong><code>title</code> is the HTTP status phrase</strong> (<code>"Unprocessable Content"</code>, not
+  <code>"Validation Error"</code>) when <code>type</code> is <code>about:blank</code> — RFC 9457 §4.2.1's rule
+  for that case. A configured <code>type_base</code> makes <code>type</code> a real URI, and only
+  then is <code>title</code> the kit's own row title, since it is describing that URI.</li>
+<li><code>instance</code> is the request path.</li>
+<li><strong>A 5xx <code>detail</code> never contains <code>str(exc)</code>.</strong> It is a fixed generic string.
+  The real reason goes to the log. — <code>problem.unregistered-is-500-without-detail</code></li>
+<li>An exception with no registered row resolves to <code>internal-error</code>/500 by way
+  of an MRO walk, so a subclass inherits its base's row.
+  — <code>problem.registered-domain-conflict-is-409</code></li>
+<li>A framework-raised 404 is a problem body too, not the framework's default
+  page. — <code>problem.framework-404-is-a-problem-body</code></li>
+</ul>
+<h3 id="the-standard-slugs-and-status-codes">The standard slugs and status codes<a class="headerlink" href="#the-standard-slugs-and-status-codes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Slug</th>
+<th>Status</th>
+<th>Raised by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bad-request</code></td>
+<td>400</td>
+<td>a malformed precondition, cursor or idempotency key</td>
+</tr>
+<tr>
+<td><code>unauthorized</code></td>
+<td>401</td>
+<td>no credentials, or credentials that failed verification</td>
+</tr>
+<tr>
+<td><code>forbidden</code></td>
+<td>403</td>
+<td>valid credentials lacking the required scope or role</td>
+</tr>
+<tr>
+<td><code>not-found</code></td>
+<td>404</td>
+<td>a missing resource</td>
+</tr>
+<tr>
+<td><code>conflict</code></td>
+<td>409</td>
+<td>a conflict with the resource's state; a duplicate idempotency key still in flight</td>
+</tr>
+<tr>
+<td><code>precondition-failed</code></td>
+<td>412</td>
+<td>an <code>If-Match</code> that evaluated to false</td>
+</tr>
+<tr>
+<td><code>content-too-large</code></td>
+<td>413</td>
+<td>a request body over the configured limit</td>
+</tr>
+<tr>
+<td><code>validation-error</code></td>
+<td>422</td>
+<td>a request body that failed validation; an idempotency key reused with a different body</td>
+</tr>
+<tr>
+<td><code>precondition-required</code></td>
+<td>428</td>
+<td>a required <code>If-Match</code> that was absent</td>
+</tr>
+<tr>
+<td><code>internal-error</code></td>
+<td>500</td>
+<td>anything unregistered</td>
+</tr>
+<tr>
+<td><code>bad-gateway</code></td>
+<td>502</td>
+<td>an upstream returned a problem</td>
+</tr>
+<tr>
+<td><code>too-many-requests</code></td>
+<td>429</td>
+<td><code>TooManyRequests</code>, raised by the application</td>
+</tr>
+<tr>
+<td><code>service-unavailable</code></td>
+<td>503</td>
+<td><code>ServiceUnavailable</code>, raised by the application</td>
+</tr>
+</tbody>
+</table>
+<p><code>TooManyRequests</code> and <code>ServiceUnavailable</code> (RFC 6585 §4, RFC 9110 §15.6.4) each
+take a <code>retry_after</code> in seconds, sent as the <code>Retry-After</code> header
+(RFC 9110 §10.2.3) — <code>problem.too-many-requests-carries-retry-after</code>,
+<code>problem.service-unavailable-carries-retry-after</code>. Enforcing a rate limit is
+not pykit's job: it is a gateway's, or a maintained library's (<code>slowapi</code>,
+<code>limits</code>); pykit only renders the response once the application decides to
+send one.</p>
+<h3 id="validation-errors">Validation errors<a class="headerlink" href="#validation-errors" title="Permanent link">&para;</a></h3>
+<p>A <code>validation-error</code> body carries an <code>errors</code> extension: a list of
+<code>{"pointer": ..., "detail": ...}</code> — RFC 9457 §3's own validation example,
+<code>pointer</code> an <strong>RFC 6901 JSON pointer</strong>. Both frameworks produce the identical
+list for the identical failure — DRF's <code>{field: [messages]}</code> and pydantic's
+<code>loc</code>/<code>msg</code> list are both normalized, and nested serializers recurse rather
+than being dropped. — <code>problem.validation-errors-are-rfc6901-pointers</code></p>
+<h3 id="exception-carried-extension-members">Exception-carried extension members<a class="headerlink" href="#exception-carried-extension-members" title="Permanent link">&para;</a></h3>
+<p>A domain exception that wants extra members on its problem body implements
+<code>HasProblemExtensions.problem_extensions()</code>. <code>ProblemRegistry.build</code> merges the
+result beneath an explicit <code>extensions=</code> argument, and only for a row below
+500 — a 5xx body says nothing about the cause, so nothing an exception carries
+reaches the wire for one. An application does <strong>not</strong> get this by putting
+arbitrary context on <code>AppException.error_data</code>: that dict routinely carries
+credentials and internal identifiers and is never published automatically:
+the application chooses what to expose by implementing the protocol.</p>
+<h3 id="proving-the-exception-table-is-total">Proving the exception table is total<a class="headerlink" href="#proving-the-exception-table-is-total" title="Permanent link">&para;</a></h3>
+<p>An unregistered domain exception silently resolves to <code>internal-error</code>/500,
+which is easy to miss. <code>unmapped_exceptions(registry, *bases)</code> walks every
+subclass of <em>bases</em> and returns the ones that resolve to the registry's
+fallback, so a test or a readiness check can assert the list is empty.</p>
+<h2 id="3-optimistic-concurrency">3. Optimistic concurrency<a class="headerlink" href="#3-optimistic-concurrency" title="Permanent link">&para;</a></h2>
+<p>An endpoint that mutates a versioned resource uses ETag preconditions.</p>
+<ul>
+<li>A read response carries <code>ETag: W/"&lt;entity_id&gt;:&lt;version&gt;"</code> — a <strong>weak</strong>
+  validator. A strong one is refused: a version counter does not assert
+  byte-for-byte equality.</li>
+<li>A write reads <code>If-Match</code>.</li>
+<li>Absent on a route that requires it → <strong>428</strong>. — <code>concurrency.absent-if-match-on-required-route-is-428</code></li>
+<li>Present and stale → <strong>412</strong>, not 409. — <code>concurrency.stale-if-match-is-412-not-409</code></li>
+<li><code>If-Match: *</code> matches any current representation and passes. — <code>concurrency.star-if-match-passes</code></li>
+<li>Present and unparseable → <strong>400</strong>, never a crash. — <code>concurrency.malformed-if-match-is-400</code></li>
+</ul>
+<p>Whether a given route <em>requires</em> a precondition is the application's choice,
+made per route and stated in its specification.</p>
+<p><code>VersionConflict</code> (412) subclasses <code>WebError</code> directly, not <code>DomainConflict</code>
+(409) — the two are different failures on the wire, and catching the 409 class
+must not also catch a 412.</p>
+<h2 id="4-pagination">4. Pagination<a class="headerlink" href="#4-pagination" title="Permanent link">&para;</a></h2>
+<p>Collection endpoints use <strong>cursor pagination in Google AIP-158's spelling</strong>.
+Page-number pagination is legacy and is used only where an endpoint genuinely
+needs a total and a jumpable page index; where it is used, the specification
+says so and says why.</p>
+<table>
+<thead>
+<tr>
+<th>Direction</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>request</td>
+<td><code>pageSize</code></td>
+<td>requested page size</td>
+</tr>
+<tr>
+<td>request</td>
+<td><code>pageToken</code></td>
+<td>opaque continuation token; absent means the first page</td>
+</tr>
+<tr>
+<td>response</td>
+<td><code>items</code></td>
+<td>the page's elements</td>
+</tr>
+<tr>
+<td>response</td>
+<td><code>nextPageToken</code></td>
+<td>opaque; <code>null</code> on the last page</td>
+</tr>
+<tr>
+<td>response</td>
+<td><code>totalSize</code></td>
+<td>optional, <strong>off by default</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>pageSize</code> above the cap is clamped, never rejected.</strong> A 422 here is a
+  specification violation, and it is the single easiest divergence to
+  introduce on FastAPI (<code>Query(le=...)</code> does exactly the wrong thing).
+  — <code>pagination.oversized-page-size-is-clamped-not-rejected</code></li>
+<li><strong><code>pageToken</code> is opaque.</strong> A client must not parse, construct or persist it
+  beyond the next request. It is not signed — a cursor is opaque, not secret.</li>
+<li><strong>A malformed token is 400</strong>, never 500. — <code>pagination.tampered-page-token-is-400</code></li>
+<li><strong><code>nextPageToken</code> is present and <code>null</code> on the last page</strong>, not omitted, so a
+  generated client's type does not change shape between pages.
+  — <code>pagination.last-page-has-a-null-next-token</code></li>
+<li><code>totalSize</code> is opt-in per endpoint, because a keyset query cannot cheaply
+  count. Do not enable it by default to ease a migration from page numbers.</li>
+<li><strong>Cursors are forward-only.</strong> There is no <code>previousPageToken</code>, and no
+  response carries a token for the preceding page.</li>
+<li>An <code>RFC 8288</code> <code>Link: &lt;...&gt;; rel="next"</code> header <strong>may</strong> be emitted alongside.
+  It is additive; the body field is the contract.</li>
+</ul>
+<p><strong>Sorting</strong> follows Google AIP-132's spelling: <code>orderBy=displayName desc</code> — a
+field name on the wire, optionally followed by <code>asc</code> (the default) or <code>desc</code>.</p>
+<ul>
+<li><strong>A list sorts by one field.</strong> More than one comma-separated term is 400,
+  never ignored, because the page token holds one sort value. AIP-132 allows
+  several; this convention does not yet.
+  — <code>pagination.order-by-two-fields-is-400</code></li>
+<li><strong>An endpoint lists the fields it can sort by.</strong> An unlisted or malformed
+  term is 400, never ignored.
+  — <code>pagination.order-by-unlisted-field-is-400</code></li>
+<li><strong>The page token binds the order.</strong> A token issued under one <code>orderBy</code> and
+  presented under another is 400.
+  — <code>pagination.order-by-descending-binds-the-token</code>,
+  <code>pagination.token-under-a-different-order-by-is-400</code></li>
+<li><strong>Ties are broken by the key.</strong> A page is ordered by the <code>orderBy</code>
+  field and then the primary key, and the token holds both, so the field need
+  not be unique. It must not be null.</li>
+</ul>
+<h2 id="5-idempotency">5. Idempotency<a class="headerlink" href="#5-idempotency" title="Permanent link">&para;</a></h2>
+<p>Unsafe endpoints that a client may retry accept an <code>Idempotency-Key</code> header.</p>
+<ul>
+<li>The specification says, per endpoint, whether the key is required or
+  optional. Where required and absent → <strong>400</strong>.</li>
+<li><strong>The request body is hashed.</strong> The same key with a different body is
+  <strong>422</strong> — <code>draft-ietf-httpapi-idempotency-key-header-07</code> §2.7, not a
+  silently-wrong replay. — <code>idempotency.same-key-different-body-is-422</code></li>
+<li><strong>A duplicate while the original request is still in flight is 409.</strong> The
+  store signals this distinctly from first sight (<code>IdempotencyKeyInFlight</code>,
+  not a silent re-execution) — same section of the draft.</li>
+<li>A replay returns the <strong>stored status and body</strong>, unchanged.
+  — <code>idempotency.replay-returns-the-stored-response</code></li>
+<li>The claim is atomic — a uniqueness constraint or an atomic set-if-absent, not
+  a check-then-insert — so two concurrent first-sight requests do not both
+  execute.</li>
+<li>Keys are namespaced by an opaque <code>scope</code>, so the same key on two endpoints,
+  or in two tenants, does not collide.</li>
+</ul>
+<p><strong>The flow is framework-free.</strong> <code>run_idempotent</code>/<code>run_idempotent_async</code> hold
+all of the above — safe-method bypass, claim, replay, complete, and the
+409/422 from the store — over <code>IdempotencyStore</code>/<code>AsyncIdempotencyStore</code>. Both
+stacks build on it: FastAPI's <code>idempotent</code> route decorator wraps the async
+twin; Django's <code>@idempotent</code> wraps the sync one, its public signature
+unchanged.</p>
+<h2 id="6-health">6. Health<a class="headerlink" href="#6-health" title="Permanent link">&para;</a></h2>
+<p>Two endpoints, and they are not the same thing. The paths are platform-neutral
+defaults, not a standard: no published spec names <code>/livez</code> or <code>/readyz</code>, but
+Kubernetes deprecated <code>/healthz</code> in v1.16 in favour of them (kubernetes.io
+"Kubernetes API health endpoints"), and no other host defines a default. See
+<code>deployment.md</code> for how each host maps its own probes onto liveness and
+readiness.</p>
+<ul>
+<li><strong><code>/livez</code> — liveness.</strong> Returns 200 unconditionally as long as the process
+  is running. It touches no dependency. A liveness probe that checks the
+  database restarts a healthy process when the database blips.
+  <code>/healthz</code> is a deprecated alias of <code>/livez</code>, kept for hosts still probing
+  it. — <code>health.liveness-is-200</code></li>
+<li><strong><code>/readyz</code> — readiness.</strong> Runs a named check per dependency and returns
+  <code>{"status": ..., "checks": {...}}</code>.</li>
+<li>A check reports <code>pass</code>, <code>warn</code>, <code>fail</code> or <strong><code>skipped</code></strong>. <code>skipped</code> is for a
+    check group that is not configured or not yet implemented, so its absence
+    is visible rather than silent. This vocabulary comes from
+    <code>draft-inadarei-api-health-check</code> (expired at -06, 2022); pykit keeps
+    <code>checks</code> as an object keyed by name rather than the draft's
+    <code>application/health+json</code> arrays.</li>
+<li>A failing <strong>required</strong> check → <strong>503</strong>. — <code>health.required-failure-is-503</code></li>
+<li>A failing non-required check degrades the reported <code>status</code> but the
+    endpoint stays <strong>200</strong>. — <code>health.optional-failure-is-200-degraded</code></li>
+<li>A <code>warn</code> never changes the HTTP status.</li>
+<li>A check that raises is reported as a failure. <code>/readyz</code> never 500s: a
+    readiness endpoint that 500s tells a load balancer nothing.</li>
+<li>Each check runs with a 2-second timeout by default — below every host's
+    probe timeout — and a check still running at the timeout is reported
+    <code>fail</code> with <code>"timed out after Ns"</code>.</li>
+<li>The response is <code>application/json</code>, <strong>not</strong> problem+json, even at 503 — a
+    readiness report is the endpoint's normal representation and the 503 is its
+    verdict, not an error.</li>
+<li>The HTTP status is not repeated in the body.</li>
+<li>Every host judges a probe by its <strong>status code and response time only</strong>, never
+  the body, so neither endpoint ever redirects (a trailing-slash 301 would mark
+  the instance unhealthy).</li>
+</ul>
+<h2 id="7-authentication-and-authorization">7. Authentication and authorization<a class="headerlink" href="#7-authentication-and-authorization" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>No credentials, or credentials that fail verification → 401</strong>, with a
+  <code>WWW-Authenticate</code> challenge. — <code>auth.no-credentials-is-401-with-a-challenge</code></li>
+<li><strong>Valid credentials lacking the required scope or role → 403</strong>, with <strong>no</strong>
+  challenge. A challenge here tells a browser to re-prompt for credentials that
+  were already correct. — <code>auth.insufficient-scope-is-403-without-a-challenge</code></li>
+<li>The challenge follows RFC 6750 §3 for Bearer and RFC 7617 for Basic, and is
+  constructed rather than hand-written.</li>
+<li><strong>The 401 body never says why verification failed.</strong> Expired, bad signature
+  and unknown <code>kid</code> are indistinguishable on the wire; the reason goes to the
+  log.</li>
+<li>The verified caller is a <code>Principal</code>: <code>subject</code> (required), plus optional
+  <code>issuer</code>, <code>scopes</code>, <code>roles</code>, <code>tenant</code>, raw <code>claims</code> and <code>mechanism</code>. Scopes
+  and roles are separate sets and neither is encoded as the other.</li>
+<li>Basic auth, where offered, is documented as local-development and
+  simple-internal-deployment only, and emits the identical challenge.</li>
+</ul>
+<h2 id="8-field-casing">8. Field casing<a class="headerlink" href="#8-field-casing" title="Permanent link">&para;</a></h2>
+<p><strong>camelCase on the wire, <code>snake_case</code> in Python.</strong> — <code>casing.response-bodies-are-camel-case</code></p>
+<p>This is the Google JSON Style Guide's rule, Microsoft's REST API Guidelines'
+rule, and what proto3's JSON mapping produces — which is also why AIP-158's
+<code>page_size</code> appears on the wire as <code>pageSize</code>. It is what every TypeScript
+client and every popular UI framework's HTTP layer expects, and picking either
+casing is far better than letting it vary per application.</p>
+<p>Three exemptions, and only three:</p>
+<ul>
+<li><strong>RFC 9457's core members</strong> (<code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code>)
+  are single lowercase words and are unaffected. Problem <em>extensions</em> follow
+  the rule.</li>
+<li><strong>Headers.</strong> HTTP field names are case-insensitive and hyphenated.</li>
+<li><strong>RFC 9264 linkset member names</strong> (<code>anchor</code>, <code>service-desc</code>, <code>service-doc</code>,
+  <code>status</code>, <code>href</code>) in the §14 api-catalog body — they are the RFC's own
+  vocabulary, verbatim.</li>
+</ul>
+<p><strong>Both framework packages enforce this in code, not in a recipe</strong> — a renderer
+and a parser wired through the framework's own settings. A convention that only
+a guide enforces is a convention that holds until the first hurried endpoint.</p>
+<h2 id="9-openapi">9. OpenAPI<a class="headerlink" href="#9-openapi" title="Permanent link">&para;</a></h2>
+<p>The generated client is the real interface, so the schema is part of the
+contract and not a by-product. But <strong>two compliant OpenAPI documents
+describing the same JSON are not required to be the same document</strong> — OpenAPI
+<em>describes</em> an API; it does not <em>prescribe</em> one. What this kit holds identical
+across stacks is narrower than "the document": wire behaviour, always; a
+generated client's method names and declared error types; nothing about a
+generated client's model, page or enum type names.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Identical across stacks?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wire behaviour: status codes, headers, body shapes</td>
+<td><strong>Yes, required</strong></td>
+</tr>
+<tr>
+<td>Schema semantics: which JSON a schema accepts</td>
+<td><strong>Yes</strong>, when the application declares the same model</td>
+</tr>
+<tr>
+<td>Document text: component names, <code>operationId</code>s, nullability spelling, enum hoisting</td>
+<td><strong>No, not a goal</strong>, except <code>operationId</code> (below)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Both stacks emit <strong>OpenAPI 3.1.0</strong> (JSON Schema 2020-12) — each framework's
+  own default; nothing pins it.</li>
+<li>The shared <strong>non-generic</strong> shapes are named identically in
+  <code>components/schemas</code>: <strong><code>ProblemDetail</code></strong>, <strong><code>CheckResult</code></strong>,
+  <strong><code>HealthReport</code></strong>. A handler that builds an error body by hand is invisible to
+  schema collection, so each framework package injects <code>ProblemDetail</code>
+  explicitly — without it a generated TypeScript client has no error type at all.</li>
+<li><strong>The paginated envelope's component name is not held identical.</strong>
+  Left to themselves the two stacks disagree — pydantic mangles the type
+  parameters into <code>Page_OrderOut_</code>, drf-spectacular emits
+  <code>PaginatedOrderOutList</code> — and neither is renamed. A resource's wire <em>model</em>
+  (<code>OrderOut</code>) still carries the same name on both stacks; only its page
+  wrapper's name differs, and a generated client's page type was never going
+  to be identical across two different generators regardless.</li>
+<li><strong>One <code>operationId</code> convention across both stacks</strong>, <code>&lt;resource&gt;&lt;Verb&gt;</code> in
+  lowerCamelCase: <code>ordersList</code>, <code>ordersCreate</code>, <code>ordersGet</code>, <code>ordersUpdate</code> for
+  <code>PUT</code>, <code>ordersPartialUpdate</code> for <code>PATCH</code>, <code>ordersDelete</code>. <code>PUT</code> and <code>PATCH</code> get
+  distinct verbs so a resource serving both never produces a duplicate
+  <code>operationId</code>. This is the one piece of document text held identical, because
+  it is what a generated client's method names are made from — read from
+  <code>rn_forge.web.openapi.operation_id</code>, which both framework packages call
+  rather than deriving names themselves.</li>
+<li><strong>An operation outside those six is a custom method, spelled
+  <a href="https://google.aip.dev/136">AIP-136</a>-style as <code>:action</code> on the resource it
+  acts on</strong>, and named <code>&lt;resource&gt;&lt;Action&gt;</code>: <code>POST /orders/{orderId}:cancel</code> →
+  <code>ordersCancel</code>, <code>POST /orders:batchCreate</code> → <code>ordersBatchCreate</code>. The colon is
+  what makes the name derivable. Spelled as a plain path segment, nothing
+  distinguishes an action from a sub-collection — <code>POST /orders/{orderId}/cancel</code>
+  and <code>POST /orders/{orderId}/items</code> have the same shape — so that spelling
+  yields a mechanical <code>cancelCreate</code> and needs an explicit override
+  (<code>operation_id=</code> on FastAPI, <code>@extend_schema(operation_id=...)</code> on DRF).
+  On DRF the colon spelling is served by <code>rn_forge.django.drf.routers.CustomMethodRouter</code>;
+  stock routers cannot express it.</li>
+<li><code>operationId</code> <strong>must be unique across the document</strong>; OpenAPI requires it, and
+  a generator that meets a duplicate produces a broken client. drf-spectacular
+  warns and appends a numeral; FastAPI does neither, so on that stack a
+  collision is silent. Two routes ending in the same literal segment
+  (<code>/orders/{id}/items</code> and <code>/invoices/{id}/items</code>) are the case to watch.</li>
+<li><strong>Every operation that can return an error declares the problem responses it
+  can produce, by status</strong> — an <code>application/problem+json</code> response
+  referencing <code>ProblemDetail</code>, for each status the application's registry can
+  render plus 500. This is an <em>accuracy</em> repair, not a naming convention: the
+  document must describe what the service actually returns, and neither
+  framework's own schema collection sees a hand-built error body.
+  <code>FastApiApp.openapi()</code> does it on FastAPI by overriding <code>openapi()</code> and
+  repairing the cached document; <code>rn_forge.django.drf.openapi</code>'s
+  <code>problem_responses_hook</code> does the identical thing through drf-spectacular's
+  postprocessing hooks.</li>
+</ul>
+<h3 id="what-a-generated-client-shares-across-stacks-and-what-it-does-not">What a generated client shares across stacks, and what it does not<a class="headerlink" href="#what-a-generated-client-shares-across-stacks-and-what-it-does-not" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Generated client</th>
+<th>Same on both stacks?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Method names (<code>operationId</code>)</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Declared error responses</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Model, page and enum type names</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Model structure (<code>-Input</code>/<code>-Output</code> split vs. <code>readOnly</code>/<code>writeOnly</code>)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Nullable field types</td>
+<td>Generator-dependent</td>
+</tr>
+<tr>
+<td>Path-parameter names</td>
+<td>Only when the application spells them the same</td>
+</tr>
+</tbody>
+</table>
+<p>Forcing textual identity beyond this means post-processing each generator's
+output to normalize away its own idioms, which buys nothing until an API must
+be re-implemented on another stack behind a client that cannot change. If that
+need arises, the standard way to get it is spec-first — one owned OpenAPI
+document, each implementation contract-tested against it — not generator
+post-processing.</p>
+<h2 id="10-http-methods-and-status-codes">10. HTTP methods and status codes<a class="headerlink" href="#10-http-methods-and-status-codes" title="Permanent link">&para;</a></h2>
+<p>Unremarkable, and worth stating so it does not vary:</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A successful read</td>
+<td>200</td>
+</tr>
+<tr>
+<td>A successful create</td>
+<td>201, with <code>Location</code></td>
+</tr>
+<tr>
+<td>A successful update</td>
+<td>200 with the representation, or 204 with no body</td>
+</tr>
+<tr>
+<td>A successful delete</td>
+<td>204</td>
+</tr>
+<tr>
+<td>An accepted asynchronous operation</td>
+<td>202</td>
+</tr>
+</tbody>
+</table>
+<p><code>PUT</code> replaces; <code>PATCH</code> is RFC 7396 JSON Merge Patch (<code>Content-Type:
+application/merge-patch+json</code>), and there is no field-mask parameter (AIP-134 is
+not adopted). A <code>DELETE</code> on an already-absent resource is
+404, not 204 — an idempotent <em>outcome</em> is not the same as a silent one, and a
+client that deleted something twice usually wants to know.</p>
+<h2 id="11-request-body-size">11. Request body size<a class="headerlink" href="#11-request-body-size" title="Permanent link">&para;</a></h2>
+<p>RFC 9110 §15.5.14: a body over the configured limit is <strong>413</strong> —
+<code>problem.content-too-large-is-413</code>.</p>
+<ul>
+<li><strong>FastAPI.</strong> <code>AppConfig.max_body_bytes</code> (default 1 MiB; <code>None</code> disables it)
+  installs a pure-ASGI <code>BodySizeLimitMiddleware</code>, ahead of the router: a
+  declared <code>Content-Length</code> over the limit is rejected before the application
+  runs, and a streamed body without one is cut off as it arrives. Uvicorn
+  itself sets no limit.</li>
+<li><strong>Django.</strong> Django's own <code>DATA_UPLOAD_MAX_MEMORY_SIZE</code> maps to 413 through
+  <code>problem_registry()</code>, instead of Django's default 400. It guards
+  <code>request.body</code> and form/multipart parsing (<code>request.POST</code>), but <strong>not</strong> a
+  raw stream read — DRF's <code>JSONParser</code> reads via <code>HttpRequest.read()</code>, which
+  the check does not cover. A view that must enforce the limit on a JSON body
+  touches <code>request.body</code> itself before the parser runs.</li>
+<li>Each host's own front end has its own cap too (see <code>deployment.md</code>); this
+  limit is the application's and should sit at or below it.</li>
+</ul>
+<h2 id="12-deprecation-and-sunset">12. Deprecation and Sunset<a class="headerlink" href="#12-deprecation-and-sunset" title="Permanent link">&para;</a></h2>
+<p>An endpoint scheduled for removal announces it on every response.</p>
+<ul>
+<li><code>Deprecation</code> (RFC 9745) carries the date it became deprecated, as a
+  structured-field date: <code>@&lt;epoch-seconds&gt;</code>.</li>
+<li><code>Sunset</code> (RFC 8594) carries the date it stops being served, as an HTTP-date,
+  when one is scheduled.</li>
+<li><code>Link: &lt;...&gt;; rel="deprecation"</code> names the deprecation notice, when there is
+  one. — <code>deprecation.endpoint-carries-rfc9745-headers</code></li>
+<li><strong>FastAPI</strong> pairs the <code>deprecated(...)</code> dependency with the route's own
+  <code>deprecated=True</code>, so the OpenAPI document marks the operation deprecated
+  too.</li>
+<li><strong>Django</strong> pairs the <code>@deprecated(...)</code> view decorator with
+  drf-spectacular's <code>@extend_schema(deprecated=True)</code> for the same reason.</li>
+</ul>
+<h2 id="13-conditional-get">13. Conditional GET<a class="headerlink" href="#13-conditional-get" title="Permanent link">&para;</a></h2>
+<p>A <code>GET</code>/<code>HEAD</code> on a resource that carries an <code>ETag</code> honors an inbound
+<code>If-None-Match</code> (RFC 9110 §13.1.2, §15.4.5).</p>
+<ul>
+<li>A weak match — <code>*</code>, or any validator in a comma-separated list, compared
+  ignoring a leading <code>W/</code> on either side — answers <strong>304</strong>, with no body and
+  the <code>ETag</code> repeated. —
+  <code>concurrency.if-none-match-matches-is-304</code></li>
+<li>A miss is an ordinary 200 carrying the current representation and <code>ETag</code>. —
+  <code>concurrency.if-none-match-mismatch-is-200</code></li>
+<li><strong>Django</strong> gets this from its own <code>ConditionalGetMiddleware</code>, which does
+  weak <code>If-None-Match</code> comparison against any response carrying an <code>ETag</code> — no
+  kit code is involved.</li>
+</ul>
+<h2 id="14-service-discovery">14. Service discovery<a class="headerlink" href="#14-service-discovery" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The OpenAPI document and the docs UI stay each framework's own defaults:
+  <code>/openapi.json</code> and <code>/docs</code>. Document text is not held identical across
+  stacks (§9); only the <em>paths</em> are, so a client always knows where to look.</li>
+<li><strong><code>/.well-known/api-catalog</code></strong> (RFC 9727) is an RFC 9264 linkset,
+  <code>application/linkset+json</code>, naming the OpenAPI document (<code>service-desc</code>,
+  RFC 8631), the docs UI (<code>service-doc</code>) and readiness (<code>status</code>).
+  — <code>discovery.api-catalog-is-an-rfc9264-linkset</code></li>
+<li><strong>FastAPI</strong> serves it by default (<code>AppConfig.api_catalog: bool = True</code>),
+  answering <code>GET</code> and <code>HEAD</code>, excluded from the OpenAPI document itself.</li>
+<li><strong>Django</strong> serves it, plus the OpenAPI document and docs UI, from
+  <code>rn_forge.django.drf.openapi.openapi_urlpatterns()</code> (the <code>openapi</code> extra).</li>
+</ul>
+<h2 id="15-security-headers">15. Security headers<a class="headerlink" href="#15-security-headers" title="Permanent link">&para;</a></h2>
+<p>The OWASP REST Security Cheat Sheet's response headers, on every response:
+<code>Cache-Control: no-store</code>, <code>Content-Security-Policy: frame-ancestors 'none'</code>,
+<code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>,
+<code>Referrer-Policy: no-referrer</code>. — <code>security.owasp-headers-are-present</code></p>
+<ul>
+<li><strong><code>Strict-Transport-Security</code> is excluded from the default preset</strong> and is
+  opt-in (<code>hsts</code>) on both stacks: sending it over plain HTTP tells a browser
+  to refuse a future connection that isn't HTTPS, which is wrong unless this
+  service terminates TLS itself rather than behind a front end that already
+  sets it (see <code>deployment.md</code>).</li>
+<li><strong>A route's own header wins.</strong> Both stacks apply the preset with <code>setdefault</code>
+  semantics.</li>
+<li><strong>web</strong> (the <code>security</code> extra, wrapping the <code>secure</code> library): <code>rn_forge.web.security.API_SECURITY_HEADERS</code>
+  and a pure-ASGI <code>SecurityHeadersMiddleware</code>.</li>
+<li><strong>FastAPI</strong> installs it by default (<code>AppConfig.security_headers: bool = True</code>, <code>AppConfig.hsts: bool = False</code>).</li>
+<li><strong>Django</strong>: <code>rn_forge.django.security.SECURITY_SETTINGS</code> configures Django's own
+  <code>SecurityMiddleware</code> and <code>XFrameOptionsMiddleware</code> for three of the five headers plus HSTS;
+  <code>rn_forge.django.security.SecurityHeadersMiddleware</code> adds the two Django has no setting for
+  (<code>Cache-Control</code>, the CSP directive).</li>
+</ul>
+<h2 id="16-cors">16. CORS<a class="headerlink" href="#16-cors" title="Permanent link">&para;</a></h2>
+<p><strong>The application owns its CORS policy</strong> — which origins, whether there is
+one at all, and whether credentials are allowed. Neither stack picks a
+default.</p>
+<ul>
+<li><strong><code>EXPOSED_HEADERS</code></strong> is the one thing only this kit can supply: a browser
+  cannot read <code>ETag</code>, <code>Link</code>, <code>Location</code>, <code>Retry-After</code>, <code>Deprecation</code> or
+  <code>Sunset</code> unless they are named in <code>Access-Control-Expose-Headers</code>,
+  comma-joined in that order. <code>traceresponse</code> is not in this list — the
+  OpenTelemetry response propagator exposes it itself.
+  — <code>cors.exposed-headers-are-comma-joined</code></li>
+<li><strong>FastAPI</strong>: <code>AppConfig.cors: CorsPolicy | None = None</code>, over Starlette's
+  own <code>CORSMiddleware</code>. <code>None</code> installs nothing.</li>
+<li><strong>Django</strong>: <code>rn_forge.django.cors.cors_settings(allowed_origins)</code> (the
+  <code>cors</code> extra, <code>django-cors-headers</code>) sets <code>CORS_ALLOWED_ORIGINS</code> and
+  <code>CORS_EXPOSE_HEADERS</code>; the application adds <code>corsheaders</code> to
+  <code>INSTALLED_APPS</code> and <code>CorsMiddleware</code> to <code>MIDDLEWARE</code> itself.</li>
+<li><code>CorsPolicy(allow_credentials=True, allow_origins=("*",))</code> raises: browsers
+  reject that combination outright.</li>
+</ul>
+<hr />
+<h2 id="17-tabular-transfer-and-bulk-operations">17. Tabular transfer and bulk operations<a class="headerlink" href="#17-tabular-transfer-and-bulk-operations" title="Permanent link">&para;</a></h2>
+<p><code>rn_forge.web.transfer</code> holds the wire shapes; the framework packages hold the
+handlers. Every rule names its source and its conformance case.</p>
+<p><strong>Export.</strong> <code>GET /orders</code> with <code>Accept: text/csv</code> or
+<code>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</code> returns the
+same filtered collection as the JSON list, as a file. This is proactive
+negotiation (RFC 9110 §12); a wildcard never selects a tabular format.
+<code>?format=csv|xlsx</code> is the fallback for a plain link and wins over <code>Accept</code>. The
+export is not paginated. A result above the configured cap is a <code>422</code> problem
+whose <code>detail</code> names the cap. The response carries
+<code>Content-Disposition: attachment</code> with a quoted ASCII <code>filename</code> and a UTF-8
+<code>filename*</code> (RFC 6266, RFC 8187). —
+<code>transfer.export-is-negotiated-from-accept</code>,
+<code>transfer.export-format-param-is-the-fallback</code>,
+<code>transfer.export-filename-carries-rfc8187-encoding</code>,
+<code>transfer.export-over-the-cap-is-422</code></p>
+<p><strong>Import.</strong> <code>POST /orders:import</code> is a custom method (AIP-136, §9), a
+<code>multipart/form-data</code> upload with a <code>file</code> part. <code>?validateOnly=true</code> runs the
+whole import and persists nothing (AIP-163). Success is <code>200</code> with
+<code>{created, updated, skipped, validateOnly}</code>. Any row error fails the whole
+import: <code>422</code> <code>application/problem+json</code> with
+<code>errors[].pointer = "/rows/12/Quantity"</code> (RFC 9457 §3, §2's <code>errors</code>), and
+nothing persisted. — <code>transfer.import-report-counts-and-validate-only</code>,
+<code>transfer.import-row-errors-are-422-pointers</code></p>
+<p><strong>Import template.</strong> <code>GET /orders:importTemplate</code>, negotiated like an export;
+<code>?prefill=true</code> adds the current filtered rows (AIP-136).</p>
+<p><strong>Bulk create.</strong> <code>POST /orders:batchCreate</code> with <code>{"requests": [...]}</code> is all or
+nothing (AIP-233) and answers <code>200 {"orders": [...]}</code>. A per-item validation or
+authorization failure is one <code>422</code> or <code>403</code> problem with
+<code>errors[].pointer = "/requests/3/..."</code> (RFC 9457). —
+<code>transfer.batch-create-item-failure-is-422-pointer</code>,
+<code>transfer.failed-batch-create-persists-nothing</code>,
+<code>transfer.batch-create-returns-the-created-resources</code></p>
+<p><strong>Bulk delete.</strong> <code>POST /orders:batchDelete</code> with <code>{"ids": [...]}</code> is all or
+nothing and answers <code>204</code> (AIP-235); an id that does not exist fails the whole
+batch with <code>404</code>. — <code>transfer.batch-delete-with-unknown-id-is-404</code>,
+<code>transfer.failed-batch-delete-deletes-nothing</code>, <code>transfer.batch-delete-is-204</code></p>
+<p><strong>Large files (not built).</strong> When a consumer needs it, the pattern is
+<code>POST /imports</code> returning <code>202</code> with <code>Location</code>, then polling the operation
+(AIP-151, §19), with an <code>Idempotency-Key</code> (§5,
+<code>draft-ietf-httpapi-idempotency-key-header</code>).</p>
+<hr />
+<h2 id="18-timestamps-and-standard-fields">18. Timestamps and standard fields<a class="headerlink" href="#18-timestamps-and-standard-fields" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Timestamps are RFC 3339 in UTC with a <code>Z</code> suffix</strong>, per AIP-142 (which
+  points to RFC 3339): <code>2026-09-23T14:05:00Z</code>. Property names end in <code>Time</code>
+  for an instant and <code>Date</code> for a calendar date. On Django this needs
+  <code>USE_TZ = True</code> and <code>TIME_ZONE = "UTC"</code>, which DRF's <code>DateTimeField</code> renders
+  with the <code>Z</code>. — <code>timestamps.rfc-3339-utc-with-z</code></li>
+<li><strong>The audit fields are <code>createTime</code>, <code>updateTime</code>, <code>createdBy</code> and
+  <code>updatedBy</code></strong> (AIP-148 for the first two; <code>createdBy</code>/<code>updatedBy</code> have no
+  AIP equivalent). <code>etag</code> and <code>requestId</code> are not fields: RFC 9110 headers
+  (§3) and the <code>Idempotency-Key</code> header (§5) govern.</li>
+<li>Errors are RFC 9457 problems, never <code>google.rpc.Status</code>.</li>
+</ul>
+<h2 id="19-versioning-compatibility-and-operations">19. Versioning, compatibility and operations<a class="headerlink" href="#19-versioning-compatibility-and-operations" title="Permanent link">&para;</a></h2>
+<p>Where no RFC or IETF draft applies, these conventions follow Google's AIPs for
+naming and shape. Nothing else from Google's stack is used, and an AIP an RFC
+already governs, or one that assumes gRPC, is not adopted (last bullet).</p>
+<ul>
+<li><strong>Versioning</strong> (AIP-185): a major version in the path, <code>/v1</code>, and no minor
+  versions on the wire. A version is retired with the <code>Deprecation</code> and
+  <code>Sunset</code> headers of §12.</li>
+<li><strong>Breaking changes</strong> (AIP-180) are the review rule: removing or renaming a
+  field, path or parameter, narrowing a type, or adding a required request
+  field. Enforce it with an OpenAPI diff (<code>oasdiff</code>) in CI of the consuming
+  repository; the kit does not run it.</li>
+<li><strong><code>validateOnly</code></strong> (AIP-163): a mutating method a UI previews accepts a
+  <code>validateOnly=true</code> query parameter, runs validation and every check the real
+  call would, and has no side effects. §17's import uses it.</li>
+<li><strong>Batch methods</strong> are spelled <code>:batchCreate</code>, <code>:batchGet</code> and <code>:batchUpdate</code>
+  (AIP-233, 231, 234). <code>:batchGet</code> and <code>:batchUpdate</code> are specified here and
+  built when a consumer needs them.</li>
+<li><strong>Long-running operations</strong> (AIP-151): the call returns <code>202</code> with a
+  <code>Location</code> naming an operation resource
+  <code>{name, done, metadata, error | response}</code>; <code>error</code> is an RFC 9457 problem.
+  <code>rn_forge.web.Operation</code> is that body: unfinished has neither outcome,
+  finished has exactly one. Storing operations and running the work are the
+  application's. — <code>operations.start-is-202-with-location</code>,
+  <code>operations.finished-carries-its-response</code>, <code>operations.failed-carries-a-problem</code></li>
+<li><strong>Custom-method paths</strong> (<code>:cancel</code>, <code>:import</code>, the batch spellings) put a
+  colon in the last path segment. It is valid in a URI, but a gateway or router
+  that treats <code>:</code> as a parameter marker must be configured to pass it through.</li>
+<li><strong>Not adopted:</strong> AIP-160 <code>filter</code> expressions (per-field query parameters
+  are the mechanism), AIP-122 resource names (ids stay ids), AIP-157 <code>readMask</code>
+  and AIP-164 soft delete (deferred).</li>
+</ul>
+<h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
+<p><code>rn_forge.web.conformance.CASES</code> is the executable form of this page. Each
+framework package ships a ~15-line driver that builds a small application over
+these primitives, runs every case through its own stack, and asserts against
+the table — never against the other stack's output, because two stacks
+agreeing on the wrong thing is not conformance.</p>
+<p>A rule stated here with no case in that table is treated as unfinished.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
