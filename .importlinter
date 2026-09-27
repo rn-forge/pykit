@@ -1,0 +1,135 @@
+# Executable import boundaries for the pykit workspace (kiln ADR-0003).
+#
+# Four rules, all of which a reader of the dependency graph would otherwise
+# have to take on trust:
+#
+#   1. commons is runtime-neutral: it never reaches into cli or tooling, and
+#      never imports Typer or Jinja.
+#   2. cli is the command-line shape and nothing more: it never imports
+#      tooling, so a batch application can take the CLI layer without the
+#      file-owning machinery (kiln D52, ADR-0002).
+#   3. the three libraries layer strictly: tooling -> cli -> commons.
+#   4. a framework's runtime surface never depends on developer tooling, on
+#      Typer or on Jinja — those arrive only with its `codegen` extra, which
+#      lives in `rn_forge.<framework>.codegen` and nowhere else.
+#   5. `rn_forge.web` is the framework-agnostic HTTP layer: it imports no web
+#      framework and neither of the development-layer packages, and the
+#      framework packages layer on top of it (web plan alignment §2).
+#   6. `rn_forge.sqlalchemy` sits beside the framework packages: it imports
+#      neither of them nor either framework.
+#
+# There are deliberately no compatibility re-exports in any direction; a shim
+# would satisfy a caller and reverse the dependency.
+#
+# Run with `uv run lint-imports`.
+
+[importlinter]
+root_packages =
+    rn_forge.commons
+    rn_forge.cli
+    rn_forge.tooling
+    rn_forge.django
+    rn_forge.fastapi
+    rn_forge.web
+    rn_forge.sqlalchemy
+include_external_packages = True
+
+[importlinter:contract:commons-is-runtime-neutral]
+name = rn_forge.commons never imports cli, tooling, Typer or Jinja
+type = forbidden
+source_modules =
+    rn_forge.commons
+forbidden_modules =
+    rn_forge.cli
+    rn_forge.tooling
+    typer
+    click
+    jinja2
+
+[importlinter:contract:cli-has-no-tooling]
+name = rn_forge.cli never imports tooling or Jinja
+type = forbidden
+source_modules =
+    rn_forge.cli
+forbidden_modules =
+    rn_forge.tooling
+    jinja2
+
+[importlinter:contract:library-layers]
+name = tooling depends on cli, cli depends on commons, never the other way round
+type = layers
+layers =
+    rn_forge.tooling
+    rn_forge.cli
+    rn_forge.commons
+
+[importlinter:contract:django-runtime-has-no-tooling]
+name = rn_forge.django's runtime surface never imports cli, tooling, Typer or Jinja
+type = forbidden
+source_modules =
+    rn_forge.django
+forbidden_modules =
+    rn_forge.cli
+    rn_forge.tooling
+    typer
+    jinja2
+# `rn_forge.django.codegen` is the one place the extra may be imported from.
+# It does not exist yet (the standardization plan defers generators), so an
+# unmatched exemption is not an error here — the contract still holds today.
+ignore_imports =
+    rn_forge.django.codegen -> *
+    rn_forge.django.codegen.* -> *
+unmatched_ignore_imports_alerting = none
+
+[importlinter:contract:fastapi-runtime-has-no-tooling]
+name = rn_forge.fastapi never imports django, cli, tooling or Jinja
+type = forbidden
+source_modules =
+    rn_forge.fastapi
+forbidden_modules =
+    rn_forge.django
+    rn_forge.cli
+    rn_forge.tooling
+    jinja2
+# Written while `rn_forge.fastapi.codegen` is empty, for the same reason as
+# django's: a fence added after the first generator was never tested.
+ignore_imports =
+    rn_forge.fastapi.codegen -> *
+    rn_forge.fastapi.codegen.* -> *
+unmatched_ignore_imports_alerting = none
+
+[importlinter:contract:web-is-framework-free]
+name = rn_forge.web never imports a web framework, cli or tooling
+type = forbidden
+source_modules =
+    rn_forge.web
+forbidden_modules =
+    django
+    fastapi
+    starlette
+    rest_framework
+    rn_forge.cli
+    rn_forge.tooling
+
+[importlinter:contract:web-layers]
+name = django, fastapi and sqlalchemy depend on web, web depends on commons, never the other way round
+type = layers
+# The `:` makes django, fastapi and sqlalchemy independent siblings at one
+# layer: none may import another.
+layers =
+    rn_forge.django : rn_forge.fastapi : rn_forge.sqlalchemy
+    rn_forge.web
+    rn_forge.commons
+
+[importlinter:contract:sqlalchemy-is-framework-free]
+name = rn_forge.sqlalchemy never imports fastapi, django or their packages
+type = forbidden
+source_modules =
+    rn_forge.sqlalchemy
+forbidden_modules =
+    rn_forge.fastapi
+    rn_forge.django
+    fastapi
+    starlette
+    django
+    rest_framework

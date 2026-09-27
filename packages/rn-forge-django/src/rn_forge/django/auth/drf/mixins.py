@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rn_forge.django.auth.drf.permissions import AuthorizationPermission
 from rn_forge.django.auth.credentials import BaseCredentials
 from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.utils import AppUtils
+from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.django.drf import PermissionAwareUser, RequestUtils
 from rn_forge.django.drf.views.mixins import RequestAccessViewMixin
 from rn_forge.django.models import BaseModel
@@ -28,9 +28,8 @@ DEFAULT_PERMISSION_ACTION_MAP: Mapping[str, str] = {
     "update": "update",
     "partial_update": "update",
     "destroy": "delete",
-    "bulk_create": "create",
-    "bulk_delete": "delete",
-    "export": "download",
+    "batch_create": "create",
+    "batch_delete": "delete",
     "import_items": "upload",
     "import_template": "upload",
 }

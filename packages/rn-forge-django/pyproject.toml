@@ -1,27 +1,85 @@
 [project]
 name = "rn-forge-django"
-version = "0.2.2"
-description = "Opinionated Django/DRF integration layer built on rn-forge-commons"
+version = "0.3.0"
+description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-dependencies = ["django>=6.0.7", "rn-forge-commons"]
+dependencies = [
+  "django>=6.0.7",
+  # Direct URLs on release tags (ADR-0004); `[tool.uv.sources]`
+  # below is local development only.
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
 
 [project.optional-dependencies]
-drf = ["djangorestframework>=3.17.1", "rn-forge-commons[excel]"]
-fixtures = ["rn-forge-commons[excel]"]
-jwt = ["djangorestframework>=3.17.1", "djangorestframework-simplejwt>=5.5.1"]
+drf = ["djangorestframework>=3.17.1"]
+# `rn_forge.django.drf.transfer` only: tabular export and import, batch create
+# and delete. `[xlsx]` brings tablib and openpyxl, which `write_xlsx` also uses.
+transfer = [
+  "djangorestframework>=3.17.1",
+  "django-import-export[xlsx]>=4.4.1",
+]
+# `fixtures.py` reads workbooks through `ExcelAdapter`, which needs pandas.
+fixtures = [
+  "rn-forge-commons[excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+jwt = [
+  "djangorestframework>=3.17.1",
+  "djangorestframework-simplejwt>=5.5.1",
+]
+# JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
+# simplejwt against a local User. The authenticator itself is web's `auth`
+# extra (`rn_forge.web.oidc`), which brings commons' `auth` extra with it.
+oidc = [
+  "djangorestframework>=3.17.1",
+  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
+celery = ["celery>=5.6.3"]
+# drf-spectacular only. djangorestframework-camel-case was evaluated and not
+# taken: its last release is 1.4.2 (2023-02), with classifiers stopping at
+# Python 3.10 — casing lives in `rn_forge.django.drf.casing` instead.
+openapi = [
+  "djangorestframework>=3.17.1",
+  "drf-spectacular>=0.30.0",
+]
 saml = [
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "python3-saml>=1.16.0",
 ]
+# `rn_forge.django.security` only, for the OWASP header preset
+# (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
+security = [
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+]
+# `rn_forge.django.cors` only. The application still owns its origins;
+# `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
+cors = ["django-cors-headers>=4.9.0"]
+# `rn_forge.django.tracing` only, called once before Django loads. Separate
+# from `drf`: tracing is not DRF-specific, and `uv sync --extra drf` must not
+# pull it in.
+otel = ["opentelemetry-instrumentation-django>=0.65b0"]
 all = [
+  "celery>=5.6.3",
+  "django-cors-headers>=4.9.0",
+  "django-import-export[xlsx]>=4.4.1",
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
+  "drf-spectacular>=0.30.0",
+  "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
-  "rn-forge-commons[excel]",
+  "rn-forge-commons[auth,excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-django/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-django"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-django/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
 requires = ["uv_build>=0.11.28,<0.12.0"]
@@ -33,18 +91,23 @@ module-name = "rn_forge.django"
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
+rn-forge-web = { workspace = true }
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra --import-mode=importlib"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
+  "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 
 [dependency-groups]
 dev = [
   "assertpy>=1.1",
   "django-stubs>=6.0.7",
+  "opentelemetry-sdk>=1.44",
+  # The PostgreSQL test job (RN_FORGE_DJANGO_TEST_DATABASE_URL); see tests/conftest.py.
+  "psycopg[binary]>=3.3.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

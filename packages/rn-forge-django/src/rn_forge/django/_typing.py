@@ -1,23 +1,4 @@
-"""Internal typing helpers for rn-forge Django integration boundaries.
-
-This module is the single place where Django/django-stubs typing gaps are
-absorbed, so a Django or django-stubs upgrade has one file to revisit.
-
-Two kinds of helper live here:
-
-- **Protocols** — structural stand-ins for Django objects that are untyped or
-  awkward to name at a call boundary.
-- **Generic aliases** — Django's field generics exist only in django-stubs; the
-  runtime classes are not subscriptable. Every alias below is therefore declared
-  under ``TYPE_CHECKING``, with a plain runtime fallback for the ones used as
-  base classes. Using ``django_stubs_ext.monkeypatch()`` instead would make
-  django-stubs a *runtime* dependency of this library, which we deliberately
-  avoid.
-
-This module is imported by ``models.base``, so it must stay import-light: it
-must not pull in ``django.contrib.admin`` or anything else that touches the app
-registry at import time. Admin-related aliases live in ``auth._typing``.
-"""
+"""Internal protocols and runtime-safe aliases for Django types."""
 
 from __future__ import annotations
 

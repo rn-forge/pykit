@@ -1,7 +1,9 @@
 site_name: rn-forge-django
-site_description: Opinionated Django/DRF integration layer built on rn-forge-commons
+site_description: Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-django/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -9,6 +11,8 @@ theme:
 
 plugins:
   - search
+  - mike:
+      canonical_version: latest
   - mkdocstrings:
       handlers:
         python:
@@ -24,11 +28,18 @@ plugins:
             show_symbol_type_heading: true
             show_symbol_type_toc: true
 
+extra:
+  version:
+    provider: mike
+
 markdown_extensions:
   - admonition
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -40,24 +51,39 @@ nav:
       - Models: guides/models.md
       - Auth: guides/auth.md
       - DRF Views: guides/drf-views.md
+      - Transfer: guides/transfer.md
+      - OpenAPI and camelCase: guides/openapi.md
+      - Messaging: guides/messaging.md
       - Fixtures: guides/fixtures.md
-  - API Reference:
-      - api/index.md
-      - Settings: api/settings.md
-      - Models: api/models.md
-      - Exceptions: api/exceptions.md
-      - Fixtures: api/fixtures.md
-      - Urls and Views: api/urls-and-views.md
+  - Reference:
+      - reference/index.md
+      - Settings: reference/settings.md
+      - Models: reference/models.md
+      - Exceptions: reference/exceptions.md
+      - Messaging: reference/messaging.md
+      - Celery: reference/celery.md
+      - Fixtures: reference/fixtures.md
+      - Urls and Views: reference/urls-and-views.md
       - Auth:
-          - api/auth/index.md
-          - Credentials and Payload: api/auth/credentials.md
-          - Basic: api/auth/basic.md
-          - JWT: api/auth/jwt.md
-          - SAML: api/auth/saml.md
-          - DRF: api/auth/drf.md
+          - reference/auth/index.md
+          - Credentials and Payload: reference/auth/credentials.md
+          - Basic: reference/auth/basic.md
+          - JWT: reference/auth/jwt.md
+          - SAML: reference/auth/saml.md
+          - DRF: reference/auth/drf.md
+          - Principal (bearer and basic): reference/auth/principal.md
+          - OIDC (JWKS bearer): reference/auth/oidc.md
       - DRF:
-          - api/drf/index.md
-          - Views: api/drf/views.md
-          - Serializers: api/drf/serializers.md
-          - Exceptions: api/drf/exceptions.md
-          - Utils: api/drf/utils.md
+          - reference/drf/index.md
+          - Views: reference/drf/views.md
+          - Transfer: reference/drf/transfer.md
+          - Routers: reference/drf/routers.md
+          - Serializers: reference/drf/serializers.md
+          - Exceptions: reference/drf/exceptions.md
+          - Pagination: reference/drf/pagination.md
+          - Idempotency: reference/drf/idempotency.md
+          - Concurrency: reference/drf/concurrency.md
+          - Casing: reference/drf/casing.md
+          - OpenAPI: reference/drf/openapi.md
+          - Utils: reference/drf/utils.md
+  - Changelog: changelog.md

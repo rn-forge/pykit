@@ -32,7 +32,7 @@ jobs:
         run: uv run --directory ${{ inputs.package-dir }} --package ${{ inputs.package-name }} --no-sync pyright
 
       - name: pytest
-        run: uv run --directory ${{ inputs.package-dir }} --package ${{ inputs.package-name }} --no-sync pytest
+        run: uv run --directory ${{ inputs.package-dir }} --package ${{ inputs.package-name }} --no-sync pytest -m "not scaffold"
 
   check-version:
     needs: verify

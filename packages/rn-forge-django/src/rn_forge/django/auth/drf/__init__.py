@@ -9,6 +9,11 @@ from rn_forge.django.auth.drf.mixins import (
     PermissionKeyViewMixin,
 )
 from rn_forge.django.auth.drf.permissions import AuthorizationPermission
+from rn_forge.django.auth.drf.principal import (
+    PrincipalBasicAuthentication,
+    PrincipalBearerAuthentication,
+    requires,
+)
 from rn_forge.django.auth.drf.serializers import (
     GroupSerializer,
     PermissionSerializer,
@@ -16,24 +21,15 @@ from rn_forge.django.auth.drf.serializers import (
 )
 from rn_forge.django.auth.drf.views import (
     AuthorizedAPIView,
-    AuthorizedBulkLoadImportModelViewSet,
-    AuthorizedExportModelViewSet,
     AuthorizedModelViewSet,
-    AuthorizedSnapshotImportModelViewSet,
-    AuthorizedUpsertImportModelViewSet,
     GroupViewSet,
     PermissionViewSet,
-    UserUpsertImportViewSet,
     UserViewSet,
 )
 
 __all__ = [
     "AuthorizedAPIView",
-    "AuthorizedBulkLoadImportModelViewSet",
-    "AuthorizedExportModelViewSet",
     "AuthorizedModelViewSet",
-    "AuthorizedSnapshotImportModelViewSet",
-    "AuthorizedUpsertImportModelViewSet",
     "AuthorizationPermission",
     "AuthorizationViewMixin",
     "BaseCredentials",
@@ -45,7 +41,9 @@ __all__ = [
     "PermissionKeyViewMixin",
     "PermissionSerializer",
     "PermissionViewSet",
+    "PrincipalBasicAuthentication",
+    "PrincipalBearerAuthentication",
     "UserSerializer",
-    "UserUpsertImportViewSet",
     "UserViewSet",
+    "requires",
 ]

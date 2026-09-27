@@ -1,10 +1,4 @@
-"""Internal typing helpers for DRF integration boundaries.
-
-DRF ships no type information, so this module is the single place where those
-gaps are absorbed — structural ``Protocol`` stand-ins for the DRF classes this
-package touches, plus re-exports that localize an otherwise-repeated
-suppression. A DRF upgrade has one file to revisit.
-"""
+"""Internal protocols for DRF integration boundaries."""
 
 from __future__ import annotations
 

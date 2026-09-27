@@ -9,8 +9,12 @@ from rest_framework.generics import GenericAPIView  # noqa: E402
 from rest_framework.test import APIRequestFactory  # noqa: E402
 
 from rn_forge.django.drf.views.base import BaseAPIView  # noqa: E402
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated  # noqa: E402
+from rest_framework.request import Request  # noqa: E402
+
 from rn_forge.django.drf.views.mixins import (  # noqa: E402
     ExceptionContextViewMixin,
+    PermissionByMethodMixin,
     RequestAccessViewMixin,
 )
 
@@ -61,3 +65,29 @@ class TestBaseAPIView:
     def test_includes_request_access_helpers(self) -> None:
         view = _BaseView()
         assert view.get_request_param("missing", "fallback") == "fallback"
+
+
+def _permission_types(view_class, method: str) -> list[type]:
+    view = view_class()
+    view.request = Request(APIRequestFactory().generic(method, "/"))
+    return [type(permission) for permission in view.get_permissions()]
+
+
+class TestPermissionByMethodMixin:
+    class _Mapped(PermissionByMethodMixin):
+        permission_classes = [IsAuthenticated]
+        PERMISSION_CLASSES_BY_METHOD = {"POST": [IsAdminUser], "GET": [AllowAny]}
+
+    class _Unmapped(PermissionByMethodMixin):
+        permission_classes = [IsAuthenticated]
+
+    def test_mapped_method_uses_its_classes(self) -> None:
+        assert _permission_types(self._Mapped, "post") == [IsAdminUser]
+        assert _permission_types(self._Mapped, "GET") == [AllowAny]
+
+    def test_unmapped_method_falls_back_to_permission_classes(self) -> None:
+        assert _permission_types(self._Mapped, "DELETE") == [IsAuthenticated]
+
+    def test_empty_map_behaves_like_the_plain_view(self) -> None:
+        for method in ("GET", "POST", "PATCH"):
+            assert _permission_types(self._Unmapped, method) == [IsAuthenticated]

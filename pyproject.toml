@@ -17,29 +17,72 @@ build-backend = "uv_build"
 [tool.pyright]
 typeCheckingMode = "strict"
 include = ["packages"]
-ignore = ["tests", "**/tests"]
+ignore = [
+  "tests",
+  "**/tests",
+  # The two framework examples in rn-forge-web's guides are documentation:
+  # they import Django/DRF and FastAPI, which this workspace deliberately does not
+  # install for that package. The framework-free asgi_app.py beside them is NOT
+  # excluded — it is executed by the test suite and is typechecked like any source.
+  "packages/rn-forge-web/docs/guides/examples/django_app.py",
+  "packages/rn-forge-web/docs/guides/examples/fastapi_app.py",
+]
 reportMissingTypeStubs = false
 reportUnnecessaryTypeIgnoreComment = "error"
 venvPath = "."
 venv = ".venv"
 
+[tool.pytest.ini_options]
+# A root-level run reads only this table, not the packages' own. importlib mode
+# lets every package keep a plain `tests/` with no __init__.py, and same-named
+# test modules in different packages do not collide.
+addopts = "-ra --import-mode=importlib"
+markers = [
+  "unit: fast isolated tests",
+  "integration: tests that exercise database-backed behavior",
+  "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+  "scaffold: installs built wheels into a scaffolded application (slow)",
+]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
 
 [tool.uv.sources]
+rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
+rn-forge-fastapi = { workspace = true }
+rn-forge-sqlalchemy = { workspace = true }
+rn-forge-tooling = { workspace = true }
+rn-forge-web = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/rn-forge-commons", "packages/rn-forge-django"]
+members = [
+  "packages/rn-forge-cli",
+  "packages/rn-forge-commons",
+  "packages/rn-forge-django",
+  "packages/rn-forge-fastapi",
+  "packages/rn-forge-sqlalchemy",
+  "packages/rn-forge-tooling",
+  "packages/rn-forge-web",
+]
 
 [dependency-groups]
-workspace = ["rn-forge-commons[all]", "rn-forge-django[all]"]
+workspace = [
+  "rn-forge-cli",
+  "rn-forge-commons[all]",
+  "rn-forge-django[all]",
+  "rn-forge-fastapi[transfer]",
+  "rn-forge-sqlalchemy",
+  "rn-forge-tooling",
+  "rn-forge-web[security]",
+]
 
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocs-monorepo-plugin>=1.1.2",
+  "mike>=2.1.3",
   "mkdocstrings[python]>=1.0.6",
 ]
 
@@ -48,13 +91,19 @@ dev = [
   { include-group = "docs" },
   "assertpy>=1.1",
   "django-stubs>=6.0.7",
+  "import-linter>=2.3",
+  "opentelemetry-instrumentation-asgi>=0.65b0",
+  "opentelemetry-sdk>=1.44",
   "pandas-stubs>=3.0.5",
+  "psycopg[binary]>=3.3.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
+  "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
+  "aiosqlite>=0.21",
+  "asyncpg>=0.30",
   "pytest-django>=4.12.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-commons[excel]",
   "ruff>=0.15.21",
-  "types-pyyaml>=6.0.12.20260518",
 ]

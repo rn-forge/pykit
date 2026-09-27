@@ -23,15 +23,21 @@ Install with ``pip install rn-forge-commons[testing]``.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 import pytest
 
 __all__ = [
     "assert_that",
     "output_path",
+    "raise_",
     "soft_assertions",
 ]
+
+
+def raise_(exc: BaseException) -> NoReturn:
+    """Raise *exc*; usable from a ``lambda`` where a statement is not allowed."""
+    raise exc
 
 
 # ---------------------------------------------------------------------------

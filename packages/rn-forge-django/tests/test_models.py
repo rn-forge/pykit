@@ -65,23 +65,6 @@ class StrictWidget(BaseModel):
         return ["code"]
 
 
-def _create_tables() -> None:
-    """Create in-memory tables for our test models."""
-    with connection.schema_editor() as editor:
-        try:
-            editor.create_model(Widget)
-        except Exception:
-            pass
-        try:
-            editor.create_model(Campaign)
-        except Exception:
-            pass
-        try:
-            editor.create_model(StrictWidget)
-        except Exception:
-            pass
-
-
 # ---------------------------------------------------------------------------
 # FixtureModelMixin
 # ---------------------------------------------------------------------------
@@ -298,10 +281,9 @@ TestModelLookupCacheWithoutDb = pytest.mark.unit(TestModelLookupCacheWithoutDb)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(django_db_setup, django_db_blocker):  # noqa: PT004
+def _django_tables(create_tables):  # noqa: PT004
     """Create Widget and Campaign tables for this module."""
-    with django_db_blocker.unblock():
-        _create_tables()
+    create_tables(Widget, Campaign, StrictWidget)
 
 
 @pytest.mark.integration
@@ -340,9 +322,15 @@ class TestTruncateModelMixin:
         Widget.truncate()
         assert Widget.objects.count() == 0
 
+    @pytest.mark.parametrize(
+        ("vendor", "statement"),
+        [("sqlite", "DELETE FROM"), ("postgresql", "TRUNCATE TABLE")],
+    )
     def test_truncate_uses_quoted_table_name(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, vendor: str, statement: str
     ) -> None:
+        # The vendor is pinned rather than read from the test database, so both
+        # branches are asserted whichever database the suite runs on.
         calls: list[str] = []
 
         class FakeCursor:
@@ -357,10 +345,11 @@ class TestTruncateModelMixin:
 
         monkeypatch.setattr(connection.ops, "quote_name", lambda name: f'"{name}"')
         monkeypatch.setattr(connection, "cursor", lambda: FakeCursor())
+        monkeypatch.setattr(connection, "vendor", vendor)
 
         Widget.truncate()
 
-        assert calls == ['DELETE FROM "rn_forge_django_widget"']
+        assert calls == [f'{statement} "rn_forge_django_widget"']
 
 
 @pytest.mark.django_db
@@ -371,11 +360,11 @@ class TestBaseModelFields:
 
     def test_created_at_auto_populated(self) -> None:
         w = Widget.objects.create(name="Y", code="Y1", created_by="u", updated_by="u")
-        assert w.created_at is not None
+        assert w.create_time is not None
 
     def test_updated_at_auto_populated(self) -> None:
         w = Widget.objects.create(name="Z", code="Z1", created_by="u", updated_by="u")
-        assert w.updated_at is not None
+        assert w.update_time is not None
 
     def test_status_can_be_set_to_inactive(self) -> None:
         w = Widget.objects.create(
@@ -383,15 +372,16 @@ class TestBaseModelFields:
         )
         assert w.status == Status.Inactive
 
+    # A blank `name` is what `full_clean` rejects and every database stores. An
+    # over-long value would prove nothing on PostgreSQL, which enforces
+    # `max_length` itself.
     def test_default_save_does_not_run_full_clean(self) -> None:
-        widget = Widget(name="x" * 101, code="TOO-LONG", created_by="u", updated_by="u")
+        widget = Widget(name="", code="BLANK", created_by="u", updated_by="u")
         widget.save()
         assert widget.pk is not None
 
     def test_opt_in_save_runs_full_clean(self) -> None:
-        widget = StrictWidget(
-            name="x" * 101, code="TOO-LONG", created_by="u", updated_by="u"
-        )
+        widget = StrictWidget(name="", code="BLANK", created_by="u", updated_by="u")
         with pytest.raises(ValidationError):
             widget.save()
 

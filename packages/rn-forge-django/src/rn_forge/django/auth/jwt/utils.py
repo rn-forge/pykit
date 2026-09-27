@@ -90,7 +90,9 @@ class JWTUtils:
 
         try:
             exchange_token = RefreshToken(cast(Any, token))
-        except Exception as exc:  # pragma: no cover - SimpleJWT raises token-specific errors
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - SimpleJWT raises token-specific errors
             raise ValueError("Invalid login exchange token") from exc
         if exchange_token.get("rn_forge_token_type") != "login_exchange":
             raise ValueError("Invalid login exchange token")

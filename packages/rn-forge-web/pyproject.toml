@@ -1,0 +1,76 @@
+[project]
+name = "rn-forge-web"
+version = "0.1.0"
+description = "Framework-agnostic HTTP/API primitives built on rn-forge-commons"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+# Pinned direct URL, not a bare name: these packages are not on PyPI, and
+# each pin names its dependency's release tag (ADR-0004).
+# `[tool.uv.sources]` below overrides this with
+# the workspace checkout for local development only — the declaration here is
+# what a consumer outside the workspace actually resolves.
+#
+# Beyond commons (with its `pydantic` extra, for the wire models),
+# `opentelemetry-api`, following OpenTelemetry's own library guidance (a no-op
+# until the application configures the SDK). See "Dependencies and why" in README.md.
+dependencies = [
+  "rn-forge-commons[pydantic] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "opentelemetry-api>=1.44",
+]
+
+[project.optional-dependencies]
+testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+# `rn_forge.web.oidc` only. The rest of the package stays dependency-free; this
+# extra exists so a binding can reuse one OIDC authenticator instead of each
+# framework package hand-writing the same verifier-to-Principal glue.
+auth = [
+  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+]
+# `rn_forge.web.security` only. `secure` is framework-agnostic (no dependencies
+# of its own) and emits the OWASP header preset directly, so it is wrapped
+# rather than hand-rolled.
+security = ["secure>=2.0.1"]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-web"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-web/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.web"
+
+[tool.uv.sources]
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+asyncio_mode = "auto"
+markers = ["unit: fast isolated tests"]
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "opentelemetry-instrumentation-asgi>=0.65b0",
+  "opentelemetry-sdk>=1.44",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-asyncio>=1.3.0",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-web[auth,security]",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "opentelemetry-instrumentation-asgi>=0.65b0",
+  "rn-forge-web[auth,security]",
+]

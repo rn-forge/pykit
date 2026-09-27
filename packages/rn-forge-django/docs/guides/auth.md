@@ -88,9 +88,80 @@ in `DEFAULT_PERMISSION_ACTION_MAP`; override per-request-app defaults via
 Use `PermissionKeyViewMixin` instead when you want permission-key resolution without full
 `AuthorizationViewMixin` request-access plumbing (e.g. on plain `GenericAPIView`s).
 
+## Externally issued tokens: `PrincipalBearerAuthentication`
+
+For an API whose callers hold tokens issued by an identity provider — Entra ID, Auth0, Okta,
+Keycloak — rather than a local `User`, bind DRF to the `rn_forge.web` auth contract. The token is
+verified by an `rn_forge.web.Authenticator` you supply, and `request.user` is the resulting
+`rn_forge.web.Principal`:
+
+```python
+from rest_framework.views import APIView
+from rn_forge.django.auth.drf import PrincipalBearerAuthentication, requires
+from rn_forge.web import Requirement
+from rn_forge.web.oidc import OidcAuthenticator
+
+
+class ApiBearer(PrincipalBearerAuthentication):
+    authenticator = OidcAuthenticator.from_issuer(
+        "https://login.example.com/tenant/v2.0", audience="api://orders"
+    )
+    realm = "orders"
+
+
+class OrderView(APIView):
+    authentication_classes = [ApiBearer]
+    permission_classes = [requires(Requirement(all_scopes=frozenset({"orders:read"})))]
+```
+
+With `problem_details_exception_handler` installed: no or invalid credentials are a **401**
+`problem+json` with an RFC 6750 `WWW-Authenticate: Bearer realm="orders"` challenge and a detail that
+never says why verification failed; valid credentials lacking the scope are a **403** with no
+challenge. The same `Requirement` evaluates identically on `rn-forge-fastapi`.
+
+Verifying the JWT is the authenticator's job, and you do not have to write one:
+`rn_forge.web.oidc.OidcAuthenticator` (web's `auth` extra, which Django's `oidc` extra brings) is
+the shared implementation, so this stack accepts exactly the tokens a FastAPI service accepts.
+`JWKSBearerAuthentication` below builds one for you from class attributes.
+
+For the bundled JWKS binding, install `rn-forge-django[oidc]` and define one
+subclass with the provider's key-set URL, issuer and audience:
+
+```python
+from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication
+
+
+class ApiBearer(JWKSBearerAuthentication):
+    jwks_url = "https://idp.example.com/.well-known/jwks.json"
+    issuer = "https://idp.example.com/"
+    audience = "api://orders"
+```
+
+Use that class in the view's `authentication_classes`, and install
+`problem_details_exception_handler` in `REST_FRAMEWORK["EXCEPTION_HANDLER"]` for the
+shared problem response. The binding caches its authenticator and key set per
+subclass and process. Override `claims_to_principal()` when the provider uses
+nonstandard role or scope claims.
+
+Build the authenticator **once, at import or startup** — it holds the JWKS cache, so a
+per-request instance refetches the key set on every call. For an IdP whose roles or scopes sit
+somewhere non-standard (Keycloak's nested `realm_access.roles`, an Okta group claim), pass a
+`claims_to_principal` override.
+
+The JWKS endpoint an authenticator fetches is IdP configuration:
+
+| IdP | `jwks_url` |
+| --- | --- |
+| Entra ID | `https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys` |
+| Auth0 | `https://{domain}/.well-known/jwks.json` |
+| Okta | `https://{domain}/oauth2/{authorization-server-id}/v1/keys` |
+
+`PrincipalBasicAuthentication` is the RFC 7617 twin, producing the same `Principal` and the same
+401. **It is for local development and simple internal deployments only.**
+
 ## Built-in auth management viewsets
 
 `rn_forge.django.auth.drf.views` ships ready-to-mount viewsets for the standard Django auth
-models, wired through `AuthorizedExportModelViewSet` / `AuthorizedUpsertImportModelViewSet`:
-`PermissionViewSet`, `GroupViewSet`, `UserViewSet`, `UserUpsertImportViewSet`. Mount them (or
+models, wired through `AuthorizedModelViewSet`:
+`PermissionViewSet`, `GroupViewSet`, `UserViewSet`. Mount them (or
 `rn_forge.django.auth.urls.urlpatterns`, which already registers them) under your API root.

@@ -1,20 +1,21 @@
-"""Django-specific utility helpers.
-
-Provides:
-
-- :class:`RequestUtils` — debug snapshot extraction from a Django
-  :class:`~django.http.HttpRequest`.
-"""
+"""Request diagnostics and configuration guards for Django."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from typing import Any, Protocol, cast
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
+from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.utils import AppUtils
+from rn_forge.commons.runtime.environment import Environment
 
 __all__ = [
     "RequestUtils",
+    "require_environment",
+    "require_settings",
 ]
 
 _REDACTED_HEADERS = frozenset(
@@ -47,11 +48,7 @@ class RequestUtils:
     def debug_request(request: HttpRequest) -> dict[str, Any]:
         """Return a structured snapshot of *request* for logging or error reports.
 
-        Collects path, method, content type, scheme, host/port, the full set of
-        HTTP headers, and selected META entries.  No external calls are made.
-
-        Works with both Django's :class:`~django.http.HttpRequest` and DRF's
-        ``rest_framework.request.Request`` (which exposes the same interface).
+        Sensitive authorization, cookie, and API-key metadata is redacted.
         """
         meta = dict(cast(Mapping[str, object], cast(Any, request).META))
         headers = {
@@ -83,3 +80,39 @@ class RequestUtils:
                 },
             },
         }
+
+
+# ---------------------------------------------------------------------------
+# Startup guards
+# ---------------------------------------------------------------------------
+
+
+def require_settings(*names: str) -> None:
+    """Raise ``ImproperlyConfigured`` if any named Django setting is unset or blank.
+
+    All missing names are reported together. Empty values follow
+    :meth:`rn_forge.commons.lang.utils.AppUtils.is_empty`.
+
+    Raises:
+        ImproperlyConfigured: One or more settings are missing.
+    """
+    missing = sorted(
+        name for name in names if AppUtils.is_empty(getattr(settings, name, None))
+    )
+    if missing:
+        raise ImproperlyConfigured(
+            f"Missing required Django setting(s): {', '.join(missing)}"
+        )
+
+
+def require_environment(*names: str) -> dict[str, str]:
+    """Return the named environment variables, raising if any is unset or blank.
+
+    Raises:
+        ImproperlyConfigured: One or more variables are missing; the message
+            names all of them.
+    """
+    try:
+        return Environment.require(*names)
+    except AppException as exc:
+        raise ImproperlyConfigured(exc.message) from exc

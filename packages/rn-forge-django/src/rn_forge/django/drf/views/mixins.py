@@ -8,8 +8,9 @@ from datetime import date
 
 from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.utils import AppUtils
+from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
 from rn_forge.django.drf._typing import (
@@ -26,6 +27,7 @@ __all__ = [
     "AuditFieldsViewMixin",
     "ExceptionContextViewMixin",
     "ModelFilterViewMixin",
+    "PermissionByMethodMixin",
     "RequestAccessViewMixin",
 ]
 
@@ -85,12 +87,11 @@ class ExceptionContextViewMixin(GenericAPIView):
         "list": "Error listing records.",
         "retrieve": "Error retrieving record.",
         "create": "Error creating record(s)",
-        "bulk_create": "Error creating records.",
+        "batch_create": "Error creating records.",
         "update": "Error updating record.",
         "partial_update": "Error updating record.",
         "destroy": "Error deleting record.",
-        "bulk_delete": "Error deleting records.",
-        "export": "Error exporting records.",
+        "batch_delete": "Error deleting records.",
         "import_items": "Error importing records.",
         "import_template": "Error building import template.",
     }
@@ -105,6 +106,26 @@ class ExceptionContextViewMixin(GenericAPIView):
         return context
 
 
+class PermissionByMethodMixin(GenericAPIView):
+    """Select DRF permission classes per HTTP method.
+
+    Unmapped methods use the view's ``permission_classes``. An explicitly empty
+    sequence leaves that method unguarded.
+    """
+
+    PERMISSION_CLASSES_BY_METHOD: ClassVar[
+        Mapping[str, Sequence[type[BasePermission]]]
+    ] = {}
+
+    @override
+    def get_permissions(self) -> Sequence[BasePermission]:  # pyright: ignore[reportIncompatibleMethodOverride]  # DRF stubs return list[BasePermission]
+        method = str(self.request.method).upper()
+        classes = self.PERMISSION_CLASSES_BY_METHOD.get(method)
+        if classes is None:
+            return cast(Sequence[BasePermission], super().get_permissions())
+        return [permission() for permission in classes]
+
+
 # ---------------------------------------------------------------------------
 # Model Filtering
 # ---------------------------------------------------------------------------
@@ -117,9 +138,9 @@ class ModelFilterViewMixin:
         "id": ("exact", "in"),
         "status": ("exact", "in"),
         "created_by": ("exact",),
-        "created_at": ("gte", "lte"),
+        "create_time": ("gte", "lte"),
         "updated_by": ("exact",),
-        "updated_at": ("gte", "lte"),
+        "update_time": ("gte", "lte"),
     }
     date_range_active_param = "active"
 

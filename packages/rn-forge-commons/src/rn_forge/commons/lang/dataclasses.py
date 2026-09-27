@@ -1,0 +1,496 @@
+"""Dataclass serialisation and typed deserialisation.
+
+:class:`DataclassMixin` rejects values that do not match their declared field
+types. :class:`LenientDataclassMixin` disables that check for records whose
+annotations dacite cannot validate, or whose input is intentionally ragged.
+:class:`StrictDataclassMixin` keeps the check and also rejects keys that name
+no field, at every nesting level.
+
+Dacite cannot validate PEP 695 ``type`` aliases or unbound type variables,
+including when nested in a container. Classes with those annotations must use
+the lenient mixin and document the specific limitation.
+
+Field exclusion
+~~~~~~~~~~~~~~~
+
+Mark a field with ``metadata={"exclude": True}`` to omit it from
+``as_dict()`` (and therefore from JSON/YAML output)::
+
+    @dataclass
+    class User(DataclassMixin):
+        name: str
+        password: str = field(metadata={"exclude": True})
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import types
+import typing
+from collections.abc import Mapping
+from enum import Enum
+from typing import Any, ClassVar, Self, cast
+
+import dacite
+
+from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.fs.documents import JsonUtils, YamlUtils
+from rn_forge.commons.logging import AppLogger
+
+_LOGGER = AppLogger.get_logger(__name__)
+
+
+class DataclassMixin:
+    """Mixin that adds serialisation helpers to a ``@dataclass``.
+
+    Must be used together with ``@dataclasses.dataclass``.  The mixin itself
+    does **not** apply the decorator — this keeps field declarations explicit
+    and avoids any global side effects.
+
+    Example::
+
+        from dataclasses import dataclass, field
+        from rn_forge.commons import DataclassMixin
+
+        @dataclass
+        class AppConfig(DataclassMixin):
+            host: str = "localhost"
+            port: int = 8080
+            secret: str = field(default="changeme", metadata={"exclude": True})
+
+        cfg = AppConfig()
+        print(cfg.to_json())   # {"host": "localhost", "port": 8080}
+        print(cfg.to_yaml())   # host: localhost\\nport: 8080\\n
+    """
+
+    def as_dict(self, *, exclude_hidden: bool = True) -> dict[str, Any]:
+        """Convert this dataclass instance to a plain dict.
+
+        Args:
+            exclude_hidden: When ``True`` (default), fields decorated with
+                ``metadata={"exclude": True}`` are omitted from the result,
+                recursively throughout nested dataclasses.
+                Pass ``False`` to include every field.
+
+        Returns:
+            A dict mapping field names to their current values. Nested
+            dataclasses are recursively converted, respecting ``exclude``
+            metadata at every level.
+
+        Raises:
+            TypeError: If the subclass was not decorated with
+                ``@dataclasses.dataclass``.
+        """
+        return _dataclass_to_dict(self, exclude_hidden=exclude_hidden)
+
+    def to_json(self, *, indent: str | int | None = None, **kwargs: Any) -> str:
+        """Serialise this instance to a JSON string.
+
+        Fields excluded via ``metadata={"exclude": True}`` are omitted.
+
+        Args:
+            indent: Indentation level passed to :func:`json.dumps`. ``None``
+                produces compact output.
+            **kwargs: Additional keyword arguments forwarded to
+                :func:`json.dumps`.
+
+        Returns:
+            A JSON string representation of this instance.
+        """
+        _LOGGER.trace("DataclassMixin.to_json | cls={}", type(self).__name__)
+        return JsonUtils.serialize(self.as_dict(), indent=indent, **kwargs)
+
+    def to_yaml(self, **kwargs: Any) -> str:
+        """Serialise this instance to a YAML string.
+
+        Fields excluded via ``metadata={"exclude": True}`` are omitted.
+
+        Args:
+            **kwargs: Additional keyword arguments forwarded to
+                :meth:`~rn_forge.commons.fs.documents.YamlUtils.serialize`
+                (e.g. ``sort_keys``, ``default_flow_style``).
+
+        Returns:
+            A YAML string representation of this instance.
+        """
+        _LOGGER.trace("DataclassMixin.to_yaml | cls={}", type(self).__name__)
+        return YamlUtils.serialize(self.as_dict(), **kwargs)
+
+    #: dacite configuration used by :meth:`from_dict`. ``check_types=True``
+    #: rejects a value whose type does not match its field — a ``str`` where an
+    #: ``int`` is declared is a bad document, not a value to pass through.
+    #: ``cast=[tuple, set]`` still performs the structural ``list -> tuple`` /
+    #: ``list -> set`` conversion for those two container types, which is a
+    #: representation difference rather than a type error (dacite does not cast
+    #: containers by default).
+    #:
+    #: ``Enum`` is cast for a subtler reason. A :class:`~enum.StrEnum` member
+    #: serialises to a plain string, and a plain string is *already* an
+    #: acceptable value for a ``StrEnum``-annotated field, so without casting
+    #: it a JSON round trip silently leaves a ``str`` where the enum member
+    #: was — and every ``is`` comparison against a member then quietly
+    #: evaluates false. Casting reconstructs the member and rejects a value
+    #: the enum does not define, which is the whole point of declaring one.
+    #: To turn checking off, subclass :class:`LenientDataclassMixin` rather
+    #: than overriding this directly — a hand-written
+    #: ``dacite.Config(check_types=False)`` builds a *fresh* config and
+    #: silently drops the ``cast`` list above, reintroducing the ``StrEnum``
+    #: bug this comment describes.
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=True, cast=[Enum, tuple, set]
+    )
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create an instance from a dict, recursively rebuilding nested dataclasses.
+
+        Only keys that match declared dataclass field names are passed to the
+        constructor.  This makes ``from_dict`` tolerant of extra data (e.g.
+        when loading from a config file that has fields added in a newer
+        schema version). Nested dataclass-typed fields are reconstructed
+        recursively for common container annotations, via :mod:`dacite`.
+
+        Note a nested dataclass field's own overridden ``from_dict`` (if any)
+        is **not** called — dacite structures nested dataclasses itself.
+
+        Args:
+            data: A dict whose keys correspond to dataclass field names.
+                Unrecognised keys are silently ignored, or rejected when the
+                class's ``__dacite_config__`` sets ``strict``.
+
+        Returns:
+            A new instance of this class populated with matching field values.
+
+        Raises:
+            AppException: A value does not match its field's declared type, a
+                required field is absent, or an enum-typed field names a member
+                the enum does not define. Under ``strict``, also a key that
+                names no field, at any nesting level; the message lists every
+                such key by its dotted path (``repository.archtype``).
+            TypeError: If the subclass was not decorated with
+                ``@dataclasses.dataclass``.
+        """
+        if not dataclasses.is_dataclass(cls):
+            _LOGGER.warning(
+                "DataclassMixin.from_dict: target is not a dataclass | cls={}", cls
+            )
+            raise TypeError(
+                f"{cls.__name__} is not a dataclass — DataclassMixin requires @dataclass"
+            )
+        if cls.__dacite_config__.strict:
+            unknown_keys = _unknown_key_paths(cls, data, "")
+            if unknown_keys:
+                _LOGGER.debug(
+                    "DataclassMixin.from_dict: unknown keys | cls={} | keys={}",
+                    cls.__name__,
+                    unknown_keys,
+                )
+                raise AppException(
+                    "Invalid {}: unknown key(s) {}",
+                    cls.__name__,
+                    ", ".join(unknown_keys),
+                )
+        field_names = {field.name for field in dataclasses.fields(cls)}
+        ignored_keys = sorted(set(data) - field_names)
+        if ignored_keys:
+            _LOGGER.debug(
+                "DataclassMixin.from_dict: ignoring unknown keys | cls={} | keys={}",
+                cls.__name__,
+                ignored_keys,
+            )
+        try:
+            return dacite.from_dict(
+                data_class=cls, data=data, config=cls.__dacite_config__
+            )
+        # ValueError is caught alongside DaciteError deliberately: dacite lets
+        # an enum's own `ValueError` propagate rather than wrapping it, so
+        # catching only DaciteError would leak the one failure a reader of a
+        # config document is most likely to cause (a misspelled enum value).
+        except (dacite.DaciteError, ValueError) as error:
+            # Debug, not exception: the `AppException` below carries the
+            # message the caller acts on. Logging a full traceback at ERROR
+            # here double-reports it, and buries a clean message under a dacite
+            # stack the reader can do nothing with.
+            _LOGGER.debug(
+                "DataclassMixin.from_dict failed | cls={} | keys={}",
+                cls.__name__,
+                sorted(data),
+            )
+            raise AppException("Invalid {}: {}", cls.__name__, error) from error
+
+    @classmethod
+    def from_json(cls, text: str) -> Self:
+        """Create an instance from a JSON string.
+
+        Delegates to :meth:`from_dict` after parsing, so unknown keys are
+        ignored.
+
+        Args:
+            text: A JSON string representing a dict of field values.
+
+        Returns:
+            A new instance populated from the parsed JSON.
+
+        Raises:
+            json.JSONDecodeError: If *text* is not valid JSON.
+        """
+        _LOGGER.trace(
+            "DataclassMixin.from_json | cls={} | text_length={}",
+            cls.__name__,
+            len(text),
+        )
+        return cls.from_dict(JsonUtils.load(text))
+
+    @classmethod
+    def from_yaml(cls, text: str) -> Self:
+        """Create an instance from a YAML string.
+
+        Delegates to :meth:`from_dict` after parsing, so unknown keys are
+        ignored.
+
+        Args:
+            text: A YAML string representing a mapping of field values.
+
+        Returns:
+            A new instance populated from the parsed YAML.
+
+        Raises:
+            ruamel.yaml.YAMLError: If *text* is not valid YAML.
+        """
+        _LOGGER.trace(
+            "DataclassMixin.from_yaml | cls={} | text_length={}",
+            cls.__name__,
+            len(text),
+        )
+        return cls.from_dict(YamlUtils.load(text))
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        # Set mixin __str__/__repr__ before @dataclass runs (which checks cls.__dict__
+        # and skips generation if they're already present). Only overwrite when the
+        # subclass hasn't explicitly defined its own version.
+        if "__str__" not in cls.__dict__:
+            cls.__str__ = DataclassMixin.__str__
+        if "__repr__" not in cls.__dict__:
+            cls.__repr__ = DataclassMixin.__repr__
+
+    def __str__(self) -> str:
+        """Return a JSON string representation of this instance.
+
+        Equivalent to calling :meth:`to_json`.  Excluded fields are omitted.
+
+        Returns:
+            A compact JSON string (no indentation).
+        """
+        return self.to_json()
+
+    def __repr__(self) -> str:
+        """Return an unambiguous ``ClassName(field=value, ...)`` representation.
+
+        Excluded fields (``metadata={"exclude": True}``) are omitted.  Falls
+        back to :func:`object.__repr__` when the class is not a dataclass.
+
+        Returns:
+            A string of the form ``ClassName(field1=value1, field2=value2)``.
+        """
+        if not dataclasses.is_dataclass(self):
+            return super().__repr__()
+        parts = ", ".join(
+            f"{f.name}={getattr(self, f.name)!r}"
+            for f in dataclasses.fields(self)
+            if not f.metadata.get("exclude", False)
+        )
+        return f"{type(self).__name__}({parts})"
+
+
+class LenientDataclassMixin(DataclassMixin):
+    """A :class:`DataclassMixin` that does **not** check field types.
+
+    Mismatched values pass through unchanged. Missing required fields and
+    invalid enum members still raise
+    :class:`~rn_forge.commons.exceptions.AppException`; container coercion and
+    ``StrEnum`` reconstruction remain enabled.
+
+    Use this only when the input is intentionally ragged or dacite cannot
+    validate the annotation, and document that reason on the subclass.
+
+    Example::
+
+        @dataclass(frozen=True, slots=True)
+        class UpstreamRow(LenientDataclassMixin):
+            name: str
+            weight: int          # the upstream feed sometimes sends "12"
+
+        UpstreamRow.from_dict({"name": "a", "weight": "12"}).weight
+        # '12'
+    """
+
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=False, cast=[Enum, tuple, set]
+    )
+
+
+class StrictDataclassMixin(DataclassMixin):
+    """A :class:`DataclassMixin` that also rejects keys naming no field.
+
+    Type checking, container coercion and ``StrEnum`` reconstruction are
+    unchanged. :meth:`~DataclassMixin.from_dict` additionally raises
+    :class:`~rn_forge.commons.exceptions.AppException` when *data* — or any
+    nested mapping that becomes a dataclass field — carries a key the target
+    dataclass does not declare. The message names every such key by its dotted
+    path. Nested dataclass fields are checked whether or not their own class
+    uses this mixin.
+
+    Example::
+
+        @dataclass(frozen=True, slots=True)
+        class Repository(StrictDataclassMixin):
+            name: str
+            archetype: str = "python-tool"
+
+        @dataclass(frozen=True, slots=True)
+        class ProjectConfig(StrictDataclassMixin):
+            repository: Repository
+
+        ProjectConfig.from_dict({"repository": {"name": "x", "archtype": "lib"}})
+        # AppException: Invalid ProjectConfig: unknown key(s) repository.archtype
+    """
+
+    __dacite_config__: ClassVar[dacite.Config] = dacite.Config(
+        check_types=True, cast=[Enum, tuple, set], strict=True
+    )
+
+
+__all__ = ["DataclassMixin", "LenientDataclassMixin", "StrictDataclassMixin"]
+
+
+def _unknown_key_paths(cls: type, data: Mapping[str, Any], prefix: str) -> list[str]:
+    """Dotted paths of every key in *data* that no field of *cls* declares.
+
+    Descends into each field whose annotation (directly, or through a union or
+    container) is a dataclass, so a nested mapping is held to the same rule.
+    """
+    field_names = {field.name for field in dataclasses.fields(cls)}
+    hints = typing.get_type_hints(cls)
+    paths: list[str] = []
+    for key, value in data.items():
+        path = f"{prefix}.{key}" if prefix else str(key)
+        if key not in field_names:
+            paths.append(path)
+            continue
+        paths.extend(_unknown_in_value(hints[key], value, path))
+    return paths
+
+
+def _unknown_in_value(annotation: object, value: object, path: str) -> list[str]:
+    """Unknown key paths inside *value*, read against its field *annotation*."""
+    origin = typing.get_origin(annotation)
+    args = typing.get_args(annotation)
+    if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+        if not isinstance(value, Mapping):
+            return []
+        return _unknown_key_paths(annotation, cast(Mapping[str, Any], value), path)
+    if origin in (typing.Union, types.UnionType):
+        # Only arms that could hold this value's shape count, so `None` in
+        # `Section | None` cannot mask unknown keys; report the closest fit.
+        candidates = [
+            _unknown_in_value(arm, value, path)
+            for arm in args
+            if _could_hold(arm, value)
+        ]
+        return min(candidates, key=len) if candidates else []
+    if origin in (list, tuple, set, frozenset) and isinstance(value, list):
+        items = cast(list[object], value)
+        return [
+            unknown
+            for index, item in enumerate(items)
+            for unknown in _unknown_in_value(
+                _element_annotation(origin, args, index), item, f"{path}.{index}"
+            )
+        ]
+    if origin is dict and len(args) == 2 and isinstance(value, Mapping):
+        entries = cast(Mapping[object, object], value)
+        return [
+            unknown
+            for key, item in entries.items()
+            for unknown in _unknown_in_value(args[1], item, f"{path}.{key}")
+        ]
+    return []
+
+
+def _could_hold(annotation: object, value: object) -> bool:
+    """Whether a union arm *annotation* could structure *value*'s shape."""
+    origin = typing.get_origin(annotation)
+    if origin in (typing.Union, types.UnionType):
+        return True
+    if isinstance(value, Mapping):
+        return origin is dict or (
+            isinstance(annotation, type) and dataclasses.is_dataclass(annotation)
+        )
+    if isinstance(value, list):
+        return origin in (list, tuple, set, frozenset)
+    return False
+
+
+def _element_annotation(origin: object, args: tuple[object, ...], index: int) -> object:
+    """The annotation of element *index* of a ``list``/``tuple``/``set`` field."""
+    if origin is tuple and not (len(args) == 2 and args[1] is Ellipsis):
+        return args[index] if index < len(args) else object
+    return args[0] if args else object
+
+
+def _dataclass_to_dict(obj: Any, *, exclude_hidden: bool) -> dict[str, Any]:
+    """Recursively convert a dataclass to a dict, respecting ``exclude`` metadata."""
+    if not dataclasses.is_dataclass(obj):
+        _LOGGER.warning(
+            "_dataclass_to_dict: target is not a dataclass | type={}",
+            type(obj).__name__,
+        )
+        raise TypeError(
+            f"{type(obj).__name__} is not a dataclass — DataclassMixin requires @dataclass"
+        )
+    result: dict[str, Any] = {}
+    for f in dataclasses.fields(obj):
+        if exclude_hidden and f.metadata.get("exclude", False):
+            _LOGGER.trace(
+                "_dataclass_to_dict | cls={} | excluded_field={}",
+                type(obj).__name__,
+                f.name,
+            )
+            continue
+        result[f.name] = _convert_value(
+            getattr(obj, f.name), exclude_hidden=exclude_hidden
+        )
+    return result
+
+
+def _convert_value(value: Any, *, exclude_hidden: bool) -> Any:
+    """Recursively convert a value, expanding nested dataclasses."""
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return _dataclass_to_dict(value, exclude_hidden=exclude_hidden)
+    if isinstance(value, list):
+        return [
+            _convert_value(item, exclude_hidden=exclude_hidden)
+            for item in cast(list[Any], value)
+        ]
+    if isinstance(value, tuple):
+        return tuple(
+            _convert_value(item, exclude_hidden=exclude_hidden)
+            for item in cast(tuple[Any, ...], value)
+        )
+    if isinstance(value, frozenset):
+        return frozenset(
+            _convert_value(item, exclude_hidden=exclude_hidden)
+            for item in cast(frozenset[Any], value)
+        )
+    if isinstance(value, set):
+        return {
+            _convert_value(item, exclude_hidden=exclude_hidden)
+            for item in cast(set[Any], value)
+        }
+    if isinstance(value, dict):
+        return {
+            k: _convert_value(v, exclude_hidden=exclude_hidden)
+            for k, v in cast(dict[Any, Any], value).items()
+        }
+    return value

@@ -21,7 +21,6 @@ class TestAuthUrls:
         assert "rn-forge-auth-permission-list" in names
         assert "rn-forge-auth-group-list" in names
         assert "rn-forge-auth-user-list" in names
-        assert "rn-forge-auth-user-import-list" in names
         assert "rn-forge-auth-user-token" in names
 
     def test_exposes_urlpatterns(self) -> None:

@@ -14,10 +14,12 @@ uv add "rn-forge-commons[all]"
 
 Targeted extras:
 
-- `coloredlogs` for colored terminal logging
-- `excel` for `openpyxl` and `pandas`
+- `auth` for JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`)
+- `json` for JSON-formatted log output (`python-json-logger`)
+- `excel` for `openpyxl` and `tablib` (`ExcelAdapter` also needs `pandas`)
 - `otel` for OpenTelemetry log correlation
 - `pandas` for dataframe helpers
+- `pydantic` for strict configuration models (`rn_forge.commons.lang.models`)
 - `testing` for `assertpy` test helpers
 
 Docs commands:

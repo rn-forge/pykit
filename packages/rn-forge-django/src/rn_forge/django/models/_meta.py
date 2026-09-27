@@ -1,10 +1,4 @@
-"""Shared typing helpers for Django model metadata access.
-
-This module centralizes the small protocol surface used by rn-forge-django when
-working with Django's private ``_meta`` attribute. It is intentionally kept
-inside the ``models`` package because both model infrastructure and model
-utilities rely on it.
-"""
+"""Typing helpers for Django model metadata access."""
 
 from __future__ import annotations
 
@@ -45,12 +39,7 @@ class ModelMetaProtocol(Protocol):
 
 
 def get_model_meta(model_class: type[object]) -> ModelMetaProtocol:
-    """Return the narrowed ``_meta`` shape for a Django model class.
-
-    This helper centralizes access to Django's private ``_meta`` attribute so
-    callers can rely on a small stable protocol instead of repeated ad-hoc
-    casts.
-    """
+    """Return the narrowed ``_meta`` shape for a Django model class."""
     meta = getattr(model_class, "_meta", None)
     if meta is None:
         raise TypeError(f"Not a Django model class: {model_class}")

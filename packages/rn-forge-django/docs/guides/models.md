@@ -25,8 +25,8 @@ class Product(BaseModel):
 
 - `status` — an `EnumField` over the `Status` enum (`Active`/`Inactive`/`Error`/`Deleted`/
   `Expired`), defaulting to `Active`
-- `created_by` / `created_at` / `updated_by` / `updated_at` audit columns (snake_case Python
-  fields, camelCase DB columns for legacy compatibility)
+- `created_by` / `create_time` / `updated_by` / `update_time` audit columns (snake_case Python
+  fields and columns)
 - `objects = NaturalKeyLookupManager()` — enables `get_by_natural_key()` for fixture loading,
   driven by `natural_keys()`
 - `TruncateModelMixin.truncate()` — `TRUNCATE TABLE` (or `DELETE FROM` on SQLite), handy for
@@ -34,6 +34,69 @@ class Product(BaseModel):
 - opt-in validation-on-save: set `validate_on_save = True` to have `save()` call
   `full_clean()`; override `get_full_clean_exclude()` to control which fields are excluded on a
   partial `update_fields` save
+
+## Concurrency and immutability
+
+Two opt-in mixins, listed **before** the base so `BaseModel`'s validation still runs:
+
+```python
+from rn_forge.django.models import BaseModel, ImmutableModelMixin, VersionedModelMixin
+
+
+class Order(VersionedModelMixin, BaseModel):
+    """`version` starts at 1 and is bumped by every save of an existing row."""
+
+
+class LedgerEntry(ImmutableModelMixin, BaseModel):
+    """Any change outside the audit columns, and any delete, raises DomainConflict (409)."""
+```
+
+The `version` bump survives a partial `save(update_fields=[...])`. The `UPDATE` only matches the row
+at the version the instance was loaded at, so a save from a stale instance — another request saved
+in between — raises `rn_forge.web.VersionConflict` (412) rather than silently overwriting it. `ImmutableModelMixin` re-reads
+the row on every update — one extra query — and does not guard queryset-level `update()`/`delete()`.
+
+Turn a stale write into a 412 from a DRF view, and emit the `ETag` the client sends back:
+
+```python
+from rn_forge.django.drf import enforce_version, etag_for
+
+
+def partial_update(self, request, *args, **kwargs):
+    order = self.get_object()
+    enforce_version(request, order, required=True)  # If-Match, or a body "version" key
+    response = super().partial_update(request, *args, **kwargs)
+    order.refresh_from_db()
+    response["ETag"] = etag_for(order)
+    return response
+```
+
+A mismatch is **412**, a missing required precondition **428**, an unparseable one **400** — decided
+by `rn_forge.web.check_precondition`, not here. The body-`version` fallback is a Django-only
+convenience; an API meant to be swappable with a FastAPI one should require the header.
+
+## Generating human-readable codes
+
+```python
+from rn_forge.django.models import AbstractSequenceCounter, SequenceGenerator
+
+
+class SequenceCounter(AbstractSequenceCounter):
+    """Your app owns this model and its migration."""
+
+
+ORDER_CODES = SequenceGenerator("order_code", counter_model=SequenceCounter, prefix="PO-")
+ORDER_CODES.generate()  # "PO-000001"
+ORDER_CODES.ensure_at_least(5_000)  # after an import: the next code is PO-005001
+```
+
+The counter model is abstract because this package ships no migrations; you declare the concrete
+model and own its migration. A shape like `PO-2026-0001` is a `formatter=` you pass, not a default.
+
+**What is and is not proven.** On PostgreSQL a real sequence (`nextval`) allocates the value;
+elsewhere the counter row is locked with `select_for_update()`. The test suite runs on sqlite, which
+has no row locks, so only the arithmetic is tested — neither the PostgreSQL path nor behaviour under
+concurrent allocation is covered by this package's suite.
 
 ## Date-based variants
 

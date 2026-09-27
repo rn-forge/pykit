@@ -2,6 +2,8 @@ site_name: rn-forge-commons
 site_description: Shared utilities for the rn-forge-* Python package family
 site_dir: .out/site
 use_directory_urls: false
+site_url: https://rn-forge.github.io/pykit/packages/rn-forge-commons/
+repo_url: https://github.com/rn-forge/pykit
 
 theme:
   name: material
@@ -9,6 +11,8 @@ theme:
 
 plugins:
   - search
+  - mike:
+      canonical_version: latest
   - mkdocstrings:
       handlers:
         python:
@@ -24,11 +28,18 @@ plugins:
             show_symbol_type_heading: true
             show_symbol_type_toc: true
 
+extra:
+  version:
+    provider: mike
+
 markdown_extensions:
   - admonition
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      base_path: [., ../..]
+      check_paths: true
 
 nav:
   - Home: index.md
@@ -37,21 +48,46 @@ nav:
       - Installation: guides/installation.md
       - Quickstart: guides/quickstart.md
       - Logging: guides/logging.md
+      - Console: guides/console.md
+      - Resilience: guides/resilience.md
       - Config: guides/config.md
       - Data: guides/data.md
       - Processes and Tasks: guides/processes-and-tasks.md
-  - API Reference:
-      - api/index.md
-      - Collections: api/collections.md
-      - Config: api/config.md
-      - Console: api/console.md
-      - Dataclasses: api/dataclasses.md
-      - Excel: api/excel.md
-      - Exceptions: api/exceptions.md
-      - Logging: api/logging.md
-      - Pandas: api/pandas.md
-      - Reflection: api/reflection.md
-      - Subprocess: api/subprocess.md
-      - Tasks: api/tasks.md
-      - Testing: api/testing.md
-      - Utils: api/utils.md
+  - Reference:
+      - reference/index.md
+      - Config: reference/config.md
+      - Exceptions: reference/exceptions.md
+      - Findings: reference/findings.md
+      - Testing: reference/testing.md
+      - Language:
+          - Collections: reference/lang/collections.md
+          - Dataclasses: reference/lang/dataclasses.md
+          - Models: reference/lang/models.md
+          - Reflection: reference/lang/reflection.md
+          - Types: reference/lang/types.md
+          - Utils: reference/lang/utils.md
+      - Filesystem:
+          - Blocks: reference/fs/blocks.md
+          - Documents: reference/fs/documents.md
+          - Hashing: reference/fs/hashing.md
+          - Locks: reference/fs/locks.md
+          - Paths: reference/fs/paths.md
+      - Data:
+          - Excel: reference/data/excel.md
+          - Pandas: reference/data/pandas.md
+      - Logging:
+          - Logger: reference/logging/logger.md
+          - StructLogger: reference/logging/structlog.md
+      - Runtime:
+          - Console: reference/runtime/console.md
+          - Environment: reference/runtime/environment.md
+          - Plugins: reference/runtime/plugins.md
+          - Subprocess: reference/runtime/subprocess.md
+          - Tasks: reference/runtime/tasks.md
+      - Integration:
+          - Token verification: reference/integration/auth.md
+          - Messaging: reference/integration/messaging.md
+          - Objects: reference/integration/objects.md
+          - Resilience: reference/integration/resilience.md
+          - Secrets: reference/integration/secrets.md
+  - Changelog: changelog.md
