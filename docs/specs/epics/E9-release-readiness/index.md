@@ -13,7 +13,7 @@ What pykit must decide, fix and prove before its first coordinated set of tags, 
 | [F9.3 — Release mechanism](F9.3-release-mechanism.md) | done | Tagging is documented; CI jobs are scoped to changes and wait on their prerequisites, so a partial run cannot tag a dependent. |
 | [F9.4 — Batch scope](F9.4-batch-scope.md) | done | All seven packages; F6.1 and F6.2 deferred. |
 | [F9.5 — External installability](F9.5-external-installability.md) | planned | A CI job proves each new tag installs outside the workspace. |
-| [F9.6 — Tag cut](F9.6-tag-cut.md) | planned | Approve and cut the tags. |
+| [F9.6 — Tag cut](F9.6-tag-cut.md) | in progress | Approve and cut the tags. |
 | [F9.7 — Interim branch pins](F9.7-interim-branch-pins.md) | done | Internal pins named `feature/upgrade` until S9.7.2 restored tag pins. |
 | [F9.8 — Scaffolded acceptance](F9.8-scaffolded-acceptance.md) | done | Prove each package in an application scaffolded from built wheels. |
 | [F9.9 — Package docs](F9.9-package-docs.md) | done | Metadata, READMEs, changelogs and versioned package sites; live pages confirmed after the tag cut. |

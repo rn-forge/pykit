@@ -4,6 +4,10 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-27
+
+Released with pykit's first coordinated set of tags (release-1).
+
 ### Fixed
 
 - `BatchCreateMixin` reports an invalid item's errors under DRF 3.18, which keys `ListSerializer` errors by item index instead of listing them.

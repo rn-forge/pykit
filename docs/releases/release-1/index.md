@@ -21,7 +21,7 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 | [F9.3 — Release mechanism](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | E9 | done |
 | [F9.4 — Batch scope](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) | E9 | done |
 | [F9.5 — External installability](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | E9 | planned |
-| [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | planned |
+| [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | in progress |
 | [F9.7 — Interim branch pins](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md) | E9 | done |
 | [F9.8 — Scaffolded acceptance](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) | E9 | done |
 | [F9.9 — Package docs](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) | E9 | done |
@@ -46,7 +46,7 @@ The tags also carry these epics, done before release-1 was planned. They predate
 
 ## Progress
 
-S9.7.2 restored tag pins. F9.2 is confirmed by the first merge run to `main`. Then S9.6.1 cuts the tags, and F9.5 verifies them.
+S9.7.2 restored tag pins. The owner approved the release on 2026-09-27. The merge to `main` confirms F9.2 and cuts the tags (S9.6.1); F9.5 then verifies them.
 
 ## Commits
 

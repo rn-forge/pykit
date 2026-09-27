@@ -4,6 +4,10 @@ Notable changes to `rn-forge-commons`, newest first, in the [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-27
+
+Released with pykit's first coordinated set of tags (release-1).
+
 ## Earlier releases
 
 `rn-forge-commons-v0.1.0` to `rn-forge-commons-v0.2.2` predate this file; their notes are on the [GitHub Releases](https://github.com/rn-forge/pykit/releases) page.

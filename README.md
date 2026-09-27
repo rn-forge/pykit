@@ -74,9 +74,7 @@ dependencies = [
 ]
 ```
 
-No tags are cut yet. Until the first coordinated release, pin the `feature/upgrade` branch in
-place of the tag ([F9.7](docs/specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md)). The
-[release pages](docs/releases/index.md) record which tags exist. Inside this workspace,
+The [release pages](docs/releases/index.md) record which tags exist. Inside this workspace,
 `[tool.uv.sources]` resolves every package to the local checkout instead.
 
 ## Requirements
