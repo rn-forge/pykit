@@ -27,7 +27,7 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 - [S9.2.1](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md#s921-make-the-docs-job-strict) — strict docs build in CI
 - [S9.3.1](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s931-document-current-tagging) — the release mechanism documented (done)
 - [S9.3.3](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s933-scope-ci-jobs-to-changes-and-dependencies) — CI jobs scoped to changes and ordered by dependency
-- [S9.8.1–S9.8.4](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) — each package accepted in a scaffolded application
+- [S9.8.1–S9.8.4](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) — each package accepted in a scaffolded application (done)
 - [S9.9.1–S9.9.3](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) — package metadata, landing READMEs and changelogs (done)
 - [S9.9.4](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s994-deploy-versioned-package-sites) — versioned package sites deployed (done)
 - [S9.7.1](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s971-pin-internal-dependencies-to-featureupgrade) and [S9.7.2](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s972-restore-tag-pins-for-the-release) — branch pins now, tag pins at the cut

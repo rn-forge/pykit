@@ -98,6 +98,7 @@ addopts = "-ra --import-mode=importlib"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
+  "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 
 [dependency-groups]

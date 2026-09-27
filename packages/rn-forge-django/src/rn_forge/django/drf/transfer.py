@@ -380,7 +380,7 @@ class BatchCreateMixin(GenericAPIView):
         if not serializer.is_valid():
             errors = [
                 e
-                for i, item_errors in enumerate(serializer.errors)
+                for i, item_errors in _indexed_errors(serializer.errors)
                 for e in _flatten(i, item_errors)
             ]
             return _problem_response(
@@ -464,6 +464,20 @@ def _list_member(request: Request, key: str) -> list[object]:
     if not isinstance(value, list) or not value:
         raise ValidationError({key: "A non-empty list is required."})
     return cast("list[object]", value)
+
+
+def _indexed_errors(errors: object) -> list[tuple[int, object]]:
+    """Pair each item's errors with its index, from either shape ``ListSerializer`` uses.
+
+    DRF 3.18 keys the errors by item index; earlier releases list them, empty for a valid item.
+    A key that is not an index (a whole-list error) is reported against item ``0``.
+    """
+    if isinstance(errors, Mapping):
+        return [
+            (key if isinstance(key, int) else 0, value)
+            for key, value in cast("Mapping[object, object]", errors).items()
+        ]
+    return list(enumerate(cast("list[object]", errors)))
 
 
 def _flatten(row: int, errors: object) -> list[RowError]:

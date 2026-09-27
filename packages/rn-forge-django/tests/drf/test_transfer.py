@@ -21,6 +21,7 @@ from rn_forge.django.drf.transfer import (  # noqa: E402
     BatchDeleteMixin,
     ResourceExportMixin,
     ResourceImportMixin,
+    _indexed_errors,
 )
 from django.test import override_settings  # noqa: E402
 
@@ -348,6 +349,22 @@ class TestBatchCreate:
             "/members:batchCreate", {"requests": "x"}, content_type="application/json"
         )
         assert response.status_code == 422
+
+    def test_an_invalid_item_is_a_422_pointing_at_its_field(self, client) -> None:
+        response = client.post(
+            "/members:batchCreate",
+            {"requests": [{"name": "a", "email": "a@x.io"}, {"name": "b"}]},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert response.json()["errors"][0]["pointer"] == "/requests/1/email"
+        assert not Member.objects.exists()
+
+    def test_item_errors_are_read_from_a_list_or_a_dict_keyed_by_index(self) -> None:
+        field = {"email": ["required"]}
+        assert _indexed_errors([{}, field]) == [(0, {}), (1, field)]
+        assert _indexed_errors({1: field}) == [(1, field)]
+        assert _indexed_errors({"non_field_errors": ["x"]}) == [(0, ["x"])]
 
 
 class TestBatchDelete:
