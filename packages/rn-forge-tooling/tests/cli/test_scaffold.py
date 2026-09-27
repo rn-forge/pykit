@@ -130,7 +130,10 @@ def test_the_lifecycle_leaves_the_documented_layout(golden_tool):
     assert json.loads((tool / "state.json").read_text())["version"] == "1.0.0"
     link = home / "bin" / "golden-tool"
     assert link.is_symlink()
-    assert link.resolve() == (tool / "versions" / "1.0.0" / "bin" / "golden-tool").resolve()
+    assert (
+        link.resolve()
+        == (tool / "versions" / "1.0.0" / "bin" / "golden-tool").resolve()
+    )
 
     status = json.loads(run("--json", "status").stdout)
     assert status["installed"] == "1.0.0"
@@ -139,7 +142,10 @@ def test_the_lifecycle_leaves_the_documented_layout(golden_tool):
     run("upgrade")
     assert (tool / "current").readlink() == Path("versions/2.0.0")
     assert (tool / "versions" / "1.0.0").is_dir()
-    assert link.resolve() == (tool / "versions" / "2.0.0" / "bin" / "golden-tool").resolve()
+    assert (
+        link.resolve()
+        == (tool / "versions" / "2.0.0" / "bin" / "golden-tool").resolve()
+    )
     assert json.loads(run("--json", "status").stdout)["installed"] == "2.0.0"
 
     run("uninstall", "--yes")
