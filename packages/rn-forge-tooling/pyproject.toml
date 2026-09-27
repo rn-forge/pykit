@@ -6,13 +6,13 @@ readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
 # Pinned direct URLs, not bare names: these packages are not on PyPI, and
-# pre-release pins name the feature/upgrade branch (ADR-0004).
+# each pin names its dependency's release tag (ADR-0004).
 # `[tool.uv.sources]` below overrides these with
 # the workspace checkouts for local development only — the declarations here
 # are what a consumer outside the workspace actually resolves.
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-commons",
-  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-cli",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli",
   "jinja2>=3.1.6",
 ]
 

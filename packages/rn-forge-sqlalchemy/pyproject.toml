@@ -6,14 +6,14 @@ readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
 # Pinned direct URL, not a bare name: these packages are not on PyPI, and
-# pre-release pins name the feature/upgrade branch (ADR-0004).
+# each pin names its dependency's release tag (ADR-0004).
 # `[tool.uv.sources]` below overrides this with
 # the workspace checkout for local development only.
 #
 # No database driver is declared: the application picks one (`asyncpg`,
 # `aiosqlite`). `rn-forge-commons` arrives pinned through `rn-forge-web`.
 dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@feature/upgrade#subdirectory=packages/rn-forge-web",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
   "sqlalchemy[asyncio]>=2.0",
 ]
 
