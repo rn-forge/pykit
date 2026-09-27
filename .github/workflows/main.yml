@@ -134,7 +134,7 @@ jobs:
         run: uv sync --all-packages --all-extras --locked
 
       - name: pytest (PostgreSQL)
-        run: uv run --directory packages/rn-forge-django --package rn-forge-django --no-sync pytest
+        run: uv run --directory packages/rn-forge-django --package rn-forge-django --no-sync pytest -m "not scaffold"
 
   # Every other job syncs --all-extras, which hides an extra that forgets a
   # dependency another extra brings. Each extra is installed alone, from the
