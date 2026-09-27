@@ -1,0 +1,1365 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastAPI adapters over rn-forge-web">
+      
+      
+      
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/wiring.html">
+      
+      
+        <link rel="prev" href="quickstart.html">
+      
+      
+        <link rel="next" href="transfer.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Wiring an application - rn-forge-fastapi</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wiring-an-application" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="rn-forge-fastapi" class="md-header__button md-logo" aria-label="rn-forge-fastapi" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            rn-forge-fastapi
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Wiring an application
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="rn-forge-fastapi" class="md-nav__button md-logo" aria-label="rn-forge-fastapi" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    rn-forge-fastapi
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiring an application
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="wiring.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiring an application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-wiring-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The wiring module
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-rules-the-wiring-depends-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rules the wiring depends on
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security headers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service discovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecating-a-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecating a route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-a-model-no-route-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing a model no route references
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-an-application-still-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an application still writes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying it
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tabular export and import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/app.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/problem.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Problem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/openapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/dependencies.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/health.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-wiring-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The wiring module
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-rules-the-wiring-depends-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rules the wiring depends on
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security headers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service discovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecating-a-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecating a route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-a-model-no-route-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing a model no route references
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-an-application-still-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an application still writes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying it
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="wiring-an-application">Wiring an application<a class="headerlink" href="#wiring-an-application" title="Permanent link">&para;</a></h1>
+<p>Promoted from <code>rn-forge-web</code>'s interim FastAPI wiring guide, which was written to
+become this package. What was a page of copy-paste handler, dependency and
+router code there is a handful of calls here; what is left is the wiring an
+application genuinely owns.</p>
+<h2 id="the-wiring-module">The wiring module<a class="headerlink" href="#the-wiring-module" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">FastAPI</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AppConfig</span><span class="p">,</span>
+    <span class="n">FastApiApp</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProblemType</span><span class="p">,</span> <span class="n">default_registry</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderLocked</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">Settings</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_app</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">checks</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FastAPI</span><span class="p">:</span>
+    <span class="n">registry</span> <span class="o">=</span> <span class="n">default_registry</span><span class="p">(</span><span class="n">type_base</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">problem_type_base</span><span class="p">)</span>
+    <span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">OrderLocked</span><span class="p">,</span> <span class="n">ProblemType</span><span class="p">(</span><span class="s2">&quot;order-locked&quot;</span><span class="p">,</span> <span class="mi">409</span><span class="p">,</span> <span class="s2">&quot;Order Locked&quot;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">FastApiApp</span><span class="p">(</span>
+        <span class="n">AppConfig</span><span class="p">(</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+            <span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">,</span>
+            <span class="n">required_checks</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;db&quot;</span><span class="p">,),</span>
+            <span class="n">realm</span><span class="o">=</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">log</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">routers</span><span class="o">=</span><span class="p">(</span><span class="n">orders</span><span class="o">.</span><span class="n">router</span><span class="p">,),</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Orders&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+
+<p><code>FastApiApp</code> installs the common adapters only. The application's composition
+root constructs <code>Settings</code>, checks, routers and infrastructure explicitly, so
+tests can pass fakes and the factory never reads the environment or starts a
+resource.</p>
+<h2 id="the-rules-the-wiring-depends-on">The rules the wiring depends on<a class="headerlink" href="#the-rules-the-wiring-depends-on" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Register domain exceptions on the registry before creating <code>AppConfig</code>.</strong> Handlers are registered per exception type,
+   because Starlette re-raises anything handled by an <code>Exception</code> handler. A row
+   added later still renders correctly, but as a logged, re-raised server error.</li>
+<li><strong>Pass that registry to <code>AppConfig</code>.</strong> Its statuses are the problem responses
+   the schema declares on every operation.</li>
+<li><strong>Tracing.</strong> <code>FastApiApp</code> instruments itself with
+   <code>FastAPIInstrumentor.instrument_app</code> by default (<code>AppConfig.tracing</code>), after
+   the kit's own middleware, so the instrumentation wraps the whole stack
+   regardless of add order. It also sets a <code>TraceResponsePropagator</code> as the
+   global response propagator, but only when nothing else has — an
+   application that configures its own response propagator first is left
+   alone. Configure a <code>TracerProvider</code> and exporter in the application, or run
+   under <code>opentelemetry-instrument</code>; <code>FastApiApp</code> never does either.</li>
+<li><strong>Derive every model from <code>rn_forge.web.WireModel</code>.</strong> camelCase on the wire is enforced by
+   the base class, including in a hand-built
+   <code>JSONResponse(model.model_dump(mode="json"))</code>.</li>
+<li><strong>Spell a non-CRUD route as a custom method.</strong> <code>POST /orders/{order_id}:cancel</code>
+   is named <code>ordersCancel</code> automatically, on both stacks. The same action as a
+   plain path segment (<code>/orders/{order_id}/cancel</code>) is indistinguishable from a
+   sub-collection and needs an explicit <code>operation_id=</code>.</li>
+</ol>
+<h2 id="routes">Routes<a class="headerlink" href="#routes" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearer_auth</span><span class="p">,</span> <span class="n">page_params</span><span class="p">,</span> <span class="n">require_if_match</span><span class="p">,</span> <span class="n">requires</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cursor</span><span class="p">,</span> <span class="n">Page</span><span class="p">,</span> <span class="n">Principal</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">,</span> <span class="n">check_precondition</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">()</span>
+<span class="n">caller</span> <span class="o">=</span> <span class="n">bearer_auth</span><span class="p">(</span><span class="n">authenticator</span><span class="o">=</span><span class="n">jwt_authenticator</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">requires</span><span class="p">(</span><span class="n">caller</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">})))</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/orders&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">orders_list</span><span class="p">(</span>
+    <span class="n">page</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Cursor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Depends</span><span class="p">(</span><span class="n">page_params</span><span class="p">(</span><span class="n">cap</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">))],</span>
+    <span class="n">principal</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Principal</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">reader</span><span class="p">)],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Page</span><span class="p">[</span><span class="n">OrderOut</span><span class="p">]:</span>
+    <span class="n">size</span><span class="p">,</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">page</span>                    <span class="c1"># size already clamped; cursor already decoded</span>
+    <span class="o">...</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;/orders/</span><span class="si">{order_id}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">orders_update</span><span class="p">(</span><span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">if_match</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">require_if_match</span><span class="p">())]):</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="k">await</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">order_id</span><span class="p">)</span>
+    <span class="n">check_precondition</span><span class="p">(</span><span class="n">if_match</span><span class="p">,</span> <span class="n">current_version</span><span class="o">=</span><span class="n">order</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">entity_id</span><span class="o">=</span><span class="n">order_id</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="o">...</span>
+</code></pre></div>
+
+<p><code>Page[OrderOut]</code> reaches the schema as pydantic's own name, <code>Page_OrderOut_</code> —
+document text is not held identical across stacks (only wire behaviour and
+<code>operationId</code> are; see <code>api-conventions.md</code> §9). The DRF binding names its own
+paginated component its own way too, <code>PaginatedOrderOutList</code>.</p>
+<p><code>pageSize</code> above the cap is clamped, never rejected — do not add a
+<code>Query(le=...)</code> alongside <code>page_params</code>; that is a 422 and a specification
+violation.</p>
+<h2 id="security-headers">Security headers<a class="headerlink" href="#security-headers" title="Permanent link">&para;</a></h2>
+<p><code>FastApiApp</code> installs the OWASP REST Security Cheat Sheet response headers by
+default (<code>AppConfig.security_headers</code>). <code>Strict-Transport-Security</code> is
+excluded from the default preset and is opt-in — <code>AppConfig(hsts=True)</code> — for
+a deployment that terminates TLS itself rather than behind a front end that
+already sets it.</p>
+<h2 id="service-discovery">Service discovery<a class="headerlink" href="#service-discovery" title="Permanent link">&para;</a></h2>
+<p><code>FastApiApp</code> serves RFC 9727's <code>/.well-known/api-catalog</code> by default
+(<code>AppConfig.api_catalog</code>), pointing at the OpenAPI document (<code>openapi_url</code>)
+and docs UI (<code>docs_url</code>) it already serves, plus readiness. Set
+<code>AppConfig(api_catalog=False)</code> to turn it off.</p>
+<h2 id="cors">CORS<a class="headerlink" href="#cors" title="Permanent link">&para;</a></h2>
+<p>Opt-in, and the application owns the policy:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppConfig</span><span class="p">,</span> <span class="n">CorsPolicy</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">AppConfig</span><span class="p">(</span><span class="n">cors</span><span class="o">=</span><span class="n">CorsPolicy</span><span class="p">(</span><span class="n">allow_origins</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;https://app.example.com&quot;</span><span class="p">,)))</span>
+</code></pre></div>
+
+<p><code>CorsPolicy.expose_headers</code> defaults to <code>rn_forge.web.EXPOSED_HEADERS</code> — the
+response headers this kit emits that a browser cannot read unless a CORS
+policy names them (<code>ETag</code>, <code>Link</code>, and so on). <code>traceresponse</code> needs no entry
+here — the OpenTelemetry response propagator exposes it itself.
+<code>allow_origins</code> has no default; naming them is the application's decision.
+<code>CorsPolicy(allow_credentials=True, allow_origins=("*",))</code> raises — browsers
+reject that combination.</p>
+<h2 id="deprecating-a-route">Deprecating a route<a class="headerlink" href="#deprecating-a-route" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated</span>
+
+<span class="n">SUNSET_ANNOUNCED</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">UTC</span><span class="p">)</span>
+<span class="n">SUNSET_DATE</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">UTC</span><span class="p">)</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">&quot;/orders/legacy-summary&quot;</span><span class="p">,</span>
+    <span class="n">deprecated</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># marks the OpenAPI operation</span>
+    <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">deprecated</span><span class="p">(</span><span class="n">deprecated_at</span><span class="o">=</span><span class="n">SUNSET_ANNOUNCED</span><span class="p">,</span> <span class="n">sunset</span><span class="o">=</span><span class="n">SUNSET_DATE</span><span class="p">))</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">orders_legacy_summary</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+
+<p><code>deprecated=True</code> and the <code>deprecated(...)</code> dependency are both needed: one
+marks the document, the other stamps the <code>Deprecation</code>/<code>Sunset</code>/<code>Link</code>
+headers on the wire (RFC 9745, RFC 8594).</p>
+<h2 id="publishing-a-model-no-route-references">Publishing a model no route references<a class="headerlink" href="#publishing-a-model-no-route-references" title="Permanent link">&para;</a></h2>
+<p>A generated client sometimes needs a shape that never appears as a request or
+response body — a webhook payload, an event published to a queue. Override
+<code>openapi()</code> on a <code>FastApiApp</code> subclass and call <code>super().openapi()</code> first, the
+same composition <code>FastApiApp</code> itself uses to repair the document:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.json_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">models_json_schema</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyApp</span><span class="p">(</span><span class="n">FastApiApp</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">openapi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">openapi</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">models_json_schema</span><span class="p">(</span>
+            <span class="p">[(</span><span class="n">OrderShippedEvent</span><span class="p">,</span> <span class="s2">&quot;serialization&quot;</span><span class="p">)],</span>
+            <span class="n">ref_template</span><span class="o">=</span><span class="s2">&quot;#/components/schemas/</span><span class="si">{model}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">][</span><span class="s2">&quot;schemas&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">definitions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;$defs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="k">return</span> <span class="n">schema</span>
+</code></pre></div>
+
+<h2 id="what-an-application-still-writes">What an application still writes<a class="headerlink" href="#what-an-application-still-writes" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The authenticator — unless it is OIDC.</strong> For bearer tokens from an identity
+  provider, install <code>rn-forge-fastapi[oidc]</code> and use the shared implementation
+  rather than writing one:</li>
+</ul>
+<p>```python
+  from rn_forge.web.oidc import OidcAuthenticator</p>
+<p>authenticator = OidcAuthenticator.from_issuer(
+      "https://idp.example.com/tenant", audience="api://orders"
+  )
+  caller = bearer_auth(authenticator=authenticator, log=log)
+  ```</p>
+<p>Pass <code>caller</code> to <code>requires(caller, Requirement(all_scopes=...))</code>, then use the
+  returned dependency on protected routes. <code>FastApiApp</code> registers the problem
+  handlers that render authentication failures as 401 with a challenge and
+  authorization failures as 403 without one.</p>
+<p>Build it once at startup — it holds the JWKS cache. It is the same
+  authenticator <code>rn-forge-django</code> uses, so both stacks accept the same tokens.
+  For any other scheme, <code>bearer_auth</code> takes any <code>rn_forge.web.Authenticator</code> or
+  <code>AsyncAuthenticator</code>: verify the token, map claims to a <code>Principal</code>, and raise
+  <code>AuthenticationFailed</code> with the reason — the reason reaches <code>log</code>, never the
+  body. A sync <code>Authenticator</code> runs in the threadpool, so a blocking JWKS fetch
+  does not stall the event loop. <code>basic_auth</code> is for local development and
+  simple internal deployments only.
+- <strong>The idempotency store.</strong> Implement <code>rn_forge.web.AsyncIdempotencyStore</code>
+  over the application's database. Race safety comes from a <code>UNIQUE (scope, key)</code>
+  constraint with <code>INSERT … ON CONFLICT DO NOTHING</code> and a read-back, never a
+  check-then-insert. Decorate the route with <code>idempotent(store, scope=...)</code>
+  (<code>rn_forge.fastapi.idempotent</code>), which wraps
+  <code>rn_forge.web.run_idempotent_async</code>: the decorated route takes
+  <code>request: Request</code> and returns a <code>Response</code>.</p>
+<p>```python
+  from fastapi import Request
+  from fastapi.responses import JSONResponse
+  from rn_forge.fastapi import idempotent</p>
+<p>@router.post("/charges", status_code=201)
+  @idempotent(store, scope="charges")
+  async def create_charge(request: Request, body: ChargeIn) -&gt; JSONResponse:
+      ...
+  ```</p>
+<ul>
+<li><strong>The checks.</strong> Zero-argument callables, sync or async, returning a <code>bool</code> or a
+  <code>rn_forge.web.CheckResult</code>. Pass <code>health_router(timeout=...)</code> so a hung
+  dependency is reported as <code>fail</code> rather than hanging <code>/readyz</code>; the default,
+  <code>None</code>, waits indefinitely.</li>
+</ul>
+<h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
+<p><code>tests/test_conformance.py</code> in this package is the FastAPI driver for the
+<code>rn-forge-web</code> conformance table: a fresh application per case, built from the
+adapters above, <code>depends_on</code> issued first, and equality asserted against the
+table — never against Django's output.</p>
+<h2 id="deploying-it">Deploying it<a class="headerlink" href="#deploying-it" title="Permanent link">&para;</a></h2>
+<p><code>rn-forge-web</code>'s "Deployment" guide maps <code>/livez</code>, <code>/readyz</code>, the security
+headers' <code>hsts</code> flag, CORS and body-size limits onto Kubernetes, App Engine
+and Azure App Service.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
