@@ -14,7 +14,7 @@ Three consequences:
 - **A partial run is the risk.** If one package's job fails, packages that depend on it can still be tagged, pinning a tag that does not exist. Each package job waits for its prerequisites' jobs, so a failure blocks only its dependents ([S9.3.3](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A package whose job was skipped is not re-tagged, so its existing tag stays the one dependents pin.
 - **CI never proves external resolution.** Every job syncs with `--all-packages`, so internal dependencies resolve from the workspace, not from their pins. The install check after tagging is separate ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)).
 
-The docs job builds with `--strict`, so a broken link fails the run before deploy ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)).
+The docs job builds with `--strict`, so a broken link fails the run before deploy ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)). Before it builds the root site, it finds the `<package>-v<version>` tags that point at the pushed commit and deploys each package's site with `mike` to `gh-pages` under `packages/<package>/<major>.<minor>/`, moving `latest` to it. It then copies that tree into the root site's Pages artifact ([S9.9.4](../specs/epics/E9-release-readiness/F9.9-package-docs.md)). A failed docs job leaves the tags in place; rerun it with a manual run of the workflow.
 
 ## Steps
 
@@ -35,5 +35,5 @@ The docs job builds with `--strict`, so a broken link fails the run before deplo
 
 1. Confirm each tag and GitHub Release exists on the remote.
 1. Check the external install job ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)) passed for each new tag.
-1. Check each tagged package's docs at `https://rn-forge.github.io/pykit/packages/<package>/latest/` show the new version ([F9.9](../specs/epics/E9-release-readiness/F9.9-package-docs.md); until S9.9.4 lands, no versioned site is deployed).
+1. Check each tagged package's docs at `https://rn-forge.github.io/pykit/packages/<package>/latest/` show the new version ([F9.9](../specs/epics/E9-release-readiness/F9.9-package-docs.md)).
 1. Record each package's version, tag, commit and install result on the release page, and set it to `shipped` with the date once its exit criteria hold.

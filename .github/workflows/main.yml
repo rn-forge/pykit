@@ -183,6 +183,24 @@ jobs:
       package-name: rn-forge-sqlalchemy
       package-dir: packages/rn-forge-sqlalchemy
 
+  # Workspace tests import from source; these install wheels built from this
+  # commit into a clean venv, the way a consumer would.
+  scaffold:
+    needs: [import-boundaries]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - name: uv sync
+        run: uv sync --all-packages --all-extras --locked
+
+      - name: pytest (scaffold)
+        run: uv run --no-sync pytest -q -m scaffold
+
   sonar:
     needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
@@ -220,6 +238,7 @@ jobs:
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     permissions:
+      contents: write # mike pushes gh-pages
       pages: write
       id-token: write
     environment:
@@ -227,13 +246,42 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
           enable-cache: true
 
+      # Tags pushed with GITHUB_TOKEN start no workflow, so the tags this run's
+      # package jobs created are found here and each package's site is deployed
+      # to gh-pages, which stores the versions between runs.
+      - name: Deploy versioned package sites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for tag in $(git tag --points-at "$GITHUB_SHA"); do
+            package="${tag%-v*}"
+            [ -f "packages/$package/mkdocs.yml" ] || continue
+            version="${tag##*-v}"
+            prefix="packages/$package"
+            config="$prefix/mkdocs.yml"
+            first=$(uv run --group docs mike list --deploy-prefix "$prefix" -F "$config" 2>/dev/null | wc -l)
+            uv run --group docs mike deploy --deploy-prefix "$prefix" -F "$config" \
+              --alias-type copy --update-aliases --push "${version%.*}" latest
+            if [ "$first" -eq 0 ]; then
+              uv run --group docs mike set-default --deploy-prefix "$prefix" -F "$config" --push latest
+            fi
+          done
+
       - name: Build docs
         run: uv run --group docs mkdocs build --strict
+
+      - name: Add versioned package sites
+        run: |
+          if git fetch origin gh-pages; then
+            git archive FETCH_HEAD packages | tar -x -C .out/site
+          fi
 
       - uses: actions/configure-pages@v6
 

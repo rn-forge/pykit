@@ -41,6 +41,7 @@ markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+  "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -81,6 +82,7 @@ docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocs-monorepo-plugin>=1.1.2",
+  "mike>=2.1.3",
   "mkdocstrings[python]>=1.0.6",
 ]
 

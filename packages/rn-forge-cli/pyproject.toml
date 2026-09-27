@@ -38,6 +38,7 @@ rn-forge-cli = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
+markers = ["scaffold: installs built wheels into a scaffolded application (slow)"]
 
 [dependency-groups]
 dev = [

@@ -3,7 +3,7 @@
 This runbook guides maintainers through adding a pykit workspace member. It covers repository integration; the package's own README and docs own its API and setup.
 
 1. Give the package its own `packages/<name>/pyproject.toml`, `src/rn_forge/<module>/` tree, `py.typed` marker, tests, README, `CHANGELOG.md`, documentation and standalone `mkdocs.yml`. Follow the existing `uv_build` namespace package mapping and Python floor.
-   Copy the published-package parts from an existing package ([ADR-0009](../adr/ADR-0009.md)): `[project.urls]`, the README's opening links line and its absolute-only links, `docs/changelog.md` with its nav entry, and the `mkdocs.yml` `site_url`, `repo_url` and `pymdownx.snippets` settings.
+   Copy the published-package parts from an existing package ([ADR-0009](../adr/ADR-0009.md)): `[project.urls]`, the README's opening links line and its absolute-only links, `docs/changelog.md` with its nav entry, and the `mkdocs.yml` `site_url`, `repo_url`, `pymdownx.snippets`, `mike` plugin (`canonical_version: latest`) and `extra.version.provider: mike` settings.
 2. Add the member to root `[tool.uv.workspace].members` and the root development dependency group. Add local `[tool.uv.sources]` overrides for its internal dependencies while keeping the declared dependencies pinned to intended git tags. Inspect optional extras independently.
 3. Update the root `.importlinter` file with the new package's place in the graph. Keep the import rules executable before adding cross-package imports. The [workspace page](../architecture/workspace.md) describes the current boundaries.
 4. Add the package to the root MkDocs includes and reader entry points. Build its standalone site and the combined site with strict link checking.

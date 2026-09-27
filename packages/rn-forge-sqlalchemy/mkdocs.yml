@@ -11,6 +11,8 @@ theme:
 
 plugins:
   - search
+  - mike:
+      canonical_version: latest
   - mkdocstrings:
       handlers:
         python:
@@ -25,6 +27,10 @@ plugins:
             show_source: false
             show_symbol_type_heading: true
             show_symbol_type_toc: true
+
+extra:
+  version:
+    provider: mike
 
 markdown_extensions:
   - admonition

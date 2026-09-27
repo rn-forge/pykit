@@ -23,13 +23,13 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 
 ### Work
 
-- [S9.1.1](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md#s911-add-the-package-job) — SQLAlchemy package job
+- [S9.1.1](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md#s911-add-the-package-job) — SQLAlchemy package job (done)
 - [S9.2.1](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md#s921-make-the-docs-job-strict) — strict docs build in CI
 - [S9.3.1](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s931-document-current-tagging) — the release mechanism documented (done)
 - [S9.3.3](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s933-scope-ci-jobs-to-changes-and-dependencies) — CI jobs scoped to changes and ordered by dependency
 - [S9.8.1–S9.8.4](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) — each package accepted in a scaffolded application
 - [S9.9.1–S9.9.3](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) — package metadata, landing READMEs and changelogs (done)
-- [S9.9.4](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s994-deploy-versioned-package-sites) — versioned package sites deployed
+- [S9.9.4](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s994-deploy-versioned-package-sites) — versioned package sites deployed (done)
 - [S9.7.1](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s971-pin-internal-dependencies-to-featureupgrade) and [S9.7.2](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s972-restore-tag-pins-for-the-release) — branch pins now, tag pins at the cut
 - [S9.6.1](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md#s961-approve-and-cut-the-tags) — the tag cut
 - [S9.5.1](../../specs/epics/E9-release-readiness/F9.5-external-installability.md#s951-verify-remote-tags-and-clean-installs) — external install check
