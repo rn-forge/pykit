@@ -1,6 +1,6 @@
 # E1 — Foundation and boundaries
 
-**Status:** done · **Implemented:** 2026-09-09 to 2026-09-16 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-09 to 2026-09-16
 
 The runtime foundation in `rn-forge-commons` and the split of the developer layer into `rn-forge-cli` and `rn-forge-tooling`. The package guides describe current use; [workspace architecture](../../../architecture/workspace.md) describes the boundaries.
 

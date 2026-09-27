@@ -1,6 +1,6 @@
 # E11 — Framework codegen
 
-**Status:** deferred · **Owner:** pykit
+**Status:** deferred
 
 Code generators for Django and FastAPI applications, shipped as each framework package's `codegen` extra and run by a scaffolding tool through an entry point.
 

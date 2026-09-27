@@ -1,6 +1,6 @@
 # E6 — Consumer reuse
 
-**Status:** deferred · **Owner:** pykit
+**Status:** deferred
 
 Two pieces of plumbing that several applications each wrote for themselves: secret redaction in structured logs, and server-sent events. Both are designed and left out of release-1.
 

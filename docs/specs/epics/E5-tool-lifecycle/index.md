@@ -1,6 +1,6 @@
 # E5 — Tool lifecycle
 
-**Status:** done · **Implemented:** 2026-09-14 to 2026-09-22 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-14 to 2026-09-22
 
 The install, upgrade and doctor lifecycle a developer tool gets from `rn-forge-tooling`. The tooling lifecycle guide describes the current `[lifecycle]` contract.
 

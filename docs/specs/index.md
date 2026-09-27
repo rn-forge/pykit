@@ -36,7 +36,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 `docs/specs/_structure.md`, which the site does not publish, holds the full rules; this is the short form.
 
 - **Taxonomy.** Epic `E<n>` → feature `F<n>.<m>` → story `S<n>.<m>.<k>`. IDs are permanent.
-- **Status.** `elaborating`, `planned` (stories and a release), `in progress`, `done`, or `deferred` (with entry criteria). Stories carry their own status.
+- **Status.** `elaborating`, `planned` (stories written, ready for a release), `in progress`, `done`, or `deferred` (with entry criteria). Stories carry their own status. A release page's scope table assigns features to that release.
 - **A decision is its own story**, so work can depend on the decision without depending on its implementation.
 - **Open questions live on the feature or epic they block.** An answered question becomes an ADR or a rejected option.
 - **Acceptance is checked inside pykit** ([ADR-0008](../adr/ADR-0008.md)); another repository's work never gates a feature or release.

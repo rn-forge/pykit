@@ -1,6 +1,6 @@
 # E12 — On-demand features
 
-**Status:** deferred · **Owner:** pykit
+**Status:** deferred
 
 Proposals that wait for a named consumer. Each has a trigger; when it fires, the item gets its own feature file with stories and acceptance before any code.
 

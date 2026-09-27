@@ -1,6 +1,6 @@
 # E3 — Framework adapters
 
-**Status:** done · **Implemented:** 2026-09-12 to 2026-09-22 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-12 to 2026-09-22
 
 The Django and FastAPI bindings of the web contract, and the FastAPI application layer. Each package's guides describe its current API.
 

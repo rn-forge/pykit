@@ -1,6 +1,6 @@
 # E2 — HTTP contract
 
-**Status:** done · **Implemented:** 2026-09-12 to 2026-09-22 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-12 to 2026-09-22
 
 The framework-neutral HTTP contract in `rn-forge-web`. The package's guides and reference pages describe current behavior.
 

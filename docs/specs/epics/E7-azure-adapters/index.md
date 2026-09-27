@@ -1,6 +1,6 @@
 # E7 — Azure adapters
 
-**Status:** deferred · **Owner:** pykit
+**Status:** deferred
 
 A proposed `rn-forge-azure` package implementing commons' secret, object-store and messaging protocols over Azure services. No package scaffold exists.
 

@@ -1,6 +1,6 @@
 # Release 1 — the first coordinated tags
 
-**Status:** planned
+**Status:** in progress
 
 pykit's first coordinated set of package tags. The only tags that exist today are single-package tags for `rn-forge-commons` and `rn-forge-django`, up to `v0.2.2`.
 
@@ -8,38 +8,74 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 
 ## Entry criteria
 
-- Every scope story below is done, and the owner approves the release (S9.6.1).
-- Until then, pykit stays installable outside the workspace through branch pins ([F9.7](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md), [ADR-0004](../../adr/ADR-0004.md)).
+- The owner approves the scope below; [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) selected all seven packages and left F6.1 and F6.2 out.
+- Until the tag cut, pykit stays installable outside the workspace through branch pins ([F9.7](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md), [ADR-0004](../../adr/ADR-0004.md)).
 
 ## Scope
 
-### Decisions
+| Feature | Epic | Status |
+| --- | --- | --- |
+| [F8.1 — Django package scope](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md) | E8 | done |
+| [F9.1 — SQLAlchemy CI](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md) | E9 | done |
+| [F9.2 — Strict docs CI](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md) | E9 | in progress |
+| [F9.3 — Release mechanism](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | E9 | done |
+| [F9.4 — Batch scope](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) | E9 | done |
+| [F9.5 — External installability](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | E9 | planned |
+| [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | planned |
+| [F9.7 — Interim branch pins](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md) | E9 | in progress |
+| [F9.8 — Scaffolded acceptance](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) | E9 | done |
+| [F9.9 — Package docs](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) | E9 | done |
 
-- [S9.9.1](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s991-record-the-decision) — each package publishes its own versioned docs (done)
-- [S8.1.1](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md#s811-record-the-split-decision) — the Django package keeps all four optional areas (done)
-- [S9.3.2](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s932-decide-how-to-handle-a-partial-run) — a failed package job blocks only its dependents (done)
-- [S9.4.1](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#s941-select-the-packages) — all seven packages (done)
-- [S9.4.2](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#s942-decide-the-consumer-reuse-features) — F6.1 and F6.2 left out (done)
+### Done before this release
 
-### Work
+The tags also carry these epics, done before release-1 was planned. They predate the story taxonomy.
 
-- [S9.1.1](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md#s911-add-the-package-job) — SQLAlchemy package job (done)
-- [S9.2.1](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md#s921-make-the-docs-job-strict) — strict docs build in CI
-- [S9.3.1](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s931-document-current-tagging) — the release mechanism documented (done)
-- [S9.3.3](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md#s933-scope-ci-jobs-to-changes-and-dependencies) — CI jobs scoped to changes and ordered by dependency
-- [S9.8.1–S9.8.4](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) — each package accepted in a scaffolded application (done)
-- [S9.9.1–S9.9.3](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) — package metadata, landing READMEs and changelogs (done)
-- [S9.9.4](../../specs/epics/E9-release-readiness/F9.9-package-docs.md#s994-deploy-versioned-package-sites) — versioned package sites deployed (done)
-- [S9.7.1](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s971-pin-internal-dependencies-to-featureupgrade) and [S9.7.2](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md#s972-restore-tag-pins-for-the-release) — branch pins now, tag pins at the cut
-- [S9.6.1](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md#s961-approve-and-cut-the-tags) — the tag cut
-- [S9.5.1](../../specs/epics/E9-release-readiness/F9.5-external-installability.md#s951-verify-remote-tags-and-clean-installs) — external install check
+| Epic | Delivered | Implemented |
+| --- | --- | --- |
+| [E1 — Foundation and boundaries](../../specs/epics/E1-foundation-and-boundaries/index.md) | Commons runtime foundation; the `rn-forge-cli`/`rn-forge-tooling` split | 2026-09-09 to 2026-09-16 |
+| [E2 — HTTP contract](../../specs/epics/E2-http-contract/index.md) | The framework-neutral HTTP contract in `rn-forge-web` | 2026-09-12 to 2026-09-22 |
+| [E3 — Framework adapters](../../specs/epics/E3-framework-adapters/index.md) | Django and FastAPI bindings of the web contract; the FastAPI application layer | 2026-09-12 to 2026-09-22 |
+| [E4 — Standards re-baseline](../../specs/epics/E4-standards-rebaseline/index.md) | Standards and native-framework decisions across web, Django, FastAPI and SQLAlchemy | 2026-09-22 to 2026-09-23 |
+| [E5 — Tool lifecycle](../../specs/epics/E5-tool-lifecycle/index.md) | Install, upgrade and doctor lifecycle in `rn-forge-tooling` | 2026-09-14 to 2026-09-22 |
+| [E10 — Documentation refactor](../../specs/epics/E10-documentation-refactor/index.md) | Docs moved from dated plans to architecture, specs, decisions and release pages | 2026-09-24 to 2026-09-26 |
 
-### Packages
+## Decisions
 
-All seven, at their declared versions; [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#scope) has the matrix. They carry the delivered features of [E1](../../specs/epics/E1-foundation-and-boundaries/index.md), [E2](../../specs/epics/E2-http-contract/index.md), [E3](../../specs/epics/E3-framework-adapters/index.md), [E4](../../specs/epics/E4-standards-rebaseline/index.md) and [E5](../../specs/epics/E5-tool-lifecycle/index.md), named by feature ID because those epics predate the story taxonomy.
+- [ADR-0009](../../adr/ADR-0009.md) — added: each package publishes its own versioned docs (S9.9.1).
+- [ADR-0004](../../adr/ADR-0004.md) — updated: internal pins name `feature/upgrade` until the tag cut (F9.7).
+
+## Progress
+
+F9.2 is confirmed by the first merge run to `main`. Then S9.7.2 restores tag pins, S9.6.1 cuts the tags, and F9.5 verifies them.
+
+## Commits
+
+Commits whose subject names a scope ID, newest first:
+
+```bash
+git log --format='%h %ad %s' --date=short -E --grep='[FS](8\.1|9\.[0-9])'
+```
+
+- `d4525a8` 2026-09-26 Add S9.8.4 scaffold test for a Django project; fix DRF 3.18 batch errors
+- `5f8af12` 2026-09-26 Add S9.8.3 scaffold test for a FastAPI service
+- `30ac67f` 2026-09-26 Add S9.8.2 scaffold test for a tool lifecycle
+- `7240631` 2026-09-26 Close F9.1 and S9.9.4; add S9.8.1 scaffold test
+- `359ad1f` 2026-09-26 Mark S9.3.3 done; restore main-only pull-request trigger
+- `55f6897` 2026-09-26 Mark S9.7.1 done after clean-install check
+- `a1116cc` 2026-09-26 Build docs with --strict in CI (S9.2.1)
+- `e945ec1` 2026-09-26 Scope CI package jobs to changes and dependencies (S9.3.3)
+
+F8.1, F9.4, S9.3.1–S9.3.2 and S9.9.1–S9.9.3 landed in `472bfa4` and `3aba88f`, before commit subjects named IDs.
 
 ## Exit criteria
 
-- S9.6.1 and S9.5.1 hold: every selected package's tag and GitHub Release exist, and each installs from its tag outside the workspace.
-- S9.9.4 holds: every selected package's versioned docs site is live.
-- This page lists each package, its version, tag and commit, and the install result.
+- F9.6 and F9.5 hold: every selected package's tag and GitHub Release exist, and each installs from its tag outside the workspace.
+- F9.9 holds: every selected package's versioned docs site is live.
+- The shipped table below lists each package, its version, tag and commit, and the install result.
+
+## Shipped
+
+Filled at the tag cut. [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md#scope) holds the package matrix until then.
+
+| Package | Version | Tag | Commit | Install |
+| --- | --- | --- | --- | --- |

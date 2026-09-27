@@ -1,6 +1,6 @@
 # E4 — Standards re-baseline
 
-**Status:** done · **Implemented:** 2026-09-22 to 2026-09-23 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-22 to 2026-09-23
 
 The standards and native-framework decisions applied across web, Django, FastAPI and SQLAlchemy. Package docs state the current contract.
 

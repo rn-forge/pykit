@@ -1,6 +1,6 @@
 # E10 — Documentation refactor
 
-**Status:** done · **Implemented:** 2026-09-24 (`472bfa4`), 2026-09-25 and 2026-09-26 · **Owner:** pykit
+**Status:** done · **Implemented:** 2026-09-24 (`472bfa4`), 2026-09-25 and 2026-09-26
 
 Moving pykit's documentation from dated plans to current architecture, specs, decisions and release pages, then applying the audit of that move and the owner's answers to both reviews.
 
