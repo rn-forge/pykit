@@ -61,7 +61,10 @@ rn-forge-fastapi = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
-markers = ["unit: fast isolated tests"]
+markers = [
+  "unit: fast isolated tests",
+  "scaffold: installs built wheels into a scaffolded application (slow)",
+]
 
 [dependency-groups]
 dev = [

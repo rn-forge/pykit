@@ -18,7 +18,7 @@ What pykit must decide, fix and prove before its first coordinated set of tags, 
 | [F9.8 — Scaffolded acceptance](F9.8-scaffolded-acceptance.md) | planned | Prove each package in an application scaffolded from built wheels. |
 | [F9.9 — Package docs](F9.9-package-docs.md) | done | Metadata, READMEs, changelogs and versioned package sites; live pages confirmed after the tag cut. |
 
-**Next step:** F9.8 (S9.8.3–S9.8.4); F9.2 is confirmed by the first merge run.
+**Next step:** F9.8 (S9.8.4); F9.2 is confirmed by the first merge run.
 
 **Order:** F9.2 and F9.8 can land at any time. S9.7.2 and S9.6.1 follow them; F9.5 verifies after S9.6.1.
 

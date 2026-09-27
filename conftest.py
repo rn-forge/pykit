@@ -42,21 +42,28 @@ def scaffold_venv(built_wheels: dict[str, Path], tmp_path: Path) -> Installer:
     """Return ``install(*requirements)``, which makes a clean venv and returns its ``bin`` dir.
 
     A requirement naming a workspace package (``rn-forge-web[drf]``) is served by its built wheel;
-    anything else resolves from the index.
+    anything else resolves from the index. Extras named here apply to the served wheel; the override
+    replaces a sibling's git pin whole, so an extra it needs is named here too.
     """
 
     def install(*requirements: str) -> Path:
         venv = tmp_path / "venv"
+        wanted = dict(_split(requirement) for requirement in requirements)
         # The wheels pin their siblings as git URLs; overriding them with the local wheels
         # keeps every install offline from the repository.
         overrides = tmp_path / "overrides.txt"
         overrides.write_text(
             "".join(
-                f"{name} @ {wheel.as_uri()}\n" for name, wheel in built_wheels.items()
+                f"{name}{wanted.get(name, '')} @ {wheel.as_uri()}\n"
+                for name, wheel in built_wheels.items()
             )
         )
         subprocess.run(["uv", "venv", "-q", "-p", "3.14", str(venv)], check=True)
-        resolved = [_local(requirement, built_wheels) for requirement in requirements]
+        resolved = [
+            requirement
+            for requirement in requirements
+            if _split(requirement)[0] not in built_wheels
+        ] + [name for name in wanted if name in built_wheels]
         subprocess.run(
             [
                 "uv",
@@ -76,12 +83,7 @@ def scaffold_venv(built_wheels: dict[str, Path], tmp_path: Path) -> Installer:
     return install
 
 
-def _local(requirement: str, wheels: dict[str, Path]) -> str:
-    name, _, extras = requirement.partition("[")
-    if name in wheels:
-        return (
-            f"{name}[{extras} @ {wheels[name].as_uri()}"
-            if extras
-            else f"{name} @ {wheels[name].as_uri()}"
-        )
-    return requirement
+def _split(requirement: str) -> tuple[str, str]:
+    """``rn-forge-web[security]`` -> ``("rn-forge-web", "[security]")``."""
+    name, bracket, extras = requirement.partition("[")
+    return name, f"{bracket}{extras}"

@@ -8,7 +8,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Epic | Release | Next step |
 | --- | --- | --- |
-| [E9 — Release readiness](epics/E9-release-readiness/index.md) | [release-1](../releases/release-1/index.md) | F9.8 (S9.8.3–S9.8.4); F9.2 is confirmed by the first merge run. |
+| [E9 — Release readiness](epics/E9-release-readiness/index.md) | [release-1](../releases/release-1/index.md) | F9.8 (S9.8.4); F9.2 is confirmed by the first merge run. |
 
 ### Deferred
 
