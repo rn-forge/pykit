@@ -13,6 +13,14 @@ Not on PyPI; a release is a git tag. Declare a pinned direct URL:
 uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django"
 ```
 
+Application code imports `rn_forge.web` directly (wire models, pagination, problem types, the
+auth contract), and this package does not re-export it. Declare `rn-forge-web` as well, at the tag
+this release pins, so the import is not an undeclared transitive dependency:
+
+```bash
+uv add "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web"
+```
+
 Optional extras:
 
 | Extra | Adds |

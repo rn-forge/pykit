@@ -46,8 +46,13 @@ as a pinned direct URL:
 ```toml
 dependencies = [
   "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.1.0#subdirectory=packages/rn-forge-fastapi",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
 ]
 ```
+
+Application code imports `rn_forge.web` directly (wire models, pagination, problem types, the
+auth contract), and this package does not re-export it. Declare `rn-forge-web` as well, at the tag
+this release pins, so the import is not an undeclared transitive dependency.
 
 `uv add rn-forge-fastapi` will not work. Inside this workspace, `[tool.uv.sources]`
 overrides the URL with the local checkout, for local development only.
