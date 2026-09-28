@@ -6,9 +6,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 ### In progress
 
-| Epic | Release | Next step |
-| --- | --- | --- |
-| [E9 — Release readiness](epics/E9-release-readiness/index.md) | [release-1](../releases/release-1/index.md) | S9.6.1 and F9.6 are done; next is F9.5's CI job. |
+No epic is currently in progress.
 
 ### Deferred
 
@@ -31,6 +29,7 @@ Ideas not yet agreed as work are parked in the [backlog](backlog.md).
 | [E3 — Framework adapters](epics/E3-framework-adapters/index.md) | 2026-09-22 |
 | [E4 — Standards re-baseline](epics/E4-standards-rebaseline/index.md) | 2026-09-23 |
 | [E5 — Tool lifecycle](epics/E5-tool-lifecycle/index.md) | 2026-09-22 |
+| [E9 — Release readiness](epics/E9-release-readiness/index.md) | 2026-09-28 |
 | [E10 — Documentation refactor](epics/E10-documentation-refactor/index.md) | 2026-09-26 |
 
 ## Conventions

@@ -1,6 +1,6 @@
 # Release 1 — the first coordinated tags
 
-**Status:** in progress
+**Status:** done (2026-09-28)
 
 pykit's first coordinated set of package tags. The only tags that exist today are single-package tags for `rn-forge-commons` and `rn-forge-django`, up to `v0.2.2`.
 
@@ -17,10 +17,10 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 | --- | --- | --- |
 | [F8.1 — Django package scope](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md) | E8 | done |
 | [F9.1 — SQLAlchemy CI](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md) | E9 | done |
-| [F9.2 — Strict docs CI](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md) | E9 | in progress |
+| [F9.2 — Strict docs CI](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md) | E9 | done |
 | [F9.3 — Release mechanism](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | E9 | done |
 | [F9.4 — Batch scope](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) | E9 | done |
-| [F9.5 — External installability](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | E9 | planned |
+| [F9.5 — External installability](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | E9 | done |
 | [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | done |
 | [F9.7 — Interim branch pins](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md) | E9 | done |
 | [F9.8 — Scaffolded acceptance](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) | E9 | done |
@@ -46,7 +46,7 @@ The tags also carry these epics, done before release-1 was planned. They predate
 
 ## Progress
 
-S9.7.2 restored tag pins. The owner approved the release on 2026-09-27. The merge to `main` confirmed F9.2, and every package job succeeded, cutting all seven tags and their GitHub Releases (S9.6.1, F9.6). All seven versioned docs sites and the root site are live. F9.5's CI job (S9.5.1) is not yet built; its acceptance script was run manually against all seven tags and every package installed and imported cleanly from its Git URL outside the workspace, recorded in the Shipped table below. F9.5 stays `planned` until that check runs in CI.
+S9.7.2 restored tag pins. The owner approved the release on 2026-09-27. The merge to `main` confirmed F9.2, and every package job succeeded, cutting all seven tags and their GitHub Releases (S9.6.1, F9.6). All seven versioned docs sites and the root site are live. F9.5's `external-install` CI job (S9.5.1) was verified via `workflow_dispatch` runs against all seven release-1 tags before merge, each installing and importing cleanly from its Git URL outside the workspace; it now runs on every push to `main`. All of release-1's scope is `done`.
 
 ## Commits
 
