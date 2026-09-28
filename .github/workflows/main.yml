@@ -233,6 +233,39 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+  external-install:
+    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
+    # TESTING (feature/f9.5-external-install-ci): also allow workflow_dispatch so this
+    # job runs on a branch without merging to main. Revert to push+main only (F9.5) before merge.
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name == 'main')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      # Every package job resolves internal dependencies from the workspace via
+      # `uv sync --all-packages`, which never proves a tag installs on its own.
+      # Tags pushed with GITHUB_TOKEN start no workflow, so this job finds the
+      # tags this run's package jobs created the same way the docs job does.
+      - name: Verify remote tags and clean installs
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          for tag in $(git tag --points-at "$GITHUB_SHA"); do
+            pkg="${tag%-v*}"
+            [ -d "packages/$pkg" ] || continue
+            git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null
+            uv venv -q "$tmp/$pkg"
+            VIRTUAL_ENV="$tmp/$pkg" uv pip install -q \
+              "$pkg @ git+https://github.com/rn-forge/pykit@$tag#subdirectory=packages/$pkg"
+            "$tmp/$pkg/bin/python" -c "import rn_forge.${pkg#rn-forge-}"
+          done
+
   docs:
     needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
