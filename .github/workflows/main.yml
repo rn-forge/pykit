@@ -235,9 +235,7 @@ jobs:
 
   external-install:
     needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
-    # TESTING (feature/f9.5-external-install-ci): also allow workflow_dispatch so this
-    # job runs on a branch without merging to main. Revert to push+main only (F9.5) before merge.
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name == 'main')) }}
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -254,13 +252,9 @@ jobs:
       # tags this run's package jobs created the same way the docs job does.
       - name: Verify remote tags and clean installs
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           tmp=$(mktemp -d)
-          # TESTING (feature/f9.5-external-install-ci): this commit sits on top of the
-          # release-1 tags, not on the tagged commit itself, so --points-at "$GITHUB_SHA"
-          # finds nothing here. Hardcode release-1's tags for this one test run; revert
-          # to --points-at "$GITHUB_SHA" before merge.
-          for tag in $(git tag --points-at f3d1757e97d1aeaba3fb61e14c09a94919f3613f); do
+          for tag in $(git tag --points-at "$GITHUB_SHA"); do
             pkg="${tag%-v*}"
             [ -d "packages/$pkg" ] || continue
             git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null
