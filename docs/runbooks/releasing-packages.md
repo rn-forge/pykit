@@ -4,17 +4,19 @@ How to take a coordinated release from an approved page to verified tags. A push
 
 ## How CI tags
 
-`.github/workflows/main.yml` runs the import-boundary check and a `changes` job first, then one reusable `_package-ci.yml` job per package from the same commit.
+`.github/workflows/main.yml` names no package; `.github/scripts/workspace_ci.py` reads them from the workspace manifests ([F14.1](../specs/epics/E14-workspace-ci/F14.1-discovered-pipeline.md)). The import-boundary check and a `plan` job run first.
 
-`changes` (`.github/scripts/changed_packages.py`) selects the packages whose files changed plus every package that depends on one, read from the manifests' internal requirements; a change outside `packages/` and `docs/`, or a manual run, selects all seven. A package job runs only when selected and waits for its direct prerequisites' jobs: `commons` first, then `cli` and `web`, then `tooling`, `django` and `fastapi`, then `sqlalchemy` (after `web` and `fastapi`). A skipped prerequisite does not block it; a failed one does. Each package job verifies the package (ruff, pyright, pytest), reads its declared version and checks whether `<package>-v<version>` exists on the remote. On a push to `main`, a missing tag makes the job build the package, create and push the tag, and publish a GitHub Release with the build artifacts. A pull request builds but never tags.
+`plan` selects the packages whose files changed plus every package that depends on one, read from the manifests' internal requirements; a change outside the packages and `docs/`, or a manual run, selects all of them. It emits the matrices for the check jobs, which run in parallel: `verify` (ruff, pyright, pytest) for each selected package; `postgres` and `smoke` for packages that declare them in `[tool.workspace-ci]` (today `rn-forge-django`: its tests against PostgreSQL, and each extra installed alone from the built wheels); and each root suite, such as `scaffold`.
+
+Each passing check leaves a marker. The single `release` job then walks the selected packages in dependency order and takes the ones whose checks all passed and whose selected prerequisites were taken too. For each, it reads the declared version and checks whether `<package>-v<version>` exists on the remote. On a push to `main`, a missing tag makes it build the package, create and push the tag, and publish a GitHub Release with the build artifacts. A pull request builds but never tags. `ci-ok` fails if any job failed; it is the required status check.
 
 Three consequences:
 
 - **Order hardly matters.** Every tag points at the same commit and is pushed within one run.
-- **A partial run is the risk.** If one package's job fails, packages that depend on it can still be tagged, pinning a tag that does not exist. Each package job waits for its prerequisites' jobs, so a failure blocks only its dependents ([S9.3.3](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A package whose job was skipped is not re-tagged, so its existing tag stays the one dependents pin.
+- **A partial run is the risk.** If one package's checks fail, packages that depend on it could be tagged, pinning a tag that does not exist. `release` withholds a package with a failed check and every selected package that depends on it, and releases the rest ([S9.3.2](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A package that was not selected is not re-tagged, so its existing tag stays the one dependents pin.
 - **CI never proves external resolution.** Every job syncs with `--all-packages`, so internal dependencies resolve from the workspace, not from their pins. The install check after tagging is separate ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)).
 
-The docs job builds with `--strict`, so a broken link fails the run before deploy ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)). Before it builds the root site, it finds the `<package>-v<version>` tags that point at the pushed commit and deploys each package's site with `mike` to `gh-pages` under `packages/<package>/<major>.<minor>/`, moving `latest` to it. It then copies that tree into the root site's Pages artifact ([S9.9.4](../specs/epics/E9-release-readiness/F9.9-package-docs.md)). A failed docs job leaves the tags in place; rerun it with a manual run of the workflow.
+The docs job runs after `release` and builds with `--strict`, so a broken link fails the run before deploy ([F9.2](../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md)). Before it builds the root site, it finds the `<package>-v<version>` tags that point at the pushed commit and deploys each package's site with `mike` to `gh-pages` under `packages/<package>/<major>.<minor>/`, moving `latest` to it. It then copies that tree into the root site's Pages artifact ([S9.9.4](../specs/epics/E9-release-readiness/F9.9-package-docs.md)). A failed docs job leaves the tags in place; rerun it with a manual run of the workflow.
 
 ## Steps
 
@@ -29,7 +31,7 @@ The docs job builds with `--strict`, so a broken link fails the run before deplo
 ### Merge and watch
 
 1. Merge to `main`.
-1. Watch every package job to completion. If one fails, fix it forward on `main`; nobody consumes a dependent's tag until its prerequisites' tags exist.
+1. Watch the run to completion. If a check fails, fix it forward on `main`; nobody consumes a dependent's tag until its prerequisites' tags exist.
 
 ### After the merge
 

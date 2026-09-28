@@ -44,6 +44,13 @@ markers = [
   "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 
+[tool.workspace-ci]
+# Package jobs; each suite below is its own job over the whole workspace.
+pytest-args = ["-m", "not scaffold"]
+
+[tool.workspace-ci.suites]
+scaffold = ["-q", "-m", "scaffold"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
 

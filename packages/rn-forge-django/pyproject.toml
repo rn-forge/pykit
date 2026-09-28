@@ -93,6 +93,23 @@ rn-forge-commons = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-web = { workspace = true }
 
+[tool.workspace-ci.postgres]
+# The `postgres`-marked tests read this DSN and skip without it.
+env = "RN_FORGE_DJANGO_TEST_DATABASE_URL"
+
+[tool.workspace-ci.smoke]
+setup = "tests/smoke_setup.py"
+modules = ["rn_forge.django", "rn_forge.django.models"]
+
+[tool.workspace-ci.smoke.extras]
+drf = ["rn_forge.django.drf", "rn_forge.django.drf.views", "rn_forge.django.auth.drf"]
+fixtures = ["rn_forge.django.fixtures"]
+jwt = ["rn_forge.django.auth.jwt"]
+oidc = ["rn_forge.django.auth.drf.oidc"]
+celery = ["rn_forge.django.celery"]
+openapi = ["rn_forge.django.drf.openapi"]
+saml = ["rn_forge.django.auth.saml"]
+
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
 markers = [

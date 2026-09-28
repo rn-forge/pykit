@@ -1,5 +1,8 @@
 name: CICD
 
+# Every package list below comes from the `plan` job, which reads the uv
+# workspace's manifests (.github/scripts/workspace_ci.py). No job names a package.
+
 on:
   push:
     branches: [main]
@@ -12,8 +15,7 @@ permissions:
 
 jobs:
   # An import contract that only passes on a developer's machine is not a
-  # contract. This gates everything else: the three-layer split is the shape
-  # the packages are built around, and a break in it invalidates the rest.
+  # contract. This gates every package check.
   import-boundaries:
     runs-on: ubuntu-latest
     steps:
@@ -24,105 +26,103 @@ jobs:
           enable-cache: true
 
       - name: uv sync
+        if: hashFiles('.importlinter') != ''
         run: uv sync --all-packages --all-extras --locked
 
       - name: lint-imports
+        if: hashFiles('.importlinter') != ''
         run: uv run --no-sync lint-imports
 
-  # A package job runs when its files changed or a package it depends on is
-  # selected, so a dependent is always tested against its changed prerequisite.
-  changes:
+  # Selects the packages whose files changed plus every package that depends on
+  # one, and emits each job's matrix.
+  plan:
     runs-on: ubuntu-latest
     outputs:
-      commons: ${{ steps.select.outputs.commons }}
-      cli: ${{ steps.select.outputs.cli }}
-      tooling: ${{ steps.select.outputs.tooling }}
-      web: ${{ steps.select.outputs.web }}
-      django: ${{ steps.select.outputs.django }}
-      fastapi: ${{ steps.select.outputs.fastapi }}
-      sqlalchemy: ${{ steps.select.outputs.sqlalchemy }}
+      release-order: ${{ steps.plan.outputs.release-order }}
+      packages: ${{ steps.plan.outputs.packages }}
+      postgres: ${{ steps.plan.outputs.postgres }}
+      smoke: ${{ steps.plan.outputs.smoke }}
+      suites: ${{ steps.plan.outputs.suites }}
+      pytest-args: ${{ steps.plan.outputs.pytest-args }}
+      cov-args: ${{ steps.plan.outputs.cov-args }}
+      test-paths: ${{ steps.plan.outputs.test-paths }}
+      sonar-sources: ${{ steps.plan.outputs.sonar-sources }}
+      sonar-tests: ${{ steps.plan.outputs.sonar-tests }}
+      sonar: ${{ steps.plan.outputs.sonar }}
+      docs: ${{ steps.plan.outputs.docs }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - id: select
+      - id: plan
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || '' }}
-        run: python3 .github/scripts/changed_packages.py "$BASE" >> "$GITHUB_OUTPUT"
+        run: python3 .github/scripts/workspace_ci.py plan "$BASE" | tee -a "$GITHUB_OUTPUT"
 
-  commons-ci:
-    needs: [import-boundaries, changes]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.commons == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-commons
-      package-dir: packages/rn-forge-commons
-
-  cli-ci:
-    needs: [import-boundaries, changes, commons-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.cli == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-cli
-      package-dir: packages/rn-forge-cli
-
-  tooling-ci:
-    needs: [import-boundaries, changes, commons-ci, cli-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.tooling == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-tooling
-      package-dir: packages/rn-forge-tooling
-
-  web-ci:
-    needs: [import-boundaries, changes, commons-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.web == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-web
-      package-dir: packages/rn-forge-web
-
-  django-ci:
-    needs: [import-boundaries, changes, commons-ci, web-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-django
-      package-dir: packages/rn-forge-django
-
-  # sqlite has no row locks, so the outbox relay's skip_locked claim and the
-  # real-sequence path of SequenceGenerator are only proven here.
-  django-postgres:
-    needs: [import-boundaries, changes]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
+  # Each passing check entry uploads an `ok-<marker>` artifact; `release` tags a
+  # package only when all of its markers exist.
+  verify:
+    name: verify (${{ matrix.name }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - name: uv sync
+        run: uv sync --all-packages --all-extras --locked
+
+      - name: ruff check
+        run: uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync ruff check
+
+      - name: pyright
+        run: uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync pyright
+
+      - name: pytest
+        run: uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync pytest ${{ needs.plan.outputs.pytest-args }}
+
+      - run: mkdir ok && touch "ok/${{ matrix.name }}.verify"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ok-${{ matrix.name }}.verify
+          path: ok/
+          retention-days: 1
+
+  # For a package with `[tool.workspace-ci.postgres]`: its tests again, with the
+  # DSN in the environment variable it names.
+  postgres:
+    name: postgres (${{ matrix.name }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.postgres != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.postgres) }}
     services:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: rnforge
-          POSTGRES_PASSWORD: rnforge
-          POSTGRES_DB: rnforge
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U rnforge"
+          --health-cmd "pg_isready -U ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-    env:
-      RN_FORGE_DJANGO_TEST_DATABASE_URL: postgresql://rnforge:rnforge@localhost:5432/rnforge
     steps:
       - uses: actions/checkout@v7
 
@@ -134,19 +134,30 @@ jobs:
         run: uv sync --all-packages --all-extras --locked
 
       - name: pytest (PostgreSQL)
-        run: uv run --directory packages/rn-forge-django --package rn-forge-django --no-sync pytest -m "not scaffold"
+        run: |
+          export ${{ matrix.env }}=postgresql://ci:ci@localhost:5432/ci
+          uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync pytest ${{ needs.plan.outputs.pytest-args }}
+
+      - run: mkdir ok && touch "ok/${{ matrix.name }}.postgres"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ok-${{ matrix.name }}.postgres
+          path: ok/
+          retention-days: 1
 
   # Every other job syncs --all-extras, which hides an extra that forgets a
   # dependency another extra brings. Each extra is installed alone, from the
   # built wheel's metadata, into a clean venv and imported.
-  django-extras:
-    needs: [import-boundaries, changes]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.django == 'true' }}
+  smoke:
+    name: smoke (${{ matrix.marker }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.smoke != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        extra: [base, drf, fixtures, jwt, oidc, celery, openapi, saml]
+        include: ${{ fromJSON(needs.plan.outputs.smoke) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -154,40 +165,27 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Build wheels
-        run: |
-          for package in rn-forge-commons rn-forge-web rn-forge-django; do
-            uv build --package "$package" --wheel --out-dir dist
-          done
+      - name: Install and import
+        run: uv run --no-project --with packaging python .github/scripts/workspace_ci.py smoke ${{ matrix.name }} "${{ matrix.extra }}"
 
-      - name: Install and import the ${{ matrix.extra }} extra
-        run: uv run --no-project --with packaging python .github/scripts/check_django_extra.py ${{ matrix.extra }}
+      - run: mkdir ok && touch "ok/${{ matrix.marker }}"
 
-  fastapi-ci:
-    needs: [import-boundaries, changes, commons-ci, web-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.fastapi == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-fastapi
-      package-dir: packages/rn-forge-fastapi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ok-${{ matrix.marker }}
+          path: ok/
+          retention-days: 1
 
-  sqlalchemy-ci:
-    needs: [import-boundaries, changes, web-ci, fastapi-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.sqlalchemy == 'true' }}
-    uses: ./.github/workflows/_package-ci.yml
-    permissions:
-      contents: write
-    with:
-      package-name: rn-forge-sqlalchemy
-      package-dir: packages/rn-forge-sqlalchemy
-
-  # Workspace tests import from source; these install wheels built from this
-  # commit into a clean venv, the way a consumer would.
-  scaffold:
-    needs: [import-boundaries]
+  # Workspace-wide pytest runs from the root `[tool.workspace-ci.suites]`.
+  suites:
+    name: suite (${{ matrix.name }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.suites != '[]' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.suites) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -198,12 +196,59 @@ jobs:
       - name: uv sync
         run: uv sync --all-packages --all-extras --locked
 
-      - name: pytest (scaffold)
-        run: uv run --no-sync pytest -q -m scaffold
+      - name: pytest
+        run: uv run --no-sync pytest ${{ matrix.args }}
+
+  # Tags pushed with GITHUB_TOKEN start no workflow, so every tag is created
+  # here, prerequisites first. A failed check blocks its package and every
+  # selected package that depends on it; the rest still release.
+  release:
+    needs: [import-boundaries, plan, verify, postgres, smoke]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.release-order != '[]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: ok-*
+          merge-multiple: true
+          path: ok/
+
+      - name: Build, tag and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          SELECTED: ${{ needs.plan.outputs.release-order }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
+          releasable="$(python3 .github/scripts/workspace_ci.py releasable ok "${names[@]}")"
+          for name in $releasable; do
+            version="$(uv version --package "$name" --short)"
+            tag="$name-v$version"
+            if [ "$PUBLISH" = true ] && git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+              echo "Tag $tag already exists, skipping build and release."
+              continue
+            fi
+            uv build --package "$name" --out-dir "dist/$name"
+            [ "$PUBLISH" = true ] || continue
+            git tag -a "$tag" -m "Release $tag"
+            git push origin "$tag"
+            gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --generate-notes
+          done
 
   sonar:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    needs: [plan, verify, postgres, smoke]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.plan.outputs.sonar == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -221,21 +266,21 @@ jobs:
         run: uv sync --all-packages --all-extras --locked
 
       - name: Run tests with coverage
-        run: >
-          uv run pytest
-          --cov=rn_forge.commons --cov=rn_forge.cli
-          --cov=rn_forge.tooling --cov=rn_forge.web --cov=rn_forge.django
-          --cov=rn_forge.fastapi --cov=rn_forge.sqlalchemy
-          --cov-report=xml:coverage.xml
-          packages
+        run: uv run pytest ${{ needs.plan.outputs.cov-args }} --cov-report=xml:coverage.xml ${{ needs.plan.outputs.test-paths }}
 
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.sources=${{ needs.plan.outputs.sonar-sources }}
+            -Dsonar.tests=${{ needs.plan.outputs.sonar-tests }}
 
+  # Every check resolves internal dependencies from the workspace via
+  # `uv sync --all-packages`, which never proves a tag installs on its own.
   external-install:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
+    needs: [release]
+    if: ${{ !cancelled() && needs.release.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -246,27 +291,23 @@ jobs:
         with:
           enable-cache: true
 
-      # Every package job resolves internal dependencies from the workspace via
-      # `uv sync --all-packages`, which never proves a tag installs on its own.
-      # Tags pushed with GITHUB_TOKEN start no workflow, so this job finds the
-      # tags this run's package jobs created the same way the docs job does.
       - name: Verify remote tags and clean installs
         run: |
           set -euo pipefail
           tmp=$(mktemp -d)
-          for tag in $(git tag --points-at "$GITHUB_SHA"); do
-            pkg="${tag%-v*}"
-            [ -d "packages/$pkg" ] || continue
+          python3 .github/scripts/workspace_ci.py released | while read -r name dir module version; do
+            tag="$name-v$version"
             git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null
-            uv venv -q "$tmp/$pkg"
-            VIRTUAL_ENV="$tmp/$pkg" uv pip install -q \
-              "$pkg @ git+https://github.com/rn-forge/pykit@$tag#subdirectory=packages/$pkg"
-            "$tmp/$pkg/bin/python" -c "import rn_forge.${pkg#rn-forge-}"
+            uv venv -q "$tmp/$name"
+            VIRTUAL_ENV="$tmp/$name" uv pip install -q \
+              "$name @ git+${{ github.server_url }}/${{ github.repository }}@$tag#subdirectory=$dir"
+            "$tmp/$name/bin/python" -c "import $module"
           done
 
+  # Runs on a push with no package change too, when `release` is skipped.
   docs:
-    needs: [commons-ci, cli-ci, tooling-ci, web-ci, django-ci, django-postgres, django-extras, fastapi-ci, sqlalchemy-ci]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && github.event_name == 'push' && github.ref_name == 'main' }}
+    needs: [import-boundaries, plan, release]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.release.result != 'failure' && needs.plan.outputs.docs == 'true' && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # mike pushes gh-pages
@@ -284,24 +325,21 @@ jobs:
         with:
           enable-cache: true
 
-      # Tags pushed with GITHUB_TOKEN start no workflow, so the tags this run's
-      # package jobs created are found here and each package's site is deployed
-      # to gh-pages, which stores the versions between runs.
+      # Each package tagged at this commit gets its site deployed to gh-pages,
+      # which stores the versions between runs.
       - name: Deploy versioned package sites
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for tag in $(git tag --points-at "$GITHUB_SHA"); do
-            package="${tag%-v*}"
-            [ -f "packages/$package/mkdocs.yml" ] || continue
-            version="${tag##*-v}"
-            prefix="packages/$package"
-            config="$prefix/mkdocs.yml"
-            first=$(uv run --group docs mike list --deploy-prefix "$prefix" -F "$config" 2>/dev/null | wc -l)
-            uv run --group docs mike deploy --deploy-prefix "$prefix" -F "$config" \
+          python3 .github/scripts/workspace_ci.py released | while read -r _ dir _ version; do
+            config="$dir/mkdocs.yml"
+            [ -f "$config" ] || continue
+            first=$(uv run --group docs mike list --deploy-prefix "$dir" -F "$config" 2>/dev/null | wc -l)
+            uv run --group docs mike deploy --deploy-prefix "$dir" -F "$config" \
               --alias-type copy --update-aliases --push "${version%.*}" latest
             if [ "$first" -eq 0 ]; then
-              uv run --group docs mike set-default --deploy-prefix "$prefix" -F "$config" --push latest
+              uv run --group docs mike set-default --deploy-prefix "$dir" -F "$config" --push latest
             fi
           done
 
@@ -323,3 +361,12 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  # The one required status check: matrix job names change with the packages.
+  ci-ok:
+    if: ${{ always() }}
+    needs: [import-boundaries, plan, verify, postgres, smoke, suites, release, sonar, external-install, docs]
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1

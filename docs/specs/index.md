@@ -6,7 +6,9 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 ### In progress
 
-No epic is currently in progress.
+| Epic | Current work |
+| --- | --- |
+| [E14 — Workspace CI](epics/E14-workspace-ci/index.md) | F14.1 discovered pipeline; awaits its first GitHub runs |
 
 ### Deferred
 

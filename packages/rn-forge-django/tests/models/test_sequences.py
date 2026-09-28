@@ -82,7 +82,7 @@ class TestCounterPath:
 @pytest.mark.postgres
 @pytest.mark.django_db(transaction=True)
 class TestSequencePathOnPostgres:
-    """The real-sequence path; runs in the django-postgres CI job."""
+    """The real-sequence path; runs in the postgres CI job."""
 
     @pytest.fixture(autouse=True)
     def _require_postgres(self):
