@@ -254,7 +254,7 @@ jobs:
       # tags this run's package jobs created the same way the docs job does.
       - name: Verify remote tags and clean installs
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           tmp=$(mktemp -d)
           # TESTING (feature/f9.5-external-install-ci): this commit sits on top of the
           # release-1 tags, not on the tagged commit itself, so --points-at "$GITHUB_SHA"
