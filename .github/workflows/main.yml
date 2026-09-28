@@ -256,7 +256,11 @@ jobs:
         run: |
           set -euo pipefail
           tmp=$(mktemp -d)
-          for tag in $(git tag --points-at "$GITHUB_SHA"); do
+          # TESTING (feature/f9.5-external-install-ci): this commit sits on top of the
+          # release-1 tags, not on the tagged commit itself, so --points-at "$GITHUB_SHA"
+          # finds nothing here. Hardcode release-1's tags for this one test run; revert
+          # to --points-at "$GITHUB_SHA" before merge.
+          for tag in $(git tag --points-at f3d1757e97d1aeaba3fb61e14c09a94919f3613f); do
             pkg="${tag%-v*}"
             [ -d "packages/$pkg" ] || continue
             git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null
