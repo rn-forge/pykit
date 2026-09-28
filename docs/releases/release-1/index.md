@@ -21,7 +21,7 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 | [F9.3 — Release mechanism](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | E9 | done |
 | [F9.4 — Batch scope](../../specs/epics/E9-release-readiness/F9.4-batch-scope.md) | E9 | done |
 | [F9.5 — External installability](../../specs/epics/E9-release-readiness/F9.5-external-installability.md) | E9 | planned |
-| [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | in progress |
+| [F9.6 — Tag cut](../../specs/epics/E9-release-readiness/F9.6-tag-cut.md) | E9 | done |
 | [F9.7 — Interim branch pins](../../specs/epics/E9-release-readiness/F9.7-interim-branch-pins.md) | E9 | done |
 | [F9.8 — Scaffolded acceptance](../../specs/epics/E9-release-readiness/F9.8-scaffolded-acceptance.md) | E9 | done |
 | [F9.9 — Package docs](../../specs/epics/E9-release-readiness/F9.9-package-docs.md) | E9 | done |
@@ -46,7 +46,7 @@ The tags also carry these epics, done before release-1 was planned. They predate
 
 ## Progress
 
-S9.7.2 restored tag pins. The owner approved the release on 2026-09-27. The merge to `main` confirms F9.2 and cuts the tags (S9.6.1); F9.5 then verifies them.
+S9.7.2 restored tag pins. The owner approved the release on 2026-09-27. The merge to `main` confirmed F9.2, and every package job succeeded, cutting all seven tags and their GitHub Releases (S9.6.1, F9.6). All seven versioned docs sites and the root site are live. F9.5's CI job (S9.5.1) is not yet built; its acceptance script was run manually against all seven tags and every package installed and imported cleanly from its Git URL outside the workspace, recorded in the Shipped table below. F9.5 stays `planned` until that check runs in CI.
 
 ## Commits
 
@@ -79,3 +79,10 @@ Filled at the tag cut. [F9.4](../../specs/epics/E9-release-readiness/F9.4-batch-
 
 | Package | Version | Tag | Commit | Install |
 | --- | --- | --- | --- | --- |
+| `rn-forge-commons` | `0.5.0` | `rn-forge-commons-v0.5.0` | `f3d1757` | pass |
+| `rn-forge-cli` | `0.1.0` | `rn-forge-cli-v0.1.0` | `f3d1757` | pass |
+| `rn-forge-tooling` | `0.2.0` | `rn-forge-tooling-v0.2.0` | `f3d1757` | pass |
+| `rn-forge-web` | `0.1.0` | `rn-forge-web-v0.1.0` | `f3d1757` | pass |
+| `rn-forge-django` | `0.3.0` | `rn-forge-django-v0.3.0` | `f3d1757` | pass |
+| `rn-forge-fastapi` | `0.1.0` | `rn-forge-fastapi-v0.1.0` | `f3d1757` | pass |
+| `rn-forge-sqlalchemy` | `0.1.0` | `rn-forge-sqlalchemy-v0.1.0` | `f3d1757` | pass |
