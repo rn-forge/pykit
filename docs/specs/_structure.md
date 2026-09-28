@@ -8,6 +8,7 @@
 - Design for unbuilt work, in the feature's `## Design`.
 - Open questions, in `## Open questions` on the epic or feature they block.
 - Work that is real but not scheduled, as a `deferred` epic or feature with entry criteria. Its items are numbered rows until promoted.
+- Ideas not yet agreed as work, in `backlog.md`: a row each (slug, one-line summary, source), with a `##` section under the table only when there is more to record. Entries take no ID and no status.
 
 ## Does not belong here
 
@@ -38,9 +39,11 @@
 
 ## Changing this area
 
+**Parking an idea:** add a row to `backlog.md`, and a section linked from the row if it needs more than a line. Do not elaborate a backlog entry unless the owner asks.
+
 **Adding work:**
 
-1. Take the next free ID.
+1. Take the next free ID. An idea promoted from the backlog carries its section into the new file, and its entry is deleted.
 1. Create the epic or feature with its status: `elaborating` until it has stories, `deferred` with entry criteria if it is not scheduled.
 1. Put design in the feature's `## Design`, and link to `architecture/` for current behavior.
 1. Add the epic's row to the board in `index.md`, in exactly one group.

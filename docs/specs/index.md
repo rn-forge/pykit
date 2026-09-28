@@ -20,6 +20,8 @@ What pykit is made of and what is left to do. The board says what is next; the e
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | The owner schedules it with a concrete framework template. |
 | [E12 — On-demand features](epics/E12-on-demand-features/index.md) | Each row's own trigger. |
 
+Ideas not yet agreed as work are parked in the [backlog](backlog.md).
+
 ### Done
 
 | Epic | Implemented |
@@ -40,6 +42,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 - **A decision is its own story**, so work can depend on the decision without depending on its implementation.
 - **Open questions live on the feature or epic they block.** An answered question becomes an ADR or a rejected option.
 - **Acceptance is checked inside pykit** ([ADR-0008](../adr/ADR-0008.md)); another repository's work never gates a feature or release.
-- **Do not start or elaborate a deferred epic unless the owner asks.**
+- **Ideas start in the [backlog](backlog.md)**, without an ID. Promoting one creates an `elaborating` epic or feature and deletes the entry.
+- **Do not start or elaborate a deferred epic or a backlog entry unless the owner asks.**
 
 The [decision log](../adr/index.md) records the durable constraints.

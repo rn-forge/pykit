@@ -15,7 +15,8 @@ work. Use [root routing](docs/_structure.md) to place documentation and [the rea
 to find published content.
 
 Do not start or elaborate a `deferred` epic or feature, such as the Azure package (E7), unless the
-owner asks. Entry criteria describe when the owner may schedule it, not permission to begin.
+owner asks. Entry criteria describe when the owner may schedule it, not permission to begin. The same
+holds for ideas parked in [the backlog](docs/specs/backlog.md).
 
 ## Orientation
 
