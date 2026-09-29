@@ -5,7 +5,7 @@
 - Every piece of pykit work as an epic, `epics/E<n>-<slug>/index.md`, done work included.
 - A feature of an unfinished epic as `F<n>.<m>-<slug>.md` beside it, holding its stories inline as `S<n>.<m>.<k>` headings, each with its own `**Status:**` and `**Acceptance:**`.
 - A done epic that predates this taxonomy keeps its features as numbered rows in its index, each with the commits that delivered it.
-- Design for unbuilt work, in the feature's `## Design`.
+- Design for unbuilt work, in the feature's `## Design`. An epic whose features share one design keeps it in `design.md` beside the epic's index, and a feature holds the work of settling it.
 - Open questions, in `## Open questions` on the epic or feature they block.
 - Work that is real but not scheduled, as a `deferred` epic or feature with entry criteria. Its items are numbered rows until promoted.
 - Ideas not yet agreed as work, in `backlog.md`: a row each (slug, one-line summary, source), with a `##` section under the table only when there is more to record. Entries take no ID and no status.

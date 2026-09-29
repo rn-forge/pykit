@@ -8,6 +8,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Epic | Current work |
 | --- | --- |
+| [E13 — Authentication and authorization](epics/E13-auth/index.md) | F13.1 auth design, elaborating |
 | [E14 — Workspace CI](epics/E14-workspace-ci/index.md) | F14.1 discovered pipeline; awaits its first GitHub runs |
 
 ### Deferred
@@ -16,7 +17,6 @@ What pykit is made of and what is left to do. The board says what is next; the e
 | --- | --- |
 | [E6 — Consumer reuse](epics/E6-consumer-reuse/index.md) | The owner schedules F6.1 or F6.2 for a release. |
 | [E7 — Azure adapters](epics/E7-azure-adapters/index.md) | The owner schedules the package and settles its namespace. |
-| [E8 — Django scope and auth](epics/E8-django-scope-and-auth/index.md) | The owner schedules the auth review (F8.2). |
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | The owner schedules it with a concrete framework template. |
 | [E12 — On-demand features](epics/E12-on-demand-features/index.md) | Each row's own trigger. |
 
@@ -33,6 +33,8 @@ Ideas not yet agreed as work are parked in the [backlog](backlog.md).
 | [E5 — Tool lifecycle](epics/E5-tool-lifecycle/index.md) | 2026-09-22 |
 | [E9 — Release readiness](epics/E9-release-readiness/index.md) | 2026-09-28 |
 | [E10 — Documentation refactor](epics/E10-documentation-refactor/index.md) | 2026-09-26 |
+
+**Retired:** E8 — Django scope and auth (2026-09-28). Its auth review is [E13](epics/E13-auth/index.md); its package-boundary question is the [django-optional-areas](backlog.md#django-optional-areas) backlog entry.
 
 ## Conventions
 

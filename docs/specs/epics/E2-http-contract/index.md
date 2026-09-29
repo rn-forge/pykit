@@ -10,7 +10,7 @@ The framework-neutral HTTP contract in `rn-forge-web`. The package's guides and 
 | --- | --- | --- |
 | F2.1 | Problem details, preconditions, cursor pagination, idempotency, health and the public API | `8b5160b` |
 | F2.2 | Consumer conventions and OpenAPI method naming | `8b5160b` |
-| F2.3 | Auth contract, then the shared `OidcAuthenticator`. The whole-auth review is deferred in [F8.2](../E8-django-scope-and-auth/F8.2-auth-review.md). | `8b5160b`, `37fa7fc` |
+| F2.3 | Auth contract, then the shared `OidcAuthenticator`. The whole-auth review is [E13](../E13-auth/index.md). | `8b5160b`, `37fa7fc` |
 | F2.4 | Framework-free conformance cases | `8b5160b` |
 | F2.5 | Exception-carried problem extensions and the `unmapped_exceptions` audit | `373d6bc` |
 

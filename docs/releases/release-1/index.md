@@ -15,7 +15,6 @@ pykit's first coordinated set of package tags. The only tags that exist today ar
 
 | Feature | Epic | Status |
 | --- | --- | --- |
-| [F8.1 — Django package scope](../../specs/epics/E8-django-scope-and-auth/F8.1-django-split.md) | E8 | done |
 | [F9.1 — SQLAlchemy CI](../../specs/epics/E9-release-readiness/F9.1-sqlalchemy-ci.md) | E9 | done |
 | [F9.2 — Strict docs CI](../../specs/epics/E9-release-readiness/F9.2-strict-docs-ci.md) | E9 | done |
 | [F9.3 — Release mechanism](../../specs/epics/E9-release-readiness/F9.3-release-mechanism.md) | E9 | done |
@@ -65,7 +64,7 @@ git log --format='%h %ad %s' --date=short -E --grep='[FS](8\.1|9\.[0-9])'
 - `a1116cc` 2026-09-26 Build docs with --strict in CI (S9.2.1)
 - `e945ec1` 2026-09-26 Scope CI package jobs to changes and dependencies (S9.3.3)
 
-F8.1, F9.4, S9.3.1–S9.3.2 and S9.9.1–S9.9.3 landed in `472bfa4` and `3aba88f`, before commit subjects named IDs.
+F9.4, S9.3.1–S9.3.2 and S9.9.1–S9.9.3 landed in `472bfa4` and `3aba88f`, before commit subjects named IDs.
 
 ## Exit criteria
 
