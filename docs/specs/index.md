@@ -9,7 +9,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 | Epic | Current work |
 | --- | --- |
 | [E13 — Authentication and authorization](epics/E13-auth/index.md) | F13.1 auth design, elaborating |
-| [E14 — Workspace CI](epics/E14-workspace-ci/index.md) | F14.1 discovered pipeline; awaits its first GitHub runs |
+| [E14 — Workspace CI](epics/E14-workspace-ci/index.md) | F14.1 discovered pipeline awaits its first GitHub runs; F14.2 hardening planned |
 
 ### Deferred
 

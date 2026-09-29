@@ -9,5 +9,6 @@ A CI pipeline that finds the workspace's packages from the uv manifests instead 
 | Feature | Status | Scope |
 | --- | --- | --- |
 | [F14.1 — Discovered pipeline](F14.1-discovered-pipeline.md) | in progress | Plan every job from the manifests; keep per-package release gating. |
+| [F14.2 — Pipeline hardening](F14.2-pipeline-hardening.md) | planned | Release record and resume, plan base from the last green run, SHA pins, setup action, concurrency, Sonar gate, timeouts, Dependabot. |
 
 **Source:** owner request, 2026-09-28.
