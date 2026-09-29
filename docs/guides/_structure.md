@@ -1,5 +1,19 @@
-# Guide routing
+# guides/ — what belongs here
 
-Root guides explain how to select and combine packages or work in this repository. Detailed use of one installed package belongs with that package.
+## Belongs here
 
-Put current structure in `architecture/`, gated procedures in `runbooks/`, and future work in `specs/`. Name pages for the activity they teach.
+- How to use what the repo builds, written for the person or agent doing it.
+- How to develop the repo itself: the task vocabulary, the day-to-day loop, and
+  the checks.
+
+## Does not belong here
+
+| Instead of | Put it in |
+| -- | -- |
+| How the repo is built | `architecture/` |
+| A procedure with a decision in it | `runbooks/` |
+| One public API's details | its doc comments, which the reference renders |
+
+## Naming and shape
+
+- One kebab-case `.md` per activity; `index.md` links them in reading order.
