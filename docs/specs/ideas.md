@@ -1,32 +1,26 @@
-# E12 — On-demand features
+# Ideas
 
-**Status:** deferred
+Ideas that are not yet agreed as pykit work. An entry has no ID and no status, and it does not authorize starting work. When the owner takes one up, it becomes a `New` epic or feature, its section moves into that file, and the entry is deleted. A dropped idea is deleted too.
 
-Proposals that wait for a named consumer. Each has a trigger; when it fires, the item gets its own feature file with stories and acceptance before any code.
+[Back to the work index](index.md)
 
-**Entry criteria:** the row's trigger occurs.
-
-[Back to the work index](../../index.md)
-
-| ID | Proposal | Trigger |
+| Idea | Summary | Source |
 | --- | --- | --- |
-| F12.1 | `:batchGet` and `:batchUpdate` handlers; the spelling is already documented | A consumer needs the handlers. |
-| F12.2 | Soft delete in AIP-164's shape: `deleteTime`, `:undelete`, `showDeleted`. Conflicts with the status-based soft delete in F12.13; whichever is promoted first settles the other. | A consumer needs soft delete on the wire. |
-| F12.3 | Multi-column sorting, with composite keysets and NULL ordering | The owner starts the ideation. |
-| F12.4 | Multi-tenant row scoping | A second application states its tenancy model. |
-| F12.5 | SQLAlchemy `AsyncIdempotencyStore`, session and unit-of-work helpers, readiness checks | A SQLAlchemy application asks for them. |
-| F12.6 | CloudEvents envelope builder | The outbox/inbox subsystem needs one. |
-| F12.7 | Claim-check pattern | A second storage backend is in view. |
-| F12.8 | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. | A second product needs the same contract. |
-| F12.9 | AIP-157 `readMask` partial responses | Payload size makes partial responses necessary. |
-| F12.10 | Django cloud messaging adapters | A second cloud backend needs an adapter. |
-| F12.11 | Django `AUTH.OIDC` settings block | A second consumer needs OIDC configuration through the settings facade. |
-| F12.12 | Fix the Django `RequestUtils` name collision | A breaking-change plan is approved. |
-| F12.13 | A shared model vocabulary for SQLAlchemy: audit-column semantics, a shared `status` enumeration, natural-key rules and status-based soft delete, normative for both ORM packages | An application needs one of these to behave the same on Django and SQLAlchemy. |
+| [django-optional-areas](#django-optional-areas) | Decide whether Celery, fixtures and messaging stay in `rn-forge-django`. | Former E8, retired 2026-09-28 |
+| [model-vocabulary](#model-vocabulary) | A shared model vocabulary, normative for both ORM packages: audit-column semantics, a shared `status` enumeration, natural-key rules and status-based soft delete. Waits for an application that needs one of these to behave the same on Django and SQLAlchemy. | F12.13, retired from E12 2026-09-29 |
+| sqlalchemy-helpers | A SQLAlchemy `AsyncIdempotencyStore`, session and unit-of-work helpers, and readiness checks. Waits for a SQLAlchemy application to ask for them. | F12.5, retired from E12 2026-09-29 |
+| cloudevents-envelope | A CloudEvents envelope builder. Waits for the outbox/inbox subsystem to need one. | F12.6, retired from E12 2026-09-29 |
+| claim-check | The claim-check pattern for large messages. Waits for a second storage backend. | F12.7, retired from E12 2026-09-29 |
+| django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on [django-optional-areas](#django-optional-areas) keeping messaging in `rn-forge-django`. | F12.10, retired from E12 2026-09-29 |
+| product-installer-contract | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. Waits for a second product that needs the same contract. | F12.8, retired from E12 2026-09-29 |
 
-## F12.13 — The proposed model vocabulary
+## django-optional-areas
 
-The [model conventions guide](../../../rn-forge-web/guides/model-conventions.md) describes what both ORM packages supply today and keeps the rest advisory, as the owner decided on 2026-09-25. These are the rules F12.13 would make normative for both packages; applications could still treat them as advice. The audit columns and `version` already exist in both packages. The `status` enumeration, natural keys and soft delete are the new parts.
+`rn-forge-django` carries Celery, fixtures and messaging behind their own extras. For release-1 the owner kept all of them, and SAML, in the package (2026-09-26). SAML's placement is now part of [E13's design](epics/E13-auth/design.md#package-placement). The question left is whether the other three stay. A move after release-1 is a breaking version of `rn-forge-django`, because [ADR-0002](../adr/ADR-0002.md) forbids aliases.
+
+## model-vocabulary
+
+The [model conventions guide](../rn-forge-web/guides/model-conventions.md) describes what both ORM packages supply today and keeps the rest advisory, as the owner decided on 2026-09-25. These are the rules this entry would make normative for both packages; applications could still treat them as advice. The audit columns and `version` already exist in both packages. The `status` enumeration, natural keys and soft delete are the new parts.
 
 There is no shared model base class or repository protocol. Django's ORM is active-record and SQLAlchemy's is data-mapper, so they differ on transactions, lazy loading, the identity map and migrations. A shared protocol would shrink to what both query APIs have in common. What is shared is a vocabulary that each package's base class follows without sharing code.
 
@@ -82,4 +76,4 @@ This is the only structural type declared over a persisted object: a `Versioned`
 - Hard deletion exists for data-retention compliance and is a separately authorized operation, not the ordinary `DELETE` endpoint.
 - A `DELETE` on a resource that is already soft-deleted returns 404, per the API conventions.
 
-F12.2's AIP-164 shape (`deleteTime`, `:undelete`, `showDeleted`) conflicts with this section. Whichever is promoted first settles the other.
+[E12](epics/E12-http-contract-extensions/index.md)'s F12.2, soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`), conflicts with this section. Whichever is taken up first settles the other.

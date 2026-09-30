@@ -1,10 +1,12 @@
 # E11 — Framework codegen
 
-**Status:** deferred
+| | |
+| --- | --- |
+| **State** | New |
+| **Tags** | deferred |
+| **Entry criteria** | the owner schedules it with a concrete framework template to generate |
 
 Code generators for Django and FastAPI applications, shipped as each framework package's `codegen` extra and run by a scaffolding tool through an entry point.
-
-**Entry criteria:** the owner schedules it with a concrete framework template to generate.
 
 [Back to the work index](../../index.md)
 

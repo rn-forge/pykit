@@ -1,8 +1,10 @@
 # E13 — Auth design
 
-**Epic:** [E13](index.md) · **Settled by:** [F13.1](F13.1-auth-design.md)
-
-**Depends on:** [ADR-0006](../../../adr/ADR-0006.md).
+| | |
+| --- | --- |
+| **Epic** | [E13](index.md) |
+| **Settled by** | [F13.1](F13.1-auth-design.md) |
+| **Depends on** | [ADR-0006](../../../adr/ADR-0006.md) |
 
 How authentication and authorization work in a new rn-forge web application: a pykit backend (Django or FastAPI) with an ngkit single-page app (SPA). This page is a working proposal shared by every E13 feature. Nothing in it is decided until it becomes an ADR or a feature. Later refinement sessions edit this page rather than starting over.
 
@@ -343,7 +345,7 @@ sequenceDiagram
 - PKCE is used even though the backend is a confidential client ([RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) §2.1.1).
 - The client never uses the implicit or password grant.
 - The `id_token` is verified with `rn-forge-auth`'s `JwtVerifier` and its JWKS cache, so the app has one JWT verification path.
-- Upstream access and refresh tokens are discarded by default. They are kept server-side only when the app calls upstream APIs on the user's behalf (see [Open questions](#open-questions)).
+- Upstream access and refresh tokens are discarded by default. They are kept server-side only when the app calls upstream APIs on the user's behalf (see [Open questions](F13.1-auth-design.md#open-questions)).
 - For an OAuth 2.0-only social provider (no `id_token`), the adapter calls the provider's user endpoint over the back channel and maps the result. The same `ExternalIdentity` comes out.
 
 ### SAML login (SP-initiated, HTTP-POST binding)
@@ -485,7 +487,7 @@ sequenceDiagram
   API-->>M: 200, 401 or 403
 ```
 
-This path exists today (`OidcAuthenticator`, `PrincipalBearerAuthentication`, FastAPI `bearer_auth`). The change is that bearer principals also get an authorization context, so a service account has roles the way a user does. A user-delegated token is limited to what both the user's permissions and the token's scopes allow. When the application calls a downstream service, it uses its own client-credentials token. Forwarding a user's identity requires token exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)) at the broker (see [Open questions](#open-questions)).
+This path exists today (`OidcAuthenticator`, `PrincipalBearerAuthentication`, FastAPI `bearer_auth`). The change is that bearer principals also get an authorization context, so a service account has roles the way a user does. A user-delegated token is limited to what both the user's permissions and the token's scopes allow. When the application calls a downstream service, it uses its own client-credentials token. Forwarding a user's identity requires token exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)) at the broker (see [Open questions](F13.1-auth-design.md#open-questions)).
 
 ## Sessions and cookies
 
@@ -586,13 +588,13 @@ The cost is one more package in the release batch, and breaking releases of `rn-
 | `rn-forge-web` | The HTTP wire contract only: credential parsing, challenge headers, and 401 and 403 problems. |
 | `rn-forge-django` | Binds the HTTP surface as views and URLconf. Transactions in Django's cache; sessions through `django.contrib.sessions`. A DRF authentication class that yields a session `Principal`. A default `AccountResolver` on the Django user model with an external-account link model. A default context provider from groups and permissions. DRF permissions built from `Requirement` and `ResourcePolicy`, plus queryset scoping. |
 | `rn-forge-fastapi` | Binds the same HTTP surface as an `APIRouter`. Server-side session middleware over `rn-forge-auth`'s `SessionStore`, CSRF middleware, and `current_principal` and `requires` dependencies. |
-| `rn-forge-sqlalchemy` | Later: a link table and default `AccountResolver` for FastAPI applications (see [Open questions](#open-questions)). |
+| `rn-forge-sqlalchemy` | Later: a link table and default `AccountResolver` for FastAPI applications (see [Open questions](F13.1-auth-design.md#open-questions)). |
 | ngkit `@rn-forge/ng/auth` | The SPA client described next, tracked in ngkit's own epic. |
 | Application | Provider configuration, claim mapping, provisioning policy, permission catalog, `AuthorizationContextProvider`, `ResourcePolicy` implementations, and calls to invalidate the context cache. |
 
 ## ngkit client contract
 
-ngkit tracks its work in its own epic. This section is the contract that work builds against: a change here is a change to that contract.
+ngkit tracks its work in its own epic. This section is the contract that work builds against: a change here is a change to that contract. It assumes proposed decision 1, a BFF. [The browser-client alternative](#the-browser-client-alternative) is still open, and the [open questions](F13.1-auth-design.md#open-questions) it raises would amend this list: the vocabulary, the session body's field names, the loop guard, the testing provider and the credential origins.
 
 - `provideRnForgeAuth({ sessionUrl, loginUrl, logoutUrl, providersUrl })` replaces the token configuration.
 - On startup the client fetches `/auth/session` and sets the `RNF_CREDENTIALS` signal. `hasPermission` and `hasAnyPermission` read the `permissions` array.
@@ -642,6 +644,66 @@ These become ADRs when accepted:
 
 The cost is a same-site deployment and CSRF protection, both of which are covered above.
 
+## The browser-client alternative
+
+This design keeps tokens out of the browser. A second model has been proposed for the SPA: the SPA is itself the OAuth client, and the API only verifies bearer tokens. [Considered and rejected](#considered-and-rejected) lists it in one line. This section states the proposal in full so the owner can settle it on its merits, and the [open questions](F13.1-auth-design.md#open-questions) it raises are listed with the others.
+
+### The proposal
+
+- **The SPA is an OIDC public client.** It uses authorization code with PKCE (RFC 7636, RFC 9700, OAuth 2.1), run in the browser by a maintained, certified Angular OIDC library; the proposed candidate is `angular-auth-oidc-client`. There is no implicit or password grant.
+- **Tokens stay in memory**, never in `localStorage`, and refresh tokens rotate.
+- **The access token is attached only to an allowlist of API URLs**, never to other origins.
+- **The API is a resource server.** It verifies bearer JWTs (RFC 6750, RFC 9068) through OIDC discovery and JWKS. It answers 401 with a challenge, and 403 without one.
+- **The UI reads authorization hints from the token.** `hasScope()` and `hasRole()` read the `scope` claim and RFC 9068's `roles` and `groups`, and the profile comes from standard `userinfo` claims (`sub`, `name`, `email`, `picture`). These are UI hints only; the server's 403 is authoritative.
+- **The identity provider owns the login page.** The SPA keeps a signed-in user menu and a forbidden page, and nothing else.
+- **One error policy.** A 401 re-authenticates once, with a guard against loops. A 403 goes to the forbidden page, never to login.
+- **An explicit no-auth mode exists for demos and tests**, documented as never for production.
+- **A BFF is the upgrade path, designed as a drop-in.** The guards, the authorization-hint signals and the 401/403 policy stay; only the token source changes, and Angular's XSRF support covers the cookie.
+
+### Where it agrees with this design
+
+- An identity provider or broker authenticates users, and pykit never issues tokens ([ADR-0006](../../../adr/ADR-0006.md)).
+- There is no implicit grant, no password grant, and no token in `localStorage`.
+- 401 means "sign in", and 403 means "signed in but not allowed". A 403 never signs the user out or starts a login.
+- The UI's view of authorization is a hint, and the server enforces every check.
+- Maintained libraries run the protocols.
+- A local Keycloak container is the realistic identity provider for acceptance.
+
+### Where it differs
+
+| Concern | Browser client | This design (BFF) |
+| --- | --- | --- |
+| OAuth client | The SPA, a public client | The backend, a confidential client |
+| Tokens in the browser | Access and refresh tokens, in memory | None; an `HttpOnly` session cookie |
+| What the API accepts from the SPA | `Authorization: Bearer` | The session cookie plus a CSRF header |
+| CSRF | Not needed; bearer tokens are not sent automatically | Required, through Angular's XSRF support and an `Origin` check |
+| Source of UI permissions | Token claims (`scope`, `roles`, `groups`) | `/auth/session`, computed per request from application data |
+| Login page | The identity provider's | The identity provider's, plus an optional chooser from `/auth/providers` |
+| SAML and social login | Only through a broker that issues OIDC tokens to the SPA | Broker, or direct federation through pykit's adapters |
+| Revocation and logout | Tokens stay valid until they expire; refresh-token revocation is at the identity provider | Immediate: the server deletes the session |
+| Session renewal | Silent renew with rotating refresh tokens in the SPA | A sliding server session; no SPA code |
+| Development and tests | An explicit no-auth mode | The backend's development provider; no switch |
+| New backend components | None | The `/auth/*` routes, session store and CSRF middleware |
+
+### What the standards say
+
+The IETF's [OAuth 2.0 for Browser-Based Applications](https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/) names three architectures, in decreasing order of security:
+
+1. The backend-for-frontend.
+2. The token-mediating backend, where the backend runs the flow and hands the SPA an access token.
+3. The browser-based OAuth client.
+
+It recommends the BFF for applications that have a backend, and especially for ones that handle personal or business data. The deciding point is what cross-site scripting can do. Keeping tokens in memory stops an attacker from *extracting* stored tokens, but a script running in the page can still *acquire new ones*: it can start its own silent authorization request, or call the SPA's token functions. So memory storage lowers the risk but does not close it. Sender-constrained tokens (DPoP, [RFC 9449](https://www.rfc-editor.org/rfc/rfc9449)) narrow the replay window further, at the cost of key handling in the SPA and DPoP support at both the identity provider and the API. Commercial identity vendors' own guidance for single-page apps that have a backend points the same way.
+
+A browser client remains the standard answer when there is no backend of the app's own to hold a session. That covers an SPA calling only third-party APIs, and a static site with no server.
+
+### Consequences for this pattern
+
+- **Every pykit application has a backend**, so the standards' own condition for the BFF holds. The browser-client model would add a public client and token handling to the SPA without removing any backend.
+- **The browser-client model rules out direct federation.** pykit never issues tokens, so a SPA that holds tokens needs an identity provider or broker that speaks OIDC to it. SAML and social login would then always need a broker. That contradicts the recommendation that a small app with one SAML provider should not need Keycloak ([Deployment profiles](#deployment-profiles)).
+- **The API's bearer path already exists and stays.** Machine clients and native apps use it. A SPA that chose to be a browser client could call a pykit API with bearer tokens today. The question is only which model the reference pattern, ngkit's client and the docs describe.
+- **Several of the proposal's details carry over under either model:** the loop guard on 401, the URL allowlist (as the list of origins the SPA sends credentials to), profile fields named after the standard claims, and a testing-only way to seed a signed-in user. The open questions below take each one up.
+
 ## Deployment topology
 
 - **Preferred:** one origin (`app.example.com` serves the SPA; `/api` and `/auth` are proxied to the backend).
@@ -664,7 +726,7 @@ The cost is a same-site deployment and CSRF protection, both of which are covere
 
 ## Considered and rejected
 
-- **Access and refresh JWTs held by the SPA** (in `localStorage`, `sessionStorage` or memory). Exposed to XSS, hard to revoke, and they need refresh-rotation code in every app.
+- **Access and refresh JWTs held by the SPA** (in `localStorage`, `sessionStorage` or memory). Exposed to XSS, hard to revoke, and they need refresh-rotation code in every app. Reopened 2026-09-28 as [the browser-client alternative](#the-browser-client-alternative), until the first of its open questions is settled.
 - **Permissions, profile or org data inside a token.** Stale until expiry, bloats every request, and exposes personal data.
 - **pykit minting its own JWTs after a login**, including the short-lived exchange token. This turns every app into an unaudited authorization server with its own key management, revocation and replay concerns. The current exchange token is also a valid SimpleJWT refresh token, redeemable at SimpleJWT's refresh endpoint.
 - **Tokens in redirect URLs**, whether in the query or the fragment. They leak through history, logs and the `Referer` header.
@@ -673,16 +735,4 @@ The cost is a same-site deployment and CSRF protection, both of which are covere
 - **A "disable auth" switch in the SPA.** The auth code path goes untested in development. A development provider replaces it.
 - **IdP-initiated SAML by default.** No `InResponseTo` means no binding to a request the app started. It stays opt-in, per provider.
 
-## Open questions
-
-Each question carries the recommendation from 2026-09-27. A question closes when the owner accepts or replaces the recommendation.
-
-- **Where do the protocol adapters live?** *Recommendation:* in `rn-forge-auth`, behind extras ([Package placement](#package-placement)).
-- **Which SAML library?** *Recommendation:* python3-saml. It is SP-focused with strict defaults and is already in use. pysaml2 is a full IdP and SP stack that is harder to configure, and both need `xmlsec1`. Revisit only if a required feature is missing.
-- **FastAPI session store.** *Recommendation:* the `SessionStore` protocol with an in-memory store for tests and single-process development, and a Redis store behind the `redis` extra. Redis is the common production choice for server-side sessions. A SQL store waits until an application asks for one. Django keeps its own session framework.
-- **FastAPI account model.** *Recommendation:* protocols only in the first version. A SQLAlchemy link table and default `AccountResolver` arrive when a FastAPI application with interactive users needs them.
-- **Tokens held for upstream calls.** *Recommendation:* out of the first version. The OIDC adapter hands upstream tokens to an application hook and pykit does not store them.
-- **Tenancy.** *Recommendation:* keep `Principal.tenant`, set by the authorization context provider. How a tenant is chosen at login waits for [F12.4](../E12-on-demand-features/index.md)'s trigger.
-- **Step-up authentication.** *Recommendation:* the first version records `auth_time` and `amr` in the session and on the `Principal`. A `Requirement` clause for recent or multi-factor authentication waits for an application that needs it.
-- **Test IdPs.** *Recommendation:* in-process fake OIDC and SAML IdPs for unit and integration tests, so acceptance runs offline inside this repository ([ADR-0008](../../../adr/ADR-0008.md)). A Keycloak container covers the broker profile in an optional CI job.
-- Should a SAML post-back establish a session, issue a JWT for later frontend requests, or support both? *Recommendation:* a session (see [Why the browser holds a session](#why-the-browser-holds-a-session-and-not-a-token)). This closes when proposed decision 1 becomes an ADR.
+[F13.1's open questions](F13.1-auth-design.md#open-questions) track what this design has yet to settle.

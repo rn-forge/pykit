@@ -46,7 +46,7 @@ Declared in `_areas.yml`, in nav order. These are the areas kiln seeds:
 - A choice between real alternatives → a new ADR under `adr/`; a change to one →
   that ADR, revised in place.
 - Work to do, or a record of work done → an epic under `specs/epics/`.
-- An idea not yet agreed as work → a row in `specs/backlog.md`.
+- An idea not yet agreed as work → a row in `specs/ideas.md`.
 - What ships when → `releases/`.
 - An operational procedure → `runbooks/`.
 - An open question → the epic or feature it blocks, until it becomes an ADR or a
@@ -71,11 +71,7 @@ this file and at `docs/index.md`.
 Check for these when changing the tree, and report what you find rather than
 fixing it silently — some of it is deliberate:
 
-- A release names a feature that does not exist, a feature is on two release
-  pages, or a planned feature is on none.
-- A feature's `**Status:**` differs from its row on its release page.
-- An epic's status contradicts its features or stories, or its board row is in
-  the wrong group, or in two.
+- An epic's state contradicts its features or stories.
 - Two ADRs decide the same topic, or an ADR's Decision changed
   (`git log --follow docs/adr/ADR-<nnnn>.md`) with no Background entry saying
   so.
@@ -87,3 +83,4 @@ fixing it silently — some of it is deliberate:
   each is for; `AGENTS.md` points at `CLAUDE.md`.
 - A `README.md` inside `docs/`: MkDocs drops one that sits beside an `index.md`,
   and the strict build fails.
+- `docs/_update_board.sh --check` must pass.

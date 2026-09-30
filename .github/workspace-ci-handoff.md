@@ -1,6 +1,6 @@
 # Handoff to kiln: discovered workspace CI
 
-pykit's CI no longer names its packages. One script reads the uv workspace and plans every job, so the workflow can be copied unchanged into any uv monorepo whose packages are released separately. This note is for bringing it into kiln's golden templates. The design and its reasons are in pykit's `docs/specs/epics/E14-workspace-ci/F14.1-discovered-pipeline.md`.
+pykit's CI no longer names its packages. One script reads the uv workspace and plans every job, so the workflow can be copied unchanged into any uv monorepo whose packages are released separately. This note is for bringing it into kiln's golden templates. The design and its reasons are in pykit's `docs/specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md`.
 
 ## Files to copy verbatim
 
