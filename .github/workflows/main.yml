@@ -21,13 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: uv sync
-        if: hashFiles('.importlinter') != ''
-        run: uv sync --all-packages --all-extras --locked
+      - uses: ./.github/actions/setup
 
       - name: lint-imports
         if: hashFiles('.importlinter') != ''
@@ -74,12 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: uv sync
-        run: uv sync --all-packages --all-extras --locked
+      - uses: ./.github/actions/setup
 
       - name: ruff check
         run: uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync ruff check
@@ -126,12 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: uv sync
-        run: uv sync --all-packages --all-extras --locked
+      - uses: ./.github/actions/setup
 
       - name: pytest (PostgreSQL)
         run: |
@@ -161,9 +145,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: ./.github/actions/setup
         with:
-          enable-cache: true
+          sync: "false"
 
       - name: Install and import
         run: uv run --no-project --with packaging python .github/scripts/workspace_ci.py smoke ${{ matrix.name }} "${{ matrix.extra }}"
@@ -189,12 +173,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: uv sync
-        run: uv sync --all-packages --all-extras --locked
+      - uses: ./.github/actions/setup
 
       - name: pytest
         run: uv run --no-sync pytest ${{ matrix.args }}
@@ -211,9 +190,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: ./.github/actions/setup
         with:
-          enable-cache: true
+          sync: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -258,12 +237,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: uv sync
-        run: uv sync --all-packages --all-extras --locked
+      - uses: ./.github/actions/setup
 
       - name: Run tests with coverage
         run: uv run pytest ${{ needs.plan.outputs.cov-args }} --cov-report=xml:coverage.xml ${{ needs.plan.outputs.test-paths }}
@@ -276,8 +250,8 @@ jobs:
             -Dsonar.sources=${{ needs.plan.outputs.sonar-sources }}
             -Dsonar.tests=${{ needs.plan.outputs.sonar-tests }}
 
-  # Every check resolves internal dependencies from the workspace via
-  # `uv sync --all-packages`, which never proves a tag installs on its own.
+  # Package checks resolve internal dependencies from the workspace, which
+  # never proves a tag installs on its own.
   external-install:
     needs: [release]
     if: ${{ !cancelled() && needs.release.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
@@ -287,9 +261,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: ./.github/actions/setup
         with:
-          enable-cache: true
+          sync: "false"
 
       - name: Verify remote tags and clean installs
         run: |
@@ -321,9 +295,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: ./.github/actions/setup
         with:
-          enable-cache: true
+          sync: "false"
 
       # Each package tagged at this commit gets its site deployed to gh-pages,
       # which stores the versions between runs.
