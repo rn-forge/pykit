@@ -20,7 +20,7 @@ The discovered CI pipeline, its hardening and the generated spec board: CI plans
 | Feature | Epic | State |
 | --- | --- | --- |
 | [F14.1](../../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md) | E14 | Active |
-| [F14.2](../../specs/epics/E14-workspace-automation/F14.2-pipeline-hardening.md) | E14 | New |
+| [F14.2](../../specs/epics/E14-workspace-automation/F14.2-pipeline-hardening.md) | E14 | Active |
 | [F14.3](../../specs/epics/E14-workspace-automation/F14.3-generated-board.md) | E14 | Closed |
 <!-- scope:end -->
 
@@ -34,7 +34,7 @@ None: the pipeline change is internal to CI and touches no released package.
 
 ## Progress
 
-F14.1's planner script and workflow are in progress (S14.1.3); F14.2 has not started. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
+F14.1's planner script and workflow are in progress (S14.1.3). F14.2 is Active: S14.2.1's action pins are Closed; S14.2.2's composite setup action is next. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
 
 ## Commits
 
