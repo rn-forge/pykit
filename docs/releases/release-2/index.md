@@ -5,7 +5,7 @@
 | **Status** | in progress |
 | **Start Date** | 2026-09-29 |
 
-The discovered CI pipeline and its hardening: CI plans its jobs from the workspace manifests instead of naming packages by hand, and the release step becomes safe to rerun unattended.
+The discovered CI pipeline, its hardening and the generated spec board: CI plans its jobs from the workspace manifests instead of naming packages by hand, the release step becomes safe to rerun unattended, and release scopes and backlog are generated from feature metadata.
 
 [Back to releases](../index.md) · [Release runbook](../../runbooks/releasing-packages.md)
 
@@ -21,6 +21,7 @@ The discovered CI pipeline and its hardening: CI plans its jobs from the workspa
 | --- | --- | --- |
 | [F14.1](../../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md) | E14 | Active |
 | [F14.2](../../specs/epics/E14-workspace-automation/F14.2-pipeline-hardening.md) | E14 | New |
+| [F14.3](../../specs/epics/E14-workspace-automation/F14.3-generated-board.md) | E14 | Closed |
 <!-- scope:end -->
 
 ## Decisions
@@ -33,19 +34,19 @@ None: the pipeline change is internal to CI and touches no released package.
 
 ## Progress
 
-F14.1's planner script and workflow are in progress (S14.1.3); F14.2 has not started.
+F14.1's planner script and workflow are in progress (S14.1.3); F14.2 has not started. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F14\.[12]|S14\.[12]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F14\.[123]|S14\.[123]\.'
 ```
 
 ## Exit criteria
 
-- F14.1 and F14.2 are `done`, and `docs/_update_board.sh --check` passes with both on this page's Scope.
+- F14.1, F14.2 and F14.3 are `Closed`, and `docs/_update_board.sh --check` passes with all three on this page's Scope.
 
 ## Shipped
 
