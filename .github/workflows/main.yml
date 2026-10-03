@@ -257,7 +257,7 @@ jobs:
 
   sonar:
     needs: [plan, verify, postgres, smoke]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.plan.outputs.sonar == 'true' }}
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.plan.outputs.sonar == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -279,6 +279,7 @@ jobs:
           args: >
             -Dsonar.sources=${{ needs.plan.outputs.sonar-sources }}
             -Dsonar.tests=${{ needs.plan.outputs.sonar-tests }}
+            -Dsonar.qualitygate.wait=true
 
   # Package checks resolve internal dependencies from the workspace, which
   # never proves a tag installs on its own.
