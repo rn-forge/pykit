@@ -62,6 +62,30 @@ async def upsert(
     if not issubclass(model, AuditMixin):
         raise TypeError(f"{model.__name__} must use AuditMixin")
     columns = [*key, *fields]
+    keyed = _keyed(rows, key, columns)
+    dialect = session.get_bind().dialect.name
+    if dialect not in ("postgresql", "sqlite"):
+        raise NotImplementedError(f"upsert does not support {dialect}")
+
+    table: Table = model.__table__  # pyright: ignore[reportAssignmentType]
+    existing = await _existing(session, table, key, fields, list(keyed))
+    to_write, created, updated = _changes(keyed, existing, columns, fields, actor)
+    if to_write:
+        insert = (postgresql if dialect == "postgresql" else sqlite).insert(table)
+        statement = insert.on_conflict_do_update(
+            index_elements=list(key),
+            set_={
+                name: insert.excluded[name]
+                for name in (*fields, "update_time", "updated_by")
+            },
+        )
+        await session.execute(statement, to_write)
+    return UpsertCounts(created, updated, len(keyed) - created - updated)
+
+
+def _keyed(
+    rows: Sequence[Mapping[str, Any]], key: Sequence[str], columns: Sequence[str]
+) -> dict[tuple[Any, ...], Mapping[str, Any]]:
     keyed: dict[tuple[Any, ...], Mapping[str, Any]] = {}
     for row in rows:
         if missing := [c for c in columns if c not in row]:
@@ -70,12 +94,17 @@ async def upsert(
         if identity in keyed:
             raise ValueError(f"duplicate key {identity}")
         keyed[identity] = row
-    dialect = session.get_bind().dialect.name
-    if dialect not in ("postgresql", "sqlite"):
-        raise NotImplementedError(f"upsert does not support {dialect}")
+    return keyed
 
-    table: Table = model.__table__  # pyright: ignore[reportAssignmentType]
-    existing = await _existing(session, table, key, fields, list(keyed))
+
+def _changes(
+    keyed: Mapping[tuple[Any, ...], Mapping[str, Any]],
+    existing: Mapping[tuple[Any, ...], Mapping[str, Any]],
+    columns: Sequence[str],
+    fields: Sequence[str],
+    actor: str,
+) -> tuple[list[dict[str, Any]], int, int]:
+    """The rows to write, with how many of them are creations and updates."""
     to_write: list[dict[str, Any]] = []
     created = updated = 0
     now = datetime.now(UTC)
@@ -96,17 +125,7 @@ async def upsert(
                 "updated_by": actor,
             }
         )
-    if to_write:
-        insert = (postgresql if dialect == "postgresql" else sqlite).insert(table)
-        statement = insert.on_conflict_do_update(
-            index_elements=list(key),
-            set_={
-                name: insert.excluded[name]
-                for name in (*fields, "update_time", "updated_by")
-            },
-        )
-        await session.execute(statement, to_write)
-    return UpsertCounts(created, updated, len(keyed) - created - updated)
+    return to_write, created, updated
 
 
 async def _existing(

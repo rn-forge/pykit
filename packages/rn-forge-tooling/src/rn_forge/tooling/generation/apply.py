@@ -146,32 +146,14 @@ def apply(
 
     rendered = _compose(root, writes, previous)
 
-    staged: dict[str, Path] = {}
-    for path, text in rendered.items():
-        if text is None:
-            continue
-        staged_path = staging / path
-        PathUtils.assert_within(staging, staged_path)
-        PathUtils.atomic_write(text, staged_path)
-        staged[path] = staged_path
+    staged = _stage(staging, rendered)
 
     created: list[Path] = []
     backed_up: list[tuple[Path, Path]] = []
     state_backup = _backup(root, store.path, backups)
 
     try:
-        for path, text in rendered.items():
-            target = resolve_within(root, path)
-            if target.is_file():
-                copied = _backup(root, target, backups)
-                if copied is not None:
-                    backed_up.append((target, copied))
-            else:
-                created.append(target)
-            if text is None:
-                target.unlink(missing_ok=True)
-                continue
-            PathUtils.atomic_write(read_text(staged[path]), target)
+        _swap_in(root, rendered, staged, backups, created, backed_up)
         if verify is not None:
             verify()
         store.replace_all(_next_entries(planned))
@@ -183,6 +165,46 @@ def apply(
 
     _LOGGER.verbose("generation.apply: applied {} change(s)", len(writes))
     return ApplyResult(changes=planned.changes, backup_dir=backups)
+
+
+def _stage(staging: Path, rendered: Mapping[str, str | None]) -> dict[str, Path]:
+    """Write every non-deleted destination's new text under *staging*."""
+    staged: dict[str, Path] = {}
+    for path, text in rendered.items():
+        if text is None:
+            continue
+        staged_path = staging / path
+        PathUtils.assert_within(staging, staged_path)
+        PathUtils.atomic_write(text, staged_path)
+        staged[path] = staged_path
+    return staged
+
+
+def _swap_in(
+    root: Path,
+    rendered: Mapping[str, str | None],
+    staged: Mapping[str, Path],
+    backups: Path,
+    created: list[Path],
+    backed_up: list[tuple[Path, Path]],
+) -> None:
+    """Replace each destination with its staged text, recording undo data.
+
+    *created* and *backed_up* are filled as it goes, so a caller can roll back
+    a partial swap.
+    """
+    for path, text in rendered.items():
+        target = resolve_within(root, path)
+        if target.is_file():
+            copied = _backup(root, target, backups)
+            if copied is not None:
+                backed_up.append((target, copied))
+        else:
+            created.append(target)
+        if text is None:
+            target.unlink(missing_ok=True)
+            continue
+        PathUtils.atomic_write(read_text(staged[path]), target)
 
 
 def _next_entries(planned: Plan) -> dict[str, StateEntry]:

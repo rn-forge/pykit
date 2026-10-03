@@ -47,19 +47,19 @@ def classify(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action
         return Action.SKIP if (root / artifact.path).exists() else Action.CREATE
 
     disk = _disk_content(root, artifact)
-    disk_hash = None if disk is None else ContentHash.of(disk)
-    last_hash = entry.content_hash if entry else None
-    new_hash = artifact.content_hash
-
     if disk is None:
         if entry is None:
             return Action.CREATE if artifact.block is None else Action.INSERT
         return Action.MISSING if artifact.block is None else Action.DRIFT
     if entry is None:
         return Action.CONFLICT
-    if disk_hash != last_hash:
+    if ContentHash.of(disk) != entry.content_hash:
         return Action.DRIFT
-    return Action.UNCHANGED if last_hash == new_hash else Action.UPDATE
+    return (
+        Action.UNCHANGED
+        if entry.content_hash == artifact.content_hash
+        else Action.UPDATE
+    )
 
 
 def _stale_action(root: Path, entry: StateEntry) -> tuple[Action, Action]:

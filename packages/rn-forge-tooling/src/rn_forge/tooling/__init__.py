@@ -16,13 +16,15 @@ __all__ = [
     "extract_archive",
 ]
 
+_INSTALL = "rn_forge.tooling.install"
+
 _MODULES = {
     "RenderError": "rn_forge.tooling.templates",
     "StateStore": "rn_forge.tooling.state",
     "TemplateEngine": "rn_forge.tooling.templates",
-    "ToolHome": "rn_forge.tooling.install",
-    "ToolProduct": "rn_forge.tooling.install",
-    "extract_archive": "rn_forge.tooling.install",
+    "ToolHome": _INSTALL,
+    "ToolProduct": _INSTALL,
+    "extract_archive": _INSTALL,
 }
 
 

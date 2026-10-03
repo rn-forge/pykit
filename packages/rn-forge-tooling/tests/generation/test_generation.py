@@ -135,8 +135,9 @@ class TestClassify:
 
 class TestPlan:
     def test_duplicate_keys_are_rejected(self, tmp_path):
+        artifacts = [managed(), managed()]
         with pytest.raises(AppException):
-            plan(tmp_path, [managed(), managed()], {})
+            plan(tmp_path, artifacts, {})
 
     def test_blocking_change_stops_the_plan(self, tmp_path):
         (tmp_path / "Taskfile.yml").write_text("hand made\n")
@@ -204,8 +205,9 @@ class TestApply:
     def test_unapproved_drift_aborts_before_writing(self, tmp_path):
         run(tmp_path, [managed(content="v1\n"), seeded()])
         (tmp_path / "Taskfile.yml").write_text("edited\n")
+        artifacts = [managed(content="v2\n"), seeded(content="other\n")]
         with pytest.raises(AppException):
-            run(tmp_path, [managed(content="v2\n"), seeded(content="other\n")])
+            run(tmp_path, artifacts)
         assert (tmp_path / "Taskfile.yml").read_text() == "edited\n"
 
     def test_forced_drift_is_overwritten(self, tmp_path):
@@ -251,12 +253,9 @@ class TestApply:
         def boom():
             raise RuntimeError("post-apply check failed")
 
+        artifacts = [managed(content="v2\n"), managed(path="new.yml", content="new\n")]
         with pytest.raises(AppException):
-            run(
-                tmp_path,
-                [managed(content="v2\n"), managed(path="new.yml", content="new\n")],
-                verify=boom,
-            )
+            run(tmp_path, artifacts, verify=boom)
         assert (tmp_path / "Taskfile.yml").read_text() == "v1\n"
         assert not (tmp_path / "new.yml").exists()
         assert store(tmp_path).load()["Taskfile.yml"].content_hash is not None
@@ -313,17 +312,15 @@ class TestSeveralBlocksInOneFile:
         def boom():
             raise RuntimeError("nope")
 
+        artifacts = [block(content=".build/\n"), other_block(content="site/\n")]
         with pytest.raises(AppException):
-            run(
-                tmp_path,
-                [block(content=".build/\n"), other_block(content="site/\n")],
-                verify=boom,
-            )
+            run(tmp_path, artifacts, verify=boom)
         assert (tmp_path / ".gitignore").read_text() == before
 
     def test_whole_file_and_block_ownership_of_one_path_is_rejected(self, tmp_path):
+        artifacts = [managed(path="notes.md"), block(path="notes.md")]
         with pytest.raises(AppException):
-            run(tmp_path, [managed(path="notes.md"), block(path="notes.md")])
+            run(tmp_path, artifacts)
 
 
 class TestBytePreservingWrites:
@@ -353,8 +350,9 @@ class TestPathContainment:
     def test_absolute_and_traversing_paths_are_rejected(self, tmp_path, path):
         root = tmp_path / "repo"
         root.mkdir()
+        artifacts = [managed(path=path)]
         with pytest.raises(AppException):
-            run(root, [managed(path=path)])
+            run(root, artifacts)
         assert not (tmp_path / "escaped.yml").exists()
 
     def test_a_symlink_out_of_the_repo_is_rejected(self, tmp_path):
@@ -364,8 +362,9 @@ class TestPathContainment:
         outside.mkdir()
         (root / "link").rmdir()
         (root / "link").symlink_to(outside, target_is_directory=True)
+        artifacts = [managed(path="link/escaped.yml")]
         with pytest.raises(AppException):
-            run(root, [managed(path="link/escaped.yml")])
+            run(root, artifacts)
         assert not (outside / "escaped.yml").exists()
 
     def test_a_stale_entry_pointing_outside_the_repo_is_rejected(self, tmp_path):
@@ -379,8 +378,9 @@ class TestPathContainment:
                 )
             }
         )
+        entries = state.load()
         with pytest.raises(AppException):
-            plan(root, [], state.load())
+            plan(root, [], entries)
 
 
 class TestInterruption:
@@ -390,12 +390,9 @@ class TestInterruption:
         def interrupt():
             raise KeyboardInterrupt
 
+        artifacts = [managed(content="v2\n"), managed(path="new.yml", content="new\n")]
         with pytest.raises(KeyboardInterrupt):
-            run(
-                tmp_path,
-                [managed(content="v2\n"), managed(path="new.yml", content="new\n")],
-                verify=interrupt,
-            )
+            run(tmp_path, artifacts, verify=interrupt)
         assert (tmp_path / "Taskfile.yml").read_text() == "v1\n"
         assert not (tmp_path / "new.yml").exists()
         assert store(tmp_path).load()["Taskfile.yml"].content_hash is not None
