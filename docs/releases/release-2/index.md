@@ -22,7 +22,7 @@ The discovered CI pipeline, its hardening, the generated spec board and Sonar re
 | [F14.1](../../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md) | E14 | Active |
 | [F14.2](../../specs/epics/E14-workspace-automation/F14.2-pipeline-hardening.md) | E14 | Active |
 | [F14.3](../../specs/epics/E14-workspace-automation/F14.3-generated-board.md) | E14 | Closed |
-| [F14.4](../../specs/epics/E14-workspace-automation/F14.4-sonar-remediation.md) | E14 | New |
+| [F14.4](../../specs/epics/E14-workspace-automation/F14.4-sonar-remediation.md) | E14 | Active |
 <!-- scope:end -->
 
 ## Decisions
