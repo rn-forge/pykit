@@ -31,6 +31,9 @@ jobs:
   # one, and emits each job's matrix.
   plan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       release-order: ${{ steps.plan.outputs.release-order }}
       packages: ${{ steps.plan.outputs.packages }}
@@ -51,8 +54,15 @@ jobs:
 
       - id: plan
         env:
-          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || '' }}
-        run: python3 .github/scripts/workspace_ci.py plan "$BASE" | tee -a "$GITHUB_OUTPUT"
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = push ]; then
+            BASE=$(gh run list --workflow main.yml --branch main --event push --status success --limit 1 --json headSha --jq '.[0].headSha // ""')
+          fi
+          python3 .github/scripts/workspace_ci.py plan "$BASE" | tee -a "$GITHUB_OUTPUT"
 
   # Each passing check entry uploads an `ok-<marker>` artifact; `release` tags a
   # package only when all of its markers exist.

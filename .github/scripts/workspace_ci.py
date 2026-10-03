@@ -140,9 +140,29 @@ def changed_files(base: str) -> list[str]:
 def select(packages: dict[str, Package], base: str) -> set[str]:
     """Packages with changed files, plus every package that depends on one.
 
-    An empty base, or a change outside every package and `UNSCOPED`, selects all.
+    An empty, invalid or non-ancestor base, or a change outside every package and
+    `UNSCOPED`, selects all.
     """
     if not base:
+        return set(packages)
+    if (
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{base}^{{commit}}"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        or subprocess.run(
+            ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+    ):
+        print(
+            f"base {base} is not a commit or an ancestor of HEAD; selecting all packages",
+            file=sys.stderr,
+        )
         return set(packages)
     selected: set[str] = set()
     for file in changed_files(base):
