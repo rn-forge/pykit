@@ -277,6 +277,15 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      - id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/workspace_ci.py sonar-target >> "$GITHUB_OUTPUT"
+
       - name: Run tests with coverage
         run: uv run pytest ${{ needs.plan.outputs.cov-args }} --cov-report=xml:coverage.xml ${{ needs.plan.outputs.test-paths }}
 
@@ -288,6 +297,7 @@ jobs:
             -Dsonar.sources=${{ needs.plan.outputs.sonar-sources }}
             -Dsonar.tests=${{ needs.plan.outputs.sonar-tests }}
             -Dsonar.qualitygate.wait=true
+            ${{ steps.target.outputs.branch-arg }}
 
   # Package checks resolve internal dependencies from the workspace, which
   # never proves a tag installs on its own.

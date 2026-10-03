@@ -11,12 +11,14 @@ Usage:
     workspace_ci.py releasable OK_DIR NAME...  the NAMEs whose checks all passed
     workspace_ci.py released                 `name dir module version` per tag at HEAD
     workspace_ci.py smoke PACKAGE [EXTRA]    install one extra from built wheels and import it
+    workspace_ci.py sonar-target             `$GITHUB_OUTPUT` line with the Sonar branch argument
 """
 
 from __future__ import annotations
 
 import fnmatch
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -361,6 +363,30 @@ def smoke(package_name: str, extra: str) -> int:
         ).returncode
 
 
+def sonar_branch(event: str, ref_type: str, ref_name: str) -> str:
+    """The Sonar branch name to analyze, or "" to leave a pull request to the scanner.
+
+    Raises `ValueError` for a tag ref or any event other than push,
+    workflow_dispatch and pull_request.
+    """
+    if event == "pull_request":
+        return ""
+    if event not in ("push", "workflow_dispatch"):
+        raise ValueError(f"unsupported event for Sonar analysis: {event}")
+    if ref_type != "branch":
+        raise ValueError(
+            f"unsupported ref for Sonar analysis: {ref_type} {ref_name}; run it on a branch"
+        )
+    return ref_name
+
+
+def sonar_target() -> None:
+    branch = sonar_branch(
+        os.environ["EVENT_NAME"], os.environ["REF_TYPE"], os.environ["REF_NAME"]
+    )
+    print(f"branch-arg=-Dsonar.branch.name={branch}" if branch else "branch-arg=")
+
+
 def main() -> int:
     command, args = sys.argv[1], sys.argv[2:]
     if command == "plan":
@@ -371,6 +397,11 @@ def main() -> int:
         released()
     elif command == "smoke":
         return smoke(args[0], args[1] if len(args) > 1 else "")
+    elif command == "sonar-target":
+        try:
+            sonar_target()
+        except ValueError as error:
+            sys.exit(str(error))
     else:
         sys.exit(f"unknown command: {command}")
     return 0
