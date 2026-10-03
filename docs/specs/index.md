@@ -7,7 +7,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Release | Status | Features |
 | --- | --- | --- |
-| [Release 2 — workspace automation](../releases/release-2/index.md) | in progress | 3 Active · 1 Closed |
+| [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |
 | [Release 1 — the first coordinated tags](../releases/release-1/index.md) | shipped (2026-09-28) | 9 Closed |
 
 ## Backlog
