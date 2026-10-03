@@ -34,7 +34,7 @@ None: the pipeline change is internal to CI and touches no released package.
 
 ## Progress
 
-F14.1's planner script and workflow are in progress (S14.1.3). F14.2 is Active: S14.2.1, S14.2.2, S14.2.4 and S14.2.7 are Closed; S14.2.3, S14.2.5 and S14.2.6 are implemented, with local checks passing and GitHub acceptance pending. S14.2.8's handoff updates are next. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
+F14.1's planner script and workflow are in progress (S14.1.3). F14.2's implementation is complete: S14.2.1, S14.2.2, S14.2.4, S14.2.7 and S14.2.8 are Closed; S14.2.3, S14.2.5 and S14.2.6 remain Active for workflow-run validation only. Local checks pass. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs. Release 2 stays in progress until this GitHub evidence is recorded.
 
 ## Commits
 

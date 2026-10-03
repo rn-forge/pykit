@@ -8,6 +8,8 @@ pykit's CI no longer names its packages. One script reads the uv workspace and p
 | --- | --- | --- |
 | `.github/workflows/main.yml` | same path | Has no repository-specific values. |
 | `.github/scripts/workspace_ci.py` | same path | Standard library only, except `smoke`, which the workflow runs with `packaging`. |
+| `.github/actions/setup/action.yml` | same path | Installs uv; `sync` defaults to `"true"`, with `"false"` for jobs that build or install separately. |
+| `.github/dependabot.yml` | same path | Checks GitHub Actions weekly and groups all updates. |
 
 Retire any per-package job template, reusable package workflow, or `changed_packages.py` or `check_django_extra.py` copy.
 
@@ -52,7 +54,8 @@ pykit's own settings are in its root `pyproject.toml` and in `packages/rn-forge-
 
 ## Assumptions baked into the workflow
 
-- Tags are `<project-name>-v<version>`, each with a GitHub Release. Tagging happens only on a push to `main`.
+- A published GitHub Release with its assets marks `<project-name>-v<version>` as shipped. On a push to `main`, an already published release is skipped; a tag without a published release is rebuilt from its tagged source; a missing tag is created at the pushed commit. A leftover draft is replaced after the build succeeds. Rerunning the original push run recovers a failed release; a manual dispatch builds only. Resumed releases at older commits need the runbook's manual install and docs checks.
+- A push is planned from the last successful `main.yml` push run on `main`; a pull request uses its base SHA; a manual dispatch selects all packages. A missing or non-ancestor baseline selects all packages. The plan job needs `actions: read` to resolve the previous successful run.
 - Packages are installed from `git+<server>/<repo>@<tag>#subdirectory=<member dir>`, derived from the run. There is no PyPI publishing.
 - A change under `docs/` selects no package; any other change outside the members selects every package. The prefix list is `UNSCOPED` in the script.
 - The docs job's step that copies package sites from `gh-pages` into the root site expects members under `packages/`.
@@ -61,7 +64,7 @@ pykit's own settings are in its root `pyproject.toml` and in `packages/rn-forge-
 ## Setting up a repository
 
 - Branch protection: make **`ci-ok`** the only required check. Matrix job names such as `verify (<name>)` change as packages are added.
-- The workflow needs `contents: write` for tagging, and Pages permissions for the docs job. Both are already declared per job.
+- The workflow needs `contents: write` for publishing releases, and Pages permissions for the docs job. Both are already declared per job.
 
 ## Checking a generated repository
 
