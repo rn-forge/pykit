@@ -114,6 +114,21 @@ class TestJwtVerifier:
         with pytest.raises(TokenVerificationError, match="not accepted"):
             _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(token)
 
+    def test_unsigned_alg_none_token_is_rejected(self):
+        token = jwt.encode(
+            {
+                "sub": "u1",
+                "iss": ISSUER,
+                "aud": AUDIENCE,
+                "exp": int(time.time()) + 300,
+            },
+            None,
+            algorithm="none",
+            headers={"kid": "k1"},
+        )
+        with pytest.raises(TokenVerificationError, match="not accepted"):
+            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(token)
+
     def test_token_without_kid_fails(self):
         token = jwt.encode({"sub": "u1"}, KEY, algorithm="RS256")
         with pytest.raises(TokenVerificationError, match="kid"):

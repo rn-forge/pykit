@@ -36,8 +36,9 @@ class SequenceGenerator:
 
     Args:
         name: The sequence name. Must match ``[a-z][a-z0-9_]*`` (at most 63
-            characters): a sequence name cannot be a bound query parameter, so
-            this validation is the only thing between the name and the DDL.
+            characters). The attribute may be reassigned; the current value is
+            validated again, and quoted with the connection's identifier
+            quoting, before each PostgreSQL statement.
         counter_model: The consumer's concrete :class:`AbstractSequenceCounter`.
         prefix: Passed to *formatter*.
         formatter: ``(prefix, value) -> code``. Defaults to
@@ -46,7 +47,8 @@ class SequenceGenerator:
             *counter_model*.
 
     Raises:
-        AppException: *name* is not a valid sequence name.
+        AppException: *name* is not a valid sequence name, at construction or
+            when :meth:`next_value` or :meth:`ensure_at_least` runs.
     """
 
     def __init__(
@@ -58,9 +60,7 @@ class SequenceGenerator:
         formatter: Callable[[str, int], str] | None = None,
         using: str | None = None,
     ) -> None:
-        AppException.check(
-            _NAME.fullmatch(name), "Invalid sequence name: {!r}", name, error_code=400
-        )
+        self._check_name(name)
         self.name = name
         self._model = counter_model
         self._prefix = prefix
@@ -75,8 +75,9 @@ class SequenceGenerator:
         """Allocate and return the next raw value."""
         alias = self._alias()
         if connections[alias].vendor == "postgresql":
+            identifier = self._identifier(alias)
             with connections[alias].cursor() as cursor:
-                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {self.name}")
+                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {identifier}")
                 cursor.execute("SELECT nextval(%s)", [self.name])
                 row: tuple[Any, ...] = cursor.fetchone()
                 return int(row[0])
@@ -94,9 +95,10 @@ class SequenceGenerator:
         """
         alias = self._alias()
         if connections[alias].vendor == "postgresql":
+            identifier = self._identifier(alias)
             with connections[alias].cursor() as cursor:
-                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {self.name}")
-                cursor.execute(f"SELECT last_value, is_called FROM {self.name}")
+                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {identifier}")
+                cursor.execute(f"SELECT last_value, is_called FROM {identifier}")
                 last_value, is_called = cursor.fetchone()
                 current = int(last_value) if is_called else int(last_value) - 1
                 if value > current:
@@ -107,6 +109,16 @@ class SequenceGenerator:
             if counter.value < value:
                 counter.value = value
                 counter.save(update_fields=["value"])
+
+    @staticmethod
+    def _check_name(name: str) -> None:
+        AppException.check(
+            _NAME.fullmatch(name), "Invalid sequence name: {!r}", name, error_code=400
+        )
+
+    def _identifier(self, alias: str) -> str:
+        self._check_name(self.name)
+        return connections[alias].ops.quote_name(self.name)
 
     def _alias(self) -> str:
         return self._using or router.db_for_write(self._model)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 
 import pytest
-from django.db import connection
+from django.db import connection, connections
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.django.models import (
@@ -37,6 +37,73 @@ class TestFormatting:
     def test_invalid_sequence_names_are_rejected(self, name) -> None:
         with pytest.raises(AppException):
             SequenceGenerator(name, counter_model=_Counter)
+
+
+class _RecordingCursor:
+    def __init__(self, executed: list[str]) -> None:
+        self._executed = executed
+
+    def __enter__(self) -> _RecordingCursor:
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        return None
+
+    def execute(self, sql: str, *_: object) -> None:
+        self._executed.append(sql)
+
+    def fetchone(self) -> tuple[int, bool]:
+        return (1, True)
+
+
+@pytest.fixture
+def executed_sql(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    executed: list[str] = []
+    default = connections["default"]
+    monkeypatch.setattr(default, "vendor", "postgresql")
+    monkeypatch.setattr(default.ops, "quote_name", lambda name: f"<{name}>")
+    monkeypatch.setattr(default, "cursor", lambda: _RecordingCursor(executed))
+    return executed
+
+
+@pytest.mark.unit
+class TestPostgresIdentifierBoundary:
+    @pytest.mark.parametrize("name", ["x; DROP TABLE y", "Upper", ""])
+    @pytest.mark.parametrize(
+        ("method", "args"), [("next_value", ()), ("ensure_at_least", (5,))]
+    )
+    def test_reassigned_unsafe_name_is_rejected_before_any_sql(
+        self, executed_sql: list[str], name: str, method: str, args: tuple[int, ...]
+    ) -> None:
+        generator = SequenceGenerator("safe_name", counter_model=_Counter)
+        generator.name = name
+        run = getattr(generator, method)
+        with pytest.raises(AppException, match="Invalid sequence name"):
+            run(*args)
+        assert executed_sql == []
+
+    def test_next_value_uses_the_quoted_identifier(
+        self, executed_sql: list[str]
+    ) -> None:
+        SequenceGenerator("orders", counter_model=_Counter).next_value()
+        assert executed_sql[0] == "CREATE SEQUENCE IF NOT EXISTS <orders>"
+
+    def test_ensure_at_least_uses_the_quoted_identifier(
+        self, executed_sql: list[str]
+    ) -> None:
+        SequenceGenerator("orders", counter_model=_Counter).ensure_at_least(5)
+        assert executed_sql[:2] == [
+            "CREATE SEQUENCE IF NOT EXISTS <orders>",
+            "SELECT last_value, is_called FROM <orders>",
+        ]
+
+    def test_reassigned_valid_name_is_the_one_used(
+        self, executed_sql: list[str]
+    ) -> None:
+        generator = SequenceGenerator("orders", counter_model=_Counter)
+        generator.name = "invoices"
+        generator.next_value()
+        assert executed_sql[0] == "CREATE SEQUENCE IF NOT EXISTS <invoices>"
 
 
 @pytest.mark.integration
