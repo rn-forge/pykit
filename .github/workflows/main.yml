@@ -192,7 +192,7 @@ jobs:
       - name: pytest
         run: uv run --no-sync pytest ${{ matrix.args }}
 
-  # Tags pushed with GITHUB_TOKEN start no workflow, so every tag is created
+  # Tags created with GITHUB_TOKEN start no workflow, so every release is created
   # here, prerequisites first. A failed check blocks its package and every
   # selected package that depends on it; the rest still release.
   release:
@@ -214,29 +214,45 @@ jobs:
           merge-multiple: true
           path: ok/
 
-      - name: Build, tag and publish
+      - name: Build and publish releases
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISH: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           SELECTED: ${{ needs.plan.outputs.release-order }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
           releasable="$(python3 .github/scripts/workspace_ci.py releasable ok "${names[@]}")"
           for name in $releasable; do
             version="$(uv version --package "$name" --short)"
             tag="$name-v$version"
-            if [ "$PUBLISH" = true ] && git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
-              echo "Tag $tag already exists, skipping build and release."
+            if [ "$PUBLISH" != true ]; then
+              uv build --package "$name" --out-dir "dist/$name"
               continue
             fi
-            uv build --package "$name" --out-dir "dist/$name"
-            [ "$PUBLISH" = true ] || continue
-            git tag -a "$tag" -m "Release $tag"
-            git push origin "$tag"
-            gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --generate-notes
+            draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || true)
+            if [ "$draft" = false ]; then
+              echo "Release $tag is already published, skipping."
+              continue
+            fi
+            remote_tag=$(git ls-remote --tags origin "refs/tags/$tag")
+            if [ -n "$remote_tag" ]; then
+              git fetch --no-tags origin "refs/tags/$tag"
+              worktree=$(mktemp -d)
+              git worktree add --detach "$worktree" FETCH_HEAD
+              uv build --directory "$worktree" --package "$name" --out-dir "$GITHUB_WORKSPACE/dist/$name"
+              git worktree remove "$worktree"
+            else
+              uv build --package "$name" --out-dir "dist/$name"
+            fi
+            if [ "$draft" = true ]; then
+              gh release delete "$tag" --yes
+            fi
+            if [ -n "$remote_tag" ]; then
+              gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --generate-notes
+            else
+              gh release create "$tag" dist/"$name"/* --target "$GITHUB_SHA" --title "$name v$version" --generate-notes
+            fi
           done
 
   sonar:
@@ -285,7 +301,7 @@ jobs:
           tmp=$(mktemp -d)
           python3 .github/scripts/workspace_ci.py released | while read -r name dir module version; do
             tag="$name-v$version"
-            git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null
+            git fetch --no-tags origin "refs/tags/$tag"
             uv venv -q "$tmp/$name"
             VIRTUAL_ENV="$tmp/$name" uv pip install -q \
               "$name @ git+${{ github.server_url }}/${{ github.repository }}@$tag#subdirectory=$dir"

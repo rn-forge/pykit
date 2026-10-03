@@ -34,7 +34,7 @@ None: the pipeline change is internal to CI and touches no released package.
 
 ## Progress
 
-F14.1's planner script and workflow are in progress (S14.1.3). F14.2 is Active: S14.2.1's action pins, S14.2.2's composite setup action and S14.2.4's concurrency are Closed; S14.2.3's plan base is implemented, with local checks passing and GitHub acceptance pending. S14.2.5's release-record behavior is next. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
+F14.1's planner script and workflow are in progress (S14.1.3). F14.2 is Active: S14.2.1's action pins, S14.2.2's composite setup action and S14.2.4's concurrency are Closed; S14.2.3's plan base and S14.2.5's release-record behavior are implemented, with local checks passing and GitHub acceptance pending. S14.2.6's Sonar guard and gate are next. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs.
 
 ## Commits
 
