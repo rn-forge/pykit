@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # An import contract that only passes on a developer's machine is not a
   # contract. This gates every package check.
@@ -293,6 +297,9 @@ jobs:
     needs: [import-boundaries, plan, release]
     if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.release.result != 'failure' && needs.plan.outputs.docs == 'true' && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       contents: write # mike pushes gh-pages
       pages: write
