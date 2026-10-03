@@ -236,5 +236,6 @@ class TestNonUniqueSortField:
         paginator = CursorPagination()
         queryset = _PagedRow.objects.all()
         request = _request(orderBy="id", pageToken=token)
+        view = _OrderedView()
         with pytest.raises(InvalidCursor):
-            paginator.paginate_queryset(queryset, request, view=_OrderedView())
+            paginator.paginate_queryset(queryset, request, view=view)
