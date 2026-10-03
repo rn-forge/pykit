@@ -5,7 +5,7 @@
 | **Status** | in progress |
 | **Start Date** | 2026-09-29 |
 
-The discovered CI pipeline, its hardening and the generated spec board: CI plans its jobs from the workspace manifests instead of naming packages by hand, the release step becomes safe to rerun unattended, and release scopes and backlog are generated from feature metadata.
+The discovered CI pipeline, its hardening, the generated spec board and Sonar remediation: CI plans its jobs from the workspace manifests, releases become safe to rerun, scope is generated from feature metadata, and Sonar findings are resolved with local feedback and correct branch attribution.
 
 [Back to releases](../index.md) · [Release runbook](../../runbooks/releasing-packages.md)
 
@@ -22,6 +22,7 @@ The discovered CI pipeline, its hardening and the generated spec board: CI plans
 | [F14.1](../../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md) | E14 | Active |
 | [F14.2](../../specs/epics/E14-workspace-automation/F14.2-pipeline-hardening.md) | E14 | Active |
 | [F14.3](../../specs/epics/E14-workspace-automation/F14.3-generated-board.md) | E14 | Closed |
+| [F14.4](../../specs/epics/E14-workspace-automation/F14.4-sonar-remediation.md) | E14 | New |
 <!-- scope:end -->
 
 ## Decisions
@@ -30,23 +31,26 @@ None yet.
 
 ## Breaking changes
 
-None: the pipeline change is internal to CI and touches no released package.
+None identified yet. F14.4 may change package code; assess public compatibility for each remediation before declaring the release free of breaking changes.
 
 ## Progress
 
 F14.1's planner script and workflow are in progress (S14.1.3). F14.2's implementation is complete: S14.2.1, S14.2.2, S14.2.4, S14.2.7 and S14.2.8 are Closed; S14.2.3, S14.2.5 and S14.2.6 remain Active for workflow-run validation only. Local checks pass. F14.3's generated board and release scopes are Closed. F14.1's remaining acceptance includes a pull-request run and the first push to `main`, where the GitHub Pages deployment runs. Release 2 stays in progress until this GitHub evidence is recorded.
+
+F14.4 is New: its seven stories cover the complete issue inventory, CI targeting, local scans, security findings, reliability tests, remaining findings and final server verification.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F14\.[123]|S14\.[123]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F14\.[1234]|S14\.[1234]\.'
 ```
 
 ## Exit criteria
 
-- F14.1, F14.2 and F14.3 are `Closed`, and `docs/_update_board.sh --check` passes with all three on this page's Scope.
+- F14.1, F14.2, F14.3 and F14.4 are `Closed`, and `docs/_update_board.sh --check` passes with all four on this page's Scope.
+- F14.4's final main analysis passes the existing quality gate and has no unresolved valid Sonar findings.
 
 ## Shipped
 
