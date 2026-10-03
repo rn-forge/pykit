@@ -96,23 +96,29 @@ class TestJwtVerifier:
         ids=["expired", "wrong-audience", "wrong-issuer", "missing-exp"],
     )
     def test_bad_claims_fail(self, claims):
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
+        token = _token(**claims)
         with pytest.raises(TokenVerificationError):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(_token(**claims))
+            verifier.verify(token)
 
     def test_wrong_signature_fails(self):
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
+        token = _token(private_key=OTHER_KEY)
         with pytest.raises(TokenVerificationError):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(_token(private_key=OTHER_KEY))
+            verifier.verify(token)
 
     def test_malformed_token_fails(self):
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
         with pytest.raises(TokenVerificationError):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify("not.a.jwt")
+            verifier.verify("not.a.jwt")
 
     def test_hmac_token_is_rejected_by_the_allow_list(self):
         token = jwt.encode(
             {"sub": "u1"}, "secret", algorithm="HS256", headers={"kid": "k1"}
         )
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(token)
+            verifier.verify(token)
 
     def test_unsigned_alg_none_token_is_rejected(self):
         token = jwt.encode(
@@ -126,13 +132,15 @@ class TestJwtVerifier:
             algorithm="none",
             headers={"kid": "k1"},
         )
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(token)
+            verifier.verify(token)
 
     def test_token_without_kid_fails(self):
         token = jwt.encode({"sub": "u1"}, KEY, algorithm="RS256")
+        verifier = _verifier(FakeIdP(_jwk(KEY, "k1")))
         with pytest.raises(TokenVerificationError, match="kid"):
-            _verifier(FakeIdP(_jwk(KEY, "k1"))).verify(token)
+            verifier.verify(token)
 
 
 class TestJwksCache:
@@ -157,9 +165,10 @@ class TestJwksCache:
         verifier = _verifier(idp, clock)
         verifier.verify(_token())
         clock.now += 60
+        forged = _token(kid="forged")
         for _ in range(10):
             with pytest.raises(TokenVerificationError):
-                verifier.verify(_token(kid="forged"))
+                verifier.verify(forged)
         assert len(idp.calls) == 2
 
     def test_max_age_expiry_refetches(self):
@@ -171,8 +180,9 @@ class TestJwksCache:
         assert len(idp.calls) == 2
 
     def test_unusable_key_set_fails(self):
+        cache = JwksCache(JWKS_URL, fetch=lambda url: {"keys": []})
         with pytest.raises(TokenVerificationError):
-            JwksCache(JWKS_URL, fetch=lambda url: {"keys": []}).get_signing_key("k1")
+            cache.get_signing_key("k1")
 
 
 class TestDiscovery:

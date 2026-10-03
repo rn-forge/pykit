@@ -738,7 +738,9 @@ def _deep_merge_layer(
         key = str(raw_key)
         escaped_key = key.replace(".", "\\.")
         path = f"{prefix}.{escaped_key}" if prefix else escaped_key
-        if isinstance(value, Mapping) and isinstance(target.get(key), dict):
+        if isinstance(value, Mapping):
+            if not isinstance(target.get(key), dict):
+                target[key] = {}
             _deep_merge_layer(
                 cast(dict[str, Any], target[key]),
                 cast(Mapping[str, Any], value),
@@ -747,18 +749,6 @@ def _deep_merge_layer(
                 append_paths,
                 path,
             )
-            provenance[path] = layer
-        elif isinstance(value, Mapping):
-            target[key] = {}
-            _deep_merge_layer(
-                cast(dict[str, Any], target[key]),
-                cast(Mapping[str, Any], value),
-                layer,
-                provenance,
-                append_paths,
-                path,
-            )
-            provenance[path] = layer
         elif (
             path in append_paths
             and isinstance(value, list)
@@ -767,14 +757,19 @@ def _deep_merge_layer(
             current: list[Any] = cast(list[Any], target[key])
             incoming_list: list[Any] = cast(list[Any], value)
             target[key] = copy.deepcopy(current) + copy.deepcopy(incoming_list)
-            provenance[path] = layer
         else:
             if isinstance(target.get(key), Mapping):
-                for descendant in list(provenance):
-                    if descendant.startswith(f"{path}."):
-                        del provenance[descendant]
+                _drop_descendant_provenance(provenance, path)
             target[key] = copy.deepcopy(cast(Any, value))
-            provenance[path] = layer
+        provenance[path] = layer
+
+
+def _drop_descendant_provenance(provenance: dict[str, str], path: str) -> None:
+    """Remove provenance entries recorded beneath *path*."""
+    # Snapshot the keys: entries are deleted while scanning.
+    for descendant in list(provenance):
+        if descendant.startswith(f"{path}."):
+            del provenance[descendant]
 
 
 __all__ = [

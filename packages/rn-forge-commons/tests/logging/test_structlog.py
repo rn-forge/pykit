@@ -130,10 +130,10 @@ class TestSameSink:
         finally:
             logging.getLogger().removeHandler(handler)
 
-    def test_json_mode_output_contains_structured_fields(self, tmp_path):
+    def test_json_mode_output_contains_structured_fields(self, tmp_path, monkeypatch):
         import json
 
-        AppLogger._configured = False
+        monkeypatch.setattr(AppLogger, "_configured", False)
         AppLogger.initialize(
             root_logger_name="structlog_test_json",
             level=TRACE,

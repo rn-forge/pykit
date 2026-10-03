@@ -694,8 +694,7 @@ def _json_default(obj: object) -> Any:
     if isinstance(obj, (datetime, date, time)):
         return obj.isoformat()
     if isinstance(obj, (set, frozenset)):
-        items: list[Any] = list(cast(set[Any], obj))
-        return sorted(items, key=repr)
+        return sorted(cast(set[Any], obj), key=repr)
     if isinstance(obj, Decimal):
         return float(obj)
     return repr(obj)

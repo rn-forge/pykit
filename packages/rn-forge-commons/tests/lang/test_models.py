@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.models import (
@@ -75,8 +75,9 @@ def test_a_message_with_braces_is_not_formatted_twice():
 
 def test_strict_models_are_frozen():
     config = ProjectConfig.parse({"schema_version": 1, "repository": {"name": "x"}})
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="frozen"):
         config.schema_version = 2  # type: ignore[misc]
+    assert config.schema_version == 1
 
 
 def test_parse_model_accepts_any_base_model():
