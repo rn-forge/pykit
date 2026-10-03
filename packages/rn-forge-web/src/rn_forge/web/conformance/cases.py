@@ -40,6 +40,18 @@ _LINKSET: Final = {"Content-Type": "application/linkset+json"}
 _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 """A well-formed W3C traceparent, from the standard's own example."""
 
+_ORDER_ID_DESC: Final = "id desc"
+_ITEMS_PATH: Final = "/conformance/items"
+_ITEM_PATH: Final = "/conformance/items/1"
+_ITEM_ETAG: Final = 'W/"1:7"'
+_CHARGES_PATH: Final = "/conformance/charges"
+_READYZ_PATH: Final = "/conformance/readyz"
+_ECHO_PATH: Final = "/conformance/echo"
+_CSV_TYPE: Final = "text/csv"
+_CSV_TYPE_PATTERN: Final = r"text/csv(; charset=utf-8)?"
+_ORDERS_CSV: Final = "id,name\r\n1,widget\r\n"
+_FIRST_CALL_ID: Final = "idempotency.first-call-executes"
+
 
 def _problem_body(
     row: ProblemType, detail: str, **extensions: object
@@ -62,7 +74,7 @@ def _problem_body(
 
 
 PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2")
-ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2", "id desc")
+ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2", _ORDER_ID_DESC)
 """The token page one must return.
 
 Asserted **exactly**, not redacted. A token is opaque to a *client*; between
@@ -128,7 +140,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="concurrency.absent-if-match-on-required-route-is-428",
         area="concurrency",
         description="RFC 6585 §3: the route demands a precondition and none was sent.",
-        request=RequestSpec("PATCH", "/conformance/items/1", headers=_JSON, body={}),
+        request=RequestSpec("PATCH", _ITEM_PATH, headers=_JSON, body={}),
         expect_status=428,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
@@ -143,7 +155,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "PATCH",
-            "/conformance/items/1",
+            _ITEM_PATH,
             headers={**_JSON, "If-Match": 'W/"1:6"'},
             body={},
         ),
@@ -159,7 +171,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         description="RFC 9110 §13.1.1: `*` matches any current representation.",
         request=RequestSpec(
             "PATCH",
-            "/conformance/items/1",
+            _ITEM_PATH,
             headers={**_JSON, "If-Match": "*"},
             body={},
         ),
@@ -173,7 +185,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         description="An unparseable validator is a 400, never a crash and never a 412.",
         request=RequestSpec(
             "PATCH",
-            "/conformance/items/1",
+            _ITEM_PATH,
             headers={**_JSON, "If-Match": "not-an-etag"},
             body={},
         ),
@@ -190,22 +202,18 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "RFC 9110 §13.1.2, §15.4.5: a GET whose If-None-Match weakly matches "
             "the current ETag gets 304, no body, ETag repeated."
         ),
-        request=RequestSpec(
-            "GET", "/conformance/items/1", headers={"If-None-Match": 'W/"1:7"'}
-        ),
+        request=RequestSpec("GET", _ITEM_PATH, headers={"If-None-Match": _ITEM_ETAG}),
         expect_status=304,
-        expect_headers={"ETag": 'W/"1:7"'},
+        expect_headers={"ETag": _ITEM_ETAG},
         expect_body={},
     ),
     ConformanceCase(
         id="concurrency.if-none-match-mismatch-is-200",
         area="concurrency",
         description="A stale If-None-Match is an ordinary 200 with the current ETag.",
-        request=RequestSpec(
-            "GET", "/conformance/items/1", headers={"If-None-Match": 'W/"1:1"'}
-        ),
+        request=RequestSpec("GET", _ITEM_PATH, headers={"If-None-Match": 'W/"1:1"'}),
         expect_status=200,
-        expect_headers={**_JSON, "ETag": 'W/"1:7"'},
+        expect_headers={**_JSON, "ETag": _ITEM_ETAG},
         expect_body={"id": "1", "version": 7},
     ),
     # --- Pagination (pagination.py) --------------------------------------
@@ -213,7 +221,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="pagination.first-page-carries-a-next-token",
         area="pagination",
         description="The AIP-158 envelope: items + nextPageToken, and totalSize absent by default.",
-        request=RequestSpec("GET", "/conformance/items", query={"pageSize": "2"}),
+        request=RequestSpec("GET", _ITEMS_PATH, query={"pageSize": "2"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_body={
@@ -230,7 +238,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "GET",
-            "/conformance/items",
+            _ITEMS_PATH,
             query={"pageSize": "2", "pageToken": PAGE_1_NEXT_TOKEN},
         ),
         expect_status=200,
@@ -244,7 +252,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "AIP-158: coerce down to the maximum. A FastAPI Query(le=...) would 422 here, "
             "and that is the divergence this case exists to catch."
         ),
-        request=RequestSpec("GET", "/conformance/items", query={"pageSize": "1000"}),
+        request=RequestSpec("GET", _ITEMS_PATH, query={"pageSize": "1000"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_body={
@@ -257,7 +265,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         area="pagination",
         description="A malformed opaque token is InvalidCursor → 400, never a 500.",
         request=RequestSpec(
-            "GET", "/conformance/items", query={"pageToken": "!!!not-base64!!!"}
+            "GET", _ITEMS_PATH, query={"pageToken": "!!!not-base64!!!"}
         ),
         expect_status=400,
         expect_headers=_PROBLEM,
@@ -272,8 +280,8 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "GET",
-            "/conformance/items",
-            query={"pageSize": "2", "orderBy": "id desc"},
+            _ITEMS_PATH,
+            query={"pageSize": "2", "orderBy": _ORDER_ID_DESC},
         ),
         expect_status=200,
         expect_headers=_JSON,
@@ -286,7 +294,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="pagination.order-by-unlisted-field-is-400",
         area="pagination",
         description="An orderBy field the endpoint does not list is a 400, never silently ignored.",
-        request=RequestSpec("GET", "/conformance/items", query={"orderBy": "secret"}),
+        request=RequestSpec("GET", _ITEMS_PATH, query={"orderBy": "secret"}),
         expect_status=400,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(BAD_REQUEST, "Cannot order by 'secret'; allowed: id"),
@@ -297,9 +305,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         description=(
             "A list sorts by one field; a second term is a 400, never silently ignored."
         ),
-        request=RequestSpec(
-            "GET", "/conformance/items", query={"orderBy": "id desc,id"}
-        ),
+        request=RequestSpec("GET", _ITEMS_PATH, query={"orderBy": "id desc,id"}),
         expect_status=400,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(BAD_REQUEST, "orderBy accepts one field; got 2"),
@@ -310,8 +316,8 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         description="A token issued for the default order is rejected once orderBy changes.",
         request=RequestSpec(
             "GET",
-            "/conformance/items",
-            query={"orderBy": "id desc", "pageToken": PAGE_1_NEXT_TOKEN},
+            _ITEMS_PATH,
+            query={"orderBy": _ORDER_ID_DESC, "pageToken": PAGE_1_NEXT_TOKEN},
         ),
         expect_status=400,
         expect_headers=_PROBLEM,
@@ -319,12 +325,12 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
     ),
     # --- Idempotency (idempotency.py) ------------------------------------
     ConformanceCase(
-        id="idempotency.first-call-executes",
+        id=_FIRST_CALL_ID,
         area="idempotency",
         description="First sight of a key: the handler runs and its response is stored.",
         request=RequestSpec(
             "POST",
-            "/conformance/charges",
+            _CHARGES_PATH,
             headers={**_JSON, "Idempotency-Key": "k-1"},
             body={"amount": 100},
         ),
@@ -339,10 +345,10 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "The same key and the same body replays the stored response, "
             "including its original status."
         ),
-        depends_on=("idempotency.first-call-executes",),
+        depends_on=(_FIRST_CALL_ID,),
         request=RequestSpec(
             "POST",
-            "/conformance/charges",
+            _CHARGES_PATH,
             headers={**_JSON, "Idempotency-Key": "k-1"},
             body={"amount": 100},
         ),
@@ -358,10 +364,10 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "different body is a detectable client bug, not a silently-wrong replay. "
             "422 per draft-ietf-httpapi-idempotency-key-header §2.7."
         ),
-        depends_on=("idempotency.first-call-executes",),
+        depends_on=(_FIRST_CALL_ID,),
         request=RequestSpec(
             "POST",
-            "/conformance/charges",
+            _CHARGES_PATH,
             headers={**_JSON, "Idempotency-Key": "k-1"},
             body={"amount": 999},
         ),
@@ -377,7 +383,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="health.all-pass-is-200",
         area="health",
         description="Every check passes; the aggregate is pass and the status is 200.",
-        request=RequestSpec("GET", "/conformance/readyz"),
+        request=RequestSpec("GET", _READYZ_PATH),
         expect_status=200,
         expect_headers=_JSON,
         expect_body={
@@ -402,7 +408,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="health.required-failure-is-503",
         area="health",
         description="A failing check named in `required` takes the endpoint to 503.",
-        request=RequestSpec("GET", "/conformance/readyz", query={"fail": "db"}),
+        request=RequestSpec("GET", _READYZ_PATH, query={"fail": "db"}),
         expect_status=503,
         # Not problem+json: a readiness report is the endpoint's normal
         # representation, and the 503 is its verdict rather than an error.
@@ -432,7 +438,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "A failing check outside `required` degrades the aggregate status but "
             "leaves the HTTP status at 200 — the load balancer keeps sending traffic."
         ),
-        request=RequestSpec("GET", "/conformance/readyz", query={"fail": "queue"}),
+        request=RequestSpec("GET", _READYZ_PATH, query={"fail": "queue"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_body={
@@ -535,7 +541,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "or is an RFC 9457 core member. RFC 9457's own members are single "
             "lowercase words and are unaffected."
         ),
-        request=RequestSpec("GET", "/conformance/items", query={"pageSize": "2"}),
+        request=RequestSpec("GET", _ITEMS_PATH, query={"pageSize": "2"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_body={
@@ -554,7 +560,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "GET",
-            "/conformance/echo",
+            _ECHO_PATH,
             headers={
                 "traceparent": _TRACEPARENT,
             },
@@ -573,9 +579,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "A malformed traceparent is never an error: the server discards "
             "it and starts a new trace."
         ),
-        request=RequestSpec(
-            "GET", "/conformance/echo", headers={"traceparent": "garbage"}
-        ),
+        request=RequestSpec("GET", _ECHO_PATH, headers={"traceparent": "garbage"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_header_patterns={
@@ -605,9 +609,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="tracing.house-header-is-not-echoed",
         area="tracing",
         description="X-Correlation-ID is a removed house header: not read, and never sent back.",
-        request=RequestSpec(
-            "GET", "/conformance/echo", headers={"X-Correlation-ID": "abc123"}
-        ),
+        request=RequestSpec("GET", _ECHO_PATH, headers={"X-Correlation-ID": "abc123"}),
         expect_status=200,
         expect_headers=_JSON,
         expect_absent_headers=frozenset({"X-Correlation-ID"}),
@@ -658,7 +660,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         id="security.owasp-headers-are-present",
         area="security",
         description="The OWASP REST Security Cheat Sheet response headers, on every response.",
-        request=RequestSpec("GET", "/conformance/echo"),
+        request=RequestSpec("GET", _ECHO_PATH),
         expect_status=200,
         expect_headers={
             **_JSON,
@@ -680,7 +682,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "response propagator itself, not by this list."
         ),
         request=RequestSpec(
-            "GET", "/conformance/echo", headers={"Origin": "https://example.com"}
+            "GET", _ECHO_PATH, headers={"Origin": "https://example.com"}
         ),
         expect_status=200,
         expect_headers={
@@ -700,16 +702,16 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "as an attachment (RFC 6266)."
         ),
         request=RequestSpec(
-            "GET", "/conformance/orders", headers={"Accept": "text/csv"}
+            "GET", "/conformance/orders", headers={"Accept": _CSV_TYPE}
         ),
         expect_status=200,
-        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
         expect_headers={
             "Content-Disposition": (
                 "attachment; filename=\"orders.csv\"; filename*=UTF-8''orders.csv"
             ),
         },
-        expect_text="id,name\r\n1,widget\r\n",
+        expect_text=_ORDERS_CSV,
     ),
     ConformanceCase(
         id="transfer.export-format-param-is-the-fallback",
@@ -717,13 +719,13 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         description="?format=csv selects CSV for a plain link that cannot send Accept.",
         request=RequestSpec("GET", "/conformance/orders", query={"format": "csv"}),
         expect_status=200,
-        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
         expect_headers={
             "Content-Disposition": (
                 "attachment; filename=\"orders.csv\"; filename*=UTF-8''orders.csv"
             ),
         },
-        expect_text="id,name\r\n1,widget\r\n",
+        expect_text=_ORDERS_CSV,
     ),
     ConformanceCase(
         id="transfer.export-filename-carries-rfc8187-encoding",
@@ -733,24 +735,24 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             "percent-encoded UTF-8 in filename*= (RFC 8187)."
         ),
         request=RequestSpec(
-            "GET", "/conformance/orders/named", headers={"Accept": "text/csv"}
+            "GET", "/conformance/orders/named", headers={"Accept": _CSV_TYPE}
         ),
         expect_status=200,
-        expect_header_patterns={"Content-Type": r"text/csv(; charset=utf-8)?"},
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
         expect_headers={
             "Content-Disposition": (
                 'attachment; filename="Ord_rs 2026.csv"; '
                 "filename*=UTF-8''Ord%C3%A9rs%202026.csv"
             ),
         },
-        expect_text="id,name\r\n1,widget\r\n",
+        expect_text=_ORDERS_CSV,
     ),
     ConformanceCase(
         id="transfer.export-over-the-cap-is-422",
         area="transfer",
         description="An export above the configured cap is a 422 problem naming the cap.",
         request=RequestSpec(
-            "GET", "/conformance/orders/over-cap", headers={"Accept": "text/csv"}
+            "GET", "/conformance/orders/over-cap", headers={"Accept": _CSV_TYPE}
         ),
         expect_status=422,
         expect_headers=_PROBLEM,

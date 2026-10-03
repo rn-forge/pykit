@@ -122,19 +122,18 @@ def test_permission_denied_is_not_an_authentication_failure():
 
 def test_the_authorizer_is_silent_when_no_log_is_injected():
     """A library that logs where the consumer did not ask is worse than one that does not."""
+    authorizer = ScopeAuthorizer()
+    requirement = Requirement(all_roles=frozenset({"admin"}))
     with pytest.raises(PermissionDenied):
-        ScopeAuthorizer().authorize(
-            READER, requires=Requirement(all_roles=frozenset({"admin"}))
-        )
+        authorizer.authorize(READER, requires=requirement)
 
 
 def test_the_injected_log_receives_the_refusal():
     seen: list[tuple[str, dict]] = []
     authorizer = ScopeAuthorizer(log=lambda msg, ctx: seen.append((msg, dict(ctx))))
+    requirement = Requirement(all_roles=frozenset({"admin"}))
     with pytest.raises(PermissionDenied):
-        authorizer.authorize(
-            READER, requires=Requirement(all_roles=frozenset({"admin"}))
-        )
+        authorizer.authorize(READER, requires=requirement)
     assert_that(seen).is_length(1)
     assert_that(seen[0][0]).is_equal_to("authorization.denied")
     assert_that(seen[0][1]["subject"]).is_equal_to("u1")

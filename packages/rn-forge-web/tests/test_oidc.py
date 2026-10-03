@@ -91,28 +91,29 @@ class TestOidcAuthenticator:
     )
     def test_verification_failures_raise_authentication_failed(self, token) -> None:
         authenticator = _authenticator()
+        credentials = _bearer(token)
 
         with pytest.raises(AuthenticationFailed) as caught:
-            authenticator.authenticate(credentials=_bearer(token))
+            authenticator.authenticate(credentials=credentials)
 
         assert_that(caught.value.error_code).is_equal_to(401)
 
     def test_the_reason_rides_on_the_exception_for_the_binding_to_log(self) -> None:
         """The message is for the log; the binding renders AUTH_FAILED_DETAIL."""
         authenticator = _authenticator()
+        credentials = _bearer(_token(exp=int(time.time()) - 60))
 
         with pytest.raises(AuthenticationFailed) as caught:
-            authenticator.authenticate(
-                credentials=_bearer(_token(exp=int(time.time()) - 60))
-            )
+            authenticator.authenticate(credentials=credentials)
 
         assert_that(caught.value.message).is_not_empty()
 
     def test_a_non_bearer_scheme_is_refused(self) -> None:
         authenticator = _authenticator()
+        credentials = Credentials("Basic", _token())
 
         with pytest.raises(AuthenticationFailed):
-            authenticator.authenticate(credentials=Credentials("Basic", _token()))
+            authenticator.authenticate(credentials=credentials)
 
     def test_the_key_set_is_fetched_once_across_calls(self) -> None:
         idp = FakeIdP()

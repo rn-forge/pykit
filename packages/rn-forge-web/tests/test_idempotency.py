@@ -214,9 +214,10 @@ def test_a_safe_method_bypasses_the_store_entirely():
 
 
 def test_an_unsafe_method_with_no_key_raises():
+    store = InMemoryIdempotencyStore()
     with pytest.raises(IdempotencyKeyRequired):
         run_idempotent(
-            InMemoryIdempotencyStore(),
+            store,
             scope="s",
             key=None,
             method="POST",
