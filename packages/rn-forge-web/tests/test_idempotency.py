@@ -33,7 +33,11 @@ def test_hash_is_key_order_independent():
 
 
 def test_hash_is_stable_across_calls():
-    assert_that(request_hash({"a": [1, 2]})).is_equal_to(request_hash({"a": [1, 2]}))
+    # SHA-256 hex of the canonical bytes b'{"a":[1,2]}'.
+    expected = "01530d164d479cf08e26d3b1ad9bdba927120d97e2d057a6d792db778780d720"
+
+    assert_that(request_hash({"a": [1, 2]})).is_equal_to(expected)
+    assert_that(request_hash({"a": [1, 2]})).is_equal_to(expected)
 
 
 def test_hash_distinguishes_different_bodies():
