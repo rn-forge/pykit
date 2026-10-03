@@ -280,7 +280,8 @@ class TestRequireSettings:
             with pytest.raises(ImproperlyConfigured) as caught:
                 require_settings("RNF_BLANK", "RNF_ABSENT", "DATABASES")
         message = str(caught.value)
-        assert "RNF_ABSENT" in message and "RNF_BLANK" in message
+        assert "RNF_ABSENT" in message
+        assert "RNF_BLANK" in message
         assert "DATABASES" not in message
 
 

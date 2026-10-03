@@ -8,13 +8,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib.metadata import entry_points
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = ["EntryPointLoader", "PluginError"]
-
-T = TypeVar("T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,7 +23,7 @@ class PluginError(DataclassMixin):
     reason: str
 
 
-class EntryPointLoader(Generic[T]):
+class EntryPointLoader[T]:
     """Load an entry-point group, returning each failure separately."""
 
     def __init__(self, group: str, *, expected_type: type[T]) -> None:

@@ -66,7 +66,7 @@ class TestDirectoryLock:
 
     def test_lock_released_on_exception(self, tmp_path):
         lock_path = tmp_path / ".lock"
-        with pytest.raises(RuntimeError):
-            with DirectoryLock(lock_path):
-                raise RuntimeError("boom")
+        lock = DirectoryLock(lock_path)
+        with pytest.raises(RuntimeError, match="boom"), lock:
+            raise RuntimeError("boom")
         assert not lock_path.exists()

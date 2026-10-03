@@ -91,8 +91,9 @@ class TestMalformed:
         ],
     )
     def test_malformed_markers_raise(self, text):
+        block = ManagedBlock("kiln")
         with pytest.raises(AppException):
-            ManagedBlock("kiln").extract(text)
+            block.extract(text)
 
 
 class TestRemove:

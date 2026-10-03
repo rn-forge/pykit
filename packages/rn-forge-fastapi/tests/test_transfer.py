@@ -130,5 +130,6 @@ async def test_read_rows_falls_back_to_the_content_type():
 
 @pytest.mark.asyncio
 async def test_read_rows_rejects_an_unknown_type():
+    pdf = upload("r.pdf", b"")
     with pytest.raises(ValueError, match="Unsupported"):
-        await read_rows(upload("r.pdf", b""), Row)
+        await read_rows(pdf, Row)

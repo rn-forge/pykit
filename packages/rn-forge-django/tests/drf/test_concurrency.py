@@ -53,18 +53,21 @@ class TestEnforceVersion:
         assert _status(caught.value, request) == 412
 
     def test_malformed_header_raises(self) -> None:
+        request = _request(**{"If-Match": "3"})
         with pytest.raises(MalformedPrecondition):
-            enforce_version(_request(**{"If-Match": "3"}), ROW)
+            enforce_version(request, ROW)
 
     def test_body_version_fallback(self) -> None:
         enforce_version(_request({"version": 3}), ROW)
+        stale = _request({"version": 2})
         with pytest.raises(VersionConflict):
-            enforce_version(_request({"version": 2}), ROW)
+            enforce_version(stale, ROW)
 
     @pytest.mark.parametrize("value", ["three", True, -1, 2.5])
     def test_malformed_body_version_raises(self, value) -> None:
+        request = _request({"version": value})
         with pytest.raises(MalformedPrecondition):
-            enforce_version(_request({"version": value}), ROW)
+            enforce_version(request, ROW)
 
     def test_header_takes_precedence_over_body(self) -> None:
         enforce_version(_request({"version": 1}, **{"If-Match": 'W/"3"'}), ROW)
@@ -81,8 +84,9 @@ class TestEnforceVersion:
     def test_entity_codec_binds_the_id(self) -> None:
         codec = EntityVersionETagCodec()
         enforce_version(_request(**{"If-Match": 'W/"17:3"'}), ROW, codec=codec)
+        stale = _request(**{"If-Match": 'W/"18:3"'})
         with pytest.raises(VersionConflict):
-            enforce_version(_request(**{"If-Match": 'W/"18:3"'}), ROW, codec=codec)
+            enforce_version(stale, ROW, codec=codec)
 
 
 class TestEtagFor:

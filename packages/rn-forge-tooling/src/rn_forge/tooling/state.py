@@ -6,7 +6,7 @@ import json
 from collections.abc import Callable, Generator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from rn_forge.commons.lang.types import JsonValue
 from rn_forge.commons.lang.dataclasses import DataclassMixin
@@ -18,10 +18,8 @@ __all__ = ["StateStore"]
 
 _LOGGER = AppLogger.get_logger(__name__)
 
-E = TypeVar("E", bound=DataclassMixin)
 
-
-class StateStore(Generic[E]):
+class StateStore[E: DataclassMixin]:
     """A locked, atomically-written, JSON-backed key -> entry store.
 
     Args:

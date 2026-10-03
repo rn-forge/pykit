@@ -43,7 +43,7 @@ def _database() -> dict[str, object]:
 
     ``postgresql://user:password@host:port/name``. The ``postgres``-marked tests
     (row locking, real sequences) need it and skip without it; CI's
-    ``django-postgres`` job sets it.
+    ``postgres`` job sets it.
     """
     url = os.environ.get(DATABASE_URL_ENV)
     if not url:

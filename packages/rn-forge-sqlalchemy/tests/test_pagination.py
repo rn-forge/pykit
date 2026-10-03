@@ -100,10 +100,11 @@ def test_the_token_writes_a_datetime_as_iso_and_the_order_by_canonically():
 @pytest.mark.asyncio
 async def test_a_token_for_another_order_by_is_invalid_cursor(session):
     cursor = Cursor("1", "1", "title")
+    query = select(Task)
 
     with pytest.raises(InvalidCursor):
         keyset(
-            select(Task),
+            query,
             columns=COLUMNS,
             terms=(),
             cursor=cursor,
@@ -114,12 +115,14 @@ async def test_a_token_for_another_order_by_is_invalid_cursor(session):
 @pytest.mark.asyncio
 async def test_a_token_value_that_does_not_fit_the_column_is_invalid_cursor():
     cursor = Cursor("not-a-date", "1", "due")
+    query = select(Task)
+    terms = (OrderField("due"),)
 
     with pytest.raises(InvalidCursor):
         keyset(
-            select(Task),
+            query,
             columns=COLUMNS,
-            terms=(OrderField("due"),),
+            terms=terms,
             cursor=cursor,
             id_column=Task.id,
         )

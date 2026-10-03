@@ -49,6 +49,10 @@ def app():
     def bail() -> None:
         raise typer.Exit(3)
 
+    @application.command()
+    def leave() -> None:
+        raise SystemExit(4)
+
     return application
 
 
@@ -71,6 +75,9 @@ class TestRun:
 
     def test_an_explicit_exit_code_survives(self, app):
         assert run(app, ["bail"]) == 3
+
+    def test_a_system_exit_code_is_returned_not_raised(self, app):
+        assert run(app, ["leave"]) == 4
 
 
 class TestCallReturnsAnExitCode:

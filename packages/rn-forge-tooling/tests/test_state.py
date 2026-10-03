@@ -99,7 +99,11 @@ class TestContentHash:
     def test_of_deterministic(self):
         from rn_forge.commons.fs.hashing import ContentHash
 
-        assert ContentHash.of("hello") == ContentHash.of("hello")
+        # SHA-256 of b"hello", hex-encoded (e.g. `printf hello | shasum -a 256`).
+        expected = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+
+        assert ContentHash.of("hello") == expected
+        assert ContentHash.of("hello") == expected
         assert ContentHash.of("hello") != ContentHash.of("world")
 
     def test_of_str_and_bytes_equivalent(self):

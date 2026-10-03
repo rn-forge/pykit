@@ -84,14 +84,12 @@ class TestSurfaceValidation:
             CliSurface(name="  ")
 
     def test_duplicate_command_names_are_rejected(self):
+        commands = (
+            CommandSurface(name="a", target=f"{HERE}:greet"),
+            CommandSurface(name="a", target=f"{HERE}:greet"),
+        )
         with pytest.raises(AppException):
-            CliSurface(
-                name="demo",
-                commands=(
-                    CommandSurface(name="a", target=f"{HERE}:greet"),
-                    CommandSurface(name="a", target=f"{HERE}:greet"),
-                ),
-            )
+            CliSurface(name="demo", commands=commands)
 
 
 class TestSurfaceIsStrictlyTyped:
@@ -130,24 +128,20 @@ class TestFromSurface:
         assert "--json" in help_text
 
     def test_an_unimportable_target_is_reported_with_its_command(self):
+        surface = CliSurface(
+            name="demo",
+            commands=(CommandSurface(name="broken", target="no.such.module:thing"),),
+        )
         with pytest.raises(AppException, match="broken"):
-            CliApp.from_surface(
-                CliSurface(
-                    name="demo",
-                    commands=(
-                        CommandSurface(name="broken", target="no.such.module:thing"),
-                    ),
-                )
-            )
+            CliApp.from_surface(surface)
 
     def test_a_target_that_is_neither_app_nor_callable_is_rejected(self):
+        surface = CliSurface(
+            name="demo",
+            commands=(CommandSurface(name="x", target=f"{HERE}:CONFIG"),),
+        )
         with pytest.raises(AppException):
-            CliApp.from_surface(
-                CliSurface(
-                    name="demo",
-                    commands=(CommandSurface(name="x", target=f"{HERE}:CONFIG"),),
-                )
-            )
+            CliApp.from_surface(surface)
 
 
 class TestFromConfig:

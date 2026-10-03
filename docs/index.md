@@ -12,6 +12,6 @@
 | [rn-forge-fastapi](rn-forge-fastapi/index.md) | FastAPI adapters and application assembly. |
 | [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) | Async SQLAlchemy models, upsert and keyset pagination. |
 
-For package choice and relationships, read [choosing packages](guides/choosing-packages.md) and [workspace boundaries](architecture/workspace.md). [Authentication](architecture/authentication.md) explains the cross-package layers; the package guides provide setup steps.
+For package choice and relationships, read [choosing packages](guides/choosing-packages.md) and [workspace boundaries](architecture/workspace.md). The package guides provide auth setup steps.
 
 Maintainers can start with the [work index](specs/index.md), [decisions](adr/index.md), [release coordination](releases/index.md), or [runbooks](runbooks/index.md).

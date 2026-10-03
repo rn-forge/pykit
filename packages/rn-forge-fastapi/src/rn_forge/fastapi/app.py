@@ -178,7 +178,7 @@ class FastApiApp(FastAPI):
         for router in routers:
             self.include_router(router)
 
-    async def _api_catalog(self) -> JSONResponse:
+    def _api_catalog(self) -> JSONResponse:
         """Serve RFC 9727's linkset, pointing at this app's own OpenAPI document and docs UI."""
         return JSONResponse(
             api_catalog_body(

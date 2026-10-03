@@ -49,6 +49,9 @@ __all__ = [
 _NON_FIELD_KEY = "non_field_errors"
 _TEXT_FORMATS = frozenset({"csv", "tsv"})
 
+type _AnyList = list[Any]
+type _ObjectList = list[object]
+
 
 class _PassthroughRenderer(BaseRenderer):
     """Lets DRF's content negotiation select a tabular format; the view builds the bytes."""
@@ -143,7 +146,7 @@ class ResourceExportMixin(ListModelMixin, GenericAPIView):
 
     @override
     def get_renderers(self) -> list[Any]:
-        renderers = cast("list[Any]", super().get_renderers())
+        renderers = cast(_AnyList, super().get_renderers())
         return [
             *renderers,
             *(_renderer_for(TABULAR_FORMATS[ext])() for ext in self.export_formats),
@@ -237,7 +240,7 @@ class ResourceImportMixin(GenericAPIView):
             rollback_on_validation_errors=self.import_rollback_on_validation_errors,
             user=cast(Any, request).user,
         )
-        for base in cast("list[Any]", result.base_errors):
+        for base in cast(_AnyList, result.base_errors):
             raise ValidationError({"file": str(base.error)})
         errors = self._row_errors(resource, result)
         report = import_report_body(
@@ -282,7 +285,7 @@ class ResourceImportMixin(GenericAPIView):
 
     @override
     def get_renderers(self) -> list[Any]:
-        renderers = cast("list[Any]", super().get_renderers())
+        renderers = cast(_AnyList, super().get_renderers())
         if getattr(self, "action", None) != "import_template":
             return renderers
         return [
@@ -323,7 +326,7 @@ class ResourceImportMixin(GenericAPIView):
         """Map an import ``Result`` to rows numbered from 0 and columns named as in the file."""
         columns: Mapping[str, Any] = resource.fields
         errors: list[RowError] = []
-        for invalid in cast("list[Any]", result.invalid_rows):
+        for invalid in cast(_AnyList, result.invalid_rows):
             for name, messages in cast(
                 "dict[str, list[str]]", invalid.field_specific_errors
             ).items():
@@ -448,7 +451,7 @@ class BatchDeleteMixin(GenericAPIView):
             raise PermissionDenied({"ids": denied})
 
         with transaction.atomic():
-            for instance in list(found.values()):
+            for instance in found.values():
                 instance.delete()
         return Response(status=204)
 
@@ -463,7 +466,7 @@ def _list_member(request: Request, key: str) -> list[object]:
     )
     if not isinstance(value, list) or not value:
         raise ValidationError({key: "A non-empty list is required."})
-    return cast("list[object]", value)
+    return cast(_ObjectList, value)
 
 
 def _indexed_errors(errors: object) -> list[tuple[int, object]]:
@@ -477,7 +480,7 @@ def _indexed_errors(errors: object) -> list[tuple[int, object]]:
             (key if isinstance(key, int) else 0, value)
             for key, value in cast("Mapping[object, object]", errors).items()
         ]
-    return list(enumerate(cast("list[object]", errors)))
+    return list(enumerate(cast(_ObjectList, errors)))
 
 
 def _flatten(row: int, errors: object) -> list[RowError]:
@@ -489,7 +492,7 @@ def _flatten(row: int, errors: object) -> list[RowError]:
             for key, value in cast("Mapping[str, object]", node).items():
                 walk(value, path if key == _NON_FIELD_KEY else (*path, key))
         elif isinstance(node, list):
-            for value in cast("list[object]", node):
+            for value in cast(_ObjectList, node):
                 walk(value, path)
         else:
             found.append(RowError(row, ".".join(path), str(node)))

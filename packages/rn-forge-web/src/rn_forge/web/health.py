@@ -148,14 +148,15 @@ async def _run_one(check: Check) -> CheckResult:
         return _failed(exc)
 
 
-async def _run_bounded(check: Check, timeout: float | None) -> CheckResult:
-    """Run one check, failing it if it is still running after *timeout* seconds."""
-    if timeout is None:
-        return await _run_one(check)
+async def _run_bounded(check: Check, limit: float | None) -> CheckResult:
+    """Run one check, failing it if it is still running after *limit* seconds."""
     try:
-        return await asyncio.wait_for(_run_one(check), timeout)
+        # A check's own TimeoutError is already folded into a failed result by
+        # _run_one, so only deadline expiry reaches the handler below.
+        async with asyncio.timeout(limit):
+            return await _run_one(check)
     except TimeoutError:
-        return CheckResult(status="fail", reason=f"timed out after {timeout:g}s")
+        return CheckResult(status="fail", reason=f"timed out after {limit:g}s")
 
 
 async def run_checks(

@@ -36,7 +36,14 @@ def test_the_token_is_url_safe():
 
 
 def test_encoding_is_stable_for_the_same_input():
-    assert_that(encode_cursor("k", "1")).is_equal_to(encode_cursor("k", "1"))
+    # urlsafe base64 of b'{"id":"1","k":"k"}'.
+    expected = "eyJpZCI6IjEiLCJrIjoiayJ9"
+
+    assert_that(encode_cursor("k", "1")).is_equal_to(expected)
+    assert_that(decode_cursor(expected)).is_equal_to(
+        Cursor(sort_key="k", entity_id="1")
+    )
+    assert_that(encode_cursor("k", "1")).is_equal_to(expected)
 
 
 @pytest.mark.parametrize(

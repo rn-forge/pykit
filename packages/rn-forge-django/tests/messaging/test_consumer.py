@@ -54,8 +54,10 @@ class TestProcessEvent:
         assert len(calls) == 1
 
     def test_unknown_type_is_recorded_and_raised(self) -> None:
+        event = _event(message_type="nope")
+        registry = HandlerRegistry()
         with pytest.raises(UnknownMessageType):
-            process_event(_event(message_type="nope"), HandlerRegistry(), InboxMessage)
+            process_event(event, registry, InboxMessage)
         row = InboxMessage.objects.get(message_id="m-1")
         assert row.processed_at is None
         assert "UnknownMessageType" in row.error
@@ -68,8 +70,9 @@ class TestProcessEvent:
             raise RuntimeError("downstream refused")
 
         registry = HandlerRegistry().register("order.created", failing)
+        event = _event()
         with pytest.raises(RuntimeError, match="downstream refused"):
-            process_event(_event(), registry, InboxMessage)
+            process_event(event, registry, InboxMessage)
         row = InboxMessage.objects.get(message_id="m-1")
         assert row.processed_at is None
         assert row.attempts == 1
@@ -85,9 +88,10 @@ class TestProcessEvent:
                 raise outcome
 
         registry = HandlerRegistry().register("order.created", flaky)
+        event = _event()
         with pytest.raises(RuntimeError):
-            process_event(_event(), registry, InboxMessage)
-        assert process_event(_event(), registry, InboxMessage) is True
+            process_event(event, registry, InboxMessage)
+        assert process_event(event, registry, InboxMessage) is True
         row = InboxMessage.objects.get(message_id="m-1")
         assert (row.attempts, row.error) == (2, "")
 

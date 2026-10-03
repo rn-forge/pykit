@@ -44,8 +44,9 @@ class TestInMemoryObjectStore:
     def test_url_for_raises_on_in_memory_store(self) -> None:
         store = InMemoryObjectStore()
         store.put("k", b"data")
+        expires_in = timedelta(minutes=5)
         with pytest.raises(NotImplementedError):
-            store.url_for("k", expires_in=timedelta(minutes=5))
+            store.url_for("k", expires_in=expires_in)
 
     def test_satisfies_object_store_protocol(self) -> None:
         assert isinstance(InMemoryObjectStore(), ObjectStore)

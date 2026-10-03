@@ -155,8 +155,9 @@ class TestInstall:
         assert (home.root / "bin/tool").read_text() == "tool 2.0.0\n"
 
     def test_upgrade_requires_an_install(self, home, source):
+        tool = product(source)
         with pytest.raises(AppException, match="not installed"):
-            upgrade(product(source), home=home)
+            upgrade(tool, home=home)
 
     def test_a_local_archive_installs_and_verifies(self, home, source, tmp_path):
         archive = make_archive(tmp_path, "3.0.0")
@@ -168,10 +169,9 @@ class TestInstall:
 
     def test_a_checksum_mismatch_is_rejected(self, tmp_path):
         archive = make_archive(tmp_path, "3.0.0")
+        bad = LocalArchive(archive, "3.0.0", "0" * 64)
         with pytest.raises(AppException, match="Checksum mismatch"):
-            fetch_release(
-                LocalArchive(archive, "3.0.0", "0" * 64), "3.0.0", tmp_path / "w"
-            )
+            fetch_release(bad, "3.0.0", tmp_path / "w")
 
 
 class TestRollback:
@@ -188,22 +188,25 @@ class TestRollback:
     def test_a_failed_download_changes_nothing(self, home, source):
         self._installed_at_one(home, source)
         source.fail_download = True
+        tool = product(source)
         with pytest.raises(AppException, match="rolled back"):
-            upgrade(product(source), home=home)
+            upgrade(tool, home=home)
         self._assert_still_one(home)
 
     def test_a_failed_first_install_leaves_no_version(self, home, source):
         source.fail_download = True
+        tool = product(source)
         with pytest.raises(AppException):
-            install(product(source), home=home)
+            install(tool, home=home)
         assert home.current_version() is None
         assert home.installed_versions() == []
         assert not (home.root / "bin/tool").is_symlink()
 
     def test_a_failed_migration_restores_the_previous_version(self, home, source):
         self._installed_at_one(home, source)
+        tool = product(source, fail_migration=True)
         with pytest.raises(AppException, match="migration exploded"):
-            upgrade(product(source, fail_migration=True), home=home)
+            upgrade(tool, home=home)
         self._assert_still_one(home)
 
     def test_an_interrupted_swap_restores_and_reraises(self, home, source, monkeypatch):
@@ -213,23 +216,26 @@ class TestRollback:
             raise KeyboardInterrupt
 
         monkeypatch.setattr(home_module, "atomic_symlink", interrupted)
+        tool = product(source)
         with pytest.raises(KeyboardInterrupt):
-            upgrade(product(source), home=home)
+            upgrade(tool, home=home)
         monkeypatch.undo()
         self._assert_still_one(home)
 
     def test_a_failed_reinstall_restores_the_version_directory(self, home, source):
         install(product(source), home=home)
+        tool = product(source, fail_build=True)
         with pytest.raises(AppException, match="build exploded"):
-            install(product(source, fail_build=True), home=home, force=True)
+            install(tool, home=home, force=True)
         assert (home.version_dir("1.0.0") / "bin/tool").read_text() == "tool 1.0.0\n"
         self._assert_still_one(home)
 
     def test_a_file_in_the_way_of_a_link_aborts(self, home, source):
         (home.root / "bin").mkdir(parents=True)
         (home.root / "bin/tool").write_text("mine")
+        tool = product(source)
         with pytest.raises(AppException, match="not a link"):
-            install(product(source), home=home)
+            install(tool, home=home)
         assert (home.root / "bin/tool").read_text() == "mine"
         assert home.current_version() is None
 
@@ -270,8 +276,9 @@ class TestUninstallAndCleanup:
         assert home.installed_versions() == ["2.0.0"]
 
     def test_cleanup_needs_an_active_version(self, home, source):
+        tool = product(source)
         with pytest.raises(AppException):
-            cleanup(product(source), home=home)
+            cleanup(tool, home=home)
 
 
 class TestStatusAndDoctor:

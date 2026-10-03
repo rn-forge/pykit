@@ -96,8 +96,9 @@ class TestRelay:
                     raise ConnectionError("broker down")
                 super().publish(destination, event)
 
+        relay = make_outbox_relay(OutboxMessage, FlakyBus(), envelope_builder=_envelope)
         with pytest.raises(ConnectionError):
-            make_outbox_relay(OutboxMessage, FlakyBus(), envelope_builder=_envelope)()
+            relay()
         assert OutboxMessage.objects.filter(published_at__isnull=True).count() == 3
 
     def test_lag_and_log_hooks(self) -> None:
@@ -110,7 +111,8 @@ class TestRelay:
             on_lag_observed=lags.append,
             log=lambda event, context: events.append((event, dict(context))),
         )()
-        assert len(lags) == 1 and lags[0] >= 600
+        assert len(lags) == 1
+        assert lags[0] >= 600
         assert events[0][0] == "outbox.relay"
         assert events[0][1]["published"] == 1
 

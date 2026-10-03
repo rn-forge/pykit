@@ -11,7 +11,6 @@ reject an oversized page size with a 422 where AIP-158 clamps.
 from __future__ import annotations
 
 import base64
-import binascii
 import json
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -173,7 +172,7 @@ def decode_cursor(raw: str) -> Cursor:
             entity_id=str(payload[_ENTITY_ID]),
             order_by=str(payload.get(_ORDER_BY, "")),
         )
-    except (ValueError, KeyError, TypeError, binascii.Error) as exc:
+    except (ValueError, KeyError, TypeError) as exc:
         raise InvalidCursor("Malformed page token", error_code=400) from exc
 
 

@@ -23,3 +23,7 @@ The root `.importlinter` file defines eight contracts. It forbids `rn_forge.comm
 All seven packages require Python 3.14 or later and provide typed package markers. They have independent versions and pinned git-tag dependencies ([ADR-0004](../adr/ADR-0004.md)). The root workspace overrides those dependencies to local members for development. That override does not prove that the intended tags install outside the workspace.
 
 Package guides own API details: [commons](../rn-forge-commons/index.md), [CLI](../rn-forge-cli/index.md), [tooling](../rn-forge-tooling/index.md), [web](../rn-forge-web/index.md), [Django](../rn-forge-django/index.md), [FastAPI](../rn-forge-fastapi/index.md), and [SQLAlchemy](../rn-forge-sqlalchemy/index.md). The [package selection guide](../guides/choosing-packages.md) starts from an application's needs.
+
+## Package docs sites
+
+There is no root `reference/` area: each package publishes its own versioned docs site instead — `index.md`, `guides/`, a generated `reference/` and `changelog.md` (which includes the package's `CHANGELOG.md`) — the same shape as a single-package repository ([ADR-0009](../adr/ADR-0009.md)). The package's `README.md` is that site's landing page, so every link in it is absolute. This tree follows the shared rn-forge docs standard ([ADR-0007](../adr/ADR-0007.md)); root navigation includes each package site, and the root site excludes routing files.

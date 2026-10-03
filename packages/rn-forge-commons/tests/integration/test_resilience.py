@@ -130,7 +130,8 @@ class TestRateLimiter:
             slept.append(seconds)
 
         run(limiter.acquire(sleep=fake_sleep))
-        assert len(slept) == 1 and 0 < slept[0] <= 10
+        assert len(slept) == 1
+        assert 0 < slept[0] <= 10
 
 
 # -- ResilientAsyncHttpClient ----------------------------------------------

@@ -73,7 +73,8 @@ def process_event(
                 raise UnknownMessageType("No handler for message type {}", message_type)
             with transaction.atomic(using=alias):
                 handler(event)
-        except Exception as exc:  # noqa: BLE001 - recorded here, re-raised below
+        # Recorded on the inbox row, then re-raised after the transaction closes.
+        except Exception as exc:  # noqa: BLE001
             row.error = f"{type(exc).__name__}: {exc}"
             row.save(update_fields=["attempts", "error"])
             failure = exc

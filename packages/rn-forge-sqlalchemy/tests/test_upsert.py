@@ -88,8 +88,9 @@ async def test_rolling_back_after_the_call_writes_nothing(session):
 
 @pytest.mark.asyncio
 async def test_a_duplicate_key_in_the_input_raises(session):
+    rows = _rows("a", "a")
     with pytest.raises(ValueError, match="duplicate key"):
-        await _upsert(session, _rows("a", "a"))
+        await _upsert(session, rows)
 
 
 @pytest.mark.asyncio

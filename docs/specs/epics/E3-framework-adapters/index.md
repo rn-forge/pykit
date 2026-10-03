@@ -1,17 +1,21 @@
 # E3 — Framework adapters
 
-**Status:** done · **Implemented:** 2026-09-12 to 2026-09-22
+| | |
+| --- | --- |
+| **State** | Closed |
+| **Start Date** | 2026-09-12 |
+| **Closed Date** | 2026-09-22 |
 
 The Django and FastAPI bindings of the web contract, and the FastAPI application layer. Each package's guides describe its current API.
 
 [Back to the work index](../../index.md)
 
-| ID | Delivered | Implemented |
-| --- | --- | --- |
-| F3.1 | Django and DRF adapters: problem responses, pagination, idempotency, versioned models, mixins, readiness, sequences, JWKS bearer auth, messaging, Celery, schema casing and the conformance driver | `9d8588c` |
-| F3.2 | FastAPI adapters: problem handlers, OpenAPI repair, header and query dependencies, health router, auth binding and the conformance driver | `3e80dbd` |
-| F3.3 | FastAPI application layer: `AppConfig` and an application factory | `c769562` |
-| F3.4 | `FastApiApp` replaces the factory | `373d6bc` |
+| ID | Scope | Commits | State |
+| --- | --- | --- | --- |
+| F3.1 | Django and DRF adapters: problem responses, pagination, idempotency, versioned models, mixins, readiness, sequences, JWKS bearer auth, messaging, Celery, schema casing and the conformance driver | `9d8588c` | Closed |
+| F3.2 | FastAPI adapters: problem handlers, OpenAPI repair, header and query dependencies, health router, auth binding and the conformance driver | `3e80dbd` | Closed |
+| F3.3 | FastAPI application layer: `AppConfig` and an application factory | `c769562` | Closed |
+| F3.4 | `FastApiApp` replaces the factory | `373d6bc` | Closed |
 
 The web contract is [E2](../E2-http-contract/index.md); later standards decisions are [E4](../E4-standards-rebaseline/index.md). [ADR-0005](../../../adr/ADR-0005.md) states the shared contract each adapter implements natively. Scaffolded FastAPI and Django applications accept both adapters in [F9.8](../E9-release-readiness/F9.8-scaffolded-acceptance.md).
 

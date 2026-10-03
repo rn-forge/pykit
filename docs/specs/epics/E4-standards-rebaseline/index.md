@@ -1,23 +1,27 @@
 # E4 — Standards re-baseline
 
-**Status:** done · **Implemented:** 2026-09-22 to 2026-09-23
+| | |
+| --- | --- |
+| **State** | Closed |
+| **Start Date** | 2026-09-22 |
+| **Closed Date** | 2026-09-23 |
 
 The standards and native-framework decisions applied across web, Django, FastAPI and SQLAlchemy. Package docs state the current contract.
 
 [Back to the work index](../../index.md)
 
-| ID | Delivered | Implemented |
-| --- | --- | --- |
-| F4.1 | OpenAPI accuracy, standards deviations fixed, shared web logic and the service surface (health, discovery, deprecation, conditional GET, `Retry-After`, security headers, body limit, CORS, idempotency runner) | `373d6bc` |
-| F4.2 | W3C Trace Context through OpenTelemetry as the only request correlation; `X-Correlation-ID` is neither read nor sent ([ADR-0001](../../../adr/ADR-0001.md), rule 5) | `630142c` |
-| F4.3 | One wire model per stack, as pydantic models in `rn-forge-web` | `df7a245` |
-| F4.4 | Library evaluations, each closed with a recorded exemption | `74b36ff`, `c1979a4` |
-| F4.5 | Tabular transfer over `tablib` and `django-import-export`, and FastAPI transfer | `cc78e19`, `a036a50` |
-| F4.6 | API Improvement Proposal conventions where no RFC applies: sorting, field names, timestamps, long-running operations | `9af1705` |
-| F4.7 | `rn-forge-sqlalchemy` and cross-stack tabular work | `653ac47` |
-| F4.8 | Simplification after F4.2: access log removed, OpenTelemetry log processor moved to commons, `traceId` rename | `74b36ff` |
+| ID | Scope | Commits | State |
+| --- | --- | --- | --- |
+| F4.1 | OpenAPI accuracy, standards deviations fixed, shared web logic and the service surface (health, discovery, deprecation, conditional GET, `Retry-After`, security headers, body limit, CORS, idempotency runner) | `373d6bc` | Closed |
+| F4.2 | W3C Trace Context through OpenTelemetry as the only request correlation; `X-Correlation-ID` is neither read nor sent ([ADR-0001](../../../adr/ADR-0001.md), rule 5) | `630142c` | Closed |
+| F4.3 | One wire model per stack, as pydantic models in `rn-forge-web` | `df7a245` | Closed |
+| F4.4 | Library evaluations, each closed with a recorded exemption | `74b36ff`, `c1979a4` | Closed |
+| F4.5 | Tabular transfer over `tablib` and `django-import-export`, and FastAPI transfer | `cc78e19`, `a036a50` | Closed |
+| F4.6 | API Improvement Proposal conventions where no RFC applies: sorting, field names, timestamps, long-running operations | `9af1705` | Closed |
+| F4.7 | `rn-forge-sqlalchemy` and cross-stack tabular work | `653ac47` | Closed |
+| F4.8 | Simplification after F4.2: access log removed, OpenTelemetry log processor moved to commons, `traceId` rename | `74b36ff` | Closed |
 
-The Django scope review was not delivered here: the split decision is [F8.1](../E8-django-scope-and-auth/F8.1-django-split.md) and the auth review is [F8.2](../E8-django-scope-and-auth/F8.2-auth-review.md). The remaining API-convention and SQLAlchemy items are deferred in [E12](../E12-on-demand-features/index.md).
+The Django scope review was not delivered here: the split decision is parked in the [ideas list](../../ideas.md#django-optional-areas) and the auth review is [E13](../E13-auth/index.md). The remaining API-convention items are deferred in [E12](../E12-http-contract-extensions/index.md), and the SQLAlchemy items are parked in the [ideas list](../../ideas.md).
 
 [ADR-0001](../../../adr/ADR-0001.md) states the order of authority. [ADR-0005](../../../adr/ADR-0005.md) states the shared HTTP contract. F4.2 emits `traceresponse` from Trace Context Level 2, a Candidate Recommendation that OpenTelemetry Python marks experimental; that instability is accepted.
 
