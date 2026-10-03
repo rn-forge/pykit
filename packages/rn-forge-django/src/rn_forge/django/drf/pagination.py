@@ -137,7 +137,8 @@ class CursorPagination(drf_pagination.CursorPagination):
         sort = requested[0]
         field, descending = sort.lstrip("-"), sort.startswith("-")
         unique = field in ("pk", queryset.model._meta.pk.name)
-        self.ordering = (sort,) if unique else (sort, "-pk" if descending else "pk")
+        tie_breaker = "-pk" if descending else "pk"
+        self.ordering = (sort,) if unique else (sort, tie_breaker)
         queryset = queryset.order_by(*self.ordering)
         if token is not None:
             beyond = "lt" if descending else "gt"

@@ -99,8 +99,9 @@ class TestPageSize:
 @pytest.mark.unit
 class TestTokens:
     def test_tampered_token_raises_invalid_cursor(self) -> None:
+        request = _request(pageToken="!!!")
         with pytest.raises(InvalidCursor):
-            _paginate(_request(pageToken="!!!"))
+            _paginate(request)
 
     def test_tampered_token_renders_as_a_400_problem(self) -> None:
         request = _request(pageToken="!!!")
@@ -114,8 +115,9 @@ class TestTokens:
 
     def test_drf_encoded_cursor_is_rejected(self) -> None:
         drf_token = base64.b64encode(b"p=3").decode()
+        request = _request(pageToken=drf_token)
         with pytest.raises(InvalidCursor):
-            _paginate(_request(pageToken=drf_token))
+            _paginate(request)
 
 
 @pytest.mark.integration
@@ -185,12 +187,14 @@ class TestOrderBy:
 
     def test_token_with_a_different_order_is_rejected(self, rows) -> None:
         body = self._ordered_page(_request(pageSize="2", orderBy="id desc"))
+        request = _request(pageToken=body["nextPageToken"])
         with pytest.raises(InvalidCursor):
-            self._ordered_page(_request(pageToken=body["nextPageToken"]))
+            self._ordered_page(request)
 
     def test_unlisted_field_is_rejected(self, rows) -> None:
+        request = _request(orderBy="secret")
         with pytest.raises(InvalidOrderBy):
-            self._ordered_page(_request(orderBy="secret"))
+            self._ordered_page(request)
 
 
 @pytest.mark.integration
@@ -229,9 +233,8 @@ class TestNonUniqueSortField:
 
     def test_token_value_that_does_not_fit_the_field_is_rejected(self, tied):
         token = encode_cursor("not-a-number", "1", "id")
+        paginator = CursorPagination()
+        queryset = _PagedRow.objects.all()
+        request = _request(orderBy="id", pageToken=token)
         with pytest.raises(InvalidCursor):
-            CursorPagination().paginate_queryset(
-                _PagedRow.objects.all(),
-                _request(orderBy="id", pageToken=token),
-                view=_OrderedView(),
-            )
+            paginator.paginate_queryset(queryset, request, view=_OrderedView())
