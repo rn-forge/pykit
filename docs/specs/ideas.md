@@ -79,7 +79,7 @@ This is the only structural type declared over a persisted object: a `Versioned`
 - Hard deletion exists for data-retention compliance and is a separately authorized operation, not the ordinary `DELETE` endpoint.
 - A `DELETE` on a resource that is already soft-deleted returns 404, per the API conventions.
 
-[E12](epics/E12-http-contract-extensions/index.md)'s F12.2, soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`), conflicts with this section. Whichever is taken up first settles the other.
+[F12.2](epics/E12-http-contract-extensions/F12.2-soft-delete.md), soft delete in AIP-164's shape, was taken up first (2026-10-04) and settles this section: soft delete becomes a nullable `delete_time` column, not a status. Its decision story rewrites this section.
 
 ## release-recovery-drill
 
