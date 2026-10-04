@@ -12,15 +12,16 @@ the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 
 import json
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI, Header, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
-from pydantic import ConfigDict, Field, ValidationError, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from rn_forge.fastapi import (
     AppConfig,
@@ -39,10 +40,13 @@ from rn_forge.fastapi import (
     requires,
 )
 from rn_forge.fastapi.transfer import (
+    batch_create_router,
+    batch_delete_router,
+    import_router,
+    import_template_router,
     problem_response,
-    read_rows,
+    tabular_export,
     tabular_format,
-    tabular_response,
 )
 from rn_forge.web import (
     Operation,
@@ -50,11 +54,9 @@ from rn_forge.web import (
     API_CATALOG_PATH,
     check_cursor_order,
     format_order_by,
-    RowError,
     TabularFormat,
-    export_cap_problem,
-    import_report_body,
-    row_errors_problem,
+    ImportCounts,
+    ItemsDenied,
     Page,
     WireModel,
     CheckResult,
@@ -134,12 +136,50 @@ class OrderCreate(WireModel):
     name: str
 
 
-class BatchCreate(WireModel):
-    requests: list[dict]
+@dataclass
+class Order:
+    id: str
+    name: str
+    quantity: int = 0
 
 
-class BatchDelete(WireModel):
-    ids: list[str]
+class OrderStore:
+    """One in-memory store behind every transfer route of the fixture."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {"1": Order("1", "widget")}
+
+    async def import_rows(self, rows, *, validate_only):
+        created = sum(row.id not in self.rows_by_id for row in rows)
+        if not validate_only:
+            for row in rows:
+                self.rows_by_id[row.id] = Order(row.id, row.name, row.quantity)
+        return ImportCounts(created, len(rows) - created, 0)
+
+    async def rows(self):
+        return list(self.rows_by_id.values())
+
+    async def create_many(self, items):
+        denied = {
+            str(index): ["You may not create this order."]
+            for index, item in enumerate(items)
+            if item.name == "forbidden"
+        }
+        if denied:
+            raise ItemsDenied(denied, root="requests")
+        created = []
+        for item in items:
+            order = Order(str(len(self.rows_by_id) + 1), item.name)
+            self.rows_by_id[order.id] = order
+            created.append(order)
+        return created
+
+    async def find(self, ids):
+        return [i for i in ids if i in self.rows_by_id]
+
+    async def delete_many(self, ids):
+        for order_id in ids:
+            del self.rows_by_id[order_id]
 
 
 EXPORT_CAP = 1
@@ -308,39 +348,46 @@ def build_app(*, failing: str | None) -> FastAPI:
     async def unavailable_route():
         raise ServiceUnavailable("Service unavailable", retry_after=5)
 
-    orders: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
+    orders = OrderStore()
     tabular = Depends(tabular_format())
 
     async def export(request: Request, fmt: TabularFormat | None, filename: str, rows):
         if fmt is None:
-            return {"items": rows}
-        if len(rows) > EXPORT_CAP:
-            return problem_response(
-                export_cap_problem(EXPORT_CAP, instance=request.url.path)
-            )
-        return await tabular_response(rows, OrderRow, fmt, filename)
+            return {"items": [{"id": r.id, "name": r.name} for r in rows]}
+        return await tabular_export(
+            rows,
+            OrderRow,
+            fmt,
+            filename,
+            max_rows=EXPORT_CAP,
+            instance=request.url.path,
+        )
 
     @app.get("/conformance/orders")
     async def export_orders(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(request, fmt, "orders.csv", list(orders.values()))
+        return await export(
+            request, fmt, "orders.csv", list(orders.rows_by_id.values())
+        )
 
     @app.get("/conformance/orders/named")
     async def export_named(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(request, fmt, "Ordérs 2026.csv", list(orders.values()))
+        return await export(
+            request, fmt, "Ordérs 2026.csv", list(orders.rows_by_id.values())
+        )
 
     @app.get("/conformance/orders/over-cap")
     async def export_over_cap(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(
-            request, fmt, "orders.csv", [*orders.values(), *orders.values()]
-        )
+        rows = list(orders.rows_by_id.values())
+        return await export(request, fmt, "orders.csv", [*rows, *rows])
 
     @app.get("/conformance/orders/count")
     async def count_orders():
-        return {"count": len(orders)}
+        return {"count": len(orders.rows_by_id)}
 
     @app.get("/conformance/orders/1")
     async def get_order():
-        return orders["1"]
+        first = orders.rows_by_id["1"]
+        return {"id": first.id, "name": first.name}
 
     @app.get("/conformance/stamped")
     async def stamped() -> Stamped:
@@ -369,59 +416,35 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
         return Operation(name="operations/2", done=True, error=problem).as_body()
 
-    @app.post("/conformance/orders:import")
-    async def import_orders(
-        request: Request,
-        file: UploadFile,
-        validate_only: bool = Query(False, alias="validateOnly"),
-    ):
-        result = await read_rows(file, OrderImport)
-        if result.errors:
-            return problem_response(
-                row_errors_problem(result.errors, instance=request.url.path)
+    def order_store() -> OrderStore:
+        return orders
+
+    for collection, cap in (("/conformance/orders", None), ("/conformance/capped", 1)):
+        app.include_router(
+            import_router(
+                collection, model=OrderImport, store=order_store, max_rows=cap
             )
-        created = sum(row.id not in orders for row in result.valid)
-        if not validate_only:
-            orders.update(
-                {row.id: {"id": row.id, "name": row.name} for row in result.valid}
-            )
-        return import_report_body(
-            created=created,
-            updated=len(result.valid) - created,
-            skipped=0,
-            validate_only=validate_only,
         )
-
-    @app.post("/conformance/orders:batchCreate")
-    async def batch_create_orders(request: Request, body: BatchCreate):
-        errors: list[RowError] = []
-        items: list[OrderCreate] = []
-        for index, item in enumerate(body.requests):
-            try:
-                items.append(OrderCreate.model_validate(item))
-            except ValidationError as exc:
-                errors.extend(
-                    RowError(index, str(e["loc"][0]), "This field is required.")
-                    for e in exc.errors()
-                )
-        if errors:
-            return problem_response(
-                row_errors_problem(errors, instance=request.url.path, root="requests")
+        app.include_router(
+            batch_create_router(
+                collection,
+                model=OrderCreate,
+                response_model=OrderRow,
+                resource_name="orders",
+                store=order_store,
+                max_rows=cap,
             )
-        created = []
-        for item in items:
-            order = {"id": str(len(orders) + 1), "name": item.name}
-            orders[order["id"]] = order
-            created.append(order)
-        return {"orders": created}
-
-    @app.post("/conformance/orders:batchDelete", status_code=204)
-    async def batch_delete_orders(body: BatchDelete):
-        for order_id in body.ids:
-            if order_id not in orders:
-                raise LookupError(f"Order {order_id} not found")
-        for order_id in body.ids:
-            del orders[order_id]
+        )
+    app.include_router(
+        import_template_router(
+            "/conformance/orders", model=OrderImport, source=order_store
+        )
+    )
+    app.include_router(
+        batch_delete_router(
+            "/conformance/orders", resource_label="Order", store=order_store
+        )
+    )
 
     return app
 
