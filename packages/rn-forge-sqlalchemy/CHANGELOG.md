@@ -4,6 +4,12 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the [Keep a Changelog
 
 ## [Unreleased]
 
+### Added
+
+- Soft delete: `SoftDeleteMixin` (a nullable, indexed `delete_time`), `live(stmt, model,
+  show_deleted=)`, `soft_delete(obj, actor=, now=)` and `undelete(obj, actor=, now=)`. Nothing hooks
+  the session; a query asks for live rows with `live()`.
+
 ### Changed
 
 - **Breaking:** `keyset` orders and resumes by every `orderBy` term, with `NULL` last in both directions, so a term's column may be nullable. It ordered by one term and required a non-null column.

@@ -49,6 +49,7 @@ nav:
       - Quickstart: guides/quickstart.md
       - Wiring an application: guides/wiring.md
       - Tabular export and import: guides/transfer.md
+      - Soft delete: guides/soft-delete.md
   - Reference:
       - reference/index.md
       - Application: reference/app.md
@@ -57,6 +58,7 @@ nav:
       - Dependencies: reference/dependencies.md
       - Merge patch: reference/merge_patch.md
       - Read mask: reference/read_mask.md
+      - Soft delete: reference/soft_delete.md
       - Health: reference/health.md
       - Transfer: reference/transfer.md
       - Auth: reference/auth.md

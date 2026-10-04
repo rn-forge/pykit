@@ -82,6 +82,31 @@ The `ETag` of a masked read is the resource's. A paginated `list` masks each of 
 actions. A view outside `BaseModelViewSet` adds `ReadMaskMixin` from `rn_forge.django.drf`;
 `read_mask_actions` names the actions it applies to.
 
+## Soft delete
+
+`SoftDeleteMixin` serves AIP-164 over a model that uses `SoftDeleteModelMixin`. List it before
+`BaseModelViewSet`:
+
+```python
+class NoteViewSet(SoftDeleteMixin, BatchDeleteMixin, BaseModelViewSet):
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    soft_delete_requires_if_match = True  # optional: 428 without If-Match
+```
+
+- `list` omits deleted rows unless `showDeleted` is `true` or `1`; `retrieve`, `batch_get` and the
+  other actions see every row.
+- `DELETE` soft-deletes and answers 200 with the resource and its `ETag`; a deleted resource is a 404.
+- `POST /notes/{id}:undelete` restores it. Serve it with `CustomMethodRouter`; the schema names it
+  `notesUndelete`.
+- `PUT` and `PATCH` on a deleted resource are a 409.
+- `BatchDeleteMixin` deletes each row through `perform_destroy`, so the same viewset soft-deletes in a
+  batch; for any other viewset `perform_destroy` still deletes the row. A deleted id is a 404 for
+  the whole batch.
+
+A versioned instance honours `If-Match` on `DELETE` and `:undelete`. The wire rules are §21 of
+`rn-forge-web`'s API conventions.
+
 ## Export, import and batch operations
 
 Tabular export and import, and batch create and delete, are in

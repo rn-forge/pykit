@@ -2,8 +2,9 @@
 
 | | |
 | --- | --- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-04 |
+| **Closed Date** | 2026-10-04 |
 
 Wire features that the [API conventions](../../../rn-forge-web/guides/api-conventions.md) describe but no package implements, or only one stack does. [E2](../E2-http-contract/index.md) delivered the contract; this epic extends it. A feature whose trigger has fired has its own feature file with stories and acceptance before any code; the rest are tagged `deferred` until their trigger occurs.
 
@@ -12,7 +13,7 @@ Wire features that the [API conventions](../../../rn-forge-web/guides/api-conven
 | Feature | Scope | Trigger | Tags | State |
 | --- | --- | --- | --- | --- |
 | [F12.1 — `:batchGet` and `:batchUpdate`](F12.1-batch-get-update.md) | `:batchGet` (AIP-231) and `:batchUpdate` (AIP-234, one merge patch per item) on both stacks, with the shared rules in `rn-forge-web` | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
-| [F12.2 — Soft delete](F12.2-soft-delete.md) | Soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`) on both stacks and both ORM packages. Settles the [model-vocabulary](../../ideas.md#model-vocabulary) idea's status-based soft delete in favor of a `delete_time` column. | Fired 2026-10-04: the owner scheduled it for release 3. | — | Active |
+| [F12.2 — Soft delete](F12.2-soft-delete.md) | Soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`) on both stacks and both ORM packages. Settles the [model-vocabulary](../../ideas.md#model-vocabulary) idea's status-based soft delete in favor of a `delete_time` column. | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
 | [F12.3 — Multi-column sorting](F12.3-multi-column-sorting.md) | Multi-term `orderBy` with composite keyset tokens and nulls last in both directions, on both stacks and `rn-forge-sqlalchemy` | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
 | [F12.9 — `readMask` partial responses](F12.9-read-mask.md) | AIP-157 `readMask` on get, list and `:batchGet`, applied to the wire representation on both stacks | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
 | [F12.12 — Django `RequestUtils` name collision](F12.12-requestutils-name-collision.md) | Remove `rn_forge.django.utils.RequestUtils` (its `debug_request` moves to `rn_forge.django.views`) and the DRF module's compatibility aliases, so one `RequestUtils` remains | Fired 2026-09-29: F12.14 is a breaking change to `rn-forge-django`, and the owner approved carrying this one with it. | — | Closed |

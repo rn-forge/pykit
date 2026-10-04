@@ -405,7 +405,7 @@ Unremarkable, and worth stating so it does not vary:
 | A successful read | 200 |
 | A successful create | 201, with `Location` |
 | A successful update | 200 with the representation, or 204 with no body |
-| A successful delete | 204 |
+| A successful delete | 204; a soft-deleting resource answers 200 with the resource (§21) |
 | An accepted asynchronous operation | 202 |
 
 `PUT` replaces; `PATCH` is RFC 7396 JSON Merge Patch (`Content-Type:
@@ -701,7 +701,8 @@ item without `ifMatch` is the `428`. An unversioned resource ignores `ifMatch`.
   with the `Z`. — `timestamps.rfc-3339-utc-with-z`
 - **The audit fields are `createTime`, `updateTime`, `createdBy` and
   `updatedBy`** (AIP-148 for the first two; `createdBy`/`updatedBy` have no
-  AIP equivalent). `etag` and `requestId` are not fields: RFC 9110 headers
+  AIP equivalent). A resource that offers soft delete also carries the
+  read-only **`deleteTime`**, `null` while it is live (AIP-164, §21). `etag` and `requestId` are not fields: RFC 9110 headers
   (§3) and the `Idempotency-Key` header (§5) govern.
 - Errors are RFC 9457 problems, never `google.rpc.Status`.
 
@@ -731,12 +732,13 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   application's. — `operations.start-is-202-with-location`,
   `operations.finished-carries-its-response`, `operations.failed-carries-a-problem`
 - **Partial responses** (AIP-157) are spelled `readMask`; §20 gives the rules.
+- **Soft delete** (AIP-164) is spelled `deleteTime`, `:undelete` and
+  `showDeleted`; §21 gives the rules.
 - **Custom-method paths** (`:cancel`, `:import`, the batch spellings) put a
   colon in the last path segment. It is valid in a URI, but a gateway or router
   that treats `:` as a parameter marker must be configured to pass it through.
 - **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
-  are the mechanism), AIP-122 resource names (ids stay ids) and AIP-164 soft
-  delete (deferred).
+  are the mechanism) and AIP-122 resource names (ids stay ids).
 
 ## 20. Partial responses
 
@@ -778,6 +780,50 @@ after serialization, so every stack validates and prunes identically.
 
 `rn_forge.web.parse_read_mask` parses and validates a mask against the declared
 fields of a representation, and `ReadMask.apply` prunes a body.
+
+## 21. Soft delete
+
+A resource either offers soft delete or does not; it never offers both kinds of `DELETE`. A
+soft-deleting resource carries a read-only `deleteTime`, an RFC 3339 UTC timestamp (§18) that is
+`null` while the resource is live. It is a stored fact, independent of any `status` field.
+
+| Request | Resource live | Resource soft-deleted |
+| --- | --- | --- |
+| `GET /notes/{id}` | 200 | 200, with `deleteTime` set |
+| `GET /notes` | listed | omitted, unless `showDeleted=true` |
+| `DELETE /notes/{id}` | 200 with the resource, `deleteTime` set, `version` bumped | 404 |
+| `POST /notes/{id}:undelete` | 409 | 200 with the resource, `deleteTime` `null`, `version` bumped |
+| `PUT` / `PATCH /notes/{id}` | as today | 409 |
+| `POST /notes:batchDelete` | soft-deletes every id; 204 | the id is not found: 404 for the whole batch |
+
+- **`DELETE` answers 200 with the resource**, in place of §10's 204, so the client gets the
+  `deleteTime` and the new `ETag` without a second request. A hard-deleting resource still answers
+  204. — `soft-delete.delete-returns-the-resource-with-its-delete-time`
+- **A get returns a deleted resource**, as AIP-164 says, and a list leaves it out.
+  `showDeleted` is `true` or `1` (any case) to include deleted resources; any other value excludes
+  them. The page token does not bind it. —
+  `soft-delete.get-returns-a-deleted-resource`, `soft-delete.list-omits-deleted-resources`,
+  `soft-delete.show-deleted-lists-them`
+- **Deleting twice is a 404** reading `{Label} {id} not found`, as §10 says of any absent
+  resource. — `soft-delete.delete-of-a-deleted-resource-is-404`
+- **`:undelete` restores the resource.** On a live resource it is a 409 reading
+  `{Label} {id} is not deleted`. — `soft-delete.undelete-restores-the-resource`,
+  `soft-delete.undeleted-resource-is-listed-again`,
+  `soft-delete.undelete-of-a-live-resource-is-409`
+- **A write to a deleted resource is a 409** reading `{Label} {id} is deleted`; undelete it first.
+  — `soft-delete.write-to-a-deleted-resource-is-409`
+- **Preconditions** (§3) apply to `DELETE` and `:undelete` on a versioned resource in the order of a
+  merge patch: absent and required is 428, malformed is 400, stale is 412, and nothing is written.
+  Both answer with the new `ETag`. — `soft-delete.stale-if-match-is-412`,
+  `soft-delete.failed-precondition-deletes-nothing`
+- **`:batchDelete` stays 204** and soft-deletes every id. A resource deleted in a batch is still
+  readable. — `soft-delete.batch-delete-soft-deletes`,
+  `soft-delete.batch-deleted-resource-is-still-readable`
+- **Purging is out of scope.** The kit offers no route that purges a soft-deleted resource and does
+  not emit AIP-164's `expireTime`. Retention is the application's own authorized operation.
+
+`rn_forge.web` supplies `ResourceDeleted` and `ResourceNotDeleted` (both 409), `SHOW_DELETED_PARAM`
+and `require_live`.
 
 ## Conformance
 

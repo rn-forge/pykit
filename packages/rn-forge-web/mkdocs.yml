@@ -63,6 +63,7 @@ nav:
       - Pagination: reference/pagination.md
       - Merge patch: reference/merge_patch.md
       - Read mask: reference/read_mask.md
+      - Soft delete: reference/soft_delete.md
       - Transfer: reference/transfer.md
       - Operations: reference/operations.md
       - Idempotency: reference/idempotency.md

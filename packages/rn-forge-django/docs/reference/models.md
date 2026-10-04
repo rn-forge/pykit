@@ -8,6 +8,10 @@
 
 ::: rn_forge.django.models.concurrency
 
+## Soft delete
+
+::: rn_forge.django.models.soft_delete
+
 ## Sequences
 
 ::: rn_forge.django.models.sequences

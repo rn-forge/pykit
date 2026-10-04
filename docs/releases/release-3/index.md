@@ -24,7 +24,7 @@ Wire features that the API conventions describe but no package implements, or on
 | [F12.14](../../specs/epics/E12-http-contract-extensions/F12.14-merge-patch.md) | E12 | Closed |
 | [F12.15](../../specs/epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md) | E12 | Closed |
 | [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | Closed |
-| [F12.2](../../specs/epics/E12-http-contract-extensions/F12.2-soft-delete.md) | E12 | Active |
+| [F12.2](../../specs/epics/E12-http-contract-extensions/F12.2-soft-delete.md) | E12 | Closed |
 | [F12.3](../../specs/epics/E12-http-contract-extensions/F12.3-multi-column-sorting.md) | E12 | Closed |
 | [F12.9](../../specs/epics/E12-http-contract-extensions/F12.9-read-mask.md) | E12 | Closed |
 <!-- scope:end -->
@@ -45,7 +45,7 @@ pykit has no live consumers, so no deprecation window is kept.
 
 ## Progress
 
-Started 2026-10-04. F12.12, F12.14, F12.15, F12.16, F12.3, F12.1 and F12.9 are closed (2026-10-04). F12.1, F12.2, F12.3 and F12.9 were added to scope on 2026-10-04; F12.2 is elaborated, not started. A suggested build order is F12.3, then F12.1, then F12.9 and F12.2; only F12.9 has to follow another (F12.1).
+Started 2026-10-04. Every feature in scope is closed (2026-10-04): F12.12, F12.14, F12.15 and F12.16, then F12.3, F12.1, F12.9 and F12.2, which were added to scope the same day. ADR-0010 is accepted. What remains is the cut: version bumps and CI, including the PostgreSQL job and the Sonar gate.
 
 ## Commits
 

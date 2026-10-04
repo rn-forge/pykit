@@ -6,6 +6,12 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ### Added
 
+- Soft delete in AIP-164's shape. `SoftDeleteModelMixin` and `SoftDeleteQuerySet` in
+  `rn_forge.django.models` add a nullable, indexed `delete_time`, `soft_delete(actor=)`,
+  `undelete(actor=)`, `.live()` and `.deleted()`, with an unfiltered default manager.
+  `SoftDeleteMixin` in `rn_forge.django.drf.views` makes `DELETE` answer `200` with the resource,
+  adds `POST {id}:undelete` and `showDeleted` on `list`, and answers `409` to `PUT` and `PATCH` on a
+  deleted resource. `WireAutoSchema` documents the three.
 - `ReadMaskMixin` in `rn_forge.django.drf`: `retrieve`, `list` and `batch_get` accept `readMask` and
   answer `200` with only the named fields. `BaseModelViewSet` includes it, and `WireAutoSchema`
   documents the parameter on those actions.
@@ -17,6 +23,8 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ### Changed
 
+- `BatchDeleteMixin` deletes each row through the view's `perform_destroy` in place of `instance.delete()`, so a
+  `SoftDeleteMixin` viewset soft-deletes in a batch. For any other viewset the behavior is unchanged.
 - **Breaking:** `CursorPagination` and `OrderByFilter` use every `orderBy` term, not the first. `ordering_fields` may name nullable fields and relation paths, `NULL` sorts last in both directions, and the `orderBy` OpenAPI description says it takes a comma-separated list. A view's non-primary-key default `ordering` supplies the terms when the request gives no `orderBy`. Page tokens issued before the change are rejected with 400.
 - **Breaking:** `BaseModelViewSet`'s `PATCH` now takes `application/merge-patch+json` (RFC 7396) and answers `application/json` with 415 and `Accept-Patch`. `PUT` and `POST` still take `application/json`.
   - The merged document is validated as a full update; a top-level `null` sets the field to `null`, and read-only or unknown members are ignored.

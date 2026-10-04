@@ -6,6 +6,9 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
 
 ### Added
 
+- Soft delete in AIP-164's shape: `soft_delete_router` (`DELETE {collection}/{id}` answering `200`
+  with the resource, and `POST {collection}/{id}:undelete`), the `SoftDeleteStore` protocol and
+  `SoftDeleteState`, and `show_deleted_param()`, all exported from `rn_forge.fastapi`.
 - `read_mask_param(model)` and `masked(page, mask)` for the `readMask` query parameter.
   `batch_get_router` takes a new `read_mask` parameter (default `True`) and applies the mask.
 - `batch_get_router` (`GET :batchGet`) and `batch_update_router` (`POST :batchUpdate`, one JSON

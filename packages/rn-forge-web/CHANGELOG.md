@@ -6,6 +6,11 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ### Added
 
+- AIP-164 soft delete rules in `rn_forge.web.soft_delete` and `rn_forge.web.exceptions`:
+  `ResourceDeleted` and `ResourceNotDeleted` (409, both in `default_registry()`),
+  `SHOW_DELETED_PARAM` and `require_live`. The `soft-delete` conformance area has thirteen
+  `soft-delete.*` cases, and the API conventions gain a *Soft delete* section; `DELETE` of a
+  soft-deleting resource is 200 with the resource, and `deleteTime` is a standard field.
 - AIP-157 `readMask` partial responses in `rn_forge.web.read_mask`: `READ_MASK_PARAM`, `FieldTree`,
   `ReadMask`, `parse_read_mask` and `InvalidReadMask` (400) in `default_registry()`. Eleven
   `read-mask.*` conformance cases, and a *Partial responses* section in the API conventions.
