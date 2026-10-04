@@ -607,6 +607,7 @@ class BatchDeleteMixin(GenericAPIView):
     Ids are matched within ``filter_queryset(get_queryset())``; an id outside it
     is a 404 problem naming the id. An error string from
     :meth:`validate_batch_delete_instance` is a 403 problem pointing at the id.
+    Each instance is deleted through the view's ``perform_destroy``.
     """
 
     def validate_batch_delete_instance(self, instance: Any) -> str | None:
@@ -641,7 +642,7 @@ class BatchDeleteMixin(GenericAPIView):
 
         with transaction.atomic():
             for instance in found.values():
-                instance.delete()
+                cast(Any, self).perform_destroy(instance)
         return Response(status=204)
 
 

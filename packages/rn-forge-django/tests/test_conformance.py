@@ -49,6 +49,7 @@ from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpattern
 from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
 from rn_forge.django.drf.routers import CustomMethodRouter
 from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.drf.views.mixins import SoftDeleteMixin
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
@@ -57,7 +58,11 @@ from rn_forge.django.drf.transfer import (
     ResourceExportMixin,
     ResourceImportMixin,
 )
-from rn_forge.django.models import BaseModel, VersionedModelMixin
+from rn_forge.django.models import (
+    BaseModel,
+    SoftDeleteModelMixin,
+    VersionedModelMixin,
+)
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
@@ -79,6 +84,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
 BOUNDARY = "conformance-boundary"
 ITEM_VERSION = 7
+CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
@@ -175,6 +181,38 @@ class _Profiles(BaseModelViewSet):
     etag_codec = EntityVersionETagCodec()
 
 
+class _ConformanceNote(SoftDeleteModelMixin, VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    text = models.CharField(max_length=40)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+        verbose_name = "note"
+        verbose_name_plural = "notes"
+
+    def get_delete_time(self):
+        return CLOCK
+
+
+class _NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceNote
+        fields = ["id", "text", "delete_time"]
+        read_only_fields = ["id", "delete_time"]
+
+
+class _Notes(SoftDeleteMixin, BatchDeleteMixin, BaseModelViewSet):
+    renderer_classes = [CamelCaseJSONRenderer]
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceNote.objects.all()
+    serializer_class = _NoteSerializer
+    pagination_class = CursorPagination
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id"]
+    etag_codec = EntityVersionETagCodec()
+
+
 class _ConformanceBook(VersionedModelMixin, BaseModel):
     id = models.CharField(primary_key=True, max_length=10)
     name = models.CharField(max_length=40)
@@ -209,6 +247,9 @@ class _CappedBooks(_Books):
 _books = CustomMethodRouter(trailing_slash=False)
 _books.register("conformance/books", _Books, basename="books")
 _books.register("conformance/capped-books", _CappedBooks, basename="capped-books")
+
+_notes = CustomMethodRouter(trailing_slash=False)
+_notes.register("conformance/notes", _Notes, basename="notes")
 
 _profiles = SimpleRouter(trailing_slash=False)
 _profiles.register("conformance/profiles", _Profiles, basename="profiles")
@@ -547,6 +588,7 @@ urlpatterns = [
     *_orders.urls,
     *_documents.urls,
     *_profiles.urls,
+    *_notes.urls,
     *_books.urls,
     path("conformance/legacy", _Legacy.as_view()),
     path("conformance/stamped", _Stamped.as_view()),
@@ -594,6 +636,22 @@ WIRING = {
 }
 
 
+def _seed_notes(model):
+    for pk, text, delete_time, version in [
+        ("1", "first", None, 1),
+        ("2", "second", DEPRECATED_AT, 2),
+        ("3", "third", None, 1),
+    ]:
+        model.objects.create(
+            pk=pk,
+            text=text,
+            delete_time=delete_time,
+            version=version,
+            created_by="t",
+            updated_by="t",
+        )
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
     create_tables(
@@ -603,6 +661,7 @@ def _tables(create_tables):
         _ConformanceDocument,
         _ConformanceBook,
         _ConformanceProfile,
+        _ConformanceNote,
     )
 
 
@@ -642,6 +701,7 @@ def client():
         address={"city": "Arlington", "postcode": "22201"},
     )
     with override_settings(**WIRING):
+        _seed_notes(_ConformanceNote)
         yield Client(raise_request_exception=False)
 
 

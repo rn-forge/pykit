@@ -6,6 +6,7 @@ from rn_forge.django.drf.views.mixins import (
     PermissionByMethodMixin,
     ReadMaskMixin,
     RequestAccessViewMixin,
+    SoftDeleteMixin,
 )
 from rn_forge.django.drf.views.base import BaseAPIView, BaseModelViewSet
 from rn_forge.django.drf.views.enums import EnumChoicesAPIView
@@ -21,4 +22,5 @@ __all__ = [
     "PermissionByMethodMixin",
     "ReadMaskMixin",
     "RequestAccessViewMixin",
+    "SoftDeleteMixin",
 ]

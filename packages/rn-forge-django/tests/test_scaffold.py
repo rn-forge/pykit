@@ -74,6 +74,7 @@ def reset_rows():
         editor.create_model(service._ConformanceDocument)
         editor.create_model(service._ConformanceBook)
         editor.create_model(service._ConformanceProfile)
+        editor.create_model(service._ConformanceNote)
     for pk in ("1", "2", "3"):
         service._ConformanceItem.objects.create(pk=pk)
     for pk, team, score in [
@@ -98,6 +99,7 @@ def reset_rows():
         display_name="Grace",
         address={"city": "Arlington", "postcode": "22201"},
     )
+    service._seed_notes(service._ConformanceNote)
     service._Order.objects.create(pk="1", name="widget")
     service._ConformanceDocument.objects.create(
         pk="1",

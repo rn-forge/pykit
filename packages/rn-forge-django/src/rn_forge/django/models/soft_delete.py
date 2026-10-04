@@ -31,8 +31,9 @@ SoftDeleteManager = NaturalKeyLookupManager.from_queryset(SoftDeleteQuerySet)
 class SoftDeleteModelMixin(models.Model):
     """Abstract mixin adding a nullable, indexed ``delete_time`` column.
 
-    List it before :class:`~rn_forge.django.models.BaseModel`. The default
-    manager is **not** filtered; select with ``.live()`` or ``.deleted()``.
+    List it before :class:`~rn_forge.django.models.BaseModel` so that its
+    manager, which adds ``.live()`` and ``.deleted()`` to the natural-key
+    manager, is the model's default. That manager is **not** filtered.
     Saving a :class:`~rn_forge.django.models.VersionedModelMixin` model through
     :meth:`soft_delete` or :meth:`undelete` bumps its version as any save does.
     """

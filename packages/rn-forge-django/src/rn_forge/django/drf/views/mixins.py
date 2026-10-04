@@ -9,6 +9,7 @@ from datetime import date
 from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.lang.utils import AppUtils
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.serializers import ListSerializer, Serializer
 from rest_framework.parsers import BaseParser
@@ -19,6 +20,7 @@ from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
 from rn_forge.django.drf.casing import MergePatchParser, camelize_key
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf._typing import (
+    action,
     CreateModelMixinProtocol,
     GenericAPIViewProtocol,
     QuerySetProtocol,
@@ -28,15 +30,20 @@ from rn_forge.django.drf._typing import (
 )
 from rn_forge.django.models import DateRangeModel
 from rn_forge.django.models.concurrency import VersionedModelMixin
+from rn_forge.django.models.soft_delete import SoftDeleteModelMixin
 from rn_forge.web import (
     MERGE_PATCH_MEDIA_TYPE,
     READ_MASK_PARAM,
+    SHOW_DELETED_PARAM,
     ETagCodec,
     FieldTree,
     ReadMask,
+    ResourceNotDeleted,
     UnsupportedMediaType,
     merge_representation,
+    parse_flag,
     parse_read_mask,
+    require_live,
     require_patch_object,
 )
 
@@ -48,6 +55,7 @@ __all__ = [
     "PermissionByMethodMixin",
     "ReadMaskMixin",
     "RequestAccessViewMixin",
+    "SoftDeleteMixin",
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)
@@ -112,6 +120,7 @@ class ExceptionContextViewMixin(GenericAPIView):
         "update": "Error updating record.",
         "partial_update": "Error updating record.",
         "destroy": "Error deleting record.",
+        "undelete": "Error undeleting record.",
         "batch_delete": "Error deleting records.",
         "import_items": "Error importing records.",
         "import_template": "Error building import template.",
@@ -408,3 +417,106 @@ class ReadMaskMixin(GenericAPIView):
             name: self._masked(mask, value) if name in members else value
             for name, value in body.items()
         }
+
+
+# ---------------------------------------------------------------------------
+# Soft delete
+# ---------------------------------------------------------------------------
+
+
+class SoftDeleteMixin(GenericAPIView):
+    """Soft delete in AIP-164's shape for a viewset over a soft-deleting model.
+
+    The model uses :class:`~rn_forge.django.models.SoftDeleteModelMixin`. List
+    this mixin before :class:`~rn_forge.django.drf.views.base.BaseModelViewSet`,
+    which supplies the audit actor and the ``ETag`` codec.
+
+    - ``list`` and ``batch_delete`` omit deleted rows; ``list`` includes them
+      when ``showDeleted`` is ``true`` or ``1``. Every other action sees all rows.
+    - ``DELETE`` soft-deletes and answers 200 with the resource and its ``ETag``.
+      A resource that is already deleted is a 404.
+    - ``POST {id}:undelete`` restores the resource and answers 200 with it.
+    - ``PUT`` and ``PATCH`` on a deleted resource are a 409.
+
+    A versioned instance honours ``If-Match`` on ``DELETE`` and ``:undelete``,
+    after the checks above.
+
+    Attributes:
+        soft_delete_requires_if_match: When ``True``, a versioned ``DELETE`` or
+            ``:undelete`` without a precondition is a 428.
+
+    Raises:
+        rest_framework.exceptions.NotFound: ``DELETE`` of a deleted resource (404).
+        rn_forge.web.ResourceDeleted: ``PUT`` or ``PATCH`` of a deleted resource (409).
+        rn_forge.web.ResourceNotDeleted: ``:undelete`` of a live resource (409).
+        rn_forge.web.PreconditionRequired: A required ``If-Match`` is missing (428).
+        rn_forge.web.MalformedPrecondition: ``If-Match`` is unparseable (400).
+        rn_forge.web.VersionConflict: ``If-Match`` is stale (412).
+    """
+
+    soft_delete_requires_if_match: ClassVar[bool] = False
+
+    @override
+    def get_queryset(self) -> Any:
+        queryset = cast(Any, super().get_queryset())
+        action_name = getattr(self, "action", None)
+        if action_name == "batch_delete" or (
+            action_name == "list"
+            and not parse_flag(
+                cast(Request, self.request).query_params.get(SHOW_DELETED_PARAM)
+            )
+        ):
+            return queryset.filter(delete_time__isnull=True)
+        return queryset
+
+    @override
+    def get_object(self) -> Any:
+        instance = cast(Any, super().get_object())
+        if getattr(self, "action", None) in {"update", "partial_update"}:
+            require_live(instance.delete_time, label=_label(instance), id=instance.pk)
+        return instance
+
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Soft-delete the instance and answer with it."""
+        instance = self.get_object()
+        if instance.delete_time is not None:
+            raise NotFound(f"{_label(instance)} {instance.pk} not found")
+        self._enforce_precondition(request, instance)
+        cast(Any, self).perform_destroy(instance)
+        return self._resource_response(instance)
+
+    def perform_destroy(self, instance: SoftDeleteModelMixin) -> None:
+        """Soft-delete *instance* as the request's actor."""
+        actor = cast(AuditFieldsViewMixin, self).get_audit_user_identifier()
+        instance.soft_delete(actor=actor)
+
+    @action(detail=True, methods=["post"], url_path="undelete", url_name="undelete")
+    def undelete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Restore a soft-deleted instance and answer with it."""
+        instance = self.get_object()
+        if instance.delete_time is None:
+            raise ResourceNotDeleted(_label(instance), instance.pk)
+        self._enforce_precondition(request, instance)
+        actor = cast(AuditFieldsViewMixin, self).get_audit_user_identifier()
+        instance.undelete(actor=actor)
+        return self._resource_response(instance)
+
+    def _enforce_precondition(self, request: Request, instance: Any) -> None:
+        if isinstance(instance, VersionedModelMixin):
+            enforce_version(
+                request,
+                instance,
+                required=self.soft_delete_requires_if_match,
+                codec=cast(ETagCodec | None, getattr(self, "etag_codec", None)),
+            )
+
+    def _resource_response(self, instance: Any) -> Response:
+        headers: dict[str, str] = {}
+        if isinstance(instance, VersionedModelMixin):
+            codec = cast(ETagCodec | None, getattr(self, "etag_codec", None))
+            headers["ETag"] = etag_for(instance, codec=codec)
+        return Response(cast(Any, self).get_serializer(instance).data, headers=headers)
+
+
+def _label(instance: Any) -> str:
+    return str(instance._meta.verbose_name).capitalize()
