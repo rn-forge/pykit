@@ -109,6 +109,13 @@ IDEMPOTENCY = InMemoryIdempotencyStore()
 AUTHORIZER = ScopeAuthorizer()
 
 ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
+PEOPLE: list[dict[str, Any]] = [
+    {"id": "1", "team": "a", "score": 10},
+    {"id": "2", "team": "b", "score": None},
+    {"id": "3", "team": "a", "score": None},
+    {"id": "4", "team": "b", "score": 5},
+    {"id": "5", "team": "a", "score": 10},
+]
 ITEM_VERSION = 7
 PAGE_DEFAULT, PAGE_CAP = 2, 2
 REALM = "conformance"
@@ -240,6 +247,43 @@ def list_items(request: Request) -> Response:
         ),
     )
     return Response(200, page.as_body())
+
+
+def list_people(request: Request) -> Response:
+    """Several `orderBy` terms: nulls last, the key breaking ties, one token value per term."""
+    order = parse_order_by(request.query("orderBy"), allowed=["id", "team", "score"])
+    keys = [(t.field, t.descending) for t in order]
+    if not any(field == "id" for field, _ in keys):
+        keys.append(("id", keys[-1][1] if keys else False))
+    rows = list(PEOPLE)
+    for field, descending in reversed(keys):  # stable passes, last term first
+        present = [r for r in rows if r[field] is not None]
+        present.sort(key=lambda r: r[field], reverse=descending)
+        rows = present + [r for r in rows if r[field] is None]
+
+    raw_size = request.query("pageSize")
+    size = clamp_page_size(
+        int(raw_size) if raw_size and raw_size.isdigit() else None,
+        default=5,
+        cap=5,
+    )
+    start = 0
+    if (token := request.query("pageToken")) is not None:
+        cursor = decode_cursor(token)
+        check_cursor_order(cursor, order)
+        start = next(i + 1 for i, r in enumerate(rows) if r["id"] == cursor.entity_id)
+
+    window = rows[start : start + size]
+    next_token = (
+        encode_cursor(
+            tuple(window[-1][t.field] for t in order),
+            str(window[-1]["id"]),
+            format_order_by(order),
+        )
+        if start + size < len(rows)
+        else None
+    )
+    return Response(200, Page(items=window, next_page_token=next_token).as_body())
 
 
 def create_charge(request: Request) -> Response:
@@ -579,6 +623,7 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/documents/1"): get_document,
     ("PATCH", "/conformance/documents/1"): patch_document,
     ("GET", "/conformance/items"): list_items,
+    ("GET", "/conformance/people"): list_people,
     ("POST", "/conformance/charges"): create_charge,
     ("GET", "/conformance/readyz"): readyz,
     ("GET", "/conformance/livez"): livez,

@@ -171,7 +171,6 @@ field name on the wire, optionally followed by `asc` (the default) or `desc`.
 - **A list sorts by one field.** More than one comma-separated term is 400,
   never ignored, because the page token holds one sort value. AIP-132 allows
   several; this convention does not yet.
-  — `pagination.order-by-two-fields-is-400`
 - **An endpoint lists the fields it can sort by.** An unlisted or malformed
   term is 400, never ignored.
   — `pagination.order-by-unlisted-field-is-400`

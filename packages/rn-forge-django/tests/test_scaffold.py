@@ -69,10 +69,19 @@ def reset_rows():
     Path("scaffold.sqlite3").unlink(missing_ok=True)
     with connection.schema_editor() as editor:
         editor.create_model(service._ConformanceItem)
+        editor.create_model(service._ConformancePerson)
         editor.create_model(service._Order)
         editor.create_model(service._ConformanceDocument)
     for pk in ("1", "2", "3"):
         service._ConformanceItem.objects.create(pk=pk)
+    for pk, team, score in [
+        ("1", "a", 10),
+        ("2", "b", None),
+        ("3", "a", None),
+        ("4", "b", 5),
+        ("5", "a", 10),
+    ]:
+        service._ConformancePerson.objects.create(pk=pk, team=team, score=score)
     service._Order.objects.create(pk="1", name="widget")
     service._ConformanceDocument.objects.create(
         pk="1",

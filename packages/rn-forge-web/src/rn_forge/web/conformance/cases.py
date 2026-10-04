@@ -47,6 +47,8 @@ _ORDER_ID_DESC: Final = "id desc"
 _MERGE: Final = {"Content-Type": MERGE_PATCH_MEDIA_TYPE}
 _DOCUMENT_PATH: Final = "/conformance/documents/1"
 _ITEMS_PATH: Final = "/conformance/items"
+_PEOPLE_PATH: Final = "/conformance/people"
+_ORDER_TEAM_SCORE_DESC: Final = "team,score desc"
 _ITEM_PATH: Final = "/conformance/items/1"
 _ITEM_ETAG: Final = 'W/"1:7"'
 _CHARGES_PATH: Final = "/conformance/charges"
@@ -99,6 +101,23 @@ two servers running the same codec over the same keyset it is deterministic,
 and two stacks that emit different tokens for the same page have diverged in a
 way no client-visible field would show.
 """
+
+COMPOSITE_PAGE_1_TOKEN: Final = encode_cursor(("a", 10), "1", _ORDER_TEAM_SCORE_DESC)
+COMPOSITE_PAGE_2_TOKEN: Final = encode_cursor(("b", 5), "4", _ORDER_TEAM_SCORE_DESC)
+COMPOSITE_NULL_TOKEN: Final = encode_cursor(("a", None), "3", _ORDER_TEAM_SCORE_DESC)
+
+_PEOPLE: Final = {
+    1: ("a", 10),
+    2: ("b", None),
+    3: ("a", None),
+    4: ("b", 5),
+    5: ("a", 10),
+}
+
+
+def _people(*ids: int) -> list[dict[str, object]]:
+    """The ``/conformance/people`` items with these ids, in this order."""
+    return [{"id": str(i), "team": _PEOPLE[i][0], "score": _PEOPLE[i][1]} for i in ids]
 
 
 CASES: Final[tuple[ConformanceCase, ...]] = (
@@ -317,15 +336,113 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body=_problem_body(BAD_REQUEST, "Cannot order by 'secret'; allowed: id"),
     ),
     ConformanceCase(
-        id="pagination.order-by-two-fields-is-400",
+        id="pagination.order-by-several-fields-sorts-by-each-in-turn",
         area="pagination",
         description=(
-            "A list sorts by one field; a second term is a 400, never silently ignored."
+            "AIP-132: orderBy is a comma-separated list; each term breaks the "
+            "ties of the one before, with its own direction."
         ),
-        request=RequestSpec("GET", _ITEMS_PATH, query={"orderBy": "id desc,id"}),
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={"orderBy": _ORDER_TEAM_SCORE_DESC, "pageSize": "5"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1, 3, 4, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.nulls-sort-last-ascending",
+        area="pagination",
+        description="Rows whose value is null come after those that have one, ascending.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "score"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(4, 1, 5, 2, 3), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.nulls-sort-last-descending",
+        area="pagination",
+        description="Rows whose value is null come after those that have one, descending too.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "score desc"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1, 4, 3, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.first-page-carries-a-composite-token",
+        area="pagination",
+        description=(
+            "The token holds one sort value per orderBy term, so the next page "
+            "can resume from the whole order."
+        ),
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={"orderBy": _ORDER_TEAM_SCORE_DESC, "pageSize": "2"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1), "nextPageToken": COMPOSITE_PAGE_1_TOKEN},
+    ),
+    ConformanceCase(
+        id="pagination.composite-token-resumes-within-a-tie",
+        area="pagination",
+        description="Rows tied on every term but the key are neither skipped nor repeated.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageSize": "2",
+                "pageToken": COMPOSITE_PAGE_1_TOKEN,
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(3, 4), "nextPageToken": COMPOSITE_PAGE_2_TOKEN},
+    ),
+    ConformanceCase(
+        id="pagination.composite-token-resumes-after-a-null",
+        area="pagination",
+        description="A token whose last value is null resumes among the rows that are null there.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageSize": "3",
+                "pageToken": COMPOSITE_NULL_TOKEN,
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(4, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.repeated-order-by-field-is-400",
+        area="pagination",
+        description="A field named twice in orderBy is a 400, never silently ignored.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "team,team desc"}),
         expect_status=400,
         expect_headers=_PROBLEM,
-        expect_body=_problem_body(BAD_REQUEST, "orderBy names 'id' more than once"),
+        expect_body=_problem_body(BAD_REQUEST, "orderBy names 'team' more than once"),
+    ),
+    ConformanceCase(
+        id="pagination.token-with-the-wrong-number-of-values-is-400",
+        area="pagination",
+        description="A token with fewer values than orderBy has terms is rejected as malformed.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageToken": encode_cursor(("a",), "1", _ORDER_TEAM_SCORE_DESC),
+            },
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "Malformed page token"),
     ),
     ConformanceCase(
         id="pagination.token-under-a-different-order-by-is-400",
