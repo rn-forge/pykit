@@ -91,7 +91,7 @@ def build_app(engine: AsyncEngine) -> FastApiApp:
             rows = (await session.scalars(stmt.limit(size + 1))).all()
         window = rows[:size]
         token = (
-            next_page_token(window[-1].id, window[-1].id, order)
+            next_page_token([window[-1].id] * len(order), window[-1].id, order)
             if len(rows) > size
             else None
         )

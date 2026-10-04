@@ -90,8 +90,8 @@ def _document(**changes: object) -> dict[str, object]:
     }
 
 
-PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2")
-ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2", _ORDER_ID_DESC)
+PAGE_1_NEXT_TOKEN: Final = encode_cursor((), "2")
+ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor(("2",), "2", _ORDER_ID_DESC)
 """The token page one must return.
 
 Asserted **exactly**, not redacted. A token is opaque to a *client*; between
@@ -325,7 +325,7 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         request=RequestSpec("GET", _ITEMS_PATH, query={"orderBy": "id desc,id"}),
         expect_status=400,
         expect_headers=_PROBLEM,
-        expect_body=_problem_body(BAD_REQUEST, "orderBy accepts one field; got 2"),
+        expect_body=_problem_body(BAD_REQUEST, "orderBy names 'id' more than once"),
     ),
     ConformanceCase(
         id="pagination.token-under-a-different-order-by-is-400",

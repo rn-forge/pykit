@@ -36,10 +36,9 @@ def keyset[T: Select[Any]](
     """Order *stmt* by the ``orderBy`` term and resume after *cursor*.
 
     Rows are ordered by the term's column, then *id_column*, both in that
-    term's direction. :func:`rn_forge.web.parse_order_by` yields at most one
-    term, because the token holds one sort value. The term's column need not be unique, since the id
+    term's direction. The term's column need not be unique, since the id
     breaks ties, but it must be non-null. With no terms the order is *id_column*
-    ascending and the token's sort key is the id.
+    ascending and the token's sort values are empty.
 
     Fetch ``page_size + 1`` rows from the result to learn whether another page
     exists.
@@ -64,7 +63,7 @@ def keyset[T: Select[Any]](
         if not terms:
             stmt = stmt.where(id_column > after_id)
         else:
-            after = _from_wire(sort, cursor.sort_key)
+            after = _from_wire(sort, str(cursor.sort_keys[0]))
             beyond = sort < after if descending else sort > after
             tie = id_column < after_id if descending else id_column > after_id
             stmt = stmt.where(or_(beyond, and_(sort == after, tie)))
@@ -75,15 +74,17 @@ def keyset[T: Select[Any]](
 
 
 def next_page_token(
-    sort_value: object, entity_id: object, terms: Sequence[OrderField]
+    row_values: Sequence[object], entity_id: object, terms: Sequence[OrderField]
 ) -> str:
     """Encode the token that resumes after the row with these values.
 
-    *sort_value* is the last row's value in the term's column (its id
-    when *terms* is empty). Pass the same *terms* given to :func:`keyset`.
+    *row_values* is the last row's value in each term's column, one per term
+    (empty when *terms* is empty). Pass the same *terms* given to :func:`keyset`.
     """
     return encode_cursor(
-        _to_wire(sort_value), _to_wire(entity_id), format_order_by(terms)
+        tuple(_to_wire(v) for v in row_values),
+        _to_wire(entity_id),
+        format_order_by(terms),
     )
 
 

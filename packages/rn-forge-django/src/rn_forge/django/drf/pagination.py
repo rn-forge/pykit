@@ -51,7 +51,7 @@ class OrderByFilter(drf_filters.OrderingFilter):
     List it in the view's ``filter_backends``; :class:`CursorPagination`
     then pages in that order. ``ordering_fields`` holds the model's
     ``snake_case`` names. An unlisted or malformed term raises
-    :class:`rn_forge.web.InvalidOrderBy`, as does more than one term.
+    :class:`rn_forge.web.InvalidOrderBy`, as does a repeated field.
     """
 
     ordering_param = ORDER_BY_PARAM
@@ -135,6 +135,9 @@ class CursorPagination(drf_pagination.CursorPagination):
         token = self._decode_token(request, terms)
 
         sort = requested[0]
+        after_value = (
+            None if token is None else token.sort_keys[0] if terms else token.entity_id
+        )
         field, descending = sort.lstrip("-"), sort.startswith("-")
         unique = field in ("pk", queryset.model._meta.pk.name)
         tie_breaker = "-pk" if descending else "pk"
@@ -142,9 +145,9 @@ class CursorPagination(drf_pagination.CursorPagination):
         queryset = queryset.order_by(*self.ordering)
         if token is not None:
             beyond = "lt" if descending else "gt"
-            after = Q(**{f"{field}__{beyond}": token.sort_key})
+            after = Q(**{f"{field}__{beyond}": after_value})
             if not unique:
-                after |= Q(**{field: token.sort_key, f"pk__{beyond}": token.entity_id})
+                after |= Q(**{field: after_value, f"pk__{beyond}": token.entity_id})
             try:
                 queryset = queryset.filter(after)
             except (ValueError, TypeError, DjangoValidationError) as exc:
@@ -174,7 +177,8 @@ class CursorPagination(drf_pagination.CursorPagination):
             if isinstance(last, Mapping)
             else getattr(last, "pk", position)
         )
-        return encode_cursor(position, str(entity_id), self._order_by)
+        sort_keys = (position,) if self._order_by else ()
+        return encode_cursor(sort_keys, str(entity_id), self._order_by)
 
     @override
     def get_paginated_response(self, data: Any) -> Response:

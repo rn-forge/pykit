@@ -24,7 +24,10 @@ def build_app():
     @app.get("/items")
     async def items(params=Depends(page_params(cap=50, default=20))):
         size, cursor = params
-        return {"size": size, "cursor": cursor and [cursor.sort_key, cursor.entity_id]}
+        return {
+            "size": size,
+            "cursor": cursor and [*cursor.sort_keys, cursor.entity_id],
+        }
 
     @app.post("/charges")
     async def charges(key: str = Depends(require_idempotency_key())):
@@ -78,7 +81,7 @@ def test_page_size_is_clamped_never_rejected(client, query, expected):
 
 
 def test_a_page_token_is_decoded(client):
-    token = encode_cursor("2026-01-01", "17")
+    token = encode_cursor(("2026-01-01",), "17")
     response = client.get("/items", params={"pageToken": token})
     assert_that(response.json()["cursor"]).is_equal_to(["2026-01-01", "17"])
 

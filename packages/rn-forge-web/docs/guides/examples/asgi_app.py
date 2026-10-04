@@ -230,7 +230,11 @@ def list_items(request: Request) -> Response:
     page = Page(
         items=window,
         next_page_token=(
-            encode_cursor(window[-1]["id"], window[-1]["id"], format_order_by(order))
+            encode_cursor(
+                (window[-1]["id"],) if order else (),
+                window[-1]["id"],
+                format_order_by(order),
+            )
             if has_more
             else None
         ),

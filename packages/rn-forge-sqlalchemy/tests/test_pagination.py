@@ -52,8 +52,8 @@ async def _walk(session, terms, size=2):
         if len(rows) <= size:
             return seen
         last = page[-1]
-        value = getattr(last, terms[0].field) if terms else last.id
-        cursor = decode_cursor(next_page_token(value, last.id, terms))
+        values = [getattr(last, t.field) for t in terms]
+        cursor = decode_cursor(next_page_token(values, last.id, terms))
 
 
 @pytest.mark.parametrize(
@@ -90,16 +90,16 @@ async def test_ties_on_the_sort_column_break_on_the_id(session):
 
 
 def test_the_token_writes_a_datetime_as_iso_and_the_order_by_canonically():
-    token = next_page_token(T0, 5, (OrderField("due", descending=True),))
+    token = next_page_token([T0], 5, (OrderField("due", descending=True),))
 
     assert_that(decode_cursor(token)).is_equal_to(
-        Cursor(T0.isoformat(), "5", "due desc")
+        Cursor((T0.isoformat(),), "5", "due desc")
     )
 
 
 @pytest.mark.asyncio
 async def test_a_token_for_another_order_by_is_invalid_cursor(session):
-    cursor = Cursor("1", "1", "title")
+    cursor = Cursor(("1",), "1", "title")
     query = select(Task)
 
     with pytest.raises(InvalidCursor):
@@ -114,7 +114,7 @@ async def test_a_token_for_another_order_by_is_invalid_cursor(session):
 
 @pytest.mark.asyncio
 async def test_a_token_value_that_does_not_fit_the_column_is_invalid_cursor():
-    cursor = Cursor("not-a-date", "1", "due")
+    cursor = Cursor(("not-a-date",), "1", "due")
     query = select(Task)
     terms = (OrderField("due"),)
 
@@ -129,4 +129,4 @@ async def test_a_token_value_that_does_not_fit_the_column_is_invalid_cursor():
 
 
 def test_encode_cursor_round_trip_is_what_keyset_reads():
-    assert_that(next_page_token("a", 1, ())).is_equal_to(encode_cursor("a", "1"))
+    assert_that(next_page_token((), 1, ())).is_equal_to(encode_cursor((), "1"))

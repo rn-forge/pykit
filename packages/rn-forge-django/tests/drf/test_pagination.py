@@ -127,14 +127,14 @@ class TestCursorEnvelope:
         body = _page(paginator, _request(pageSize="2"))
         assert body == {
             "items": [{"id": 1}, {"id": 2}],
-            "nextPageToken": encode_cursor("2", "2"),
+            "nextPageToken": encode_cursor((), "2"),
         }
         assert "totalSize" not in body
 
     def test_token_decodes_with_the_shared_codec(self, rows) -> None:
         body = _page(CursorPagination(), _request(pageSize="2"))
         cursor = decode_cursor(body["nextPageToken"])
-        assert (cursor.sort_key, cursor.entity_id) == ("2", "2")
+        assert (cursor.sort_keys, cursor.entity_id) == ((), "2")
 
     def test_pages_walk_to_a_null_token(self, rows) -> None:
         seen: list[int] = []
@@ -232,7 +232,7 @@ class TestNonUniqueSortField:
         assert self._walk("label desc", page_size) == [8, 7, 6, 3, 2, 1, 5, 4]
 
     def test_token_value_that_does_not_fit_the_field_is_rejected(self, tied):
-        token = encode_cursor("not-a-number", "1", "id")
+        token = encode_cursor(("not-a-number",), "1", "id")
         paginator = CursorPagination()
         queryset = _PagedRow.objects.all()
         request = _request(orderBy="id", pageToken=token)

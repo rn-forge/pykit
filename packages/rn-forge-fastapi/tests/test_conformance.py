@@ -295,7 +295,11 @@ def build_app(*, failing: str | None) -> FastAPI:
         window = rows[start : start + size]
         more = start + size < len(rows)
         token = (
-            encode_cursor(window[-1]["id"], window[-1]["id"], format_order_by(order))
+            encode_cursor(
+                (window[-1]["id"],) if order else (),
+                window[-1]["id"],
+                format_order_by(order),
+            )
             if more
             else None
         )
