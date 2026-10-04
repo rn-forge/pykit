@@ -20,7 +20,7 @@ Wire features that the API conventions describe but no package implements, or on
 | Feature | Epic | State |
 | --- | --- | --- |
 | [F12.12](../../specs/epics/E12-http-contract-extensions/F12.12-requestutils-name-collision.md) | E12 | Closed |
-| [F12.14](../../specs/epics/E12-http-contract-extensions/F12.14-merge-patch.md) | E12 | Active |
+| [F12.14](../../specs/epics/E12-http-contract-extensions/F12.14-merge-patch.md) | E12 | Closed |
 | [F12.15](../../specs/epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md) | E12 | New |
 | [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | Closed |
 <!-- scope:end -->
@@ -39,7 +39,7 @@ All in `rn-forge-django`; pykit has no live consumers, so no deprecation window 
 
 ## Progress
 
-Started 2026-10-04. F12.12 and F12.16 are closed; F12.14 is active.
+Started 2026-10-04. F12.12, F12.14 and F12.16 are closed.
 
 ## Commits
 

@@ -105,6 +105,35 @@ paginated component its own way too, `PaginatedOrderOutList`.
 `Query(le=...)` alongside `page_params`; that is a 422 and a specification
 violation.
 
+## Merge patch
+
+`merge_patch_body()` checks the media type and returns the raw body; `merge_into` parses it,
+merges it into the current resource and validates the result against the model.
+`merge_patch_openapi()` declares the request body. Declare `merge_patch_body()` before the
+`If-Match` dependency, so the media type answers first (415), and call `check_precondition`
+before `merge_into`, so a stale request is 412 whatever the body says.
+
+```python
+from fastapi import Depends, Header
+
+from rn_forge.fastapi import merge_into, merge_patch_body, merge_patch_openapi
+from rn_forge.web import check_precondition
+
+
+@router.patch("/documents/{doc_id}", openapi_extra=merge_patch_openapi())
+async def documents_update(
+    doc_id: str,
+    body: bytes = Depends(merge_patch_body()),
+    if_match: str | None = Header(default=None),
+) -> DocumentOut:
+    document = await repo.get(doc_id)
+    check_precondition(if_match, current_version=document.version, entity_id=doc_id)
+    return merge_into(DocumentOut, document, body)
+```
+
+Use `require_if_match()` in place of the optional header to make it required (428). A `null` on
+a non-nullable field is a 422 that reads `This field may not be null.`
+
 ## Security headers
 
 `FastApiApp` installs the OWASP REST Security Cheat Sheet response headers by

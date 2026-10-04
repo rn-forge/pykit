@@ -26,6 +26,39 @@ the authenticated user's email (`"anonymous"` when unauthenticated) on `perform_
 `ModelFilterViewMixin` adds default `filterset_fields` for `id`, `status`, and the audit
 columns, plus an opt-in `?active=true` filter for models extending `DateRangeModel`.
 
+## Merge patch
+
+`BaseModelViewSet` includes `MergePatchMixin`: its `PATCH` takes `application/merge-patch+json`
+(RFC 7396) and answers any other media type with 415 and `Accept-Patch`. `PUT` and `POST` still
+take `application/json`. The merged document is validated as a full update. See the API
+conventions, section 10, in `rn-forge-web` for the request order and the `null` rule.
+
+A versioned model (`VersionedModelMixin`) checks `If-Match`, and `retrieve` and `PATCH` answer with
+an `ETag`. Set `etag_codec`, and `merge_patch_requires_if_match = True` to make the header
+required (428 when absent).
+
+```python
+from rn_forge.django.drf.views import BaseModelViewSet
+from rn_forge.web import EntityVersionETagCodec
+
+
+class DocumentViewSet(BaseModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    etag_codec = EntityVersionETagCodec()
+    merge_patch_requires_if_match = True
+```
+
+```http
+PATCH /documents/1
+Content-Type: application/merge-patch+json
+If-Match: W/"1:1"
+
+{"settings": {"size": null}, "note": null}
+```
+
+A view outside `BaseModelViewSet` adds `MergePatchMixin` from `rn_forge.django.drf`.
+
 ## Export, import and batch operations
 
 Tabular export and import, and batch create and delete, are in

@@ -70,9 +70,17 @@ def reset_rows():
     with connection.schema_editor() as editor:
         editor.create_model(service._ConformanceItem)
         editor.create_model(service._Order)
+        editor.create_model(service._ConformanceDocument)
     for pk in ("1", "2", "3"):
         service._ConformanceItem.objects.create(pk=pk)
     service._Order.objects.create(pk="1", name="widget")
+    service._ConformanceDocument.objects.create(
+        pk="1",
+        name="widget",
+        note="fragile",
+        tags=["a", "b"],
+        settings={"color": "red", "size": "L"},
+    )
     connection.close()
     cache.clear()
 

@@ -392,6 +392,54 @@ not adopted). A `DELETE` on an already-absent resource is
 404, not 204 — an idempotent *outcome* is not the same as a silent one, and a
 client that deleted something twice usually wants to know.
 
+### Merge patch
+
+The body of a merge patch is a partial copy of the resource: a member that is present sets the
+field, an absent member leaves it alone, objects merge recursively and an array is replaced
+whole. The merge runs on the representation the client would read, and the merged document is
+validated as a full update, so a patch never bypasses the serializer or the model. The shared
+implementation is `rn_forge.web.merge_patch`; each adapter only binds it.
+
+Every stack evaluates a merge-patch request in this order, and the first failure answers:
+
+| Step | Failure | Status |
+| --- | --- | --- |
+| 1. Media type is `application/merge-patch+json` | `UnsupportedMediaType`, with `Accept-Patch` | 415 |
+| 2. Precondition (`If-Match`), when the resource is versioned | absent and required / malformed / stale | 428 / 400 / 412 |
+| 3. Body is a JSON object | `InvalidMergePatch` | 422 |
+| 4. Merged document validates | field errors with pointers | 422 |
+
+The media type comes first because a body in the wrong language has no meaning to check. The
+precondition comes before the body, so a stale request is 412 whatever it says, and nothing is
+written.
+
+- A `PATCH` with another media type, `application/json` included, is **415** with `Accept-Patch:
+  application/merge-patch+json`. — `patch.json-content-type-is-415`
+- A stale `If-Match` is **412**, and nothing is written. — `patch.stale-if-match-is-412`,
+  `patch.failed-precondition-changes-nothing`
+- A body that is not a JSON object is **422** with detail `A merge patch must be a JSON object.`
+  — `patch.non-object-body-is-422`
+- A merged document that fails validation is **422** with a pointer per field.
+
+**`null` at the top level.** A resource has a fixed set of fields, and a field cannot be absent
+from it, so a `null` member that names a field sets that field to `null`. A nullable field stores
+`null`. — `patch.null-sets-a-nullable-field-to-null`. A non-nullable field fails validation: 422,
+pointer at the field, detail `This field may not be null.` (`NULL_FIELD_DETAIL`).
+— `patch.null-on-a-non-nullable-field-is-422`. Inside a JSON-valued field RFC 7396 applies
+unchanged: `null` removes the member. — `patch.null-inside-a-json-value-removes-the-member`
+
+**Nested objects and arrays.** Objects merge member by member and keep what the patch does not
+name. — `patch.nested-merge-keeps-absent-members`. An array is replaced whole.
+— `patch.array-is-replaced-whole`
+
+**Ignored members.** A member naming a read-only or server-owned field (`id`, `version`, an audit
+field) or a field the resource does not have changes nothing, and the rest of the patch applies,
+so a client can send back a whole representation it read. — `patch.read-only-members-are-ignored`
+
+**Media type per method.** Only `PATCH` accepts `application/merge-patch+json`, and a merge-patch
+route's `PATCH` accepts nothing else. `PUT` and `POST` keep `application/json`. A route opts in:
+`BaseModelViewSet` on Django, `merge_patch_body()` on FastAPI.
+
 ## 11. Request body size
 
 RFC 9110 §15.5.14: a body over the configured limit is **413** —
