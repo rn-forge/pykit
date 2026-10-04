@@ -8,7 +8,8 @@ from rn_forge.django.drf.utils import (
     PermissionAwareUser,
     RequestUtils,
 )
-from rn_forge.django.drf.views import EnumChoicesAPIView
+from rn_forge.django.drf.casing import MergePatchParser
+from rn_forge.django.drf.views import EnumChoicesAPIView, MergePatchMixin
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore, idempotent
 from rn_forge.django.drf.pagination import (
@@ -24,6 +25,8 @@ __all__ = [
     "EnumChoicesAPIView",
     "OrderByFilter",
     "LegacyPageNumberPagination",
+    "MergePatchMixin",
+    "MergePatchParser",
     "PermissionAwareUser",
     "RequestUtils",
     "drf_exception_handler",

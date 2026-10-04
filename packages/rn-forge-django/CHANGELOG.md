@@ -4,6 +4,13 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `BaseModelViewSet`'s `PATCH` now takes `application/merge-patch+json` (RFC 7396) and answers `application/json` with 415 and `Accept-Patch`. `PUT` and `POST` still take `application/json`.
+  - The merged document is validated as a full update; a top-level `null` sets the field to `null`, and read-only or unknown members are ignored.
+  - A versioned instance enforces `If-Match` on `PATCH`, and `retrieve` and `PATCH` answer with an `ETag`.
+  - New: `MergePatchMixin` and `MergePatchParser`, exported from `rn_forge.django.drf`.
+
 ### Removed
 
 - **Breaking:** `rn_forge.django.utils.RequestUtils` and the DRF `RequestUtils` aliases are gone, so `RequestUtils` names only the DRF class.

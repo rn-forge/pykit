@@ -1,6 +1,7 @@
 from rn_forge.django.drf.views.mixins import (
     AuditFieldsViewMixin,
     ExceptionContextViewMixin,
+    MergePatchMixin,
     ModelFilterViewMixin,
     PermissionByMethodMixin,
     RequestAccessViewMixin,
@@ -14,6 +15,7 @@ __all__ = [
     "AuditFieldsViewMixin",
     "EnumChoicesAPIView",
     "ExceptionContextViewMixin",
+    "MergePatchMixin",
     "ModelFilterViewMixin",
     "PermissionByMethodMixin",
     "RequestAccessViewMixin",

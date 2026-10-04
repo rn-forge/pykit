@@ -62,9 +62,7 @@ def debug_request(request: HttpRequest) -> dict[str, Any]:
     meta = dict(cast(Mapping[str, object], cast(Any, request).META))
     headers = {
         str(key): str(value)
-        for key, value in cast(
-            _HttpHeadersProtocol, cast(Any, request).headers
-        ).items()
+        for key, value in cast(_HttpHeadersProtocol, cast(Any, request).headers).items()
     }
     return {
         "path": request.path,

@@ -10,9 +10,13 @@ from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.generics import GenericAPIView
+from rest_framework.parsers import BaseParser
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
+from rn_forge.django.drf.casing import MergePatchParser
+from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf._typing import (
     CreateModelMixinProtocol,
     GenericAPIViewProtocol,
@@ -22,10 +26,19 @@ from rn_forge.django.drf._typing import (
     UpdateModelMixinProtocol,
 )
 from rn_forge.django.models import DateRangeModel
+from rn_forge.django.models.concurrency import VersionedModelMixin
+from rn_forge.web import (
+    MERGE_PATCH_MEDIA_TYPE,
+    ETagCodec,
+    UnsupportedMediaType,
+    merge_representation,
+    require_patch_object,
+)
 
 __all__ = [
     "AuditFieldsViewMixin",
     "ExceptionContextViewMixin",
+    "MergePatchMixin",
     "ModelFilterViewMixin",
     "PermissionByMethodMixin",
     "RequestAccessViewMixin",
@@ -209,3 +222,85 @@ class AuditFieldsViewMixin(RequestAccessViewMixin):
             "Preparing update audit fields: actor={}", self.get_audit_user_identifier()
         )
         cast(UpdateModelMixinProtocol, super()).perform_update(serializer)
+
+
+# ---------------------------------------------------------------------------
+# JSON Merge Patch
+# ---------------------------------------------------------------------------
+
+
+class MergePatchMixin(GenericAPIView):
+    """``PATCH`` as an RFC 7396 JSON Merge Patch, for a viewset's ``partial_update``.
+
+    ``PATCH`` accepts only ``application/merge-patch+json``; any other media
+    type is a 415. ``PUT`` and ``POST`` keep the view's own parsers. The
+    current representation is merged with the patch and the result validated
+    as a full update.
+    A top-level ``null`` sets that field to ``null``; read-only and unknown
+    members are ignored.
+
+    When the instance is a :class:`~rn_forge.django.models.VersionedModelMixin`,
+    ``If-Match`` is enforced and ``retrieve`` and ``PATCH`` answer with an ``ETag``.
+
+    Attributes:
+        merge_patch_requires_if_match: When ``True``, a versioned ``PATCH``
+            without a precondition is a 428.
+        etag_codec: The validator format; ``None`` uses
+            :class:`rn_forge.web.VersionETagCodec`.
+    """
+
+    merge_patch_requires_if_match: ClassVar[bool] = False
+    etag_codec: ClassVar[ETagCodec | None] = None
+
+    @override
+    def get_parsers(self) -> list[BaseParser]:
+        # DRF builds the request (and so the parsers) before a view's own `request` is set.
+        method = getattr(getattr(self, "request", None), "method", None)
+        if str(method).upper() == "PATCH":
+            return [MergePatchParser()]
+        return cast(list[BaseParser], super().get_parsers())
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return the instance, with an ``ETag`` when it is versioned."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, headers=self._etag_headers(instance))
+
+    def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Apply a merge patch.
+
+        Raises:
+            rn_forge.web.UnsupportedMediaType: The media type is not
+                ``application/merge-patch+json`` (415).
+            rn_forge.web.PreconditionRequired: A required ``If-Match`` is
+                missing (428).
+            rn_forge.web.MalformedPrecondition: ``If-Match`` is unparseable (400).
+            rn_forge.web.VersionConflict: ``If-Match`` is stale (412).
+            rn_forge.web.InvalidMergePatch: The body is not a JSON object (422).
+            rest_framework.exceptions.ValidationError: The merged document is
+                invalid (422).
+        """
+        media_type = str(request.content_type).split(";", 1)[0].strip().lower()
+        if media_type != MERGE_PATCH_MEDIA_TYPE:
+            raise UnsupportedMediaType()
+        instance = self.get_object()
+        if isinstance(instance, VersionedModelMixin):
+            enforce_version(
+                request,
+                instance,
+                required=self.merge_patch_requires_if_match,
+                codec=self.etag_codec,
+            )
+        patch = require_patch_object(cast(object, request.data))  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data partially untyped
+        current = cast(Mapping[str, Any], self.get_serializer(instance).data)
+        serializer = self.get_serializer(
+            instance, data=merge_representation(current, patch)
+        )
+        serializer.is_valid(raise_exception=True)
+        cast(UpdateModelMixinProtocol, self).perform_update(serializer)
+        return Response(serializer.data, headers=self._etag_headers(instance))
+
+    def _etag_headers(self, instance: object) -> dict[str, str]:
+        if not isinstance(instance, VersionedModelMixin):
+            return {}
+        return {"ETag": etag_for(instance, codec=self.etag_codec)}
