@@ -28,6 +28,8 @@ __all__ = [
     "PermissionDenied",
     "PreconditionRequired",
     "RemoteProblem",
+    "ResourceDeleted",
+    "ResourceNotDeleted",
     "RowsInvalid",
     "ServiceUnavailable",
     "TooManyRequests",
@@ -48,6 +50,34 @@ class WebError(AppException):
 
 class DomainConflict(WebError):
     """The request conflicts with the current state of the resource (409)."""
+
+
+class ResourceDeleted(DomainConflict):
+    """The resource is soft-deleted and cannot be written (409).
+
+    Args:
+        label: The resource's display name, such as ``Note``.
+        id: The resource identifier.
+
+    The message is ``{label} {id} is deleted``.
+    """
+
+    def __init__(self, label: str, id: object, **error_data: Any) -> None:
+        super().__init__("{} {} is deleted", label, id, **error_data)
+
+
+class ResourceNotDeleted(DomainConflict):
+    """The resource is live and cannot be undeleted (409).
+
+    Args:
+        label: The resource's display name, such as ``Note``.
+        id: The resource identifier.
+
+    The message is ``{label} {id} is not deleted``.
+    """
+
+    def __init__(self, label: str, id: object, **error_data: Any) -> None:
+        super().__init__("{} {} is not deleted", label, id, **error_data)
 
 
 class _PointedError(WebError):

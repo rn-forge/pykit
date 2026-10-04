@@ -33,6 +33,7 @@ type ConformanceArea = Literal[
     "operations",
     "patch",
     "read-mask",
+    "soft-delete",
 ]
 """Areas covered by the conformance suite."""
 

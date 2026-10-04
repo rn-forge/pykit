@@ -79,6 +79,10 @@ from rn_forge.web.read_mask import (
     ReadMask,
     parse_read_mask,
 )
+from rn_forge.web.soft_delete import (
+    SHOW_DELETED_PARAM,
+    require_live,
+)
 from rn_forge.web.tracing import (
     EXPOSED_HEADERS,
     TRACE_ID_KEY,
@@ -102,6 +106,8 @@ from rn_forge.web.exceptions import (
     PermissionDenied,
     PreconditionRequired,
     RemoteProblem,
+    ResourceDeleted,
+    ResourceNotDeleted,
     RowsInvalid,
     ServiceUnavailable,
     TooManyRequests,
@@ -234,6 +240,7 @@ __all__ = [
     "BatchUpdateItem",
     "ImportCounts",
     "SERVICE_UNAVAILABLE",
+    "SHOW_DELETED_PARAM",
     "TOO_MANY_REQUESTS",
     "TRACE_ID_KEY",
     "UNAUTHORIZED",
@@ -293,6 +300,8 @@ __all__ = [
     "Receive",
     "RemoteProblem",
     "RequestSpec",
+    "ResourceDeleted",
+    "ResourceNotDeleted",
     "Requirement",
     "RowError",
     "RowsInvalid",
@@ -311,6 +320,7 @@ __all__ = [
     "api_catalog_body",
     "apply_merge_patch",
     "merge_representation",
+    "require_live",
     "require_patch_object",
     "case_by_id",
     "cases_for",
