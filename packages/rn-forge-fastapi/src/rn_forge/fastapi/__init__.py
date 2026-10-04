@@ -13,6 +13,11 @@ from rn_forge.fastapi.dependencies import (
 from rn_forge.fastapi.deprecation import deprecated
 from rn_forge.fastapi.health import health_router
 from rn_forge.fastapi.idempotency import idempotent
+from rn_forge.fastapi.merge_patch import (
+    merge_into,
+    merge_patch_body,
+    merge_patch_openapi,
+)
 from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.problem import Log, register_problem_handlers
 
@@ -28,6 +33,9 @@ __all__ = [
     "deprecated",
     "health_router",
     "idempotent",
+    "merge_into",
+    "merge_patch_body",
+    "merge_patch_openapi",
     "operation_id",
     "order_by_param",
     "page_params",

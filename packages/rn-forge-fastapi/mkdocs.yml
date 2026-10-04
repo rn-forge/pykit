@@ -55,6 +55,7 @@ nav:
       - Problem: reference/problem.md
       - OpenAPI: reference/openapi.md
       - Dependencies: reference/dependencies.md
+      - Merge patch: reference/merge_patch.md
       - Health: reference/health.md
       - Transfer: reference/transfer.md
       - Auth: reference/auth.md
