@@ -52,6 +52,8 @@ from rn_forge.django.drf.views.base import BaseModelViewSet
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
+    BatchGetMixin,
+    BatchUpdateMixin,
     ResourceExportMixin,
     ResourceImportMixin,
 )
@@ -128,6 +130,39 @@ class _Documents(BaseModelViewSet):
     serializer_class = _DocumentSerializer
     etag_codec = EntityVersionETagCodec()
 
+
+class _ConformanceBook(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    name = models.CharField(max_length=40)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+
+
+class _BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceBook
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
+
+
+class _Books(BatchGetMixin, BatchUpdateMixin, BaseModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceBook.objects.order_by("id")
+    serializer_class = _BookSerializer
+    etag_codec = EntityVersionETagCodec()
+
+
+class _CappedBooks(_Books):
+    def dispatch(self, request, *args, **kwargs):
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            return super().dispatch(request, *args, **kwargs)
+
+
+_books = CustomMethodRouter(trailing_slash=False)
+_books.register("conformance/books", _Books, basename="books")
+_books.register("conformance/capped-books", _CappedBooks, basename="capped-books")
 
 _documents = SimpleRouter(trailing_slash=False)
 _documents.register("conformance/documents", _Documents, basename="documents")
@@ -462,6 +497,7 @@ urlpatterns = [
     path("conformance/orders/count", _OrderCount.as_view()),
     *_orders.urls,
     *_documents.urls,
+    *_books.urls,
     path("conformance/legacy", _Legacy.as_view()),
     path("conformance/stamped", _Stamped.as_view()),
     path("conformance/exports", _StartExport.as_view()),
@@ -510,7 +546,13 @@ WIRING = {
 
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(_ConformanceItem, _ConformancePerson, _Order, _ConformanceDocument)
+    create_tables(
+        _ConformanceItem,
+        _ConformancePerson,
+        _Order,
+        _ConformanceDocument,
+        _ConformanceBook,
+    )
 
 
 @pytest.fixture
@@ -534,6 +576,8 @@ def client():
         tags=["a", "b"],
         settings={"color": "red", "size": "L"},
     )
+    for pk, name in [("1", "alpha"), ("2", "beta"), ("3", "gamma")]:
+        _ConformanceBook.objects.create(pk=pk, name=name)
     with override_settings(**WIRING):
         yield Client(raise_request_exception=False)
 

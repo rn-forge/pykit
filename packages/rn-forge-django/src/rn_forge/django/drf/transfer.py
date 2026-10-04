@@ -1,4 +1,4 @@
-"""Tabular export and import, and batch create and delete, for DRF viewsets.
+"""Tabular export and import, and batch get, create, update and delete, for DRF viewsets.
 
 Requires the ``transfer`` extra. Not re-exported by :mod:`rn_forge.django.drf`.
 Register the viewset with :class:`~rn_forge.django.drf.routers.CustomMethodRouter`
@@ -7,10 +7,11 @@ so the actions are served as ``/orders:import`` and ``/orders:batchCreate``.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar, cast, override
 
 import tablib
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
@@ -25,20 +26,30 @@ from rest_framework.response import Response
 from rn_forge.commons.data.excel import write_xlsx
 from rn_forge.django.drf._typing import action
 from rn_forge.django.drf.views.mixins import AuditFieldsViewMixin
+from rn_forge.django.models.concurrency import VersionedModelMixin
 from rn_forge.django import settings as django_settings
 from rn_forge.web import (
     NON_EMPTY_LIST_DETAIL,
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
     TABULAR_FORMATS,
+    VALIDATION_ERROR,
+    ETagCodec,
     ProblemResponse,
     RowError,
     TabularFormat,
+    VersionETagCodec,
+    batch_get_ids,
+    check_item_precondition,
     content_disposition,
+    default_registry,
     export_cap_problem,
     field_error,
     import_report_body,
+    merge_representation,
+    parse_batch_update,
     parse_flag,
+    render_problem,
     row_cap_problem,
     row_errors_problem,
     unreadable_file_detail,
@@ -48,6 +59,8 @@ from rn_forge.web import (
 __all__ = [
     "BatchCreateMixin",
     "BatchDeleteMixin",
+    "BatchGetMixin",
+    "BatchUpdateMixin",
     "ResourceExportMixin",
     "ResourceImportMixin",
 ]
@@ -342,7 +355,72 @@ class ResourceImportMixin(GenericAPIView):
         return errors
 
 
-class BatchCreateMixin(GenericAPIView):
+class _BatchResourceMixin(GenericAPIView):
+    """The response key shared by the batch mixins that answer with resources.
+
+    Attributes:
+        batch_resource_name: The response key; the model's plural verbose name
+            in camelCase when unset.
+    """
+
+    batch_resource_name: ClassVar[str | None] = None
+
+    def _resource_name(self) -> str:
+        if self.batch_resource_name:
+            return self.batch_resource_name
+        model: Any = cast(Any, self).get_queryset().model
+        first, *rest = str(model._meta.verbose_name_plural).split()
+        return first + "".join(word.title() for word in rest)
+
+    def _find_all(self, ids: Sequence[str]) -> dict[str, Any]:
+        """Return the rows for *ids* within the view's scope, keyed by string pk.
+
+        Raises:
+            rest_framework.exceptions.NotFound: The first id, in request order,
+                that is not in scope.
+        """
+        queryset: Any = cast(Any, self).filter_queryset(cast(Any, self).get_queryset())
+        pk_field: Any = queryset.model._meta.pk
+        coercible: list[str] = []
+        for raw_id in ids:
+            try:
+                pk_field.to_python(raw_id)
+            except DjangoValidationError:
+                continue  # an id the key cannot hold names no row, so it is a 404 below
+            coercible.append(raw_id)
+        found = {str(obj.pk): obj for obj in queryset.filter(pk__in=coercible)}
+        for raw_id in ids:
+            if raw_id not in found:
+                label = str(queryset.model._meta.verbose_name).capitalize()
+                raise NotFound(f"{label} {raw_id} not found")
+        return found
+
+
+class BatchGetMixin(_BatchResourceMixin):
+    """Add ``GET :batchGet?ids=1&ids=2``.
+
+    Ids are matched within ``filter_queryset(get_queryset())`` and serialized
+    with the view's serializer. The response is ``200`` with the resources
+    under the plural resource name, one per requested id in request order. A
+    missing ``ids`` parameter, or more ids than ``transfer.max_rows``, is a 400
+    problem; an id outside the view's scope is a 404 problem naming the id.
+
+    Attributes:
+        batch_resource_name: The response key; the model's plural verbose name
+            in camelCase when unset.
+    """
+
+    @action(detail=False, methods=["get"], url_path="batchGet", url_name="batch-get")
+    def batch_get(self, request: Request) -> HttpResponseBase:
+        ids = batch_get_ids(request.query_params.getlist("ids"), cap=_max_rows())
+        found = self._find_all(ids)
+        serializer: Any = cast(Any, self).get_serializer(
+            [found[i] for i in ids], many=True
+        )
+        return Response({self._resource_name(): serializer.data})
+
+
+class BatchCreateMixin(_BatchResourceMixin):
     """Add ``POST :batchCreate``: ``{"requests": [...]}``, all or nothing.
 
     Each item goes through the view's serializer. The response is ``200`` with
@@ -355,8 +433,6 @@ class BatchCreateMixin(GenericAPIView):
         batch_resource_name: The response key; the model's plural verbose name
             in camelCase when unset.
     """
-
-    batch_resource_name: ClassVar[str | None] = None
 
     def prepare_batch_create_item(self, item: dict[str, Any]) -> dict[str, Any]:
         """Return one request item before serializer validation."""
@@ -407,12 +483,122 @@ class BatchCreateMixin(GenericAPIView):
             serializer.save()
         return Response({self._resource_name(): serializer.data})
 
-    def _resource_name(self) -> str:
-        if self.batch_resource_name:
-            return self.batch_resource_name
-        model: Any = cast(Any, self).get_queryset().model
-        first, *rest = str(model._meta.verbose_name_plural).split()
-        return first + "".join(word.title() for word in rest)
+
+class BatchUpdateMixin(_BatchResourceMixin):
+    """Add ``POST :batchUpdate``: ``{"requests": [{"id", "patch", "ifMatch"}]}``, all or nothing.
+
+    Each item's ``patch`` is an RFC 7396 JSON Merge Patch, merged into the
+    row's current representation and validated through the view's serializer
+    as a full update. ``ifMatch`` is the item's precondition, checked when the
+    row is a :class:`~rn_forge.django.models.VersionedModelMixin`. The response
+    is ``200`` with the updated resources under the plural resource name, in
+    request order.
+
+    A malformed list or item is a 422 problem, an id outside
+    ``filter_queryset(get_queryset())`` a 404, a failed precondition a 428, 400
+    or 412 pointing at ``/requests/<i>/ifMatch``, a failed merged document a
+    422 pointing at ``/requests/<i>/patch/<field>``, and an error string from
+    :meth:`validate_batch_update_item` a 403 pointing at the item. Nothing is
+    persisted on failure.
+
+    Attributes:
+        batch_resource_name: The response key; the model's plural verbose name
+            in camelCase when unset.
+        batch_update_requires_if_match: When ``True``, a versioned item
+            without ``ifMatch`` is a 428.
+        etag_codec: The validator format; ``None`` uses
+            :class:`rn_forge.web.VersionETagCodec`.
+    """
+
+    batch_update_requires_if_match: ClassVar[bool] = False
+    etag_codec: ClassVar[ETagCodec | None] = None
+
+    def validate_batch_update_item(
+        self, instance: Any, data: dict[str, Any]
+    ) -> str | None:
+        """Return an error message for one validated update, or ``None`` when allowed.
+
+        Args:
+            instance: The row before the update.
+            data: The item's validated data.
+        """
+        del instance, data
+        return None
+
+    @action(
+        detail=False, methods=["post"], url_path="batchUpdate", url_name="batch-update"
+    )
+    def batch_update(self, request: Request) -> HttpResponseBase:
+        _list_member(request, "requests")
+        parsed = parse_batch_update(
+            cast(object, request.data),  # pyright: ignore[reportUnknownMemberType]  # DRF stubs leave data partially untyped
+            cap=_max_rows(),
+            instance=request.path,
+        )
+        if isinstance(parsed, ProblemResponse):
+            return _problem_response(parsed)
+        found = self._find_all([item.id for item in parsed])
+
+        codec = self.etag_codec or VersionETagCodec()
+        for item in parsed:
+            instance = found[item.id]
+            if isinstance(instance, VersionedModelMixin):
+                check_item_precondition(
+                    item,
+                    current_version=instance.version,
+                    entity_id=instance.pk,
+                    codec=codec,
+                    required=self.batch_update_requires_if_match,
+                )
+
+        serializers: list[Any] = []
+        failures: list[dict[str, str]] = []
+        for item in parsed:
+            instance = found[item.id]
+            current = cast(
+                "Mapping[str, Any]", cast(Any, self).get_serializer(instance).data
+            )
+            serializer: Any = cast(Any, self).get_serializer(
+                instance, data=merge_representation(current, item.patch)
+            )
+            if not serializer.is_valid():
+                failures.extend(
+                    field_error(
+                        ("requests", item.index, "patch", *e.field.split(".")),
+                        e.message,
+                    )
+                    if e.field
+                    else field_error(("requests", item.index, "patch"), e.message)
+                    for e in _flatten(item.index, serializer.errors)
+                )
+            serializers.append(serializer)
+        if failures:
+            return _problem_response(
+                render_problem(
+                    default_registry(),
+                    ValueError("Validation Error"),
+                    instance=request.path,
+                    problem=VALIDATION_ERROR,
+                    detail="One or more rows are invalid.",
+                    extensions={"errors": failures},
+                )
+            )
+
+        denied: dict[str, list[str]] = {}
+        for item, serializer in zip(parsed, serializers, strict=True):
+            data = cast("dict[str, Any]", serializer.validated_data)
+            if isinstance(self, AuditFieldsViewMixin):
+                self.prepare_update_data(data)
+            message = self.validate_batch_update_item(found[item.id], data)
+            if message is not None:
+                denied[str(item.index)] = [message]
+        if denied:
+            raise PermissionDenied({"requests": denied})
+
+        with transaction.atomic():
+            for serializer in serializers:
+                serializer.save()
+        return Response({self._resource_name(): [s.data for s in serializers]})
 
 
 class BatchDeleteMixin(GenericAPIView):
