@@ -6,6 +6,7 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ### Changed
 
+- **Breaking:** `CursorPagination` and `OrderByFilter` use every `orderBy` term, not the first. `ordering_fields` may name nullable fields and relation paths, `NULL` sorts last in both directions, and the `orderBy` OpenAPI description says it takes a comma-separated list. A view's non-primary-key default `ordering` supplies the terms when the request gives no `orderBy`. Page tokens issued before the change are rejected with 400.
 - **Breaking:** `BaseModelViewSet`'s `PATCH` now takes `application/merge-patch+json` (RFC 7396) and answers `application/json` with 415 and `Accept-Patch`. `PUT` and `POST` still take `application/json`.
   - The merged document is validated as a full update; a top-level `null` sets the field to `null`, and read-only or unknown members are ignored.
   - A versioned instance enforces `If-Match` on `PATCH`, and `retrieve` and `PATCH` answer with an `ETag`.

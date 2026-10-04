@@ -159,8 +159,8 @@ class OrderStore:
         token = None
         if len(found) > size:
             last = window[-1]
-            sort = getattr(last, SORT_ATTRS[terms[0].field]) if terms else last.id
-            token = next_page_token(sort, last.id, terms)
+            values = [getattr(last, SORT_ATTRS[t.field]) for t in terms]
+            token = next_page_token(values, last.id, terms)
         return Page[OrderOut](
             items=[OrderOut.model_validate(o, from_attributes=True) for o in window],
             next_page_token=token,
@@ -170,7 +170,7 @@ class OrderStore:
 The wiring.
 
 ```python
-def build_appdef build_app() -> FastAPI:
+def build_app() -> FastAPI:
     engine = create_async_engine("sqlite+aiosqlite://")
     sessions = async_sessionmaker(engine, expire_on_commit=False)
 

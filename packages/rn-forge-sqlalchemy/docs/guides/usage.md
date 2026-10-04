@@ -65,10 +65,22 @@ rows = (await session.scalars(stmt.limit(page_size + 1))).all()
 page, more = rows[:page_size], len(rows) > page_size
 token = None
 if more:
-    last = page[-1]  # sort value: its column for the orderBy term
-    token = next_page_token(last.name, last.id, order_by)
+    last = page[-1]  # one value per orderBy term, in term order
+    token = next_page_token(
+        [getattr(last, t.field) for t in order_by], last.id, order_by
+    )
 ```
 
-The `orderBy` column need not be unique, because the id breaks ties, but it must
-be non-null. `parse_order_by` accepts one field; a second is a `400`. A token
-issued for another `orderBy` is a `400`.
+`orderBy` is a comma-separated list, so `team, score desc` orders by `team`,
+then by `score` descending, then by the id. The columns need not be unique,
+because the id breaks ties, and they may be nullable: rows whose value is
+`NULL` come last in both directions. A token issued for another `orderBy`, or
+holding a different number of values, is a `400`.
+
+```python
+columns = {"team": Person.team, "score": Person.score, "id": Person.id}
+terms = parse_order_by("team, score desc", allowed=columns)  # score is nullable
+stmt = keyset(
+    select(Person), columns=columns, terms=terms, cursor=cursor, id_column=Person.id
+)
+```

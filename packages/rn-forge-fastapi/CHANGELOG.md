@@ -25,6 +25,7 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
 
 ### Changed
 
+- **Breaking:** `order_by_param` describes `orderBy` as a comma-separated list of fields and names the sortable fields. It described one field. It returns every term, as `parse_order_by` in `rn-forge-web` now accepts several and rejects a repeated field with 400.
 - `read_rows` picks the format from the file extension, and uses the content type only when the
   file name has none, as `rn-forge-django` does. A `.pdf` sent as `text/csv` is now unsupported.
 

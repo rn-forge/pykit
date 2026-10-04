@@ -26,6 +26,12 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ### Changed
 
+- **Breaking:** `orderBy` takes a comma-separated list of terms, and `null` sorts last in both directions.
+  - `parse_order_by` accepts many terms and rejects a repeated field with `orderBy names '{field}' more than once`. It rejected a second term.
+  - `Cursor(sort_key: str, ...)` is now `Cursor(sort_keys: tuple[SortValue, ...], ...)`, and `encode_cursor(sort_key, ...)` is now `encode_cursor(sort_keys, ...)`. `SortValue` (`str | int | float | bool | None`) is exported.
+  - The token's JSON is `{"k": [<values>], "id": ..., "o": ...}`. Tokens issued before the change are rejected with 400.
+  - `check_cursor_order` also rejects a token whose value count does not match the terms, with `Malformed page token`.
+  - New conformance cases: `pagination.order-by-several-fields-sorts-by-each-in-turn`, `nulls-sort-last-ascending`, `nulls-sort-last-descending`, `first-page-carries-a-composite-token`, `composite-token-resumes-within-a-tie`, `composite-token-resumes-after-a-null`, `repeated-order-by-field-is-400` and `token-with-the-wrong-number-of-values-is-400`. The case that asserted the one-field rule is removed.
 - `EXPOSED_HEADERS` now ends with `Content-Disposition`, so a cross-origin browser
   client can read the file name of an export or an import template.
 

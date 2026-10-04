@@ -165,22 +165,45 @@ says so and says why.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 
-**Sorting** follows Google AIP-132's spelling: `orderBy=displayName desc` — a
-field name on the wire, optionally followed by `asc` (the default) or `desc`.
+**Sorting** follows Google AIP-132's spelling: `orderBy=team, score desc` — a
+comma-separated list of terms, each a field name on the wire optionally followed
+by `asc` (the default) or `desc`. Whitespace around a term is ignored.
 
-- **A list sorts by one field.** More than one comma-separated term is 400,
-  never ignored, because the page token holds one sort value. AIP-132 allows
-  several; this convention does not yet.
+- **A list may sort by several fields.** Each term breaks the ties of the one
+  before it, in its own direction.
+  — `pagination.order-by-several-fields-sorts-by-each-in-turn`
+- **Each field appears at most once.** A repeated field is 400, detail
+  `orderBy names '{field}' more than once`. An empty term (`team,,score`, or a
+  trailing comma) is the malformed-term 400.
+  — `pagination.repeated-order-by-field-is-400`
 - **An endpoint lists the fields it can sort by.** An unlisted or malformed
   term is 400, never ignored.
   — `pagination.order-by-unlisted-field-is-400`
-- **The page token binds the order.** A token issued under one `orderBy` and
-  presented under another is 400.
+- **The primary key breaks ties.** It is appended as a final term, in the last
+  term's direction, unless it is already a term, so the order is total and a
+  field need not be unique.
+- **`null` sorts last, in both directions.** Whatever a database does by
+  default, an `asc` or a `desc` term puts the rows whose value is `null` after
+  the rows that have one, the same on every stack and every database. A
+  nullable field can be sorted on.
+  — `pagination.nulls-sort-last-ascending`,
+  `pagination.nulls-sort-last-descending`
+- **The page token binds the whole order.** It holds one sort value per term,
+  plus the key and the canonical `orderBy` (`team,score desc`). A token
+  presented under another `orderBy` is 400 `pageToken does not match orderBy`.
   — `pagination.order-by-descending-binds-the-token`,
   `pagination.token-under-a-different-order-by-is-400`
-- **Ties are broken by the key.** A page is ordered by the `orderBy`
-  field and then the primary key, and the token holds both, so the field need
-  not be unique. It must not be null.
+- **The token resumes from every term.** The next page is the rows past the
+  last row's values, including within a tie and after a `null`.
+  — `pagination.first-page-carries-a-composite-token`,
+  `pagination.composite-token-resumes-within-a-tie`,
+  `pagination.composite-token-resumes-after-a-null`
+- **A token whose number of values does not match the terms is 400**
+  `Malformed page token`.
+  — `pagination.token-with-the-wrong-number-of-values-is-400`
+- **Sort values keep their JSON type** in the token: string, number, boolean or
+  `null`. Dates and datetimes are ISO 8601 strings. A value that does not fit
+  its column is 400 `Malformed page token`, never a 500.
 
 ## 5. Idempotency
 

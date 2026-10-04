@@ -91,6 +91,32 @@ customer = NestedReadPrimaryKeyRelatedField(
 )
 ```
 
+## Sorting and paging
+
+`OrderByFilter` reads AIP-132 `orderBy` over the view's `ordering_fields`, and
+`CursorPagination` pages in that order. `orderBy` is a comma-separated list; a
+field may be nullable or span a relation (`author__name`), and rows whose value
+is `NULL` come last in both directions. The primary key breaks ties.
+
+```python
+from rn_forge.django.drf import CursorPagination, OrderByFilter
+
+
+class PersonViewSet(BaseModelViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
+    pagination_class = CursorPagination
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["team", "score", "id"]  # score is nullable
+```
+
+```http
+GET /people?orderBy=team,score%20desc&pageSize=2
+```
+
+A page token holds one value per term, so a token issued under another
+`orderBy` is a 400.
+
 ## Exceptions
 
 Register the normalized JSON exception handler in DRF settings:
