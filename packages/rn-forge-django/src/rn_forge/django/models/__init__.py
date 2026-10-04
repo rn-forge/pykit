@@ -17,6 +17,7 @@ from ._meta import (
     get_model_meta,
 )
 from .enums import BaseEnum, Status
+from .soft_delete import SoftDeleteModelMixin, SoftDeleteQuerySet
 from .sequences import (
     AbstractSequenceCounter,
     SequenceGenerator,
@@ -41,6 +42,8 @@ __all__ = [
     "ModelUtils",
     "NaturalKeyLookupManager",
     "SequenceGenerator",
+    "SoftDeleteModelMixin",
+    "SoftDeleteQuerySet",
     "Status",
     "TruncateModelMixin",
     "VersionedModelMixin",
