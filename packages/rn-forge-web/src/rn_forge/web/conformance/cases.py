@@ -922,6 +922,143 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=204,
         expect_body={},
     ),
+    ConformanceCase(
+        id="transfer.import-template-is-the-import-columns",
+        area="transfer",
+        description=(
+            "AIP-136: the import template is a CSV attachment whose only row is "
+            "the import model's column names."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/orders:importTemplate", headers={"Accept": _CSV_TYPE}
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
+        expect_headers={
+            "Content-Disposition": (
+                'attachment; filename="import-template.csv"; '
+                "filename*=UTF-8''import-template.csv"
+            ),
+        },
+        expect_text="id,name,Quantity\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.import-template-prefill-adds-the-rows",
+        area="transfer",
+        description="?prefill=true adds the current rows under the header row.",
+        request=RequestSpec(
+            "GET",
+            "/conformance/orders:importTemplate",
+            headers={"Accept": _CSV_TYPE},
+            query={"prefill": "true"},
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
+        expect_text="id,name,Quantity\r\n1,widget,0\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.import-without-a-file-is-422",
+        area="transfer",
+        description="A multipart import with no file part is a 422 naming /file.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:import",
+            headers={"Content-Type": "multipart/form-data"},
+            body={},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[{"pointer": "/file", "detail": "This field is required."}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.import-over-the-cap-is-422",
+        area="transfer",
+        description="An import with more data rows than the cap is a 422 naming the cap.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/capped:import",
+            headers={"Content-Type": "multipart/form-data"},
+            body={"file": "id,name,Quantity\n2,a,3\n3,b,4\n"},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "The import exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-with-an-empty-list-is-422",
+        area="transfer",
+        description="AIP-233: an empty requests list is a 422 naming /requests.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": []},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[
+                {"pointer": "/requests", "detail": "A non-empty list is required."}
+            ],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-over-the-cap-is-422",
+        area="transfer",
+        description="A batch with more items than the cap is a 422 naming the cap.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/capped:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "a"}, {"name": "b"}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "The batch exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-denied-item-is-403-pointer",
+        area="transfer",
+        description=(
+            "One item the principal may not create fails the whole batch as a "
+            "403 whose pointer names the item."
+        ),
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "ok"}, {"name": "forbidden"}]},
+        ),
+        expect_status=403,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            FORBIDDEN,
+            "Forbidden",
+            errors=[
+                {"pointer": "/requests/1", "detail": "You may not create this order."}
+            ],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.denied-batch-create-persists-nothing",
+        area="transfer",
+        description="All or nothing: after the denied batch, the collection still has one order.",
+        request=RequestSpec("GET", "/conformance/orders/count"),
+        depends_on=("transfer.batch-create-denied-item-is-403-pointer",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"count": 1},
+    ),
     # --- Timestamps (api-conventions.md §18) -----------------------------
     ConformanceCase(
         id="timestamps.rfc-3339-utc-with-z",

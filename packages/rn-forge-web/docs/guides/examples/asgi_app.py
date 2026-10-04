@@ -41,6 +41,8 @@ from rn_forge.web import (
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
+    ItemsDenied,
+    NON_EMPTY_LIST_DETAIL,
     MERGE_PATCH_MEDIA_TYPE,
     NULL_FIELD_DETAIL,
     Message,
@@ -58,6 +60,7 @@ from rn_forge.web import (
     Send,
     ServiceUnavailable,
     TooManyRequests,
+    VALIDATION_ERROR,
     UnsupportedMediaType,
     WireModel,
     check_cursor_order,
@@ -78,6 +81,8 @@ from rn_forge.web import (
     is_not_modified,
     liveness_body,
     negotiate_tabular_format,
+    parse_flag,
+    row_cap_problem,
     row_errors_problem,
     render_problem,
     run_checks,
@@ -112,6 +117,9 @@ SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 ORDERS: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
 EXPORT_CAP = 1
+IMPORT_COLUMNS = ["id", "name", "Quantity"]
+CAPPED_ROWS = 1
+ORDER_QUANTITY = "0"
 DOCUMENT: dict[str, Any] = {
     "version": 1,
     "body": {
@@ -343,6 +351,19 @@ def _from_problem(rendered: ProblemResponse) -> Response:
     )
 
 
+def _field_problem(request: Request, name: str, detail: str) -> Response:
+    """A 422 whose single `errors` entry points at the top-level member *name*."""
+    return _from_problem(
+        render_problem(
+            REGISTRY,
+            ValueError("Validation Error"),
+            instance=request.path,
+            problem=VALIDATION_ERROR,
+            extensions={"errors": [field_error((name,), detail)]},
+        )
+    )
+
+
 def _export(request: Request, filename: str, rows: list[dict[str, str]]) -> Response:
     """Export negotiation. Only CSV is written here; xlsx needs a codec."""
     fmt = negotiate_tabular_format(
@@ -430,7 +451,7 @@ def get_operation(request: Request) -> Response:
     return Response(200, operation.as_body())
 
 
-def import_orders(request: Request) -> Response:
+def _import(request: Request, cap: int | None) -> Response:
     """Multipart upload, all or nothing, honouring `validateOnly`."""
     message = BytesParser(policy=HTTP).parsebytes(
         b"Content-Type: "
@@ -439,9 +460,14 @@ def import_orders(request: Request) -> Response:
         + request.raw
     )
     upload = next(
-        part for part in message.iter_parts() if part.get_filename() == "file"
+        (part for part in message.iter_parts() if part.get_filename() == "file"),
+        None,
     )
+    if upload is None:
+        return _field_problem(request, "file", REQUIRED_FIELD_DETAIL)
     rows = list(csv.DictReader(io.StringIO(upload.get_content())))
+    if cap is not None and len(rows) > cap:
+        return _from_problem(row_cap_problem("import", cap, instance=request.path))
     errors = [
         RowError(i, "Quantity", "Enter a whole number.")
         for i, row in enumerate(rows)
@@ -450,7 +476,7 @@ def import_orders(request: Request) -> Response:
     if errors:
         return _from_problem(row_errors_problem(errors, instance=request.path))
     created = sum(row["id"] not in ORDERS for row in rows)
-    validate_only = request.query("validateOnly") == "true"
+    validate_only = parse_flag(request.query("validateOnly"))
     if not validate_only:
         ORDERS.update(
             {row["id"]: {"id": row["id"], "name": row["name"]} for row in rows}
@@ -466,8 +492,38 @@ def import_orders(request: Request) -> Response:
     )
 
 
-def batch_create_orders(request: Request) -> Response:
+def import_orders(request: Request) -> Response:
+    return _import(request, None)
+
+
+def import_capped(request: Request) -> Response:
+    return _import(request, CAPPED_ROWS)
+
+
+def import_template(request: Request) -> Response:
+    """The import columns as a CSV header row, plus the orders when `prefill`."""
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(IMPORT_COLUMNS)
+    if parse_flag(request.query("prefill")):
+        writer.writerows(
+            [order["id"], order["name"], ORDER_QUANTITY] for order in ORDERS.values()
+        )
+    return Response(
+        200,
+        {},
+        headers={"Content-Disposition": content_disposition("import-template.csv")},
+        media_type="text/csv",
+        raw=out.getvalue().encode(),
+    )
+
+
+def _batch_create(request: Request, cap: int | None) -> Response:
     items = request.json()["requests"]
+    if not items:
+        return _field_problem(request, "requests", NON_EMPTY_LIST_DETAIL)
+    if cap is not None and len(items) > cap:
+        return _from_problem(row_cap_problem("batch", cap, instance=request.path))
     errors = [
         RowError(i, "name", REQUIRED_FIELD_DETAIL)
         for i, item in enumerate(items)
@@ -477,12 +533,27 @@ def batch_create_orders(request: Request) -> Response:
         return _from_problem(
             row_errors_problem(errors, instance=request.path, root="requests")
         )
+    denied: dict[str | int, list[str]] = {
+        i: ["You may not create this order."]
+        for i, item in enumerate(items)
+        if item["name"] == "forbidden"
+    }
+    if denied:
+        raise ItemsDenied(denied, root="requests")
     created: list[dict[str, str]] = []
     for item in items:
         order = {"id": str(len(ORDERS) + 1), "name": item["name"]}
         ORDERS[order["id"]] = order
         created.append(order)
     return Response(200, {"orders": created})
+
+
+def batch_create_orders(request: Request) -> Response:
+    return _batch_create(request, None)
+
+
+def batch_create_capped(request: Request) -> Response:
+    return _batch_create(request, CAPPED_ROWS)
 
 
 def batch_delete_orders(request: Request) -> Response:
@@ -523,6 +594,9 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/operations/1"): get_operation,
     ("GET", "/conformance/operations/2"): get_operation,
     ("POST", "/conformance/orders:import"): import_orders,
+    ("GET", "/conformance/orders:importTemplate"): import_template,
+    ("POST", "/conformance/capped:import"): import_capped,
+    ("POST", "/conformance/capped:batchCreate"): batch_create_capped,
     ("POST", "/conformance/orders:batchCreate"): batch_create_orders,
     ("POST", "/conformance/orders:batchDelete"): batch_delete_orders,
 }

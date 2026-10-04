@@ -31,7 +31,12 @@ pytestmark = pytest.mark.unit
 CASE_IDS = [
     case.id
     for case in CASES
-    if case.area == "pagination" or case.id.startswith("transfer.import-")
+    if case.area == "pagination"
+    or case.id
+    in {
+        "transfer.import-report-counts-and-validate-only",
+        "transfer.import-row-errors-are-422-pointers",
+    }
 ]
 
 

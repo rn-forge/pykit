@@ -454,6 +454,15 @@ def issue(client, case):
     headers = dict(spec.headers)
     if headers.get("Content-Type") == "multipart/form-data":
         del headers["Content-Type"]
+        if not spec.body:
+            headers["Content-Type"] = "multipart/form-data; boundary=empty"
+            return client.request(
+                spec.method,
+                spec.path,
+                headers=headers,
+                params=dict(spec.query),
+                content=b"--empty--\r\n",
+            )
         return client.request(
             spec.method,
             spec.path,
