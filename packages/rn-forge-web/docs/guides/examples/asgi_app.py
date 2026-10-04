@@ -309,12 +309,17 @@ def _export(request: Request, filename: str, rows: list[dict[str, str]]) -> Resp
     writer = csv.DictWriter(out, fieldnames=["id", "name"])
     writer.writeheader()
     writer.writerows(rows)
+    headers = {
+        "Content-Disposition": content_disposition(f"{filename}.{fmt.extension}")
+    }
+    origin = request.header("Origin")
+    if origin is not None:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Expose-Headers"] = ", ".join(EXPOSED_HEADERS)
     return Response(
         200,
         {},
-        headers={
-            "Content-Disposition": content_disposition(f"{filename}.{fmt.extension}")
-        },
+        headers=headers,
         media_type=fmt.media_type,
         raw=out.getvalue().encode(),
     )
