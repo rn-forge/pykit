@@ -34,6 +34,7 @@ AREAS = (
     "timestamps",
     "operations",
     "read-mask",
+    "soft-delete",
 )
 
 

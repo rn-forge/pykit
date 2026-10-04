@@ -40,7 +40,10 @@ from rn_forge.fastapi import (
     read_mask_param,
     require_if_match,
     requires,
+    show_deleted_param,
+    soft_delete_router,
 )
+from rn_forge.fastapi import SoftDeleteState
 from rn_forge.fastapi.transfer import (
     batch_create_router,
     batch_delete_router,
@@ -74,6 +77,7 @@ from rn_forge.web import (
     TooManyRequests,
     check_precondition,
     encode_cursor,
+    require_live,
     run_idempotent_async,
 )
 from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
@@ -82,6 +86,7 @@ pytestmark = pytest.mark.unit
 
 ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
 ITEM_VERSION = 7
+CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
@@ -280,6 +285,72 @@ class BookStore:
             book.version += 1
             updated.append(book)
         return updated
+
+
+class NoteRow(WireModel):
+    id: str
+    text: str
+    delete_time: datetime | None = None
+
+
+class NoteText(WireModel):
+    text: str
+
+
+@dataclass
+class Note:
+    id: str
+    text: str
+    delete_time: datetime | None = None
+    version: int = 1
+
+
+class NoteStore:
+    """In-memory soft-deleting notes."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {
+            "1": Note("1", "first"),
+            "2": Note("2", "second", DEPRECATED_AT, 2),
+            "3": Note("3", "third"),
+        }
+
+    async def find(self, id):
+        note = self.rows_by_id.get(id)
+        return (
+            None
+            if note is None
+            else SoftDeleteState(note, note.version, note.delete_time)
+        )
+
+    async def soft_delete(self, id):
+        note = self.rows_by_id[id]
+        note.delete_time, note.version = CLOCK, note.version + 1
+        return note
+
+    async def undelete(self, id):
+        note = self.rows_by_id[id]
+        note.delete_time, note.version = None, note.version + 1
+        return note
+
+
+class NoteBatchStore:
+    """The batch-delete view of :class:`NoteStore`: live notes only, soft-deleted."""
+
+    def __init__(self, notes: NoteStore) -> None:
+        self.notes = notes
+
+    async def find(self, ids):
+        return {
+            i
+            for i in ids
+            if i in self.notes.rows_by_id
+            and self.notes.rows_by_id[i].delete_time is None
+        }
+
+    async def delete_many(self, ids):
+        for i in ids:
+            await self.notes.soft_delete(i)
 
 
 EXPORT_CAP = 1
@@ -632,6 +703,58 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
     )
 
+    notes = NoteStore()
+    note_codec = EntityVersionETagCodec()
+
+    def note_store() -> NoteStore:
+        return notes
+
+    @app.get("/conformance/notes", response_model=Page[NoteRow])
+    async def list_notes(show_deleted: bool = Depends(show_deleted_param())):
+        rows = [
+            n for n in notes.rows_by_id.values() if show_deleted or not n.delete_time
+        ]
+        return Page[NoteRow](
+            items=[NoteRow.model_validate(n, from_attributes=True) for n in rows],
+            next_page_token=None,
+        )
+
+    @app.get("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def get_note(note_id: str):
+        return notes.rows_by_id[note_id]
+
+    @app.patch("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def patch_note(
+        note_id: str,
+        body: bytes = Depends(merge_patch_body()),
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ):
+        note = notes.rows_by_id[note_id]
+        require_live(note.delete_time, label="Note", id=note_id)
+        check_precondition(
+            if_match, current_version=note.version, entity_id=note_id, codec=note_codec
+        )
+        note.text = merge_into(NoteText, {"text": note.text}, body).text
+        note.version += 1
+        return note
+
+    app.include_router(
+        soft_delete_router(
+            "/conformance/notes",
+            response_model=NoteRow,
+            resource_label="Note",
+            store=note_store,
+            codec=note_codec,
+        )
+    )
+    app.include_router(
+        batch_delete_router(
+            "/conformance/notes",
+            resource_label="Note",
+            store=lambda: NoteBatchStore(notes),
+        )
+    )
+
     return app
 
 
@@ -725,5 +848,13 @@ def test_the_fixture_serves_every_path_the_table_uses():
     """
     paths = build_app(failing=None).openapi()["paths"]
     served = {path.replace("{pk}", "1") for path in paths} | {API_CATALOG_PATH}
+    templates = [
+        re.compile(re.sub(r"\{[^}/:]+\}", "[^/:]+", p)) for p in paths if "{" in p
+    ]
     used = {case.request.path for case in CASES}
-    assert_that(used - served - {"/conformance/missing"}).is_empty()
+    unserved = {
+        path
+        for path in used - served - {"/conformance/missing"}
+        if not any(t.fullmatch(path) for t in templates)
+    }
+    assert_that(unserved).is_empty()

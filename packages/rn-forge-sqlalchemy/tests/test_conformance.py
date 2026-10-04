@@ -5,11 +5,12 @@ test code; neither package imports the other.
 """
 
 import re
+from datetime import UTC, datetime
 
 import httpx
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, Query, Request, UploadFile
+from fastapi import Depends, Header, Query, Request, UploadFile
 from pydantic import ConfigDict, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -18,12 +19,37 @@ from sqlalchemy.orm import Mapped, mapped_column
 from rn_forge.fastapi import (
     AppConfig,
     FastApiApp,
+    SoftDeleteState,
+    merge_into,
+    merge_patch_body,
     order_by_param,
     page_params,
+    show_deleted_param,
+    soft_delete_router,
 )
-from rn_forge.fastapi.transfer import problem_response, read_rows
-from rn_forge.sqlalchemy import AuditMixin, Base, keyset, next_page_token, upsert
-from rn_forge.web import Page, WireModel, import_report_body, row_errors_problem
+from rn_forge.fastapi.transfer import batch_delete_router, problem_response, read_rows
+from rn_forge.sqlalchemy import (
+    AuditMixin,
+    Base,
+    SoftDeleteMixin,
+    VersionMixin,
+    keyset,
+    live,
+    next_page_token,
+    soft_delete,
+    undelete,
+    update_versioned,
+    upsert,
+)
+from rn_forge.web import (
+    EntityVersionETagCodec,
+    Page,
+    WireModel,
+    check_precondition,
+    import_report_body,
+    require_live,
+    row_errors_problem,
+)
 from rn_forge.web.conformance import CASES, case_by_id, redact
 
 pytestmark = pytest.mark.unit
@@ -32,6 +58,7 @@ CASE_IDS = [
     case.id
     for case in CASES
     if case.area == "pagination"
+    or case.area == "soft-delete"
     or case.id
     in {
         "transfer.import-report-counts-and-validate-only",
@@ -60,6 +87,74 @@ class Order(AuditMixin, Base):
     id: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str]
     quantity: Mapped[int]
+
+
+class Note(SoftDeleteMixin, VersionMixin, AuditMixin, Base):
+    __tablename__ = "conformance_note"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    text: Mapped[str]
+
+
+CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
+DELETED_AT = datetime(2026, 1, 1, tzinfo=UTC)
+
+
+class NoteRow(WireModel):
+    id: str
+    text: str
+    delete_time: datetime | None = None
+
+
+class NoteText(WireModel):
+    text: str
+
+
+class NoteStore:
+    """Soft-deleting notes over one SQLAlchemy session per call."""
+
+    def __init__(self, sessions: async_sessionmaker) -> None:
+        self.sessions = sessions
+
+    async def find(self, id):
+        async with self.sessions() as session:
+            note = await session.get(Note, id)
+        return (
+            None
+            if note is None
+            else SoftDeleteState(note, note.version, note.delete_time)
+        )
+
+    async def _write(self, id, change):
+        async with self.sessions() as session:
+            note = await session.get(Note, id)
+            change(note, actor="conformance", now=CLOCK)
+            await session.commit()
+            return note
+
+    async def soft_delete(self, id):
+        return await self._write(id, soft_delete)
+
+    async def undelete(self, id):
+        return await self._write(id, undelete)
+
+
+class NoteBatchStore:
+    """The batch-delete view: live notes only, soft-deleted together."""
+
+    def __init__(self, sessions: async_sessionmaker) -> None:
+        self.sessions = sessions
+
+    async def find(self, ids):
+        async with self.sessions() as session:
+            stmt = live(select(Note.id).where(Note.id.in_(ids)), Note)
+            return set(await session.scalars(stmt))
+
+    async def delete_many(self, ids):
+        async with self.sessions() as session:
+            for note in await session.scalars(select(Note).where(Note.id.in_(ids))):
+                soft_delete(note, actor="conformance", now=CLOCK)
+            await session.commit()
 
 
 class OrderImport(WireModel):
@@ -135,6 +230,61 @@ def build_app(engine: AsyncEngine) -> FastApiApp:
             next_page_token=token,
         )
 
+    notes = NoteStore(sessions)
+    note_codec = EntityVersionETagCodec()
+
+    @app.get("/conformance/notes", response_model=Page[NoteRow])
+    async def list_notes(show_deleted: bool = Depends(show_deleted_param())):
+        stmt = live(select(Note).order_by(Note.id), Note, show_deleted=show_deleted)
+        async with sessions() as session:
+            rows = (await session.scalars(stmt)).all()
+        return Page[NoteRow](
+            items=[NoteRow.model_validate(n, from_attributes=True) for n in rows],
+            next_page_token=None,
+        )
+
+    @app.get("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def get_note(note_id: str):
+        async with sessions() as session:
+            return await session.get(Note, note_id)
+
+    @app.patch("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def patch_note(
+        note_id: str,
+        body: bytes = Depends(merge_patch_body()),
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ):
+        async with sessions() as session:
+            note = await session.get(Note, note_id)
+            require_live(note.delete_time, label="Note", id=note_id)
+            check_precondition(
+                if_match,
+                current_version=note.version,
+                entity_id=note_id,
+                codec=note_codec,
+            )
+            text = merge_into(NoteText, {"text": note.text}, body).text
+            await update_versioned(session, note, text=text)
+            await session.commit()
+            return note
+
+    app.include_router(
+        soft_delete_router(
+            "/conformance/notes",
+            response_model=NoteRow,
+            resource_label="Note",
+            store=lambda: notes,
+            codec=note_codec,
+        )
+    )
+    app.include_router(
+        batch_delete_router(
+            "/conformance/notes",
+            resource_label="Note",
+            store=lambda: NoteBatchStore(sessions),
+        )
+    )
+
     @app.post("/conformance/orders:import")
     async def import_orders(
         request: Request,
@@ -200,6 +350,14 @@ async def test_sqlalchemy_backed_fastapi_conforms(engine, session, case_id):
             (3, "a", None),
             (4, "b", 5),
             (5, "a", 10),
+        ]
+    )
+    session.add_all(
+        Note(id=i, text=text, delete_time=deleted, version=version)
+        for i, text, deleted, version in [
+            ("1", "first", None, 1),
+            ("2", "second", DELETED_AT, 2),
+            ("3", "third", None, 1),
         ]
     )
     await session.commit()

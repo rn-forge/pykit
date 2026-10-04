@@ -131,6 +131,16 @@ def _people(*ids: int) -> list[dict[str, object]]:
     return [{"id": str(i), "team": _PEOPLE[i][0], "score": _PEOPLE[i][1]} for i in ids]
 
 
+_NOTES_PATH: Final = "/conformance/notes"
+_NOTE_1: Final = "/conformance/notes/1"
+_NOTE_2: Final = "/conformance/notes/2"
+_NOTE_3: Final = "/conformance/notes/3"
+
+
+def _note(id: str, text: str, delete_time: str | None = None) -> dict[str, object]:
+    return {"id": id, "text": text, "deleteTime": delete_time}
+
+
 CASES: Final[tuple[ConformanceCase, ...]] = (
     # --- Problem bodies (problem.py) -------------------------------
     ConformanceCase(
@@ -1659,6 +1669,146 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=200,
         expect_headers=_JSON,
         expect_body={"books": [{"name": "alpha"}]},
+    ),
+    ConformanceCase(
+        id="soft-delete.delete-returns-the-resource-with-its-delete-time",
+        area="soft-delete",
+        description="AIP-164: DELETE soft-deletes and answers 200 with the resource, its deleteTime and the new ETag.",
+        request=RequestSpec("DELETE", _NOTE_1),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:2"'},
+        expect_body=_note("1", "first", "2026-01-02T00:00:00Z"),
+    ),
+    ConformanceCase(
+        id="soft-delete.list-omits-deleted-resources",
+        area="soft-delete",
+        description="A list leaves out soft-deleted resources.",
+        request=RequestSpec("GET", _NOTES_PATH),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [_note("1", "first"), _note("3", "third")],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.show-deleted-lists-them",
+        area="soft-delete",
+        description="showDeleted=true brings soft-deleted resources back into a list.",
+        request=RequestSpec("GET", _NOTES_PATH, query={"showDeleted": "true"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                _note("1", "first"),
+                _note("2", "second", "2026-01-01T00:00:00Z"),
+                _note("3", "third"),
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.get-returns-a-deleted-resource",
+        area="soft-delete",
+        description="AIP-164: a get returns the soft-deleted resource, with its deleteTime.",
+        request=RequestSpec("GET", _NOTE_2),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("2", "second", "2026-01-01T00:00:00Z"),
+    ),
+    ConformanceCase(
+        id="soft-delete.delete-of-a-deleted-resource-is-404",
+        area="soft-delete",
+        description="A DELETE on an already soft-deleted resource is not found.",
+        request=RequestSpec("DELETE", _NOTE_2),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Note 2 not found"),
+    ),
+    ConformanceCase(
+        id="soft-delete.undelete-restores-the-resource",
+        area="soft-delete",
+        description="AIP-164: :undelete answers 200 with the live resource and the new ETag.",
+        request=RequestSpec("POST", "/conformance/notes/2:undelete"),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"2:3"'},
+        expect_body=_note("2", "second"),
+    ),
+    ConformanceCase(
+        id="soft-delete.undeleted-resource-is-listed-again",
+        area="soft-delete",
+        description="An undeleted resource is back in the default list.",
+        request=RequestSpec("GET", _NOTES_PATH),
+        depends_on=("soft-delete.undelete-restores-the-resource",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                _note("1", "first"),
+                _note("2", "second"),
+                _note("3", "third"),
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.undelete-of-a-live-resource-is-409",
+        area="soft-delete",
+        description="Undeleting a resource that is not deleted conflicts.",
+        request=RequestSpec("POST", "/conformance/notes/1:undelete"),
+        expect_status=409,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(CONFLICT, "Note 1 is not deleted"),
+    ),
+    ConformanceCase(
+        id="soft-delete.write-to-a-deleted-resource-is-409",
+        area="soft-delete",
+        description="A PATCH on a soft-deleted resource conflicts.",
+        request=RequestSpec("PATCH", _NOTE_2, headers=_MERGE, body={"text": "x"}),
+        expect_status=409,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(CONFLICT, "Note 2 is deleted"),
+    ),
+    ConformanceCase(
+        id="soft-delete.stale-if-match-is-412",
+        area="soft-delete",
+        description="DELETE honours If-Match; a stale validator is a 412.",
+        request=RequestSpec("DELETE", _NOTE_1, headers={"If-Match": 'W/"1:9"'}),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED, "Precondition failed: expected version 1, got 9"
+        ),
+    ),
+    ConformanceCase(
+        id="soft-delete.failed-precondition-deletes-nothing",
+        area="soft-delete",
+        description="A failed precondition leaves the resource live.",
+        request=RequestSpec("GET", _NOTE_1),
+        depends_on=("soft-delete.stale-if-match-is-412",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("1", "first"),
+    ),
+    ConformanceCase(
+        id="soft-delete.batch-delete-soft-deletes",
+        area="soft-delete",
+        description="AIP-235 over AIP-164: a batch delete soft-deletes and answers 204.",
+        request=RequestSpec(
+            "POST", "/conformance/notes:batchDelete", headers=_JSON, body={"ids": ["3"]}
+        ),
+        expect_status=204,
+        expect_body={},
+    ),
+    ConformanceCase(
+        id="soft-delete.batch-deleted-resource-is-still-readable",
+        area="soft-delete",
+        description="A resource soft-deleted in a batch is still returned by a get.",
+        request=RequestSpec("GET", _NOTE_3),
+        depends_on=("soft-delete.batch-delete-soft-deletes",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("3", "third", "2026-01-02T00:00:00Z"),
     ),
 )
 

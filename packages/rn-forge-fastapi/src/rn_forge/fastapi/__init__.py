@@ -21,12 +21,20 @@ from rn_forge.fastapi.merge_patch import (
 from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.read_mask import masked, read_mask_param
 from rn_forge.fastapi.problem import Log, register_problem_handlers
+from rn_forge.fastapi.soft_delete import (
+    SoftDeleteState,
+    SoftDeleteStore,
+    show_deleted_param,
+    soft_delete_router,
+)
 
 __all__ = [
     "AppConfig",
     "CorsPolicy",
     "FastApiApp",
     "Log",
+    "SoftDeleteState",
+    "SoftDeleteStore",
     "apply_cors",
     "basic_auth",
     "bearer_auth",
@@ -46,4 +54,6 @@ __all__ = [
     "require_idempotency_key",
     "require_if_match",
     "requires",
+    "show_deleted_param",
+    "soft_delete_router",
 ]

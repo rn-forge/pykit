@@ -45,6 +45,7 @@ from rn_forge.web import (
     NON_EMPTY_LIST_DETAIL,
     MERGE_PATCH_MEDIA_TYPE,
     NULL_FIELD_DETAIL,
+    SHOW_DELETED_PARAM,
     Message,
     Operation,
     Page,
@@ -56,6 +57,7 @@ from rn_forge.web import (
     FieldTree,
     Receive,
     Requirement,
+    ResourceNotDeleted,
     RowError,
     Scope,
     ScopeAuthorizer,
@@ -91,6 +93,7 @@ from rn_forge.web import (
     row_cap_problem,
     row_errors_problem,
     render_problem,
+    require_live,
     run_checks,
     run_idempotent,
 )
@@ -663,6 +666,118 @@ def batch_delete_orders(request: Request) -> Response:
     return Response(204, {})
 
 
+NOTES_CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
+
+
+def _notes_seed() -> dict[str, dict[str, Any]]:
+    return {
+        "1": {"text": "first", "delete_time": None, "version": 1},
+        "2": {"text": "second", "delete_time": DEPRECATED_AT, "version": 2},
+        "3": {"text": "third", "delete_time": None, "version": 1},
+    }
+
+
+NOTES = _notes_seed()
+
+
+def _note_id(request: Request) -> str:
+    return request.path.rsplit("/", 1)[1].split(":")[0]
+
+
+def _note_body(note_id: str) -> dict[str, Any]:
+    note = NOTES[note_id]
+    delete_time = note["delete_time"]
+    return {
+        "id": note_id,
+        "text": note["text"],
+        "deleteTime": None
+        if delete_time is None
+        else delete_time.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def _note_response(note_id: str) -> Response:
+    etag = CODEC.format(entity_id=note_id, version=NOTES[note_id]["version"])
+    return Response(200, _note_body(note_id), headers={"ETag": etag})
+
+
+def _live_note(request: Request) -> str:
+    """The id of a note that is not soft-deleted, else a 404."""
+    note_id = _note_id(request)
+    if NOTES[note_id]["delete_time"] is not None:
+        raise LookupError(f"Note {note_id} not found")
+    return note_id
+
+
+def _precondition(request: Request, note_id: str) -> None:
+    check_precondition(
+        request.header("If-Match"),
+        current_version=NOTES[note_id]["version"],
+        entity_id=note_id,
+    )
+
+
+def list_notes(request: Request) -> Response:
+    """`showDeleted` brings soft-deleted notes back into the list."""
+    show_deleted = parse_flag(request.query(SHOW_DELETED_PARAM))
+    items = [
+        _note_body(note_id)
+        for note_id, note in sorted(NOTES.items())
+        if show_deleted or note["delete_time"] is None
+    ]
+    return Response(200, Page(items=items, next_page_token=None).as_body())
+
+
+def get_note(request: Request) -> Response:
+    return _note_response(_note_id(request))
+
+
+def delete_note(request: Request) -> Response:
+    """AIP-164: a soft delete answers 200 with the resource."""
+    note_id = _live_note(request)
+    _precondition(request, note_id)
+    NOTES[note_id].update(
+        delete_time=NOTES_CLOCK, version=NOTES[note_id]["version"] + 1
+    )
+    return _note_response(note_id)
+
+
+def undelete_note(request: Request) -> Response:
+    note_id = _note_id(request)
+    if NOTES[note_id]["delete_time"] is None:
+        raise ResourceNotDeleted("Note", note_id)
+    _precondition(request, note_id)
+    NOTES[note_id].update(delete_time=None, version=NOTES[note_id]["version"] + 1)
+    return _note_response(note_id)
+
+
+def patch_note(request: Request) -> Response:
+    media_type = (request.header("Content-Type") or "").split(";")[0].strip().lower()
+    if media_type != MERGE_PATCH_MEDIA_TYPE:
+        raise UnsupportedMediaType()
+    note_id = _note_id(request)
+    require_live(NOTES[note_id]["delete_time"], label="Note", id=note_id)
+    _precondition(request, note_id)
+    patch = require_patch_object(request.json())
+    NOTES[note_id].update(
+        text=patch.get("text", NOTES[note_id]["text"]),
+        version=NOTES[note_id]["version"] + 1,
+    )
+    return _note_response(note_id)
+
+
+def batch_delete_notes(request: Request) -> Response:
+    ids = [str(i) for i in request.json()["ids"]]
+    for note_id in ids:
+        if note_id not in NOTES or NOTES[note_id]["delete_time"] is not None:
+            raise LookupError(f"Note {note_id} not found")
+    for note_id in ids:
+        NOTES[note_id].update(
+            delete_time=NOTES_CLOCK, version=NOTES[note_id]["version"] + 1
+        )
+    return Response(204, {})
+
+
 BOOK_FIELDS: FieldTree = {"id": None, "name": None}
 
 
@@ -786,6 +901,13 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/capped-books:batchGet"): batch_get_capped_books,
     ("POST", "/conformance/capped-books:batchUpdate"): batch_update_capped_books,
 }
+for _id in NOTES:
+    ROUTES[("GET", f"/conformance/notes/{_id}")] = get_note
+    ROUTES[("DELETE", f"/conformance/notes/{_id}")] = delete_note
+    ROUTES[("PATCH", f"/conformance/notes/{_id}")] = patch_note
+    ROUTES[("POST", f"/conformance/notes/{_id}:undelete")] = undelete_note
+ROUTES[("GET", "/conformance/notes")] = list_notes
+ROUTES[("POST", "/conformance/notes:batchDelete")] = batch_delete_notes
 
 
 # --- the plumbing ---------------------------------------------------------
