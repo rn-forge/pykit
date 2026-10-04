@@ -13,6 +13,9 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
   `BatchDeleteStore`), `max_rows` and `dependencies=`. `tabular_export` applies the export cap
   inside an application's own list route. `RowsResult` gains `total`, `read_rows` takes
   `formats=` and raises `ValueError` with the shared unsupported and unreadable file details.
+  A store raises `RowsInvalid` (422) or `ItemsDenied` (403) from `rn-forge-web` for a failure only it can
+  find. The factories answer the shared 422s: a missing file, a missing or empty list, and a row cap.
+  The transfer guide shows a complete resource over `rn-forge-sqlalchemy`'s `upsert` and `keyset`.
 - JSON Merge Patch (RFC 7396) binding: `merge_patch_body()` checks the
   `application/merge-patch+json` media type (415 with `Accept-Patch`) and returns the raw body,
   `merge_into(model, current, body)` parses it, merges and validates against a pydantic model, and

@@ -576,19 +576,39 @@ whole import and persists nothing (AIP-163). Success is `200` with
 `{created, updated, skipped, validateOnly}`. Any row error fails the whole
 import: `422` `application/problem+json` with
 `errors[].pointer = "/rows/12/Quantity"` (RFC 9457 §3, §2's `errors`), and
-nothing persisted. — `transfer.import-report-counts-and-validate-only`,
-`transfer.import-row-errors-are-422-pointers`
+nothing persisted. A request with no `file` part is a `422` with
+`errors[].pointer = "/file"` and `This field is required.`. An import of more
+data rows than the configured cap is a `422` whose `detail` is
+`The import exceeds the limit of {cap} rows.` and which has no `errors` member.
+— `transfer.import-report-counts-and-validate-only`,
+`transfer.import-row-errors-are-422-pointers`,
+`transfer.import-without-a-file-is-422`, `transfer.import-over-the-cap-is-422`
 
-**Import template.** `GET /orders:importTemplate`, negotiated like an export;
-`?prefill=true` adds the current filtered rows (AIP-136).
+**Import template.** `GET /orders:importTemplate`, negotiated like an export,
+is a file whose header row is the import columns, so it round-trips through
+`:import`. `?prefill=true` adds the current filtered rows (AIP-136). —
+`transfer.import-template-is-the-import-columns`,
+`transfer.import-template-prefill-adds-the-rows`
 
 **Bulk create.** `POST /orders:batchCreate` with `{"requests": [...]}` is all or
 nothing (AIP-233) and answers `200 {"orders": [...]}`. A per-item validation or
 authorization failure is one `422` or `403` problem with
-`errors[].pointer = "/requests/3/..."` (RFC 9457). —
+`errors[].pointer = "/requests/3/..."` (RFC 9457). A denied item is a `403`
+whose `errors[].pointer` is `/requests/<i>`, and nothing is created. —
 `transfer.batch-create-item-failure-is-422-pointer`,
 `transfer.failed-batch-create-persists-nothing`,
-`transfer.batch-create-returns-the-created-resources`
+`transfer.batch-create-returns-the-created-resources`,
+`transfer.batch-create-denied-item-is-403-pointer`,
+`transfer.denied-batch-create-persists-nothing`
+
+**Shared list rules.** Both batch methods and the import share these, whatever
+the framework. A missing `requests` or `ids` member is a `422` at `/requests` or
+`/ids` with `This field is required.`. A member that is an empty list, or not a
+list, is a `422` at that pointer with `A non-empty list is required.`. A batch
+of more items than the configured cap is a `422` whose `detail` is
+`The batch exceeds the limit of {cap} rows.` and which has no `errors` member.
+— `transfer.batch-create-with-an-empty-list-is-422`,
+`transfer.batch-create-over-the-cap-is-422`
 
 **Bulk delete.** `POST /orders:batchDelete` with `{"ids": [...]}` is all or
 nothing and answers `204` (AIP-235); an id that does not exist fails the whole

@@ -18,6 +18,11 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 - `UnsupportedMediaType` (415, with `Accept-Patch`) and `InvalidMergePatch` (422) in
   `rn_forge.web.exceptions`, both in `default_registry()`.
 - The `patch` conformance area, with ten `patch.*` cases.
+- Eight `transfer.*` conformance cases: `import-without-a-file-is-422`, `import-over-the-cap-is-422`,
+  `import-template-is-the-import-columns`, `import-template-prefill-adds-the-rows`,
+  `batch-create-with-an-empty-list-is-422`, `batch-create-over-the-cap-is-422`,
+  `batch-create-denied-item-is-403-pointer` and `denied-batch-create-persists-nothing`.
+- A reference page for `rn_forge.web.transfer`.
 
 ### Changed
 
