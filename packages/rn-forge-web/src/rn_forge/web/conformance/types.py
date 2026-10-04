@@ -32,6 +32,7 @@ type ConformanceArea = Literal[
     "timestamps",
     "operations",
     "patch",
+    "read-mask",
 ]
 """Areas covered by the conformance suite."""
 

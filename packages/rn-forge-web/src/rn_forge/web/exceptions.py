@@ -22,6 +22,7 @@ __all__ = [
     "InvalidCursor",
     "InvalidMergePatch",
     "InvalidOrderBy",
+    "InvalidReadMask",
     "ItemsDenied",
     "MalformedPrecondition",
     "PermissionDenied",
@@ -95,6 +96,10 @@ class InvalidBatchGet(WebError):
 
 class InvalidOrderBy(WebError):
     """``orderBy`` names a field the endpoint cannot sort by, or is malformed (400)."""
+
+
+class InvalidReadMask(WebError):
+    """``readMask`` combines ``*`` with other paths, or names an undeclared field (400)."""
 
 
 class ContentTooLarge(WebError):
