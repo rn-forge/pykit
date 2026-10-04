@@ -31,7 +31,11 @@ None yet.
 
 ## Breaking changes
 
-F12.14 is documented as breaking: "It changes `BaseModelViewSet`'s `PATCH` media type, which is a breaking change for a client that sends `application/json` there." F12.12 ships with it: the epic records that "F12.14 is a breaking change to `rn-forge-django`, and the owner approved carrying this one with it."
+All in `rn-forge-django`; pykit has no live consumers, so no deprecation window is kept.
+
+- F12.14: `BaseModelViewSet` answers a `PATCH` sent as `application/json` with 415; a client sends `application/merge-patch+json`.
+- F12.12: `rn_forge.django.utils.RequestUtils` is removed (its `debug_request` is now `rn_forge.django.views.debug_request`), as are `rn_forge.django.drf.DRFUtils` and `RequestUtils.get_request_param`, `get_request_data` and `get_request_value`.
+- F12.15: the transfer mixins change response details. A missing import file reads `This field is required.`; the import and batch row caps answer a 422 with no `errors` member; a missing or empty `requests` or `ids` member reads `This field is required.` or `A non-empty list is required.`
 
 ## Progress
 
