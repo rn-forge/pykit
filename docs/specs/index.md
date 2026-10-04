@@ -7,6 +7,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Release | Status | Features |
 | --- | --- | --- |
+| [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | in progress | 4 New |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |
 | [Release 1 — the first coordinated tags](../releases/release-1/index.md) | shipped (2026-09-28) | 9 Closed |
 
@@ -18,7 +19,6 @@ Features with no Iteration, by State and epic.
 
 | Epic | Features |
 | --- | --- |
-| [E12 — HTTP contract extensions](epics/E12-http-contract-extensions/index.md) | F12.12, [F12.14](epics/E12-http-contract-extensions/F12.14-merge-patch.md), [F12.15](epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md), [F12.16](epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) |
 | [E13 — Authentication and authorization](epics/E13-auth/index.md) | [F13.1](epics/E13-auth/F13.1-auth-design.md) |
 
 ### Deferred

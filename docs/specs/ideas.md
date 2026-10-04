@@ -13,7 +13,6 @@ Ideas that are not yet agreed as pykit work. An entry has no ID and no status, a
 | claim-check | The claim-check pattern for large messages. Waits for a second storage backend. | F12.7, retired from E12 2026-09-29 |
 | django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on [django-optional-areas](#django-optional-areas) keeping messaging in `rn-forge-django`. | F12.10, retired from E12 2026-09-29 |
 | product-installer-contract | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. Waits for a second product that needs the same contract. | F12.8, retired from E12 2026-09-29 |
-| [require-ci-ok-on-main](#require-ci-ok-on-main) | Make `ci-ok` the required status check on `main`. Repository configuration, owner action. | S14.1.3, amended 2026-10-03 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
 | [full-local-sonar-scan](#full-local-sonar-scan) | Run the authorized full local Sonar scan. | S14.4.3, amended 2026-10-03 |
@@ -81,10 +80,6 @@ This is the only structural type declared over a persisted object: a `Versioned`
 - A `DELETE` on a resource that is already soft-deleted returns 404, per the API conventions.
 
 [E12](epics/E12-http-contract-extensions/index.md)'s F12.2, soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`), conflicts with this section. Whichever is taken up first settles the other.
-
-## require-ci-ok-on-main
-
-GitHub reports `main` as not protected. Make `ci-ok` the required status check, because matrix job names change with the packages. This is repository configuration the owner sets, not repo content.
 
 ## release-recovery-drill
 
