@@ -7,7 +7,7 @@ Ideas that are not yet agreed as pykit work. An entry has no ID and no status, a
 | Idea | Summary | Source |
 | --- | --- | --- |
 | [django-optional-areas](#django-optional-areas) | Decide whether Celery, fixtures and messaging stay in `rn-forge-django`. | Former E8, retired 2026-09-28 |
-| [model-vocabulary](#model-vocabulary) | A shared model vocabulary, normative for both ORM packages: audit-column semantics, a shared `status` enumeration, natural-key rules and status-based soft delete. Waits for an application that needs one of these to behave the same on Django and SQLAlchemy. | F12.13, retired from E12 2026-09-29 |
+| [model-vocabulary](#model-vocabulary) | A shared model vocabulary, normative for both ORM packages: audit-column semantics, a shared `status` enumeration and natural-key rules. Waits for an application that needs one of these to behave the same on Django and SQLAlchemy. | F12.13, retired from E12 2026-09-29 |
 | sqlalchemy-helpers | A SQLAlchemy `AsyncIdempotencyStore`, session and unit-of-work helpers, and readiness checks. Waits for a SQLAlchemy application to ask for them. | F12.5, retired from E12 2026-09-29 |
 | cloudevents-envelope | A CloudEvents envelope builder. Waits for the outbox/inbox subsystem to need one. | F12.6, retired from E12 2026-09-29 |
 | claim-check | The claim-check pattern for large messages. Waits for a second storage backend. | F12.7, retired from E12 2026-09-29 |
@@ -23,7 +23,7 @@ Ideas that are not yet agreed as pykit work. An entry has no ID and no status, a
 
 ## model-vocabulary
 
-The [model conventions guide](../rn-forge-web/guides/model-conventions.md) describes what both ORM packages supply today and keeps the rest advisory, as the owner decided on 2026-09-25. These are the rules this entry would make normative for both packages; applications could still treat them as advice. The audit columns and `version` already exist in both packages. The `status` enumeration, natural keys and soft delete are the new parts.
+The [model conventions guide](../rn-forge-web/guides/model-conventions.md) describes what both ORM packages supply today and keeps the rest advisory, as the owner decided on 2026-09-25. These are the rules this entry would make normative for both packages; applications could still treat them as advice. The audit columns and `version` already exist in both packages. The `status` enumeration and natural keys are the new parts.
 
 There is no shared model base class or repository protocol. Django's ORM is active-record and SQLAlchemy's is data-mapper, so they differ on transactions, lazy loading, the identity map and migrations. A shared protocol would shrink to what both query APIs have in common. What is shared is a vocabulary that each package's base class follows without sharing code.
 
@@ -73,13 +73,7 @@ This is the only structural type declared over a persisted object: a `Versioned`
 
 ### Soft delete
 
-- Deletion is a status transition, not a column: a soft-deleted row has `status = DELETED`, with no `deleted_at` or `is_deleted`. `update_time` and `updated_by` record when and by whom.
-- Default managers and query scopes exclude `DELETED` rows; retrieving them is explicit.
-- A soft delete is reversed by a status transition, which is an ordinary versioned write and bumps `version`.
-- Hard deletion exists for data-retention compliance and is a separately authorized operation, not the ordinary `DELETE` endpoint.
-- A `DELETE` on a resource that is already soft-deleted returns 404, per the API conventions.
-
-[F12.2](epics/E12-http-contract-extensions/F12.2-soft-delete.md), soft delete in AIP-164's shape, was taken up first (2026-10-04) and settles this section: soft delete becomes a nullable `delete_time` column, not a status. Its decision story rewrites this section.
+Soft delete is a nullable `delete_time` column, not a status, in AIP-164's shape, as [ADR-0010](../adr/ADR-0010.md) records. [F12.2](epics/E12-http-contract-extensions/F12.2-soft-delete.md) builds it.
 
 ## release-recovery-drill
 

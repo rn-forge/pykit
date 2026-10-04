@@ -24,14 +24,14 @@ Wire features that the API conventions describe but no package implements, or on
 | [F12.14](../../specs/epics/E12-http-contract-extensions/F12.14-merge-patch.md) | E12 | Closed |
 | [F12.15](../../specs/epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md) | E12 | Closed |
 | [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | Closed |
-| [F12.2](../../specs/epics/E12-http-contract-extensions/F12.2-soft-delete.md) | E12 | New |
+| [F12.2](../../specs/epics/E12-http-contract-extensions/F12.2-soft-delete.md) | E12 | Active |
 | [F12.3](../../specs/epics/E12-http-contract-extensions/F12.3-multi-column-sorting.md) | E12 | Closed |
 | [F12.9](../../specs/epics/E12-http-contract-extensions/F12.9-read-mask.md) | E12 | Closed |
 <!-- scope:end -->
 
 ## Decisions
 
-None yet.
+- [ADR-0010](../../adr/ADR-0010.md): soft delete is a nullable `delete_time` column, in AIP-164's shape (accepted 2026-10-04).
 
 ## Breaking changes
 
