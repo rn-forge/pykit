@@ -33,6 +33,7 @@ AREAS = (
     "transfer",
     "timestamps",
     "operations",
+    "read-mask",
 )
 
 

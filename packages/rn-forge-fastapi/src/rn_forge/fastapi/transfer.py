@@ -36,6 +36,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model
 
 from rn_forge.fastapi.openapi import operation_id
+from rn_forge.fastapi.read_mask import read_mask_param
 
 from rn_forge.commons.data.excel import write_xlsx
 from rn_forge.web import (
@@ -46,6 +47,7 @@ from rn_forge.web import (
     BatchUpdateItem,
     ETagCodec,
     ProblemResponse,
+    ReadMask,
     RowsInvalid,
     VersionETagCodec,
     check_item_precondition,
@@ -726,6 +728,10 @@ def batch_delete_router(
     return router
 
 
+def _no_mask() -> None:
+    return None
+
+
 def batch_get_router(
     collection: str,
     *,
@@ -734,6 +740,7 @@ def batch_get_router(
     resource_label: str,
     store: Callable[..., BatchGetStore],
     max_rows: int | None = None,
+    read_mask: bool = True,
     dependencies: Sequence[DependsParam] = (),
 ) -> APIRouter:
     """Build ``GET {collection}:batchGet``, taking a repeated ``ids`` query parameter.
@@ -742,7 +749,9 @@ def batch_get_router(
     The first id that :meth:`BatchGetStore.get_many` does not return is a 404
     reading ``{resource_label} {id} not found``. The response is 200 with one
     entry per requested id, in request order and repeating duplicates, as
-    *response_model* dumped by alias, under *resource_name*.
+    *response_model* dumped by alias, under *resource_name*. With *read_mask*,
+    the route also takes ``readMask`` (see :func:`rn_forge.fastapi.read_mask_param`)
+    and each resource holds only the fields it names.
 
     Args:
         collection: The collection path, for example ``/orders``.
@@ -751,6 +760,7 @@ def batch_get_router(
         resource_label: The resource's name in the 404 detail, for example ``Order``.
         store: A dependency returning the :class:`BatchGetStore`.
         max_rows: The most ids a batch may hold; ``None`` for no limit.
+        read_mask: Whether the route accepts ``readMask``.
         dependencies: Dependencies of the route, as for ``APIRouter``.
 
     Returns:
@@ -760,17 +770,23 @@ def batch_get_router(
     result_model = _list_model(
         f"{response_model.__name__}BatchGetResponse", resource_name, response_model
     )
+    mask_dependency = read_mask_param(response_model) if read_mask else _no_mask
 
     async def batch_get(
         ids: list[str] = Query(default_factory=list),
         target: BatchGetStore = Depends(store),
-    ) -> dict[str, Any]:
+        mask: ReadMask | None = Depends(mask_dependency),
+    ) -> Any:
         wanted = batch_get_ids(ids, cap=max_rows)
         found = await target.get_many(wanted)
         for item in wanted:
             if item not in found:
                 raise LookupError(f"{resource_label} {item} not found")
-        return {resource_name: [_dump(response_model, found[i]) for i in wanted]}
+        resources = [_dump(response_model, found[i]) for i in wanted]
+        if mask is None:
+            return {resource_name: resources}
+        # A returned response is not validated against the full model.
+        return JSONResponse({resource_name: [mask.apply(r) for r in resources]})
 
     router.add_api_route(
         f"{collection}:batchGet",

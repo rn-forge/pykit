@@ -688,7 +688,7 @@ class BookStore:
         return [self.books[i] for i, _ in items]
 
 
-def books(*, cap=None, guard=None, **update_options):
+def books(*, cap=None, guard=None, read_mask=True, **update_options):
     store = BookStore()
     app = FastApiApp(AppConfig())
     dependencies = [Depends(guard)] if guard else []
@@ -704,6 +704,7 @@ def books(*, cap=None, guard=None, **update_options):
             resource_label="Book",
             store=get_store,
             max_rows=cap,
+            read_mask=read_mask,
             dependencies=dependencies,
         )
     )
@@ -779,6 +780,46 @@ def test_batch_get_names_the_first_missing_id():
     )
     assert_that(response.status_code).is_equal_to(404)
     assert_that(response.json()["detail"]).is_equal_to("Book 9 not found")
+
+
+def test_batch_get_masks_each_resource():
+    client, _, _ = books()
+    response = client.get(
+        "/books:batchGet", params=[("ids", "1"), ("ids", "2"), ("readMask", "name")]
+    )
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to(
+        {"books": [{"name": "alpha"}, {"name": "beta"}]}
+    )
+
+
+def test_batch_get_rejects_an_unknown_read_mask_path_before_reading():
+    client, store, _ = books()
+    response = client.get("/books:batchGet", params={"ids": "1", "readMask": "nope"})
+    assert_that(response.status_code).is_equal_to(400)
+    assert_that(response.json()["detail"]).is_equal_to("Unknown readMask path 'nope'")
+    assert_that(store.calls).is_empty()
+
+
+def test_batch_get_ignores_read_mask_when_the_router_does_not_accept_it():
+    client, _, app = books(read_mask=False)
+    response = client.get("/books:batchGet", params={"ids": "2", "readMask": "nope"})
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()["books"][0]).contains_key("id", "name")
+    names = [
+        p["name"]
+        for p in app.openapi()["paths"]["/books:batchGet"]["get"]["parameters"]
+    ]
+    assert_that(names).does_not_contain("readMask")
+
+
+def test_batch_get_documents_read_mask_by_default():
+    _, _, app = books()
+    names = [
+        p["name"]
+        for p in app.openapi()["paths"]["/books:batchGet"]["get"]["parameters"]
+    ]
+    assert_that(names).contains("readMask")
 
 
 def test_batch_update_merges_each_patch_with_integer_ids():

@@ -52,6 +52,8 @@ from rn_forge.web import (
     ProblemDetail,
     ProblemResponse,
     ProblemType,
+    READ_MASK_PARAM,
+    FieldTree,
     Receive,
     Requirement,
     RowError,
@@ -85,6 +87,7 @@ from rn_forge.web import (
     negotiate_tabular_format,
     parse_batch_update,
     parse_flag,
+    parse_read_mask,
     row_cap_problem,
     row_errors_problem,
     render_problem,
@@ -130,6 +133,29 @@ BOOKS: dict[str, dict[str, Any]] = {
     "1": {"name": "alpha", "version": 1},
     "2": {"name": "beta", "version": 1},
     "3": {"name": "gamma", "version": 1},
+}
+PROFILES: list[dict[str, Any]] = [
+    {
+        "id": "1",
+        "displayName": "Ada",
+        "address": {"city": "London", "postcode": "N1"},
+        "phones": [{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+        "settings": {"theme": "dark"},
+    },
+    {
+        "id": "2",
+        "displayName": "Grace",
+        "address": {"city": "Arlington", "postcode": "22201"},
+        "phones": [],
+        "settings": {},
+    },
+]
+PROFILE_FIELDS: FieldTree = {
+    "id": None,
+    "displayName": None,
+    "address": {"city": None, "postcode": None},
+    "phones": {"kind": None, "number": None},
+    "settings": None,  # free-form: no path goes inside it
 }
 EXPORT_CAP = 1
 IMPORT_COLUMNS = ["id", "name", "Quantity"]
@@ -216,6 +242,21 @@ def patch_document(request: Request) -> Response:
 
 def _document_etag() -> dict[str, str]:
     return {"ETag": CODEC.format(entity_id="1", version=DOCUMENT["version"])}
+
+
+def get_profile(request: Request) -> Response:
+    """`readMask` on a single resource; the ETag is the unmasked resource's."""
+    mask = parse_read_mask(request.query(READ_MASK_PARAM), fields=PROFILE_FIELDS)
+    profile = PROFILES[0]
+    body = profile if mask is None else mask.apply(profile)
+    return Response(200, body, headers={"ETag": CODEC.format(entity_id="1", version=1)})
+
+
+def list_profiles(request: Request) -> Response:
+    """`readMask` on a collection: each item is masked, the page members are not."""
+    mask = parse_read_mask(request.query(READ_MASK_PARAM), fields=PROFILE_FIELDS)
+    items = PROFILES if mask is None else [mask.apply(p) for p in PROFILES]
+    return Response(200, Page(items=items, next_page_token=None).as_body())
 
 
 def list_items(request: Request) -> Response:
@@ -622,6 +663,9 @@ def batch_delete_orders(request: Request) -> Response:
     return Response(204, {})
 
 
+BOOK_FIELDS: FieldTree = {"id": None, "name": None}
+
+
 def _book(book_id: str) -> dict[str, str]:
     return {"id": book_id, "name": BOOKS[book_id]["name"]}
 
@@ -631,7 +675,11 @@ def _batch_get_books(request: Request, cap: int | None) -> Response:
     for book_id in ids:
         if book_id not in BOOKS:
             raise LookupError(f"Book {book_id} not found")
-    return Response(200, {"books": [_book(book_id) for book_id in ids]})
+    mask = parse_read_mask(request.query(READ_MASK_PARAM), fields=BOOK_FIELDS)
+    books = [_book(book_id) for book_id in ids]
+    return Response(
+        200, {"books": books if mask is None else [mask.apply(b) for b in books]}
+    )
 
 
 def _batch_update_books(request: Request, cap: int | None) -> Response:
@@ -705,6 +753,8 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/items/1"): get_item,
     ("GET", "/conformance/documents/1"): get_document,
     ("PATCH", "/conformance/documents/1"): patch_document,
+    ("GET", "/conformance/profiles"): list_profiles,
+    ("GET", "/conformance/profiles/1"): get_profile,
     ("GET", "/conformance/items"): list_items,
     ("GET", "/conformance/people"): list_people,
     ("POST", "/conformance/charges"): create_charge,

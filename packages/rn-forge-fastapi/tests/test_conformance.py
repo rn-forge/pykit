@@ -35,7 +35,9 @@ from rn_forge.fastapi import (
     merge_patch_body,
     merge_patch_openapi,
     order_by_param,
+    masked,
     page_params,
+    read_mask_param,
     require_if_match,
     requires,
 )
@@ -60,6 +62,7 @@ from rn_forge.web import (
     ImportCounts,
     ItemsDenied,
     Page,
+    ReadMask,
     WireModel,
     CheckResult,
     DomainConflict,
@@ -120,6 +123,40 @@ class Document(WireModel):
     note: str | None = None
     tags: list[str] = []
     settings: dict[str, Any] = {}
+
+
+class Address(WireModel):
+    city: str
+    postcode: str
+
+
+class Phone(WireModel):
+    kind: str
+    number: str
+
+
+class Profile(WireModel):
+    id: str
+    display_name: str
+    address: Address
+    phones: list[Phone] = []
+    settings: dict[str, Any] = {}
+
+
+PROFILES = [
+    Profile(
+        id="1",
+        display_name="Ada",
+        address=Address(city="London", postcode="N1"),
+        phones=[Phone(kind="home", number="1"), Phone(kind="work", number="2")],
+        settings={"theme": "dark"},
+    ),
+    Profile(
+        id="2",
+        display_name="Grace",
+        address=Address(city="Arlington", postcode="22201"),
+    ),
+]
 
 
 class OrderRow(WireModel):
@@ -340,6 +377,24 @@ def build_app(*, failing: str | None) -> FastAPI:
         document.update(merge_into(Document, document, body).model_dump(by_alias=True))
         document_version[0] += 1
         return document_response()
+
+    @app.get("/conformance/profiles/1", response_model=Profile)
+    async def get_profile(
+        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+    ):
+        body = PROFILES[0].model_dump()
+        return JSONResponse(
+            body if mask is None else mask.apply(body),
+            headers={"ETag": codec.format(entity_id="1", version=1)},
+        )
+
+    @app.get("/conformance/profiles", response_model=Page[Profile])
+    async def list_profiles(
+        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+    ):
+        return JSONResponse(
+            masked(Page[Profile](items=PROFILES, next_page_token=None), mask)
+        )
 
     @app.get("/conformance/items")
     async def list_items(

@@ -19,6 +19,7 @@ from rn_forge.fastapi.merge_patch import (
     merge_patch_openapi,
 )
 from rn_forge.fastapi.openapi import operation_id
+from rn_forge.fastapi.read_mask import masked, read_mask_param
 from rn_forge.fastapi.problem import Log, register_problem_handlers
 
 __all__ = [
@@ -33,12 +34,14 @@ __all__ = [
     "deprecated",
     "health_router",
     "idempotent",
+    "masked",
     "merge_into",
     "merge_patch_body",
     "merge_patch_openapi",
     "operation_id",
     "order_by_param",
     "page_params",
+    "read_mask_param",
     "register_problem_handlers",
     "require_idempotency_key",
     "require_if_match",

@@ -46,6 +46,14 @@ _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 _ORDER_ID_DESC: Final = "id desc"
 _MERGE: Final = {"Content-Type": MERGE_PATCH_MEDIA_TYPE}
 _DOCUMENT_PATH: Final = "/conformance/documents/1"
+_PROFILE_PATH: Final = "/conformance/profiles/1"
+_PROFILE_ADA: Final = {
+    "id": "1",
+    "displayName": "Ada",
+    "address": {"city": "London", "postcode": "N1"},
+    "phones": [{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+    "settings": {"theme": "dark"},
+}
 _ITEMS_PATH: Final = "/conformance/items"
 _PEOPLE_PATH: Final = "/conformance/people"
 _ORDER_TEAM_SCORE_DESC: Final = "team,score desc"
@@ -1536,6 +1544,121 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_JSON,
         expect_body=_document(),
         depends_on=("patch.stale-if-match-is-412",),
+    ),
+    ConformanceCase(
+        id="read-mask.get-returns-only-the-masked-fields",
+        area="read-mask",
+        description="AIP-157: readMask names top-level fields, and only those are returned.",
+        request=RequestSpec(
+            "GET", _PROFILE_PATH, query={"readMask": "displayName,settings"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"displayName": "Ada", "settings": {"theme": "dark"}},
+    ),
+    ConformanceCase(
+        id="read-mask.nested-path-selects-a-sub-field",
+        area="read-mask",
+        description="A dotted path selects one field of a declared object.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "address.city"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"address": {"city": "London"}},
+    ),
+    ConformanceCase(
+        id="read-mask.path-through-a-list-applies-to-each-element",
+        area="read-mask",
+        description="A path through a list of objects applies to every element.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "phones.number"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"phones": [{"number": "1"}, {"number": "2"}]},
+    ),
+    ConformanceCase(
+        id="read-mask.overlapping-paths-merge",
+        area="read-mask",
+        description="A path and one of its sub-paths merge to the whole object.",
+        request=RequestSpec(
+            "GET", _PROFILE_PATH, query={"readMask": "address,address.city"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"address": {"city": "London", "postcode": "N1"}},
+    ),
+    ConformanceCase(
+        id="read-mask.star-is-the-whole-resource",
+        area="read-mask",
+        description="A readMask of * returns the whole resource.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "*"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_PROFILE_ADA,
+    ),
+    ConformanceCase(
+        id="read-mask.list-masks-each-item",
+        area="read-mask",
+        description="On a collection the mask applies to each item, and the page members stay.",
+        request=RequestSpec(
+            "GET", "/conformance/profiles", query={"readMask": "id,displayName"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                {"id": "1", "displayName": "Ada"},
+                {"id": "2", "displayName": "Grace"},
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="read-mask.unknown-path-is-400",
+        area="read-mask",
+        description="A path that names no declared field is a 400, never ignored.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "nickname"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "Unknown readMask path 'nickname'"),
+    ),
+    ConformanceCase(
+        id="read-mask.path-inside-a-free-form-field-is-400",
+        area="read-mask",
+        description="A free-form JSON field is a leaf: a path inside it names nothing declared.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "settings.theme"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "Unknown readMask path 'settings.theme'"
+        ),
+    ),
+    ConformanceCase(
+        id="read-mask.star-with-other-paths-is-400",
+        area="read-mask",
+        description="* selects everything, so combining it with a path is a 400.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "*,displayName"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "readMask '*' cannot be combined with other paths"
+        ),
+    ),
+    ConformanceCase(
+        id="read-mask.masked-read-keeps-the-etag",
+        area="read-mask",
+        description="A masked read carries the resource's ETag, so a client can follow with If-Match.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "displayName"}),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:1"'},
+        expect_body={"displayName": "Ada"},
+    ),
+    ConformanceCase(
+        id="read-mask.batch-get-masks-each-item",
+        area="read-mask",
+        description="A :batchGet applies the mask to each resource.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": "1", "readMask": "name"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"books": [{"name": "alpha"}]},
     ),
 )
 
