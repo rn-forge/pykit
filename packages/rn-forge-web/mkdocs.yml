@@ -61,6 +61,7 @@ nav:
       - Exceptions: reference/exceptions.md
       - Concurrency: reference/concurrency.md
       - Pagination: reference/pagination.md
+      - Merge patch: reference/merge_patch.md
       - Operations: reference/operations.md
       - Idempotency: reference/idempotency.md
       - Health: reference/health.md

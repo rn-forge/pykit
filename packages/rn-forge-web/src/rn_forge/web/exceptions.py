@@ -17,6 +17,7 @@ __all__ = [
     "IdempotencyKeyRequired",
     "IdempotencyKeyReuse",
     "InvalidCursor",
+    "InvalidMergePatch",
     "InvalidOrderBy",
     "MalformedPrecondition",
     "PermissionDenied",
@@ -24,9 +25,15 @@ __all__ = [
     "RemoteProblem",
     "ServiceUnavailable",
     "TooManyRequests",
+    "UnsupportedMediaType",
     "VersionConflict",
     "WebError",
 ]
+
+
+_UNSUPPORTED_MEDIA_TYPE_DETAIL = (
+    "Use Content-Type: application/merge-patch+json for PATCH"
+)
 
 
 class WebError(AppException):
@@ -59,6 +66,42 @@ class InvalidOrderBy(WebError):
 
 class ContentTooLarge(WebError):
     """The request body exceeds the configured size limit (413)."""
+
+
+class UnsupportedMediaType(WebError):
+    """The request's media type is not one the route accepts (415).
+
+    The message defaults to ``Use Content-Type: application/merge-patch+json for PATCH``.
+    """
+
+    def __init__(
+        self,
+        *message_args: Any,
+        **error_data: Any,
+    ) -> None:
+        super().__init__(
+            *(message_args or (_UNSUPPORTED_MEDIA_TYPE_DETAIL,)), **error_data
+        )
+
+    def response_headers(self) -> dict[str, str]:
+        """Return the ``Accept-Patch`` header (RFC 5789 section 2.2)."""
+        return {"Accept-Patch": "application/merge-patch+json"}
+
+
+class InvalidMergePatch(WebError):
+    """A merge-patch body is not a JSON object (422).
+
+    The message defaults to ``A merge patch must be a JSON object.``
+    """
+
+    def __init__(
+        self,
+        *message_args: Any,
+        **error_data: Any,
+    ) -> None:
+        super().__init__(
+            *(message_args or ("A merge patch must be a JSON object.",)), **error_data
+        )
 
 
 class IdempotencyKeyRequired(WebError):
