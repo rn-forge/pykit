@@ -94,6 +94,15 @@ class _ConformanceItem(models.Model):
         app_label = "rn_forge_django"
 
 
+class _ConformancePerson(models.Model):
+    id = models.CharField(primary_key=True, max_length=10)
+    team = models.CharField(max_length=10)
+    score = models.IntegerField(null=True)
+
+    class Meta:
+        app_label = "rn_forge_django"
+
+
 class _ConformanceDocument(VersionedModelMixin, BaseModel):
     id = models.CharField(primary_key=True, max_length=10)
     name = models.CharField(max_length=40)
@@ -290,6 +299,27 @@ class _ItemSerializer(serializers.ModelSerializer):
         fields = ["id"]
 
 
+class _PersonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformancePerson
+        fields = ["id", "team", "score"]
+
+
+class _FivePerPage(CursorPagination):
+    page_size = 5
+    max_page_size = 5
+
+
+class _People(ListAPIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformancePerson.objects.all()
+    serializer_class = _PersonSerializer
+    pagination_class = _FivePerPage
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id", "team", "score"]
+
+
 class _TwoPerPage(CursorPagination):
     page_size = 2
     max_page_size = 2
@@ -416,6 +446,7 @@ urlpatterns = [
     path("conformance/validate", _Validate.as_view()),
     path("conformance/items/<str:pk>", _Item.as_view()),
     path("conformance/items", _Items.as_view()),
+    path("conformance/people", _People.as_view()),
     path("conformance/charges", _Charges.as_view()),
     path("conformance/readyz", _readyz),
     path("conformance/livez", liveness_view),
@@ -479,7 +510,7 @@ WIRING = {
 
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(_ConformanceItem, _Order, _ConformanceDocument)
+    create_tables(_ConformanceItem, _ConformancePerson, _Order, _ConformanceDocument)
 
 
 @pytest.fixture
@@ -487,6 +518,14 @@ def client():
     """A fresh application per case: rows reset, and the cache (the store) cleared by conftest."""
     for pk in ("1", "2", "3"):
         _ConformanceItem.objects.create(pk=pk)
+    for pk, team, score in [
+        ("1", "a", 10),
+        ("2", "b", None),
+        ("3", "a", None),
+        ("4", "b", 5),
+        ("5", "a", 10),
+    ]:
+        _ConformancePerson.objects.create(pk=pk, team=team, score=score)
     _Order.objects.create(pk="1", name="widget")
     _ConformanceDocument.objects.create(
         pk="1",
