@@ -46,6 +46,14 @@ class Item(AuditMixin, Base):
     id: Mapped[str] = mapped_column(primary_key=True)
 
 
+class Person(AuditMixin, Base):
+    __tablename__ = "conformance_person"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    team: Mapped[str]
+    score: Mapped[int | None]
+
+
 class Order(AuditMixin, Base):
     __tablename__ = "conformance_order"
 
@@ -97,6 +105,34 @@ def build_app(engine: AsyncEngine) -> FastApiApp:
         )
         return Page[dict[str, str]](
             items=[{"id": row.id} for row in window], next_page_token=token
+        )
+
+    @app.get("/conformance/people")
+    async def list_people(
+        params=Depends(page_params(cap=5, default=5)),
+        order=Depends(order_by_param(allowed=["id", "team", "score"])),
+    ) -> Page[dict[str, str | int | None]]:
+        size, cursor = params
+        stmt = keyset(
+            select(Person),
+            columns={"id": Person.id, "team": Person.team, "score": Person.score},
+            terms=order,
+            cursor=cursor,
+            id_column=Person.id,
+        )
+        async with sessions() as session:
+            rows = (await session.scalars(stmt.limit(size + 1))).all()
+        window = rows[:size]
+        token = (
+            next_page_token(
+                [getattr(window[-1], t.field) for t in order], window[-1].id, order
+            )
+            if len(rows) > size
+            else None
+        )
+        return Page[dict[str, str | int | None]](
+            items=[{"id": r.id, "team": r.team, "score": r.score} for r in window],
+            next_page_token=token,
         )
 
     @app.post("/conformance/orders:import")
@@ -156,6 +192,16 @@ async def issue(client: httpx.AsyncClient, case):
 @pytest.mark.asyncio
 async def test_sqlalchemy_backed_fastapi_conforms(engine, session, case_id):
     session.add_all(Item(id=str(i)) for i in (1, 2, 3))
+    session.add_all(
+        Person(id=str(i), team=team, score=score)
+        for i, team, score in [
+            (1, "a", 10),
+            (2, "b", None),
+            (3, "a", None),
+            (4, "b", 5),
+            (5, "a", 10),
+        ]
+    )
     await session.commit()
     case = case_by_id(case_id)
     transport = httpx.ASGITransport(app=build_app(engine), raise_app_exceptions=False)
