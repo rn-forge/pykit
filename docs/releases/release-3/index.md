@@ -22,7 +22,7 @@ Wire features that the API conventions describe but no package implements, or on
 | [F12.12](../../specs/epics/E12-http-contract-extensions/F12.12-requestutils-name-collision.md) | E12 | New |
 | [F12.14](../../specs/epics/E12-http-contract-extensions/F12.14-merge-patch.md) | E12 | New |
 | [F12.15](../../specs/epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md) | E12 | New |
-| [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | New |
+| [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | Closed |
 <!-- scope:end -->
 
 ## Decisions
@@ -39,7 +39,7 @@ All in `rn-forge-django`; pykit has no live consumers, so no deprecation window 
 
 ## Progress
 
-The scope is scheduled. Nothing has started.
+Started 2026-10-04. F12.16 is closed.
 
 ## Commits
 

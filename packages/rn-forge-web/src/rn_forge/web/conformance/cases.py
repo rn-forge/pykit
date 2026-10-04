@@ -693,7 +693,28 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             ),
         },
         expect_body={},
-    ),  # --- Tabular transfer and bulk operations (transfer.py) ----------------
+    ),
+    ConformanceCase(
+        id="cors.export-exposes-content-disposition",
+        area="cors",
+        description=(
+            "A cross-origin CSV export exposes Content-Disposition, so a "
+            "browser client can read the file name."
+        ),
+        request=RequestSpec(
+            "GET",
+            "/conformance/orders",
+            headers={"Accept": _CSV_TYPE, "Origin": "https://example.com"},
+        ),
+        expect_status=200,
+        expect_headers={"Access-Control-Allow-Origin": "https://example.com"},
+        expect_header_patterns={
+            "Content-Type": _CSV_TYPE_PATTERN,
+            "Access-Control-Expose-Headers": r"(.+, )?Content-Disposition(, .+)?",
+        },
+        expect_text=_ORDERS_CSV,
+    ),
+    # --- Tabular transfer and bulk operations (transfer.py) ----------------
     ConformanceCase(
         id="transfer.export-is-negotiated-from-accept",
         area="transfer",

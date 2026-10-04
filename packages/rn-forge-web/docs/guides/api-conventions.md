@@ -485,11 +485,13 @@ one at all, and whether credentials are allowed. Neither stack picks a
 default.
 
 - **`EXPOSED_HEADERS`** is the one thing only this kit can supply: a browser
-  cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation` or
-  `Sunset` unless they are named in `Access-Control-Expose-Headers`,
+  cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation`,
+  `Sunset` or `Content-Disposition` (the file name of §17's exports and import
+  templates) unless they are named in `Access-Control-Expose-Headers`,
   comma-joined in that order. `traceresponse` is not in this list — the
   OpenTelemetry response propagator exposes it itself.
-  — `cors.exposed-headers-are-comma-joined`
+  — `cors.exposed-headers-are-comma-joined`,
+  `cors.export-exposes-content-disposition`
 - **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's
   own `CORSMiddleware`. `None` installs nothing.
 - **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the

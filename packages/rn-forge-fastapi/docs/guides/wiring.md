@@ -132,8 +132,9 @@ config = AppConfig(cors=CorsPolicy(allow_origins=("https://app.example.com",)))
 
 `CorsPolicy.expose_headers` defaults to `rn_forge.web.EXPOSED_HEADERS` — the
 response headers this kit emits that a browser cannot read unless a CORS
-policy names them (`ETag`, `Link`, and so on). `traceresponse` needs no entry
-here — the OpenTelemetry response propagator exposes it itself.
+policy names them (`ETag`, `Link`, `Content-Disposition`, and so on).
+`traceresponse` needs no entry here — the OpenTelemetry response propagator
+exposes it itself.
 `allow_origins` has no default; naming them is the application's decision.
 `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises — browsers
 reject that combination.

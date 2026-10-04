@@ -4,6 +4,11 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+
+- `EXPOSED_HEADERS` now ends with `Content-Disposition`, so a cross-origin browser
+  client can read the file name of an export or an import template.
+
 ## [0.1.0] - 2026-09-27
 
 First release.
