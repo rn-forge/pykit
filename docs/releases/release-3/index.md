@@ -26,7 +26,7 @@ Wire features that the API conventions describe but no package implements, or on
 | [F12.16](../../specs/epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) | E12 | Closed |
 | [F12.2](../../specs/epics/E12-http-contract-extensions/F12.2-soft-delete.md) | E12 | New |
 | [F12.3](../../specs/epics/E12-http-contract-extensions/F12.3-multi-column-sorting.md) | E12 | Closed |
-| [F12.9](../../specs/epics/E12-http-contract-extensions/F12.9-read-mask.md) | E12 | New |
+| [F12.9](../../specs/epics/E12-http-contract-extensions/F12.9-read-mask.md) | E12 | Active |
 <!-- scope:end -->
 
 ## Decisions
