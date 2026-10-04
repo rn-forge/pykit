@@ -6,6 +6,15 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ### Added
 
+- `:batchGet` and `:batchUpdate` wire rules in `rn_forge.web.transfer`: `batch_get_ids`,
+  `parse_batch_update`, `BatchUpdateItem`, `NON_EMPTY_IDS_DETAIL` and `DUPLICATE_ID_DETAIL`, with
+  `check_item_precondition` in `rn_forge.web.concurrency` and `InvalidBatchGet` (400) in
+  `default_registry()`.
+- `PreconditionRequired`, `MalformedPrecondition` and `VersionConflict` take an optional `errors`
+  argument that renders as the problem's `errors` member. Without it their bodies are unchanged.
+- Eleven `transfer.*` conformance cases for `:batchGet` and `:batchUpdate`, from
+  `batch-get-returns-resources-in-request-order` to `batch-update-with-an-empty-list-is-422`.
+  `RequestSpec.query` accepts a tuple of values for a repeated parameter.
 - Shared transfer rules in `rn_forge.web.transfer`: `ImportCounts`, `parse_flag`,
   `row_cap_problem`, `NON_EMPTY_LIST_DETAIL`, `unsupported_file_detail` and
   `unreadable_file_detail`.

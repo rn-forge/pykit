@@ -55,7 +55,7 @@ router = CustomMethodRouter(trailing_slash=False)
 router.register("orders", OrderViewSet, basename="orders")
 ```
 
-A viewset takes only the mixins it needs. The wire shapes are those of the transfer section of
+A viewset takes only the mixins it needs (`BatchGetMixin`, `BatchCreateMixin`, `BatchUpdateMixin`, `BatchDeleteMixin`). The wire shapes are those of the transfer section of
 the `rn-forge-web` API conventions.
 
 | Request | Behaviour |
@@ -64,6 +64,8 @@ the `rn-forge-web` API conventions.
 | `POST /orders:import`, `multipart/form-data` `file`, `?validateOnly=true` | Upsert through the import resource. `200 {created, updated, skipped, validateOnly}`; any row error is a 422 with `errors[].pointer = "/rows/<row>/<column>"` and nothing persisted. Permission `upload`. |
 | `GET /orders:importTemplate`, `?prefill=true` | The import columns, negotiated like an export; prefill adds the filtered rows. |
 | `POST /orders:batchCreate`, `{"requests": [...]}` | Each item through the serializer, all or nothing. `200 {"orders": [...]}`. |
+| `GET /orders:batchGet?ids=1&ids=2` | The ids within `filter_queryset(get_queryset())`, serialized with the view's serializer. `200 {"orders": [...]}` in request order. No `ids`, or more than `transfer.max_rows`, is a 400; an id outside the filtered queryset is a 404 naming it. |
+| `POST /orders:batchUpdate`, `{"requests": [{"id", "patch", "ifMatch"}]}` | Each `patch` is a JSON Merge Patch merged into the row and validated through the serializer, all or nothing, in one transaction. `200 {"orders": [...]}` in request order. A failed precondition is a 428, 400 or 412 at `/requests/<i>/ifMatch`; an invalid merge is a 422 at `/requests/<i>/patch/<field>`. |
 | `POST /orders:batchDelete`, `{"ids": [...]}` | All or nothing, `204`. An id outside the filtered queryset is a 404 naming it. |
 
 Row numbers in pointers count from 0. A pointer names the column as it appears in the file when
@@ -79,7 +81,14 @@ Override the hooks and return a message to refuse an item; the response is one 4
 - `prepare_batch_create_item(item)` runs on each raw item before validation.
 - `validate_batch_create_item(item)` runs on each validated item, after
   `AuditFieldsViewMixin.prepare_create_data`.
+- `validate_batch_update_item(instance, data)` runs on each row and its validated data, after
+  `AuditFieldsViewMixin.prepare_update_data`.
 - `validate_batch_delete_instance(instance)` runs on each instance to delete.
+
+`BatchUpdateMixin` checks `ifMatch` for a `VersionedModelMixin` row, and an unversioned model
+ignores it. Set `batch_update_requires_if_match = True` to make a missing `ifMatch` a 428, and
+`etag_codec` to change the validator format, as for `MergePatchMixin`. `BatchGetMixin` and
+`BatchUpdateMixin` answer under `batch_resource_name`, which they share with `BatchCreateMixin`.
 
 In an import resource the same check belongs in `before_import_row(row, **kwargs)`, where
 `kwargs["user"]` is the request user; raising there is reported as a row error.

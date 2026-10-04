@@ -6,6 +6,10 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
 
 ### Added
 
+- `batch_get_router` (`GET :batchGet`) and `batch_update_router` (`POST :batchUpdate`, one JSON
+  Merge Patch and optional `ifMatch` per item) in `rn_forge.fastapi.transfer`, with the
+  `BatchGetStore`, `BatchUpdateStore` and `Current` protocols. `batch_update_router` takes
+  `require_if_match` and `codec`.
 - Route factories in `rn_forge.fastapi.transfer` that match `rn-forge-django`'s transfer mixins:
   `import_router` (`POST :import`), `import_template_router` (`GET :importTemplate`),
   `batch_create_router` (`POST :batchCreate`) and `batch_delete_router` (`POST :batchDelete`).

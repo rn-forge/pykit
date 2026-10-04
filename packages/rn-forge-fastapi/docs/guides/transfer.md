@@ -1,7 +1,7 @@
 # Tabular export, import and batch operations
 
 `rn_forge.fastapi.transfer` serves spreadsheet download and upload, an import
-template, and batch create and delete. It needs the `transfer` extra (tablib,
+template, and batch get, create, update and delete. It needs the `transfer` extra (tablib,
 openpyxl and `python-multipart`) and is not imported by `rn_forge.fastapi`. The
 wire contract is §17 of `rn-forge-web`'s API conventions. Persistence is the
 application's: each route factory takes a **store**, a dependency that returns an
@@ -13,6 +13,8 @@ object with the methods the factory calls.
 | `import_template_router` | `GET {collection}:importTemplate` | `TemplateSource` | `rows()` |
 | `batch_create_router` | `POST {collection}:batchCreate` | `BatchCreateStore` | `create_many(items)` |
 | `batch_delete_router` | `POST {collection}:batchDelete` | `BatchDeleteStore` | `find(ids)`, `delete_many(ids)` |
+| `batch_get_router` | `GET {collection}:batchGet` | `BatchGetStore` | `get_many(ids)` |
+| `batch_update_router` | `POST {collection}:batchUpdate` | `BatchUpdateStore` | `current(ids)`, `update_many(items)` |
 
 The stores are structural protocols, so a store never imports them. A factory
 validates the request, applies the row cap (`max_rows`) and calls the store only
@@ -223,6 +225,24 @@ A row that fails a check only the store can make, such as a foreign-key lookup,
 is reported by raising `RowsInvalid(errors)` (from `rn_forge.web`, built from `rn_forge.web.transfer.RowError`) from `import_rows`. It renders the
 same 422 as a cell that failed validation, pointing at `/rows/<row>/<column>`.
 
+### Batch get and update
+
+`batch_get_router` reads a repeated `ids` query parameter. The store's `get_many(ids)` returns the
+rows that exist within the caller's scope, keyed by id as a string. `batch_update_router` takes
+`{"requests": [{"id", "patch", "ifMatch"}]}`: the store's `current(ids)` returns each existing row
+as an object with `row` and `version` (`None` when the resource is unversioned), the factory merges
+each patch into the row dumped through `model` by alias and validates the result as `model`, and
+`update_many(items)` receives `(id, model instance)` pairs only after every check has passed. It
+writes them in one transaction, bumps each version and returns the updated rows in the order given.
+
+```python
+app.include_router(batch_get_router("/orders", response_model=OrderOut, resource_name="orders", resource_label="Order", store=order_store, max_rows=100))
+app.include_router(batch_update_router("/orders", model=OrderDocument, response_model=OrderOut, resource_name="orders", resource_label="Order", store=order_store, max_rows=100, require_if_match=True))
+```
+
+`update_many` raises `ItemsDenied(errors, root="requests")` before writing to refuse an item.
+`codec=` changes the validator format of `ifMatch`, which defaults to `VersionETagCodec`.
+
 ### What the factories answer
 
 | Request | Response |
@@ -237,6 +257,14 @@ same 422 as a cell that failed validation, pointing at `/rows/<row>/<column>`.
 | `:batchCreate` item fails validation | 422, every failed field at `/requests/<i>/<field>`; the store is not called |
 | `:batchCreate` raises `ItemsDenied` | 403, `errors[].pointer` `/requests/<i>` |
 | `:batchCreate` succeeds | 200 `{"<resource_name>": [...]}` of `response_model` dumped by alias |
+| `:batchGet` has no non-empty `ids`, or more than `max_rows` | 400, `A non-empty ids parameter is required.` or `The batch exceeds the limit of N rows.` |
+| `:batchGet` or `:batchUpdate` names an unknown id | 404, `{resource_label} {id} not found` |
+| `:batchGet` succeeds | 200 `{"<resource_name>": [...]}` in request order, duplicates repeated |
+| `:batchUpdate` item is malformed or repeats an id | 422, every failing item at `/requests/<i>/id`, `/patch` or `/ifMatch`; the store is not called |
+| `:batchUpdate` precondition fails | 428, 400 or 412, `errors[].pointer` `/requests/<i>/ifMatch` |
+| `:batchUpdate` merged document is invalid | 422, every failed field at `/requests/<i>/patch/<field>`; the store is not asked to write |
+| `:batchUpdate` raises `ItemsDenied` | 403, `errors[].pointer` `/requests/<i>` |
+| `:batchUpdate` succeeds | 200 `{"<resource_name>": [...]}` of `response_model` dumped by alias, in request order |
 | `:batchDelete` names an unknown id | 404, `{resource_label} {id} not found` |
 | `:batchDelete` succeeds | 204 |
 

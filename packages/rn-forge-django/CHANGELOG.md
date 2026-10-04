@@ -4,6 +4,14 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ## [Unreleased]
 
+### Added
+
+- `BatchGetMixin` (`GET :batchGet?ids=1&ids=2`) and `BatchUpdateMixin` (`POST :batchUpdate`, one
+  JSON Merge Patch and optional `ifMatch` per item) in `rn_forge.django.drf.transfer`.
+  `BatchUpdateMixin` has `batch_update_requires_if_match`, `etag_codec` and
+  `validate_batch_update_item(instance, data)`. `batch_resource_name` is shared with
+  `BatchCreateMixin`.
+
 ### Changed
 
 - **Breaking:** `CursorPagination` and `OrderByFilter` use every `orderBy` term, not the first. `ordering_fields` may name nullable fields and relation paths, `NULL` sorts last in both directions, and the `orderBy` OpenAPI description says it takes a comma-separated list. A view's non-primary-key default `ordering` supplies the terms when the request gives no `orderBy`. Page tokens issued before the change are rejected with 400.

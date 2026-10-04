@@ -637,6 +637,54 @@ nothing and answers `204` (AIP-235); an id that does not exist fails the whole
 batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 `transfer.failed-batch-delete-deletes-nothing`, `transfer.batch-delete-is-204`
 
+**Batch get.** `GET /books:batchGet?ids=1&ids=2` (AIP-231) takes a repeated
+`ids` parameter; a comma-joined value is one id. It answers
+`200 {"books": [...]}` with one entry per requested id, in request order and
+repeating duplicates. Failures are `400` problems, as for `orderBy` and
+`pageToken` (§4): no non-empty `ids` value is `A non-empty ids parameter is
+required.`, and more ids than the configured cap is `The batch exceeds the
+limit of {cap} rows.`. The first id that does not exist within the caller's
+scope is a `404` reading `{Label} {id} not found`; an id outside the scope is a
+`404`, not a `403`, so `:batchGet` reveals nothing a `GET` would not. —
+`transfer.batch-get-returns-resources-in-request-order`,
+`transfer.batch-get-with-an-unknown-id-is-404`,
+`transfer.batch-get-without-ids-is-400`,
+`transfer.batch-get-over-the-cap-is-400`
+
+**Batch update.** `POST /books:batchUpdate` with
+`{"requests": [{"id": "2", "patch": {...}, "ifMatch": "W/\"2:1\""}]}` is all or
+nothing (AIP-234) and answers `200 {"books": [...]}` in request order. §10 does
+not adopt field masks, so each item's `patch` is a JSON Merge Patch (RFC 7396),
+merged as a single `PATCH` merges it; `ifMatch` is the item's precondition, with
+the header's syntax and meaning, and a batch response carries no per-item
+`ETag`. The first failing step answers:
+
+1. `requests` missing, empty or not a list: `422` at `/requests`, as for
+   `:batchCreate`.
+2. More items than the cap: the `422` of the shared list rules.
+3. An item with no `id`, a `patch` that is not a JSON object, or an `ifMatch`
+   that is not a string: `422`, every failing item at `/requests/<i>/id`,
+   `/requests/<i>/patch` or `/requests/<i>/ifMatch`.
+4. An id named twice: `422` at `/requests/<i>/id`, `Duplicate id in batch.`,
+   for each later occurrence.
+5. An id that does not exist within the caller's scope: `404`.
+6. A failed precondition on a versioned resource: `428`, `400` or `412`, the
+   first in request order, with `errors[].pointer = "/requests/<i>/ifMatch"`.
+7. A merged document that is invalid: `422`, every failing item at
+   `/requests/<i>/patch/<field>`.
+8. An item the application denies: `403` at `/requests/<i>`.
+
+Step 3 comes before the precondition, unlike a single `PATCH`, because the
+precondition is inside the body. A route may require preconditions, and then an
+item without `ifMatch` is the `428`. An unversioned resource ignores `ifMatch`.
+— `transfer.batch-update-applies-each-merge-patch`,
+`transfer.batch-update-stale-if-match-is-412-pointer`,
+`transfer.failed-batch-update-changes-nothing`,
+`transfer.batch-update-item-validation-is-422-pointer`,
+`transfer.batch-update-with-an-unknown-id-is-404`,
+`transfer.batch-update-with-a-duplicate-id-is-422`,
+`transfer.batch-update-with-an-empty-list-is-422`
+
 **Large files (not built).** When a consumer needs it, the pattern is
 `POST /imports` returning `202` with `Location`, then polling the operation
 (AIP-151, §19), with an `Idempotency-Key` (§5,
@@ -674,8 +722,7 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   `validateOnly=true` query parameter, runs validation and every check the real
   call would, and has no side effects. §17's import uses it.
 - **Batch methods** are spelled `:batchCreate`, `:batchGet` and `:batchUpdate`
-  (AIP-233, 231, 234). `:batchGet` and `:batchUpdate` are specified here and
-  built when a consumer needs them.
+  (AIP-233, 231, 234); §17 gives their rules.
 - **Long-running operations** (AIP-151): the call returns `202` with a
   `Location` naming an operation resource
   `{name, done, metadata, error | response}`; `error` is an RFC 9457 problem.
