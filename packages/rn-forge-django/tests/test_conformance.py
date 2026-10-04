@@ -9,7 +9,7 @@ If a case needs more than a line or two over them, the adapter is missing.
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
 
-There is no `pytest.skip` in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision Django cannot honour and belongs in the web plan.
 """
@@ -34,6 +34,7 @@ from import_export import resources as ie_resources
 from import_export import widgets as ie_widgets
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView
+from rest_framework.routers import SimpleRouter
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,12 +48,14 @@ from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
 from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.views.base import BaseModelViewSet
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
     ResourceExportMixin,
     ResourceImportMixin,
 )
+from rn_forge.django.models import BaseModel, VersionedModelMixin
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
@@ -89,6 +92,36 @@ class _ConformanceItem(models.Model):
 
     class Meta:
         app_label = "rn_forge_django"
+
+
+class _ConformanceDocument(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    name = models.CharField(max_length=40)
+    note = models.CharField(max_length=40, null=True, blank=True)
+    tags = models.JSONField(default=list)
+    settings = models.JSONField(default=dict)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+
+
+class _DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceDocument
+        fields = ["id", "name", "note", "tags", "settings"]
+        read_only_fields = ["id"]
+
+
+class _Documents(BaseModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceDocument.objects.all()
+    serializer_class = _DocumentSerializer
+    etag_codec = EntityVersionETagCodec()
+
+
+_documents = SimpleRouter(trailing_slash=False)
+_documents.register("conformance/documents", _Documents, basename="documents")
 
 
 def _next_order_id():
@@ -387,6 +420,7 @@ urlpatterns = [
     path("conformance/orders/over-cap", _over_cap),
     path("conformance/orders/count", _OrderCount.as_view()),
     *_orders.urls,
+    *_documents.urls,
     path("conformance/legacy", _Legacy.as_view()),
     path("conformance/stamped", _Stamped.as_view()),
     path("conformance/exports", _StartExport.as_view()),
@@ -435,7 +469,7 @@ WIRING = {
 
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(_ConformanceItem, _Order)
+    create_tables(_ConformanceItem, _Order, _ConformanceDocument)
 
 
 @pytest.fixture
@@ -444,6 +478,13 @@ def client():
     for pk in ("1", "2", "3"):
         _ConformanceItem.objects.create(pk=pk)
     _Order.objects.create(pk="1", name="widget")
+    _ConformanceDocument.objects.create(
+        pk="1",
+        name="widget",
+        note="fragile",
+        tags=["a", "b"],
+        settings={"color": "red", "size": "L"},
+    )
     with override_settings(**WIRING):
         yield Client(raise_request_exception=False)
 
@@ -462,6 +503,7 @@ def issue(client, case):
             BOUNDARY, {k: ContentFile(v, name="file.csv") for k, v in spec.body.items()}
         )
     else:
+        content_type = headers.pop("Content-Type", content_type)
         data = json.dumps(spec.body)
     return client.generic(
         spec.method, target, data=data, content_type=content_type, headers=headers

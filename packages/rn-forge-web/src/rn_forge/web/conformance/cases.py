@@ -11,6 +11,7 @@ from rn_forge.web.conformance.types import (
     ConformanceCase,
     RequestSpec,
 )
+from rn_forge.web.merge_patch import MERGE_PATCH_MEDIA_TYPE
 from rn_forge.web.tracing import EXPOSED_HEADERS
 from rn_forge.web.pagination import encode_cursor
 from rn_forge.web.problem import (
@@ -24,8 +25,10 @@ from rn_forge.web.problem import (
     PRECONDITION_FAILED,
     PRECONDITION_REQUIRED,
     SERVICE_UNAVAILABLE,
+    NULL_FIELD_DETAIL,
     TOO_MANY_REQUESTS,
     UNAUTHORIZED,
+    UNSUPPORTED_MEDIA_TYPE,
     VALIDATION_ERROR,
     FORBIDDEN,
     ProblemType,
@@ -41,6 +44,8 @@ _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 """A well-formed W3C traceparent, from the standard's own example."""
 
 _ORDER_ID_DESC: Final = "id desc"
+_MERGE: Final = {"Content-Type": MERGE_PATCH_MEDIA_TYPE}
+_DOCUMENT_PATH: Final = "/conformance/documents/1"
 _ITEMS_PATH: Final = "/conformance/items"
 _ITEM_PATH: Final = "/conformance/items/1"
 _ITEM_ETAG: Final = 'W/"1:7"'
@@ -70,6 +75,18 @@ def _problem_body(
         "instance": REDACTED,
         "traceId": REDACTED,
         **extensions,
+    }
+
+
+def _document(**changes: object) -> dict[str, object]:
+    """The fixture document, as `GET /conformance/documents/1` serves it fresh."""
+    return {
+        "id": "1",
+        "name": "widget",
+        "note": "fragile",
+        "tags": ["a", "b"],
+        "settings": {"color": "red", "size": "L"},
+        **changes,
     }
 
 
@@ -965,6 +982,139 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
                 "instance": REDACTED,
             },
         },
+    ),
+    # --- Merge patch (merge_patch.py) ------------------------------
+    ConformanceCase(
+        id="patch.nested-merge-keeps-absent-members",
+        area="patch",
+        description=(
+            "RFC 7396 §2: objects merge recursively, so a member the patch does "
+            "not name keeps its value."
+        ),
+        request=RequestSpec(
+            "PATCH",
+            _DOCUMENT_PATH,
+            headers=_MERGE,
+            body={"settings": {"color": "blue"}},
+        ),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:2"'},
+        expect_body=_document(settings={"color": "blue", "size": "L"}),
+    ),
+    ConformanceCase(
+        id="patch.null-inside-a-json-value-removes-the-member",
+        area="patch",
+        description=("RFC 7396 §2: below the top level, null removes the member."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"settings": {"size": None}}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(settings={"color": "red"}),
+    ),
+    ConformanceCase(
+        id="patch.null-sets-a-nullable-field-to-null",
+        area="patch",
+        description=("At the top level a null names a field and stores null in it."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"note": None}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(note=None),
+    ),
+    ConformanceCase(
+        id="patch.array-is-replaced-whole",
+        area="patch",
+        description=("RFC 7396 §2: an array is a value, so it replaces the target's."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"tags": ["c"]}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(tags=["c"]),
+    ),
+    ConformanceCase(
+        id="patch.read-only-members-are-ignored",
+        area="patch",
+        description=(
+            "A server-owned member in the patch changes nothing; the rest applies."
+        ),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"id": "99", "name": "gadget"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(name="gadget"),
+    ),
+    ConformanceCase(
+        id="patch.null-on-a-non-nullable-field-is-422",
+        area="patch",
+        description="A null on a required field fails validation, naming the field.",
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"name": None}
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[{"pointer": "/name", "detail": NULL_FIELD_DETAIL}],
+        ),
+    ),
+    ConformanceCase(
+        id="patch.non-object-body-is-422",
+        area="patch",
+        description="RFC 7396 lets a non-object replace the target; pykit refuses it.",
+        request=RequestSpec("PATCH", _DOCUMENT_PATH, headers=_MERGE, body=["name"]),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "A merge patch must be a JSON object."
+        ),
+    ),
+    ConformanceCase(
+        id="patch.json-content-type-is-415",
+        area="patch",
+        description=(
+            "RFC 5789 §2.2: a patch format the server does not support is 415, "
+            "and Accept-Patch names the one it does."
+        ),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_JSON, body={"name": "gadget"}
+        ),
+        expect_status=415,
+        expect_headers={**_PROBLEM, "Accept-Patch": MERGE_PATCH_MEDIA_TYPE},
+        expect_body=_problem_body(
+            UNSUPPORTED_MEDIA_TYPE,
+            "Use Content-Type: application/merge-patch+json for PATCH",
+        ),
+    ),
+    ConformanceCase(
+        id="patch.stale-if-match-is-412",
+        area="patch",
+        description="The precondition is checked before the patch is applied.",
+        request=RequestSpec(
+            "PATCH",
+            _DOCUMENT_PATH,
+            headers={**_MERGE, "If-Match": 'W/"1:9"'},
+            body={"name": "gadget"},
+        ),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED, "Precondition failed: expected version 1, got 9"
+        ),
+    ),
+    ConformanceCase(
+        id="patch.failed-precondition-changes-nothing",
+        area="patch",
+        description="After the 412, the document is still the original.",
+        request=RequestSpec("GET", _DOCUMENT_PATH),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(),
+        depends_on=("patch.stale-if-match-is-412",),
     ),
 )
 

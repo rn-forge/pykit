@@ -5,17 +5,19 @@ hand-written: if a case needs more than a line or two over them, the adapter is
 missing. Assertions are against the table, never against Django's output — two
 stacks agreeing on the wrong thing is not conformance.
 
-There is no `pytest.skip` in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 """
 
+import json
 import re
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, Header, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from pydantic import ConfigDict, Field, ValidationError, field_validator
@@ -28,6 +30,9 @@ from rn_forge.fastapi import (
     conditional_get,
     deprecated,
     health_router,
+    merge_into,
+    merge_patch_body,
+    merge_patch_openapi,
     order_by_param,
     page_params,
     require_if_match,
@@ -95,6 +100,13 @@ class Named(WireModel):
 class Stamped(WireModel):
     id: str
     create_time: datetime
+
+
+class Document(WireModel):
+    name: str
+    note: str | None = None
+    tags: list[str] = []
+    settings: dict[str, Any] = {}
 
 
 class OrderRow(WireModel):
@@ -194,6 +206,37 @@ def build_app(*, failing: str | None) -> FastAPI:
         return JSONResponse(
             {"id": "1", "version": ITEM_VERSION}, headers={"ETag": etag}
         )
+
+    document: dict[str, Any] = {
+        "name": "widget",
+        "note": "fragile",
+        "tags": ["a", "b"],
+        "settings": {"color": "red", "size": "L"},
+    }
+    document_version = [1]
+    codec = EntityVersionETagCodec()
+
+    def document_response():
+        return JSONResponse(
+            {"id": "1", **document},
+            headers={"ETag": codec.format(entity_id="1", version=document_version[0])},
+        )
+
+    @app.get("/conformance/documents/1")
+    async def get_document():
+        return document_response()
+
+    @app.patch("/conformance/documents/1", openapi_extra=merge_patch_openapi())
+    async def patch_document(
+        body: bytes = Depends(merge_patch_body()),
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ):
+        check_precondition(
+            if_match, current_version=document_version[0], entity_id="1", codec=codec
+        )
+        document.update(merge_into(Document, document, body).model_dump(by_alias=True))
+        document_version[0] += 1
+        return document_response()
 
     @app.get("/conformance/items")
     async def list_items(
@@ -402,7 +445,7 @@ def issue(client, case):
         spec.path,
         headers=headers,
         params=dict(spec.query),
-        json=spec.body,
+        content=None if spec.body is None else json.dumps(spec.body),
     )
 
 

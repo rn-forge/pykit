@@ -41,6 +41,8 @@ from rn_forge.web import (
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
+    MERGE_PATCH_MEDIA_TYPE,
+    NULL_FIELD_DETAIL,
     Message,
     Operation,
     Page,
@@ -56,11 +58,14 @@ from rn_forge.web import (
     Send,
     ServiceUnavailable,
     TooManyRequests,
+    UnsupportedMediaType,
     WireModel,
     check_cursor_order,
     check_precondition,
     clamp_page_size,
     format_order_by,
+    merge_representation,
+    require_patch_object,
     parse_order_by,
     content_disposition,
     decode_cursor,
@@ -89,6 +94,11 @@ REGISTRY.register(
     ProblemType("validation-error", 422, "Validation Error"),
 )
 
+
+class NullField(RequestValidationError):
+    """A `null` named a field that cannot hold one."""
+
+
 CODEC = EntityVersionETagCodec()
 IDEMPOTENCY = InMemoryIdempotencyStore()
 AUTHORIZER = ScopeAuthorizer()
@@ -102,6 +112,16 @@ SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 ORDERS: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
 EXPORT_CAP = 1
+DOCUMENT: dict[str, Any] = {
+    "version": 1,
+    "body": {
+        "id": "1",
+        "name": "widget",
+        "note": "fragile",
+        "tags": ["a", "b"],
+        "settings": {"color": "red", "size": "L"},
+    },
+}
 
 
 # --- the handlers ---------------------------------------------------------
@@ -146,6 +166,33 @@ def get_item(request: Request) -> Response:
     if is_not_modified(request.header("If-None-Match"), etag):
         return Response(304, {}, headers={"ETag": etag})
     return Response(200, {"id": "1", "version": ITEM_VERSION}, headers={"ETag": etag})
+
+
+def get_document(request: Request) -> Response:
+    return Response(200, DOCUMENT["body"], headers=_document_etag())
+
+
+def patch_document(request: Request) -> Response:
+    """RFC 7396 merge patch, in the order the contract fixes: media type,
+    precondition, body shape, then validation of the merged document."""
+    media_type = (request.header("Content-Type") or "").split(";")[0].strip().lower()
+    if media_type != MERGE_PATCH_MEDIA_TYPE:
+        raise UnsupportedMediaType()
+    check_precondition(
+        request.header("If-Match"),
+        current_version=DOCUMENT["version"],
+        entity_id="1",
+    )
+    patch = require_patch_object(request.json())
+    merged = merge_representation(DOCUMENT["body"], patch) | {"id": "1"}
+    if not isinstance(merged["name"], str):
+        raise NullField("Validation Error")
+    DOCUMENT.update(body=merged, version=DOCUMENT["version"] + 1)
+    return Response(200, DOCUMENT["body"], headers=_document_etag())
+
+
+def _document_etag() -> dict[str, str]:
+    return {"ETag": CODEC.format(entity_id="1", version=DOCUMENT["version"])}
 
 
 def list_items(request: Request) -> Response:
@@ -454,6 +501,8 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("POST", "/conformance/validate"): validate,
     ("PATCH", "/conformance/items/1"): patch_item,
     ("GET", "/conformance/items/1"): get_item,
+    ("GET", "/conformance/documents/1"): get_document,
+    ("PATCH", "/conformance/documents/1"): patch_document,
     ("GET", "/conformance/items"): list_items,
     ("POST", "/conformance/charges"): create_charge,
     ("GET", "/conformance/readyz"): readyz,
@@ -575,7 +624,10 @@ def _problem_response(exc: BaseException, request: Request) -> Response:
 def _error_extensions(exc: BaseException) -> dict[str, Any]:
     """Field errors, when there are any."""
     if isinstance(exc, RequestValidationError):
-        return {"errors": [field_error(("name",), REQUIRED_FIELD_DETAIL)]}
+        detail = (
+            NULL_FIELD_DETAIL if isinstance(exc, NullField) else REQUIRED_FIELD_DETAIL
+        )
+        return {"errors": [field_error(("name",), detail)]}
     return {}
 
 
