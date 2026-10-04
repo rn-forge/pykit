@@ -7,6 +7,7 @@ from rn_forge.django.drf.views.mixins import (
     ExceptionContextViewMixin,
     MergePatchMixin,
     ModelFilterViewMixin,
+    ReadMaskMixin,
     RequestAccessViewMixin,
 )
 
@@ -29,6 +30,7 @@ class BaseModelViewSet(
     ExceptionContextViewMixin,
     MergePatchMixin,
     ModelFilterViewMixin,
+    ReadMaskMixin,
     ModelViewSet,
 ):
-    """Generic DRF model viewset with request helpers, exception context and merge-patch ``PATCH``."""
+    """Generic DRF model viewset with request helpers, exception context, merge-patch ``PATCH`` and ``readMask``."""

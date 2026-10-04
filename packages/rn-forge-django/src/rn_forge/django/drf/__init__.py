@@ -9,7 +9,7 @@ from rn_forge.django.drf.utils import (
     RequestUtils,
 )
 from rn_forge.django.drf.casing import MergePatchParser
-from rn_forge.django.drf.views import EnumChoicesAPIView, MergePatchMixin
+from rn_forge.django.drf.views import EnumChoicesAPIView, MergePatchMixin, ReadMaskMixin
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf.idempotency import CacheIdempotencyStore, idempotent
 from rn_forge.django.drf.pagination import (
@@ -28,6 +28,7 @@ __all__ = [
     "MergePatchMixin",
     "MergePatchParser",
     "PermissionAwareUser",
+    "ReadMaskMixin",
     "RequestUtils",
     "drf_exception_handler",
     "enforce_version",

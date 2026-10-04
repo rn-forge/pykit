@@ -10,12 +10,13 @@ from django.http import HttpRequest
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.generics import GenericAPIView
+from rest_framework.serializers import ListSerializer, Serializer
 from rest_framework.parsers import BaseParser
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
-from rn_forge.django.drf.casing import MergePatchParser
+from rn_forge.django.drf.casing import MergePatchParser, camelize_key
 from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf._typing import (
     CreateModelMixinProtocol,
@@ -29,9 +30,13 @@ from rn_forge.django.models import DateRangeModel
 from rn_forge.django.models.concurrency import VersionedModelMixin
 from rn_forge.web import (
     MERGE_PATCH_MEDIA_TYPE,
+    READ_MASK_PARAM,
     ETagCodec,
+    FieldTree,
+    ReadMask,
     UnsupportedMediaType,
     merge_representation,
+    parse_read_mask,
     require_patch_object,
 )
 
@@ -41,6 +46,7 @@ __all__ = [
     "MergePatchMixin",
     "ModelFilterViewMixin",
     "PermissionByMethodMixin",
+    "ReadMaskMixin",
     "RequestAccessViewMixin",
 ]
 
@@ -306,3 +312,99 @@ class MergePatchMixin(GenericAPIView):
         if not isinstance(instance, VersionedModelMixin):
             return {}
         return {"ETag": etag_for(instance, codec=self.etag_codec)}
+
+
+# Partial responses
+# ---------------------------------------------------------------------------
+
+
+def _snake_tree(serializer: Any) -> dict[str, Any]:
+    """The readable fields of *serializer* by field name; a nested serializer is a subtree."""
+    tree: dict[str, Any] = {}
+    for name, field in cast(Mapping[str, Any], serializer.fields).items():
+        if field.write_only:
+            continue
+        nested: Any = (
+            cast(Any, field).child if isinstance(field, ListSerializer) else field
+        )
+        tree[name] = _snake_tree(nested) if isinstance(nested, Serializer) else None
+    return tree
+
+
+def _wire_tree(tree: Mapping[str, Any]) -> FieldTree:
+    return {
+        camelize_key(name): None if sub is None else _wire_tree(sub)
+        for name, sub in tree.items()
+    }
+
+
+def _snake_mask(mask: Mapping[str, Any], declared: Mapping[str, Any]) -> dict[str, Any]:
+    """Re-key a mask tree from wire names back to the field names it was parsed against."""
+    names = {camelize_key(name): name for name in declared}
+    return {
+        names[wire]: None if sub is None else _snake_mask(sub, declared[names[wire]])
+        for wire, sub in mask.items()
+    }
+
+
+class ReadMaskMixin(GenericAPIView):
+    """Honour ``readMask`` on ``retrieve``, ``list`` and ``batch_get``.
+
+    A ``200`` response then holds only the fields the mask names, with its
+    ``ETag`` unchanged. On ``list`` the mask applies to each of ``items``, and
+    on ``batch_get`` to each resource. Other actions, and responses with any
+    other status, are left alone. Fields are selected by their camelCase wire
+    names, as declared by the view's serializer; a write-only field is not
+    selectable.
+
+    Attributes:
+        read_mask_actions: The actions the mask applies to.
+
+    Raises:
+        rn_forge.web.InvalidReadMask: The mask combines ``*`` with other paths,
+            or a path names no field the serializer declares (400).
+    """
+
+    read_mask_actions: ClassVar[frozenset[str]] = frozenset(
+        {"retrieve", "list", "batch_get"}
+    )
+
+    _read_mask: ReadMask | None = None
+
+    @override
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        cast(Any, super()).initial(request, *args, **kwargs)
+        view: Any = self
+        if view.action not in self.read_mask_actions:
+            return
+        declared = _snake_tree(view.get_serializer())
+        mask = parse_read_mask(
+            request.query_params.get(READ_MASK_PARAM), fields=_wire_tree(declared)
+        )
+        if mask is not None:
+            self._read_mask = ReadMask(_snake_mask(mask.tree, declared))
+
+    @override
+    def finalize_response(
+        self, request: Request, response: Any, *args: Any, **kwargs: Any
+    ) -> Any:
+        response = cast(Any, super()).finalize_response(
+            request, response, *args, **kwargs
+        )
+        if self._read_mask is not None and response.status_code == 200:
+            response.data = self._masked(self._read_mask, response.data)
+        return response
+
+    def _masked(self, mask: ReadMask, data: Any) -> Any:
+        """Apply *mask* to the resources in a ``200`` body of this view's action."""
+        if isinstance(data, list):
+            return [mask.apply(item) for item in cast(list[Any], data)]
+        body = cast(Mapping[str, Any], data)
+        action: str = cast(Any, self).action
+        if action == "retrieve":
+            return mask.apply(body)
+        members = {"items"} if action == "list" else set(body)
+        return {
+            name: self._masked(mask, value) if name in members else value
+            for name, value in body.items()
+        }

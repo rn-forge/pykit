@@ -131,6 +131,50 @@ class _Documents(BaseModelViewSet):
     etag_codec = EntityVersionETagCodec()
 
 
+class _ConformanceProfile(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    display_name = models.CharField(max_length=40)
+    address = models.JSONField(default=dict)
+    phones = models.JSONField(default=list)
+    settings = models.JSONField(default=dict)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+
+
+class _AddressSerializer(serializers.Serializer):
+    city = serializers.CharField()
+    postcode = serializers.CharField()
+
+
+class _PhoneSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    number = serializers.CharField()
+
+
+class _ProfileSerializer(serializers.ModelSerializer):
+    address = _AddressSerializer()
+    phones = _PhoneSerializer(many=True)
+
+    class Meta:
+        model = _ConformanceProfile
+        fields = ["id", "display_name", "address", "phones", "settings"]
+        read_only_fields = ["id"]
+
+
+class _Profiles(BaseModelViewSet):
+    # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
+    renderer_classes = [CamelCaseJSONRenderer]
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceProfile.objects.all()
+    serializer_class = _ProfileSerializer
+    pagination_class = CursorPagination
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id"]
+    etag_codec = EntityVersionETagCodec()
+
+
 class _ConformanceBook(VersionedModelMixin, BaseModel):
     id = models.CharField(primary_key=True, max_length=10)
     name = models.CharField(max_length=40)
@@ -165,6 +209,9 @@ class _CappedBooks(_Books):
 _books = CustomMethodRouter(trailing_slash=False)
 _books.register("conformance/books", _Books, basename="books")
 _books.register("conformance/capped-books", _CappedBooks, basename="capped-books")
+
+_profiles = SimpleRouter(trailing_slash=False)
+_profiles.register("conformance/profiles", _Profiles, basename="profiles")
 
 _documents = SimpleRouter(trailing_slash=False)
 _documents.register("conformance/documents", _Documents, basename="documents")
@@ -499,6 +546,7 @@ urlpatterns = [
     path("conformance/orders/count", _OrderCount.as_view()),
     *_orders.urls,
     *_documents.urls,
+    *_profiles.urls,
     *_books.urls,
     path("conformance/legacy", _Legacy.as_view()),
     path("conformance/stamped", _Stamped.as_view()),
@@ -554,6 +602,7 @@ def _tables(create_tables):
         _Order,
         _ConformanceDocument,
         _ConformanceBook,
+        _ConformanceProfile,
     )
 
 
@@ -580,6 +629,18 @@ def client():
     )
     for pk, name in [("1", "alpha"), ("2", "beta"), ("3", "gamma")]:
         _ConformanceBook.objects.create(pk=pk, name=name)
+    _ConformanceProfile.objects.create(
+        pk="1",
+        display_name="Ada",
+        address={"city": "London", "postcode": "N1"},
+        phones=[{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+        settings={"theme": "dark"},
+    )
+    _ConformanceProfile.objects.create(
+        pk="2",
+        display_name="Grace",
+        address={"city": "Arlington", "postcode": "22201"},
+    )
     with override_settings(**WIRING):
         yield Client(raise_request_exception=False)
 

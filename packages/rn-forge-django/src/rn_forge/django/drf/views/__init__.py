@@ -4,6 +4,7 @@ from rn_forge.django.drf.views.mixins import (
     MergePatchMixin,
     ModelFilterViewMixin,
     PermissionByMethodMixin,
+    ReadMaskMixin,
     RequestAccessViewMixin,
 )
 from rn_forge.django.drf.views.base import BaseAPIView, BaseModelViewSet
@@ -18,5 +19,6 @@ __all__ = [
     "MergePatchMixin",
     "ModelFilterViewMixin",
     "PermissionByMethodMixin",
+    "ReadMaskMixin",
     "RequestAccessViewMixin",
 ]

@@ -41,15 +41,18 @@ from django.urls import URLPattern, path
 from django.views.decorators.http import require_http_methods
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rn_forge.django.drf.casing import camelize_key
 from rn_forge.django.drf.exceptions import problem_registry
+from rn_forge.django.drf.views.mixins import ReadMaskMixin
 from rn_forge.web import (
     ProblemDetail,
     API_CATALOG_PATH,
     DOCS_PATH,
     LINKSET_MEDIA_TYPE,
     OPENAPI_PATH,
+    READ_MASK_PARAM,
     READINESS_PATH,
     api_catalog_body,
 )
@@ -157,7 +160,32 @@ class WireAutoSchema(AutoSchema):
     The paginated component keeps drf-spectacular's own name
     (``PaginatedOrderOutList``) — document text is not held identical across
     stacks; only wire behaviour and ``operationId`` are.
+
+    An operation of a :class:`~rn_forge.django.drf.views.mixins.ReadMaskMixin`
+    view that the mask applies to also documents the ``readMask`` query parameter.
     """
+
+    @override
+    def get_override_parameters(self) -> list[Any]:
+        parameters = cast(list[Any], super().get_override_parameters())
+        view = cast(Any, self).view
+        if (
+            isinstance(view, ReadMaskMixin)
+            and getattr(view, "action", None) in view.read_mask_actions
+        ):
+            parameters.append(
+                OpenApiParameter(
+                    READ_MASK_PARAM,
+                    str,
+                    OpenApiParameter.QUERY,
+                    required=False,
+                    description=(
+                        "Comma-separated field paths to return, such as "
+                        "`displayName,address.city`. `*` returns the whole resource."
+                    ),
+                )
+            )
+        return parameters
 
     @override
     def get_operation_id(self) -> str:
