@@ -91,6 +91,15 @@ class AnyToken:
         return Principal(subject="u1")
 
 
+PEOPLE = [
+    {"id": "1", "team": "a", "score": 10},
+    {"id": "2", "team": "b", "score": None},
+    {"id": "3", "team": "a", "score": None},
+    {"id": "4", "team": "b", "score": 5},
+    {"id": "5", "team": "a", "score": 10},
+]
+
+
 class Charge(WireModel):
     amount: int
 
@@ -304,6 +313,39 @@ def build_app(*, failing: str | None) -> FastAPI:
             else None
         )
         return Page[dict[str, str]](items=window, next_page_token=token)
+
+    @app.get("/conformance/people")
+    async def list_people(
+        params=Depends(page_params(cap=5, default=5)),
+        order=Depends(order_by_param(allowed=["id", "team", "score"])),
+    ) -> Page[dict[str, Any]]:
+        size, cursor = params
+        if cursor:
+            check_cursor_order(cursor, order)
+        keys = [(t.field, t.descending) for t in order]
+        if not any(field == "id" for field, _ in keys):
+            keys.append(("id", keys[-1][1] if keys else False))
+        rows = list(PEOPLE)
+        for field, descending in reversed(keys):  # stable passes, last term first
+            present = [r for r in rows if r[field] is not None]
+            present.sort(key=lambda r: r[field], reverse=descending)
+            rows = present + [r for r in rows if r[field] is None]
+        start = (
+            next(i + 1 for i, row in enumerate(rows) if row["id"] == cursor.entity_id)
+            if cursor
+            else 0
+        )
+        window = rows[start : start + size]
+        token = (
+            encode_cursor(
+                tuple(window[-1][t.field] for t in order),
+                window[-1]["id"],
+                format_order_by(order),
+            )
+            if start + size < len(rows)
+            else None
+        )
+        return Page[dict[str, Any]](items=window, next_page_token=token)
 
     @app.post("/conformance/charges", status_code=201)
     async def create_charge(request: Request, body: Charge):
