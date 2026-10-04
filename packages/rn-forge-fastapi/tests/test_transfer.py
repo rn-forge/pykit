@@ -12,6 +12,8 @@ from rn_forge.fastapi import AppConfig, FastApiApp
 from rn_forge.fastapi.transfer import (
     batch_create_router,
     batch_delete_router,
+    batch_get_router,
+    batch_update_router,
     import_router,
     import_template_router,
     read_rows,
@@ -626,5 +628,312 @@ def test_the_problem_repair_declares_403_404_and_422_on_every_route():
         responses = next(iter(item.values()))["responses"]
         for status in ("403", "404", "422"):
             assert_that(responses[status]["content"]).contains_key(
+                "application/problem+json"
+            )
+
+
+class BookDocument(BaseModel):
+    name: str
+    note: str | None = None
+
+
+class BookRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+
+
+class BookState:
+    def __init__(self, row, version):
+        self.row, self.version = row, version
+
+
+class Book:
+    def __init__(self, id, name, note=None):
+        self.id, self.name, self.note = id, name, note
+
+
+class BookStore:
+    """Versioned books; records every call and raises what the test sets."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, object]] = []
+        self.denied: Exception | None = None
+        self.books = {
+            "1": Book("1", "alpha", "n"),
+            "2": Book("2", "beta"),
+            "3": Book("3", "gamma"),
+        }
+        self.versions: dict[str, int | None] = {"1": 1, "2": 1, "3": 1}
+
+    async def get_many(self, ids):
+        self.calls.append(("get_many", list(ids)))
+        return {i: self.books[i] for i in ids if i in self.books}
+
+    async def current(self, ids):
+        self.calls.append(("current", list(ids)))
+        return {
+            i: BookState(self.books[i], self.versions[i])
+            for i in ids
+            if i in self.books
+        }
+
+    async def update_many(self, items):
+        self.calls.append(("update_many", [(i, d.name, d.note) for i, d in items]))
+        if self.denied:
+            raise self.denied
+        for book_id, doc in items:
+            self.books[book_id].name, self.books[book_id].note = doc.name, doc.note
+        return [self.books[i] for i, _ in items]
+
+
+def books(*, cap=None, guard=None, **update_options):
+    store = BookStore()
+    app = FastApiApp(AppConfig())
+    dependencies = [Depends(guard)] if guard else []
+
+    def get_store() -> BookStore:
+        return store
+
+    app.include_router(
+        batch_get_router(
+            "/books",
+            response_model=BookRead,
+            resource_name="books",
+            resource_label="Book",
+            store=get_store,
+            max_rows=cap,
+            dependencies=dependencies,
+        )
+    )
+    app.include_router(
+        batch_update_router(
+            "/books",
+            model=BookDocument,
+            response_model=BookRead,
+            resource_name="books",
+            resource_label="Book",
+            store=get_store,
+            max_rows=cap,
+            dependencies=dependencies,
+            **update_options,
+        )
+    )
+    return TestClient(app, raise_server_exceptions=False), store, app
+
+
+def book_update(client, *requests):
+    return client.post("/books:batchUpdate", json={"requests": list(requests)})
+
+
+def test_batch_get_returns_rows_in_request_order_repeating_duplicates():
+    client, store, _ = books()
+    response = client.get(
+        "/books:batchGet", params=[("ids", "3"), ("ids", "1"), ("ids", "3")]
+    )
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to(
+        {
+            "books": [
+                {"id": "3", "name": "gamma"},
+                {"id": "1", "name": "alpha"},
+                {"id": "3", "name": "gamma"},
+            ]
+        }
+    )
+
+
+def test_batch_get_drops_empty_values_and_does_not_split_commas():
+    client, store, _ = books()
+    response = client.get("/books:batchGet", params=[("ids", ""), ("ids", "1,2")])
+    assert_that(response.status_code).is_equal_to(404)
+    assert_that(response.json()["detail"]).is_equal_to("Book 1,2 not found")
+    assert_that(store.calls).is_equal_to([("get_many", ["1,2"])])
+
+
+@pytest.mark.parametrize("params", [{}, {"ids": ""}])
+def test_batch_get_requires_an_id(params):
+    client, store, _ = books()
+    response = client.get("/books:batchGet", params=params)
+    assert_that(response.status_code).is_equal_to(400)
+    assert_that(response.json()["detail"]).is_equal_to(
+        "A non-empty ids parameter is required."
+    )
+    assert_that(store.calls).is_empty()
+
+
+def test_batch_get_over_the_cap_is_a_400():
+    client, store, _ = books(cap=1)
+    response = client.get("/books:batchGet", params=[("ids", "1"), ("ids", "2")])
+    assert_that(response.status_code).is_equal_to(400)
+    assert_that(response.json()["detail"]).is_equal_to(
+        "The batch exceeds the limit of 1 rows."
+    )
+
+
+def test_batch_get_names_the_first_missing_id():
+    client, _, _ = books()
+    response = client.get(
+        "/books:batchGet", params=[("ids", "1"), ("ids", "9"), ("ids", "8")]
+    )
+    assert_that(response.status_code).is_equal_to(404)
+    assert_that(response.json()["detail"]).is_equal_to("Book 9 not found")
+
+
+def test_batch_update_merges_each_patch_with_integer_ids():
+    client, store, _ = books()
+    response = book_update(
+        client,
+        {"id": 2, "patch": {"name": "beta2"}, "ifMatch": 'W/"1"'},
+        {"id": "1", "patch": {"note": None}},
+    )
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to(
+        {"books": [{"id": "2", "name": "beta2"}, {"id": "1", "name": "alpha"}]}
+    )
+    assert_that(store.calls[-1]).is_equal_to(
+        ("update_many", [("2", "beta2", None), ("1", "alpha", None)])
+    )
+
+
+def test_batch_update_ignores_if_match_on_an_unversioned_row():
+    client, store, _ = books()
+    store.versions["1"] = None
+    response = book_update(client, {"id": "1", "patch": {}, "ifMatch": "junk"})
+    assert_that(response.status_code).is_equal_to(200)
+
+
+def test_batch_update_require_if_match_is_a_428_with_the_pointer():
+    client, store, _ = books(require_if_match=True)
+    response = book_update(
+        client, {"id": "1", "patch": {}, "ifMatch": "*"}, {"id": "2", "patch": {}}
+    )
+    assert_that(response.status_code).is_equal_to(428)
+    assert_that(pointers(response)[0][0]).is_equal_to("/requests/1/ifMatch")
+    assert_that([c for c, _ in store.calls]).does_not_contain("update_many")
+
+
+def test_batch_update_a_stale_precondition_is_a_412_with_the_pointer():
+    client, store, _ = books()
+    response = book_update(
+        client, {"id": "1", "patch": {}}, {"id": "2", "patch": {}, "ifMatch": 'W/"9"'}
+    )
+    assert_that(response.status_code).is_equal_to(412)
+    assert_that(pointers(response)[0][0]).is_equal_to("/requests/1/ifMatch")
+
+
+def test_batch_update_an_unknown_id_is_a_404():
+    client, store, _ = books()
+    response = book_update(client, {"id": "1", "patch": {}}, {"id": "99", "patch": {}})
+    assert_that(response.status_code).is_equal_to(404)
+    assert_that(response.json()["detail"]).is_equal_to("Book 99 not found")
+
+
+def test_batch_update_validation_failure_writes_nothing():
+    client, store, _ = books()
+    response = book_update(
+        client,
+        {"id": "1", "patch": {"name": None}},
+        {"id": "2", "patch": {"name": "ok"}},
+        {"id": "3", "patch": {"note": 5}},
+    )
+    assert_that(response.status_code).is_equal_to(422)
+    assert_that(response.json()["detail"]).is_equal_to("One or more rows are invalid.")
+    assert_that(pointers(response)).is_equal_to(
+        [
+            ("/requests/0/patch/name", "This field may not be null."),
+            ("/requests/2/patch/note", "Input should be a valid string"),
+        ]
+    )
+    assert_that([c for c, _ in store.calls]).does_not_contain("update_many")
+
+
+def test_batch_update_renders_items_a_store_denies():
+    client, store, _ = books()
+    store.denied = ItemsDenied({"1": ["Locked."]}, root="requests")
+    response = book_update(client, {"id": "1", "patch": {}}, {"id": "2", "patch": {}})
+    assert_that(response.status_code).is_equal_to(403)
+    assert_that(pointers(response)).is_equal_to([("/requests/1", "Locked.")])
+    assert_that(store.books["1"].name).is_equal_to("alpha")
+
+
+@pytest.mark.parametrize(
+    "body",
+    [{}, {"requests": []}, {"requests": "x"}, [1]],
+)
+def test_batch_update_step_one_matches_batch_create(body):
+    client, store, _ = resource()
+    create = client.post("/orders:batchCreate", json=body)
+    client, store, _ = books()
+    update = client.post("/books:batchUpdate", json=body)
+    assert_that(update.status_code).is_equal_to(create.status_code).is_equal_to(422)
+    assert_that(pointers(update)).is_equal_to(pointers(create))
+    assert_that(update.json()["detail"]).is_equal_to(create.json()["detail"])
+    assert_that(store.calls).is_empty()
+
+
+def test_batch_update_over_the_cap_is_the_row_cap_problem():
+    client, store, _ = books(cap=1)
+    response = book_update(client, {"id": "1", "patch": {}}, {"id": "2", "patch": {}})
+    assert_that(response.status_code).is_equal_to(422)
+    assert_that(response.json()["detail"]).is_equal_to(
+        "The batch exceeds the limit of 1 rows."
+    )
+    assert_that(response.json()).does_not_contain_key("errors")
+    assert_that(store.calls).is_empty()
+
+
+def test_batch_update_reports_malformed_items_and_duplicates_before_the_store():
+    client, store, _ = books()
+    response = book_update(client, {"patch": {}}, {"id": "1", "patch": 3})
+    assert_that(pointers(response)).is_equal_to(
+        [
+            ("/requests/0/id", "This field is required."),
+            ("/requests/1/patch", "A merge patch must be a JSON object."),
+        ]
+    )
+    response = book_update(client, {"id": "1", "patch": {}}, {"id": 1, "patch": {}})
+    assert_that(pointers(response)).is_equal_to(
+        [("/requests/1/id", "Duplicate id in batch.")]
+    )
+    assert_that(store.calls).is_empty()
+
+
+def test_the_new_routes_run_their_dependencies_first():
+    client, store, _ = books(guard=deny_everything)
+    responses = [
+        client.get("/books:batchGet", params={"ids": "1"}),
+        book_update(client, {"id": "1", "patch": {}}),
+    ]
+    assert_that([r.status_code for r in responses]).is_equal_to([403, 403])
+    assert_that(store.calls).is_empty()
+
+
+def test_openapi_describes_the_batch_get_and_update_routes():
+    _, _, app = books()
+    paths = app.openapi()["paths"]
+    schemas = app.openapi()["components"]["schemas"]
+
+    get = paths["/books:batchGet"]["get"]
+    assert_that(get["operationId"]).is_equal_to("booksBatchGet")
+    ids = next(p for p in get["parameters"] if p["name"] == "ids")
+    assert_that(ids["in"]).is_equal_to("query")
+    assert_that(ids["schema"]["type"]).is_equal_to("array")
+
+    update = paths["/books:batchUpdate"]["post"]
+    assert_that(update["operationId"]).is_equal_to("booksBatchUpdate")
+    request = update["requestBody"]["content"]["application/json"]["schema"]
+    request_schema = schemas[request["$ref"].rsplit("/")[-1]]
+    item = schemas[
+        request_schema["properties"]["requests"]["items"]["$ref"].rsplit("/")[-1]
+    ]
+    assert_that(set(item["properties"])).is_equal_to({"id", "patch", "ifMatch"})
+    for operation, statuses in (
+        (get, ("400", "404")),
+        (update, ("403", "404", "412", "422", "428")),
+    ):
+        for status in statuses:
+            assert_that(operation["responses"][status]["content"]).contains_key(
                 "application/problem+json"
             )

@@ -42,6 +42,8 @@ from rn_forge.fastapi import (
 from rn_forge.fastapi.transfer import (
     batch_create_router,
     batch_delete_router,
+    batch_get_router,
+    batch_update_router,
     import_router,
     import_template_router,
     problem_response,
@@ -189,6 +191,58 @@ class OrderStore:
     async def delete_many(self, ids):
         for order_id in ids:
             del self.rows_by_id[order_id]
+
+
+class BookDocument(WireModel):
+    name: str
+
+
+class BookRow(WireModel):
+    id: str
+    name: str
+
+
+@dataclass
+class Book:
+    id: str
+    name: str
+    version: int = 1
+
+
+@dataclass
+class BookState:
+    row: Book
+    version: int
+
+
+class BookStore:
+    """In-memory books for `:batchGet` and `:batchUpdate`."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {
+            "1": Book("1", "alpha"),
+            "2": Book("2", "beta"),
+            "3": Book("3", "gamma"),
+        }
+
+    async def get_many(self, ids):
+        return {i: self.rows_by_id[i] for i in ids if i in self.rows_by_id}
+
+    async def current(self, ids):
+        return {
+            i: BookState(self.rows_by_id[i], self.rows_by_id[i].version)
+            for i in ids
+            if i in self.rows_by_id
+        }
+
+    async def update_many(self, items):
+        updated = []
+        for book_id, document in items:
+            book = self.rows_by_id[book_id]
+            book.name = document.name
+            book.version += 1
+            updated.append(book)
+        return updated
 
 
 EXPORT_CAP = 1
@@ -479,6 +533,37 @@ def build_app(*, failing: str | None) -> FastAPI:
                 resource_name="orders",
                 store=order_store,
                 max_rows=cap,
+            )
+        )
+    books = BookStore()
+
+    def book_store() -> BookStore:
+        return books
+
+    for collection, cap in (
+        ("/conformance/books", None),
+        ("/conformance/capped-books", 1),
+    ):
+        app.include_router(
+            batch_get_router(
+                collection,
+                response_model=BookRow,
+                resource_name="books",
+                resource_label="Book",
+                store=book_store,
+                max_rows=cap,
+            )
+        )
+        app.include_router(
+            batch_update_router(
+                collection,
+                model=BookDocument,
+                response_model=BookRow,
+                resource_name="books",
+                resource_label="Book",
+                store=book_store,
+                max_rows=cap,
+                codec=EntityVersionETagCodec(),
             )
         )
     app.include_router(

@@ -1,4 +1,4 @@
-"""Tabular export and import, and batch create and delete, over FastAPI.
+"""Tabular export and import, and batch get, create, update and delete, over FastAPI.
 
 Requires the ``transfer`` extra. Not imported by :mod:`rn_forge.fastapi`.
 Persistence is the application's: the route factories take a store dependency
@@ -33,7 +33,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.params import Depends as DependsParam
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model
 
 from rn_forge.fastapi.openapi import operation_id
 
@@ -42,8 +42,17 @@ from rn_forge.web import (
     NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
+    VALIDATION_ERROR,
+    BatchUpdateItem,
+    ETagCodec,
     ProblemResponse,
     RowsInvalid,
+    VersionETagCodec,
+    check_item_precondition,
+    default_registry,
+    field_error,
+    merge_representation,
+    render_problem,
 )
 from rn_forge.web.transfer import (
     NON_EMPTY_LIST_DETAIL,
@@ -51,10 +60,12 @@ from rn_forge.web.transfer import (
     ImportCounts,
     RowError,
     TabularFormat,
+    batch_get_ids,
     content_disposition,
     export_cap_problem,
     import_report_body,
     negotiate_tabular_format,
+    parse_batch_update,
     parse_flag,
     row_cap_problem,
     row_errors_problem,
@@ -65,11 +76,16 @@ from rn_forge.web.transfer import (
 __all__ = [
     "BatchCreateStore",
     "BatchDeleteStore",
+    "BatchGetStore",
+    "BatchUpdateStore",
+    "Current",
     "ImportStore",
     "RowsResult",
     "TemplateSource",
     "batch_create_router",
     "batch_delete_router",
+    "batch_get_router",
+    "batch_update_router",
     "import_router",
     "import_template_router",
     "problem_response",
@@ -356,6 +372,48 @@ class BatchDeleteStore(Protocol):
         ...
 
 
+class BatchGetStore(Protocol):
+    """Finds a batch of resources."""
+
+    async def get_many(self, ids: Sequence[str]) -> Mapping[str, Any]:
+        """Return the rows of *ids* that exist within the caller's scope, keyed by id as a string."""
+        ...
+
+
+class Current(Protocol):
+    """A row as :class:`BatchUpdateStore` reports it: the row, and its version if it has one."""
+
+    @property
+    def row(self) -> Any:
+        """The stored row."""
+        ...
+
+    @property
+    def version(self) -> int | None:
+        """The row's version, or ``None`` when the resource is unversioned."""
+        ...
+
+
+class BatchUpdateStore[T](Protocol):
+    """Finds and updates a batch of resources."""
+
+    async def current(self, ids: Sequence[str]) -> Mapping[str, Current]:
+        """Return each of *ids* that exists within the caller's scope, keyed by id as a string."""
+        ...
+
+    async def update_many(self, items: Sequence[tuple[str, T]]) -> Sequence[Any]:
+        """Write every validated document in one transaction and return the updated rows.
+
+        Bumps each versioned row's version. The rows are returned in the order
+        of *items*.
+
+        Raises:
+            ItemsDenied: An item is not permitted, with ``root="requests"``,
+                raised before anything is written.
+        """
+        ...
+
+
 def _router(dependencies: Sequence[DependsParam]) -> APIRouter:
     return APIRouter(
         dependencies=list(dependencies), generate_unique_id_function=operation_id
@@ -374,17 +432,45 @@ def _rejection(loc: str, kind: str, message: str) -> RequestValidationError:
     )
 
 
+def _error_message(err: Mapping[str, Any]) -> str:
+    if err["type"] == "missing":
+        return REQUIRED_FIELD_DETAIL
+    if "input" in err and err["input"] is None:
+        return NULL_FIELD_DETAIL
+    if err["type"] == "value_error" and "ctx" in err:
+        return str(err["ctx"]["error"])
+    return err["msg"]
+
+
 def _item_errors(index: int, exc: ValidationError) -> Iterator[RowError]:
     for err in exc.errors():
-        if err["type"] == "missing":
-            message = REQUIRED_FIELD_DETAIL
-        elif "input" in err and err["input"] is None:
-            message = NULL_FIELD_DETAIL
-        elif err["type"] == "value_error" and "ctx" in err:
-            message = str(err["ctx"]["error"])
-        else:
-            message = err["msg"]
-        yield RowError(index, ".".join(str(part) for part in err["loc"]), message)
+        yield RowError(
+            index, ".".join(str(part) for part in err["loc"]), _error_message(err)
+        )
+
+
+async def _checked_list(
+    request: Request, key: str, max_rows: int | None
+) -> list[object]:
+    """Return the raw body's *key* member, which must be a non-empty list within *max_rows*."""
+    try:
+        body: object = await request.json()
+    except ValueError:
+        body = None
+    members: Mapping[str, object] = (
+        cast("Mapping[str, object]", body) if isinstance(body, Mapping) else {}
+    )
+    if key not in members:
+        raise _rejection(key, "missing", "Field required")
+    value: object = members[key]
+    if not isinstance(value, list) or not value:
+        raise _rejection(key, "value_error", NON_EMPTY_LIST_DETAIL)
+    entries = cast("list[object]", value)
+    if max_rows is not None and len(entries) > max_rows:
+        raise ValueError(
+            row_cap_problem("batch", max_rows, instance=request.url.path).problem.detail
+        )
+    return entries
 
 
 def _list_guard(
@@ -398,27 +484,10 @@ def _list_guard(
     items = TypeAdapter(item_model) if item_model is not None else None
 
     async def guard(request: Request) -> None:
-        try:
-            body: object = await request.json()
-        except ValueError:
-            body = None
-        members: Mapping[str, object] = (
-            cast("Mapping[str, object]", body) if isinstance(body, Mapping) else {}
-        )
-        if key not in members:
-            raise _rejection(key, "missing", "Field required")
-        value: object = members[key]
-        if not isinstance(value, list) or not value:
-            raise _rejection(key, "value_error", NON_EMPTY_LIST_DETAIL)
-        if max_rows is not None and len(cast("list[object]", value)) > max_rows:
-            raise ValueError(
-                row_cap_problem(
-                    "batch", max_rows, instance=request.url.path
-                ).problem.detail
-            )
+        value = await _checked_list(request, key, max_rows)
         if items is not None:
             errors: list[RowError] = []
-            for index, item in enumerate(cast("list[object]", value)):
+            for index, item in enumerate(value):
                 try:
                     items.validate_python(item)
                 except ValidationError as exc:
@@ -655,3 +724,199 @@ def batch_delete_router(
         dependencies=[_list_guard("ids", max_rows)],
     )
     return router
+
+
+def batch_get_router(
+    collection: str,
+    *,
+    response_model: type[BaseModel],
+    resource_name: str,
+    resource_label: str,
+    store: Callable[..., BatchGetStore],
+    max_rows: int | None = None,
+    dependencies: Sequence[DependsParam] = (),
+) -> APIRouter:
+    """Build ``GET {collection}:batchGet``, taking a repeated ``ids`` query parameter.
+
+    A missing ``ids`` parameter, or more ids than *max_rows*, is a 400 problem.
+    The first id that :meth:`BatchGetStore.get_many` does not return is a 404
+    reading ``{resource_label} {id} not found``. The response is 200 with one
+    entry per requested id, in request order and repeating duplicates, as
+    *response_model* dumped by alias, under *resource_name*.
+
+    Args:
+        collection: The collection path, for example ``/orders``.
+        response_model: The model of one resource.
+        resource_name: The response member that holds the resources.
+        resource_label: The resource's name in the 404 detail, for example ``Order``.
+        store: A dependency returning the :class:`BatchGetStore`.
+        max_rows: The most ids a batch may hold; ``None`` for no limit.
+        dependencies: Dependencies of the route, as for ``APIRouter``.
+
+    Returns:
+        The router.
+    """
+    router = _router(dependencies)
+    result_model = _list_model(
+        f"{response_model.__name__}BatchGetResponse", resource_name, response_model
+    )
+
+    async def batch_get(
+        ids: list[str] = Query(default_factory=list),
+        target: BatchGetStore = Depends(store),
+    ) -> dict[str, Any]:
+        wanted = batch_get_ids(ids, cap=max_rows)
+        found = await target.get_many(wanted)
+        for item in wanted:
+            if item not in found:
+                raise LookupError(f"{resource_label} {item} not found")
+        return {resource_name: [_dump(response_model, found[i]) for i in wanted]}
+
+    router.add_api_route(
+        f"{collection}:batchGet",
+        batch_get,
+        methods=["GET"],
+        response_model=result_model,
+    )
+    return router
+
+
+def batch_update_router[T: BaseModel](
+    collection: str,
+    *,
+    model: type[T],
+    response_model: type[BaseModel],
+    resource_name: str,
+    resource_label: str,
+    store: Callable[..., BatchUpdateStore[T]],
+    max_rows: int | None = None,
+    require_if_match: bool = False,
+    codec: ETagCodec | None = None,
+    dependencies: Sequence[DependsParam] = (),
+) -> APIRouter:
+    """Build ``POST {collection}:batchUpdate``, taking ``{"requests": [...]}``.
+
+    Each item is ``{"id", "patch", "ifMatch"}``: *patch* is a JSON Merge Patch
+    and ``ifMatch`` an optional precondition. The current row is dumped through
+    *model* by alias, merged with the patch and validated as *model*. The first
+    failing step answers: the list and item shape are 422 problems, a missing
+    id is a 404 reading ``{resource_label} {id} not found``, a failed
+    precondition is a 428, 400 or 412 pointing at ``/requests/<i>/ifMatch``,
+    and an invalid merged document is a 422 problem pointing at
+    ``/requests/<i>/patch/<field>``. The store is not asked to write after a
+    failure. Ids may be strings or integers and are compared as strings. The
+    response is 200 with the updated rows, as *response_model* dumped by alias,
+    under *resource_name*.
+
+    Args:
+        collection: The collection path, for example ``/orders``.
+        model: The model of one full resource document.
+        response_model: The model of one updated resource.
+        resource_name: The response member that holds the updated resources.
+        resource_label: The resource's name in the 404 detail, for example ``Order``.
+        store: A dependency returning the :class:`BatchUpdateStore`.
+        max_rows: The most items a batch may hold; ``None`` for no limit.
+        require_if_match: When ``True``, a versioned item without ``ifMatch``
+            is a 428.
+        codec: The validator format; ``None`` uses
+            :class:`rn_forge.web.VersionETagCodec`.
+        dependencies: Dependencies of the route, as for ``APIRouter``.
+
+    Returns:
+        The router.
+    """
+    router = _router(dependencies)
+    item_model = create_model(
+        f"{model.__name__}BatchUpdateItem",
+        id=(str | int, ...),
+        patch=(dict[str, Any], ...),
+        if_match=(str | None, Field(default=None, alias="ifMatch")),
+    )
+    request_model = _list_model(
+        f"{model.__name__}BatchUpdateRequest", "requests", item_model
+    )
+    result_model = _list_model(
+        f"{response_model.__name__}BatchUpdateResponse", resource_name, response_model
+    )
+    etag_codec = codec or VersionETagCodec()
+
+    async def parse(request: Request) -> list[BatchUpdateItem]:
+        await _checked_list(request, "requests", max_rows)
+        parsed = parse_batch_update(
+            await request.json(), cap=max_rows, instance=request.url.path
+        )
+        assert not isinstance(parsed, ProblemResponse)  # _checked_list ruled both out
+        return parsed
+
+    async def batch_update(
+        request: Request,
+        body: Any = Body(),
+        items: list[BatchUpdateItem] = Depends(parse),
+        target: BatchUpdateStore[T] = Depends(store),
+    ) -> Response | dict[str, Any]:
+        del body
+        found = await target.current([item.id for item in items])
+        for item in items:
+            if item.id not in found:
+                raise LookupError(f"{resource_label} {item.id} not found")
+        for item in items:
+            version = found[item.id].version
+            if version is not None:
+                check_item_precondition(
+                    item,
+                    current_version=version,
+                    entity_id=item.id,
+                    codec=etag_codec,
+                    required=require_if_match,
+                )
+
+        documents: list[tuple[str, T]] = []
+        failures: list[dict[str, str]] = []
+        for item in items:
+            current = model.model_validate(
+                found[item.id].row, from_attributes=True
+            ).model_dump(by_alias=True, mode="json")
+            try:
+                documents.append(
+                    (
+                        item.id,
+                        model.model_validate(merge_representation(current, item.patch)),
+                    )
+                )
+            except ValidationError as exc:
+                failures.extend(
+                    field_error(
+                        ("requests", item.index, "patch", *err["loc"]),
+                        _error_message(err),
+                    )
+                    for err in exc.errors()
+                )
+        if failures:
+            return problem_response(
+                render_problem(
+                    default_registry(),
+                    ValueError("Validation Error"),
+                    instance=request.url.path,
+                    problem=VALIDATION_ERROR,
+                    detail="One or more rows are invalid.",
+                    extensions={"errors": failures},
+                )
+            )
+
+        updated = await target.update_many(documents)
+        return {resource_name: [_dump(response_model, row) for row in updated]}
+
+    batch_update.__annotations__["body"] = request_model
+    router.add_api_route(
+        f"{collection}:batchUpdate",
+        batch_update,
+        methods=["POST"],
+        response_model=result_model,
+    )
+    return router
+
+
+def _dump(model: type[BaseModel], row: object) -> dict[str, Any]:
+    return model.model_validate(row, from_attributes=True).model_dump(
+        by_alias=True, mode="json"
+    )
