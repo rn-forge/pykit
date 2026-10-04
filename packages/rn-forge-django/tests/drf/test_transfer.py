@@ -269,7 +269,11 @@ class TestImport:
         assert Member.objects.filter(email="a@x.io").exists()
 
     def test_missing_file_is_a_422(self, client) -> None:
-        assert client.post("/members:import", {}).status_code == 422
+        response = client.post("/members:import", {})
+        assert response.status_code == 422
+        assert response.json()["errors"] == [
+            {"pointer": "/file", "detail": "This field is required."}
+        ]
 
     def test_unsupported_extension_is_a_422(self, client) -> None:
         assert upload(client, "/members:import", "x", name="m.pdf").status_code == 422
@@ -283,7 +287,10 @@ class TestImport:
     def test_too_many_rows_is_a_422(self, client, team) -> None:
         body = "EMAIL,FNAME,TEAM\na@x.io,a,EAST\nb@x.io,b,EAST\n"
         with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
-            assert upload(client, "/members:import", body).status_code == 422
+            response = upload(client, "/members:import", body)
+        assert response.status_code == 422
+        assert response.json()["detail"] == "The import exceeds the limit of 1 rows."
+        assert "errors" not in response.json()
 
     def test_import_round_trips_an_xlsx_upload(self, client, team) -> None:
         dataset = tablib.Dataset(
@@ -349,6 +356,29 @@ class TestBatchCreate:
             "/members:batchCreate", {"requests": "x"}, content_type="application/json"
         )
         assert response.status_code == 422
+        assert response.json()["errors"] == [
+            {"pointer": "/requests", "detail": "A non-empty list is required."}
+        ]
+
+    def test_a_missing_member_is_required(self, client) -> None:
+        response = client.post(
+            "/members:batchCreate", {}, content_type="application/json"
+        )
+        assert response.json()["errors"] == [
+            {"pointer": "/requests", "detail": "This field is required."}
+        ]
+
+    def test_over_the_cap_is_a_422_without_errors(self, client) -> None:
+        items = [{"name": "a", "email": "a@x.io"}, {"name": "b", "email": "b@x.io"}]
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            response = client.post(
+                "/members:batchCreate",
+                {"requests": items},
+                content_type="application/json",
+            )
+        assert response.status_code == 422
+        assert response.json()["detail"] == "The batch exceeds the limit of 1 rows."
+        assert "errors" not in response.json()
 
     def test_an_invalid_item_is_a_422_pointing_at_its_field(self, client) -> None:
         response = client.post(

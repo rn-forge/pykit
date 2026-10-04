@@ -10,6 +10,11 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
   - The merged document is validated as a full update; a top-level `null` sets the field to `null`, and read-only or unknown members are ignored.
   - A versioned instance enforces `If-Match` on `PATCH`, and `retrieve` and `PATCH` answer with an `ETag`.
   - New: `MergePatchMixin` and `MergePatchParser`, exported from `rn_forge.django.drf`.
+- **Breaking:** the import and batch endpoints word their 422 details as `rn-forge-web` does, which `rn-forge-fastapi` also uses.
+  - A request over `transfer.max_rows` on `:import`, `:batchCreate` and `:batchDelete` is a 422 problem with detail `The import exceeds the limit of N rows.` or `The batch exceeds the limit of N rows.` and no `errors` member. It was an `errors` entry with an empty pointer.
+  - A `:import` request with no `file` part answers `This field is required.` at `/file`, not `No file was submitted.`.
+  - A missing `requests` or `ids` member answers `This field is required.` at `/requests` or `/ids`. An empty list or a non-list still answers `A non-empty list is required.`.
+  - `validateOnly` and `prefill` accept `true` or `1`, ignoring case, as before; the unsupported and unreadable `file` details are unchanged in wording.
 
 ### Removed
 

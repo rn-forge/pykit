@@ -27,7 +27,9 @@ from rn_forge.django.drf._typing import action
 from rn_forge.django.drf.views.mixins import AuditFieldsViewMixin
 from rn_forge.django import settings as django_settings
 from rn_forge.web import (
+    NON_EMPTY_LIST_DETAIL,
     PROBLEM_MEDIA_TYPE,
+    REQUIRED_FIELD_DETAIL,
     TABULAR_FORMATS,
     ProblemResponse,
     RowError,
@@ -36,7 +38,11 @@ from rn_forge.web import (
     export_cap_problem,
     field_error,
     import_report_body,
+    parse_flag,
+    row_cap_problem,
     row_errors_problem,
+    unreadable_file_detail,
+    unsupported_file_detail,
 )
 
 __all__ = [
@@ -116,10 +122,6 @@ def _tabular_response(
 def _max_rows() -> int | None:
     # The facade is rebuilt on setting_changed, so it is read through the module.
     return django_settings.rn_forge_django_settings.drf.transfer.max_rows
-
-
-def _too_many_rows(what: str, cap: int) -> ValidationError:
-    return ValidationError(f"The {what} exceeds the limit of {cap} rows.")
 
 
 class ResourceExportMixin(ListModelMixin, GenericAPIView):
@@ -221,17 +223,16 @@ class ResourceImportMixin(GenericAPIView):
     def import_items(self, request: Request) -> HttpResponseBase:
         upload: Any = cast(Any, request).FILES.get("file")
         if upload is None:
-            raise ValidationError({"file": "No file was submitted."})
+            raise ValidationError({"file": REQUIRED_FIELD_DETAIL})
         fmt = self._upload_format(str(upload.name))
         dataset = self._load(fmt, upload.read())
         cap = _max_rows()
         if cap is not None and len(dataset) > cap:
-            raise _too_many_rows("import", cap)
+            return _problem_response(
+                row_cap_problem("import", cap, instance=request.path)
+            )
 
-        validate_only = request.query_params.get("validateOnly", "").lower() in (
-            "true",
-            "1",
-        )
+        validate_only = parse_flag(request.query_params.get("validateOnly"))
         resource = self.get_import_resource()
         result: Any = resource.import_data(
             dataset,
@@ -268,7 +269,7 @@ class ResourceImportMixin(GenericAPIView):
     def import_template(self, request: Request) -> HttpResponseBase:
         fmt = self._template_format(request)
         queryset: Any = cast(Any, self).filter_queryset(cast(Any, self).get_queryset())
-        if request.query_params.get("prefill", "").lower() not in ("true", "1"):
+        if not parse_flag(request.query_params.get("prefill")):
             queryset = queryset.none()
         elif (cap := _max_rows()) is not None and queryset.count() > cap:
             return _problem_response(export_cap_problem(cap, instance=request.path))
@@ -303,9 +304,7 @@ class ResourceImportMixin(GenericAPIView):
         extension = filename.rsplit(".", 1)[-1].lower()
         if extension not in self.import_formats:
             raise ValidationError(
-                {
-                    "file": f"Unsupported file type; use one of: {', '.join(self.import_formats)}."
-                }
+                {"file": unsupported_file_detail(self.import_formats)}
             )
         return TABULAR_FORMATS[extension]
 
@@ -318,7 +317,7 @@ class ResourceImportMixin(GenericAPIView):
             return cast(Any, tablib.Dataset()).load(content, format=fmt.tablib_name)
         except Exception as exc:  # noqa: BLE001  # tablib and openpyxl raise unrelated types for a corrupt file
             raise ValidationError(
-                {"file": f"The file could not be read as {fmt.extension}."}
+                {"file": unreadable_file_detail(fmt.extension)}
             ) from exc
 
     @staticmethod
@@ -375,7 +374,9 @@ class BatchCreateMixin(GenericAPIView):
         items = _list_member(request, "requests")
         cap = _max_rows()
         if cap is not None and len(items) > cap:
-            raise _too_many_rows("batch", cap)
+            return _problem_response(
+                row_cap_problem("batch", cap, instance=request.path)
+            )
         prepared = [
             self.prepare_batch_create_item(cast("dict[str, Any]", i)) for i in items
         ]
@@ -430,11 +431,13 @@ class BatchDeleteMixin(GenericAPIView):
     @action(
         detail=False, methods=["post"], url_path="batchDelete", url_name="batch-delete"
     )
-    def batch_delete(self, request: Request) -> Response:
+    def batch_delete(self, request: Request) -> HttpResponseBase:
         ids = _list_member(request, "ids")
         cap = _max_rows()
         if cap is not None and len(ids) > cap:
-            raise _too_many_rows("batch", cap)
+            return _problem_response(
+                row_cap_problem("batch", cap, instance=request.path)
+            )
         queryset: Any = cast(Any, self).filter_queryset(cast(Any, self).get_queryset())
         found = {str(obj.pk): obj for obj in queryset.filter(pk__in=ids)}
         for raw_id in ids:
@@ -459,13 +462,14 @@ class BatchDeleteMixin(GenericAPIView):
 def _list_member(request: Request, key: str) -> list[object]:
     """Return ``request.data[key]``, which must be a non-empty list."""
     data: object = cast(Any, request).data
-    value = (
-        cast("Mapping[str, object]", data).get(key)
-        if isinstance(data, Mapping)
-        else None
+    members: Mapping[str, object] = (
+        cast("Mapping[str, object]", data) if isinstance(data, Mapping) else {}
     )
+    if key not in members:
+        raise ValidationError({key: REQUIRED_FIELD_DETAIL})
+    value = members[key]
     if not isinstance(value, list) or not value:
-        raise ValidationError({key: "A non-empty list is required."})
+        raise ValidationError({key: NON_EMPTY_LIST_DETAIL})
     return cast(_ObjectList, value)
 
 

@@ -187,6 +187,15 @@ class _Orders(
     export_resource_class = _OrderExport
     import_resource_class = _OrderImport
 
+    def validate_batch_create_item(self, item):
+        return "You may not create this order." if item["name"] == "forbidden" else None
+
+
+class _Capped(_Orders):
+    def dispatch(self, request, *args, **kwargs):
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            return super().dispatch(request, *args, **kwargs)
+
 
 class _OverCap(_Orders):
     def filter_queryset(self, queryset):
@@ -214,6 +223,7 @@ class _OrderCount(APIView):
 
 _orders = CustomMethodRouter(trailing_slash=False)
 _orders.register("conformance/orders", _Orders, basename="orders")
+_orders.register("conformance/capped", _Capped, basename="capped")
 
 
 class _AnyToken:
