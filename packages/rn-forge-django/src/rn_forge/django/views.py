@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import html
 import json
-from collections.abc import Callable, Collection, Mapping
-from typing import Any
+from collections.abc import Callable, Collection, Iterable, Mapping
+from typing import Any, Protocol, cast
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -25,15 +25,70 @@ from rn_forge.web import (
     run_checks_sync,
 )
 
-from rn_forge.django.utils import RequestUtils
-
 __all__ = [
+    "debug_request",
     "debug_request_view",
     "health_urlpatterns",
     "index_view",
     "liveness_view",
     "readiness_view",
 ]
+
+_REDACTED_HEADERS = frozenset(
+    {
+        "HTTP_AUTHORIZATION",
+        "HTTP_COOKIE",
+        "HTTP_SET_COOKIE",
+        "HTTP_X_API_KEY",
+        "HTTP_X_AUTH_TOKEN",
+    }
+)
+
+
+class _HttpHeadersProtocol(Protocol):
+    def items(self) -> Iterable[tuple[object, object]]: ...
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def debug_request(request: HttpRequest) -> dict[str, Any]:
+    """Return a structured snapshot of *request* for logging or error reports.
+
+    Sensitive authorization, cookie, and API-key metadata is redacted.
+    """
+    meta = dict(cast(Mapping[str, object], cast(Any, request).META))
+    headers = {
+        str(key): str(value)
+        for key, value in cast(
+            _HttpHeadersProtocol, cast(Any, request).headers
+        ).items()
+    }
+    return {
+        "path": request.path,
+        "path_info": request.path_info,
+        "method": request.method,
+        "content_type": cast(str | None, cast(Any, request).content_type),
+        "scheme": request.scheme,
+        "absolute_uri": cast(str, cast(Any, request).build_absolute_uri()),
+        "full_path": request.get_full_path(),
+        "host": request.get_host(),
+        "port": request.get_port(),
+        "headers": headers,
+        "meta": {
+            "REMOTE_ADDR": meta.get("REMOTE_ADDR"),
+            "REMOTE_HOST": meta.get("REMOTE_HOST"),
+            "SERVER_PORT": meta.get("SERVER_PORT"),
+            "PATH_INFO": meta.get("PATH_INFO"),
+            **{
+                k: ("<redacted>" if k in _REDACTED_HEADERS else str(v))
+                for k, v in meta.items()
+                if str(k).startswith("HTTP_")
+            },
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +101,7 @@ def index_view(request: HttpRequest) -> HttpResponse:
     """Render a template-free HTML diagnostics page for the request."""
     payload: dict[str, Any] = {
         "version": getattr(settings, "VERSION", None),
-        "request": RequestUtils.debug_request(request),
+        "request": debug_request(request),
     }
     pretty = html.escape(json.dumps(payload, indent=2, default=str))
     return HttpResponse(
@@ -75,8 +130,8 @@ def liveness_view(request: HttpRequest) -> JsonResponse:
 
 @require_GET
 def debug_request_view(request: HttpRequest, **kwargs: Any) -> JsonResponse:
-    """Return the structured request snapshot produced by :class:`RequestUtils`."""
-    return JsonResponse(RequestUtils.debug_request(request), **kwargs)
+    """Return the structured request snapshot produced by :func:`debug_request`."""
+    return JsonResponse(debug_request(request), **kwargs)
 
 
 def readiness_view(

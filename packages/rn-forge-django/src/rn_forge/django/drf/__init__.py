@@ -5,7 +5,6 @@ from rn_forge.django.drf.exceptions import (
 )
 from rn_forge.django.drf.utils import (
     AuthenticatedRequestUser,
-    DRFUtils,
     PermissionAwareUser,
     RequestUtils,
 )
@@ -22,7 +21,6 @@ __all__ = [
     "AuthenticatedRequestUser",
     "CacheIdempotencyStore",
     "CursorPagination",
-    "DRFUtils",
     "EnumChoicesAPIView",
     "OrderByFilter",
     "LegacyPageNumberPagination",

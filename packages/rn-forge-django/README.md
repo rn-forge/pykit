@@ -60,8 +60,9 @@ Optional extras:
 - **`settings`** — `rn_forge_django_settings`: a typed, frozen-dataclass settings facade built from the
   Django `RN_FORGE_DJANGO` setting dict, auto-reloaded on `override_settings`/`setting_changed`.
 - **`fixtures`** — Builds Django JSON fixtures from Excel workbooks (requires the `fixtures` extra).
-- **`urls`** / **`views`** — Reusable standalone views (including the `readiness_view` factory) and
-  URLconf; `utils` carries the `require_settings`/`require_environment` startup guards.
+- **`urls`** / **`views`** — Reusable standalone views (including the `readiness_view` factory and
+  `debug_request`) and URLconf; `utils` carries the `require_settings`/`require_environment`
+  startup guards.
 
 The HTTP wire semantics — problem bodies, preconditions, pagination tokens, idempotency keys,
 readiness reports, the auth contract — are `rn-forge-web`'s. Everything here that touches them is an
