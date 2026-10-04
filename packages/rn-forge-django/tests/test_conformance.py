@@ -137,6 +137,8 @@ class _ConformanceBook(VersionedModelMixin, BaseModel):
 
     class Meta(BaseModel.Meta):
         app_label = "rn_forge_django"
+        verbose_name = "book"
+        verbose_name_plural = "books"
 
 
 class _BookSerializer(serializers.ModelSerializer):
@@ -584,7 +586,11 @@ def client():
 
 def issue(client, case):
     spec = case.request
-    target = f"{spec.path}?{urlencode(dict(spec.query))}" if spec.query else spec.path
+    target = (
+        f"{spec.path}?{urlencode(dict(spec.query), doseq=True)}"
+        if spec.query
+        else spec.path
+    )
     headers = dict(spec.headers)
     content_type = "application/json"
     if spec.body is None:

@@ -63,7 +63,9 @@ from rn_forge.web import (
     VALIDATION_ERROR,
     UnsupportedMediaType,
     WireModel,
+    batch_get_ids,
     check_cursor_order,
+    check_item_precondition,
     check_precondition,
     clamp_page_size,
     format_order_by,
@@ -81,6 +83,7 @@ from rn_forge.web import (
     is_not_modified,
     liveness_body,
     negotiate_tabular_format,
+    parse_batch_update,
     parse_flag,
     row_cap_problem,
     row_errors_problem,
@@ -123,6 +126,11 @@ DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
 ORDERS: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
+BOOKS: dict[str, dict[str, Any]] = {
+    "1": {"name": "alpha", "version": 1},
+    "2": {"name": "beta", "version": 1},
+    "3": {"name": "gamma", "version": 1},
+}
 EXPORT_CAP = 1
 IMPORT_COLUMNS = ["id", "name", "Quantity"]
 CAPPED_ROWS = 1
@@ -614,6 +622,81 @@ def batch_delete_orders(request: Request) -> Response:
     return Response(204, {})
 
 
+def _book(book_id: str) -> dict[str, str]:
+    return {"id": book_id, "name": BOOKS[book_id]["name"]}
+
+
+def _batch_get_books(request: Request, cap: int | None) -> Response:
+    ids = batch_get_ids(request.query_all("ids"), cap=cap)
+    for book_id in ids:
+        if book_id not in BOOKS:
+            raise LookupError(f"Book {book_id} not found")
+    return Response(200, {"books": [_book(book_id) for book_id in ids]})
+
+
+def _batch_update_books(request: Request, cap: int | None) -> Response:
+    """The steps in the order the contract fixes; nothing is written before the last."""
+    items = parse_batch_update(request.json(), cap=cap, instance=request.path)
+    if isinstance(items, ProblemResponse):
+        return _from_problem(items)
+    for item in items:
+        if item.id not in BOOKS:
+            raise LookupError(f"Book {item.id} not found")
+    for item in items:
+        check_item_precondition(
+            item,
+            current_version=BOOKS[item.id]["version"],
+            entity_id=item.id,
+            codec=CODEC,
+            required=False,
+        )
+    merged = {
+        item.id: merge_representation({"name": BOOKS[item.id]["name"]}, item.patch)
+        for item in items
+    }
+    failures = [
+        field_error(
+            ("requests", item.index, "patch", "name"),
+            NULL_FIELD_DETAIL
+            if merged[item.id]["name"] is None
+            else "Not a valid string.",
+        )
+        for item in items
+        if not isinstance(merged[item.id]["name"], str)
+    ]
+    if failures:
+        return _from_problem(
+            render_problem(
+                REGISTRY,
+                ValueError("Validation Error"),
+                instance=request.path,
+                problem=VALIDATION_ERROR,
+                detail="One or more rows are invalid.",
+                extensions={"errors": failures},
+            )
+        )
+    for item in items:
+        BOOKS[item.id]["name"] = merged[item.id]["name"]
+        BOOKS[item.id]["version"] += 1
+    return Response(200, {"books": [_book(item.id) for item in items]})
+
+
+def batch_get_books(request: Request) -> Response:
+    return _batch_get_books(request, None)
+
+
+def batch_get_capped_books(request: Request) -> Response:
+    return _batch_get_books(request, CAPPED_ROWS)
+
+
+def batch_update_books(request: Request) -> Response:
+    return _batch_update_books(request, None)
+
+
+def batch_update_capped_books(request: Request) -> Response:
+    return _batch_update_books(request, CAPPED_ROWS)
+
+
 ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/boom"): boom,
     ("GET", "/conformance/conflict"): conflict,
@@ -648,6 +731,10 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("POST", "/conformance/capped:batchCreate"): batch_create_capped,
     ("POST", "/conformance/orders:batchCreate"): batch_create_orders,
     ("POST", "/conformance/orders:batchDelete"): batch_delete_orders,
+    ("GET", "/conformance/books:batchGet"): batch_get_books,
+    ("POST", "/conformance/books:batchUpdate"): batch_update_books,
+    ("GET", "/conformance/capped-books:batchGet"): batch_get_capped_books,
+    ("POST", "/conformance/capped-books:batchUpdate"): batch_update_capped_books,
 }
 
 
@@ -676,6 +763,9 @@ class Request:
     def query(self, name: str) -> str | None:
         values = self._query.get(name)
         return values[0] if values else None
+
+    def query_all(self, name: str) -> list[str]:
+        return self._query.get(name, [])
 
     def json(self) -> Any:
         return json.loads(self._body) if self._body else None

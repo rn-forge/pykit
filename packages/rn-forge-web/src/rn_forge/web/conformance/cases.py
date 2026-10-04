@@ -58,6 +58,9 @@ _CSV_TYPE: Final = "text/csv"
 _CSV_TYPE_PATTERN: Final = r"text/csv(; charset=utf-8)?"
 _ORDERS_CSV: Final = "id,name\r\n1,widget\r\n"
 _FIRST_CALL_ID: Final = "idempotency.first-call-executes"
+_BOOKS_GET: Final = "/conformance/books:batchGet"
+_BOOKS_UPDATE: Final = "/conformance/books:batchUpdate"
+_STALE_BOOK: Final = "Precondition failed: expected version 1, got 9"
 
 
 def _problem_body(
@@ -1175,6 +1178,170 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=200,
         expect_headers=_JSON,
         expect_body={"count": 1},
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-returns-resources-in-request-order",
+        area="transfer",
+        description="AIP-231: :batchGet answers 200 with the resources under the plural name, in request order.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("3", "1")}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "books": [{"id": "3", "name": "gamma"}, {"id": "1", "name": "alpha"}]
+        },
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-with-an-unknown-id-is-404",
+        area="transfer",
+        description="AIP-231: one id that does not exist fails the whole batch.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("1", "999")}),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Book 999 not found"),
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-without-ids-is-400",
+        area="transfer",
+        description="A :batchGet with no ids parameter is a 400, as a query-parameter fault is.",
+        request=RequestSpec("GET", _BOOKS_GET),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "A non-empty ids parameter is required."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-over-the-cap-is-400",
+        area="transfer",
+        description="A :batchGet naming more ids than the cap is a 400 naming the cap.",
+        request=RequestSpec(
+            "GET", "/conformance/capped-books:batchGet", query={"ids": ("1", "2")}
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "The batch exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-applies-each-merge-patch",
+        area="transfer",
+        description="AIP-234 with RFC 7396 items: each patch is merged and the updated resources are returned in request order.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={
+                "requests": [
+                    {"id": "2", "patch": {"name": "beta2"}, "ifMatch": 'W/"2:1"'}
+                ]
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"books": [{"id": "2", "name": "beta2"}]},
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-stale-if-match-is-412-pointer",
+        area="transfer",
+        description="An item whose ifMatch is stale fails the whole batch as a 412 whose pointer names the item.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={
+                "requests": [
+                    {"id": "1", "patch": {"name": "x"}},
+                    {"id": "3", "patch": {"name": "y"}, "ifMatch": 'W/"3:9"'},
+                ]
+            },
+        ),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED,
+            _STALE_BOOK,
+            errors=[{"pointer": "/requests/1/ifMatch", "detail": _STALE_BOOK}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.failed-batch-update-changes-nothing",
+        area="transfer",
+        description="All or nothing: after the failed batch, the first item is still unchanged.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("1", "3")}),
+        depends_on=("transfer.batch-update-stale-if-match-is-412-pointer",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "books": [{"id": "1", "name": "alpha"}, {"id": "3", "name": "gamma"}]
+        },
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-item-validation-is-422-pointer",
+        area="transfer",
+        description="An item whose merged document is invalid fails the whole batch; the pointer names the member in the patch.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "1", "patch": {"name": None}}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[{"pointer": "/requests/0/patch/name", "detail": NULL_FIELD_DETAIL}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-an-unknown-id-is-404",
+        area="transfer",
+        description="One id that does not exist fails the whole batch.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "999", "patch": {}}]},
+        ),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Book 999 not found"),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-a-duplicate-id-is-422",
+        area="transfer",
+        description="An id named twice is a 422 pointing at the later item.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "1", "patch": {}}, {"id": "1", "patch": {}}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[{"pointer": "/requests/1/id", "detail": "Duplicate id in batch."}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-an-empty-list-is-422",
+        area="transfer",
+        description="An empty requests list is a 422 naming /requests.",
+        request=RequestSpec(
+            "POST", _BOOKS_UPDATE, headers=_JSON, body={"requests": []}
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[
+                {"pointer": "/requests", "detail": "A non-empty list is required."}
+            ],
+        ),
     ),
     # --- Timestamps (api-conventions.md §18) -----------------------------
     ConformanceCase(

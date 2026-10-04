@@ -72,6 +72,7 @@ def reset_rows():
         editor.create_model(service._ConformancePerson)
         editor.create_model(service._Order)
         editor.create_model(service._ConformanceDocument)
+        editor.create_model(service._ConformanceBook)
     for pk in ("1", "2", "3"):
         service._ConformanceItem.objects.create(pk=pk)
     for pk, team, score in [
@@ -82,6 +83,8 @@ def reset_rows():
         ("5", "a", 10),
     ]:
         service._ConformancePerson.objects.create(pk=pk, team=team, score=score)
+    for pk, name in [("1", "alpha"), ("2", "beta"), ("3", "gamma")]:
+        service._ConformanceBook.objects.create(pk=pk, name=name)
     service._Order.objects.create(pk="1", name="widget")
     service._ConformanceDocument.objects.create(
         pk="1",
