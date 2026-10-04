@@ -6,6 +6,9 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ### Added
 
+- `ReadMaskMixin` in `rn_forge.django.drf`: `retrieve`, `list` and `batch_get` accept `readMask` and
+  answer `200` with only the named fields. `BaseModelViewSet` includes it, and `WireAutoSchema`
+  documents the parameter on those actions.
 - `BatchGetMixin` (`GET :batchGet?ids=1&ids=2`) and `BatchUpdateMixin` (`POST :batchUpdate`, one
   JSON Merge Patch and optional `ifMatch` per item) in `rn_forge.django.drf.transfer`.
   `BatchUpdateMixin` has `batch_update_requires_if_match`, `etag_codec` and

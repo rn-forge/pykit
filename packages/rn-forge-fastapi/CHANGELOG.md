@@ -6,6 +6,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
 
 ### Added
 
+- `read_mask_param(model)` and `masked(page, mask)` for the `readMask` query parameter.
+  `batch_get_router` takes a new `read_mask` parameter (default `True`) and applies the mask.
 - `batch_get_router` (`GET :batchGet`) and `batch_update_router` (`POST :batchUpdate`, one JSON
   Merge Patch and optional `ifMatch` per item) in `rn_forge.fastapi.transfer`, with the
   `BatchGetStore`, `BatchUpdateStore` and `Current` protocols. `batch_update_router` takes

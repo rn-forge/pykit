@@ -730,12 +730,54 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   finished has exactly one. Storing operations and running the work are the
   application's. — `operations.start-is-202-with-location`,
   `operations.finished-carries-its-response`, `operations.failed-carries-a-problem`
+- **Partial responses** (AIP-157) are spelled `readMask`; §20 gives the rules.
 - **Custom-method paths** (`:cancel`, `:import`, the batch spellings) put a
   colon in the last path segment. It is valid in a URI, but a gateway or router
   that treats `:` as a parameter marker must be configured to pass it through.
 - **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
-  are the mechanism), AIP-122 resource names (ids stay ids), AIP-157 `readMask`
-  and AIP-164 soft delete (deferred).
+  are the mechanism), AIP-122 resource names (ids stay ids) and AIP-164 soft
+  delete (deferred).
+
+## 20. Partial responses
+
+A read accepts `readMask`, a comma-separated list of field paths, and the
+response holds only those fields. It applies to a `GET` of one resource, a `GET`
+of a collection and `:batchGet`. The mask is applied to the wire representation
+after serialization, so every stack validates and prunes identically.
+
+- **A path is made of wire field names** (camelCase, §8) joined by `.`.
+  Whitespace around a path is ignored. An absent or blank mask returns the whole
+  resource. — `read-mask.get-returns-only-the-masked-fields`,
+  `read-mask.nested-path-selects-a-sub-field`
+- **`*` alone is the whole resource.** `*` combined with any other path is 400
+  `readMask '*' cannot be combined with other paths`.
+  — `read-mask.star-is-the-whole-resource`,
+  `read-mask.star-with-other-paths-is-400`
+- **Every path must name a declared field.** Each segment names a field of the
+  declared object the previous one reaches. A path through a list of objects
+  applies to every element. A path that names nothing, or goes inside a scalar
+  or a free-form JSON field, is 400 `Unknown readMask path '{path}'`, and so is
+  an empty path (`a,,b`). An unknown path is never ignored, as an unknown
+  `orderBy` field is not (§4). —
+  `read-mask.path-through-a-list-applies-to-each-element`,
+  `read-mask.unknown-path-is-400`,
+  `read-mask.path-inside-a-free-form-field-is-400`
+- **Overlapping paths merge.** `address,address.city` returns the whole
+  `address`. — `read-mask.overlapping-paths-merge`
+- **No field is added implicitly.** A mask without `id` returns no `id`.
+- **What it applies to.** A collection `GET` masks each element of `items` and
+  leaves `nextPageToken` and `totalSize` alone. `:batchGet` masks each resource.
+  Writes, problem bodies and tabular exports ignore `readMask`. —
+  `read-mask.list-masks-each-item`, `read-mask.batch-get-masks-each-item`
+- **Preconditions are unchanged.** A masked `GET` carries the resource's
+  `ETag`, so a client can read a few fields and then send `If-Match` on a merge
+  patch (§10). — `read-mask.masked-read-keeps-the-etag`
+- **OpenAPI.** Each read operation that accepts a mask documents `readMask`.
+  Response schemas are not changed: a client that sends a mask treats the
+  response as a partial of the declared type.
+
+`rn_forge.web.parse_read_mask` parses and validates a mask against the declared
+fields of a representation, and `ReadMask.apply` prunes a body.
 
 ## Conformance
 

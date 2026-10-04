@@ -6,6 +6,9 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ### Added
 
+- AIP-157 `readMask` partial responses in `rn_forge.web.read_mask`: `READ_MASK_PARAM`, `FieldTree`,
+  `ReadMask`, `parse_read_mask` and `InvalidReadMask` (400) in `default_registry()`. Eleven
+  `read-mask.*` conformance cases, and a *Partial responses* section in the API conventions.
 - `:batchGet` and `:batchUpdate` wire rules in `rn_forge.web.transfer`: `batch_get_ids`,
   `parse_batch_update`, `BatchUpdateItem`, `NON_EMPTY_IDS_DETAIL` and `DUPLICATE_ID_DETAIL`, with
   `check_item_precondition` in `rn_forge.web.concurrency` and `InvalidBatchGet` (400) in

@@ -59,6 +59,29 @@ If-Match: W/"1:1"
 
 A view outside `BaseModelViewSet` adds `MergePatchMixin` from `rn_forge.django.drf`.
 
+## Partial responses
+
+`BaseModelViewSet` includes `ReadMaskMixin`: `retrieve`, `list` and `batch_get` accept `readMask`
+and answer `200` with only the fields it names. Fields are selected by their camelCase wire names
+as the view's serializer declares them: a nested serializer or a list serializer can be reached
+with a dotted path, any other field (a `JSONField` included) is a leaf, and a write-only field
+cannot be selected. A path that names nothing is a 400 problem. See the API conventions, section
+20, in `rn-forge-web` for the rules.
+
+```http
+GET /profiles/1?readMask=displayName,address.city
+```
+
+```json
+{"displayName": "Ada", "address": {"city": "London"}}
+```
+
+The `ETag` of a masked read is the resource's. A paginated `list` masks each of `items` and keeps
+`nextPageToken`. Other actions, and any response that is not `200`, ignore the mask. With
+`rn_forge.django.drf.openapi.WireAutoSchema` the schema documents `readMask` on those three
+actions. A view outside `BaseModelViewSet` adds `ReadMaskMixin` from `rn_forge.django.drf`;
+`read_mask_actions` names the actions it applies to.
+
 ## Export, import and batch operations
 
 Tabular export and import, and batch create and delete, are in

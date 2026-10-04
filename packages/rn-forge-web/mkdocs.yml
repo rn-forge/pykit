@@ -62,6 +62,7 @@ nav:
       - Concurrency: reference/concurrency.md
       - Pagination: reference/pagination.md
       - Merge patch: reference/merge_patch.md
+      - Read mask: reference/read_mask.md
       - Transfer: reference/transfer.md
       - Operations: reference/operations.md
       - Idempotency: reference/idempotency.md

@@ -134,6 +134,41 @@ async def documents_update(
 Use `require_if_match()` in place of the optional header to make it required (428). A `null` on
 a non-nullable field is a 422 that reads `This field may not be null.`
 
+## Partial responses
+
+`read_mask_param(Model)` is a dependency yielding the parsed `readMask`, or `None` for the whole
+resource. It reads the model's aliases, so a nested model, `Model | None` or `list[Model]` field
+can be reached with a dotted path and anything else is a leaf. A path that names nothing is a 400
+problem before the route runs. Apply the mask to the dumped body with `mask.apply(...)`, or to a
+page with `masked(page, mask)`. Return a `JSONResponse` and declare `response_model` for the
+documentation, because the pruned body no longer validates as the full model.
+
+```python
+from fastapi import Depends
+from fastapi.responses import JSONResponse
+
+from rn_forge.fastapi import masked, read_mask_param
+from rn_forge.web import Page, ReadMask
+
+
+@router.get("/profiles/{profile_id}", response_model=ProfileOut)
+async def profiles_get(
+    profile_id: str, mask: ReadMask | None = Depends(read_mask_param(ProfileOut))
+) -> JSONResponse:
+    body = ProfileOut.model_validate(await repo.get(profile_id)).model_dump(by_alias=True)
+    return JSONResponse(body if mask is None else mask.apply(body))
+
+
+@router.get("/profiles", response_model=Page[ProfileOut])
+async def profiles_list(
+    mask: ReadMask | None = Depends(read_mask_param(ProfileOut)),
+) -> JSONResponse:
+    page = Page[ProfileOut](items=await repo.list(), next_page_token=None)
+    return JSONResponse(masked(page, mask))
+```
+
+`batch_get_router` accepts `readMask` unless it is built with `read_mask=False`.
+
 ## Security headers
 
 `FastApiApp` installs the OWASP REST Security Cheat Sheet response headers by
