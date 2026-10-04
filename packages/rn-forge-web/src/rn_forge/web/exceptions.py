@@ -18,6 +18,7 @@ __all__ = [
     "IdempotencyKeyInFlight",
     "IdempotencyKeyRequired",
     "IdempotencyKeyReuse",
+    "InvalidBatchGet",
     "InvalidCursor",
     "InvalidMergePatch",
     "InvalidOrderBy",
@@ -48,20 +49,48 @@ class DomainConflict(WebError):
     """The request conflicts with the current state of the resource (409)."""
 
 
-class VersionConflict(WebError):
+class _PointedError(WebError):
+    """A :class:`WebError` that may carry ``errors`` entries for the problem body.
+
+    Args:
+        *message_args: Forwarded to ``AppException``.
+        errors: Validation-error entries (see :func:`~rn_forge.web.field_error`)
+            emitted as the problem's ``errors`` member. ``None`` emits nothing.
+        **error_data: Forwarded to ``AppException``.
+    """
+
+    def __init__(
+        self,
+        *message_args: Any,
+        errors: Sequence[Mapping[str, str]] | None = None,
+        **error_data: Any,
+    ) -> None:
+        super().__init__(*message_args, **error_data)
+        self.errors = errors
+
+    def problem_extensions(self) -> Mapping[str, Any]:
+        """Return the ``errors`` member when one was given."""
+        return {} if self.errors is None else {"errors": list(self.errors)}
+
+
+class VersionConflict(_PointedError):
     """The client's precondition did not match the current version (412)."""
 
 
-class PreconditionRequired(WebError):
+class PreconditionRequired(_PointedError):
     """The route requires a precondition and the client sent none (428)."""
 
 
-class MalformedPrecondition(WebError):
+class MalformedPrecondition(_PointedError):
     """The precondition header was present but could not be parsed (400)."""
 
 
 class InvalidCursor(WebError):
     """The pagination token was absent from, or malformed in, the request (400)."""
+
+
+class InvalidBatchGet(WebError):
+    """A ``:batchGet`` request's ``ids`` parameter is missing or over the row cap (400)."""
 
 
 class InvalidOrderBy(WebError):

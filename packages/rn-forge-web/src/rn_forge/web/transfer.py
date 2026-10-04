@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, cast
 from urllib.parse import quote
 
+from rn_forge.web.exceptions import InvalidBatchGet, RowsInvalid
+from rn_forge.web.merge_patch import JsonValue
 from rn_forge.web.problem import (
+    REQUIRED_FIELD_DETAIL,
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemResponse,
@@ -17,8 +20,11 @@ from rn_forge.web.problem import (
 )
 
 __all__ = [
+    "DUPLICATE_ID_DETAIL",
+    "NON_EMPTY_IDS_DETAIL",
     "NON_EMPTY_LIST_DETAIL",
     "TABULAR_FORMATS",
+    "BatchUpdateItem",
     "ImportCounts",
     "RowError",
     "TabularFormat",
@@ -26,6 +32,8 @@ __all__ = [
     "export_cap_problem",
     "import_report_body",
     "negotiate_tabular_format",
+    "batch_get_ids",
+    "parse_batch_update",
     "parse_flag",
     "row_cap_problem",
     "row_errors_problem",
@@ -35,6 +43,15 @@ __all__ = [
 
 NON_EMPTY_LIST_DETAIL: Final = "A non-empty list is required."
 """The detail for a bulk member that is an empty list or not a list."""
+
+NON_EMPTY_IDS_DETAIL: Final = "A non-empty ids parameter is required."
+"""The detail for a ``:batchGet`` request with no usable ``ids`` value."""
+
+DUPLICATE_ID_DETAIL: Final = "Duplicate id in batch."
+"""The detail for a repeated id in a ``:batchUpdate`` request."""
+
+_PATCH_DETAIL: Final = "A merge patch must be a JSON object."
+_IF_MATCH_DETAIL: Final = "Not a valid string."
 
 
 @dataclass(frozen=True)
@@ -231,8 +248,130 @@ def row_cap_problem(
         ValueError("Validation Error"),
         instance=instance,
         problem=VALIDATION_ERROR,
-        detail=f"The {kind} exceeds the limit of {cap} rows.",
+        detail=_cap_detail(kind, cap),
     )
+
+
+def _cap_detail(kind: str, cap: int) -> str:
+    return f"The {kind} exceeds the limit of {cap} rows."
+
+
+def batch_get_ids(values: Iterable[str], *, cap: int | None) -> list[str]:
+    """Return the ids of a ``:batchGet`` request, from its repeated ``ids`` values.
+
+    Empty values are dropped; a value is never split, so a comma-joined value
+    is one id.
+
+    Args:
+        values: The raw values of the repeated ``ids`` query parameter.
+        cap: The most ids a request may name, or ``None`` for no limit.
+
+    Raises:
+        InvalidBatchGet: No value is non-empty, or there are more than *cap* ids.
+    """
+    ids = [value for value in values if value]
+    if not ids:
+        raise InvalidBatchGet(NON_EMPTY_IDS_DETAIL)
+    if cap is not None and len(ids) > cap:
+        raise InvalidBatchGet(_cap_detail("batch", cap))
+    return ids
+
+
+@dataclass(frozen=True)
+class BatchUpdateItem:
+    """One validated ``:batchUpdate`` item.
+
+    *index* is the item's position in ``requests``, *patch* its JSON Merge Patch
+    and *if_match* its ``ifMatch`` precondition, if any.
+    """
+
+    index: int
+    id: str
+    patch: dict[str, JsonValue]
+    if_match: str | None
+
+
+def parse_batch_update(
+    body: object,
+    *,
+    cap: int | None,
+    instance: str,
+    registry: ProblemRegistry | None = None,
+) -> list[BatchUpdateItem] | ProblemResponse:
+    """Check a ``:batchUpdate`` body's list, its size, each item's shape and the ids.
+
+    Args:
+        body: The decoded JSON request body.
+        cap: The most items a request may carry, or ``None`` for no limit.
+        instance: The ``instance`` member, in practice the request path.
+        registry: The registry to render with; the default when omitted.
+
+    Returns:
+        The items in request order, or the problem to render when ``requests``
+        is missing, empty or not a list (422 at ``/requests``) or over *cap*
+        (:func:`row_cap_problem`).
+
+    Raises:
+        RowsInvalid: An item has no ``id``, a ``patch`` that is not a JSON
+            object or an ``ifMatch`` that is not a string, or repeats an
+            earlier item's id. Every failing item is reported, with root
+            ``requests``.
+    """
+    members = cast("dict[str, object]", body) if isinstance(body, dict) else {}
+    raw = members.get("requests")
+    if not isinstance(raw, list) or not raw:
+        detail = (
+            NON_EMPTY_LIST_DETAIL if "requests" in members else REQUIRED_FIELD_DETAIL
+        )
+        return render_problem(
+            registry or default_registry(),
+            ValueError("Validation Error"),
+            instance=instance,
+            problem=VALIDATION_ERROR,
+            detail="Validation Error",
+            extensions={"errors": [field_error(("requests",), detail)]},
+        )
+    entries = cast("list[object]", raw)
+    if cap is not None and len(entries) > cap:
+        return row_cap_problem("batch", cap, instance=instance, registry=registry)
+
+    items: list[BatchUpdateItem] = []
+    errors: list[RowError] = []
+    for index, entry in enumerate(entries):
+        fields = cast("dict[str, object]", entry) if isinstance(entry, dict) else {}
+        item_id = fields.get("id")
+        patch = fields.get("patch")
+        if_match = fields.get("ifMatch")
+        failed = False
+        if isinstance(item_id, bool) or not isinstance(item_id, (str, int)):
+            errors.append(RowError(index, "id", REQUIRED_FIELD_DETAIL))
+            failed = True
+        if not isinstance(patch, dict):
+            errors.append(RowError(index, "patch", _PATCH_DETAIL))
+            failed = True
+        if if_match is not None and not isinstance(if_match, str):
+            errors.append(RowError(index, "ifMatch", _IF_MATCH_DETAIL))
+            failed = True
+        if not failed:
+            items.append(
+                BatchUpdateItem(
+                    index,
+                    str(item_id),
+                    cast("dict[str, JsonValue]", patch),
+                    cast("str | None", if_match),
+                )
+            )
+    if errors:
+        raise RowsInvalid(errors, root="requests")
+
+    seen: set[str] = set()
+    for item in items:
+        if item.id in seen:
+            errors.append(RowError(item.index, "id", DUPLICATE_ID_DETAIL))
+        seen.add(item.id)
+    if errors:
+        raise RowsInvalid(errors, root="requests")
+    return items
 
 
 @dataclass(frozen=True)

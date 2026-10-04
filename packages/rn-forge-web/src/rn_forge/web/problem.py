@@ -26,6 +26,7 @@ from rn_forge.web.exceptions import (
     IdempotencyKeyInFlight,
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
+    InvalidBatchGet,
     InvalidCursor,
     InvalidMergePatch,
     InvalidOrderBy,
@@ -448,6 +449,7 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
         .register(VersionConflict, PRECONDITION_FAILED)
         .register(PreconditionRequired, PRECONDITION_REQUIRED)
         .register(MalformedPrecondition, BAD_REQUEST)
+        .register(InvalidBatchGet, BAD_REQUEST)
         .register(InvalidCursor, BAD_REQUEST)
         .register(InvalidOrderBy, BAD_REQUEST)
         .register(IdempotencyKeyRequired, BAD_REQUEST)
