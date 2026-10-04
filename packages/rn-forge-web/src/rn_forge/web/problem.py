@@ -29,10 +29,12 @@ from rn_forge.web.exceptions import (
     InvalidCursor,
     InvalidMergePatch,
     InvalidOrderBy,
+    ItemsDenied,
     MalformedPrecondition,
     PermissionDenied,
     PreconditionRequired,
     RemoteProblem,
+    RowsInvalid,
     ServiceUnavailable,
     TooManyRequests,
     UnsupportedMediaType,
@@ -453,11 +455,13 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
         .register(IdempotencyKeyInFlight, CONFLICT)
         .register(AuthenticationFailed, UNAUTHORIZED)
         .register(PermissionDenied, FORBIDDEN)
+        .register(ItemsDenied, FORBIDDEN)
         .register(RemoteProblem, BAD_GATEWAY)
         .register(ContentTooLarge, CONTENT_TOO_LARGE)
         .register(TooManyRequests, TOO_MANY_REQUESTS)
         .register(UnsupportedMediaType, UNSUPPORTED_MEDIA_TYPE)
         .register(InvalidMergePatch, VALIDATION_ERROR)
+        .register(RowsInvalid, VALIDATION_ERROR)
         .register(ServiceUnavailable, SERVICE_UNAVAILABLE)
         .register(LookupError, NOT_FOUND)
         .register(ValueError, VALIDATION_ERROR)

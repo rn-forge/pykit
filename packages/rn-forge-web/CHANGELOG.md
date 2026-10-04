@@ -6,6 +6,11 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ### Added
 
+- Shared transfer rules in `rn_forge.web.transfer`: `ImportCounts`, `parse_flag`,
+  `row_cap_problem`, `NON_EMPTY_LIST_DETAIL`, `unsupported_file_detail` and
+  `unreadable_file_detail`.
+- `RowsInvalid` (422) and `ItemsDenied` (403) in `rn_forge.web.exceptions`, both in
+  `default_registry()`.
 - JSON Merge Patch (RFC 7396), framework-neutral, in `rn_forge.web.merge_patch`:
   `MERGE_PATCH_MEDIA_TYPE`, `apply_merge_patch`, `merge_representation` and `require_patch_object`.
   A top-level `null` sets a field to `null`; below the top level `null` removes the member.

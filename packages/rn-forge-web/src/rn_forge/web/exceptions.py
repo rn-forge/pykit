@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from rn_forge.commons.exceptions import AppException
 
 if TYPE_CHECKING:
     from rn_forge.web.problem import ProblemDetail
+    from rn_forge.web.transfer import RowError
 
 __all__ = [
     "AuthenticationFailed",
@@ -19,10 +21,12 @@ __all__ = [
     "InvalidCursor",
     "InvalidMergePatch",
     "InvalidOrderBy",
+    "ItemsDenied",
     "MalformedPrecondition",
     "PermissionDenied",
     "PreconditionRequired",
     "RemoteProblem",
+    "RowsInvalid",
     "ServiceUnavailable",
     "TooManyRequests",
     "UnsupportedMediaType",
@@ -126,6 +130,81 @@ class AuthenticationFailed(WebError):
 
 class PermissionDenied(WebError):
     """Credentials verified, but the principal lacks the required access (403)."""
+
+
+class ItemsDenied(PermissionDenied):
+    """Some items of a bulk request are not permitted (403).
+
+    Renders ``Forbidden`` with one ``errors`` entry per message, whose
+    ``pointer`` is ``/<root>/<index>`` (``/<root>/<index>/<field>`` for a
+    field-keyed entry).
+
+    Args:
+        errors: Messages by item index, or by item index then field name.
+        root: The first pointer segment, such as ``"requests"`` or ``"ids"``.
+
+    Example::
+
+        ItemsDenied({"1": ["You may not create this order."]}, root="requests")
+    """
+
+    def __init__(
+        self,
+        errors: Mapping[str | int, Sequence[str] | Mapping[str, Sequence[str]]],
+        *,
+        root: str,
+    ) -> None:
+        super().__init__("Forbidden")
+        self.errors = errors
+        self.root = root
+
+    def problem_extensions(self) -> Mapping[str, Any]:
+        """Return the ``errors`` member."""
+        from rn_forge.web.problem import field_error  # noqa: PLC0415  # problem imports this module
+
+        entries: list[dict[str, str]] = []
+        for index, item in self.errors.items():
+            if isinstance(item, Mapping):
+                entries.extend(
+                    field_error((self.root, index, field), message)
+                    for field, messages in item.items()
+                    for message in messages
+                )
+            else:
+                entries.extend(
+                    field_error((self.root, index), message) for message in item
+                )
+        return {"errors": entries}
+
+
+class RowsInvalid(WebError):
+    """One or more rows of an import or bulk request are invalid (422).
+
+    Renders ``One or more rows are invalid.`` with one ``errors`` entry per
+    failed cell, whose ``pointer`` is ``/<root>/<row>[/<field>]``.
+
+    Args:
+        errors: The failed cells.
+        root: The first pointer segment.
+    """
+
+    def __init__(self, errors: Iterable[RowError], *, root: str = "rows") -> None:
+        super().__init__("One or more rows are invalid.")
+        self.errors = tuple(errors)
+        self.root = root
+
+    def problem_extensions(self) -> Mapping[str, Any]:
+        """Return the ``errors`` member."""
+        from rn_forge.web.problem import field_error  # noqa: PLC0415  # problem imports this module
+
+        return {
+            "errors": [
+                field_error(
+                    (self.root, e.row, *([e.field] if e.field else [])), e.message
+                )
+                for e in self.errors
+            ]
+        }
 
 
 class TooManyRequests(WebError):

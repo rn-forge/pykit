@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Final, Literal
 from urllib.parse import quote
 
 from rn_forge.web.problem import (
@@ -17,15 +17,24 @@ from rn_forge.web.problem import (
 )
 
 __all__ = [
+    "NON_EMPTY_LIST_DETAIL",
     "TABULAR_FORMATS",
+    "ImportCounts",
     "RowError",
     "TabularFormat",
     "content_disposition",
     "export_cap_problem",
     "import_report_body",
     "negotiate_tabular_format",
+    "parse_flag",
+    "row_cap_problem",
     "row_errors_problem",
+    "unreadable_file_detail",
+    "unsupported_file_detail",
 ]
+
+NON_EMPTY_LIST_DETAIL: Final = "A non-empty list is required."
+"""The detail for a bulk member that is an empty list or not a list."""
 
 
 @dataclass(frozen=True)
@@ -200,3 +209,61 @@ def export_cap_problem(
         problem=VALIDATION_ERROR,
         detail=f"The export exceeds the limit of {cap} rows; narrow the filter.",
     )
+
+
+def row_cap_problem(
+    kind: Literal["import", "batch"],
+    cap: int,
+    *,
+    instance: str,
+    registry: ProblemRegistry | None = None,
+) -> ProblemResponse:
+    """Render "the *kind* exceeds *cap* rows" as a 422 problem with no ``errors`` member.
+
+    Args:
+        kind: ``"import"`` or ``"batch"``.
+        cap: The row limit.
+        instance: The ``instance`` member, in practice the request path.
+        registry: The registry to render with; the default when omitted.
+    """
+    return render_problem(
+        registry or default_registry(),
+        ValueError("Validation Error"),
+        instance=instance,
+        problem=VALIDATION_ERROR,
+        detail=f"The {kind} exceeds the limit of {cap} rows.",
+    )
+
+
+@dataclass(frozen=True)
+class ImportCounts:
+    """What an import did: rows *created*, rows *updated* and rows *skipped*."""
+
+    created: int
+    updated: int
+    skipped: int
+
+
+def parse_flag(value: str | None) -> bool:
+    """Return whether *value* is ``"true"`` or ``"1"``, ignoring case.
+
+    Anything else, including ``None``, is ``False``. It parses the
+    ``validateOnly`` and ``prefill`` query parameters.
+    """
+    return value is not None and value.lower() in {"true", "1"}
+
+
+def unsupported_file_detail(formats: Iterable[str]) -> str:
+    """Return the detail for an upload whose type is not in *formats*.
+
+    Example::
+
+        unsupported_file_detail(("csv", "xlsx"))
+        # 'Unsupported file type; use one of: csv, xlsx.'
+    """
+    return f"Unsupported file type; use one of: {', '.join(formats)}."
+
+
+def unreadable_file_detail(extension: str) -> str:
+    """Return the detail for an upload that could not be parsed as *extension*."""
+    return f"The file could not be read as {extension}."
