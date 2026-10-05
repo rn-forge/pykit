@@ -22,7 +22,8 @@ async def engine(
     if request.param == "sqlite":
         url = f"sqlite+aiosqlite:///{tmp_path / 'test.db'}"
     elif dsn := os.environ.get(POSTGRES_DSN):
-        url = dsn
+        # CI exports a bare `postgresql://` DSN; the async engine needs a driver.
+        url = dsn.replace("postgresql://", "postgresql+asyncpg://", 1)
     else:
         pytest.skip(f"{POSTGRES_DSN} is not set")
     engine = create_async_engine(url)

@@ -43,6 +43,10 @@ markers = [
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
+[tool.workspace-ci.postgres]
+# The `postgres`-marked tests read this DSN and skip without it.
+env = "RN_FORGE_TEST_POSTGRES_DSN"
+
 [dependency-groups]
 dev = [
   "aiosqlite>=0.21",
