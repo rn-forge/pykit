@@ -372,29 +372,6 @@ class _BatchResourceMixin(GenericAPIView):
         first, *rest = str(model._meta.verbose_name_plural).split()
         return first + "".join(word.title() for word in rest)
 
-    def _find_all(self, ids: Sequence[str]) -> dict[str, Any]:
-        """Return the rows for *ids* within the view's scope, keyed by string pk.
-
-        Raises:
-            rest_framework.exceptions.NotFound: The first id, in request order,
-                that is not in scope.
-        """
-        queryset: Any = cast(Any, self).filter_queryset(cast(Any, self).get_queryset())
-        pk_field: Any = queryset.model._meta.pk
-        coercible: list[str] = []
-        for raw_id in ids:
-            try:
-                pk_field.to_python(raw_id)
-            except DjangoValidationError:
-                continue  # an id the key cannot hold names no row, so it is a 404 below
-            coercible.append(raw_id)
-        found = {str(obj.pk): obj for obj in queryset.filter(pk__in=coercible)}
-        for raw_id in ids:
-            if raw_id not in found:
-                label = str(queryset.model._meta.verbose_name).capitalize()
-                raise NotFound(f"{label} {raw_id} not found")
-        return found
-
 
 class BatchGetMixin(_BatchResourceMixin):
     """Add ``GET :batchGet?ids=1&ids=2``.
@@ -413,7 +390,7 @@ class BatchGetMixin(_BatchResourceMixin):
     @action(detail=False, methods=["get"], url_path="batchGet", url_name="batch-get")
     def batch_get(self, request: Request) -> HttpResponseBase:
         ids = batch_get_ids(request.query_params.getlist("ids"), cap=_max_rows())
-        found = self._find_all(ids)
+        found = _find_all(self, ids)
         serializer: Any = cast(Any, self).get_serializer(
             [found[i] for i in ids], many=True
         )
@@ -537,7 +514,7 @@ class BatchUpdateMixin(_BatchResourceMixin):
         )
         if isinstance(parsed, ProblemResponse):
             return _problem_response(parsed)
-        found = self._find_all([item.id for item in parsed])
+        found = _find_all(self, [item.id for item in parsed])
 
         codec = self.etag_codec or VersionETagCodec()
         for item in parsed:
@@ -625,12 +602,7 @@ class BatchDeleteMixin(GenericAPIView):
             return _problem_response(
                 row_cap_problem("batch", cap, instance=request.path)
             )
-        queryset: Any = cast(Any, self).filter_queryset(cast(Any, self).get_queryset())
-        found = {str(obj.pk): obj for obj in queryset.filter(pk__in=ids)}
-        for raw_id in ids:
-            if str(raw_id) not in found:
-                label = str(queryset.model._meta.verbose_name).capitalize()
-                raise NotFound(f"{label} {raw_id} not found")
+        found = _find_all(self, [str(i) for i in ids])
 
         denied: dict[str, list[str]] = {}
         for index, raw_id in enumerate(ids):
@@ -644,6 +616,30 @@ class BatchDeleteMixin(GenericAPIView):
             for instance in found.values():
                 cast(Any, self).perform_destroy(instance)
         return Response(status=204)
+
+
+def _find_all(view: Any, ids: Sequence[str]) -> dict[str, Any]:
+    """Return the rows for *ids* within *view*'s scope, keyed by string pk.
+
+    Raises:
+        rest_framework.exceptions.NotFound: The first id, in request order,
+            that is not in scope.
+    """
+    queryset: Any = view.filter_queryset(view.get_queryset())
+    pk_field: Any = queryset.model._meta.pk
+    coercible: list[str] = []
+    for raw_id in ids:
+        try:
+            pk_field.to_python(raw_id)
+        except DjangoValidationError:
+            continue  # an id the key cannot hold names no row, so it is a 404 below
+        coercible.append(raw_id)
+    found = {str(obj.pk): obj for obj in queryset.filter(pk__in=coercible)}
+    for raw_id in ids:
+        if raw_id not in found:
+            label = str(queryset.model._meta.verbose_name).capitalize()
+            raise NotFound(f"{label} {raw_id} not found")
+    return found
 
 
 def _list_member(request: Request, key: str) -> list[object]:

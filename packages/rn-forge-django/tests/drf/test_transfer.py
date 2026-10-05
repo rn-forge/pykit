@@ -482,6 +482,14 @@ class TestBatchDelete:
         assert response.status_code == 403
         assert Member.objects.count() == 2
 
+    def test_an_id_the_key_cannot_hold_is_a_404(self, client, members) -> None:
+        response = client.post(
+            "/members:batchDelete", {"ids": ["abc"]}, content_type="application/json"
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Member abc not found"
+        assert Member.objects.count() == 2
+
 
 def make_books(*names):
     return [Book.objects.create(name=n) for n in names]
