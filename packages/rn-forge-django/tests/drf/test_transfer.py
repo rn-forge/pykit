@@ -555,6 +555,33 @@ class TestBatchUpdate:
         }
         assert [x.version for x in Book.objects.order_by("id")] == [2, 2]
 
+    def test_a_conflict_at_save_time_is_a_412_with_the_pointer(
+        self, client, monkeypatch
+    ) -> None:
+        a, b = make_books("a", "b")
+        real_save = Book.save
+        bumped: list[bool] = []
+
+        def racing_save(self, *args, **kwargs):
+            if not bumped:
+                bumped.append(True)
+                Book.objects.filter(pk=b.pk).update(version=5)
+            return real_save(self, *args, **kwargs)
+
+        monkeypatch.setattr(Book, "save", racing_save)
+        response = update(
+            client,
+            "/books",
+            {"id": a.pk, "patch": {"name": "a2"}},
+            {"id": b.pk, "patch": {"name": "b2"}, "ifMatch": f'W/"{b.pk}:1"'},
+        )
+        assert response.status_code == 412
+        assert response.json()["errors"][0]["pointer"] == "/requests/1/ifMatch"
+        assert [(x.name, x.version) for x in Book.objects.order_by("id")] == [
+            ("a", 1),
+            ("b", 1),  # the simulated writer's bump shares the rolled-back transaction
+        ]
+
     def test_a_denied_item_is_a_403_and_writes_nothing(self, client) -> None:
         a, locked = make_books("a", "locked")
         response = update(

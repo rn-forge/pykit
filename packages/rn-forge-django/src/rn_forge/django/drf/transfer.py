@@ -38,6 +38,7 @@ from rn_forge.web import (
     ProblemResponse,
     RowError,
     TabularFormat,
+    VersionConflict,
     VersionETagCodec,
     batch_get_ids,
     check_item_precondition,
@@ -473,8 +474,9 @@ class BatchUpdateMixin(_BatchResourceMixin):
 
     A malformed list or item is a 422 problem, an id outside
     ``filter_queryset(get_queryset())`` a 404, a failed precondition a 428, 400
-    or 412 pointing at ``/requests/<i>/ifMatch``, a failed merged document a
-    422 pointing at ``/requests/<i>/patch/<field>``, and an error string from
+    or 412 pointing at ``/requests/<i>/ifMatch`` (a version conflict at save time
+    included), a failed merged document a 422 pointing at
+    ``/requests/<i>/patch/<field>``, and an error string from
     :meth:`validate_batch_update_item` a 403 pointing at the item. Nothing is
     persisted on failure.
 
@@ -573,8 +575,16 @@ class BatchUpdateMixin(_BatchResourceMixin):
             raise PermissionDenied({"requests": denied})
 
         with transaction.atomic():
-            for serializer in serializers:
-                serializer.save()
+            for item, serializer in zip(parsed, serializers, strict=True):
+                try:
+                    serializer.save()
+                except VersionConflict as exc:
+                    pointed = [
+                        field_error(("requests", item.index, "ifMatch"), exc.message)
+                    ]
+                    raise VersionConflict(
+                        "{}", exc.message, error_code=exc.error_code, errors=pointed
+                    ) from exc
         return Response({self._resource_name(): [s.data for s in serializers]})
 
 
