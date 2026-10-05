@@ -6,7 +6,7 @@ consumer declares a pinned direct URL to it:
 ```toml
 [project]
 dependencies = [
-  "rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django",
+  "rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django",
 ]
 ```
 
@@ -14,14 +14,14 @@ Extras use the same form, with the extra before the `@`:
 
 ```toml
 dependencies = [
-  "rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django",
+  "rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django",
 ]
 ```
 
 or, from the command line:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django"
 ```
 
 Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each pinned to its own release

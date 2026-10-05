@@ -5,20 +5,23 @@ hand-written: if a case needs more than a line or two over them, the adapter is
 missing. Assertions are against the table, never against Django's output — two
 stacks agreeing on the wrong thing is not conformance.
 
-There is no `pytest.skip` in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 """
 
+import json
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from assertpy import assert_that
-from fastapi import Depends, FastAPI, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
-from pydantic import ConfigDict, Field, ValidationError, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from rn_forge.fastapi import (
     AppConfig,
@@ -28,16 +31,29 @@ from rn_forge.fastapi import (
     conditional_get,
     deprecated,
     health_router,
+    merge_into,
+    merge_patch_body,
+    merge_patch_openapi,
     order_by_param,
+    masked,
     page_params,
+    read_mask_param,
     require_if_match,
     requires,
+    show_deleted_param,
+    soft_delete_router,
 )
+from rn_forge.fastapi import SoftDeleteState
 from rn_forge.fastapi.transfer import (
+    batch_create_router,
+    batch_delete_router,
+    batch_get_router,
+    batch_update_router,
+    import_router,
+    import_template_router,
     problem_response,
-    read_rows,
+    tabular_export,
     tabular_format,
-    tabular_response,
 )
 from rn_forge.web import (
     Operation,
@@ -45,12 +61,11 @@ from rn_forge.web import (
     API_CATALOG_PATH,
     check_cursor_order,
     format_order_by,
-    RowError,
     TabularFormat,
-    export_cap_problem,
-    import_report_body,
-    row_errors_problem,
+    ImportCounts,
+    ItemsDenied,
     Page,
+    ReadMask,
     WireModel,
     CheckResult,
     DomainConflict,
@@ -62,6 +77,7 @@ from rn_forge.web import (
     TooManyRequests,
     check_precondition,
     encode_cursor,
+    require_live,
     run_idempotent_async,
 )
 from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
@@ -70,6 +86,7 @@ pytestmark = pytest.mark.unit
 
 ROWS = [{"id": "1"}, {"id": "2"}, {"id": "3"}]
 ITEM_VERSION = 7
+CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
@@ -84,6 +101,15 @@ class AnyToken:
         return Principal(subject="u1")
 
 
+PEOPLE = [
+    {"id": "1", "team": "a", "score": 10},
+    {"id": "2", "team": "b", "score": None},
+    {"id": "3", "team": "a", "score": None},
+    {"id": "4", "team": "b", "score": 5},
+    {"id": "5", "team": "a", "score": 10},
+]
+
+
 class Charge(WireModel):
     amount: int
 
@@ -95,6 +121,47 @@ class Named(WireModel):
 class Stamped(WireModel):
     id: str
     create_time: datetime
+
+
+class Document(WireModel):
+    name: str
+    note: str | None = None
+    tags: list[str] = []
+    settings: dict[str, Any] = {}
+
+
+class Address(WireModel):
+    city: str
+    postcode: str
+
+
+class Phone(WireModel):
+    kind: str
+    number: str
+
+
+class Profile(WireModel):
+    id: str
+    display_name: str
+    address: Address
+    phones: list[Phone] = []
+    settings: dict[str, Any] = {}
+
+
+PROFILES = [
+    Profile(
+        id="1",
+        display_name="Ada",
+        address=Address(city="London", postcode="N1"),
+        phones=[Phone(kind="home", number="1"), Phone(kind="work", number="2")],
+        settings={"theme": "dark"},
+    ),
+    Profile(
+        id="2",
+        display_name="Grace",
+        address=Address(city="Arlington", postcode="22201"),
+    ),
+]
 
 
 class OrderRow(WireModel):
@@ -122,12 +189,168 @@ class OrderCreate(WireModel):
     name: str
 
 
-class BatchCreate(WireModel):
-    requests: list[dict]
+@dataclass
+class Order:
+    id: str
+    name: str
+    quantity: int = 0
 
 
-class BatchDelete(WireModel):
-    ids: list[str]
+class OrderStore:
+    """One in-memory store behind every transfer route of the fixture."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {"1": Order("1", "widget")}
+
+    async def import_rows(self, rows, *, validate_only):
+        created = sum(row.id not in self.rows_by_id for row in rows)
+        if not validate_only:
+            for row in rows:
+                self.rows_by_id[row.id] = Order(row.id, row.name, row.quantity)
+        return ImportCounts(created, len(rows) - created, 0)
+
+    async def rows(self):
+        return list(self.rows_by_id.values())
+
+    async def create_many(self, items):
+        denied = {
+            str(index): ["You may not create this order."]
+            for index, item in enumerate(items)
+            if item.name == "forbidden"
+        }
+        if denied:
+            raise ItemsDenied(denied, root="requests")
+        created = []
+        for item in items:
+            order = Order(str(len(self.rows_by_id) + 1), item.name)
+            self.rows_by_id[order.id] = order
+            created.append(order)
+        return created
+
+    async def find(self, ids):
+        return [i for i in ids if i in self.rows_by_id]
+
+    async def delete_many(self, ids):
+        for order_id in ids:
+            del self.rows_by_id[order_id]
+
+
+class BookDocument(WireModel):
+    name: str
+
+
+class BookRow(WireModel):
+    id: str
+    name: str
+
+
+@dataclass
+class Book:
+    id: str
+    name: str
+    version: int = 1
+
+
+@dataclass
+class BookState:
+    row: Book
+    version: int
+
+
+class BookStore:
+    """In-memory books for `:batchGet` and `:batchUpdate`."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {
+            "1": Book("1", "alpha"),
+            "2": Book("2", "beta"),
+            "3": Book("3", "gamma"),
+        }
+
+    async def get_many(self, ids):
+        return {i: self.rows_by_id[i] for i in ids if i in self.rows_by_id}
+
+    async def current(self, ids):
+        return {
+            i: BookState(self.rows_by_id[i], self.rows_by_id[i].version)
+            for i in ids
+            if i in self.rows_by_id
+        }
+
+    async def update_many(self, items):
+        updated = []
+        for book_id, document in items:
+            book = self.rows_by_id[book_id]
+            book.name = document.name
+            book.version += 1
+            updated.append(book)
+        return updated
+
+
+class NoteRow(WireModel):
+    id: str
+    text: str
+    delete_time: datetime | None = None
+
+
+class NoteText(WireModel):
+    text: str
+
+
+@dataclass
+class Note:
+    id: str
+    text: str
+    delete_time: datetime | None = None
+    version: int = 1
+
+
+class NoteStore:
+    """In-memory soft-deleting notes."""
+
+    def __init__(self) -> None:
+        self.rows_by_id = {
+            "1": Note("1", "first"),
+            "2": Note("2", "second", DEPRECATED_AT, 2),
+            "3": Note("3", "third"),
+        }
+
+    async def find(self, id):
+        note = self.rows_by_id.get(id)
+        return (
+            None
+            if note is None
+            else SoftDeleteState(note, note.version, note.delete_time)
+        )
+
+    async def soft_delete(self, id):
+        note = self.rows_by_id[id]
+        note.delete_time, note.version = CLOCK, note.version + 1
+        return note
+
+    async def undelete(self, id):
+        note = self.rows_by_id[id]
+        note.delete_time, note.version = None, note.version + 1
+        return note
+
+
+class NoteBatchStore:
+    """The batch-delete view of :class:`NoteStore`: live notes only, soft-deleted."""
+
+    def __init__(self, notes: NoteStore) -> None:
+        self.notes = notes
+
+    async def find(self, ids):
+        return {
+            i
+            for i in ids
+            if i in self.notes.rows_by_id
+            and self.notes.rows_by_id[i].delete_time is None
+        }
+
+    async def delete_many(self, ids):
+        for i in ids:
+            await self.notes.soft_delete(i)
 
 
 EXPORT_CAP = 1
@@ -195,6 +418,55 @@ def build_app(*, failing: str | None) -> FastAPI:
             {"id": "1", "version": ITEM_VERSION}, headers={"ETag": etag}
         )
 
+    document: dict[str, Any] = {
+        "name": "widget",
+        "note": "fragile",
+        "tags": ["a", "b"],
+        "settings": {"color": "red", "size": "L"},
+    }
+    document_version = [1]
+    codec = EntityVersionETagCodec()
+
+    def document_response():
+        return JSONResponse(
+            {"id": "1", **document},
+            headers={"ETag": codec.format(entity_id="1", version=document_version[0])},
+        )
+
+    @app.get("/conformance/documents/1")
+    async def get_document():
+        return document_response()
+
+    @app.patch("/conformance/documents/1", openapi_extra=merge_patch_openapi())
+    async def patch_document(
+        body: bytes = Depends(merge_patch_body()),
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ):
+        check_precondition(
+            if_match, current_version=document_version[0], entity_id="1", codec=codec
+        )
+        document.update(merge_into(Document, document, body).model_dump(by_alias=True))
+        document_version[0] += 1
+        return document_response()
+
+    @app.get("/conformance/profiles/1", response_model=Profile)
+    async def get_profile(
+        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+    ):
+        body = PROFILES[0].model_dump()
+        return JSONResponse(
+            body if mask is None else mask.apply(body),
+            headers={"ETag": codec.format(entity_id="1", version=1)},
+        )
+
+    @app.get("/conformance/profiles", response_model=Page[Profile])
+    async def list_profiles(
+        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+    ):
+        return JSONResponse(
+            masked(Page[Profile](items=PROFILES, next_page_token=None), mask)
+        )
+
     @app.get("/conformance/items")
     async def list_items(
         params=Depends(page_params(cap=2, default=2)),
@@ -212,11 +484,48 @@ def build_app(*, failing: str | None) -> FastAPI:
         window = rows[start : start + size]
         more = start + size < len(rows)
         token = (
-            encode_cursor(window[-1]["id"], window[-1]["id"], format_order_by(order))
+            encode_cursor(
+                (window[-1]["id"],) if order else (),
+                window[-1]["id"],
+                format_order_by(order),
+            )
             if more
             else None
         )
         return Page[dict[str, str]](items=window, next_page_token=token)
+
+    @app.get("/conformance/people")
+    async def list_people(
+        params=Depends(page_params(cap=5, default=5)),
+        order=Depends(order_by_param(allowed=["id", "team", "score"])),
+    ) -> Page[dict[str, Any]]:
+        size, cursor = params
+        if cursor:
+            check_cursor_order(cursor, order)
+        keys = [(t.field, t.descending) for t in order]
+        if not any(field == "id" for field, _ in keys):
+            keys.append(("id", keys[-1][1] if keys else False))
+        rows = list(PEOPLE)
+        for field, descending in reversed(keys):  # stable passes, last term first
+            present = [r for r in rows if r[field] is not None]
+            present.sort(key=lambda r: r[field], reverse=descending)
+            rows = present + [r for r in rows if r[field] is None]
+        start = (
+            next(i + 1 for i, row in enumerate(rows) if row["id"] == cursor.entity_id)
+            if cursor
+            else 0
+        )
+        window = rows[start : start + size]
+        token = (
+            encode_cursor(
+                tuple(window[-1][t.field] for t in order),
+                window[-1]["id"],
+                format_order_by(order),
+            )
+            if start + size < len(rows)
+            else None
+        )
+        return Page[dict[str, Any]](items=window, next_page_token=token)
 
     @app.post("/conformance/charges", status_code=201)
     async def create_charge(request: Request, body: Charge):
@@ -265,39 +574,46 @@ def build_app(*, failing: str | None) -> FastAPI:
     async def unavailable_route():
         raise ServiceUnavailable("Service unavailable", retry_after=5)
 
-    orders: dict[str, dict[str, str]] = {"1": {"id": "1", "name": "widget"}}
+    orders = OrderStore()
     tabular = Depends(tabular_format())
 
     async def export(request: Request, fmt: TabularFormat | None, filename: str, rows):
         if fmt is None:
-            return {"items": rows}
-        if len(rows) > EXPORT_CAP:
-            return problem_response(
-                export_cap_problem(EXPORT_CAP, instance=request.url.path)
-            )
-        return await tabular_response(rows, OrderRow, fmt, filename)
+            return {"items": [{"id": r.id, "name": r.name} for r in rows]}
+        return await tabular_export(
+            rows,
+            OrderRow,
+            fmt,
+            filename,
+            max_rows=EXPORT_CAP,
+            instance=request.url.path,
+        )
 
     @app.get("/conformance/orders")
     async def export_orders(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(request, fmt, "orders.csv", list(orders.values()))
+        return await export(
+            request, fmt, "orders.csv", list(orders.rows_by_id.values())
+        )
 
     @app.get("/conformance/orders/named")
     async def export_named(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(request, fmt, "Ordérs 2026.csv", list(orders.values()))
+        return await export(
+            request, fmt, "Ordérs 2026.csv", list(orders.rows_by_id.values())
+        )
 
     @app.get("/conformance/orders/over-cap")
     async def export_over_cap(request: Request, fmt: TabularFormat | None = tabular):
-        return await export(
-            request, fmt, "orders.csv", [*orders.values(), *orders.values()]
-        )
+        rows = list(orders.rows_by_id.values())
+        return await export(request, fmt, "orders.csv", [*rows, *rows])
 
     @app.get("/conformance/orders/count")
     async def count_orders():
-        return {"count": len(orders)}
+        return {"count": len(orders.rows_by_id)}
 
     @app.get("/conformance/orders/1")
     async def get_order():
-        return orders["1"]
+        first = orders.rows_by_id["1"]
+        return {"id": first.id, "name": first.name}
 
     @app.get("/conformance/stamped")
     async def stamped() -> Stamped:
@@ -326,59 +642,118 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
         return Operation(name="operations/2", done=True, error=problem).as_body()
 
-    @app.post("/conformance/orders:import")
-    async def import_orders(
-        request: Request,
-        file: UploadFile,
-        validate_only: bool = Query(False, alias="validateOnly"),
+    def order_store() -> OrderStore:
+        return orders
+
+    for collection, cap in (("/conformance/orders", None), ("/conformance/capped", 1)):
+        app.include_router(
+            import_router(
+                collection, model=OrderImport, store=order_store, max_rows=cap
+            )
+        )
+        app.include_router(
+            batch_create_router(
+                collection,
+                model=OrderCreate,
+                response_model=OrderRow,
+                resource_name="orders",
+                store=order_store,
+                max_rows=cap,
+            )
+        )
+    books = BookStore()
+
+    def book_store() -> BookStore:
+        return books
+
+    for collection, cap in (
+        ("/conformance/books", None),
+        ("/conformance/capped-books", 1),
     ):
-        result = await read_rows(file, OrderImport)
-        if result.errors:
-            return problem_response(
-                row_errors_problem(result.errors, instance=request.url.path)
+        app.include_router(
+            batch_get_router(
+                collection,
+                response_model=BookRow,
+                resource_name="books",
+                resource_label="Book",
+                store=book_store,
+                max_rows=cap,
             )
-        created = sum(row.id not in orders for row in result.valid)
-        if not validate_only:
-            orders.update(
-                {row.id: {"id": row.id, "name": row.name} for row in result.valid}
+        )
+        app.include_router(
+            batch_update_router(
+                collection,
+                model=BookDocument,
+                response_model=BookRow,
+                resource_name="books",
+                resource_label="Book",
+                store=book_store,
+                max_rows=cap,
+                codec=EntityVersionETagCodec(),
             )
-        return import_report_body(
-            created=created,
-            updated=len(result.valid) - created,
-            skipped=0,
-            validate_only=validate_only,
+        )
+    app.include_router(
+        import_template_router(
+            "/conformance/orders", model=OrderImport, source=order_store
+        )
+    )
+    app.include_router(
+        batch_delete_router(
+            "/conformance/orders", resource_label="Order", store=order_store
+        )
+    )
+
+    notes = NoteStore()
+    note_codec = EntityVersionETagCodec()
+
+    def note_store() -> NoteStore:
+        return notes
+
+    @app.get("/conformance/notes", response_model=Page[NoteRow])
+    async def list_notes(show_deleted: bool = Depends(show_deleted_param())):
+        rows = [
+            n for n in notes.rows_by_id.values() if show_deleted or not n.delete_time
+        ]
+        return Page[NoteRow](
+            items=[NoteRow.model_validate(n, from_attributes=True) for n in rows],
+            next_page_token=None,
         )
 
-    @app.post("/conformance/orders:batchCreate")
-    async def batch_create_orders(request: Request, body: BatchCreate):
-        errors: list[RowError] = []
-        items: list[OrderCreate] = []
-        for index, item in enumerate(body.requests):
-            try:
-                items.append(OrderCreate.model_validate(item))
-            except ValidationError as exc:
-                errors.extend(
-                    RowError(index, str(e["loc"][0]), "This field is required.")
-                    for e in exc.errors()
-                )
-        if errors:
-            return problem_response(
-                row_errors_problem(errors, instance=request.url.path, root="requests")
-            )
-        created = []
-        for item in items:
-            order = {"id": str(len(orders) + 1), "name": item.name}
-            orders[order["id"]] = order
-            created.append(order)
-        return {"orders": created}
+    @app.get("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def get_note(note_id: str):
+        return notes.rows_by_id[note_id]
 
-    @app.post("/conformance/orders:batchDelete", status_code=204)
-    async def batch_delete_orders(body: BatchDelete):
-        for order_id in body.ids:
-            if order_id not in orders:
-                raise LookupError(f"Order {order_id} not found")
-        for order_id in body.ids:
-            del orders[order_id]
+    @app.patch("/conformance/notes/{note_id}", response_model=NoteRow)
+    async def patch_note(
+        note_id: str,
+        body: bytes = Depends(merge_patch_body()),
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ):
+        note = notes.rows_by_id[note_id]
+        require_live(note.delete_time, label="Note", id=note_id)
+        check_precondition(
+            if_match, current_version=note.version, entity_id=note_id, codec=note_codec
+        )
+        note.text = merge_into(NoteText, {"text": note.text}, body).text
+        note.version += 1
+        return note
+
+    app.include_router(
+        soft_delete_router(
+            "/conformance/notes",
+            response_model=NoteRow,
+            resource_label="Note",
+            store=note_store,
+            codec=note_codec,
+        )
+    )
+    app.include_router(
+        batch_delete_router(
+            "/conformance/notes",
+            resource_label="Note",
+            store=lambda: NoteBatchStore(notes),
+        )
+    )
 
     return app
 
@@ -388,6 +763,15 @@ def issue(client, case):
     headers = dict(spec.headers)
     if headers.get("Content-Type") == "multipart/form-data":
         del headers["Content-Type"]
+        if not spec.body:
+            headers["Content-Type"] = "multipart/form-data; boundary=empty"
+            return client.request(
+                spec.method,
+                spec.path,
+                headers=headers,
+                params=dict(spec.query),
+                content=b"--empty--\r\n",
+            )
         return client.request(
             spec.method,
             spec.path,
@@ -402,7 +786,7 @@ def issue(client, case):
         spec.path,
         headers=headers,
         params=dict(spec.query),
-        json=spec.body,
+        content=None if spec.body is None else json.dumps(spec.body),
     )
 
 
@@ -464,5 +848,13 @@ def test_the_fixture_serves_every_path_the_table_uses():
     """
     paths = build_app(failing=None).openapi()["paths"]
     served = {path.replace("{pk}", "1") for path in paths} | {API_CATALOG_PATH}
+    templates = [
+        re.compile(re.sub(r"\{[^}/:]+\}", "[^/:]+", p)) for p in paths if "{" in p
+    ]
     used = {case.request.path for case in CASES}
-    assert_that(used - served - {"/conformance/missing"}).is_empty()
+    unserved = {
+        path
+        for path in used - served - {"/conformance/missing"}
+        if not any(t.fullmatch(path) for t in templates)
+    }
+    assert_that(unserved).is_empty()

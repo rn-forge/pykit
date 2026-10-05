@@ -74,8 +74,8 @@ def order_by_param(
 ) -> Callable[..., tuple[OrderField, ...]]:
     """Return a dependency yielding the parsed AIP-132 ``orderBy`` terms.
 
-    A term outside *allowed*, a malformed one, or more than one term is a 400 before it reaches a
-    query. Pass the result and the decoded cursor to
+    The value is a comma-separated list of terms. A term outside *allowed*, a malformed one, or a
+    repeated field is a 400 before it reaches a query. Pass the result and the decoded cursor to
     :func:`rn_forge.web.check_cursor_order`, and the canonical order from
     :func:`rn_forge.web.format_order_by` to :func:`rn_forge.web.encode_cursor`.
 
@@ -89,7 +89,8 @@ def order_by_param(
             default=None,
             alias=ORDER_BY_PARAM,
             description=(
-                "Sort order: one field, e.g. `displayName desc`. "
+                "Sort order: a comma-separated list of fields, each optionally "
+                "followed by `asc` or `desc`, e.g. `team, score desc`. "
                 f"Sortable fields: {', '.join(names)}."
             ),
         ),

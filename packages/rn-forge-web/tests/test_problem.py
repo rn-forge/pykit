@@ -411,3 +411,27 @@ def test_problem_from_body_falls_back_to_the_http_status():
 def test_problem_from_body_round_trips_through_as_body():
     original = default_registry().build(DomainConflict("clash"), instance="/x")
     assert_that(problem_from_body(409, original.as_body())).is_equal_to(original)
+
+
+def test_unsupported_media_type_is_415_with_accept_patch():
+    from rn_forge.web.exceptions import UnsupportedMediaType
+    from rn_forge.web.problem import UNSUPPORTED_MEDIA_TYPE, default_registry
+
+    exc = UnsupportedMediaType()
+    assert_that(default_registry().problem_for(exc)).is_equal_to(UNSUPPORTED_MEDIA_TYPE)
+    assert_that(UNSUPPORTED_MEDIA_TYPE.status).is_equal_to(415)
+    assert_that(exc.response_headers()).is_equal_to(
+        {"Accept-Patch": "application/merge-patch+json"}
+    )
+    assert_that(exc.message).is_equal_to(
+        "Use Content-Type: application/merge-patch+json for PATCH"
+    )
+
+
+def test_invalid_merge_patch_is_422():
+    from rn_forge.web.exceptions import InvalidMergePatch
+    from rn_forge.web.problem import default_registry
+
+    assert_that(default_registry().problem_for(InvalidMergePatch()).status).is_equal_to(
+        422
+    )

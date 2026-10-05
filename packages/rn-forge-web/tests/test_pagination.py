@@ -23,27 +23,42 @@ pytestmark = pytest.mark.unit
 
 
 def test_round_trip():
-    token = encode_cursor("2026-09-11T10:00:00Z", "a1")
+    token = encode_cursor(("2026-09-11T10:00:00Z",), "a1")
     assert_that(decode_cursor(token)).is_equal_to(
-        Cursor(sort_key="2026-09-11T10:00:00Z", entity_id="a1")
+        Cursor(sort_keys=("2026-09-11T10:00:00Z",), entity_id="a1")
     )
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [(), ("a",), (3,), (1.5,), (True,), (False,), (None,), ("a", 10, 2.5, True, None)],
+    ids=["empty", "str", "int", "float", "true", "false", "null", "mixed"],
+)
+def test_every_sort_value_type_round_trips_with_its_json_type(keys):
+    cursor = decode_cursor(encode_cursor(keys, "1", "a,b desc"))
+
+    assert_that(cursor.sort_keys).is_equal_to(keys)
+    assert_that([type(v) for v in cursor.sort_keys]).is_equal_to(
+        [type(v) for v in keys]
+    )
+    assert_that(cursor.order_by).is_equal_to("a,b desc")
 
 
 def test_the_token_is_url_safe():
     """It goes in a query string; base64's `+` and `/` would need escaping."""
-    token = encode_cursor("z" * 40, "éè")
+    token = encode_cursor(("z" * 40,), "éè")
     assert_that(token).does_not_contain("+").does_not_contain("/")
 
 
 def test_encoding_is_stable_for_the_same_input():
-    # urlsafe base64 of b'{"id":"1","k":"k"}'.
-    expected = "eyJpZCI6IjEiLCJrIjoiayJ9"
+    # urlsafe base64 of b'{"id":"1","k":["k"]}'.
+    expected = "eyJpZCI6IjEiLCJrIjpbImsiXX0="
 
-    assert_that(encode_cursor("k", "1")).is_equal_to(expected)
+    assert_that(encode_cursor(("k",), "1")).is_equal_to(expected)
     assert_that(decode_cursor(expected)).is_equal_to(
-        Cursor(sort_key="k", entity_id="1")
+        Cursor(sort_keys=("k",), entity_id="1")
     )
-    assert_that(encode_cursor("k", "1")).is_equal_to(expected)
+    assert_that(encode_cursor(("k",), "1")).is_equal_to(expected)
 
 
 @pytest.mark.parametrize(
@@ -53,8 +68,13 @@ def test_encoding_is_stable_for_the_same_input():
         (base64.urlsafe_b64encode(b"not json").decode(), "base64 of non-JSON"),
         (base64.urlsafe_b64encode(b'["a","b"]').decode(), "JSON of a non-object"),
         (base64.urlsafe_b64encode(b'"a string"').decode(), "JSON of a scalar"),
-        (base64.urlsafe_b64encode(b'{"k":"x"}').decode(), "missing the id key"),
+        (base64.urlsafe_b64encode(b'{"k":["x"]}').decode(), "missing the id key"),
         (base64.urlsafe_b64encode(b'{"id":"x"}').decode(), "missing the sort key"),
+        (base64.urlsafe_b64encode(b'{"k":"x","id":"1"}').decode(), "old single value"),
+        (base64.urlsafe_b64encode(b'{"k":{"a":1},"id":"1"}').decode(), "k an object"),
+        (base64.urlsafe_b64encode(b'{"k":null,"id":"1"}').decode(), "k null"),
+        (base64.urlsafe_b64encode(b'{"k":[[1]],"id":"1"}').decode(), "nested value"),
+        (base64.urlsafe_b64encode(b'{"k":[{}],"id":"1"}').decode(), "object value"),
         (base64.urlsafe_b64encode(b"null").decode(), "JSON null"),
         ("", "empty"),
     ],
@@ -67,7 +87,7 @@ def test_every_malformed_input_class_raises_invalid_cursor(raw, why):
 
 
 def test_a_tampered_token_does_not_leak_its_contents():
-    token = base64.urlsafe_b64encode(json.dumps({"k": "x"}).encode()).decode()
+    token = base64.urlsafe_b64encode(json.dumps({"k": ["x"]}).encode()).decode()
     try:
         decode_cursor(token)
     except InvalidCursor as exc:
@@ -175,7 +195,7 @@ def test_next_link_header_honours_a_custom_parameter_name():
 def test_a_real_token_survives_the_link_header_round_trip():
     from urllib.parse import parse_qs, urlparse
 
-    token = encode_cursor("2026-09-11T10:00:00Z", "a1")
+    token = encode_cursor(("2026-09-11T10:00:00Z",), "a1")
     value = next_link_header("https://api.example/items", token)
     url = value[1 : value.index(">")]
     recovered = parse_qs(urlparse(url).query)["pageToken"][0]
@@ -199,8 +219,16 @@ def test_parse_order_by_reads_the_direction():
 
 @pytest.mark.parametrize(
     "raw",
-    ["secret", "id sideways", "id desc extra", "id,id", "id,,"],
-    ids=["unlisted", "bad-direction", "extra-word", "two-terms", "empty-term"],
+    ["secret", "id sideways", "id desc extra", "id,,", "id,", ",id", "id,secret"],
+    ids=[
+        "unlisted",
+        "bad-direction",
+        "extra-word",
+        "empty-term",
+        "trailing-comma",
+        "leading-comma",
+        "second-unlisted",
+    ],
 )
 def test_parse_order_by_rejects_bad_input(raw):
     from rn_forge.web.exceptions import InvalidOrderBy
@@ -209,6 +237,50 @@ def test_parse_order_by_rejects_bad_input(raw):
     assert_that(parse_order_by).raises(InvalidOrderBy).when_called_with(
         raw, allowed=["id"]
     )
+
+
+def test_parse_order_by_reads_several_terms_with_mixed_directions():
+    from rn_forge.web.pagination import OrderField, parse_order_by
+
+    terms = parse_order_by(
+        " team , score desc,name asc ", allowed=["team", "score", "name"]
+    )
+
+    assert_that(terms).is_equal_to(
+        (
+            OrderField("team"),
+            OrderField("score", descending=True),
+            OrderField("name"),
+        )
+    )
+
+
+@pytest.mark.parametrize("raw", ["team,team desc", "team,score,team"])
+def test_parse_order_by_rejects_a_repeated_field(raw):
+    from rn_forge.web.exceptions import InvalidOrderBy
+    from rn_forge.web.pagination import parse_order_by
+
+    with pytest.raises(InvalidOrderBy) as caught:
+        parse_order_by(raw, allowed=["team", "score"])
+
+    assert_that(caught.value.message).is_equal_to("orderBy names 'team' more than once")
+
+
+def test_parse_order_by_rejects_an_empty_term_between_fields():
+    from rn_forge.web.exceptions import InvalidOrderBy
+    from rn_forge.web.pagination import parse_order_by
+
+    with pytest.raises(InvalidOrderBy) as caught:
+        parse_order_by("team,,score", allowed=["team", "score"])
+
+    assert_that(caught.value.message).starts_with("Malformed orderBy term")
+
+
+def test_format_order_by_is_canonical_for_several_terms():
+    from rn_forge.web.pagination import OrderField, format_order_by
+
+    terms = [OrderField("team"), OrderField("score", descending=True)]
+    assert_that(format_order_by(terms)).is_equal_to("team,score desc")
 
 
 @pytest.mark.parametrize("raw", [None, "", "  "])
@@ -221,6 +293,27 @@ def test_parse_order_by_blank_means_default_order(raw):
 def test_cursor_carries_and_checks_its_order():
     from rn_forge.web.pagination import OrderField, check_cursor_order
 
-    cursor = decode_cursor(encode_cursor("2", "2", "id desc"))
+    cursor = decode_cursor(encode_cursor(("2",), "2", "id desc"))
     check_cursor_order(cursor, [OrderField("id", descending=True)])
     assert_that(check_cursor_order).raises(InvalidCursor).when_called_with(cursor, [])
+
+
+def test_a_token_with_the_wrong_number_of_values_is_rejected():
+    from rn_forge.web.pagination import OrderField, check_cursor_order
+
+    terms = [OrderField("team"), OrderField("score", descending=True)]
+    cursor = decode_cursor(encode_cursor(("a",), "1", "team,score desc"))
+
+    with pytest.raises(InvalidCursor) as caught:
+        check_cursor_order(cursor, terms)
+
+    assert_that(caught.value.message).is_equal_to("Malformed page token")
+
+
+def test_a_token_with_one_value_per_term_passes_the_order_check():
+    from rn_forge.web.pagination import OrderField, check_cursor_order
+
+    terms = [OrderField("team"), OrderField("score", descending=True)]
+    cursor = decode_cursor(encode_cursor(("a", None), "1", "team,score desc"))
+
+    check_cursor_order(cursor, terms)

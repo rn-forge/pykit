@@ -41,16 +41,20 @@ from django.urls import URLPattern, path
 from django.views.decorators.http import require_http_methods
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rn_forge.django.drf.casing import camelize_key
 from rn_forge.django.drf.exceptions import problem_registry
+from rn_forge.django.drf.views.mixins import ReadMaskMixin, SoftDeleteMixin
 from rn_forge.web import (
     ProblemDetail,
     API_CATALOG_PATH,
     DOCS_PATH,
     LINKSET_MEDIA_TYPE,
     OPENAPI_PATH,
+    READ_MASK_PARAM,
     READINESS_PATH,
+    SHOW_DELETED_PARAM,
     api_catalog_body,
 )
 from rn_forge.web.openapi import (
@@ -157,7 +161,65 @@ class WireAutoSchema(AutoSchema):
     The paginated component keeps drf-spectacular's own name
     (``PaginatedOrderOutList``) — document text is not held identical across
     stacks; only wire behaviour and ``operationId`` are.
+
+    An operation of a :class:`~rn_forge.django.drf.views.mixins.ReadMaskMixin`
+    view that the mask applies to also documents the ``readMask`` query parameter.
+
+    A :class:`~rn_forge.django.drf.views.mixins.SoftDeleteMixin` view documents
+    ``showDeleted`` on its list, ``DELETE`` as a 200 with the resource, and
+    ``:undelete`` without a request body.
     """
+
+    def _soft_delete_action(self) -> str | None:
+        view = cast(Any, self).view
+        if isinstance(view, SoftDeleteMixin):
+            return cast(str | None, getattr(view, "action", None))
+        return None
+
+    @override
+    def get_override_parameters(self) -> list[Any]:
+        parameters = cast(list[Any], super().get_override_parameters())
+        view = cast(Any, self).view
+        if (
+            isinstance(view, ReadMaskMixin)
+            and getattr(view, "action", None) in view.read_mask_actions
+        ):
+            parameters.append(
+                OpenApiParameter(
+                    READ_MASK_PARAM,
+                    str,
+                    OpenApiParameter.QUERY,
+                    required=False,
+                    description=(
+                        "Comma-separated field paths to return, such as "
+                        "`displayName,address.city`. `*` returns the whole resource."
+                    ),
+                )
+            )
+        if self._soft_delete_action() == "list":
+            parameters.append(
+                OpenApiParameter(
+                    SHOW_DELETED_PARAM,
+                    bool,
+                    OpenApiParameter.QUERY,
+                    required=False,
+                    description="Include soft-deleted resources when `true` or `1`.",
+                )
+            )
+        return parameters
+
+    @override
+    def get_request_serializer(self) -> Any:
+        if self._soft_delete_action() == "undelete":
+            return None
+        return super().get_request_serializer()
+
+    @override
+    def get_response_serializers(self) -> Any:
+        serializers = cast(Any, super()).get_response_serializers()
+        if self._soft_delete_action() == "destroy":
+            return {200: serializers}
+        return serializers
 
     @override
     def get_operation_id(self) -> str:

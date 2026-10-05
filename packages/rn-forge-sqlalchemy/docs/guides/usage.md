@@ -31,6 +31,29 @@ The update matches on the version the object holds. A row at another version
 raises `rn_forge.web.VersionConflict`, which the framework adapters render as
 `412`, the same as `rn-forge-django`'s `VersionedModel`.
 
+## Soft delete
+
+```python
+class Note(SoftDeleteMixin, VersionMixin, AuditMixin, Base):
+    __tablename__ = "note"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+
+
+stmt = live(select(Note), Note)  # delete_time IS NULL
+stmt = live(select(Note), Note, show_deleted=True)  # unchanged
+
+soft_delete(note, actor=principal.subject)
+undelete(note, actor=principal.subject)
+await session.commit()
+```
+
+`SoftDeleteMixin` adds a nullable, indexed `delete_time` (AIP-164's `deleteTime`). `soft_delete` and
+`undelete` set it, and set `updated_by` and `update_time` on an `AuditMixin` row and bump `version` on
+a `VersionMixin` row. They do not flush or commit. Pass `now=` to pin the time. Nothing hooks the
+session: a query that should hide deleted rows says so with `live()`, and `session.get()` still
+returns a deleted row.
+
 ## Import: `upsert`
 
 ```python
@@ -65,10 +88,22 @@ rows = (await session.scalars(stmt.limit(page_size + 1))).all()
 page, more = rows[:page_size], len(rows) > page_size
 token = None
 if more:
-    last = page[-1]  # sort value: its column for the orderBy term
-    token = next_page_token(last.name, last.id, order_by)
+    last = page[-1]  # one value per orderBy term, in term order
+    token = next_page_token(
+        [getattr(last, t.field) for t in order_by], last.id, order_by
+    )
 ```
 
-The `orderBy` column need not be unique, because the id breaks ties, but it must
-be non-null. `parse_order_by` accepts one field; a second is a `400`. A token
-issued for another `orderBy` is a `400`.
+`orderBy` is a comma-separated list, so `team, score desc` orders by `team`,
+then by `score` descending, then by the id. The columns need not be unique,
+because the id breaks ties, and they may be nullable: rows whose value is
+`NULL` come last in both directions. A token issued for another `orderBy`, or
+holding a different number of values, is a `400`.
+
+```python
+columns = {"team": Person.team, "score": Person.score, "id": Person.id}
+terms = parse_order_by("team, score desc", allowed=columns)  # score is nullable
+stmt = keyset(
+    select(Person), columns=columns, terms=terms, cursor=cursor, id_column=Person.id
+)
+```

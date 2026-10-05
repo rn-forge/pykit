@@ -29,6 +29,7 @@ EXPOSED_HEADERS: Final[tuple[str, ...]] = (
     "Retry-After",
     "Deprecation",
     "Sunset",
+    "Content-Disposition",
 )
 """Response headers this kit emits that a browser can read only when a CORS
 policy names them in ``Access-Control-Expose-Headers``.

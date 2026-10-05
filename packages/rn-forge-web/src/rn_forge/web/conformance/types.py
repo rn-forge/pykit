@@ -31,6 +31,9 @@ type ConformanceArea = Literal[
     "transfer",
     "timestamps",
     "operations",
+    "patch",
+    "read-mask",
+    "soft-delete",
 ]
 """Areas covered by the conformance suite."""
 
@@ -52,13 +55,16 @@ class RequestSpec:
     """The request a driver must issue.
 
     ``path`` is relative to whatever base the driver mounts the fixture app
-    at, and always begins with ``/``.
+    at, and always begins with ``/``. A ``query`` value that is a tuple is a
+    repeated parameter, one occurrence per item.
     """
 
     method: str
     path: str
     headers: Mapping[str, str] = field(default_factory=dict[str, str])
-    query: Mapping[str, str] = field(default_factory=dict[str, str])
+    query: Mapping[str, str | tuple[str, ...]] = field(
+        default_factory=dict[str, str | tuple[str, ...]]
+    )
     body: Any = None
 
 

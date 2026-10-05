@@ -5,7 +5,9 @@ from rest_framework.viewsets import ModelViewSet
 from rn_forge.django.drf.views.mixins import (
     AuditFieldsViewMixin,
     ExceptionContextViewMixin,
+    MergePatchMixin,
     ModelFilterViewMixin,
+    ReadMaskMixin,
     RequestAccessViewMixin,
 )
 
@@ -26,7 +28,9 @@ class BaseAPIView(
 class BaseModelViewSet(
     AuditFieldsViewMixin,
     ExceptionContextViewMixin,
+    MergePatchMixin,
     ModelFilterViewMixin,
+    ReadMaskMixin,
     ModelViewSet,
 ):
-    """Generic DRF model viewset with request helpers and exception context."""
+    """Generic DRF model viewset with request helpers, exception context, merge-patch ``PATCH`` and ``readMask``."""

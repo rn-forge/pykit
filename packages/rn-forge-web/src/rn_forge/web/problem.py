@@ -26,14 +26,20 @@ from rn_forge.web.exceptions import (
     IdempotencyKeyInFlight,
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
+    InvalidBatchGet,
     InvalidCursor,
+    InvalidMergePatch,
     InvalidOrderBy,
+    InvalidReadMask,
+    ItemsDenied,
     MalformedPrecondition,
     PermissionDenied,
     PreconditionRequired,
     RemoteProblem,
+    RowsInvalid,
     ServiceUnavailable,
     TooManyRequests,
+    UnsupportedMediaType,
     VersionConflict,
 )
 
@@ -47,6 +53,7 @@ __all__ = [
     "GENERIC_SERVER_DETAIL",
     "INTERNAL_ERROR",
     "NOT_FOUND",
+    "NULL_FIELD_DETAIL",
     "PRECONDITION_FAILED",
     "PRECONDITION_REQUIRED",
     "PROBLEM_MEDIA_TYPE",
@@ -54,6 +61,7 @@ __all__ = [
     "SERVICE_UNAVAILABLE",
     "TOO_MANY_REQUESTS",
     "UNAUTHORIZED",
+    "UNSUPPORTED_MEDIA_TYPE",
     "VALIDATION_ERROR",
     "HasProblemExtensions",
     "HasResponseHeaders",
@@ -169,6 +177,9 @@ FORBIDDEN: Final = ProblemType("forbidden", 403, "Forbidden")
 BAD_REQUEST: Final = ProblemType("bad-request", 400, "Bad Request")
 BAD_GATEWAY: Final = ProblemType("bad-gateway", 502, "Bad Gateway")
 CONTENT_TOO_LARGE: Final = ProblemType("content-too-large", 413, "Content Too Large")
+UNSUPPORTED_MEDIA_TYPE: Final = ProblemType(
+    "unsupported-media-type", 415, "Unsupported Media Type"
+)
 TOO_MANY_REQUESTS: Final = ProblemType("too-many-requests", 429, "Too Many Requests")
 SERVICE_UNAVAILABLE: Final = ProblemType(
     "service-unavailable", 503, "Service Unavailable"
@@ -439,16 +450,22 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
         .register(VersionConflict, PRECONDITION_FAILED)
         .register(PreconditionRequired, PRECONDITION_REQUIRED)
         .register(MalformedPrecondition, BAD_REQUEST)
+        .register(InvalidBatchGet, BAD_REQUEST)
         .register(InvalidCursor, BAD_REQUEST)
         .register(InvalidOrderBy, BAD_REQUEST)
+        .register(InvalidReadMask, BAD_REQUEST)
         .register(IdempotencyKeyRequired, BAD_REQUEST)
         .register(IdempotencyKeyReuse, VALIDATION_ERROR)
         .register(IdempotencyKeyInFlight, CONFLICT)
         .register(AuthenticationFailed, UNAUTHORIZED)
         .register(PermissionDenied, FORBIDDEN)
+        .register(ItemsDenied, FORBIDDEN)
         .register(RemoteProblem, BAD_GATEWAY)
         .register(ContentTooLarge, CONTENT_TOO_LARGE)
         .register(TooManyRequests, TOO_MANY_REQUESTS)
+        .register(UnsupportedMediaType, UNSUPPORTED_MEDIA_TYPE)
+        .register(InvalidMergePatch, VALIDATION_ERROR)
+        .register(RowsInvalid, VALIDATION_ERROR)
         .register(ServiceUnavailable, SERVICE_UNAVAILABLE)
         .register(LookupError, NOT_FOUND)
         .register(ValueError, VALIDATION_ERROR)
@@ -508,6 +525,9 @@ def _collect_subclasses(
 
 REQUIRED_FIELD_DETAIL: Final = "This field is required."
 """The ``detail`` of a validation error for a missing field, on every stack."""
+
+NULL_FIELD_DETAIL: Final = "This field may not be null."
+"""The ``detail`` of a validation error for a ``null`` on a non-nullable field, on every stack."""
 
 
 def field_error(path: Iterable[object], detail: str) -> dict[str, str]:

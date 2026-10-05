@@ -9,10 +9,12 @@ from typing import Any, Final, cast, override
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rn_forge.django import settings as rnf_settings
+from rn_forge.web import MERGE_PATCH_MEDIA_TYPE
 
 __all__ = [
     "CamelCaseJSONParser",
     "CamelCaseJSONRenderer",
+    "MergePatchParser",
     "RawDict",
     "RawList",
     "camelize",
@@ -110,6 +112,12 @@ class CamelCaseJSONParser(JSONParser):
         if not _casing_enabled():
             return data
         return underscoreize(data, opaque=_opaque_field_names(parser_context))
+
+
+class MergePatchParser(CamelCaseJSONParser):
+    """The camelCase JSON parser for ``application/merge-patch+json`` bodies."""
+
+    media_type = MERGE_PATCH_MEDIA_TYPE
 
 
 def _opaque_field_names(parser_context: Mapping[str, Any] | None) -> frozenset[str]:

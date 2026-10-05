@@ -165,23 +165,45 @@ says so and says why.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 
-**Sorting** follows Google AIP-132's spelling: `orderBy=displayName desc` — a
-field name on the wire, optionally followed by `asc` (the default) or `desc`.
+**Sorting** follows Google AIP-132's spelling: `orderBy=team, score desc` — a
+comma-separated list of terms, each a field name on the wire optionally followed
+by `asc` (the default) or `desc`. Whitespace around a term is ignored.
 
-- **A list sorts by one field.** More than one comma-separated term is 400,
-  never ignored, because the page token holds one sort value. AIP-132 allows
-  several; this convention does not yet.
-  — `pagination.order-by-two-fields-is-400`
+- **A list may sort by several fields.** Each term breaks the ties of the one
+  before it, in its own direction.
+  — `pagination.order-by-several-fields-sorts-by-each-in-turn`
+- **Each field appears at most once.** A repeated field is 400, detail
+  `orderBy names '{field}' more than once`. An empty term (`team,,score`, or a
+  trailing comma) is the malformed-term 400.
+  — `pagination.repeated-order-by-field-is-400`
 - **An endpoint lists the fields it can sort by.** An unlisted or malformed
   term is 400, never ignored.
   — `pagination.order-by-unlisted-field-is-400`
-- **The page token binds the order.** A token issued under one `orderBy` and
-  presented under another is 400.
+- **The primary key breaks ties.** It is appended as a final term, in the last
+  term's direction, unless it is already a term, so the order is total and a
+  field need not be unique.
+- **`null` sorts last, in both directions.** Whatever a database does by
+  default, an `asc` or a `desc` term puts the rows whose value is `null` after
+  the rows that have one, the same on every stack and every database. A
+  nullable field can be sorted on.
+  — `pagination.nulls-sort-last-ascending`,
+  `pagination.nulls-sort-last-descending`
+- **The page token binds the whole order.** It holds one sort value per term,
+  plus the key and the canonical `orderBy` (`team,score desc`). A token
+  presented under another `orderBy` is 400 `pageToken does not match orderBy`.
   — `pagination.order-by-descending-binds-the-token`,
   `pagination.token-under-a-different-order-by-is-400`
-- **Ties are broken by the key.** A page is ordered by the `orderBy`
-  field and then the primary key, and the token holds both, so the field need
-  not be unique. It must not be null.
+- **The token resumes from every term.** The next page is the rows past the
+  last row's values, including within a tie and after a `null`.
+  — `pagination.first-page-carries-a-composite-token`,
+  `pagination.composite-token-resumes-within-a-tie`,
+  `pagination.composite-token-resumes-after-a-null`
+- **A token whose number of values does not match the terms is 400**
+  `Malformed page token`.
+  — `pagination.token-with-the-wrong-number-of-values-is-400`
+- **Sort values keep their JSON type** in the token: string, number, boolean or
+  `null`. Dates and datetimes are ISO 8601 strings. A value that does not fit
+  its column is 400 `Malformed page token`, never a 500.
 
 ## 5. Idempotency
 
@@ -383,7 +405,7 @@ Unremarkable, and worth stating so it does not vary:
 | A successful read | 200 |
 | A successful create | 201, with `Location` |
 | A successful update | 200 with the representation, or 204 with no body |
-| A successful delete | 204 |
+| A successful delete | 204; a soft-deleting resource answers 200 with the resource (§21) |
 | An accepted asynchronous operation | 202 |
 
 `PUT` replaces; `PATCH` is RFC 7396 JSON Merge Patch (`Content-Type:
@@ -391,6 +413,54 @@ application/merge-patch+json`), and there is no field-mask parameter (AIP-134 is
 not adopted). A `DELETE` on an already-absent resource is
 404, not 204 — an idempotent *outcome* is not the same as a silent one, and a
 client that deleted something twice usually wants to know.
+
+### Merge patch
+
+The body of a merge patch is a partial copy of the resource: a member that is present sets the
+field, an absent member leaves it alone, objects merge recursively and an array is replaced
+whole. The merge runs on the representation the client would read, and the merged document is
+validated as a full update, so a patch never bypasses the serializer or the model. The shared
+implementation is `rn_forge.web.merge_patch`; each adapter only binds it.
+
+Every stack evaluates a merge-patch request in this order, and the first failure answers:
+
+| Step | Failure | Status |
+| --- | --- | --- |
+| 1. Media type is `application/merge-patch+json` | `UnsupportedMediaType`, with `Accept-Patch` | 415 |
+| 2. Precondition (`If-Match`), when the resource is versioned | absent and required / malformed / stale | 428 / 400 / 412 |
+| 3. Body is a JSON object | `InvalidMergePatch` | 422 |
+| 4. Merged document validates | field errors with pointers | 422 |
+
+The media type comes first because a body in the wrong language has no meaning to check. The
+precondition comes before the body, so a stale request is 412 whatever it says, and nothing is
+written.
+
+- A `PATCH` with another media type, `application/json` included, is **415** with `Accept-Patch:
+  application/merge-patch+json`. — `patch.json-content-type-is-415`
+- A stale `If-Match` is **412**, and nothing is written. — `patch.stale-if-match-is-412`,
+  `patch.failed-precondition-changes-nothing`
+- A body that is not a JSON object is **422** with detail `A merge patch must be a JSON object.`
+  — `patch.non-object-body-is-422`
+- A merged document that fails validation is **422** with a pointer per field.
+
+**`null` at the top level.** A resource has a fixed set of fields, and a field cannot be absent
+from it, so a `null` member that names a field sets that field to `null`. A nullable field stores
+`null`. — `patch.null-sets-a-nullable-field-to-null`. A non-nullable field fails validation: 422,
+pointer at the field, detail `This field may not be null.` (`NULL_FIELD_DETAIL`).
+— `patch.null-on-a-non-nullable-field-is-422`. Inside a JSON-valued field RFC 7396 applies
+unchanged: `null` removes the member. — `patch.null-inside-a-json-value-removes-the-member`
+
+**Nested objects and arrays.** Objects merge member by member and keep what the patch does not
+name. — `patch.nested-merge-keeps-absent-members`. An array is replaced whole.
+— `patch.array-is-replaced-whole`
+
+**Ignored members.** A member naming a read-only or server-owned field (`id`, `version`, an audit
+field) or a field the resource does not have changes nothing, and the rest of the patch applies,
+so a client can send back a whole representation it read. — `patch.read-only-members-are-ignored`
+
+**Media type per method.** Only `PATCH` accepts `application/merge-patch+json`, and a merge-patch
+route's `PATCH` accepts nothing else. `PUT` and `POST` keep `application/json`. A route opts in:
+`BaseModelViewSet` on Django, `merge_patch_body()` on FastAPI.
 
 ## 11. Request body size
 
@@ -485,11 +555,13 @@ one at all, and whether credentials are allowed. Neither stack picks a
 default.
 
 - **`EXPOSED_HEADERS`** is the one thing only this kit can supply: a browser
-  cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation` or
-  `Sunset` unless they are named in `Access-Control-Expose-Headers`,
+  cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation`,
+  `Sunset` or `Content-Disposition` (the file name of §17's exports and import
+  templates) unless they are named in `Access-Control-Expose-Headers`,
   comma-joined in that order. `traceresponse` is not in this list — the
   OpenTelemetry response propagator exposes it itself.
-  — `cors.exposed-headers-are-comma-joined`
+  — `cors.exposed-headers-are-comma-joined`,
+  `cors.export-exposes-content-disposition`
 - **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's
   own `CORSMiddleware`. `None` installs nothing.
 - **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the
@@ -526,24 +598,92 @@ whole import and persists nothing (AIP-163). Success is `200` with
 `{created, updated, skipped, validateOnly}`. Any row error fails the whole
 import: `422` `application/problem+json` with
 `errors[].pointer = "/rows/12/Quantity"` (RFC 9457 §3, §2's `errors`), and
-nothing persisted. — `transfer.import-report-counts-and-validate-only`,
-`transfer.import-row-errors-are-422-pointers`
+nothing persisted. A request with no `file` part is a `422` with
+`errors[].pointer = "/file"` and `This field is required.`. An import of more
+data rows than the configured cap is a `422` whose `detail` is
+`The import exceeds the limit of {cap} rows.` and which has no `errors` member.
+— `transfer.import-report-counts-and-validate-only`,
+`transfer.import-row-errors-are-422-pointers`,
+`transfer.import-without-a-file-is-422`, `transfer.import-over-the-cap-is-422`
 
-**Import template.** `GET /orders:importTemplate`, negotiated like an export;
-`?prefill=true` adds the current filtered rows (AIP-136).
+**Import template.** `GET /orders:importTemplate`, negotiated like an export,
+is a file whose header row is the import columns, so it round-trips through
+`:import`. `?prefill=true` adds the current filtered rows (AIP-136). —
+`transfer.import-template-is-the-import-columns`,
+`transfer.import-template-prefill-adds-the-rows`
 
 **Bulk create.** `POST /orders:batchCreate` with `{"requests": [...]}` is all or
 nothing (AIP-233) and answers `200 {"orders": [...]}`. A per-item validation or
 authorization failure is one `422` or `403` problem with
-`errors[].pointer = "/requests/3/..."` (RFC 9457). —
+`errors[].pointer = "/requests/3/..."` (RFC 9457). A denied item is a `403`
+whose `errors[].pointer` is `/requests/<i>`, and nothing is created. —
 `transfer.batch-create-item-failure-is-422-pointer`,
 `transfer.failed-batch-create-persists-nothing`,
-`transfer.batch-create-returns-the-created-resources`
+`transfer.batch-create-returns-the-created-resources`,
+`transfer.batch-create-denied-item-is-403-pointer`,
+`transfer.denied-batch-create-persists-nothing`
+
+**Shared list rules.** Both batch methods and the import share these, whatever
+the framework. A missing `requests` or `ids` member is a `422` at `/requests` or
+`/ids` with `This field is required.`. A member that is an empty list, or not a
+list, is a `422` at that pointer with `A non-empty list is required.`. A batch
+of more items than the configured cap is a `422` whose `detail` is
+`The batch exceeds the limit of {cap} rows.` and which has no `errors` member.
+— `transfer.batch-create-with-an-empty-list-is-422`,
+`transfer.batch-create-over-the-cap-is-422`
 
 **Bulk delete.** `POST /orders:batchDelete` with `{"ids": [...]}` is all or
 nothing and answers `204` (AIP-235); an id that does not exist fails the whole
 batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 `transfer.failed-batch-delete-deletes-nothing`, `transfer.batch-delete-is-204`
+
+**Batch get.** `GET /books:batchGet?ids=1&ids=2` (AIP-231) takes a repeated
+`ids` parameter; a comma-joined value is one id. It answers
+`200 {"books": [...]}` with one entry per requested id, in request order and
+repeating duplicates. Failures are `400` problems, as for `orderBy` and
+`pageToken` (§4): no non-empty `ids` value is `A non-empty ids parameter is
+required.`, and more ids than the configured cap is `The batch exceeds the
+limit of {cap} rows.`. The first id that does not exist within the caller's
+scope is a `404` reading `{Label} {id} not found`; an id outside the scope is a
+`404`, not a `403`, so `:batchGet` reveals nothing a `GET` would not. —
+`transfer.batch-get-returns-resources-in-request-order`,
+`transfer.batch-get-with-an-unknown-id-is-404`,
+`transfer.batch-get-without-ids-is-400`,
+`transfer.batch-get-over-the-cap-is-400`
+
+**Batch update.** `POST /books:batchUpdate` with
+`{"requests": [{"id": "2", "patch": {...}, "ifMatch": "W/\"2:1\""}]}` is all or
+nothing (AIP-234) and answers `200 {"books": [...]}` in request order. §10 does
+not adopt field masks, so each item's `patch` is a JSON Merge Patch (RFC 7396),
+merged as a single `PATCH` merges it; `ifMatch` is the item's precondition, with
+the header's syntax and meaning, and a batch response carries no per-item
+`ETag`. The first failing step answers:
+
+1. `requests` missing, empty or not a list: `422` at `/requests`, as for
+   `:batchCreate`.
+2. More items than the cap: the `422` of the shared list rules.
+3. An item with no `id`, a `patch` that is not a JSON object, or an `ifMatch`
+   that is not a string: `422`, every failing item at `/requests/<i>/id`,
+   `/requests/<i>/patch` or `/requests/<i>/ifMatch`.
+4. An id named twice: `422` at `/requests/<i>/id`, `Duplicate id in batch.`,
+   for each later occurrence.
+5. An id that does not exist within the caller's scope: `404`.
+6. A failed precondition on a versioned resource: `428`, `400` or `412`, the
+   first in request order, with `errors[].pointer = "/requests/<i>/ifMatch"`.
+7. A merged document that is invalid: `422`, every failing item at
+   `/requests/<i>/patch/<field>`.
+8. An item the application denies: `403` at `/requests/<i>`.
+
+Step 3 comes before the precondition, unlike a single `PATCH`, because the
+precondition is inside the body. A route may require preconditions, and then an
+item without `ifMatch` is the `428`. An unversioned resource ignores `ifMatch`.
+— `transfer.batch-update-applies-each-merge-patch`,
+`transfer.batch-update-stale-if-match-is-412-pointer`,
+`transfer.failed-batch-update-changes-nothing`,
+`transfer.batch-update-item-validation-is-422-pointer`,
+`transfer.batch-update-with-an-unknown-id-is-404`,
+`transfer.batch-update-with-a-duplicate-id-is-422`,
+`transfer.batch-update-with-an-empty-list-is-422`
 
 **Large files (not built).** When a consumer needs it, the pattern is
 `POST /imports` returning `202` with `Location`, then polling the operation
@@ -561,7 +701,8 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
   with the `Z`. — `timestamps.rfc-3339-utc-with-z`
 - **The audit fields are `createTime`, `updateTime`, `createdBy` and
   `updatedBy`** (AIP-148 for the first two; `createdBy`/`updatedBy` have no
-  AIP equivalent). `etag` and `requestId` are not fields: RFC 9110 headers
+  AIP equivalent). A resource that offers soft delete also carries the
+  read-only **`deleteTime`**, `null` while it is live (AIP-164, §21). `etag` and `requestId` are not fields: RFC 9110 headers
   (§3) and the `Idempotency-Key` header (§5) govern.
 - Errors are RFC 9457 problems, never `google.rpc.Status`.
 
@@ -582,8 +723,7 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   `validateOnly=true` query parameter, runs validation and every check the real
   call would, and has no side effects. §17's import uses it.
 - **Batch methods** are spelled `:batchCreate`, `:batchGet` and `:batchUpdate`
-  (AIP-233, 231, 234). `:batchGet` and `:batchUpdate` are specified here and
-  built when a consumer needs them.
+  (AIP-233, 231, 234); §17 gives their rules.
 - **Long-running operations** (AIP-151): the call returns `202` with a
   `Location` naming an operation resource
   `{name, done, metadata, error | response}`; `error` is an RFC 9457 problem.
@@ -591,12 +731,99 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   finished has exactly one. Storing operations and running the work are the
   application's. — `operations.start-is-202-with-location`,
   `operations.finished-carries-its-response`, `operations.failed-carries-a-problem`
+- **Partial responses** (AIP-157) are spelled `readMask`; §20 gives the rules.
+- **Soft delete** (AIP-164) is spelled `deleteTime`, `:undelete` and
+  `showDeleted`; §21 gives the rules.
 - **Custom-method paths** (`:cancel`, `:import`, the batch spellings) put a
   colon in the last path segment. It is valid in a URI, but a gateway or router
   that treats `:` as a parameter marker must be configured to pass it through.
 - **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
-  are the mechanism), AIP-122 resource names (ids stay ids), AIP-157 `readMask`
-  and AIP-164 soft delete (deferred).
+  are the mechanism) and AIP-122 resource names (ids stay ids).
+
+## 20. Partial responses
+
+A read accepts `readMask`, a comma-separated list of field paths, and the
+response holds only those fields. It applies to a `GET` of one resource, a `GET`
+of a collection and `:batchGet`. The mask is applied to the wire representation
+after serialization, so every stack validates and prunes identically.
+
+- **A path is made of wire field names** (camelCase, §8) joined by `.`.
+  Whitespace around a path is ignored. An absent or blank mask returns the whole
+  resource. — `read-mask.get-returns-only-the-masked-fields`,
+  `read-mask.nested-path-selects-a-sub-field`
+- **`*` alone is the whole resource.** `*` combined with any other path is 400
+  `readMask '*' cannot be combined with other paths`.
+  — `read-mask.star-is-the-whole-resource`,
+  `read-mask.star-with-other-paths-is-400`
+- **Every path must name a declared field.** Each segment names a field of the
+  declared object the previous one reaches. A path through a list of objects
+  applies to every element. A path that names nothing, or goes inside a scalar
+  or a free-form JSON field, is 400 `Unknown readMask path '{path}'`, and so is
+  an empty path (`a,,b`). An unknown path is never ignored, as an unknown
+  `orderBy` field is not (§4). —
+  `read-mask.path-through-a-list-applies-to-each-element`,
+  `read-mask.unknown-path-is-400`,
+  `read-mask.path-inside-a-free-form-field-is-400`
+- **Overlapping paths merge.** `address,address.city` returns the whole
+  `address`. — `read-mask.overlapping-paths-merge`
+- **No field is added implicitly.** A mask without `id` returns no `id`.
+- **What it applies to.** A collection `GET` masks each element of `items` and
+  leaves `nextPageToken` and `totalSize` alone. `:batchGet` masks each resource.
+  Writes, problem bodies and tabular exports ignore `readMask`. —
+  `read-mask.list-masks-each-item`, `read-mask.batch-get-masks-each-item`
+- **Preconditions are unchanged.** A masked `GET` carries the resource's
+  `ETag`, so a client can read a few fields and then send `If-Match` on a merge
+  patch (§10). — `read-mask.masked-read-keeps-the-etag`
+- **OpenAPI.** Each read operation that accepts a mask documents `readMask`.
+  Response schemas are not changed: a client that sends a mask treats the
+  response as a partial of the declared type.
+
+`rn_forge.web.parse_read_mask` parses and validates a mask against the declared
+fields of a representation, and `ReadMask.apply` prunes a body.
+
+## 21. Soft delete
+
+A resource either offers soft delete or does not; it never offers both kinds of `DELETE`. A
+soft-deleting resource carries a read-only `deleteTime`, an RFC 3339 UTC timestamp (§18) that is
+`null` while the resource is live. It is a stored fact, independent of any `status` field.
+
+| Request | Resource live | Resource soft-deleted |
+| --- | --- | --- |
+| `GET /notes/{id}` | 200 | 200, with `deleteTime` set |
+| `GET /notes` | listed | omitted, unless `showDeleted=true` |
+| `DELETE /notes/{id}` | 200 with the resource, `deleteTime` set, `version` bumped | 404 |
+| `POST /notes/{id}:undelete` | 409 | 200 with the resource, `deleteTime` `null`, `version` bumped |
+| `PUT` / `PATCH /notes/{id}` | as today | 409 |
+| `POST /notes:batchDelete` | soft-deletes every id; 204 | the id is not found: 404 for the whole batch |
+
+- **`DELETE` answers 200 with the resource**, in place of §10's 204, so the client gets the
+  `deleteTime` and the new `ETag` without a second request. A hard-deleting resource still answers
+  204. — `soft-delete.delete-returns-the-resource-with-its-delete-time`
+- **A get returns a deleted resource**, as AIP-164 says, and a list leaves it out.
+  `showDeleted` is `true` or `1` (any case) to include deleted resources; any other value excludes
+  them. The page token does not bind it. —
+  `soft-delete.get-returns-a-deleted-resource`, `soft-delete.list-omits-deleted-resources`,
+  `soft-delete.show-deleted-lists-them`
+- **Deleting twice is a 404** reading `{Label} {id} not found`, as §10 says of any absent
+  resource. — `soft-delete.delete-of-a-deleted-resource-is-404`
+- **`:undelete` restores the resource.** On a live resource it is a 409 reading
+  `{Label} {id} is not deleted`. — `soft-delete.undelete-restores-the-resource`,
+  `soft-delete.undeleted-resource-is-listed-again`,
+  `soft-delete.undelete-of-a-live-resource-is-409`
+- **A write to a deleted resource is a 409** reading `{Label} {id} is deleted`; undelete it first.
+  — `soft-delete.write-to-a-deleted-resource-is-409`
+- **Preconditions** (§3) apply to `DELETE` and `:undelete` on a versioned resource in the order of a
+  merge patch: absent and required is 428, malformed is 400, stale is 412, and nothing is written.
+  Both answer with the new `ETag`. — `soft-delete.stale-if-match-is-412`,
+  `soft-delete.failed-precondition-deletes-nothing`
+- **`:batchDelete` stays 204** and soft-deletes every id. A resource deleted in a batch is still
+  readable. — `soft-delete.batch-delete-soft-deletes`,
+  `soft-delete.batch-deleted-resource-is-still-readable`
+- **Purging is out of scope.** The kit offers no route that purges a soft-deleted resource and does
+  not emit AIP-164's `expireTime`. Retention is the application's own authorized operation.
+
+`rn_forge.web` supplies `ResourceDeleted` and `ResourceNotDeleted` (both 409), `SHOW_DELETED_PARAM`
+and `require_live`.
 
 ## Conformance
 

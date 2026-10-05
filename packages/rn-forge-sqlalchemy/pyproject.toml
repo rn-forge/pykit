@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-sqlalchemy"
-version = "0.1.0"
+version = "0.2.0"
 description = "Async SQLAlchemy models, upsert and keyset pagination over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -13,7 +13,7 @@ requires-python = ">=3.14"
 # No database driver is declared: the application picks one (`asyncpg`,
 # `aiosqlite`). `rn-forge-commons` arrives pinned through `rn-forge-web`.
 dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
   "sqlalchemy[asyncio]>=2.0",
 ]
 
@@ -42,6 +42,10 @@ markers = [
   "unit: fast isolated tests",
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
+
+[tool.workspace-ci.postgres]
+# The `postgres`-marked tests read this DSN and skip without it.
+env = "RN_FORGE_TEST_POSTGRES_DSN"
 
 [dependency-groups]
 dev = [

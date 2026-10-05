@@ -182,7 +182,9 @@ async def list_items(
     page = Page(
         items=window,
         next_page_token=encode_cursor(
-            window[-1]["id"], window[-1]["id"], format_order_by(order)
+            (window[-1]["id"],) if order else (),
+            window[-1]["id"],
+            format_order_by(order),
         )
         if more
         else None,

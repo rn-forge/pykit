@@ -69,10 +69,45 @@ def reset_rows():
     Path("scaffold.sqlite3").unlink(missing_ok=True)
     with connection.schema_editor() as editor:
         editor.create_model(service._ConformanceItem)
+        editor.create_model(service._ConformancePerson)
         editor.create_model(service._Order)
+        editor.create_model(service._ConformanceDocument)
+        editor.create_model(service._ConformanceBook)
+        editor.create_model(service._ConformanceProfile)
+        editor.create_model(service._ConformanceNote)
     for pk in ("1", "2", "3"):
         service._ConformanceItem.objects.create(pk=pk)
+    for pk, team, score in [
+        ("1", "a", 10),
+        ("2", "b", None),
+        ("3", "a", None),
+        ("4", "b", 5),
+        ("5", "a", 10),
+    ]:
+        service._ConformancePerson.objects.create(pk=pk, team=team, score=score)
+    for pk, name in [("1", "alpha"), ("2", "beta"), ("3", "gamma")]:
+        service._ConformanceBook.objects.create(pk=pk, name=name)
+    service._ConformanceProfile.objects.create(
+        pk="1",
+        display_name="Ada",
+        address={"city": "London", "postcode": "N1"},
+        phones=[{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+        settings={"theme": "dark"},
+    )
+    service._ConformanceProfile.objects.create(
+        pk="2",
+        display_name="Grace",
+        address={"city": "Arlington", "postcode": "22201"},
+    )
+    service._seed_notes(service._ConformanceNote)
     service._Order.objects.create(pk="1", name="widget")
+    service._ConformanceDocument.objects.create(
+        pk="1",
+        name="widget",
+        note="fragile",
+        tags=["a", "b"],
+        settings={"color": "red", "size": "L"},
+    )
     connection.close()
     cache.clear()
 

@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from rn_forge.fastapi import (
     conditional_get,
+    order_by_param,
     page_params,
     register_problem_handlers,
     require_idempotency_key,
@@ -24,7 +25,14 @@ def build_app():
     @app.get("/items")
     async def items(params=Depends(page_params(cap=50, default=20))):
         size, cursor = params
-        return {"size": size, "cursor": cursor and [cursor.sort_key, cursor.entity_id]}
+        return {
+            "size": size,
+            "cursor": cursor and [*cursor.sort_keys, cursor.entity_id],
+        }
+
+    @app.get("/people")
+    async def people(order=Depends(order_by_param(allowed=["team", "score"]))):
+        return [[t.field, t.descending] for t in order]
 
     @app.post("/charges")
     async def charges(key: str = Depends(require_idempotency_key())):
@@ -78,7 +86,7 @@ def test_page_size_is_clamped_never_rejected(client, query, expected):
 
 
 def test_a_page_token_is_decoded(client):
-    token = encode_cursor("2026-01-01", "17")
+    token = encode_cursor(("2026-01-01",), "17")
     response = client.get("/items", params={"pageToken": token})
     assert_that(response.json()["cursor"]).is_equal_to(["2026-01-01", "17"])
 
@@ -158,3 +166,23 @@ def test_no_if_none_match_returns_the_representation(client):
     response = client.get("/cached")
     assert_that(response.status_code).is_equal_to(200)
     assert_that(response.json()).is_equal_to({"id": "1"})
+
+
+def test_order_by_reads_a_comma_separated_list(client):
+    response = client.get("/people", params={"orderBy": "team, score desc"})
+    assert_that(response.json()).is_equal_to([["team", False], ["score", True]])
+
+
+def test_order_by_rejects_a_repeated_field(client):
+    body = problem(client.get("/people", params={"orderBy": "team,team desc"}), 400)
+    assert_that(body["detail"]).is_equal_to("orderBy names 'team' more than once")
+
+
+def test_order_by_describes_a_list_and_names_the_sortable_fields(client):
+    parameters = client.get("/openapi.json").json()["paths"]["/people"]["get"][
+        "parameters"
+    ]
+    (description,) = [p["description"] for p in parameters if p["name"] == "orderBy"]
+    assert_that(description).contains("comma-separated list").contains(
+        "Sortable fields: score, team"
+    )
