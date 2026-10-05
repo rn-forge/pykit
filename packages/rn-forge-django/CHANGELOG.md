@@ -4,6 +4,8 @@ Notable changes to `rn-forge-django`, newest first, in the [Keep a Changelog](ht
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-05
+
 ### Added
 
 - Soft delete in AIP-164's shape. `SoftDeleteModelMixin` and `SoftDeleteQuerySet` in

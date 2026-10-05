@@ -4,6 +4,8 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
 ### Added
 
 - AIP-164 soft delete rules in `rn_forge.web.soft_delete` and `rn_forge.web.exceptions`:

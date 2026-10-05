@@ -45,7 +45,7 @@ pykit has no live consumers, so no deprecation window is kept.
 
 ## Progress
 
-Started 2026-10-04. Every feature in scope is closed (2026-10-04): F12.12, F12.14, F12.15 and F12.16, then F12.3, F12.1, F12.9 and F12.2, which were added to scope the same day. ADR-0010 is accepted. What remains is the cut: version bumps and CI, including the PostgreSQL job and the Sonar gate.
+Started 2026-10-04. Every feature in scope is closed (2026-10-04): F12.12, F12.14, F12.15 and F12.16, then F12.3, F12.1, F12.9 and F12.2, which were added to scope the same day. ADR-0010 is accepted. The version bumps are prepared: `rn-forge-web` 0.2.0, `rn-forge-django` 0.4.0, `rn-forge-fastapi` 0.2.0 and `rn-forge-sqlalchemy` 0.2.0, with the internal pins restored to `rn-forge-web-v0.2.0`. What remains is the merge to `main`, CI including the PostgreSQL job and the Sonar gate, and the post-merge checks.
 
 ## Commits
 

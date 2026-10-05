@@ -4,6 +4,8 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the [Keep a Changelog
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
 ### Added
 
 - Soft delete: `SoftDeleteMixin` (a nullable, indexed `delete_time`), `live(stmt, model,

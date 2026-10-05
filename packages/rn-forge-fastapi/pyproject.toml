@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.1.0"
+version = "0.2.0"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -16,7 +16,7 @@ requires-python = ">=3.14"
 dependencies = [
   # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
   # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
-  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",
@@ -32,7 +32,7 @@ testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into web's extras.
 oidc = [
-  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.

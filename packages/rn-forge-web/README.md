@@ -63,7 +63,7 @@ tag**, and a consumer declares it as a pinned direct URL:
 
 ```toml
 dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 ```
 

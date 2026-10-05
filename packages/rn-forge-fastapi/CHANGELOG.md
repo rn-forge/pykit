@@ -4,6 +4,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
 ### Added
 
 - Soft delete in AIP-164's shape: `soft_delete_router` (`DELETE {collection}/{id}` answering `200`
