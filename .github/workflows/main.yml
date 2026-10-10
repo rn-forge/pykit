@@ -98,7 +98,7 @@ jobs:
 
       - run: mkdir ok && touch "ok/${{ matrix.name }}.verify"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ok-${{ matrix.name }}.verify
           path: ok/
@@ -142,7 +142,7 @@ jobs:
 
       - run: mkdir ok && touch "ok/${{ matrix.name }}.postgres"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ok-${{ matrix.name }}.postgres
           path: ok/
@@ -173,7 +173,7 @@ jobs:
 
       - run: mkdir ok && touch "ok/${{ matrix.marker }}"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ok-${{ matrix.marker }}
           path: ok/
@@ -215,7 +215,7 @@ jobs:
         with:
           sync: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: ok-*
           merge-multiple: true
@@ -289,7 +289,7 @@ jobs:
       - name: Run tests with coverage
         run: uv run pytest ${{ needs.plan.outputs.cov-args }} --cov-report=xml:coverage.xml ${{ needs.plan.outputs.test-paths }}
 
-      - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
