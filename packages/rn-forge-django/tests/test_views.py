@@ -10,6 +10,7 @@ from django.http import HttpRequest  # noqa: E402
 from django.test import RequestFactory  # noqa: E402
 
 from rn_forge.django.views import (  # noqa: E402
+    debug_request,
     debug_request_view,
     health_urlpatterns,
     index_view,
@@ -122,3 +123,82 @@ class TestHealthUrlpatterns:
         patterns = health_urlpatterns(checks={}, legacy_liveness_path=None)
         names = [str(p.pattern) for p in patterns]
         assert "healthz" not in names
+
+
+# ---------------------------------------------------------------------------
+# debug_request
+# ---------------------------------------------------------------------------
+
+
+class TestDebugRequest:
+    def _make_request(self, path: str = "/test/", method: str = "GET") -> HttpRequest:
+        factory = RequestFactory()
+        maker = getattr(factory, method.lower())
+        return maker(path)
+
+    def test_contains_expected_top_level_keys(self) -> None:
+        req = self._make_request()
+        result = debug_request(req)
+        assert set(result.keys()) == {
+            "path",
+            "path_info",
+            "method",
+            "content_type",
+            "scheme",
+            "absolute_uri",
+            "full_path",
+            "host",
+            "port",
+            "headers",
+            "meta",
+        }
+
+    def test_path_matches_request(self) -> None:
+        req = self._make_request("/api/v1/items/")
+        result = debug_request(req)
+        assert result["path"] == "/api/v1/items/"
+        assert result["full_path"] == "/api/v1/items/"
+
+    def test_method_is_uppercased(self) -> None:
+        req = self._make_request(method="POST")
+        result = debug_request(req)
+        assert result["method"] == "POST"
+
+    def test_headers_is_dict(self) -> None:
+        req = self._make_request()
+        result = debug_request(req)
+        assert isinstance(result["headers"], dict)
+
+    def test_meta_contains_remote_addr(self) -> None:
+        req = self._make_request()
+        req.META["REMOTE_ADDR"] = "127.0.0.1"
+        result = debug_request(req)
+        assert result["meta"]["REMOTE_ADDR"] == "127.0.0.1"
+
+    def test_meta_http_headers_are_included(self) -> None:
+        req = self._make_request()
+        req.META["HTTP_ACCEPT"] = "application/json"
+        result = debug_request(req)
+        assert result["meta"]["HTTP_ACCEPT"] == "application/json"
+
+    def test_sensitive_http_headers_are_redacted(self) -> None:
+        req = self._make_request()
+        req.META["HTTP_AUTHORIZATION"] = "Bearer secret-token"
+        req.META["HTTP_COOKIE"] = "sessionid=secret"
+        result = debug_request(req)
+        assert result["meta"]["HTTP_AUTHORIZATION"] == "<redacted>"
+        assert result["meta"]["HTTP_COOKIE"] == "<redacted>"
+
+    def test_meta_non_http_keys_excluded(self) -> None:
+        req = self._make_request()
+        req.META["wsgi.input"] = object()
+        result = debug_request(req)
+        # wsgi.input does not start with HTTP_; should not be in meta HTTP keys
+        assert "wsgi.input" not in result["meta"]
+
+    def test_no_external_calls_made(self) -> None:
+        # Ensure debug_request does not contain an external IP field
+        req = self._make_request()
+        result = debug_request(req)
+        assert "internalIP" not in result
+        assert "externalIP" not in result

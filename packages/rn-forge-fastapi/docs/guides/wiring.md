@@ -105,6 +105,70 @@ paginated component its own way too, `PaginatedOrderOutList`.
 `Query(le=...)` alongside `page_params`; that is a 422 and a specification
 violation.
 
+## Merge patch
+
+`merge_patch_body()` checks the media type and returns the raw body; `merge_into` parses it,
+merges it into the current resource and validates the result against the model.
+`merge_patch_openapi()` declares the request body. Declare `merge_patch_body()` before the
+`If-Match` dependency, so the media type answers first (415), and call `check_precondition`
+before `merge_into`, so a stale request is 412 whatever the body says.
+
+```python
+from fastapi import Depends, Header
+
+from rn_forge.fastapi import merge_into, merge_patch_body, merge_patch_openapi
+from rn_forge.web import check_precondition
+
+
+@router.patch("/documents/{doc_id}", openapi_extra=merge_patch_openapi())
+async def documents_update(
+    doc_id: str,
+    body: bytes = Depends(merge_patch_body()),
+    if_match: str | None = Header(default=None),
+) -> DocumentOut:
+    document = await repo.get(doc_id)
+    check_precondition(if_match, current_version=document.version, entity_id=doc_id)
+    return merge_into(DocumentOut, document, body)
+```
+
+Use `require_if_match()` in place of the optional header to make it required (428). A `null` on
+a non-nullable field is a 422 that reads `This field may not be null.`
+
+## Partial responses
+
+`read_mask_param(Model)` is a dependency yielding the parsed `readMask`, or `None` for the whole
+resource. It reads the model's aliases, so a nested model, `Model | None` or `list[Model]` field
+can be reached with a dotted path and anything else is a leaf. A path that names nothing is a 400
+problem before the route runs. Apply the mask to the dumped body with `mask.apply(...)`, or to a
+page with `masked(page, mask)`. Return a `JSONResponse` and declare `response_model` for the
+documentation, because the pruned body no longer validates as the full model.
+
+```python
+from fastapi import Depends
+from fastapi.responses import JSONResponse
+
+from rn_forge.fastapi import masked, read_mask_param
+from rn_forge.web import Page, ReadMask
+
+
+@router.get("/profiles/{profile_id}", response_model=ProfileOut)
+async def profiles_get(
+    profile_id: str, mask: ReadMask | None = Depends(read_mask_param(ProfileOut))
+) -> JSONResponse:
+    body = ProfileOut.model_validate(await repo.get(profile_id)).model_dump(by_alias=True)
+    return JSONResponse(body if mask is None else mask.apply(body))
+
+
+@router.get("/profiles", response_model=Page[ProfileOut])
+async def profiles_list(
+    mask: ReadMask | None = Depends(read_mask_param(ProfileOut)),
+) -> JSONResponse:
+    page = Page[ProfileOut](items=await repo.list(), next_page_token=None)
+    return JSONResponse(masked(page, mask))
+```
+
+`batch_get_router` accepts `readMask` unless it is built with `read_mask=False`.
+
 ## Security headers
 
 `FastApiApp` installs the OWASP REST Security Cheat Sheet response headers by
@@ -132,8 +196,9 @@ config = AppConfig(cors=CorsPolicy(allow_origins=("https://app.example.com",)))
 
 `CorsPolicy.expose_headers` defaults to `rn_forge.web.EXPOSED_HEADERS` — the
 response headers this kit emits that a browser cannot read unless a CORS
-policy names them (`ETag`, `Link`, and so on). `traceresponse` needs no entry
-here — the OpenTelemetry response propagator exposes it itself.
+policy names them (`ETag`, `Link`, `Content-Disposition`, and so on).
+`traceresponse` needs no entry here — the OpenTelemetry response propagator
+exposes it itself.
 `allow_origins` has no default; naming them is the application's decision.
 `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises — browsers
 reject that combination.

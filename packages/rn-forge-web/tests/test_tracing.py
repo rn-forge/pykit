@@ -16,7 +16,9 @@ _TRACER = trace.get_tracer(__name__)
 
 
 def test_exposed_headers_does_not_carry_a_correlation_header():
-    assert_that(EXPOSED_HEADERS).contains("ETag", "Link", "Location", "Retry-After")
+    assert_that(EXPOSED_HEADERS).contains(
+        "ETag", "Link", "Location", "Retry-After", "Content-Disposition"
+    )
     assert_that(EXPOSED_HEADERS).does_not_contain("X-Correlation-ID")
     assert_that(EXPOSED_HEADERS).does_not_contain("traceresponse")
 

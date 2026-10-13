@@ -75,6 +75,32 @@ A mismatch is **412**, a missing required precondition **428**, an unparseable o
 by `rn_forge.web.check_precondition`, not here. The body-`version` fallback is a Django-only
 convenience; an API meant to be swappable with a FastAPI one should require the header.
 
+## Soft delete
+
+`SoftDeleteModelMixin` adds a nullable, indexed `delete_time`. List it **before** `BaseModel` so
+that its manager becomes the default one; that manager keeps `get_by_natural_key()` and adds
+`.live()` and `.deleted()`:
+
+```python
+from rn_forge.django.models import BaseModel, SoftDeleteModelMixin, VersionedModelMixin
+
+
+class Note(SoftDeleteModelMixin, VersionedModelMixin, BaseModel):
+    text = models.CharField(max_length=255)
+
+
+note.soft_delete(actor="alice")  # sets delete_time and updated_by, then saves
+note.undelete(actor="bob")  # clears delete_time and sets updated_by
+Note.objects.live()  # delete_time IS NULL
+Note.objects.deleted()  # delete_time IS NOT NULL
+```
+
+The default manager is **not** filtered, so the admin, related-object lookups and a `GET` of a
+deleted resource keep working; the view decides what is visible. A versioned model bumps its
+`version` on `soft_delete` and `undelete` as on any save. Override `get_delete_time()` to supply the
+recorded time. `delete_time` is independent of `status`, and `Status.Deleted` does not mean
+soft-deleted. The view side is in [DRF Views](drf-views.md#soft-delete).
+
 ## Generating human-readable codes
 
 ```python

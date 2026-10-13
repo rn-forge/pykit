@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from rn_forge.web import (
+    NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
     REQUIRED_FIELD_DETAIL,
     VALIDATION_ERROR,
@@ -131,17 +132,24 @@ def _validation_errors(raw: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]
     """Map pydantic's ``errors()`` list to :func:`rn_forge.web.field_error` entries.
 
     FastAPI's leading ``"body"`` location is dropped, and a missing field reads
-    :data:`rn_forge.web.REQUIRED_FIELD_DETAIL` as it does on DRF.
+    :data:`rn_forge.web.REQUIRED_FIELD_DETAIL` as it does on DRF. An entry whose input is
+    ``None`` reads :data:`rn_forge.web.NULL_FIELD_DETAIL`.
     """
     return [
         field_error(
             _body_relative(entry.get("loc") or ()),
-            REQUIRED_FIELD_DETAIL
-            if entry.get("type") == "missing"
-            else str(entry.get("msg", "")),
+            _detail(entry),
         )
         for entry in raw
     ]
+
+
+def _detail(entry: Mapping[str, Any]) -> str:
+    if entry.get("type") == "missing":
+        return REQUIRED_FIELD_DETAIL
+    if "input" in entry and entry["input"] is None:
+        return NULL_FIELD_DETAIL
+    return str(entry.get("msg", ""))
 
 
 def _body_relative(loc: Sequence[Any]) -> Sequence[Any]:

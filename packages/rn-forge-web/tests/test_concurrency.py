@@ -6,6 +6,7 @@ from assertpy import assert_that
 from rn_forge.web.concurrency import (
     EntityVersionETagCodec,
     VersionETagCodec,
+    check_item_precondition,
     check_precondition,
     is_not_modified,
 )
@@ -14,6 +15,8 @@ from rn_forge.web.exceptions import (
     PreconditionRequired,
     VersionConflict,
 )
+from rn_forge.web.problem import default_registry, render_problem
+from rn_forge.web.transfer import BatchUpdateItem
 
 pytestmark = pytest.mark.unit
 
@@ -162,3 +165,70 @@ def test_comparison_is_weak_on_both_sides():
 
 def test_a_comma_list_matches_if_any_member_matches():
     assert_that(is_not_modified('W/"other:1", W/"a1:7"', 'W/"a1:7"')).is_true()
+
+
+# --- check_item_precondition ----------------------------------------------
+
+
+def _item(if_match: str | None, index: int = 4) -> BatchUpdateItem:
+    return BatchUpdateItem(index, "2", {}, if_match)
+
+
+def _check(item: BatchUpdateItem, *, version: int = 1, required: bool = False) -> None:
+    check_item_precondition(
+        item, current_version=version, entity_id="2", codec=ENTITY, required=required
+    )
+
+
+def test_item_precondition_passes_on_a_match_an_absent_value_and_a_star():
+    _check(_item('W/"2:1"'))
+    _check(_item(None))
+    _check(_item("*"), version=9)
+
+
+@pytest.mark.parametrize(
+    ("if_match", "required", "version", "exc_type", "status"),
+    [
+        (None, True, 1, PreconditionRequired, 428),
+        ("garbage", False, 1, MalformedPrecondition, 400),
+        ('W/"2:9"', False, 1, VersionConflict, 412),
+        ('W/"7:1"', False, 1, VersionConflict, 412),
+    ],
+)
+def test_item_precondition_failures_point_at_the_item(
+    if_match, required, version, exc_type, status
+):
+    with pytest.raises(exc_type) as raised:
+        _check(_item(if_match), version=version, required=required)
+
+    with pytest.raises(exc_type) as plain:
+        check_precondition(
+            if_match,
+            current_version=version,
+            entity_id="2",
+            codec=ENTITY,
+            required=required,
+        )
+    rendered = render_problem(default_registry(), raised.value, instance="/x")
+    assert_that(rendered.status).is_equal_to(status)
+    assert_that(rendered.body["detail"]).is_equal_to(plain.value.message)
+    assert_that(rendered.body["errors"]).is_equal_to(
+        [{"pointer": "/requests/4/ifMatch", "detail": plain.value.message}]
+    )
+
+
+def test_item_precondition_keeps_braces_in_the_validator_literal():
+    with pytest.raises(MalformedPrecondition) as raised:
+        _check(_item("{}"))
+
+    assert_that(raised.value.message).contains("{}")
+
+
+def test_existing_precondition_errors_render_without_errors():
+    for exc in (
+        PreconditionRequired("x", error_code=428),
+        MalformedPrecondition("x", error_code=400),
+        VersionConflict("x", error_code=412),
+    ):
+        rendered = render_problem(default_registry(), exc, instance="/x")
+        assert_that(rendered.body).does_not_contain_key("errors")

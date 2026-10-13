@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Final
+from typing import Any, Final
 
-from sqlalchemy import DateTime, Dialect, Integer, MetaData, String
+from sqlalchemy import DateTime, Dialect, Integer, MetaData, Select, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
@@ -13,8 +13,12 @@ __all__ = [
     "NAMING_CONVENTION",
     "AuditMixin",
     "Base",
+    "SoftDeleteMixin",
     "UTCDateTime",
     "VersionMixin",
+    "live",
+    "soft_delete",
+    "undelete",
 ]
 
 NAMING_CONVENTION: Final = {
@@ -93,3 +97,64 @@ class VersionMixin:
     """A ``version`` counter, starting at 1, for :func:`update_versioned`."""
 
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+
+class SoftDeleteMixin:
+    """A nullable, indexed ``delete_time``; ``None`` while the row is live (AIP-164).
+
+    Pair it with :class:`AuditMixin` for ``updated_by``. Nothing filters queries
+    implicitly: select live rows with :func:`live`.
+    """
+
+    delete_time: Mapped[datetime | None] = mapped_column(
+        UTCDateTime, default=None, index=True
+    )
+
+
+def live[T: Any](
+    stmt: Select[T], model: type[SoftDeleteMixin], *, show_deleted: bool = False
+) -> Select[T]:
+    """Return *stmt* restricted to live rows of *model*.
+
+    Args:
+        stmt: The select to restrict.
+        model: A mapped class using :class:`SoftDeleteMixin`.
+        show_deleted: Return *stmt* unchanged, soft-deleted rows included.
+    """
+    if show_deleted:
+        return stmt
+    return stmt.where(model.delete_time.is_(None))
+
+
+def soft_delete(
+    obj: SoftDeleteMixin, *, actor: str, now: datetime | None = None
+) -> None:
+    """Mark *obj* soft-deleted at *now* (default: the current UTC time).
+
+    Sets ``delete_time`` and ``updated_by``, and ``update_time`` on an
+    :class:`AuditMixin` row. Increments ``version`` on a :class:`VersionMixin`
+    row. Does not flush or commit.
+    """
+    when = now or _now()
+    _stamp(obj, delete_time=when, actor=actor, when=when)
+
+
+def undelete(obj: SoftDeleteMixin, *, actor: str, now: datetime | None = None) -> None:
+    """Clear *obj*'s ``delete_time``, recording *actor* and *now*.
+
+    Sets ``updated_by``, ``update_time`` (an :class:`AuditMixin` row) and
+    ``version`` (a :class:`VersionMixin` row) as :func:`soft_delete` does.
+    Does not flush or commit.
+    """
+    _stamp(obj, delete_time=None, actor=actor, when=now or _now())
+
+
+def _stamp(
+    obj: SoftDeleteMixin, *, delete_time: datetime | None, actor: str, when: datetime
+) -> None:
+    obj.delete_time = delete_time
+    if isinstance(obj, AuditMixin):
+        obj.updated_by = actor
+        obj.update_time = when
+    if isinstance(obj, VersionMixin):
+        obj.version += 1

@@ -11,6 +11,7 @@ from rn_forge.web.conformance.types import (
     ConformanceCase,
     RequestSpec,
 )
+from rn_forge.web.merge_patch import MERGE_PATCH_MEDIA_TYPE
 from rn_forge.web.tracing import EXPOSED_HEADERS
 from rn_forge.web.pagination import encode_cursor
 from rn_forge.web.problem import (
@@ -24,8 +25,10 @@ from rn_forge.web.problem import (
     PRECONDITION_FAILED,
     PRECONDITION_REQUIRED,
     SERVICE_UNAVAILABLE,
+    NULL_FIELD_DETAIL,
     TOO_MANY_REQUESTS,
     UNAUTHORIZED,
+    UNSUPPORTED_MEDIA_TYPE,
     VALIDATION_ERROR,
     FORBIDDEN,
     ProblemType,
@@ -41,7 +44,19 @@ _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 """A well-formed W3C traceparent, from the standard's own example."""
 
 _ORDER_ID_DESC: Final = "id desc"
+_MERGE: Final = {"Content-Type": MERGE_PATCH_MEDIA_TYPE}
+_DOCUMENT_PATH: Final = "/conformance/documents/1"
+_PROFILE_PATH: Final = "/conformance/profiles/1"
+_PROFILE_ADA: Final = {
+    "id": "1",
+    "displayName": "Ada",
+    "address": {"city": "London", "postcode": "N1"},
+    "phones": [{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+    "settings": {"theme": "dark"},
+}
 _ITEMS_PATH: Final = "/conformance/items"
+_PEOPLE_PATH: Final = "/conformance/people"
+_ORDER_TEAM_SCORE_DESC: Final = "team,score desc"
 _ITEM_PATH: Final = "/conformance/items/1"
 _ITEM_ETAG: Final = 'W/"1:7"'
 _CHARGES_PATH: Final = "/conformance/charges"
@@ -51,6 +66,9 @@ _CSV_TYPE: Final = "text/csv"
 _CSV_TYPE_PATTERN: Final = r"text/csv(; charset=utf-8)?"
 _ORDERS_CSV: Final = "id,name\r\n1,widget\r\n"
 _FIRST_CALL_ID: Final = "idempotency.first-call-executes"
+_BOOKS_GET: Final = "/conformance/books:batchGet"
+_BOOKS_UPDATE: Final = "/conformance/books:batchUpdate"
+_STALE_BOOK: Final = "Precondition failed: expected version 1, got 9"
 
 
 def _problem_body(
@@ -73,8 +91,20 @@ def _problem_body(
     }
 
 
-PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2")
-ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor("2", "2", _ORDER_ID_DESC)
+def _document(**changes: object) -> dict[str, object]:
+    """The fixture document, as `GET /conformance/documents/1` serves it fresh."""
+    return {
+        "id": "1",
+        "name": "widget",
+        "note": "fragile",
+        "tags": ["a", "b"],
+        "settings": {"color": "red", "size": "L"},
+        **changes,
+    }
+
+
+PAGE_1_NEXT_TOKEN: Final = encode_cursor((), "2")
+ORDERED_PAGE_1_NEXT_TOKEN: Final = encode_cursor(("2",), "2", _ORDER_ID_DESC)
 """The token page one must return.
 
 Asserted **exactly**, not redacted. A token is opaque to a *client*; between
@@ -82,6 +112,33 @@ two servers running the same codec over the same keyset it is deterministic,
 and two stacks that emit different tokens for the same page have diverged in a
 way no client-visible field would show.
 """
+
+COMPOSITE_PAGE_1_TOKEN: Final = encode_cursor(("a", 10), "1", _ORDER_TEAM_SCORE_DESC)
+COMPOSITE_PAGE_2_TOKEN: Final = encode_cursor(("b", 5), "4", _ORDER_TEAM_SCORE_DESC)
+COMPOSITE_NULL_TOKEN: Final = encode_cursor(("a", None), "3", _ORDER_TEAM_SCORE_DESC)
+
+_PEOPLE: Final = {
+    1: ("a", 10),
+    2: ("b", None),
+    3: ("a", None),
+    4: ("b", 5),
+    5: ("a", 10),
+}
+
+
+def _people(*ids: int) -> list[dict[str, object]]:
+    """The ``/conformance/people`` items with these ids, in this order."""
+    return [{"id": str(i), "team": _PEOPLE[i][0], "score": _PEOPLE[i][1]} for i in ids]
+
+
+_NOTES_PATH: Final = "/conformance/notes"
+_NOTE_1: Final = "/conformance/notes/1"
+_NOTE_2: Final = "/conformance/notes/2"
+_NOTE_3: Final = "/conformance/notes/3"
+
+
+def _note(id: str, text: str, delete_time: str | None = None) -> dict[str, object]:
+    return {"id": id, "text": text, "deleteTime": delete_time}
 
 
 CASES: Final[tuple[ConformanceCase, ...]] = (
@@ -300,15 +357,113 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body=_problem_body(BAD_REQUEST, "Cannot order by 'secret'; allowed: id"),
     ),
     ConformanceCase(
-        id="pagination.order-by-two-fields-is-400",
+        id="pagination.order-by-several-fields-sorts-by-each-in-turn",
         area="pagination",
         description=(
-            "A list sorts by one field; a second term is a 400, never silently ignored."
+            "AIP-132: orderBy is a comma-separated list; each term breaks the "
+            "ties of the one before, with its own direction."
         ),
-        request=RequestSpec("GET", _ITEMS_PATH, query={"orderBy": "id desc,id"}),
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={"orderBy": _ORDER_TEAM_SCORE_DESC, "pageSize": "5"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1, 3, 4, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.nulls-sort-last-ascending",
+        area="pagination",
+        description="Rows whose value is null come after those that have one, ascending.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "score"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(4, 1, 5, 2, 3), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.nulls-sort-last-descending",
+        area="pagination",
+        description="Rows whose value is null come after those that have one, descending too.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "score desc"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1, 4, 3, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.first-page-carries-a-composite-token",
+        area="pagination",
+        description=(
+            "The token holds one sort value per orderBy term, so the next page "
+            "can resume from the whole order."
+        ),
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={"orderBy": _ORDER_TEAM_SCORE_DESC, "pageSize": "2"},
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(5, 1), "nextPageToken": COMPOSITE_PAGE_1_TOKEN},
+    ),
+    ConformanceCase(
+        id="pagination.composite-token-resumes-within-a-tie",
+        area="pagination",
+        description="Rows tied on every term but the key are neither skipped nor repeated.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageSize": "2",
+                "pageToken": COMPOSITE_PAGE_1_TOKEN,
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(3, 4), "nextPageToken": COMPOSITE_PAGE_2_TOKEN},
+    ),
+    ConformanceCase(
+        id="pagination.composite-token-resumes-after-a-null",
+        area="pagination",
+        description="A token whose last value is null resumes among the rows that are null there.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageSize": "3",
+                "pageToken": COMPOSITE_NULL_TOKEN,
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"items": _people(4, 2), "nextPageToken": None},
+    ),
+    ConformanceCase(
+        id="pagination.repeated-order-by-field-is-400",
+        area="pagination",
+        description="A field named twice in orderBy is a 400, never silently ignored.",
+        request=RequestSpec("GET", _PEOPLE_PATH, query={"orderBy": "team,team desc"}),
         expect_status=400,
         expect_headers=_PROBLEM,
-        expect_body=_problem_body(BAD_REQUEST, "orderBy accepts one field; got 2"),
+        expect_body=_problem_body(BAD_REQUEST, "orderBy names 'team' more than once"),
+    ),
+    ConformanceCase(
+        id="pagination.token-with-the-wrong-number-of-values-is-400",
+        area="pagination",
+        description="A token with fewer values than orderBy has terms is rejected as malformed.",
+        request=RequestSpec(
+            "GET",
+            _PEOPLE_PATH,
+            query={
+                "orderBy": _ORDER_TEAM_SCORE_DESC,
+                "pageToken": encode_cursor(("a",), "1", _ORDER_TEAM_SCORE_DESC),
+            },
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "Malformed page token"),
     ),
     ConformanceCase(
         id="pagination.token-under-a-different-order-by-is-400",
@@ -693,7 +848,28 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
             ),
         },
         expect_body={},
-    ),  # --- Tabular transfer and bulk operations (transfer.py) ----------------
+    ),
+    ConformanceCase(
+        id="cors.export-exposes-content-disposition",
+        area="cors",
+        description=(
+            "A cross-origin CSV export exposes Content-Disposition, so a "
+            "browser client can read the file name."
+        ),
+        request=RequestSpec(
+            "GET",
+            "/conformance/orders",
+            headers={"Accept": _CSV_TYPE, "Origin": "https://example.com"},
+        ),
+        expect_status=200,
+        expect_headers={"Access-Control-Allow-Origin": "https://example.com"},
+        expect_header_patterns={
+            "Content-Type": _CSV_TYPE_PATTERN,
+            "Access-Control-Expose-Headers": r"(.+, )?Content-Disposition(, .+)?",
+        },
+        expect_text=_ORDERS_CSV,
+    ),
+    # --- Tabular transfer and bulk operations (transfer.py) ----------------
     ConformanceCase(
         id="transfer.export-is-negotiated-from-accept",
         area="transfer",
@@ -884,6 +1060,307 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_status=204,
         expect_body={},
     ),
+    ConformanceCase(
+        id="transfer.import-template-is-the-import-columns",
+        area="transfer",
+        description=(
+            "AIP-136: the import template is a CSV attachment whose only row is "
+            "the import model's column names."
+        ),
+        request=RequestSpec(
+            "GET", "/conformance/orders:importTemplate", headers={"Accept": _CSV_TYPE}
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
+        expect_headers={
+            "Content-Disposition": (
+                'attachment; filename="import-template.csv"; '
+                "filename*=UTF-8''import-template.csv"
+            ),
+        },
+        expect_text="id,name,Quantity\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.import-template-prefill-adds-the-rows",
+        area="transfer",
+        description="?prefill=true adds the current rows under the header row.",
+        request=RequestSpec(
+            "GET",
+            "/conformance/orders:importTemplate",
+            headers={"Accept": _CSV_TYPE},
+            query={"prefill": "true"},
+        ),
+        expect_status=200,
+        expect_header_patterns={"Content-Type": _CSV_TYPE_PATTERN},
+        expect_text="id,name,Quantity\r\n1,widget,0\r\n",
+    ),
+    ConformanceCase(
+        id="transfer.import-without-a-file-is-422",
+        area="transfer",
+        description="A multipart import with no file part is a 422 naming /file.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:import",
+            headers={"Content-Type": "multipart/form-data"},
+            body={},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[{"pointer": "/file", "detail": "This field is required."}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.import-over-the-cap-is-422",
+        area="transfer",
+        description="An import with more data rows than the cap is a 422 naming the cap.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/capped:import",
+            headers={"Content-Type": "multipart/form-data"},
+            body={"file": "id,name,Quantity\n2,a,3\n3,b,4\n"},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "The import exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-with-an-empty-list-is-422",
+        area="transfer",
+        description="AIP-233: an empty requests list is a 422 naming /requests.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": []},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[
+                {"pointer": "/requests", "detail": "A non-empty list is required."}
+            ],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-over-the-cap-is-422",
+        area="transfer",
+        description="A batch with more items than the cap is a 422 naming the cap.",
+        request=RequestSpec(
+            "POST",
+            "/conformance/capped:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "a"}, {"name": "b"}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "The batch exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-create-denied-item-is-403-pointer",
+        area="transfer",
+        description=(
+            "One item the principal may not create fails the whole batch as a "
+            "403 whose pointer names the item."
+        ),
+        request=RequestSpec(
+            "POST",
+            "/conformance/orders:batchCreate",
+            headers=_JSON,
+            body={"requests": [{"name": "ok"}, {"name": "forbidden"}]},
+        ),
+        expect_status=403,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            FORBIDDEN,
+            "Forbidden",
+            errors=[
+                {"pointer": "/requests/1", "detail": "You may not create this order."}
+            ],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.denied-batch-create-persists-nothing",
+        area="transfer",
+        description="All or nothing: after the denied batch, the collection still has one order.",
+        request=RequestSpec("GET", "/conformance/orders/count"),
+        depends_on=("transfer.batch-create-denied-item-is-403-pointer",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"count": 1},
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-returns-resources-in-request-order",
+        area="transfer",
+        description="AIP-231: :batchGet answers 200 with the resources under the plural name, in request order.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("3", "1")}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "books": [{"id": "3", "name": "gamma"}, {"id": "1", "name": "alpha"}]
+        },
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-with-an-unknown-id-is-404",
+        area="transfer",
+        description="AIP-231: one id that does not exist fails the whole batch.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("1", "999")}),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Book 999 not found"),
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-without-ids-is-400",
+        area="transfer",
+        description="A :batchGet with no ids parameter is a 400, as a query-parameter fault is.",
+        request=RequestSpec("GET", _BOOKS_GET),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "A non-empty ids parameter is required."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-get-over-the-cap-is-400",
+        area="transfer",
+        description="A :batchGet naming more ids than the cap is a 400 naming the cap.",
+        request=RequestSpec(
+            "GET", "/conformance/capped-books:batchGet", query={"ids": ("1", "2")}
+        ),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "The batch exceeds the limit of 1 rows."
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-applies-each-merge-patch",
+        area="transfer",
+        description="AIP-234 with RFC 7396 items: each patch is merged and the updated resources are returned in request order.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={
+                "requests": [
+                    {"id": "2", "patch": {"name": "beta2"}, "ifMatch": 'W/"2:1"'}
+                ]
+            },
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"books": [{"id": "2", "name": "beta2"}]},
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-stale-if-match-is-412-pointer",
+        area="transfer",
+        description="An item whose ifMatch is stale fails the whole batch as a 412 whose pointer names the item.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={
+                "requests": [
+                    {"id": "1", "patch": {"name": "x"}},
+                    {"id": "3", "patch": {"name": "y"}, "ifMatch": 'W/"3:9"'},
+                ]
+            },
+        ),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED,
+            _STALE_BOOK,
+            errors=[{"pointer": "/requests/1/ifMatch", "detail": _STALE_BOOK}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.failed-batch-update-changes-nothing",
+        area="transfer",
+        description="All or nothing: after the failed batch, the first item is still unchanged.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": ("1", "3")}),
+        depends_on=("transfer.batch-update-stale-if-match-is-412-pointer",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "books": [{"id": "1", "name": "alpha"}, {"id": "3", "name": "gamma"}]
+        },
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-item-validation-is-422-pointer",
+        area="transfer",
+        description="An item whose merged document is invalid fails the whole batch; the pointer names the member in the patch.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "1", "patch": {"name": None}}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[{"pointer": "/requests/0/patch/name", "detail": NULL_FIELD_DETAIL}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-an-unknown-id-is-404",
+        area="transfer",
+        description="One id that does not exist fails the whole batch.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "999", "patch": {}}]},
+        ),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Book 999 not found"),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-a-duplicate-id-is-422",
+        area="transfer",
+        description="An id named twice is a 422 pointing at the later item.",
+        request=RequestSpec(
+            "POST",
+            _BOOKS_UPDATE,
+            headers=_JSON,
+            body={"requests": [{"id": "1", "patch": {}}, {"id": "1", "patch": {}}]},
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "One or more rows are invalid.",
+            errors=[{"pointer": "/requests/1/id", "detail": "Duplicate id in batch."}],
+        ),
+    ),
+    ConformanceCase(
+        id="transfer.batch-update-with-an-empty-list-is-422",
+        area="transfer",
+        description="An empty requests list is a 422 naming /requests.",
+        request=RequestSpec(
+            "POST", _BOOKS_UPDATE, headers=_JSON, body={"requests": []}
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[
+                {"pointer": "/requests", "detail": "A non-empty list is required."}
+            ],
+        ),
+    ),
     # --- Timestamps (api-conventions.md §18) -----------------------------
     ConformanceCase(
         id="timestamps.rfc-3339-utc-with-z",
@@ -944,6 +1421,394 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
                 "instance": REDACTED,
             },
         },
+    ),
+    # --- Merge patch (merge_patch.py) ------------------------------
+    ConformanceCase(
+        id="patch.nested-merge-keeps-absent-members",
+        area="patch",
+        description=(
+            "RFC 7396 §2: objects merge recursively, so a member the patch does "
+            "not name keeps its value."
+        ),
+        request=RequestSpec(
+            "PATCH",
+            _DOCUMENT_PATH,
+            headers=_MERGE,
+            body={"settings": {"color": "blue"}},
+        ),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:2"'},
+        expect_body=_document(settings={"color": "blue", "size": "L"}),
+    ),
+    ConformanceCase(
+        id="patch.null-inside-a-json-value-removes-the-member",
+        area="patch",
+        description=("RFC 7396 §2: below the top level, null removes the member."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"settings": {"size": None}}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(settings={"color": "red"}),
+    ),
+    ConformanceCase(
+        id="patch.null-sets-a-nullable-field-to-null",
+        area="patch",
+        description=("At the top level a null names a field and stores null in it."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"note": None}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(note=None),
+    ),
+    ConformanceCase(
+        id="patch.array-is-replaced-whole",
+        area="patch",
+        description=("RFC 7396 §2: an array is a value, so it replaces the target's."),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"tags": ["c"]}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(tags=["c"]),
+    ),
+    ConformanceCase(
+        id="patch.read-only-members-are-ignored",
+        area="patch",
+        description=(
+            "A server-owned member in the patch changes nothing; the rest applies."
+        ),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"id": "99", "name": "gadget"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(name="gadget"),
+    ),
+    ConformanceCase(
+        id="patch.null-on-a-non-nullable-field-is-422",
+        area="patch",
+        description="A null on a required field fails validation, naming the field.",
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_MERGE, body={"name": None}
+        ),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR,
+            "Validation Error",
+            errors=[{"pointer": "/name", "detail": NULL_FIELD_DETAIL}],
+        ),
+    ),
+    ConformanceCase(
+        id="patch.non-object-body-is-422",
+        area="patch",
+        description="RFC 7396 lets a non-object replace the target; pykit refuses it.",
+        request=RequestSpec("PATCH", _DOCUMENT_PATH, headers=_MERGE, body=["name"]),
+        expect_status=422,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            VALIDATION_ERROR, "A merge patch must be a JSON object."
+        ),
+    ),
+    ConformanceCase(
+        id="patch.json-content-type-is-415",
+        area="patch",
+        description=(
+            "RFC 5789 §2.2: a patch format the server does not support is 415, "
+            "and Accept-Patch names the one it does."
+        ),
+        request=RequestSpec(
+            "PATCH", _DOCUMENT_PATH, headers=_JSON, body={"name": "gadget"}
+        ),
+        expect_status=415,
+        expect_headers={**_PROBLEM, "Accept-Patch": MERGE_PATCH_MEDIA_TYPE},
+        expect_body=_problem_body(
+            UNSUPPORTED_MEDIA_TYPE,
+            "Use Content-Type: application/merge-patch+json for PATCH",
+        ),
+    ),
+    ConformanceCase(
+        id="patch.stale-if-match-is-412",
+        area="patch",
+        description="The precondition is checked before the patch is applied.",
+        request=RequestSpec(
+            "PATCH",
+            _DOCUMENT_PATH,
+            headers={**_MERGE, "If-Match": 'W/"1:9"'},
+            body={"name": "gadget"},
+        ),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED, "Precondition failed: expected version 1, got 9"
+        ),
+    ),
+    ConformanceCase(
+        id="patch.failed-precondition-changes-nothing",
+        area="patch",
+        description="After the 412, the document is still the original.",
+        request=RequestSpec("GET", _DOCUMENT_PATH),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_document(),
+        depends_on=("patch.stale-if-match-is-412",),
+    ),
+    ConformanceCase(
+        id="read-mask.get-returns-only-the-masked-fields",
+        area="read-mask",
+        description="AIP-157: readMask names top-level fields, and only those are returned.",
+        request=RequestSpec(
+            "GET", _PROFILE_PATH, query={"readMask": "displayName,settings"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"displayName": "Ada", "settings": {"theme": "dark"}},
+    ),
+    ConformanceCase(
+        id="read-mask.nested-path-selects-a-sub-field",
+        area="read-mask",
+        description="A dotted path selects one field of a declared object.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "address.city"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"address": {"city": "London"}},
+    ),
+    ConformanceCase(
+        id="read-mask.path-through-a-list-applies-to-each-element",
+        area="read-mask",
+        description="A path through a list of objects applies to every element.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "phones.number"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"phones": [{"number": "1"}, {"number": "2"}]},
+    ),
+    ConformanceCase(
+        id="read-mask.overlapping-paths-merge",
+        area="read-mask",
+        description="A path and one of its sub-paths merge to the whole object.",
+        request=RequestSpec(
+            "GET", _PROFILE_PATH, query={"readMask": "address,address.city"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"address": {"city": "London", "postcode": "N1"}},
+    ),
+    ConformanceCase(
+        id="read-mask.star-is-the-whole-resource",
+        area="read-mask",
+        description="A readMask of * returns the whole resource.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "*"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_PROFILE_ADA,
+    ),
+    ConformanceCase(
+        id="read-mask.list-masks-each-item",
+        area="read-mask",
+        description="On a collection the mask applies to each item, and the page members stay.",
+        request=RequestSpec(
+            "GET", "/conformance/profiles", query={"readMask": "id,displayName"}
+        ),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                {"id": "1", "displayName": "Ada"},
+                {"id": "2", "displayName": "Grace"},
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="read-mask.unknown-path-is-400",
+        area="read-mask",
+        description="A path that names no declared field is a 400, never ignored.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "nickname"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(BAD_REQUEST, "Unknown readMask path 'nickname'"),
+    ),
+    ConformanceCase(
+        id="read-mask.path-inside-a-free-form-field-is-400",
+        area="read-mask",
+        description="A free-form JSON field is a leaf: a path inside it names nothing declared.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "settings.theme"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "Unknown readMask path 'settings.theme'"
+        ),
+    ),
+    ConformanceCase(
+        id="read-mask.star-with-other-paths-is-400",
+        area="read-mask",
+        description="* selects everything, so combining it with a path is a 400.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "*,displayName"}),
+        expect_status=400,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            BAD_REQUEST, "readMask '*' cannot be combined with other paths"
+        ),
+    ),
+    ConformanceCase(
+        id="read-mask.masked-read-keeps-the-etag",
+        area="read-mask",
+        description="A masked read carries the resource's ETag, so a client can follow with If-Match.",
+        request=RequestSpec("GET", _PROFILE_PATH, query={"readMask": "displayName"}),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:1"'},
+        expect_body={"displayName": "Ada"},
+    ),
+    ConformanceCase(
+        id="read-mask.batch-get-masks-each-item",
+        area="read-mask",
+        description="A :batchGet applies the mask to each resource.",
+        request=RequestSpec("GET", _BOOKS_GET, query={"ids": "1", "readMask": "name"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={"books": [{"name": "alpha"}]},
+    ),
+    ConformanceCase(
+        id="soft-delete.delete-returns-the-resource-with-its-delete-time",
+        area="soft-delete",
+        description="AIP-164: DELETE soft-deletes and answers 200 with the resource, its deleteTime and the new ETag.",
+        request=RequestSpec("DELETE", _NOTE_1),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"1:2"'},
+        expect_body=_note("1", "first", "2026-01-02T00:00:00Z"),
+    ),
+    ConformanceCase(
+        id="soft-delete.list-omits-deleted-resources",
+        area="soft-delete",
+        description="A list leaves out soft-deleted resources.",
+        request=RequestSpec("GET", _NOTES_PATH),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [_note("1", "first"), _note("3", "third")],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.show-deleted-lists-them",
+        area="soft-delete",
+        description="showDeleted=true brings soft-deleted resources back into a list.",
+        request=RequestSpec("GET", _NOTES_PATH, query={"showDeleted": "true"}),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                _note("1", "first"),
+                _note("2", "second", "2026-01-01T00:00:00Z"),
+                _note("3", "third"),
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.get-returns-a-deleted-resource",
+        area="soft-delete",
+        description="AIP-164: a get returns the soft-deleted resource, with its deleteTime.",
+        request=RequestSpec("GET", _NOTE_2),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("2", "second", "2026-01-01T00:00:00Z"),
+    ),
+    ConformanceCase(
+        id="soft-delete.delete-of-a-deleted-resource-is-404",
+        area="soft-delete",
+        description="A DELETE on an already soft-deleted resource is not found.",
+        request=RequestSpec("DELETE", _NOTE_2),
+        expect_status=404,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(NOT_FOUND, "Note 2 not found"),
+    ),
+    ConformanceCase(
+        id="soft-delete.undelete-restores-the-resource",
+        area="soft-delete",
+        description="AIP-164: :undelete answers 200 with the live resource and the new ETag.",
+        request=RequestSpec("POST", "/conformance/notes/2:undelete"),
+        expect_status=200,
+        expect_headers={**_JSON, "ETag": 'W/"2:3"'},
+        expect_body=_note("2", "second"),
+    ),
+    ConformanceCase(
+        id="soft-delete.undeleted-resource-is-listed-again",
+        area="soft-delete",
+        description="An undeleted resource is back in the default list.",
+        request=RequestSpec("GET", _NOTES_PATH),
+        depends_on=("soft-delete.undelete-restores-the-resource",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body={
+            "items": [
+                _note("1", "first"),
+                _note("2", "second"),
+                _note("3", "third"),
+            ],
+            "nextPageToken": None,
+        },
+    ),
+    ConformanceCase(
+        id="soft-delete.undelete-of-a-live-resource-is-409",
+        area="soft-delete",
+        description="Undeleting a resource that is not deleted conflicts.",
+        request=RequestSpec("POST", "/conformance/notes/1:undelete"),
+        expect_status=409,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(CONFLICT, "Note 1 is not deleted"),
+    ),
+    ConformanceCase(
+        id="soft-delete.write-to-a-deleted-resource-is-409",
+        area="soft-delete",
+        description="A PATCH on a soft-deleted resource conflicts.",
+        request=RequestSpec("PATCH", _NOTE_2, headers=_MERGE, body={"text": "x"}),
+        expect_status=409,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(CONFLICT, "Note 2 is deleted"),
+    ),
+    ConformanceCase(
+        id="soft-delete.stale-if-match-is-412",
+        area="soft-delete",
+        description="DELETE honours If-Match; a stale validator is a 412.",
+        request=RequestSpec("DELETE", _NOTE_1, headers={"If-Match": 'W/"1:9"'}),
+        expect_status=412,
+        expect_headers=_PROBLEM,
+        expect_body=_problem_body(
+            PRECONDITION_FAILED, "Precondition failed: expected version 1, got 9"
+        ),
+    ),
+    ConformanceCase(
+        id="soft-delete.failed-precondition-deletes-nothing",
+        area="soft-delete",
+        description="A failed precondition leaves the resource live.",
+        request=RequestSpec("GET", _NOTE_1),
+        depends_on=("soft-delete.stale-if-match-is-412",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("1", "first"),
+    ),
+    ConformanceCase(
+        id="soft-delete.batch-delete-soft-deletes",
+        area="soft-delete",
+        description="AIP-235 over AIP-164: a batch delete soft-deletes and answers 204.",
+        request=RequestSpec(
+            "POST", "/conformance/notes:batchDelete", headers=_JSON, body={"ids": ["3"]}
+        ),
+        expect_status=204,
+        expect_body={},
+    ),
+    ConformanceCase(
+        id="soft-delete.batch-deleted-resource-is-still-readable",
+        area="soft-delete",
+        description="A resource soft-deleted in a batch is still returned by a get.",
+        request=RequestSpec("GET", _NOTE_3),
+        depends_on=("soft-delete.batch-delete-soft-deletes",),
+        expect_status=200,
+        expect_headers=_JSON,
+        expect_body=_note("3", "third", "2026-01-02T00:00:00Z"),
     ),
 )
 
