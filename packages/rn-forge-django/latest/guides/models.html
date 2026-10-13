@@ -500,6 +500,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#soft-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Soft delete
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#generating-human-readable-codes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1751,6 +1762,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#soft-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Soft delete
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#generating-human-readable-codes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1880,6 +1902,28 @@ the row on every update — one extra query — and does not guard queryset-leve
 <p>A mismatch is <strong>412</strong>, a missing required precondition <strong>428</strong>, an unparseable one <strong>400</strong> — decided
 by <code>rn_forge.web.check_precondition</code>, not here. The body-<code>version</code> fallback is a Django-only
 convenience; an API meant to be swappable with a FastAPI one should require the header.</p>
+<h2 id="soft-delete">Soft delete<a class="headerlink" href="#soft-delete" title="Permanent link">&para;</a></h2>
+<p><code>SoftDeleteModelMixin</code> adds a nullable, indexed <code>delete_time</code>. List it <strong>before</strong> <code>BaseModel</code> so
+that its manager becomes the default one; that manager keeps <code>get_by_natural_key()</code> and adds
+<code>.live()</code> and <code>.deleted()</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SoftDeleteModelMixin</span><span class="p">,</span> <span class="n">VersionedModelMixin</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Note</span><span class="p">(</span><span class="n">SoftDeleteModelMixin</span><span class="p">,</span> <span class="n">VersionedModelMixin</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+
+
+<span class="n">note</span><span class="o">.</span><span class="n">soft_delete</span><span class="p">(</span><span class="n">actor</span><span class="o">=</span><span class="s2">&quot;alice&quot;</span><span class="p">)</span>  <span class="c1"># sets delete_time and updated_by, then saves</span>
+<span class="n">note</span><span class="o">.</span><span class="n">undelete</span><span class="p">(</span><span class="n">actor</span><span class="o">=</span><span class="s2">&quot;bob&quot;</span><span class="p">)</span>  <span class="c1"># clears delete_time and sets updated_by</span>
+<span class="n">Note</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">live</span><span class="p">()</span>  <span class="c1"># delete_time IS NULL</span>
+<span class="n">Note</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">deleted</span><span class="p">()</span>  <span class="c1"># delete_time IS NOT NULL</span>
+</code></pre></div>
+
+<p>The default manager is <strong>not</strong> filtered, so the admin, related-object lookups and a <code>GET</code> of a
+deleted resource keep working; the view decides what is visible. A versioned model bumps its
+<code>version</code> on <code>soft_delete</code> and <code>undelete</code> as on any save. Override <code>get_delete_time()</code> to supply the
+recorded time. <code>delete_time</code> is independent of <code>status</code>, and <code>Status.Deleted</code> does not mean
+soft-deleted. The view side is in <a href="drf-views.html#soft-delete">DRF Views</a>.</p>
 <h2 id="generating-human-readable-codes">Generating human-readable codes<a class="headerlink" href="#generating-human-readable-codes" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractSequenceCounter</span><span class="p">,</span> <span class="n">SequenceGenerator</span>
 

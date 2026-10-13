@@ -2130,6 +2130,11 @@ spelled as a plain path segment gets a mechanical name; give it an explicit
 <p>The paginated component keeps drf-spectacular's own name
 (<code>PaginatedOrderOutList</code>) — document text is not held identical across
 stacks; only wire behaviour and <code>operationId</code> are.</p>
+<p>An operation of a :class:<code>~rn_forge.django.drf.views.mixins.ReadMaskMixin</code>
+view that the mask applies to also documents the <code>readMask</code> query parameter.</p>
+<p>A :class:<code>~rn_forge.django.drf.views.mixins.SoftDeleteMixin</code> view documents
+<code>showDeleted</code> on its list, <code>DELETE</code> as a 200 with the resource, and
+<code>:undelete</code> without a request body.</p>
 
 
 

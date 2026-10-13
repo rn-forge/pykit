@@ -1415,6 +1415,45 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchGetMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BatchGetMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchUpdateMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BatchUpdateMixin
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" BatchUpdateMixin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchUpdateMixin.validate_batch_update_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_batch_update_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.django.drf.transfer.ResourceExportMixin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1884,6 +1923,45 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchGetMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BatchGetMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchUpdateMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BatchUpdateMixin
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" BatchUpdateMixin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.transfer.BatchUpdateMixin.validate_batch_update_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_batch_update_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.django.drf.transfer.ResourceExportMixin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1980,7 +2058,7 @@
 
     <div class="doc doc-contents first">
 
-        <p>Tabular export and import, and batch create and delete, for DRF viewsets.</p>
+        <p>Tabular export and import, and batch get, create, update and delete, for DRF viewsets.</p>
 <p>Requires the <code>transfer</code> extra. Not re-exported by :mod:<code>rn_forge.django.drf</code>.
 Register the viewset with :class:<code>~rn_forge.django.drf.routers.CustomMethodRouter</code>
 so the actions are served as <code>/orders:import</code> and <code>/orders:batchCreate</code>.</p>
@@ -2017,7 +2095,7 @@ so the actions are served as <code>/orders:import</code> and <code>/orders:batch
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="rest_framework.generics.GenericAPIView">GenericAPIView</span></code></p>
+              Bases: <code><span title="rn_forge.django.drf.transfer._BatchResourceMixin">_BatchResourceMixin</span></code></p>
 
 
 
@@ -2139,7 +2217,8 @@ in camelCase when unset.</p>
         <p>Add <code>POST :batchDelete</code>: <code>{"ids": [...]}</code>, all or nothing, <code>204</code>.</p>
 <p>Ids are matched within <code>filter_queryset(get_queryset())</code>; an id outside it
 is a 404 problem naming the id. An error string from
-:meth:<code>validate_batch_delete_instance</code> is a 403 problem pointing at the id.</p>
+:meth:<code>validate_batch_delete_instance</code> is a 403 problem pointing at the id.
+Each instance is deleted through the view's <code>perform_destroy</code>.</p>
 
 
 
@@ -2174,6 +2253,261 @@ is a 404 problem naming the id. An error string from
     <div class="doc doc-contents ">
 
         <p>Return an error message for one delete target, or <code>None</code> when allowed.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="rn_forge.django.drf.transfer.BatchGetMixin" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>BatchGetMixin</code>
+
+
+<a href="#rn_forge.django.drf.transfer.BatchGetMixin" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="rn_forge.django.drf.transfer._BatchResourceMixin">_BatchResourceMixin</span></code></p>
+
+
+
+        <p>Add <code>GET :batchGet?ids=1&amp;ids=2</code>.</p>
+<p>Ids are matched within <code>filter_queryset(get_queryset())</code> and serialized
+with the view's serializer. The response is <code>200</code> with the resources
+under the plural resource name, one per requested id in request order. A
+missing <code>ids</code> parameter, or more ids than <code>transfer.max_rows</code>, is a 400
+problem; an id outside the view's scope is a 404 problem naming the id.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.django.drf.transfer.BatchGetMixin.batch_resource_name">batch_resource_name</span></code></td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The response key; the model's plural verbose name
+in camelCase when unset.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="rn_forge.django.drf.transfer.BatchUpdateMixin" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>BatchUpdateMixin</code>
+
+
+<a href="#rn_forge.django.drf.transfer.BatchUpdateMixin" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="rn_forge.django.drf.transfer._BatchResourceMixin">_BatchResourceMixin</span></code></p>
+
+
+
+        <p>Add <code>POST :batchUpdate</code>: <code>{"requests": [{"id", "patch", "ifMatch"}]}</code>, all or nothing.</p>
+<p>Each item's <code>patch</code> is an RFC 7396 JSON Merge Patch, merged into the
+row's current representation and validated through the view's serializer
+as a full update. <code>ifMatch</code> is the item's precondition, checked when the
+row is a :class:<code>~rn_forge.django.models.VersionedModelMixin</code>. The response
+is <code>200</code> with the updated resources under the plural resource name, in
+request order.</p>
+<p>A malformed list or item is a 422 problem, an id outside
+<code>filter_queryset(get_queryset())</code> a 404, a failed precondition a 428, 400
+or 412 pointing at <code>/requests/&lt;i&gt;/ifMatch</code> (a version conflict at save time
+included), a failed merged document a 422 pointing at
+<code>/requests/&lt;i&gt;/patch/&lt;field&gt;</code>, and an error string from
+:meth:<code>validate_batch_update_item</code> a 403 pointing at the item. Nothing is
+persisted on failure.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.django.drf.transfer.BatchUpdateMixin.batch_resource_name">batch_resource_name</span></code></td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The response key; the model's plural verbose name
+in camelCase when unset.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.django.drf.transfer.BatchUpdateMixin.batch_update_requires_if_match">batch_update_requires_if_match</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>When <code>True</code>, a versioned item
+without <code>ifMatch</code> is a 428.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.django.drf.transfer.BatchUpdateMixin.etag_codec">etag_codec</span></code></td>
+            <td>
+                  <code><span title="rn_forge.web.ETagCodec">ETagCodec</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator format; <code>None</code> uses
+:class:<code>rn_forge.web.VersionETagCodec</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.django.drf.transfer.BatchUpdateMixin.validate_batch_update_item" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">validate_batch_update_item</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></code>
+
+<a href="#rn_forge.django.drf.transfer.BatchUpdateMixin.validate_batch_update_item" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return an error message for one validated update, or <code>None</code> when allowed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>instance</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The row before the update.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>data</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The item's validated data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

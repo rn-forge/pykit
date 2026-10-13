@@ -1824,7 +1824,7 @@ actions are served as <code>/orders:import</code> and <code>/orders:batchCreate<
 <span class="n">router</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="n">OrderViewSet</span><span class="p">,</span> <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;orders&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>A viewset takes only the mixins it needs. The wire shapes are those of the transfer section of
+<p>A viewset takes only the mixins it needs (<code>BatchGetMixin</code>, <code>BatchCreateMixin</code>, <code>BatchUpdateMixin</code>, <code>BatchDeleteMixin</code>). The wire shapes are those of the transfer section of
 the <code>rn-forge-web</code> API conventions.</p>
 <table>
 <thead>
@@ -1851,6 +1851,14 @@ the <code>rn-forge-web</code> API conventions.</p>
 <td>Each item through the serializer, all or nothing. <code>200 {"orders": [...]}</code>.</td>
 </tr>
 <tr>
+<td><code>GET /orders:batchGet?ids=1&amp;ids=2</code></td>
+<td>The ids within <code>filter_queryset(get_queryset())</code>, serialized with the view's serializer. <code>200 {"orders": [...]}</code> in request order. No <code>ids</code>, or more than <code>transfer.max_rows</code>, is a 400; an id outside the filtered queryset is a 404 naming it.</td>
+</tr>
+<tr>
+<td><code>POST /orders:batchUpdate</code>, <code>{"requests": [{"id", "patch", "ifMatch"}]}</code></td>
+<td>Each <code>patch</code> is a JSON Merge Patch merged into the row and validated through the serializer, all or nothing, in one transaction. <code>200 {"orders": [...]}</code> in request order. A failed precondition is a 428, 400 or 412 at <code>/requests/&lt;i&gt;/ifMatch</code>; an invalid merge is a 422 at <code>/requests/&lt;i&gt;/patch/&lt;field&gt;</code>.</td>
+</tr>
+<tr>
 <td><code>POST /orders:batchDelete</code>, <code>{"ids": [...]}</code></td>
 <td>All or nothing, <code>204</code>. An id outside the filtered queryset is a 404 naming it.</td>
 </tr>
@@ -1867,8 +1875,14 @@ whole row.</p>
 <li><code>prepare_batch_create_item(item)</code> runs on each raw item before validation.</li>
 <li><code>validate_batch_create_item(item)</code> runs on each validated item, after
   <code>AuditFieldsViewMixin.prepare_create_data</code>.</li>
+<li><code>validate_batch_update_item(instance, data)</code> runs on each row and its validated data, after
+  <code>AuditFieldsViewMixin.prepare_update_data</code>.</li>
 <li><code>validate_batch_delete_instance(instance)</code> runs on each instance to delete.</li>
 </ul>
+<p><code>BatchUpdateMixin</code> checks <code>ifMatch</code> for a <code>VersionedModelMixin</code> row, and an unversioned model
+ignores it. Set <code>batch_update_requires_if_match = True</code> to make a missing <code>ifMatch</code> a 428, and
+<code>etag_codec</code> to change the validator format, as for <code>MergePatchMixin</code>. <code>BatchGetMixin</code> and
+<code>BatchUpdateMixin</code> answer under <code>batch_resource_name</code>, which they share with <code>BatchCreateMixin</code>.</p>
 <p>In an import resource the same check belongs in <code>before_import_row(row, **kwargs)</code>, where
 <code>kwargs["user"]</code> is the request user; raising there is reported as a row error.</p>
 <h2 id="committing-the-valid-rows">Committing the valid rows<a class="headerlink" href="#committing-the-valid-rows" title="Permanent link">&para;</a></h2>

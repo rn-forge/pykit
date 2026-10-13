@@ -1642,18 +1642,18 @@
 consumer declares a pinned direct URL to it:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 </code></pre></div>
 
 <p>Extras use the same form, with the extra before the <code>@</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 </code></pre></div>
 
 <p>or, from the command line:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django&quot;</span>
+<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django&quot;</span>
 </code></pre></div>
 
 <p>Base dependencies are Django, <code>rn-forge-commons</code> and <code>rn-forge-web</code>, each pinned to its own release

@@ -1872,9 +1872,9 @@
 
 
         <p>Keyset pagination emitting the AIP-158 envelope over the shared cursor codec.</p>
-<p>Rows are ordered by the first <code>orderBy</code> field and then the primary key, so
-the field need not be unique. Pagination is forward-only. Invalid tokens raise
-:class:<code>rn_forge.web.InvalidCursor</code>.</p>
+<p>Rows are ordered by every <code>orderBy</code> term and then the primary key, so a
+field need not be unique or non-null. Without <code>orderBy</code> the view's default
+ordering supplies the terms. Pagination is forward-only. Invalid tokens raise :class:<code>rn_forge.web.InvalidCursor</code>.</p>
 
 
 
@@ -1991,8 +1991,10 @@ the field need not be unique. Pagination is forward-only. Invalid tokens raise
         <p>AIP-132 <code>orderBy</code> (<code>displayName desc</code>) over the view's <code>ordering_fields</code>.</p>
 <p>List it in the view's <code>filter_backends</code>; :class:<code>CursorPagination</code>
 then pages in that order. <code>ordering_fields</code> holds the model's
-<code>snake_case</code> names. An unlisted or malformed term raises
-:class:<code>rn_forge.web.InvalidOrderBy</code>, as does more than one term.</p>
+<code>snake_case</code> names, and may be nullable or span a relation
+(<code>author__name</code>). The value is a comma-separated list of terms; rows whose
+value is <code>NULL</code> sort last in both directions. An unlisted or malformed term
+raises :class:<code>rn_forge.web.InvalidOrderBy</code>, as does a repeated field.</p>
 
 
 
