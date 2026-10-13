@@ -483,6 +483,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#merge-patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merge patch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partial-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partial responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-headers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -594,6 +616,34 @@
     
   
     Tabular export and import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft-delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
   
 
     
@@ -808,6 +858,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/health.html" class="md-nav__link">
         
   
@@ -972,6 +1106,28 @@
     <span class="md-ellipsis">
       
         Routes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merge-patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merge patch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partial-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partial responses
       
     </span>
   </a>
@@ -1184,6 +1340,62 @@ paginated component its own way too, <code>PaginatedOrderOutList</code>.</p>
 <p><code>pageSize</code> above the cap is clamped, never rejected — do not add a
 <code>Query(le=...)</code> alongside <code>page_params</code>; that is a 422 and a specification
 violation.</p>
+<h2 id="merge-patch">Merge patch<a class="headerlink" href="#merge-patch" title="Permanent link">&para;</a></h2>
+<p><code>merge_patch_body()</code> checks the media type and returns the raw body; <code>merge_into</code> parses it,
+merges it into the current resource and validates the result against the model.
+<code>merge_patch_openapi()</code> declares the request body. Declare <code>merge_patch_body()</code> before the
+<code>If-Match</code> dependency, so the media type answers first (415), and call <code>check_precondition</code>
+before <code>merge_into</code>, so a stale request is 412 whatever the body says.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Header</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_into</span><span class="p">,</span> <span class="n">merge_patch_body</span><span class="p">,</span> <span class="n">merge_patch_openapi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_precondition</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;/documents/</span><span class="si">{doc_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">openapi_extra</span><span class="o">=</span><span class="n">merge_patch_openapi</span><span class="p">())</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">documents_update</span><span class="p">(</span>
+    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">body</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">merge_patch_body</span><span class="p">()),</span>
+    <span class="n">if_match</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocumentOut</span><span class="p">:</span>
+    <span class="n">document</span> <span class="o">=</span> <span class="k">await</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+    <span class="n">check_precondition</span><span class="p">(</span><span class="n">if_match</span><span class="p">,</span> <span class="n">current_version</span><span class="o">=</span><span class="n">document</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">entity_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">merge_into</span><span class="p">(</span><span class="n">DocumentOut</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Use <code>require_if_match()</code> in place of the optional header to make it required (428). A <code>null</code> on
+a non-nullable field is a 422 that reads <code>This field may not be null.</code></p>
+<h2 id="partial-responses">Partial responses<a class="headerlink" href="#partial-responses" title="Permanent link">&para;</a></h2>
+<p><code>read_mask_param(Model)</code> is a dependency yielding the parsed <code>readMask</code>, or <code>None</code> for the whole
+resource. It reads the model's aliases, so a nested model, <code>Model | None</code> or <code>list[Model]</code> field
+can be reached with a dotted path and anything else is a leaf. A path that names nothing is a 400
+problem before the route runs. Apply the mask to the dumped body with <code>mask.apply(...)</code>, or to a
+page with <code>masked(page, mask)</code>. Return a <code>JSONResponse</code> and declare <code>response_model</code> for the
+documentation, because the pruned body no longer validates as the full model.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONResponse</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">masked</span><span class="p">,</span> <span class="n">read_mask_param</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">Page</span><span class="p">,</span> <span class="n">ReadMask</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/profiles/</span><span class="si">{profile_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">ProfileOut</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">profiles_get</span><span class="p">(</span>
+    <span class="n">profile_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">ReadMask</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">read_mask_param</span><span class="p">(</span><span class="n">ProfileOut</span><span class="p">))</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONResponse</span><span class="p">:</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">ProfileOut</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="k">await</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">profile_id</span><span class="p">))</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">JSONResponse</span><span class="p">(</span><span class="n">body</span> <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mask</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">body</span><span class="p">))</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/profiles&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">Page</span><span class="p">[</span><span class="n">ProfileOut</span><span class="p">])</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">profiles_list</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">ReadMask</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">read_mask_param</span><span class="p">(</span><span class="n">ProfileOut</span><span class="p">)),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONResponse</span><span class="p">:</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">Page</span><span class="p">[</span><span class="n">ProfileOut</span><span class="p">](</span><span class="n">items</span><span class="o">=</span><span class="k">await</span> <span class="n">repo</span><span class="o">.</span><span class="n">list</span><span class="p">(),</span> <span class="n">next_page_token</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">JSONResponse</span><span class="p">(</span><span class="n">masked</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">mask</span><span class="p">))</span>
+</code></pre></div>
+
+<p><code>batch_get_router</code> accepts <code>readMask</code> unless it is built with <code>read_mask=False</code>.</p>
 <h2 id="security-headers">Security headers<a class="headerlink" href="#security-headers" title="Permanent link">&para;</a></h2>
 <p><code>FastApiApp</code> installs the OWASP REST Security Cheat Sheet response headers by
 default (<code>AppConfig.security_headers</code>). <code>Strict-Transport-Security</code> is
@@ -1204,8 +1416,9 @@ and docs UI (<code>docs_url</code>) it already serves, plus readiness. Set
 
 <p><code>CorsPolicy.expose_headers</code> defaults to <code>rn_forge.web.EXPOSED_HEADERS</code> — the
 response headers this kit emits that a browser cannot read unless a CORS
-policy names them (<code>ETag</code>, <code>Link</code>, and so on). <code>traceresponse</code> needs no entry
-here — the OpenTelemetry response propagator exposes it itself.
+policy names them (<code>ETag</code>, <code>Link</code>, <code>Content-Disposition</code>, and so on).
+<code>traceresponse</code> needs no entry here — the OpenTelemetry response propagator
+exposes it itself.
 <code>allow_origins</code> has no default; naming them is the application's decision.
 <code>CorsPolicy(allow_credentials=True, allow_origins=("*",))</code> raises — browsers
 reject that combination.</p>

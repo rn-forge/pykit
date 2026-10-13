@@ -16,7 +16,7 @@
         <link rel="prev" href="openapi.html">
       
       
-        <link rel="next" href="health.html">
+        <link rel="next" href="merge_patch.html">
       
       
         
@@ -437,6 +437,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/soft-delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -747,6 +775,90 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1108,8 +1220,8 @@ proceeds with its normal 200 response; a non-<code>None</code> result is a
     <div class="doc doc-contents ">
 
         <p>Return a dependency yielding the parsed AIP-132 <code>orderBy</code> terms.</p>
-<p>A term outside <em>allowed</em>, a malformed one, or more than one term is a 400 before it reaches a
-query. Pass the result and the decoded cursor to
+<p>The value is a comma-separated list of terms. A term outside <em>allowed</em>, a malformed one, or a
+repeated field is a 400 before it reaches a query. Pass the result and the decoded cursor to
 :func:<code>rn_forge.web.check_cursor_order</code>, and the canonical order from
 :func:<code>rn_forge.web.format_order_by</code> to :func:<code>rn_forge.web.encode_cursor</code>.</p>
 
