@@ -808,6 +808,118 @@
   
   
     <li class="md-nav__item">
+      <a href="merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="operations.html" class="md-nav__link">
         
   
@@ -1828,7 +1940,7 @@ a response body is part of the contract and is compared exactly.</p>
 
 
 <h3 id="rn_forge.web.conformance.ConformanceArea" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceArea</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;concurrency&#39;</span><span class="p">,</span> <span class="s1">&#39;pagination&#39;</span><span class="p">,</span> <span class="s1">&#39;idempotency&#39;</span><span class="p">,</span> <span class="s1">&#39;health&#39;</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">,</span> <span class="s1">&#39;casing&#39;</span><span class="p">,</span> <span class="s1">&#39;tracing&#39;</span><span class="p">,</span> <span class="s1">&#39;deprecation&#39;</span><span class="p">,</span> <span class="s1">&#39;discovery&#39;</span><span class="p">,</span> <span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="s1">&#39;cors&#39;</span><span class="p">,</span> <span class="s1">&#39;transfer&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">,</span> <span class="s1">&#39;operations&#39;</span><span class="p">]</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceArea</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;concurrency&#39;</span><span class="p">,</span> <span class="s1">&#39;pagination&#39;</span><span class="p">,</span> <span class="s1">&#39;idempotency&#39;</span><span class="p">,</span> <span class="s1">&#39;health&#39;</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">,</span> <span class="s1">&#39;casing&#39;</span><span class="p">,</span> <span class="s1">&#39;tracing&#39;</span><span class="p">,</span> <span class="s1">&#39;deprecation&#39;</span><span class="p">,</span> <span class="s1">&#39;discovery&#39;</span><span class="p">,</span> <span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="s1">&#39;cors&#39;</span><span class="p">,</span> <span class="s1">&#39;transfer&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">,</span> <span class="s1">&#39;operations&#39;</span><span class="p">,</span> <span class="s1">&#39;patch&#39;</span><span class="p">,</span> <span class="s1">&#39;read-mask&#39;</span><span class="p">,</span> <span class="s1">&#39;soft-delete&#39;</span><span class="p">]</span></code>
 
 <a href="#rn_forge.web.conformance.ConformanceArea" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1948,7 +2060,7 @@ export). When set, :attr:<code>expect_body</code> is not compared.</p>
 
 
 <h3 id="rn_forge.web.conformance.RequestSpec" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">RequestSpec</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">query</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">body</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">RequestSpec</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">query</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]](),</span> <span class="n">body</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -1963,7 +2075,8 @@ export). When set, :attr:<code>expect_body</code> is not compared.</p>
 
         <p>The request a driver must issue.</p>
 <p><code>path</code> is relative to whatever base the driver mounts the fixture app
-at, and always begins with <code>/</code>.</p>
+at, and always begins with <code>/</code>. A <code>query</code> value that is a tuple is a
+repeated parameter, one occurrence per item.</p>
 
 
 
@@ -2169,7 +2282,7 @@ a response body is part of the contract and is compared exactly.</p>
 
 
 <h3 id="rn_forge.web.conformance.types.ConformanceArea" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceArea</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;concurrency&#39;</span><span class="p">,</span> <span class="s1">&#39;pagination&#39;</span><span class="p">,</span> <span class="s1">&#39;idempotency&#39;</span><span class="p">,</span> <span class="s1">&#39;health&#39;</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">,</span> <span class="s1">&#39;casing&#39;</span><span class="p">,</span> <span class="s1">&#39;tracing&#39;</span><span class="p">,</span> <span class="s1">&#39;deprecation&#39;</span><span class="p">,</span> <span class="s1">&#39;discovery&#39;</span><span class="p">,</span> <span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="s1">&#39;cors&#39;</span><span class="p">,</span> <span class="s1">&#39;transfer&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">,</span> <span class="s1">&#39;operations&#39;</span><span class="p">]</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceArea</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;concurrency&#39;</span><span class="p">,</span> <span class="s1">&#39;pagination&#39;</span><span class="p">,</span> <span class="s1">&#39;idempotency&#39;</span><span class="p">,</span> <span class="s1">&#39;health&#39;</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">,</span> <span class="s1">&#39;casing&#39;</span><span class="p">,</span> <span class="s1">&#39;tracing&#39;</span><span class="p">,</span> <span class="s1">&#39;deprecation&#39;</span><span class="p">,</span> <span class="s1">&#39;discovery&#39;</span><span class="p">,</span> <span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="s1">&#39;cors&#39;</span><span class="p">,</span> <span class="s1">&#39;transfer&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">,</span> <span class="s1">&#39;operations&#39;</span><span class="p">,</span> <span class="s1">&#39;patch&#39;</span><span class="p">,</span> <span class="s1">&#39;read-mask&#39;</span><span class="p">,</span> <span class="s1">&#39;soft-delete&#39;</span><span class="p">]</span></code>
 
 <a href="#rn_forge.web.conformance.types.ConformanceArea" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -2289,7 +2402,7 @@ export). When set, :attr:<code>expect_body</code> is not compared.</p>
 
 
 <h3 id="rn_forge.web.conformance.types.RequestSpec" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">RequestSpec</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">query</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">body</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">RequestSpec</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">query</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]](),</span> <span class="n">body</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -2304,7 +2417,8 @@ export). When set, :attr:<code>expect_body</code> is not compared.</p>
 
         <p>The request a driver must issue.</p>
 <p><code>path</code> is relative to whatever base the driver mounts the fixture app
-at, and always begins with <code>/</code>.</p>
+at, and always begins with <code>/</code>. A <code>query</code> value that is a tuple is a
+repeated parameter, one occurrence per item.</p>
 
 
 
@@ -2402,7 +2516,7 @@ apply without knowing whether the table's expectation was already redacted.</p>
 
 
 <h3 id="rn_forge.web.conformance.cases.ORDERED_PAGE_1_NEXT_TOKEN" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">ORDERED_PAGE_1_NEXT_TOKEN</span> <span class="o">=</span> <span class="n">encode_cursor</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;id desc&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">ORDERED_PAGE_1_NEXT_TOKEN</span> <span class="o">=</span> <span class="n">encode_cursor</span><span class="p">((</span><span class="s1">&#39;2&#39;</span><span class="p">,),</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">_ORDER_ID_DESC</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>

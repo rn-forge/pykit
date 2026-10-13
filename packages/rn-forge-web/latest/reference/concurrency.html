@@ -963,6 +963,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.concurrency.check_item_precondition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;check_item_precondition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.concurrency.check_precondition" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1013,6 +1024,118 @@
     
   
     Pagination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
   
 
     
@@ -1462,6 +1585,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.concurrency.check_item_precondition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;check_item_precondition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.concurrency.check_precondition" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1674,7 +1808,7 @@ and <code>If-Match: *</code> only.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
+                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1767,7 +1901,7 @@ relaxation is intentional.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
+                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1899,6 +2033,169 @@ catch a precondition replayed from a different entity; prefer
 <div class="doc doc-object doc-function">
 
 
+<h3 id="rn_forge.web.concurrency.check_item_precondition" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">check_item_precondition</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">current_version</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span></code>
+
+<a href="#rn_forge.web.concurrency.check_item_precondition" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Raise unless a <code>:batchUpdate</code> item's <code>ifMatch</code> matches the current state.</p>
+<p>Checks <code>item.if_match</code> as :func:<code>check_precondition</code> checks an
+<code>If-Match</code> header, and raises the same exception for the same input,
+with an <code>errors</code> entry pointing at <code>/requests/&lt;index&gt;/ifMatch</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>item</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              BatchUpdateItem(index, id, patch, if_match)
+
+  
+      dataclass
+   (rn_forge.web.transfer.BatchUpdateItem)" href="transfer.html#rn_forge.web.transfer.BatchUpdateItem">BatchUpdateItem</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The item to check.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_version</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The entity's current version.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>entity_id</code>
+            </td>
+            <td>
+                  <code><span title="object">object</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The entity's id, compared when the codec carries one.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>codec</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ETagCodec (rn_forge.web.concurrency.ETagCodec)" href="#rn_forge.web.concurrency.ETagCodec">ETagCodec</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator format.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>required</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>When <code>True</code>, an item without <code>ifMatch</code> is an error.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              PreconditionRequired(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.PreconditionRequired)" href="exceptions.html#rn_forge.web.exceptions.PreconditionRequired">PreconditionRequired</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The item has no <code>ifMatch</code> and <em>required</em>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The <code>ifMatch</code> is unparseable.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              VersionConflict(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.VersionConflict)" href="exceptions.html#rn_forge.web.exceptions.VersionConflict">VersionConflict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The version, or the entity id, does not match.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="rn_forge.web.concurrency.check_precondition" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">check_precondition</span><span class="p">(</span><span class="n">raw_if_match</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">current_version</span><span class="p">,</span> <span class="n">entity_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">codec</span><span class="o">=</span><span class="n">DEFAULT_CODEC</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
@@ -2023,7 +2320,7 @@ preconditions mandatory is the caller's choice, per route.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="              PreconditionRequired(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.PreconditionRequired)" href="exceptions.html#rn_forge.web.exceptions.PreconditionRequired">PreconditionRequired</a></code>
+                  <code><a class="autorefs autorefs-internal" title="              PreconditionRequired(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.PreconditionRequired)" href="exceptions.html#rn_forge.web.exceptions.PreconditionRequired">PreconditionRequired</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2033,7 +2330,7 @@ preconditions mandatory is the caller's choice, per route.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
+                  <code><a class="autorefs autorefs-internal" title="              MalformedPrecondition(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.MalformedPrecondition)" href="exceptions.html#rn_forge.web.exceptions.MalformedPrecondition">MalformedPrecondition</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2043,7 +2340,7 @@ preconditions mandatory is the caller's choice, per route.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="              VersionConflict(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.VersionConflict)" href="exceptions.html#rn_forge.web.exceptions.VersionConflict">VersionConflict</a></code>
+                  <code><a class="autorefs autorefs-internal" title="              VersionConflict(*message_args, errors=None, **error_data) (rn_forge.web.exceptions.VersionConflict)" href="exceptions.html#rn_forge.web.exceptions.VersionConflict">VersionConflict</a></code>
             </td>
             <td>
               <div class="doc-md-description">

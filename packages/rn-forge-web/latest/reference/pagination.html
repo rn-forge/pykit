@@ -16,7 +16,7 @@
         <link rel="prev" href="concurrency.html">
       
       
-        <link rel="next" href="operations.html">
+        <link rel="next" href="merge_patch.html">
       
       
         
@@ -885,6 +885,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.pagination.SortValue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;SortValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.pagination.Cursor" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1020,6 +1031,118 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1355,6 +1478,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.pagination.SortValue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;SortValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.pagination.Cursor" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1611,6 +1745,28 @@ reject an oversized page size with a 422 where AIP-158 clamps.</p>
 
 </div>
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="rn_forge.web.pagination.SortValue" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">SortValue</span> <span class="o">=</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#rn_forge.web.pagination.SortValue" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One sort value in a page token, as its JSON type; dates are ISO 8601 strings.</p>
+
+    </div>
+
+</div>
+
 
 
 <div class="doc doc-object doc-class">
@@ -1618,7 +1774,7 @@ reject an oversized page size with a 422 where AIP-158 clamps.</p>
 
 
 <h3 id="rn_forge.web.pagination.Cursor" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Cursor</span><span class="p">(</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Cursor</span><span class="p">(</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -1632,10 +1788,11 @@ reject an oversized page size with a 422 where AIP-158 clamps.</p>
 
 
         <p>The decoded contents of a page token.</p>
-<p><code>sort_key</code> is the value of the column the query orders by; <code>entity_id</code>
-is the tiebreaker that makes the ordering total. Together they are the
-keyset the next page resumes from. <code>order_by</code> is the canonical
-<code>orderBy</code> the token was issued for, empty for the endpoint's default order.</p>
+<p><code>sort_keys</code> holds the last row's value for each <code>orderBy</code> term, in term
+order; <code>entity_id</code> is the tiebreaker that makes the ordering total.
+Together they are the keyset the next page resumes from. <code>order_by</code> is
+the canonical <code>orderBy</code> the token was issued for, empty for the
+endpoint's default order, whose <code>sort_keys</code> is empty.</p>
 
 
 
@@ -1813,7 +1970,8 @@ keyset the next page resumes from. <code>order_by</code> is the canonical
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The token's order differs from the request's.</p>
+                <p>The token's order differs from the request's, or it
+holds a different number of sort values than there are terms.</p>
               </div>
             </td>
           </tr>
@@ -1944,8 +2102,8 @@ means "unspecified" and yields <em>default</em>.</p>
 
         <p>Decode a page token.</p>
 <p>Every malformed input class is caught — not base64, base64 of non-JSON,
-JSON of a non-object, JSON missing a key. Missing one of them turns a
-tampered token into a 500.</p>
+JSON of a non-object, JSON missing a key, a sort-value list that is not a
+list of scalars. Missing one of them turns a tampered token into a 500.</p>
 
 
 <p><span class="doc-section-title">Raises:</span></p>
@@ -1979,7 +2137,7 @@ tampered token into a 500.</p>
 
 
 <h3 id="rn_forge.web.pagination.encode_cursor" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">encode_cursor</span><span class="p">(</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">encode_cursor</span><span class="p">(</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
 
 <a href="#rn_forge.web.pagination.encode_cursor" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1988,7 +2146,8 @@ tampered token into a 500.</p>
 
         <p>Encode a keyset position as an opaque page token.</p>
 <p>URL-safe base64 over compact JSON — small, and safe in a query string
-without further escaping. <em>order_by</em> is the canonical ordering from
+without further escaping. <em>sort_keys</em> holds one value per <code>orderBy</code> term
+and keeps each value's JSON type. <em>order_by</em> is the canonical ordering from
 :func:<code>format_order_by</code>; it is omitted from the token when empty.</p>
 
 
@@ -2139,9 +2298,8 @@ on an endpoint that cannot build an absolute URL.</p>
 
         <p>Parse an AIP-132 <code>orderBy</code> value such as <code>displayName desc</code>.</p>
 <p>A term is a field name optionally followed by <code>asc</code> or <code>desc</code> (default
-<code>asc</code>). One term is accepted: the page token holds one sort value, so a
-list cannot yet be paged by several. The result is a tuple so that several
-terms can be returned without changing the signature.</p>
+<code>asc</code>). Terms are comma-separated, whitespace around a term is ignored,
+and a field may appear only once.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2211,7 +2369,7 @@ the wire.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The single term, or an empty tuple when <em>raw</em> is blank.</p>
+                <p>The terms in order, or an empty tuple when <em>raw</em> is blank.</p>
               </div>
             </td>
           </tr>
@@ -2234,8 +2392,8 @@ the wire.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><em>raw</em> has more than one term, or the term is malformed
-or names a field outside <em>allowed</em>.</p>
+                <p>A term is malformed (including an empty one), names a
+field outside <em>allowed</em>, or repeats an earlier term's field.</p>
               </div>
             </td>
           </tr>

@@ -877,6 +877,118 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/operations.html" class="md-nav__link">
         
   
@@ -1224,6 +1336,11 @@
 <td>No shared natural-key mixin is supplied. An application declares its own key and constraint.</td>
 </tr>
 <tr>
+<td>Soft delete</td>
+<td><code>SoftDeleteModelMixin</code> adds a nullable, indexed <code>delete_time</code>, <code>soft_delete(actor=...)</code>, <code>undelete(actor=...)</code> and a <code>.live()</code> / <code>.deleted()</code> queryset.</td>
+<td><code>SoftDeleteMixin</code> adds the same <code>delete_time</code>; <code>live()</code>, <code>soft_delete()</code> and <code>undelete()</code> act on it.</td>
+</tr>
+<tr>
 <td>Record status</td>
 <td><code>BaseModel.status</code> uses Django's <code>Status</code> values: <code>Active</code>, <code>Inactive</code>, <code>Error</code>, <code>Deleted</code>, and <code>Expired</code>.</td>
 <td>No status mixin or shared status enumeration is supplied.</td>
@@ -1232,10 +1349,11 @@
 </table>
 <p>These pieces share field names where shown. They do not create a shared model base, repository protocol, or serializer. Django and SQLAlchemy retain their own persistence and transaction models.</p>
 <h2 id="application-design-guidance">Application design guidance<a class="headerlink" href="#application-design-guidance" title="Permanent link">&para;</a></h2>
-<p>An application may use a stable natural key for fixtures and cross-environment references. It may choose a status field and a soft-delete policy. Those choices require application-specific query, update and authorization behavior. The packages do not enforce a universal three-state lifecycle, automatic filtering of deleted rows, or reversible deletion.</p>
+<p>An application may use a stable natural key for fixtures and cross-environment references. It may choose a status field. That choice requires application-specific query, update and authorization behavior, and the packages do not enforce a universal lifecycle.</p>
+<p>Soft delete is a nullable <code>delete_time</code> column, never a status value, so that it can be served as AIP-164's <code>deleteTime</code> and survive later writes. Neither package filters deleted rows implicitly: a query asks for live rows with <code>.live()</code> on Django or <code>live()</code> on SQLAlchemy, and a read of one resource can still return a deleted row. Purging is the application's own authorized operation. The wire rules are §21 of the API conventions.</p>
 <p>Keep persisted timestamps timezone-aware and use UTC in application code. <code>rn-forge-sqlalchemy.UTCDateTime</code> enforces UTC normalization for its mapped timestamps. Check the Django project's timezone settings when using <code>BaseModel</code>.</p>
 <p>The <code>version</code> field is a useful concurrency convention. Use Django's <code>VersionedModelMixin.save()</code> or SQLAlchemy's <code>update_versioned()</code> where an endpoint promises conditional writes. Bulk writes and arbitrary SQL are outside those guarantees.</p>
-<p>This page records implemented guarantees and optional advice. A stronger cross-package model requirement would need a separate feature decision; SQLAlchemy status, natural keys, and soft delete are not required here.</p>
+<p>This page records implemented guarantees and optional advice. A stronger cross-package model requirement would need a separate feature decision; SQLAlchemy status and natural keys are not required here.</p>
 
 
 
