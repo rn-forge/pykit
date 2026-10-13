@@ -14,7 +14,7 @@ import base64
 import json
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Final, cast
 from urllib.parse import quote
 
 from pydantic import ConfigDict, Field
@@ -29,6 +29,7 @@ __all__ = [
     "Cursor",
     "OrderField",
     "Page",
+    "SortValue",
     "check_cursor_order",
     "clamp_page_size",
     "decode_cursor",
@@ -47,6 +48,9 @@ DEFAULT_PAGE_TOKEN_PARAM: Final = "pageToken"
 ORDER_BY_PARAM: Final = "orderBy"
 """The query parameter carrying the sort order."""
 
+SortValue = str | int | float | bool | None
+"""One sort value in a page token, as its JSON type; dates are ISO 8601 strings."""
+
 _SORT_KEY: Final = "k"
 _ENTITY_ID: Final = "id"
 _ORDER_BY: Final = "o"
@@ -56,13 +60,14 @@ _ORDER_BY: Final = "o"
 class Cursor:
     """The decoded contents of a page token.
 
-    ``sort_key`` is the value of the column the query orders by; ``entity_id``
-    is the tiebreaker that makes the ordering total. Together they are the
-    keyset the next page resumes from. ``order_by`` is the canonical
-    ``orderBy`` the token was issued for, empty for the endpoint's default order.
+    ``sort_keys`` holds the last row's value for each ``orderBy`` term, in term
+    order; ``entity_id`` is the tiebreaker that makes the ordering total.
+    Together they are the keyset the next page resumes from. ``order_by`` is
+    the canonical ``orderBy`` the token was issued for, empty for the
+    endpoint's default order, whose ``sort_keys`` is empty.
     """
 
-    sort_key: str
+    sort_keys: tuple[SortValue, ...]
     entity_id: str
     order_by: str = ""
 
@@ -81,9 +86,8 @@ def parse_order_by(
     """Parse an AIP-132 ``orderBy`` value such as ``displayName desc``.
 
     A term is a field name optionally followed by ``asc`` or ``desc`` (default
-    ``asc``). One term is accepted: the page token holds one sort value, so a
-    list cannot yet be paged by several. The result is a tuple so that several
-    terms can be returned without changing the signature.
+    ``asc``). Terms are comma-separated, whitespace around a term is ignored,
+    and a field may appear only once.
 
     Args:
         raw: The query parameter value. ``None`` or blank yields no terms.
@@ -91,21 +95,16 @@ def parse_order_by(
             the wire.
 
     Returns:
-        The single term, or an empty tuple when *raw* is blank.
+        The terms in order, or an empty tuple when *raw* is blank.
 
     Raises:
-        InvalidOrderBy: *raw* has more than one term, or the term is malformed
-            or names a field outside *allowed*.
+        InvalidOrderBy: A term is malformed (including an empty one), names a
+            field outside *allowed*, or repeats an earlier term's field.
     """
     if raw is None or not raw.strip():
         return ()
-    chunks = raw.split(",")
-    if len(chunks) > 1:
-        raise InvalidOrderBy(
-            f"orderBy accepts one field; got {len(chunks)}", error_code=400
-        )
     terms: list[OrderField] = []
-    for chunk in chunks:
+    for chunk in raw.split(","):
         parts = chunk.split()
         if len(parts) not in (1, 2) or (
             len(parts) == 2 and parts[1] not in ("asc", "desc")
@@ -118,6 +117,10 @@ def parse_order_by(
             raise InvalidOrderBy(
                 f"Cannot order by {name!r}; allowed: {', '.join(sorted(allowed))}",
                 error_code=400,
+            )
+        if any(t.field == name for t in terms):
+            raise InvalidOrderBy(
+                f"orderBy names {name!r} more than once", error_code=400
             )
         terms.append(
             OrderField(name, descending=len(parts) == 2 and parts[1] == "desc")
@@ -134,20 +137,26 @@ def check_cursor_order(cursor: Cursor, terms: Collection[OrderField]) -> None:
     """Reject a page token issued for a different ordering than *terms*.
 
     Raises:
-        InvalidCursor: The token's order differs from the request's.
+        InvalidCursor: The token's order differs from the request's, or it
+            holds a different number of sort values than there are terms.
     """
     if cursor.order_by != format_order_by(terms):
         raise InvalidCursor("pageToken does not match orderBy", error_code=400)
+    if len(cursor.sort_keys) != len(terms):
+        raise InvalidCursor("Malformed page token", error_code=400)
 
 
-def encode_cursor(sort_key: str, entity_id: str, order_by: str = "") -> str:
+def encode_cursor(
+    sort_keys: tuple[SortValue, ...], entity_id: str, order_by: str = ""
+) -> str:
     """Encode a keyset position as an opaque page token.
 
     URL-safe base64 over compact JSON — small, and safe in a query string
-    without further escaping. *order_by* is the canonical ordering from
+    without further escaping. *sort_keys* holds one value per ``orderBy`` term
+    and keeps each value's JSON type. *order_by* is the canonical ordering from
     :func:`format_order_by`; it is omitted from the token when empty.
     """
-    fields = {_SORT_KEY: sort_key, _ENTITY_ID: entity_id}
+    fields: dict[str, Any] = {_SORT_KEY: list(sort_keys), _ENTITY_ID: entity_id}
     if order_by:
         fields[_ORDER_BY] = order_by
     payload = json.dumps(fields, separators=(",", ":"), sort_keys=True)
@@ -158,8 +167,8 @@ def decode_cursor(raw: str) -> Cursor:
     """Decode a page token.
 
     Every malformed input class is caught — not base64, base64 of non-JSON,
-    JSON of a non-object, JSON missing a key. Missing one of them turns a
-    tampered token into a 500.
+    JSON of a non-object, JSON missing a key, a sort-value list that is not a
+    list of scalars. Missing one of them turns a tampered token into a 500.
 
     Raises:
         InvalidCursor: *raw* is not a well-formed page token.
@@ -167,8 +176,14 @@ def decode_cursor(raw: str) -> Cursor:
     try:
         decoded = base64.urlsafe_b64decode(raw.encode())
         payload = json.loads(decoded)
+        sort_keys = payload[_SORT_KEY]
+        if not isinstance(sort_keys, list) or not all(
+            v is None or isinstance(v, str | int | float | bool)
+            for v in cast(list[object], sort_keys)
+        ):
+            raise ValueError("sort values are not a list of scalars")
         return Cursor(
-            sort_key=str(payload[_SORT_KEY]),
+            sort_keys=tuple(cast(list[SortValue], sort_keys)),
             entity_id=str(payload[_ENTITY_ID]),
             order_by=str(payload.get(_ORDER_BY, "")),
         )

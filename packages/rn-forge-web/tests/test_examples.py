@@ -21,6 +21,7 @@ import json
 import pathlib
 import re
 import sys
+from urllib.parse import urlencode
 
 import pytest
 from assertpy import assert_that
@@ -52,7 +53,7 @@ def asgi_app():
 
 async def call(app, case):
     """Drive one conformance case through an ASGI app and collect the response."""
-    query = "&".join(f"{k}={v}" for k, v in case.request.query.items()).encode()
+    query = urlencode(dict(case.request.query), doseq=True).encode()
     headers = dict(case.request.headers)
     if case.request.body is None:
         body = b""

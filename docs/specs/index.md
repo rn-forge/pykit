@@ -7,6 +7,7 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Release | Status | Features |
 | --- | --- | --- |
+| [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | in progress | 8 Closed |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |
 | [Release 1 — the first coordinated tags](../releases/release-1/index.md) | shipped (2026-09-28) | 9 Closed |
 
@@ -18,7 +19,6 @@ Features with no Iteration, by State and epic.
 
 | Epic | Features |
 | --- | --- |
-| [E12 — HTTP contract extensions](epics/E12-http-contract-extensions/index.md) | F12.12, [F12.14](epics/E12-http-contract-extensions/F12.14-merge-patch.md), [F12.15](epics/E12-http-contract-extensions/F12.15-fastapi-resource-operations.md), [F12.16](epics/E12-http-contract-extensions/F12.16-expose-content-disposition.md) |
 | [E13 — Authentication and authorization](epics/E13-auth/index.md) | [F13.1](epics/E13-auth/F13.1-auth-design.md) |
 
 ### Deferred
@@ -28,7 +28,6 @@ Features with no Iteration, by State and epic.
 | [E6 — Consumer reuse](epics/E6-consumer-reuse/index.md) | [F6.1](epics/E6-consumer-reuse/F6.1-log-redaction.md), [F6.2](epics/E6-consumer-reuse/F6.2-sse.md) | the owner schedules either feature for a release |
 | [E7 — Azure adapters](epics/E7-azure-adapters/index.md) | F7.1, F7.2, F7.3, F7.4, F7.5, F7.6, F7.7, F7.8 | the owner schedules the package and settles its namespace |
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | — | the owner schedules it with a concrete framework template to generate |
-| [E12 — HTTP contract extensions](epics/E12-http-contract-extensions/index.md) | F12.1, F12.2, F12.3, F12.9 | Per feature; see the epic. |
 <!-- board:end -->
 
 E8 — Django scope and auth was retired on 2026-09-28. Its auth review is [E13](epics/E13-auth/index.md); its package-boundary question is the [django-optional-areas](ideas.md#django-optional-areas) idea.

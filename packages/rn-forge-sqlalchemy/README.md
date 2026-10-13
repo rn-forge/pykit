@@ -35,8 +35,8 @@ as a pinned direct URL:
 
 ```toml
 dependencies = [
-  "rn-forge-sqlalchemy @ git+https://github.com/rn-forge/pykit@rn-forge-sqlalchemy-v0.1.0#subdirectory=packages/rn-forge-sqlalchemy",
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-sqlalchemy @ git+https://github.com/rn-forge/pykit@rn-forge-sqlalchemy-v0.2.0#subdirectory=packages/rn-forge-sqlalchemy",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 ```
 

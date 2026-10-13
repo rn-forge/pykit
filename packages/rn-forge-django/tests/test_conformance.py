@@ -9,7 +9,7 @@ If a case needs more than a line or two over them, the adapter is missing.
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
 
-There is no `pytest.skip` in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision Django cannot honour and belongs in the web plan.
 """
@@ -34,6 +34,7 @@ from import_export import resources as ie_resources
 from import_export import widgets as ie_widgets
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView
+from rest_framework.routers import SimpleRouter
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,11 +48,20 @@ from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
 from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.drf.views.mixins import SoftDeleteMixin
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
+    BatchGetMixin,
+    BatchUpdateMixin,
     ResourceExportMixin,
     ResourceImportMixin,
+)
+from rn_forge.django.models import (
+    BaseModel,
+    SoftDeleteModelMixin,
+    VersionedModelMixin,
 )
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
@@ -74,6 +84,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
 BOUNDARY = "conformance-boundary"
 ITEM_VERSION = 7
+CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
@@ -89,6 +100,162 @@ class _ConformanceItem(models.Model):
 
     class Meta:
         app_label = "rn_forge_django"
+
+
+class _ConformancePerson(models.Model):
+    id = models.CharField(primary_key=True, max_length=10)
+    team = models.CharField(max_length=10)
+    score = models.IntegerField(null=True)
+
+    class Meta:
+        app_label = "rn_forge_django"
+
+
+class _ConformanceDocument(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    name = models.CharField(max_length=40)
+    note = models.CharField(max_length=40, null=True, blank=True)
+    tags = models.JSONField(default=list)
+    settings = models.JSONField(default=dict)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+
+
+class _DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceDocument
+        fields = ["id", "name", "note", "tags", "settings"]
+        read_only_fields = ["id"]
+
+
+class _Documents(BaseModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceDocument.objects.all()
+    serializer_class = _DocumentSerializer
+    etag_codec = EntityVersionETagCodec()
+
+
+class _ConformanceProfile(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    display_name = models.CharField(max_length=40)
+    address = models.JSONField(default=dict)
+    phones = models.JSONField(default=list)
+    settings = models.JSONField(default=dict)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+
+
+class _AddressSerializer(serializers.Serializer):
+    city = serializers.CharField()
+    postcode = serializers.CharField()
+
+
+class _PhoneSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    number = serializers.CharField()
+
+
+class _ProfileSerializer(serializers.ModelSerializer):
+    address = _AddressSerializer()
+    phones = _PhoneSerializer(many=True)
+
+    class Meta:
+        model = _ConformanceProfile
+        fields = ["id", "display_name", "address", "phones", "settings"]
+        read_only_fields = ["id"]
+
+
+class _Profiles(BaseModelViewSet):
+    # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
+    renderer_classes = [CamelCaseJSONRenderer]
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceProfile.objects.all()
+    serializer_class = _ProfileSerializer
+    pagination_class = CursorPagination
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id"]
+    etag_codec = EntityVersionETagCodec()
+
+
+class _ConformanceNote(SoftDeleteModelMixin, VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    text = models.CharField(max_length=40)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+        verbose_name = "note"
+        verbose_name_plural = "notes"
+
+    def get_delete_time(self):
+        return CLOCK
+
+
+class _NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceNote
+        fields = ["id", "text", "delete_time"]
+        read_only_fields = ["id", "delete_time"]
+
+
+class _Notes(SoftDeleteMixin, BatchDeleteMixin, BaseModelViewSet):
+    renderer_classes = [CamelCaseJSONRenderer]
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceNote.objects.all()
+    serializer_class = _NoteSerializer
+    pagination_class = CursorPagination
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id"]
+    etag_codec = EntityVersionETagCodec()
+
+
+class _ConformanceBook(VersionedModelMixin, BaseModel):
+    id = models.CharField(primary_key=True, max_length=10)
+    name = models.CharField(max_length=40)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django"
+        verbose_name = "book"
+        verbose_name_plural = "books"
+
+
+class _BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformanceBook
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
+
+
+class _Books(BatchGetMixin, BatchUpdateMixin, BaseModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformanceBook.objects.order_by("id")
+    serializer_class = _BookSerializer
+    etag_codec = EntityVersionETagCodec()
+
+
+class _CappedBooks(_Books):
+    def dispatch(self, request, *args, **kwargs):
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            return super().dispatch(request, *args, **kwargs)
+
+
+_books = CustomMethodRouter(trailing_slash=False)
+_books.register("conformance/books", _Books, basename="books")
+_books.register("conformance/capped-books", _CappedBooks, basename="capped-books")
+
+_notes = CustomMethodRouter(trailing_slash=False)
+_notes.register("conformance/notes", _Notes, basename="notes")
+
+_profiles = SimpleRouter(trailing_slash=False)
+_profiles.register("conformance/profiles", _Profiles, basename="profiles")
+
+_documents = SimpleRouter(trailing_slash=False)
+_documents.register("conformance/documents", _Documents, basename="documents")
 
 
 def _next_order_id():
@@ -154,6 +321,15 @@ class _Orders(
     export_resource_class = _OrderExport
     import_resource_class = _OrderImport
 
+    def validate_batch_create_item(self, item):
+        return "You may not create this order." if item["name"] == "forbidden" else None
+
+
+class _Capped(_Orders):
+    def dispatch(self, request, *args, **kwargs):
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            return super().dispatch(request, *args, **kwargs)
+
 
 class _OverCap(_Orders):
     def filter_queryset(self, queryset):
@@ -181,6 +357,7 @@ class _OrderCount(APIView):
 
 _orders = CustomMethodRouter(trailing_slash=False)
 _orders.register("conformance/orders", _Orders, basename="orders")
+_orders.register("conformance/capped", _Capped, basename="capped")
 
 
 class _AnyToken:
@@ -245,6 +422,27 @@ class _ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformanceItem
         fields = ["id"]
+
+
+class _PersonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = _ConformancePerson
+        fields = ["id", "team", "score"]
+
+
+class _FivePerPage(CursorPagination):
+    page_size = 5
+    max_page_size = 5
+
+
+class _People(ListAPIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = _ConformancePerson.objects.all()
+    serializer_class = _PersonSerializer
+    pagination_class = _FivePerPage
+    filter_backends = [OrderByFilter]
+    ordering_fields = ["id", "team", "score"]
 
 
 class _TwoPerPage(CursorPagination):
@@ -373,6 +571,7 @@ urlpatterns = [
     path("conformance/validate", _Validate.as_view()),
     path("conformance/items/<str:pk>", _Item.as_view()),
     path("conformance/items", _Items.as_view()),
+    path("conformance/people", _People.as_view()),
     path("conformance/charges", _Charges.as_view()),
     path("conformance/readyz", _readyz),
     path("conformance/livez", liveness_view),
@@ -387,6 +586,10 @@ urlpatterns = [
     path("conformance/orders/over-cap", _over_cap),
     path("conformance/orders/count", _OrderCount.as_view()),
     *_orders.urls,
+    *_documents.urls,
+    *_profiles.urls,
+    *_notes.urls,
+    *_books.urls,
     path("conformance/legacy", _Legacy.as_view()),
     path("conformance/stamped", _Stamped.as_view()),
     path("conformance/exports", _StartExport.as_view()),
@@ -433,9 +636,33 @@ WIRING = {
 }
 
 
+def _seed_notes(model):
+    for pk, text, delete_time, version in [
+        ("1", "first", None, 1),
+        ("2", "second", DEPRECATED_AT, 2),
+        ("3", "third", None, 1),
+    ]:
+        model.objects.create(
+            pk=pk,
+            text=text,
+            delete_time=delete_time,
+            version=version,
+            created_by="t",
+            updated_by="t",
+        )
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(_ConformanceItem, _Order)
+    create_tables(
+        _ConformanceItem,
+        _ConformancePerson,
+        _Order,
+        _ConformanceDocument,
+        _ConformanceBook,
+        _ConformanceProfile,
+        _ConformanceNote,
+    )
 
 
 @pytest.fixture
@@ -443,14 +670,48 @@ def client():
     """A fresh application per case: rows reset, and the cache (the store) cleared by conftest."""
     for pk in ("1", "2", "3"):
         _ConformanceItem.objects.create(pk=pk)
+    for pk, team, score in [
+        ("1", "a", 10),
+        ("2", "b", None),
+        ("3", "a", None),
+        ("4", "b", 5),
+        ("5", "a", 10),
+    ]:
+        _ConformancePerson.objects.create(pk=pk, team=team, score=score)
     _Order.objects.create(pk="1", name="widget")
+    _ConformanceDocument.objects.create(
+        pk="1",
+        name="widget",
+        note="fragile",
+        tags=["a", "b"],
+        settings={"color": "red", "size": "L"},
+    )
+    for pk, name in [("1", "alpha"), ("2", "beta"), ("3", "gamma")]:
+        _ConformanceBook.objects.create(pk=pk, name=name)
+    _ConformanceProfile.objects.create(
+        pk="1",
+        display_name="Ada",
+        address={"city": "London", "postcode": "N1"},
+        phones=[{"kind": "home", "number": "1"}, {"kind": "work", "number": "2"}],
+        settings={"theme": "dark"},
+    )
+    _ConformanceProfile.objects.create(
+        pk="2",
+        display_name="Grace",
+        address={"city": "Arlington", "postcode": "22201"},
+    )
     with override_settings(**WIRING):
+        _seed_notes(_ConformanceNote)
         yield Client(raise_request_exception=False)
 
 
 def issue(client, case):
     spec = case.request
-    target = f"{spec.path}?{urlencode(dict(spec.query))}" if spec.query else spec.path
+    target = (
+        f"{spec.path}?{urlencode(dict(spec.query), doseq=True)}"
+        if spec.query
+        else spec.path
+    )
     headers = dict(spec.headers)
     content_type = "application/json"
     if spec.body is None:
@@ -462,6 +723,7 @@ def issue(client, case):
             BOUNDARY, {k: ContentFile(v, name="file.csv") for k, v in spec.body.items()}
         )
     else:
+        content_type = headers.pop("Content-Type", content_type)
         data = json.dumps(spec.body)
     return client.generic(
         spec.method, target, data=data, content_type=content_type, headers=headers

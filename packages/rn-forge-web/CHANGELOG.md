@@ -4,6 +4,56 @@ Notable changes to `rn-forge-web`, newest first, in the [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
+### Added
+
+- AIP-164 soft delete rules in `rn_forge.web.soft_delete` and `rn_forge.web.exceptions`:
+  `ResourceDeleted` and `ResourceNotDeleted` (409, both in `default_registry()`),
+  `SHOW_DELETED_PARAM` and `require_live`. The `soft-delete` conformance area has thirteen
+  `soft-delete.*` cases, and the API conventions gain a *Soft delete* section; `DELETE` of a
+  soft-deleting resource is 200 with the resource, and `deleteTime` is a standard field.
+- AIP-157 `readMask` partial responses in `rn_forge.web.read_mask`: `READ_MASK_PARAM`, `FieldTree`,
+  `ReadMask`, `parse_read_mask` and `InvalidReadMask` (400) in `default_registry()`. Eleven
+  `read-mask.*` conformance cases, and a *Partial responses* section in the API conventions.
+- `:batchGet` and `:batchUpdate` wire rules in `rn_forge.web.transfer`: `batch_get_ids`,
+  `parse_batch_update`, `BatchUpdateItem`, `NON_EMPTY_IDS_DETAIL` and `DUPLICATE_ID_DETAIL`, with
+  `check_item_precondition` in `rn_forge.web.concurrency` and `InvalidBatchGet` (400) in
+  `default_registry()`.
+- `PreconditionRequired`, `MalformedPrecondition` and `VersionConflict` take an optional `errors`
+  argument that renders as the problem's `errors` member. Without it their bodies are unchanged.
+- Eleven `transfer.*` conformance cases for `:batchGet` and `:batchUpdate`, from
+  `batch-get-returns-resources-in-request-order` to `batch-update-with-an-empty-list-is-422`.
+  `RequestSpec.query` accepts a tuple of values for a repeated parameter.
+- Shared transfer rules in `rn_forge.web.transfer`: `ImportCounts`, `parse_flag`,
+  `row_cap_problem`, `NON_EMPTY_LIST_DETAIL`, `unsupported_file_detail` and
+  `unreadable_file_detail`.
+- `RowsInvalid` (422) and `ItemsDenied` (403) in `rn_forge.web.exceptions`, both in
+  `default_registry()`.
+- JSON Merge Patch (RFC 7396), framework-neutral, in `rn_forge.web.merge_patch`:
+  `MERGE_PATCH_MEDIA_TYPE`, `apply_merge_patch`, `merge_representation` and `require_patch_object`.
+  A top-level `null` sets a field to `null`; below the top level `null` removes the member.
+- `UNSUPPORTED_MEDIA_TYPE` and `NULL_FIELD_DETAIL` in `rn_forge.web.problem`.
+- `UnsupportedMediaType` (415, with `Accept-Patch`) and `InvalidMergePatch` (422) in
+  `rn_forge.web.exceptions`, both in `default_registry()`.
+- The `patch` conformance area, with ten `patch.*` cases.
+- Eight `transfer.*` conformance cases: `import-without-a-file-is-422`, `import-over-the-cap-is-422`,
+  `import-template-is-the-import-columns`, `import-template-prefill-adds-the-rows`,
+  `batch-create-with-an-empty-list-is-422`, `batch-create-over-the-cap-is-422`,
+  `batch-create-denied-item-is-403-pointer` and `denied-batch-create-persists-nothing`.
+- A reference page for `rn_forge.web.transfer`.
+
+### Changed
+
+- **Breaking:** `orderBy` takes a comma-separated list of terms, and `null` sorts last in both directions.
+  - `parse_order_by` accepts many terms and rejects a repeated field with `orderBy names '{field}' more than once`. It rejected a second term.
+  - `Cursor(sort_key: str, ...)` is now `Cursor(sort_keys: tuple[SortValue, ...], ...)`, and `encode_cursor(sort_key, ...)` is now `encode_cursor(sort_keys, ...)`. `SortValue` (`str | int | float | bool | None`) is exported.
+  - The token's JSON is `{"k": [<values>], "id": ..., "o": ...}`. Tokens issued before the change are rejected with 400.
+  - `check_cursor_order` also rejects a token whose value count does not match the terms, with `Malformed page token`.
+  - New conformance cases: `pagination.order-by-several-fields-sorts-by-each-in-turn`, `nulls-sort-last-ascending`, `nulls-sort-last-descending`, `first-page-carries-a-composite-token`, `composite-token-resumes-within-a-tie`, `composite-token-resumes-after-a-null`, `repeated-order-by-field-is-400` and `token-with-the-wrong-number-of-values-is-400`. The case that asserted the one-field rule is removed.
+- `EXPOSED_HEADERS` now ends with `Content-Disposition`, so a cross-origin browser
+  client can read the file name of an export or an import template.
+
 ## [0.1.0] - 2026-09-27
 
 First release.

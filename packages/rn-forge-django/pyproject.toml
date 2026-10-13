@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-django"
-version = "0.3.0"
+version = "0.4.0"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -10,7 +10,7 @@ dependencies = [
   # Direct URLs on release tags (ADR-0004); `[tool.uv.sources]`
   # below is local development only.
   "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +35,7 @@ jwt = [
 oidc = [
   "djangorestframework>=3.17.1",
   "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
-  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 celery = ["celery>=5.6.3"]
 # drf-spectacular only. djangorestframework-camel-case was evaluated and not
@@ -53,7 +53,7 @@ saml = [
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
 security = [
-  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 # `rn_forge.django.cors` only. The application still owns its origins;
 # `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
@@ -72,7 +72,7 @@ all = [
   "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
   "rn-forge-commons[auth,excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
-  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 
 [project.urls]

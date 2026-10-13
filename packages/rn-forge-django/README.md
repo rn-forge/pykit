@@ -10,7 +10,7 @@ and [`rn-forge-web`](https://github.com/rn-forge/pykit/tree/main/packages/rn-for
 Not on PyPI; a release is a git tag. Declare a pinned direct URL:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.3.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django"
 ```
 
 Application code imports `rn_forge.web` directly (wire models, pagination, problem types, the
@@ -18,7 +18,7 @@ auth contract), and this package does not re-export it. Declare `rn-forge-web` a
 this release pins, so the import is not an undeclared transitive dependency:
 
 ```bash
-uv add "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.1.0#subdirectory=packages/rn-forge-web"
+uv add "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web"
 ```
 
 Optional extras:
@@ -60,8 +60,9 @@ Optional extras:
 - **`settings`** — `rn_forge_django_settings`: a typed, frozen-dataclass settings facade built from the
   Django `RN_FORGE_DJANGO` setting dict, auto-reloaded on `override_settings`/`setting_changed`.
 - **`fixtures`** — Builds Django JSON fixtures from Excel workbooks (requires the `fixtures` extra).
-- **`urls`** / **`views`** — Reusable standalone views (including the `readiness_view` factory) and
-  URLconf; `utils` carries the `require_settings`/`require_environment` startup guards.
+- **`urls`** / **`views`** — Reusable standalone views (including the `readiness_view` factory and
+  `debug_request`) and URLconf; `utils` carries the `require_settings`/`require_environment`
+  startup guards.
 
 The HTTP wire semantics — problem bodies, preconditions, pagination tokens, idempotency keys,
 readiness reports, the auth contract — are `rn-forge-web`'s. Everything here that touches them is an

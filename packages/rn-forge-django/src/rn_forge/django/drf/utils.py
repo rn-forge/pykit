@@ -14,7 +14,6 @@ from rn_forge.django.drf._typing import RequestProtocol
 
 __all__ = [
     "AuthenticatedRequestUser",
-    "DRFUtils",
     "PermissionAwareUser",
     "RequestUtils",
 ]
@@ -119,23 +118,6 @@ class RequestUtils:
         raise ValidationError(f"Missing uploaded file field: {key}")
 
     @staticmethod
-    def get_request_param(
-        request: Request, key: str, default: str | None = None
-    ) -> str | None:
-        """Compatibility alias for :meth:`get_param`."""
-        return RequestUtils.get_param(request, key, default)
-
-    @staticmethod
-    def get_request_data(request: Request) -> dict[str, Any]:
-        """Compatibility alias for :meth:`get_data`."""
-        return RequestUtils.get_data(request)
-
-    @staticmethod
-    def get_request_value(request: Request, key: str, default: Any = None) -> Any:
-        """Compatibility alias for :meth:`get_value`."""
-        return RequestUtils.get_value(request, key, default)
-
-    @staticmethod
     def get_request_user(request: Request) -> AuthenticatedRequestUser:
         """Return the current request user with a stable typed protocol."""
         return cast(AuthenticatedRequestUser, cast(RequestProtocol, request).user)
@@ -144,6 +126,3 @@ class RequestUtils:
     def get_request_auth(request: Request) -> Any:
         """Return the current request auth payload."""
         return cast(RequestProtocol, request).auth
-
-
-DRFUtils = RequestUtils

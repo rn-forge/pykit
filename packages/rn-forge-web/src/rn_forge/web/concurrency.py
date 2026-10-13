@@ -8,19 +8,24 @@ and ``If-Match: *`` only.
 from __future__ import annotations
 
 import re
-from typing import Final, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
 
 from rn_forge.web.exceptions import (
     MalformedPrecondition,
     PreconditionRequired,
     VersionConflict,
 )
+from rn_forge.web.problem import field_error
+
+if TYPE_CHECKING:
+    from rn_forge.web.transfer import BatchUpdateItem
 
 __all__ = [
     "ANY_ETAG",
     "ETagCodec",
     "EntityVersionETagCodec",
     "VersionETagCodec",
+    "check_item_precondition",
     "check_precondition",
     "is_not_modified",
 ]
@@ -168,6 +173,49 @@ def check_precondition(
                 entity_id,
                 error_code=412,
             )
+
+
+def check_item_precondition(
+    item: BatchUpdateItem,
+    *,
+    current_version: int,
+    entity_id: object,
+    codec: ETagCodec,
+    required: bool,
+) -> None:
+    """Raise unless a ``:batchUpdate`` item's ``ifMatch`` matches the current state.
+
+    Checks ``item.if_match`` as :func:`check_precondition` checks an
+    ``If-Match`` header, and raises the same exception for the same input,
+    with an ``errors`` entry pointing at ``/requests/<index>/ifMatch``.
+
+    Args:
+        item: The item to check.
+        current_version: The entity's current version.
+        entity_id: The entity's id, compared when the codec carries one.
+        codec: The validator format.
+        required: When ``True``, an item without ``ifMatch`` is an error.
+
+    Raises:
+        PreconditionRequired: The item has no ``ifMatch`` and *required*.
+        MalformedPrecondition: The ``ifMatch`` is unparseable.
+        VersionConflict: The version, or the entity id, does not match.
+    """
+    try:
+        check_precondition(
+            item.if_match,
+            current_version=current_version,
+            entity_id=entity_id,
+            codec=codec,
+            required=required,
+        )
+    except (PreconditionRequired, MalformedPrecondition, VersionConflict) as exc:
+        pointed = [
+            field_error(("requests", item.index, "ifMatch"), exc.message),
+        ]
+        raise type(exc)(
+            "{}", exc.message, error_code=exc.error_code, errors=pointed
+        ) from exc
 
 
 def is_not_modified(if_none_match: str | None, etag: str) -> bool:

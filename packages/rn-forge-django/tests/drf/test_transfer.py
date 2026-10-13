@@ -19,10 +19,15 @@ from rn_forge.django.drf.routers import CustomMethodRouter  # noqa: E402
 from rn_forge.django.drf.transfer import (  # noqa: E402
     BatchCreateMixin,
     BatchDeleteMixin,
+    BatchGetMixin,
+    BatchUpdateMixin,
     ResourceExportMixin,
     ResourceImportMixin,
     _indexed_errors,
 )
+from rn_forge.django.drf.views.base import BaseModelViewSet  # noqa: E402
+from rn_forge.django.models import BaseModel, VersionedModelMixin  # noqa: E402
+from rn_forge.web import EntityVersionETagCodec  # noqa: E402
 from django.test import override_settings  # noqa: E402
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
@@ -46,9 +51,24 @@ class Member(models.Model):
         app_label = "rn_forge_django_messaging"
 
 
+class Book(VersionedModelMixin, BaseModel):
+    name = models.CharField(max_length=30)
+
+    class Meta(BaseModel.Meta):
+        app_label = "rn_forge_django_messaging"
+
+
+class Note(models.Model):
+    name = models.CharField(max_length=30)
+    updated_by = models.CharField(max_length=50, default="", blank=True)
+
+    class Meta:
+        app_label = "rn_forge_django_messaging"
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _tables(create_tables):
-    create_tables(Team, Member)
+    create_tables(Team, Member, Book, Note)
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -120,7 +140,52 @@ class Lenient(Members):
     import_rollback_on_validation_errors = False
 
 
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
+
+
+class Books(BatchGetMixin, BatchUpdateMixin, BaseModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = Book.objects.order_by("id")
+    serializer_class = BookSerializer
+    etag_codec = EntityVersionETagCodec()
+
+    def validate_batch_update_item(self, instance, data):
+        return "locked" if instance.name == "locked" else None
+
+
+class StrictBooks(Books):
+    batch_update_requires_if_match = True
+
+
+class ScopedBooks(Books):
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset).exclude(name="hidden")
+
+
+class NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
+
+
+class Notes(BatchUpdateMixin, ModelViewSet):
+    authentication_classes: list = []
+    permission_classes: list = []
+    queryset = Note.objects.order_by("id")
+    serializer_class = NoteSerializer
+
+
 router = CustomMethodRouter(trailing_slash=False)
+router.register("books", Books, basename="books")
+router.register("strict-books", StrictBooks, basename="strict-books")
+router.register("scoped-books", ScopedBooks, basename="scoped-books")
+router.register("notes", Notes, basename="notes")
 router.register("members", Members, basename="members")
 router.register("lenient", Lenient, basename="lenient")
 urlpatterns = router.urls
@@ -269,7 +334,11 @@ class TestImport:
         assert Member.objects.filter(email="a@x.io").exists()
 
     def test_missing_file_is_a_422(self, client) -> None:
-        assert client.post("/members:import", {}).status_code == 422
+        response = client.post("/members:import", {})
+        assert response.status_code == 422
+        assert response.json()["errors"] == [
+            {"pointer": "/file", "detail": "This field is required."}
+        ]
 
     def test_unsupported_extension_is_a_422(self, client) -> None:
         assert upload(client, "/members:import", "x", name="m.pdf").status_code == 422
@@ -283,7 +352,10 @@ class TestImport:
     def test_too_many_rows_is_a_422(self, client, team) -> None:
         body = "EMAIL,FNAME,TEAM\na@x.io,a,EAST\nb@x.io,b,EAST\n"
         with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
-            assert upload(client, "/members:import", body).status_code == 422
+            response = upload(client, "/members:import", body)
+        assert response.status_code == 422
+        assert response.json()["detail"] == "The import exceeds the limit of 1 rows."
+        assert "errors" not in response.json()
 
     def test_import_round_trips_an_xlsx_upload(self, client, team) -> None:
         dataset = tablib.Dataset(
@@ -349,6 +421,29 @@ class TestBatchCreate:
             "/members:batchCreate", {"requests": "x"}, content_type="application/json"
         )
         assert response.status_code == 422
+        assert response.json()["errors"] == [
+            {"pointer": "/requests", "detail": "A non-empty list is required."}
+        ]
+
+    def test_a_missing_member_is_required(self, client) -> None:
+        response = client.post(
+            "/members:batchCreate", {}, content_type="application/json"
+        )
+        assert response.json()["errors"] == [
+            {"pointer": "/requests", "detail": "This field is required."}
+        ]
+
+    def test_over_the_cap_is_a_422_without_errors(self, client) -> None:
+        items = [{"name": "a", "email": "a@x.io"}, {"name": "b", "email": "b@x.io"}]
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            response = client.post(
+                "/members:batchCreate",
+                {"requests": items},
+                content_type="application/json",
+            )
+        assert response.status_code == 422
+        assert response.json()["detail"] == "The batch exceeds the limit of 1 rows."
+        assert "errors" not in response.json()
 
     def test_an_invalid_item_is_a_422_pointing_at_its_field(self, client) -> None:
         response = client.post(
@@ -386,3 +481,235 @@ class TestBatchDelete:
         )
         assert response.status_code == 403
         assert Member.objects.count() == 2
+
+    def test_an_id_the_key_cannot_hold_is_a_404(self, client, members) -> None:
+        response = client.post(
+            "/members:batchDelete", {"ids": ["abc"]}, content_type="application/json"
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Member abc not found"
+        assert Member.objects.count() == 2
+
+
+def make_books(*names):
+    return [Book.objects.create(name=n) for n in names]
+
+
+def update(client, path, *requests):
+    return client.post(
+        f"{path}:batchUpdate",
+        {"requests": list(requests)},
+        content_type="application/json",
+    )
+
+
+class TestBatchGet:
+    def test_returns_resources_in_request_order_with_duplicates(self, client) -> None:
+        a, b = make_books("a", "b")
+        response = client.get(f"/books:batchGet?ids={b.pk}&ids={a.pk}&ids={b.pk}")
+        assert response.status_code == 200
+        assert response.json() == {
+            "books": [
+                {"id": b.pk, "name": "b"},
+                {"id": a.pk, "name": "a"},
+                {"id": b.pk, "name": "b"},
+            ]
+        }
+
+    def test_a_comma_joined_value_is_one_id(self, client) -> None:
+        a, b = make_books("a", "b")
+        response = client.get(f"/books:batchGet?ids={a.pk},{b.pk}")
+        assert response.status_code == 404
+
+    def test_a_scoped_out_id_is_a_404(self, client) -> None:
+        (hidden,) = make_books("hidden")
+        response = client.get(f"/scoped-books:batchGet?ids={hidden.pk}")
+        assert response.status_code == 404
+        assert response.json()["detail"] == f"Book {hidden.pk} not found"
+
+    def test_empty_ids_are_a_400(self, client) -> None:
+        response = client.get("/books:batchGet?ids=")
+        assert response.status_code == 400
+        assert response.json()["detail"] == "A non-empty ids parameter is required."
+
+    def test_over_the_cap_is_a_400(self, client) -> None:
+        a, b = make_books("a", "b")
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            response = client.get(f"/books:batchGet?ids={a.pk}&ids={b.pk}")
+        assert response.status_code == 400
+        assert response.json()["detail"] == "The batch exceeds the limit of 1 rows."
+
+
+class TestBatchUpdate:
+    def test_merges_each_patch_and_bumps_each_version(self, client) -> None:
+        a, b = make_books("a", "b")
+        response = update(
+            client,
+            "/books",
+            {"id": str(b.pk), "patch": {"name": "b2"}, "ifMatch": f'W/"{b.pk}:1"'},
+            {"id": a.pk, "patch": {"name": "a2"}},
+        )
+        assert response.status_code == 200
+        assert response.json() == {
+            "books": [{"id": b.pk, "name": "b2"}, {"id": a.pk, "name": "a2"}]
+        }
+        assert [x.version for x in Book.objects.order_by("id")] == [2, 2]
+
+    def test_a_conflict_at_save_time_is_a_412_with_the_pointer(
+        self, client, monkeypatch
+    ) -> None:
+        a, b = make_books("a", "b")
+        real_save = Book.save
+        bumped: list[bool] = []
+
+        def racing_save(self, *args, **kwargs):
+            if not bumped:
+                bumped.append(True)
+                Book.objects.filter(pk=b.pk).update(version=5)
+            return real_save(self, *args, **kwargs)
+
+        monkeypatch.setattr(Book, "save", racing_save)
+        response = update(
+            client,
+            "/books",
+            {"id": a.pk, "patch": {"name": "a2"}},
+            {"id": b.pk, "patch": {"name": "b2"}, "ifMatch": f'W/"{b.pk}:1"'},
+        )
+        assert response.status_code == 412
+        assert response.json()["errors"][0]["pointer"] == "/requests/1/ifMatch"
+        assert [(x.name, x.version) for x in Book.objects.order_by("id")] == [
+            ("a", 1),
+            ("b", 1),  # the simulated writer's bump shares the rolled-back transaction
+        ]
+
+    def test_a_denied_item_is_a_403_and_writes_nothing(self, client) -> None:
+        a, locked = make_books("a", "locked")
+        response = update(
+            client,
+            "/books",
+            {"id": a.pk, "patch": {"name": "a2"}},
+            {"id": locked.pk, "patch": {"name": "x"}},
+        )
+        assert response.status_code == 403
+        assert response.json()["errors"] == [
+            {"pointer": "/requests/1", "detail": "locked"}
+        ]
+        assert sorted(Book.objects.values_list("name", flat=True)) == ["a", "locked"]
+
+    def test_required_if_match_is_a_428_with_the_pointer(self, client) -> None:
+        a, b = make_books("a", "b")
+        response = update(
+            client,
+            "/strict-books",
+            {"id": a.pk, "patch": {}, "ifMatch": "*"},
+            {"id": b.pk, "patch": {}},
+        )
+        assert response.status_code == 428
+        assert response.json()["errors"][0]["pointer"] == "/requests/1/ifMatch"
+
+    def test_audit_fields_are_set_on_every_updated_row(self, client) -> None:
+        a, b = make_books("a", "b")
+        update(
+            client,
+            "/books",
+            {"id": a.pk, "patch": {"name": "a2"}},
+            {"id": b.pk, "patch": {"name": "b2"}},
+        )
+        assert {x.updated_by for x in Book.objects.all()} == {"anonymous"}
+
+    def test_an_unversioned_model_ignores_if_match(self, client) -> None:
+        note = Note.objects.create(name="n")
+        response = update(
+            client,
+            "/notes",
+            {"id": note.pk, "patch": {"name": "n2"}, "ifMatch": "junk"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"notes": [{"id": note.pk, "name": "n2"}]}
+
+    def test_a_scoped_out_id_is_a_404(self, client) -> None:
+        (hidden,) = make_books("hidden")
+        response = update(client, "/scoped-books", {"id": hidden.pk, "patch": {}})
+        assert response.status_code == 404
+        assert response.json()["detail"] == f"Book {hidden.pk} not found"
+
+    def test_an_invalid_merge_is_a_422_pointing_into_the_patch(self, client) -> None:
+        a, b = make_books("a", "b")
+        response = update(
+            client,
+            "/books",
+            {"id": a.pk, "patch": {"name": "ok"}},
+            {"id": b.pk, "patch": {"name": None}},
+        )
+        assert response.status_code == 422
+        assert response.json()["errors"] == [
+            {
+                "pointer": "/requests/1/patch/name",
+                "detail": "This field may not be null.",
+            }
+        ]
+        assert Book.objects.get(pk=a.pk).name == "a"
+
+    @pytest.mark.parametrize(
+        ("body", "detail"),
+        [
+            ({}, "This field is required."),
+            ({"requests": []}, "A non-empty list is required."),
+        ],
+    )
+    def test_step_one_matches_batch_create(self, client, body, detail) -> None:
+        response = client.post(
+            "/books:batchUpdate", body, content_type="application/json"
+        )
+        create = client.post(
+            "/members:batchCreate", body, content_type="application/json"
+        )
+        assert response.status_code == create.status_code == 422
+        same = {
+            k: v for k, v in create.json().items() if k not in {"traceId", "instance"}
+        }
+        assert response.json() == {
+            **same,
+            "instance": "/books:batchUpdate",
+            "traceId": response.json()["traceId"],
+        }
+        assert response.json()["errors"] == [{"pointer": "/requests", "detail": detail}]
+
+    def test_over_the_cap_is_the_row_cap_422(self, client) -> None:
+        a, b = make_books("a", "b")
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"TRANSFER": {"MAX_ROWS": 1}}}):
+            response = update(
+                client, "/books", {"id": a.pk, "patch": {}}, {"id": b.pk, "patch": {}}
+            )
+        assert response.status_code == 422
+        assert response.json()["detail"] == "The batch exceeds the limit of 1 rows."
+
+
+def test_the_schema_names_the_batch_operations() -> None:
+    pytest.importorskip("drf_spectacular")
+    from drf_spectacular.generators import SchemaGenerator
+    from drf_spectacular.settings import patched_settings
+
+    from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS
+
+    with (
+        override_settings(
+            REST_FRAMEWORK={
+                "DEFAULT_SCHEMA_CLASS": "rn_forge.django.drf.openapi.WireAutoSchema"
+            }
+        ),
+        patched_settings(
+            {
+                **SPECTACULAR_SETTINGS,
+                "TITLE": "t",
+            }
+        ),
+    ):
+        schema = SchemaGenerator(patterns=router.urls).get_schema(
+            request=None, public=True
+        )
+
+    operations = {
+        op["operationId"] for item in schema["paths"].values() for op in item.values()
+    }
+    assert {"booksBatchGet", "booksBatchUpdate"} <= operations

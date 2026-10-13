@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -2052,7 +2052,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },
@@ -2194,7 +2194,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-fastapi"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },
@@ -2270,7 +2270,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-sqlalchemy"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/rn-forge-sqlalchemy" }
 dependencies = [
     { name = "rn-forge-web" },
@@ -2387,7 +2387,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-web"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/rn-forge-web" }
 dependencies = [
     { name = "opentelemetry-api" },
