@@ -772,7 +772,7 @@
         <p>Keyset pagination over :mod:<code>rn_forge.web</code>'s opaque page token.</p>
 <p><code>sqlakeyset</code> is not adopted (checked 2026-09-23): its bookmark is its own
 marker tuple, so adopting it would mean translating the token both ways to
-replace a predicate of about ten lines.</p>
+replace a short predicate.</p>
 
 
 
@@ -805,12 +805,12 @@ replace a predicate of about ten lines.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Order <em>stmt</em> by the <code>orderBy</code> term and resume after <em>cursor</em>.</p>
-<p>Rows are ordered by the term's column, then <em>id_column</em>, both in that
-term's direction. :func:<code>rn_forge.web.parse_order_by</code> yields at most one
-term, because the token holds one sort value. The term's column need not be unique, since the id
-breaks ties, but it must be non-null. With no terms the order is <em>id_column</em>
-ascending and the token's sort key is the id.</p>
+        <p>Order <em>stmt</em> by every <code>orderBy</code> term and resume after <em>cursor</em>.</p>
+<p>Rows are ordered by each term's column in turn, then by <em>id_column</em> in the
+last term's direction (ascending with no terms), unless <em>id_column</em> is
+already a term. Rows whose value is <code>NULL</code> come after those that have one,
+in both directions, on every database. Term columns need not be unique and
+may be nullable; <em>id_column</em> must not be.</p>
 <p>Fetch <code>page_size + 1</code> rows from the result to learn whether another page
 exists.</p>
 
@@ -900,7 +900,7 @@ request gave none.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The unique tiebreaker column.</p>
+                <p>The unique, non-null tiebreaker column.</p>
               </div>
             </td>
             <td>
@@ -943,7 +943,7 @@ values do not fit the columns.</p>
 
 
 <h3 id="rn_forge.sqlalchemy.pagination.next_page_token" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">next_page_token</span><span class="p">(</span><span class="n">sort_value</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">terms</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">next_page_token</span><span class="p">(</span><span class="n">row_values</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">terms</span><span class="p">)</span></code>
 
 <a href="#rn_forge.sqlalchemy.pagination.next_page_token" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -951,8 +951,8 @@ values do not fit the columns.</p>
     <div class="doc doc-contents ">
 
         <p>Encode the token that resumes after the row with these values.</p>
-<p><em>sort_value</em> is the last row's value in the term's column (its id
-when <em>terms</em> is empty). Pass the same <em>terms</em> given to :func:<code>keyset</code>.</p>
+<p><em>row_values</em> is the last row's value in each term's column, one per term
+(empty when <em>terms</em> is empty). Pass the same <em>terms</em> given to :func:<code>keyset</code>.</p>
 
 
     </div>

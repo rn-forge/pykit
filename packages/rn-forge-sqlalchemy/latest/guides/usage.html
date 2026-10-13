@@ -416,6 +416,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#soft-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Soft delete
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#import-upsert" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -723,6 +734,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#soft-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Soft delete
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#import-upsert" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -790,6 +812,26 @@ rejects a naive value and returns an aware UTC value on SQLite too, so AIP-142's
 <p>The update matches on the version the object holds. A row at another version
 raises <code>rn_forge.web.VersionConflict</code>, which the framework adapters render as
 <code>412</code>, the same as <code>rn-forge-django</code>'s <code>VersionedModel</code>.</p>
+<h2 id="soft-delete">Soft delete<a class="headerlink" href="#soft-delete" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Note</span><span class="p">(</span><span class="n">SoftDeleteMixin</span><span class="p">,</span> <span class="n">VersionMixin</span><span class="p">,</span> <span class="n">AuditMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;note&quot;</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">stmt</span> <span class="o">=</span> <span class="n">live</span><span class="p">(</span><span class="n">select</span><span class="p">(</span><span class="n">Note</span><span class="p">),</span> <span class="n">Note</span><span class="p">)</span>  <span class="c1"># delete_time IS NULL</span>
+<span class="n">stmt</span> <span class="o">=</span> <span class="n">live</span><span class="p">(</span><span class="n">select</span><span class="p">(</span><span class="n">Note</span><span class="p">),</span> <span class="n">Note</span><span class="p">,</span> <span class="n">show_deleted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># unchanged</span>
+
+<span class="n">soft_delete</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">principal</span><span class="o">.</span><span class="n">subject</span><span class="p">)</span>
+<span class="n">undelete</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">principal</span><span class="o">.</span><span class="n">subject</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</code></pre></div>
+
+<p><code>SoftDeleteMixin</code> adds a nullable, indexed <code>delete_time</code> (AIP-164's <code>deleteTime</code>). <code>soft_delete</code> and
+<code>undelete</code> set it, and set <code>updated_by</code> and <code>update_time</code> on an <code>AuditMixin</code> row and bump <code>version</code> on
+a <code>VersionMixin</code> row. They do not flush or commit. Pass <code>now=</code> to pin the time. Nothing hooks the
+session: a query that should hide deleted rows says so with <code>live()</code>, and <code>session.get()</code> still
+returns a deleted row.</p>
 <h2 id="import-upsert">Import: <code>upsert</code><a class="headerlink" href="#import-upsert" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="n">counts</span> <span class="o">=</span> <span class="k">await</span> <span class="n">upsert</span><span class="p">(</span>
     <span class="n">session</span><span class="p">,</span> <span class="n">Order</span><span class="p">,</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">],</span>
@@ -819,13 +861,23 @@ repeated key in the input raises <code>ValueError</code>.</p>
 <span class="n">page</span><span class="p">,</span> <span class="n">more</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[:</span><span class="n">page_size</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">page_size</span>
 <span class="n">token</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="k">if</span> <span class="n">more</span><span class="p">:</span>
-    <span class="n">last</span> <span class="o">=</span> <span class="n">page</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># sort value: its column for the orderBy term</span>
-    <span class="n">token</span> <span class="o">=</span> <span class="n">next_page_token</span><span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">last</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">order_by</span><span class="p">)</span>
+    <span class="n">last</span> <span class="o">=</span> <span class="n">page</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># one value per orderBy term, in term order</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">next_page_token</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">order_by</span><span class="p">],</span> <span class="n">last</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">order_by</span>
+    <span class="p">)</span>
 </code></pre></div>
 
-<p>The <code>orderBy</code> column need not be unique, because the id breaks ties, but it must
-be non-null. <code>parse_order_by</code> accepts one field; a second is a <code>400</code>. A token
-issued for another <code>orderBy</code> is a <code>400</code>.</p>
+<p><code>orderBy</code> is a comma-separated list, so <code>team, score desc</code> orders by <code>team</code>,
+then by <code>score</code> descending, then by the id. The columns need not be unique,
+because the id breaks ties, and they may be nullable: rows whose value is
+<code>NULL</code> come last in both directions. A token issued for another <code>orderBy</code>, or
+holding a different number of values, is a <code>400</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;team&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">team</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+<span class="n">terms</span> <span class="o">=</span> <span class="n">parse_order_by</span><span class="p">(</span><span class="s2">&quot;team, score desc&quot;</span><span class="p">,</span> <span class="n">allowed</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>  <span class="c1"># score is nullable</span>
+<span class="n">stmt</span> <span class="o">=</span> <span class="n">keyset</span><span class="p">(</span>
+    <span class="n">select</span><span class="p">(</span><span class="n">Person</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">terms</span><span class="o">=</span><span class="n">terms</span><span class="p">,</span> <span class="n">cursor</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">Person</span><span class="o">.</span><span class="n">id</span>
+<span class="p">)</span>
+</code></pre></div>
 
 
 

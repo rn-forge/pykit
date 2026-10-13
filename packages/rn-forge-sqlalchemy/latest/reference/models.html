@@ -549,6 +549,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.SoftDeleteMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SoftDeleteMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.sqlalchemy.models.UTCDateTime" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -564,6 +575,39 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VersionMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;live
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.soft_delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;soft_delete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.undelete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;undelete
       
     </span>
   </a>
@@ -774,6 +818,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.SoftDeleteMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SoftDeleteMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.sqlalchemy.models.UTCDateTime" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -789,6 +844,39 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VersionMixin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;live
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.soft_delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;soft_delete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.sqlalchemy.models.undelete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;undelete
       
     </span>
   </a>
@@ -980,6 +1068,54 @@ all four.</p>
 
 
 
+<h3 id="rn_forge.sqlalchemy.models.SoftDeleteMixin" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SoftDeleteMixin</code>
+
+
+<a href="#rn_forge.sqlalchemy.models.SoftDeleteMixin" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>A nullable, indexed <code>delete_time</code>; <code>None</code> while the row is live (AIP-164).</p>
+<p>Pair it with :class:<code>AuditMixin</code> for <code>updated_by</code>. Nothing filters queries
+implicitly: select live rows with :func:<code>live</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h3 id="rn_forge.sqlalchemy.models.UTCDateTime" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>UTCDateTime</code>
 
@@ -1072,6 +1208,129 @@ value, including from SQLite, which stores no zone.</p>
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.sqlalchemy.models.live" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">live</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">show_deleted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#rn_forge.sqlalchemy.models.live" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return <em>stmt</em> restricted to live rows of <em>model</em>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>stmt</code>
+            </td>
+            <td>
+                  <code><span title="sqlalchemy.Select">Select</span>[<span title="rn_forge.sqlalchemy.models.live[T]">T</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The select to restrict.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>model</code>
+            </td>
+            <td>
+                  <code><span title="type">type</span>[<a class="autorefs autorefs-internal" title="            SoftDeleteMixin (rn_forge.sqlalchemy.models.SoftDeleteMixin)" href="#rn_forge.sqlalchemy.models.SoftDeleteMixin">SoftDeleteMixin</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A mapped class using :class:<code>SoftDeleteMixin</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>show_deleted</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Return <em>stmt</em> unchanged, soft-deleted rows included.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.sqlalchemy.models.soft_delete" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">soft_delete</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.sqlalchemy.models.soft_delete" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Mark <em>obj</em> soft-deleted at <em>now</em> (default: the current UTC time).</p>
+<p>Sets <code>delete_time</code> and <code>updated_by</code>, and <code>update_time</code> on an
+:class:<code>AuditMixin</code> row. Increments <code>version</code> on a :class:<code>VersionMixin</code>
+row. Does not flush or commit.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.sqlalchemy.models.undelete" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">undelete</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.sqlalchemy.models.undelete" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Clear <em>obj</em>'s <code>delete_time</code>, recording <em>actor</em> and <em>now</em>.</p>
+<p>Sets <code>updated_by</code>, <code>update_time</code> (an :class:<code>AuditMixin</code> row) and
+<code>version</code> (a :class:<code>VersionMixin</code> row) as :func:<code>soft_delete</code> does.
+Does not flush or commit.</p>
+
+
+    </div>
+
+</div>
 
 
 
