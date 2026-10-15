@@ -27,7 +27,7 @@ kiln readiness ([E16](../../specs/epics/E16-kiln-adoption/index.md)): the worksp
 | [F15.1](../../specs/epics/E15-package-boundaries/F15.1-package-boundary-rule.md) | E15 | New |
 | [F15.2](../../specs/epics/E15-package-boundaries/F15.2-auth-package.md) | E15 | New |
 | [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | New |
-| [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | New |
+| [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Active |
 | [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | New |
 <!-- scope:end -->
 
@@ -41,7 +41,7 @@ kiln readiness ([E16](../../specs/epics/E16-kiln-adoption/index.md)): the worksp
 ## Decisions
 
 - [ADR-0011](../../adr/ADR-0011.md), when a part of commons becomes its own package (proposed; accepted by S15.1.1).
-- [ADR-0012](../../adr/ADR-0012.md), CI and release logic ships as the `rn-forge-devops` package, never as workflow logic or copied scripts (proposed; accepted by S16.1.1).
+- [ADR-0012](../../adr/ADR-0012.md), CI and release logic ships as the `rn-forge-devops` package, never as workflow logic or copied scripts (accepted 2026-10-15, S16.1.1).
 
 ## Breaking changes
 

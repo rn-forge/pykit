@@ -2,7 +2,8 @@
 
 | | |
 | --- | --- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-10-15 |
 
 pykit moves onto [kiln](https://github.com/rn-forge/kiln)'s `python-lib` archetype, so that its CI, task surface and docs tooling are generated and checked like every other rn-forge repository, and pykit stops carrying its own copies. kiln proves the archetype can host pykit inside kiln (kiln's F6.1 and F6.4); this epic is pykit's side: the planner moves to where a generated workflow can reach it, pykit conforms to the shared standard where it does not yet, and then the cutover. Acceptance is checked inside pykit ([ADR-0008](../../../adr/ADR-0008.md)).
 
@@ -10,7 +11,7 @@ pykit moves onto [kiln](https://github.com/rn-forge/kiln)'s `python-lib` archety
 
 | Feature | Scope | State |
 | --- | --- | --- |
-| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | New |
+| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | Active |
 | [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | New |
 | [F16.3 — Cut over onto kiln](F16.3-cutover.md) | `kiln init` as `python-lib`, generated CI and tasks, and the files pykit stops owning. | New |
 

@@ -15,4 +15,4 @@ Each record states one choice that constrains future work across pykit packages,
 | [ADR-0009: Each package publishes its own versioned docs; the root site browses them all](ADR-0009.md) | Package documentation | accepted |
 | [ADR-0010: Soft delete is a nullable `delete_time` column, in AIP-164's shape](ADR-0010.md) | Soft delete | accepted |
 | [ADR-0011: A part of commons becomes its own package only when it passes three tests, and every package takes adapters the same way](ADR-0011.md) | Package boundaries | proposed |
-| [ADR-0012: CI and release logic ships as the rn-forge-devops package, never as workflow logic or copied scripts](ADR-0012.md) | CI and release automation | proposed |
+| [ADR-0012: CI and release logic ships as the rn-forge-devops package, never as workflow logic or copied scripts](ADR-0012.md) | CI and release automation | accepted |
