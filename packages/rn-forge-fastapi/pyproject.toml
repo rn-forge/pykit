@@ -37,7 +37,7 @@ oidc = [
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
 transfer = [
-  "rn-forge-commons[excel] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-data @ git+https://github.com/rn-forge/pykit@rn-forge-data-v0.1.0#subdirectory=packages/rn-forge-data",
   "python-multipart>=0.0.20",
 ]
 
@@ -56,8 +56,15 @@ module-name = "rn_forge.fastapi"
 
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
+rn-forge-data = { workspace = true }
 rn-forge-web = { workspace = true }
 rn-forge-fastapi = { workspace = true }
+
+[tool.workspace-ci.smoke]
+modules = ["rn_forge.fastapi"]
+
+[tool.workspace-ci.smoke.extras]
+transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"

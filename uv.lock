@@ -481,11 +481,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/91/d1/110aeb2acffea56d4222861b5678c2643f0bda00081e40d687077348bb7c/django_import_export-4.4.1-py3-none-any.whl", hash = "sha256:8be2782e505ae303ccb02070a1b4c528995922126fca9ee449eb28666835dd4b", size = 157691, upload-time = "2026-05-05T12:42:42.554Z" },
 ]
 
-[package.optional-dependencies]
-xlsx = [
-    { name = "tablib", extra = ["xlsx"] },
-]
-
 [[package]]
 name = "django-stubs"
 version = "6.1.2"
@@ -2250,13 +2245,14 @@ dependencies = [
 all = [
     { name = "celery" },
     { name = "django-cors-headers" },
-    { name = "django-import-export", extra = ["xlsx"] },
+    { name = "django-import-export" },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
     { name = "rn-forge-commons", extra = ["auth"] },
+    { name = "rn-forge-data", extra = ["pandas"] },
     { name = "rn-forge-web", extra = ["security"] },
 ]
 celery = [
@@ -2269,7 +2265,7 @@ drf = [
     { name = "djangorestframework" },
 ]
 fixtures = [
-    { name = "rn-forge-commons" },
+    { name = "rn-forge-data", extra = ["pandas"] },
 ]
 jwt = [
     { name = "djangorestframework" },
@@ -2296,8 +2292,9 @@ security = [
     { name = "rn-forge-web", extra = ["security"] },
 ]
 transfer = [
-    { name = "django-import-export", extra = ["xlsx"] },
+    { name = "django-import-export" },
     { name = "djangorestframework" },
+    { name = "rn-forge-data" },
 ]
 
 [package.dev-dependencies]
@@ -2328,8 +2325,8 @@ requires-dist = [
     { name = "django", specifier = ">=6.0.7" },
     { name = "django-cors-headers", marker = "extra == 'all'", specifier = ">=4.9.0" },
     { name = "django-cors-headers", marker = "extra == 'cors'", specifier = ">=4.9.0" },
-    { name = "django-import-export", extras = ["xlsx"], marker = "extra == 'all'", specifier = ">=4.4.1" },
-    { name = "django-import-export", extras = ["xlsx"], marker = "extra == 'transfer'", specifier = ">=4.4.1" },
+    { name = "django-import-export", marker = "extra == 'all'", specifier = ">=4.4.1" },
+    { name = "django-import-export", marker = "extra == 'transfer'", specifier = ">=4.4.1" },
     { name = "djangorestframework", marker = "extra == 'all'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'jwt'", specifier = ">=3.17.1" },
@@ -2347,9 +2344,11 @@ requires-dist = [
     { name = "python3-saml", marker = "extra == 'all'", specifier = ">=1.16.0" },
     { name = "python3-saml", marker = "extra == 'saml'", specifier = ">=1.16.0" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth", "excel", "pandas"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["excel", "pandas"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
+    { name = "rn-forge-data", extras = ["pandas"], marker = "extra == 'all'", editable = "packages/rn-forge-data" },
+    { name = "rn-forge-data", extras = ["pandas"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'all'", editable = "packages/rn-forge-web" },
@@ -2399,7 +2398,7 @@ testing = [
 ]
 transfer = [
     { name = "python-multipart" },
-    { name = "rn-forge-commons" },
+    { name = "rn-forge-data" },
 ]
 
 [package.dev-dependencies]
@@ -2429,7 +2428,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.65b0" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "python-multipart", marker = "extra == 'transfer'", specifier = ">=0.0.20" },
-    { name = "rn-forge-commons", extras = ["excel"], marker = "extra == 'transfer'", editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-web", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
 ]

@@ -16,14 +16,15 @@ dependencies = [
 [project.optional-dependencies]
 drf = ["djangorestframework>=3.17.1"]
 # `rn_forge.django.drf.transfer` only: tabular export and import, batch create
-# and delete. `[xlsx]` brings tablib and openpyxl, which `write_xlsx` also uses.
+# and delete. `write_xlsx` comes from rn-forge-data, which brings openpyxl.
 transfer = [
   "djangorestframework>=3.17.1",
-  "django-import-export[xlsx]>=4.4.1",
+  "django-import-export>=4.4.1",
+  "rn-forge-data @ git+https://github.com/rn-forge/pykit@rn-forge-data-v0.1.0#subdirectory=packages/rn-forge-data",
 ]
 # `fixtures.py` reads workbooks through `ExcelAdapter`, which needs pandas.
 fixtures = [
-  "rn-forge-commons[excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-data[pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-data-v0.1.0#subdirectory=packages/rn-forge-data",
 ]
 jwt = [
   "djangorestframework>=3.17.1",
@@ -65,13 +66,14 @@ otel = ["opentelemetry-instrumentation-django>=0.65b0"]
 all = [
   "celery>=5.6.3",
   "django-cors-headers>=4.9.0",
-  "django-import-export[xlsx]>=4.4.1",
+  "django-import-export>=4.4.1",
   "djangorestframework>=3.17.1",
   "djangorestframework-simplejwt>=5.5.1",
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
-  "rn-forge-commons[auth,excel,pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-data[pandas] @ git+https://github.com/rn-forge/pykit@rn-forge-data-v0.1.0#subdirectory=packages/rn-forge-data",
   "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
 ]
 
@@ -90,6 +92,7 @@ module-name = "rn_forge.django"
 
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
+rn-forge-data = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-web = { workspace = true }
 
@@ -104,6 +107,7 @@ modules = ["rn_forge.django", "rn_forge.django.models"]
 [tool.workspace-ci.smoke.extras]
 drf = ["rn_forge.django.drf", "rn_forge.django.drf.views", "rn_forge.django.auth.drf"]
 fixtures = ["rn_forge.django.fixtures"]
+transfer = ["rn_forge.django.drf.transfer"]
 jwt = ["rn_forge.django.auth.jwt"]
 oidc = ["rn_forge.django.auth.drf.oidc"]
 celery = ["rn_forge.django.celery"]

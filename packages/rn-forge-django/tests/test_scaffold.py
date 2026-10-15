@@ -189,7 +189,8 @@ def test_a_served_project_passes_every_conformance_case(scaffold_venv, tmp_path:
     (project / "service.py").write_text(service + "\n\n" + helpers)
     (project / "driver.py").write_text(DRIVER)
     bin_dir = scaffold_venv(
-        "rn-forge-commons[excel,pydantic]",
+        "rn-forge-commons[pydantic]",
+        "rn-forge-data[pandas]",
         "rn-forge-web[security]",
         "rn-forge-django[drf,transfer,openapi,security,cors,otel]",
         "assertpy",

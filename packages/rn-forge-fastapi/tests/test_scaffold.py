@@ -98,7 +98,7 @@ def test_a_served_service_passes_every_conformance_case(scaffold_venv, tmp_path:
     )
     (service / "driver.py").write_text(DRIVER)
     bin_dir = scaffold_venv(
-        "rn-forge-commons[excel]",
+        "rn-forge-data",
         "rn-forge-web[security]",
         "rn-forge-fastapi[transfer]",
         "assertpy",
