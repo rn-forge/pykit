@@ -1,9 +1,8 @@
 # Declaring a CLI
 
-`CliApp.from_config` builds a Typer application from a `[cli]` table in a
-TOML, YAML or JSON document. You write the command functions; the table names
-them, and `CliApp` supplies the app, the standard options and exit-code
-handling.
+`CliApp.from_config` builds a Typer application from a `[cli]` table in a TOML,
+YAML or JSON document. You write the command functions; the table names them,
+and `CliApp` supplies the app, the standard options and exit-code handling.
 
 ## The `[cli]` table
 
@@ -24,7 +23,7 @@ target = "golden_app.commands.db:app"
 ```
 
 | Key | Meaning |
-| --- | --- |
+| -- | -- |
 | `name` | application name, also the root logger name |
 | `help` | the application's `--help` text |
 | `default_log_level` | default value of `--log-level` (default `verbose`) |
@@ -59,14 +58,14 @@ AppException: Invalid CliSurface: wrong value type for field "commands.target"
               - should be "str" instead of value "1" of type "int"
 ```
 
-A missing `[cli]` table, a blank name, duplicate command names and a target
-that cannot be imported are rejected the same way.
+A missing `[cli]` table, a blank name, duplicate command names and a target that
+cannot be imported are rejected the same way.
 
 ## Loading from a mapping
 
 `CliSurface.load` also accepts an already-parsed mapping, for a test or an
-application with its own config loader. Loading and building are separate
-steps, so a configuration can be validated without building the app:
+application with its own config loader. Loading and building are separate steps,
+so a configuration can be validated without building the app:
 
 ```python
 from rn_forge.cli import CliApp, CliSurface

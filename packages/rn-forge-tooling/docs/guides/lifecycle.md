@@ -2,8 +2,7 @@
 
 `rn_forge.tooling.install` gives an installable tool its `install`, `upgrade`,
 `uninstall`, `cleanup`, `status` and `doctor` verbs. The tool describes itself
-with a `ToolProduct`; this package owns every algorithm around that
-description.
+with a `ToolProduct`; this package owns every algorithm around that description.
 
 ## The layout under `$RNF_HOME`
 
@@ -55,7 +54,7 @@ PRODUCT = GoldenTool(name="golden-tool", version=__version__, repo="rn-forge/gol
 ```
 
 | Member | Default | Override to |
-| --- | --- | --- |
+| -- | -- | -- |
 | `release_source` | `GitHubReleases(repo)` | publish somewhere else, or verify a checksum asset |
 | `state_schema_version` | `1` | have `doctor` report an install recorded under an older schema |
 | `artifacts()` | nothing | put links on `PATH` |
@@ -70,16 +69,17 @@ shows that the check ran.
 
 `install` runs in the same shape as `generation.apply`:
 
-1. fetch into scratch space and verify the checksum, if the source publishes one;
-2. set aside an existing directory for the same version, then build the new one;
-3. put the links in place, backing up any link already there;
-4. migrate from the active version, then write `state.json`;
-5. swap `current` **last**.
+1. fetch into scratch space and verify the checksum, if the source publishes
+   one;
+1. set aside an existing directory for the same version, then build the new one;
+1. put the links in place, backing up any link already there;
+1. migrate from the active version, then write `state.json`;
+1. swap `current` **last**.
 
 If any step raises, the steps already taken are undone in reverse, and the
 previous version is active again. An `Exception` is re-raised as an
-`AppException`. An interruption (`KeyboardInterrupt`) is re-raised as-is,
-after the rollback.
+`AppException`. An interruption (`KeyboardInterrupt`) is re-raised as-is, after
+the rollback.
 
 Other verbs:
 
@@ -95,7 +95,7 @@ A product that is not installed is a **warning**, not an error. The same
 and nothing is wrong. The product's own checks run either way.
 
 | Code | Severity | Meaning |
-| --- | --- | --- |
+| -- | -- | -- |
 | `install.not-installed` | warning | no `current` link |
 | `install.ok` | info | the install checks found nothing |
 | `install.current-broken` | error | `current` points at a missing version |
@@ -129,23 +129,23 @@ app = build_tool_app(Path(__file__).parent / "cli.toml")
 ```
 
 | Key | Meaning |
-| --- | --- |
+| -- | -- |
 | `product` | import path of the `ToolProduct` |
 | `verbs` | any of `install`, `upgrade`, `uninstall`, `cleanup`, `status`, `doctor` |
 | `namespace` | optional sub-command group the verbs are mounted under |
 
 Without `namespace`, `build_tool_app` mounts the verbs at the root:
-`golden-tool doctor`, not `golden-tool lifecycle doctor`. With `namespace =
-"self"`, they mount as a group instead: `golden-tool self doctor`, the same
-shape as `uv self update` or `rustup self update`.
+`golden-tool doctor`, not `golden-tool lifecycle doctor`. With
+`namespace = "self"`, they mount as a group instead: `golden-tool self doctor`,
+the same shape as `uv self update` or `rustup self update`.
 
-Whether a verb collides with a `[[cli.commands]]` name depends on the
-namespace: without one, the verbs and the commands share the root, so a verb
-may not repeat a command's name. With a namespace, only the namespace itself
-occupies the root — a command may share a verb's name (e.g. a root `doctor`
-next to `self doctor`), but not the namespace's own name. Either way, an
-unknown verb, a blank or whitespace-containing namespace, or an unimportable
-product raises before the application is built.
+Whether a verb collides with a `[[cli.commands]]` name depends on the namespace:
+without one, the verbs and the commands share the root, so a verb may not repeat
+a command's name. With a namespace, only the namespace itself occupies the root
+— a command may share a verb's name (e.g. a root `doctor` next to
+`self doctor`), but not the namespace's own name. Either way, an unknown verb, a
+blank or whitespace-containing namespace, or an unimportable product raises
+before the application is built.
 
 `build_tool_app` builds the application from `[cli]` with `CliSurface.load` and
 `CliApp.from_surface`, then adds the verbs with `CliApp.add_typer`. A repository

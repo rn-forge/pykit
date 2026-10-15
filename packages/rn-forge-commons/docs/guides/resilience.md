@@ -1,8 +1,8 @@
 # Resilience
 
-`ResilientAsyncHttpClient` wraps `httpx.AsyncClient` with a per-key circuit breaker (`purgatory`),
-retry with `Retry-After` awareness (`stamina`), and a rate limiter clamped from response headers —
-the `resilience` extra.
+`ResilientAsyncHttpClient` wraps `httpx.AsyncClient` with a per-key circuit
+breaker (`purgatory`), retry with `Retry-After` awareness (`stamina`), and a
+rate limiter clamped from response headers — the `resilience` extra.
 
 ```python
 from rn_forge.commons.integration.resilience import ResilientAsyncHttpClient
@@ -13,23 +13,23 @@ async with ResilientAsyncHttpClient("https://api.example.com", name="example-api
 
 ## Per-key breakers
 
-Pass `key=` to `request`/`get`/`post`/... to protect several independent upstreams (e.g. one
-breaker per tenant or per upstream organisation) from one client instance — each key gets its own
-circuit, tripped independently:
+Pass `key=` to `request`/`get`/`post`/... to protect several independent
+upstreams (e.g. one breaker per tenant or per upstream organisation) from one
+client instance — each key gets its own circuit, tripped independently:
 
 ```python
 await client.get("/widgets", key=f"tenant-{tenant_id}")
 ```
 
-Only failures that say something about the upstream count toward `fail_max`: connection errors,
-timeouts and the transient statuses (429, 500, 502, 503, 504). A 404 or 422 is raised to the caller
-but never opens the circuit.
+Only failures that say something about the upstream count toward `fail_max`:
+connection errors, timeouts and the transient statuses (429, 500, 502, 503,
+504). A 404 or 422 is raised to the caller but never opens the circuit.
 
 ## The metrics seam
 
-`on_state_change(key, old_state, new_state)` is called on every circuit transition. It defaults to
-an `AppLogger` warning — wire it to your own metrics backend rather than expecting this module to
-import OpenTelemetry:
+`on_state_change(key, old_state, new_state)` is called on every circuit
+transition. It defaults to an `AppLogger` warning — wire it to your own metrics
+backend rather than expecting this module to import OpenTelemetry:
 
 ```python
 ResilientAsyncHttpClient(
@@ -41,9 +41,10 @@ ResilientAsyncHttpClient(
 
 ## Testable timing
 
-The rate limiter's `clock`/`sleep` are constructor-injectable, so a test can run on a fake clock
-instead of real wall time. `X-RateLimit-Reset` is read as a Unix epoch timestamp, so `clock` is a
-wall clock (default `time.time`), not a monotonic one:
+The rate limiter's `clock`/`sleep` are constructor-injectable, so a test can run
+on a fake clock instead of real wall time. `X-RateLimit-Reset` is read as a Unix
+epoch timestamp, so `clock` is a wall clock (default `time.time`), not a
+monotonic one:
 
 ```python
 client = ResilientAsyncHttpClient(
@@ -56,4 +57,5 @@ client = ResilientAsyncHttpClient(
 
 ## Escape hatch
 
-`client.client` is the underlying `httpx.AsyncClient`, for anything this facade doesn't cover.
+`client.client` is the underlying `httpx.AsyncClient`, for anything this facade
+doesn't cover.

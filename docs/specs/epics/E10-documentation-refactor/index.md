@@ -1,17 +1,19 @@
 # E10 — Documentation refactor
 
-| | |
-| --- | --- |
+|  |  |
+| -- | -- |
 | **State** | Closed |
 | **Start Date** | 2026-09-24 |
 | **Closed Date** | 2026-09-26 |
 
-Moving pykit's documentation from dated plans to current architecture, specs, decisions and release pages, then applying the audit of that move and the owner's answers to both reviews.
+Moving pykit's documentation from dated plans to current architecture, specs,
+decisions and release pages, then applying the audit of that move and the
+owner's answers to both reviews.
 
 [Back to the work index](../../index.md)
 
 | Feature | Scope | State |
-| --- | --- | --- |
+| -- | -- | -- |
 | [F10.1 — Evidence and map](F10.1-evidence-map.md) | Baseline and the migration map. | Closed |
 | [F10.2 — Routing and architecture](F10.2-routing-architecture.md) | Current pages and decision records. | Closed |
 | [F10.3 — Status and release cutover](F10.3-status-release.md) | Board and release page. | Closed |

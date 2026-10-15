@@ -3,8 +3,7 @@
 ## Releases are pinned git tags, not PyPI versions
 
 None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag** on this repository, and every consumer declares it as a pinned direct
-URL:
+tag** on this repository, and every consumer declares it as a pinned direct URL:
 
 ```toml
 [project]
@@ -14,9 +13,9 @@ dependencies = [
 ```
 
 `uv add rn-forge-web` will not work: there is nothing on the index under that
-name. Pin the tag explicitly rather than tracking a branch — an unpinned
-`git+…` reference re-resolves on every lock refresh, which is how a library
-upgrade arrives without anyone deciding it should.
+name. Pin the tag explicitly rather than tracking a branch — an unpinned `git+…`
+reference re-resolves on every lock refresh, which is how a library upgrade
+arrives without anyone deciding it should.
 
 `rn-forge-commons` comes in transitively, itself pinned to the tag this release
 was built against. There is nothing else to install: this package has no
@@ -51,5 +50,5 @@ uv run lint-imports
 ```
 
 The `web-is-framework-free` and `web-layers` contracts in `.importlinter` are
-what CI trusts, because they see transitive imports. A grep over the source is
-a useful fast local check but is not the gate.
+what CI trusts, because they see transitive imports. A grep over the source is a
+useful fast local check but is not the gate.

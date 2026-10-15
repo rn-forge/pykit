@@ -1,6 +1,7 @@
 # Guides
 
-These guides help readers choose packages and work in the pykit repository. Each package keeps its own usage guides.
+These guides help readers choose packages and work in the pykit repository. Each
+package keeps its own usage guides.
 
 - [Choosing packages](choosing-packages.md)
 - [Development](development.md)

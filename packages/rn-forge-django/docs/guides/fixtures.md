@@ -1,7 +1,7 @@
 # Fixtures
 
-`FixtureManager` (requires the `fixtures` extra) converts Excel workbooks into Django JSON
-fixtures and can load them with `loaddata`.
+`FixtureManager` (requires the `fixtures` extra) converts Excel workbooks into
+Django JSON fixtures and can load them with `loaddata`.
 
 ```python
 from pathlib import Path
@@ -39,13 +39,14 @@ FixtureManager(config).prepare_fixtures().load_data()
 ```
 
 Each `FixtureDefinition` reads one worksheet (named after `model`) from
-`root_path/input/<app_label>/<input_file>` and writes Django `loaddata`-ready JSON to
-`root_path/output/<app_label>/<output_file>`.
+`root_path/input/<app_label>/<input_file>` and writes Django `loaddata`-ready
+JSON to `root_path/output/<app_label>/<output_file>`.
 
-- `ColumnType.MANY_TO_MANY` columns are read from a separate worksheet named after the column,
-  joined back to the main sheet via `key_columns`.
-- `common_fields` on a `FixtureDefinition` are merged into every generated row (e.g. a constant
-  `tenant_id`).
-- `load_data(fixture_models=["orders.product"])` loads a subset; omit it (or pass `["ALL"]`) to
-  load everything configured. It bootstraps Django (`DJANGO_SETTINGS_MODULE` +
-  `django.setup()`) if not already configured, using `settings_module`.
+- `ColumnType.MANY_TO_MANY` columns are read from a separate worksheet named
+  after the column, joined back to the main sheet via `key_columns`.
+- `common_fields` on a `FixtureDefinition` are merged into every generated row
+  (e.g. a constant `tenant_id`).
+- `load_data(fixture_models=["orders.product"])` loads a subset; omit it (or
+  pass `["ALL"]`) to load everything configured. It bootstraps Django
+  (`DJANGO_SETTINGS_MODULE` + `django.setup()`) if not already configured,
+  using `settings_module`.

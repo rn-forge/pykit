@@ -1,9 +1,11 @@
 # Architecture decisions
 
-Each record states one choice that constrains future work across pykit packages, why it was made, and what it costs. Package guides describe the current APIs; the [spec board](../specs/index.md) tracks work.
+Each record states one choice that constrains future work across pykit packages,
+why it was made, and what it costs. Package guides describe the current APIs;
+the [spec board](../specs/index.md) tracks work.
 
 | Decision | Scope | Status |
-| --- | --- | --- |
+| -- | -- | -- |
 | [ADR-0001: Standards and proven libraries come first; pykit wraps, never reimplements](ADR-0001.md) | Design principles | accepted |
 | [ADR-0002: Code is placed by what its API contains, and boundaries are one-way](ADR-0002.md) | Package placement and imports | accepted |
 | [ADR-0003: Optional integrations stay behind explicit extras and outside the facade](ADR-0003.md) | Optional dependencies | accepted |

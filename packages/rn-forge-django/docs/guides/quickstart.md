@@ -13,7 +13,8 @@ class Order(BaseModel):
         return ["reference"]
 ```
 
-`BaseModel` adds `status`, `created_by`/`create_time`/`updated_by`/`update_time`, and a
+`BaseModel` adds `status`,
+`created_by`/`create_time`/`updated_by`/`update_time`, and a
 `NaturalKeyLookupManager` default manager — see [Models](models.md).
 
 Wire a DRF viewset over it:
@@ -38,8 +39,9 @@ class OrderViewSet(BaseModelViewSet):
 
 ## Wire it to the shared API contract
 
-Errors as RFC 9457 problems, W3C Trace Context on every request, AIP-158 cursor pagination and
-camelCase JSON — the same wire an `rn-forge-fastapi` service speaks:
+Errors as RFC 9457 problems, W3C Trace Context on every request, AIP-158 cursor
+pagination and camelCase JSON — the same wire an `rn-forge-fastapi` service
+speaks:
 
 ```python
 # manage.py, wsgi.py, asgi.py — before Django loads
@@ -66,7 +68,8 @@ globals().update(SECURITY_SETTINGS)  # or assign SECURE_CONTENT_TYPE_NOSNIFF etc
 
 ### CORS
 
-Opt-in (the `cors` extra, `django-cors-headers`), and the application owns the origins:
+Opt-in (the `cors` extra, `django-cors-headers`), and the application owns the
+origins:
 
 ```python
 from rn_forge.django.cors import cors_settings
@@ -103,12 +106,12 @@ urlpatterns = [
 ]
 ```
 
-`health_urlpatterns` serves `/livez` (liveness), `/readyz` (readiness) and `/healthz` (a
-deprecated alias of `/livez`), each with no trailing slash — a probe on every host fails on a
-redirect, and `APPEND_SLASH` would send one.
+`health_urlpatterns` serves `/livez` (liveness), `/readyz` (readiness) and
+`/healthz` (a deprecated alias of `/livez`), each with no trailing slash — a
+probe on every host fails on a redirect, and `APPEND_SLASH` would send one.
 
-With the `otel` extra and `instrument()`, the request span is the access record: method, path,
-status and duration.
+With the `otel` extra and `instrument()`, the request span is the access record:
+method, path, status and duration.
 
 ### Deprecating a view
 
@@ -128,9 +131,9 @@ class LegacySummaryView(APIView):
     def get(self, request): ...
 ```
 
-`@extend_schema(deprecated=True)` and `@deprecated(...)` are both needed: one marks the
-document, the other stamps the `Deprecation`/`Sunset`/`Link` headers on the wire (RFC 9745,
-RFC 8594).
+`@extend_schema(deprecated=True)` and `@deprecated(...)` are both needed: one
+marks the document, the other stamps the `Deprecation`/`Sunset`/`Link` headers
+on the wire (RFC 9745, RFC 8594).
 
 Common imports:
 
@@ -144,5 +147,6 @@ from rn_forge.django.drf.serializers import BaseModelSerializer
 See [Settings](settings.md), [Auth](auth.md), [DRF Views](drf-views.md), and
 [Fixtures](fixtures.md) for the rest of the surface.
 
-`rn-forge-web`'s "Deployment" guide maps `/livez`, `/readyz`, the security headers' `hsts`
-setting, CORS and body-size limits onto Kubernetes, App Engine and Azure App Service.
+`rn-forge-web`'s "Deployment" guide maps `/livez`, `/readyz`, the security
+headers' `hsts` setting, CORS and body-size limits onto Kubernetes, App Engine
+and Azure App Service.

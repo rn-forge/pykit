@@ -1,17 +1,18 @@
 # E9 — Release readiness
 
-| | |
-| --- | --- |
+|  |  |
+| -- | -- |
 | **State** | Closed |
 | **Start Date** | 2026-09-24 |
 | **Closed Date** | 2026-09-28 |
 
-What pykit must decide, fix and prove before its first coordinated set of tags, and the interim that keeps pykit installable outside the workspace until then.
+What pykit must decide, fix and prove before its first coordinated set of tags,
+and the interim that keeps pykit installable outside the workspace until then.
 
 [Back to the work index](../../index.md)
 
 | Feature | Scope | State |
-| --- | --- | --- |
+| -- | -- | -- |
 | [F9.1 — SQLAlchemy CI](F9.1-sqlalchemy-ci.md) | Add the missing package job. | Closed |
 | [F9.2 — Strict docs CI](F9.2-strict-docs-ci.md) | Build the documentation with `--strict` in CI. | Closed |
 | [F9.3 — Release mechanism](F9.3-release-mechanism.md) | Tagging is documented; CI jobs are scoped to changes and wait on their prerequisites, so a partial run cannot tag a dependent. | Closed |
@@ -24,4 +25,5 @@ What pykit must decide, fix and prove before its first coordinated set of tags, 
 
 All nine features are closed; release-1's exit criteria are met.
 
-The [release runbook](../../../runbooks/releasing-packages.md) describes the workflow.
+The [release runbook](../../../runbooks/releasing-packages.md) describes the
+workflow.

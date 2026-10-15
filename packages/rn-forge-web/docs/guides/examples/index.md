@@ -5,7 +5,7 @@ Three applications serving the same ten endpoints — the fixture surface
 from the prose.
 
 | File | Stack | Tested how |
-| --- | --- | --- |
+| -- | -- | -- |
 | [`asgi_app.py`](asgi_app.py) | None — a bare ASGI application over the primitives | **Executed** against the full conformance table by this package's own test suite |
 | [`django_app.py`](django_app.py) | Django + DRF | Symbol-checked (see below) |
 | [`fastapi_app.py`](fastapi_app.py) | FastAPI | Symbol-checked (see below) |
@@ -30,7 +30,7 @@ framework's own behaviour.
 ## The ten endpoints
 
 | Path | What it exercises |
-| --- | --- |
+| -- | -- |
 | `GET /conformance/boom` | an unregistered exception → 500, detail suppressed |
 | `GET /conformance/conflict` | a registered `DomainConflict` → 409 |
 | `GET /conformance/missing` | a routing 404 as a problem body |

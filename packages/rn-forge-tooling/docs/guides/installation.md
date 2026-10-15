@@ -1,9 +1,9 @@
 # Installation
 
 These packages are not published to PyPI. A release is a **git tag**, and a
-consumer depends on a tag by pinned direct URL — a bare `uv add
-rn-forge-tooling` would not resolve, and a floating branch reference would
-silently change what a build produced.
+consumer depends on a tag by pinned direct URL — a bare
+`uv add rn-forge-tooling` would not resolve, and a floating branch reference
+would silently change what a build produced.
 
 ```toml
 [project]
@@ -30,7 +30,7 @@ The three libraries split by what an API's signature *contains*, not by who
 calls it today:
 
 | Concern | Package |
-| --- | --- |
+| -- | -- |
 | Typer app factory, standard options, `AppConsole`, exit codes, the `[cli]` surface | `rn-forge-cli` |
 | Generation, templates, state, install | `rn-forge-tooling` |
 | Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols | `rn-forge-commons` |

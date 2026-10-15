@@ -8,16 +8,17 @@ It provides:
 
 - a locked, atomically-written JSON state store
 - a strict Jinja render engine
-- a generation engine: artifact kinds, action classification, transactional apply
-- the tool lifecycle: `$RNF_HOME` layout, release fetching and verification,
-  and transactional install/upgrade/uninstall/cleanup/status/doctor verbs
+- a generation engine: artifact kinds, action classification, transactional
+  apply
+- the tool lifecycle: `$RNF_HOME` layout, release fetching and verification, and
+  transactional install/upgrade/uninstall/cleanup/status/doctor verbs
 
 Where `rn-forge-commons` is runtime-neutral — safe in a web server, a worker or
 a container — and `rn-forge-cli` is the command-line shape every application
-wants, this package is deliberately workstation-shaped: it assumes a
-developer's filesystem and a tool that owns files in it. A repository that only
-needs a command line takes `rn-forge-cli` and stops there. A package that ships
-into a deployed runtime must not depend on this one outside a `codegen` extra;
+wants, this package is deliberately workstation-shaped: it assumes a developer's
+filesystem and a tool that owns files in it. A repository that only needs a
+command line takes `rn-forge-cli` and stops there. A package that ships into a
+deployed runtime must not depend on this one outside a `codegen` extra;
 `uv run lint-imports` enforces that.
 
 Use the guides for common workflows and the API reference for module details.

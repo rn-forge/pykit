@@ -1,7 +1,7 @@
 # Wiring an application
 
-Promoted from `rn-forge-web`'s interim FastAPI wiring guide, which was written to
-become this package. What was a page of copy-paste handler, dependency and
+Promoted from `rn-forge-web`'s interim FastAPI wiring guide, which was written
+to become this package. What was a page of copy-paste handler, dependency and
 router code there is a handful of calls here; what is left is the wiring an
 application genuinely owns.
 
@@ -44,26 +44,28 @@ resource.
 
 ## The rules the wiring depends on
 
-1. **Register domain exceptions on the registry before creating `AppConfig`.** Handlers are registered per exception type,
-   because Starlette re-raises anything handled by an `Exception` handler. A row
-   added later still renders correctly, but as a logged, re-raised server error.
-2. **Pass that registry to `AppConfig`.** Its statuses are the problem responses
+1. **Register domain exceptions on the registry before creating `AppConfig`.**
+   Handlers are registered per exception type, because Starlette re-raises
+   anything handled by an `Exception` handler. A row added later still renders
+   correctly, but as a logged, re-raised server error.
+1. **Pass that registry to `AppConfig`.** Its statuses are the problem responses
    the schema declares on every operation.
-3. **Tracing.** `FastApiApp` instruments itself with
-   `FastAPIInstrumentor.instrument_app` by default (`AppConfig.tracing`), after
-   the kit's own middleware, so the instrumentation wraps the whole stack
-   regardless of add order. It also sets a `TraceResponsePropagator` as the
-   global response propagator, but only when nothing else has — an
+1. **Tracing.** `FastApiApp` instruments itself with
+   `FastAPIInstrumentor.instrument_app` by default (`AppConfig.tracing`),
+   after the kit's own middleware, so the instrumentation wraps the whole
+   stack regardless of add order. It also sets a `TraceResponsePropagator` as
+   the global response propagator, but only when nothing else has — an
    application that configures its own response propagator first is left
    alone. Configure a `TracerProvider` and exporter in the application, or run
    under `opentelemetry-instrument`; `FastApiApp` never does either.
-4. **Derive every model from `rn_forge.web.WireModel`.** camelCase on the wire is enforced by
-   the base class, including in a hand-built
+1. **Derive every model from `rn_forge.web.WireModel`.** camelCase on the wire
+   is enforced by the base class, including in a hand-built
    `JSONResponse(model.model_dump(mode="json"))`.
-5. **Spell a non-CRUD route as a custom method.** `POST /orders/{order_id}:cancel`
-   is named `ordersCancel` automatically, on both stacks. The same action as a
-   plain path segment (`/orders/{order_id}/cancel`) is indistinguishable from a
-   sub-collection and needs an explicit `operation_id=`.
+1. **Spell a non-CRUD route as a custom method.**
+   `POST /orders/{order_id}:cancel` is named `ordersCancel` automatically, on
+   both stacks. The same action as a plain path segment
+   (`/orders/{order_id}/cancel`) is indistinguishable from a sub-collection
+   and needs an explicit `operation_id=`.
 
 ## Routes
 
@@ -107,11 +109,12 @@ violation.
 
 ## Merge patch
 
-`merge_patch_body()` checks the media type and returns the raw body; `merge_into` parses it,
-merges it into the current resource and validates the result against the model.
-`merge_patch_openapi()` declares the request body. Declare `merge_patch_body()` before the
-`If-Match` dependency, so the media type answers first (415), and call `check_precondition`
-before `merge_into`, so a stale request is 412 whatever the body says.
+`merge_patch_body()` checks the media type and returns the raw body;
+`merge_into` parses it, merges it into the current resource and validates the
+result against the model. `merge_patch_openapi()` declares the request body.
+Declare `merge_patch_body()` before the `If-Match` dependency, so the media type
+answers first (415), and call `check_precondition` before `merge_into`, so a
+stale request is 412 whatever the body says.
 
 ```python
 from fastapi import Depends, Header
@@ -131,17 +134,20 @@ async def documents_update(
     return merge_into(DocumentOut, document, body)
 ```
 
-Use `require_if_match()` in place of the optional header to make it required (428). A `null` on
-a non-nullable field is a 422 that reads `This field may not be null.`
+Use `require_if_match()` in place of the optional header to make it required
+(428). A `null` on a non-nullable field is a 422 that reads
+`This field may not be null.`
 
 ## Partial responses
 
-`read_mask_param(Model)` is a dependency yielding the parsed `readMask`, or `None` for the whole
-resource. It reads the model's aliases, so a nested model, `Model | None` or `list[Model]` field
-can be reached with a dotted path and anything else is a leaf. A path that names nothing is a 400
-problem before the route runs. Apply the mask to the dumped body with `mask.apply(...)`, or to a
-page with `masked(page, mask)`. Return a `JSONResponse` and declare `response_model` for the
-documentation, because the pruned body no longer validates as the full model.
+`read_mask_param(Model)` is a dependency yielding the parsed `readMask`, or
+`None` for the whole resource. It reads the model's aliases, so a nested model,
+`Model | None` or `list[Model]` field can be reached with a dotted path and
+anything else is a leaf. A path that names nothing is a 400 problem before the
+route runs. Apply the mask to the dumped body with `mask.apply(...)`, or to a
+page with `masked(page, mask)`. Return a `JSONResponse` and declare
+`response_model` for the documentation, because the pruned body no longer
+validates as the full model.
 
 ```python
 from fastapi import Depends
@@ -172,16 +178,16 @@ async def profiles_list(
 ## Security headers
 
 `FastApiApp` installs the OWASP REST Security Cheat Sheet response headers by
-default (`AppConfig.security_headers`). `Strict-Transport-Security` is
-excluded from the default preset and is opt-in — `AppConfig(hsts=True)` — for
-a deployment that terminates TLS itself rather than behind a front end that
+default (`AppConfig.security_headers`). `Strict-Transport-Security` is excluded
+from the default preset and is opt-in — `AppConfig(hsts=True)` — for a
+deployment that terminates TLS itself rather than behind a front end that
 already sets it.
 
 ## Service discovery
 
 `FastApiApp` serves RFC 9727's `/.well-known/api-catalog` by default
-(`AppConfig.api_catalog`), pointing at the OpenAPI document (`openapi_url`)
-and docs UI (`docs_url`) it already serves, plus readiness. Set
+(`AppConfig.api_catalog`), pointing at the OpenAPI document (`openapi_url`) and
+docs UI (`docs_url`) it already serves, plus readiness. Set
 `AppConfig(api_catalog=False)` to turn it off.
 
 ## CORS
@@ -195,10 +201,9 @@ config = AppConfig(cors=CorsPolicy(allow_origins=("https://app.example.com",)))
 ```
 
 `CorsPolicy.expose_headers` defaults to `rn_forge.web.EXPOSED_HEADERS` — the
-response headers this kit emits that a browser cannot read unless a CORS
-policy names them (`ETag`, `Link`, `Content-Disposition`, and so on).
-`traceresponse` needs no entry here — the OpenTelemetry response propagator
-exposes it itself.
+response headers this kit emits that a browser cannot read unless a CORS policy
+names them (`ETag`, `Link`, `Content-Disposition`, and so on). `traceresponse`
+needs no entry here — the OpenTelemetry response propagator exposes it itself.
 `allow_origins` has no default; naming them is the application's decision.
 `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises — browsers
 reject that combination.
@@ -225,8 +230,8 @@ async def orders_legacy_summary(): ...
 ```
 
 `deprecated=True` and the `deprecated(...)` dependency are both needed: one
-marks the document, the other stamps the `Deprecation`/`Sunset`/`Link`
-headers on the wire (RFC 9745, RFC 8594).
+marks the document, the other stamps the `Deprecation`/`Sunset`/`Link` headers
+on the wire (RFC 9745, RFC 8594).
 
 ## Publishing a model no route references
 
@@ -256,49 +261,50 @@ class MyApp(FastApiApp):
   provider, install `rn-forge-fastapi[oidc]` and use the shared implementation
   rather than writing one:
 
-  ```python
-  from rn_forge.web.oidc import OidcAuthenticator
+    ```python
+    from rn_forge.web.oidc import OidcAuthenticator
 
-  authenticator = OidcAuthenticator.from_issuer(
-      "https://idp.example.com/tenant", audience="api://orders"
-  )
-  caller = bearer_auth(authenticator=authenticator, log=log)
-  ```
+    authenticator = OidcAuthenticator.from_issuer(
+        "https://idp.example.com/tenant", audience="api://orders"
+    )
+    caller = bearer_auth(authenticator=authenticator, log=log)
+    ```
 
-  Pass `caller` to `requires(caller, Requirement(all_scopes=...))`, then use the
-  returned dependency on protected routes. `FastApiApp` registers the problem
-  handlers that render authentication failures as 401 with a challenge and
-  authorization failures as 403 without one.
+    Pass `caller` to `requires(caller, Requirement(all_scopes=...))`, then use the
+    returned dependency on protected routes. `FastApiApp` registers the problem
+    handlers that render authentication failures as 401 with a challenge and
+    authorization failures as 403 without one.
 
-  Build it once at startup — it holds the JWKS cache. It is the same
-  authenticator `rn-forge-django` uses, so both stacks accept the same tokens.
-  For any other scheme, `bearer_auth` takes any `rn_forge.web.Authenticator` or
-  `AsyncAuthenticator`: verify the token, map claims to a `Principal`, and raise
-  `AuthenticationFailed` with the reason — the reason reaches `log`, never the
-  body. A sync `Authenticator` runs in the threadpool, so a blocking JWKS fetch
-  does not stall the event loop. `basic_auth` is for local development and
-  simple internal deployments only.
-- **The idempotency store.** Implement `rn_forge.web.AsyncIdempotencyStore`
-  over the application's database. Race safety comes from a `UNIQUE (scope, key)`
+    Build it once at startup — it holds the JWKS cache. It is the same
+    authenticator `rn-forge-django` uses, so both stacks accept the same tokens.
+    For any other scheme, `bearer_auth` takes any `rn_forge.web.Authenticator`
+    or `AsyncAuthenticator`: verify the token, map claims to a `Principal`, and
+    raise `AuthenticationFailed` with the reason — the reason reaches `log`,
+    never the body. A sync `Authenticator` runs in the threadpool, so a blocking
+    JWKS fetch does not stall the event loop. `basic_auth` is for local
+    development and simple internal deployments only.
+
+- **The idempotency store.** Implement `rn_forge.web.AsyncIdempotencyStore` over
+  the application's database. Race safety comes from a `UNIQUE (scope, key)`
   constraint with `INSERT … ON CONFLICT DO NOTHING` and a read-back, never a
   check-then-insert. Decorate the route with `idempotent(store, scope=...)`
   (`rn_forge.fastapi.idempotent`), which wraps
   `rn_forge.web.run_idempotent_async`: the decorated route takes
   `request: Request` and returns a `Response`.
 
-  ```python
-  from fastapi import Request
-  from fastapi.responses import JSONResponse
-  from rn_forge.fastapi import idempotent
+    ```python
+    from fastapi import Request
+    from fastapi.responses import JSONResponse
+    from rn_forge.fastapi import idempotent
 
-  @router.post("/charges", status_code=201)
-  @idempotent(store, scope="charges")
-  async def create_charge(request: Request, body: ChargeIn) -> JSONResponse:
-      ...
-  ```
+    @router.post("/charges", status_code=201)
+    @idempotent(store, scope="charges")
+    async def create_charge(request: Request, body: ChargeIn) -> JSONResponse:
+        ...
+    ```
 
-- **The checks.** Zero-argument callables, sync or async, returning a `bool` or a
-  `rn_forge.web.CheckResult`. Pass `health_router(timeout=...)` so a hung
+- **The checks.** Zero-argument callables, sync or async, returning a `bool` or
+  a `rn_forge.web.CheckResult`. Pass `health_router(timeout=...)` so a hung
   dependency is reported as `fail` rather than hanging `/readyz`; the default,
   `None`, waits indefinitely.
 
@@ -312,5 +318,5 @@ table — never against Django's output.
 ## Deploying it
 
 `rn-forge-web`'s "Deployment" guide maps `/livez`, `/readyz`, the security
-headers' `hsts` flag, CORS and body-size limits onto Kubernetes, App Engine
-and Azure App Service.
+headers' `hsts` flag, CORS and body-size limits onto Kubernetes, App Engine and
+Azure App Service.

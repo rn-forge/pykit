@@ -1,6 +1,7 @@
 # Changelog
 
-Notable changes to `rn-forge-commons`, newest first, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+Notable changes to `rn-forge-commons`, newest first, in the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
@@ -8,4 +9,6 @@ Notable changes to `rn-forge-commons`, newest first, in the [Keep a Changelog](h
 
 Released with pykit's first coordinated set of tags (release-1).
 
-`rn-forge-commons-v0.1.0` to `rn-forge-commons-v0.2.2` predate this file; their notes are on the [GitHub Releases](https://github.com/rn-forge/pykit/releases) page.
+`rn-forge-commons-v0.1.0` to `rn-forge-commons-v0.2.2` predate this file; their
+notes are on the [GitHub Releases](https://github.com/rn-forge/pykit/releases)
+page.

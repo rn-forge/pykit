@@ -1,6 +1,7 @@
 # Config
 
-`Config` loads one file or a directory of JSON or YAML files, deep-merges them, and optionally resolves references.
+`Config` loads one file or a directory of JSON or YAML files, deep-merges them,
+and optionally resolves references.
 
 Example YAML:
 
@@ -40,9 +41,9 @@ Reference forms:
 
 ## Validating a document against a schema
 
-`Config` merges and resolves; it does not say whether the result is well-formed. When a
-hand-authored document has a fixed shape — a tool's `config.toml`, a manifest — validate it with
-a `StrictModel` from the `pydantic` extra:
+`Config` merges and resolves; it does not say whether the result is well-formed.
+When a hand-authored document has a fixed shape — a tool's `config.toml`, a
+manifest — validate it with a `StrictModel` from the `pydantic` extra:
 
 ```python
 import tomllib
@@ -64,12 +65,14 @@ with open("config.toml", "rb") as handle:
     config = ProjectConfig.parse(tomllib.load(handle), source="config.toml")
 ```
 
-A `StrictModel` is strict (a string is never coerced to an integer), frozen, and rejects any key
-it does not declare. A failure raises `ModelValidationError`, an `AppException` whose message
-lists every failing key by dotted path — a missing key, a wrong type and a misspelled key are
-reported together, not one per run. `errors` holds the same failures as `FieldError` records.
-`parse_model` gives the same reporting for a `BaseModel` that does not subclass `StrictModel`.
+A `StrictModel` is strict (a string is never coerced to an integer), frozen, and
+rejects any key it does not declare. A failure raises `ModelValidationError`, an
+`AppException` whose message lists every failing key by dotted path — a missing
+key, a wrong type and a misspelled key are reported together, not one per run.
+`errors` holds the same failures as `FieldError` records. `parse_model` gives
+the same reporting for a `BaseModel` that does not subclass `StrictModel`.
 
-Choose it over `DataclassMixin.from_dict` when the author of the document needs every mistake at
-once, or when the schema needs pydantic's validators. The extra is opt-in, and
-`rn_forge.commons` never imports it, so a program that does not use it pays nothing at import time.
+Choose it over `DataclassMixin.from_dict` when the author of the document needs
+every mistake at once, or when the schema needs pydantic's validators. The extra
+is opt-in, and `rn_forge.commons` never imports it, so a program that does not
+use it pays nothing at import time.

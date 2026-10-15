@@ -1,6 +1,11 @@
 # rn-forge-fastapi
 
-[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fastapi/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-fastapi) · [All pykit packages](https://rn-forge.github.io/pykit/)
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/)
+·
+[Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fastapi/CHANGELOG.md)
+·
+[Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-fastapi)
+· [All pykit packages](https://rn-forge.github.io/pykit/)
 
 FastAPI adapters over `rn-forge-web`.
 
@@ -11,7 +16,7 @@ into an application: exception-handler registration, `Depends` factories, a
 router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 
 | Module | What it adapts |
-| --- | --- |
+| -- | -- |
 | `problem` | `register_problem_handlers(app)` — every error the app produces, including FastAPI's own 404/405/422, as `application/problem+json` |
 | `openapi` | `FastApiApp.openapi()` repairs the cached document — adds `ProblemDetail` and the problem responses it can actually produce, accuracy only; `operation_id` — the shared `operationId` convention |
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
@@ -50,12 +55,14 @@ dependencies = [
 ]
 ```
 
-Application code imports `rn_forge.web` directly (wire models, pagination, problem types, the
-auth contract), and this package does not re-export it. Declare `rn-forge-web` as well, at the tag
-this release pins, so the import is not an undeclared transitive dependency.
+Application code imports `rn_forge.web` directly (wire models, pagination,
+problem types, the auth contract), and this package does not re-export it.
+Declare `rn-forge-web` as well, at the tag this release pins, so the import is
+not an undeclared transitive dependency.
 
-`uv add rn-forge-fastapi` will not work. Inside this workspace, `[tool.uv.sources]`
-overrides the URL with the local checkout, for local development only.
+`uv add rn-forge-fastapi` will not work. Inside this workspace,
+`[tool.uv.sources]` overrides the URL with the local checkout, for local
+development only.
 
 ## What this package deliberately does not ship
 
@@ -70,13 +77,14 @@ overrides the URL with the local checkout, for local development only.
   own `FastAPIInstrumentor`, not a house middleware — `FastApiApp` calls it by
   default (`AppConfig.tracing`). The current trace id reaches a 500 the same
   way it reaches any other response: `render_problem` reads it from the active
-  span, and `ServerErrorMiddleware` sits inside the instrumentation's span, not
-  outside it.
+  span, and `ServerErrorMiddleware` sits inside the instrumentation's span,
+  not outside it.
 - **A token verifier.** The auth binding takes any `rn_forge.web.Authenticator`;
   verifying a JWT against a JWKS is that authenticator's job. For OIDC that
-  authenticator already exists — `rn_forge.web.oidc.OidcAuthenticator`, via this
-  package's `oidc` extra — and is shared with `rn-forge-django` so both stacks
-  accept the same tokens. Nothing here wraps it; pass it to `bearer_auth`.
+  authenticator already exists — `rn_forge.web.oidc.OidcAuthenticator`, via
+  this package's `oidc` extra — and is shared with `rn-forge-django` so both
+  stacks accept the same tokens. Nothing here wraps it; pass it to
+  `bearer_auth`.
 
 ## Dependencies
 
@@ -85,11 +93,11 @@ overrides the URL with the local checkout, for local development only.
 arrives pinned through `rn-forge-web`.
 
 **`fastapi`** (`>=0.141.1`) — a hard dependency, not an extra. It is used as
-documented, not abstracted away — an application
-keeps `APIRouter`, `Depends`, `Header` and `response_model` exactly as FastAPI
-defines them. `pydantic` (2.13 resolved) and `starlette` arrive with it; the
-`rn_forge.web.WireModel` configuration uses `validate_by_name`/`serialize_by_alias`, which
-need pydantic ≥ 2.11.
+documented, not abstracted away — an application keeps `APIRouter`, `Depends`,
+`Header` and `response_model` exactly as FastAPI defines them. `pydantic` (2.13
+resolved) and `starlette` arrive with it; the `rn_forge.web.WireModel`
+configuration uses `validate_by_name`/`serialize_by_alias`, which need pydantic
+≥ 2.11.
 
 **Not wrapped:** FastAPI's `HTTPBearer`/`HTTPBasic` are used with
 `auto_error=False` — kept for the `securitySchemes` entry they put in the
