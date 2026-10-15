@@ -68,6 +68,7 @@ extend-immutable-calls = ["fastapi.Body", "fastapi.Depends", "fastapi.Query", "f
 [tool.uv.sources]
 rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
+rn-forge-data = { workspace = true }
 rn-forge-devops = { workspace = true }
 rn-forge-django = { workspace = true }
 rn-forge-fastapi = { workspace = true }
@@ -79,6 +80,7 @@ rn-forge-web = { workspace = true }
 members = [
   "packages/rn-forge-cli",
   "packages/rn-forge-commons",
+  "packages/rn-forge-data",
   "packages/rn-forge-devops",
   "packages/rn-forge-django",
   "packages/rn-forge-fastapi",
@@ -129,6 +131,6 @@ dev = [
   "asyncpg>=0.30",
   "pytest-django>=4.12.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-commons[excel]",
+  "rn-forge-data[pandas]",
   "ruff>=0.17.1",
 ]

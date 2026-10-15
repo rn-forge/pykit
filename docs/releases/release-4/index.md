@@ -41,7 +41,7 @@ release-1 and is not in this release.
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
 | [F15.1](../../specs/epics/E15-package-boundaries/F15.1-package-boundary-rule.md) | E15 | Active |
 | [F15.2](../../specs/epics/E15-package-boundaries/F15.2-auth-package.md) | E15 | New |
-| [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | New |
+| [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | Active |
 | [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Active |
 | [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | Closed |
 

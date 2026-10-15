@@ -12,6 +12,7 @@ guide explains its setup and API.
 | A Django service | [`rn-forge-django`](../rn-forge-django/index.md) | Django extras such as `drf`, `oidc`, `fixtures` or `celery` |
 | A FastAPI service | [`rn-forge-fastapi`](../rn-forge-fastapi/index.md) | `oidc` or `transfer` extras |
 | Async SQLAlchemy models and persistence helpers | [`rn-forge-sqlalchemy`](../rn-forge-sqlalchemy/index.md) | The web contract it already depends on |
+| Excel and tabular data helpers | [`rn-forge-data`](../rn-forge-data/index.md) | The `pandas` extra for the pandas adapter |
 | CI and release automation for a repository in any language | [`rn-forge-devops`](../rn-forge-devops/index.md) | Nothing: run it with `uvx`; it is a CI tool, not an application dependency |
 
 Use `rn-forge-web` for shared wire behavior. Django and FastAPI bind that

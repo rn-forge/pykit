@@ -1,6 +1,6 @@
 # Executable import boundaries for the pykit workspace (kiln ADR-0003).
 #
-# Eight rules, all of which a reader of the dependency graph would otherwise
+# Nine rules, all of which a reader of the dependency graph would otherwise
 # have to take on trust:
 #
 #   1. commons is runtime-neutral: it never reaches into cli or tooling, and
@@ -20,6 +20,8 @@
 #   7. `rn_forge.devops` is CI tooling with no rn-forge dependency: it imports
 #      no other `rn_forge` package (ADR-0012).
 #   8. `rn_forge.devops.ci` is the core: it imports neither adapter.
+#   9. `rn_forge.data` is a sibling of web over commons, and its core never
+#      imports the `rn_forge.data.pandas` adapter (ADR-0011).
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -36,6 +38,7 @@ root_packages =
     rn_forge.web
     rn_forge.sqlalchemy
     rn_forge.devops
+    rn_forge.data
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
@@ -116,13 +119,14 @@ forbidden_modules =
     rn_forge.tooling
 
 [importlinter:contract:web-layers]
-name = django, fastapi and sqlalchemy depend on web, web depends on commons, never the other way round
+name = django, fastapi and sqlalchemy depend on web and data, which depend on commons, never the other way round
 type = layers
 # The `:` makes django, fastapi and sqlalchemy independent siblings at one
-# layer: none may import another.
+# layer: none may import another. web and data are likewise independent
+# siblings over commons.
 layers =
     rn_forge.django : rn_forge.fastapi : rn_forge.sqlalchemy
-    rn_forge.web
+    rn_forge.web : rn_forge.data
     rn_forge.commons
 
 [importlinter:contract:sqlalchemy-is-framework-free]
@@ -160,3 +164,11 @@ source_modules =
 forbidden_modules =
     rn_forge.devops.uv
     rn_forge.devops.github
+
+[importlinter:contract:data-core-has-no-adapter]
+name = rn_forge.data never imports the pandas adapter
+type = forbidden
+source_modules =
+    rn_forge.data
+forbidden_modules =
+    rn_forge.data.pandas

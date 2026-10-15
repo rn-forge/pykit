@@ -30,7 +30,7 @@ deliberately outside E15.
 | -- | -- | -- |
 | [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | Active |
 | [F15.2 — rn-forge-auth package](F15.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | New |
-| [F15.3 — rn-forge-data package](F15.3-data-package.md) | Create the package and move the Excel and pandas code into it. | New |
+| [F15.3 — rn-forge-data package](F15.3-data-package.md) | Create the package and move the Excel and pandas code into it. | Active |
 | [F15.4 — Domain errors in commons](F15.4-domain-errors.md) | Move `VersionConflict` and `DomainConflict` to commons so the ORM packages need no web import. | New |
 | [F15.5 — Framework-neutral messaging core](F15.5-neutral-messaging.md) | Split the outbox and inbox loops from their Django models. | New |
 | [F15.6 — Framework-neutral fixtures](F15.6-neutral-fixtures.md) | Split workbook reading and validation from Django's `loaddata` output. | New |
