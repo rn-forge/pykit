@@ -31,6 +31,9 @@ def _parser() -> argparse.ArgumentParser:
     smoke.add_argument("package", metavar="PACKAGE")
     smoke.add_argument("extra", nargs="?", default="", metavar="EXTRA")
     commands.add_parser(
+        "adapters", help="check each declared adapter has a module and an extra"
+    )
+    commands.add_parser(
         "sonar-target",
         help="print the `$GITHUB_OUTPUT` line with the Sonar branch argument",
     )
@@ -68,6 +71,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         for name in ok:
             print(name)
+    elif command == "adapters":
+        problems = uv.check_adapters(workspace)
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        return 1 if problems else 0
     elif command == "released":
         for found in ci.released(workspace):
             print(*found)

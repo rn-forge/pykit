@@ -21,7 +21,11 @@ setup.
 1. Update the root `.importlinter` file with the new package's place in the
    graph. Keep the import rules executable before adding cross-package
    imports. The [workspace page](../architecture/workspace.md) describes the
-   current boundaries.
+   current boundaries. If the package takes adapters
+   ([ADR-0011](../adr/ADR-0011.md)), each adapter module maps to an extra of
+   the same name. List the names in `[tool.workspace-ci] adapters`; CI checks
+   the mapping with `rn-forge-devops adapters`. One forbidden contract per
+   package keeps the core from importing its adapters.
 1. Add the package to the root MkDocs includes and reader entry points. Build
    its standalone site and the combined site with strict link checking.
 1. CI picks the member up from the workspace

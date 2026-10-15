@@ -13,3 +13,6 @@ Notable changes to `rn-forge-devops`, newest first, in the
   (`rn_forge.devops.ci`), a uv workspace adapter (`rn_forge.devops.uv`), a
   GitHub Actions adapter (`rn_forge.devops.github`) and the `rn-forge-devops`
   console script (`rn_forge.devops.cli`).
+- The `adapters` subcommand and the `adapters` key of `[tool.workspace-ci]`: a
+  package lists its adapter names, and the command fails when a name has no
+  module or no extra of the same name, or is repeated.

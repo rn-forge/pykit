@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from rn_forge.devops import cli
@@ -42,3 +44,39 @@ def test_cli_exits_with_message_for_tag(
         cli.main()
     assert "unsupported ref" in str(exit_info.value.code)
     assert capsys.readouterr().out == ""
+
+
+def _adapter_workspace(root: Path, extras: str) -> None:
+    (root / "pkgs/data/src/data").mkdir(parents=True)
+    (root / "pkgs/data/src/data/pandas.py").write_text("")
+    (root / "pyproject.toml").write_text('[tool.uv.workspace]\nmembers = ["pkgs/*"]\n')
+    (root / "pkgs/data/pyproject.toml").write_text(
+        '[project]\nname = "data"\nversion = "1"\n\n'
+        f"[project.optional-dependencies]\n{extras}\n\n"
+        '[tool.workspace-ci]\nadapters = ["pandas"]\n'
+    )
+
+
+def test_cli_adapters_is_silent_when_they_are_declared_correctly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _adapter_workspace(tmp_path, "pandas = []")
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["adapters"]) == 0
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
+def test_cli_adapters_prints_each_problem_to_stderr(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _adapter_workspace(tmp_path, "excel = []")
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["adapters"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "data: adapter pandas has no extra pandas\n"

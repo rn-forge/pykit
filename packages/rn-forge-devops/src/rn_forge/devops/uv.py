@@ -1,4 +1,4 @@
-"""The uv workspace adapter: manifest reading and the `smoke` check.
+"""The uv workspace adapter: manifest reading and the `smoke` and `adapters` checks.
 
 Members are those of the root `[tool.uv.workspace]`. A member's internal
 requirements are the members named in its dependencies, optional dependencies and
@@ -104,6 +104,7 @@ def load_workspace(root: Path) -> Workspace:
                 if smoke is not None
                 else None
             ),
+            adapters=ci.get("adapters"),
         )
     settings = manifest.get("tool", {}).get(TOOL, {})
     return Workspace(
@@ -112,6 +113,56 @@ def load_workspace(root: Path) -> Workspace:
         pytest_args=settings.get("pytest-args", []),
         suites=settings.get("suites", {}),
     )
+
+
+def adapter_problems(
+    package: Package, extras: set[str], modules: set[str]
+) -> list[str]:
+    """Return one message per problem with the adapters `package` declares.
+
+    A declared adapter is a problem when it is repeated, when it is not in
+    `modules`, or when it is not in `extras`.
+
+    Args:
+        package: The member; one that declares no adapters has no problems.
+        extras: The names in the member's `[project.optional-dependencies]`.
+        modules: The module and subpackage names found in the member's source
+            directory.
+    """
+    problems: list[str] = []
+    seen: set[str] = set()
+    for name in package.adapters or []:
+        if name in seen:
+            problems.append(f"{package.name}: adapter {name} is declared twice")
+            continue
+        seen.add(name)
+        if name not in modules:
+            problems.append(f"{package.name}: adapter {name} has no module {name}")
+        if name not in extras:
+            problems.append(f"{package.name}: adapter {name} has no extra {name}")
+    return problems
+
+
+def check_adapters(workspace: Workspace) -> list[str]:
+    """Return the problems `adapter_problems` finds across the workspace members
+    that declare `adapters`."""
+    problems: list[str] = []
+    for package in workspace.packages.values():
+        if package.adapters is None:
+            continue
+        member = workspace.root / package.dir
+        manifest: dict[str, Any] = tomllib.loads(
+            (member / "pyproject.toml").read_text()
+        )
+        source = member / "src" / Path(*package.module.split("."))
+        modules = {
+            path.stem if path.is_file() else path.name
+            for path in (source.iterdir() if source.is_dir() else ())
+            if path.is_dir() or path.suffix == ".py"
+        }
+        extras = set(manifest["project"].get("optional-dependencies", {}))
+        problems += adapter_problems(package, extras, modules)
+    return problems
 
 
 def smoke(workspace: Workspace, package_name: str, extra: str) -> int:

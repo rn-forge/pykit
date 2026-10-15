@@ -55,6 +55,7 @@ class Package:
         postgres_env: Variable that receives a PostgreSQL DSN, or `None` when the
             package needs no database run.
         smoke: The smoke-test declaration, or `None`.
+        adapters: Names of the package's adapters, or `None` when it declares none.
     """
 
     name: str
@@ -63,6 +64,7 @@ class Package:
     requires: set[str] = field(default_factory=lambda: set[str]())
     postgres_env: str | None = None
     smoke: Smoke | None = None
+    adapters: list[str] | None = None
 
     def checks(self) -> list[dict[str, str]]:
         """Every check that must pass before this package may be released."""
