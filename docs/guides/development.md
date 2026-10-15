@@ -5,7 +5,7 @@ repository root unless a command says otherwise.
 
 ## Setup
 
-The repository is a uv workspace with seven packages. Install every package and
+The repository is a uv workspace with eight packages. Install every package and
 every optional extra with:
 
 ```bash
@@ -78,7 +78,7 @@ branch and puts a merge commit on `main`, which breaks its linear history.
 
 Each package also has a standalone MkDocs site. Build it from that package's
 directory with `uv run --group docs mkdocs build --strict`. The root site
-includes all seven, but a combined build does not show that each standalone site
+includes all eight, but a combined build does not show that each standalone site
 resolves its own links, so check both. Use a temporary `--site-dir` to keep an
 existing preview.
 

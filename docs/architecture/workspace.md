@@ -1,6 +1,6 @@
 # Workspace boundaries
 
-How the seven pykit packages depend on each other, and the executable rules that
+How the eight pykit packages depend on each other, and the executable rules that
 keep them that way. Read it before placing a shared contract or an adapter.
 
 ## Package graph
@@ -14,25 +14,29 @@ keep them that way. Read it before placing a shared contract or an adapter.
 | `rn-forge-django` | `rn_forge.django` | `rn-forge-commons`, `rn-forge-web` | Django and Django REST framework adapters |
 | `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-web[security]`; `rn-forge-commons[excel]` with the `transfer` extra | FastAPI adapters |
 | `rn-forge-sqlalchemy` | `rn_forge.sqlalchemy` | `rn-forge-web` | Async SQLAlchemy models, upsert and keyset pagination |
+| `rn-forge-devops` | `rn_forge.devops` | None (third-party `packaging` only) | CI and release automation: the planner core with uv and GitHub Actions adapters |
 
 The framework packages are siblings over `rn-forge-web`. The CLI and tooling
-branch is separate from the HTTP branch. Optional extras add capabilities at the
-owning package; for example, Django's `oidc` extra adds commons and web auth
-dependencies.
+branch is separate from the HTTP branch. `rn-forge-devops` stands apart from
+both: it depends on no other pykit package, so a CI run in a repository of any
+language installs only `packaging` ([ADR-0012](../adr/ADR-0012.md)). Optional
+extras add capabilities at the owning package; for example, Django's `oidc`
+extra adds commons and web auth dependencies.
 
 ## Executable boundaries
 
-The root `.importlinter` file defines eight contracts. It forbids
+The root `.importlinter` file defines ten contracts. It forbids
 `rn_forge.commons` from importing the CLI and tooling layers, and forbids
 `rn_forge.cli` from importing tooling. It keeps `rn_forge.web` free of Django,
 FastAPI, Starlette and the developer-tool layers. It also keeps Django, FastAPI
-and SQLAlchemy independent of each other. Framework code generation may import
-tooling only from its optional `codegen` subpackage; the generators are
-[deferred](../specs/epics/E11-framework-codegen/index.md). A new package takes
-its place in this graph by the placement rules in [ADR-0002](../adr/ADR-0002.md)
-and adds its contracts to `.importlinter`.
+and SQLAlchemy independent of each other. It keeps `rn_forge.devops` free of
+every other `rn_forge` package and its core free of its adapters. Framework code
+generation may import tooling only from its optional `codegen` subpackage; the
+generators are [deferred](../specs/epics/E11-framework-codegen/index.md). A new
+package takes its place in this graph by the placement rules in
+[ADR-0002](../adr/ADR-0002.md) and adds its contracts to `.importlinter`.
 
-All seven packages require Python 3.14 or later and provide typed package
+All eight packages require Python 3.14 or later and provide typed package
 markers. They have independent versions and pinned git-tag dependencies
 ([ADR-0004](../adr/ADR-0004.md)). The root workspace overrides those
 dependencies to local members for development. That override does not prove that
@@ -41,8 +45,9 @@ the intended tags install outside the workspace.
 Package guides own API details: [commons](../rn-forge-commons/index.md),
 [CLI](../rn-forge-cli/index.md), [tooling](../rn-forge-tooling/index.md),
 [web](../rn-forge-web/index.md), [Django](../rn-forge-django/index.md),
-[FastAPI](../rn-forge-fastapi/index.md), and
-[SQLAlchemy](../rn-forge-sqlalchemy/index.md). The
+[FastAPI](../rn-forge-fastapi/index.md),
+[SQLAlchemy](../rn-forge-sqlalchemy/index.md), and
+[devops](../rn-forge-devops/index.md). The
 [package selection guide](../guides/choosing-packages.md) starts from an
 application's needs.
 

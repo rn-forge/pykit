@@ -6,8 +6,8 @@ settled before the merge, and everything that proves them happens after it.
 
 ## How CI tags
 
-`.github/workflows/main.yml` names no package; `.github/scripts/workspace_ci.py`
-reads them from the workspace manifests
+`.github/workflows/main.yml` names no package; the `rn-forge-devops` package
+(`uv run rn-forge-devops`) reads them from the workspace manifests
 ([F14.1](../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md)).
 The import-boundary check and a `plan` job run first.
 

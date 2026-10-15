@@ -1,6 +1,6 @@
 # pykit
 
-`pykit` is a uv workspace of seven independently versioned `rn-forge-*` Python
+`pykit` is a uv workspace of eight independently versioned `rn-forge-*` Python
 packages. Start with a package for its usage guides, or use the root guides to
 combine packages.
 
@@ -13,6 +13,7 @@ combine packages.
 | [rn-forge-django](rn-forge-django/index.md) | Django and Django REST framework adapters. |
 | [rn-forge-fastapi](rn-forge-fastapi/index.md) | FastAPI adapters and application assembly. |
 | [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) | Async SQLAlchemy models, upsert and keyset pagination. |
+| [rn-forge-devops](rn-forge-devops/index.md) | CI and release automation for rn-forge repositories in any language, run with uv. |
 
 For package choice and relationships, read
 [choosing packages](guides/choosing-packages.md) and

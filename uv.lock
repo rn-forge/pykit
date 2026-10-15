@@ -12,6 +12,7 @@ members = [
     "pykit",
     "rn-forge-cli",
     "rn-forge-commons",
+    "rn-forge-devops",
     "rn-forge-django",
     "rn-forge-fastapi",
     "rn-forge-sqlalchemy",
@@ -1633,6 +1634,7 @@ dev = [
     { name = "pytest-randomly" },
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all", "excel"] },
+    { name = "rn-forge-devops" },
     { name = "rn-forge-django", extra = ["all"] },
     { name = "rn-forge-fastapi", extra = ["transfer"] },
     { name = "rn-forge-sqlalchemy" },
@@ -1654,6 +1656,7 @@ docs = [
 workspace = [
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all"] },
+    { name = "rn-forge-devops" },
     { name = "rn-forge-django", extra = ["all"] },
     { name = "rn-forge-fastapi", extra = ["transfer"] },
     { name = "rn-forge-sqlalchemy" },
@@ -1692,6 +1695,7 @@ dev = [
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-commons", extras = ["excel"], editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
     { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-sqlalchemy", editable = "packages/rn-forge-sqlalchemy" },
@@ -1713,6 +1717,7 @@ docs = [
 workspace = [
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
+    { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
     { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-sqlalchemy", editable = "packages/rn-forge-sqlalchemy" },
@@ -2142,6 +2147,49 @@ docs = [
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
+]
+
+[[package]]
+name = "rn-forge-devops"
+version = "0.1.0"
+source = { editable = "packages/rn-forge-devops" }
+dependencies = [
+    { name = "packaging" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-randomly" },
+    { name = "rn-forge-devops" },
+    { name = "ruff" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "rn-forge-devops" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "packaging", specifier = ">=24" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-randomly", specifier = ">=4.1.0" },
+    { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
+    { name = "ruff", specifier = ">=0.15.21" },
+]
+docs = [
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-material", specifier = ">=9.7.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
 ]
 
 [[package]]

@@ -26,6 +26,7 @@ plugins:
             - packages/rn-forge-fastapi/src
             - packages/rn-forge-sqlalchemy/src
             - packages/rn-forge-tooling/src
+            - packages/rn-forge-devops/src
             - packages/rn-forge-web/src
           options:
             docstring_style: auto
@@ -60,6 +61,7 @@ nav:
       - rn-forge-sqlalchemy: '!include packages/rn-forge-sqlalchemy/mkdocs.yml'
       - rn-forge-tooling: '!include packages/rn-forge-tooling/mkdocs.yml'
       - rn-forge-web: '!include packages/rn-forge-web/mkdocs.yml'
+      - rn-forge-devops: '!include packages/rn-forge-devops/mkdocs.yml'
   - Architecture:
       - Overview: architecture/index.md
       - Workspace: architecture/workspace.md

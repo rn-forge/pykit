@@ -16,13 +16,14 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | [`rn-forge-web`](packages/rn-forge-web) | `rn_forge.web` | Framework-agnostic HTTP/API primitives — the wire semantics an application promises its callers: W3C Trace Context, RFC 9457 problem details, ETag preconditions, AIP-158 pagination, idempotency, readiness, ASGI middleware, the auth contract, and a framework-free conformance table. Depends on `rn-forge-commons` and nothing else. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (basic/JWT/SAML), DRF views/serializers/exceptions, a typed settings facade. |
 | [`rn-forge-fastapi`](packages/rn-forge-fastapi) | `rn_forge.fastapi` | FastAPI adapters over `rn-forge-web`: problem handlers, the OpenAPI error-type repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health router and the auth binding. Makes no wire decision of its own. |
+| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | CI and release automation for rn-forge repositories in any language, run with uv: the `rn-forge-devops` command plans each CI job's matrix from the workspace manifests and gates releases on their checks. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
 | [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | `rn_forge.sqlalchemy` | Async SQLAlchemy models, upsert and keyset pagination over `rn-forge-web`: `Base`, `UTCDateTime`, audit and version mixins, `update_versioned`, `upsert`, `keyset`. PostgreSQL and SQLite. |
 
 ## Import boundaries
 
 The boundaries between these packages are executable, not conventional.
-[`.importlinter`](.importlinter) states eight contracts and
-`uv run lint-imports` proves them; CI gates every other job on it.
+[`.importlinter`](.importlinter) states ten contracts and `uv run lint-imports`
+proves them; CI gates every other job on it.
 
 1. `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or
    Jinja — it is runtime-neutral and ships into web servers and containers.
@@ -45,6 +46,10 @@ The boundaries between these packages are executable, not conventional.
    `rn_forge.fastapi.codegen` may.
 1. `rn_forge.sqlalchemy` imports neither framework package nor `fastapi`,
    `starlette`, `django` or `rest_framework`.
+1. `rn_forge.devops` imports no other `rn_forge` package: CI tooling for any
+   language's repository carries no rn-forge dependency (ADR-0012).
+1. `rn_forge.devops.ci`, the core, imports neither the uv nor the GitHub Actions
+   adapter.
 
 There are deliberately **no compatibility re-exports** in any direction: a shim
 would satisfy a caller and reverse the dependency.
@@ -121,8 +126,9 @@ guides, API reference and changelog, and build as a standalone site. Start with
 [`rn-forge-tooling`](packages/rn-forge-tooling),
 [`rn-forge-web`](packages/rn-forge-web),
 [`rn-forge-django`](packages/rn-forge-django),
-[`rn-forge-fastapi`](packages/rn-forge-fastapi) or
-[`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy).
+[`rn-forge-fastapi`](packages/rn-forge-fastapi),
+[`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) or
+[`rn-forge-devops`](packages/rn-forge-devops).
 
 **Maintaining the workspace.** [`docs/`](docs/index.md) holds what spans
 packages: the [spec board](docs/specs/index.md) of current and planned work

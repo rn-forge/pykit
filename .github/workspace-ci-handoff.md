@@ -1,22 +1,29 @@
 # Handoff to kiln: discovered workspace CI
 
-pykit's CI no longer names its packages. One script reads the uv workspace and
-plans every job, so the workflow can be copied unchanged into any uv monorepo
-whose packages are released separately. This note is for bringing it into kiln's
-golden templates. The design and its reasons are in pykit's
+pykit's CI no longer names its packages. The `rn-forge-devops` package reads the
+uv workspace and plans every job, so the workflow can be copied unchanged into
+any uv monorepo whose packages are released separately. This note is for
+bringing it into kiln's golden templates. The design and its reasons are in
+pykit's
 `docs/specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md`.
 
 ## Files to copy verbatim
 
+The planner is the `rn-forge-devops` package (`packages/rn-forge-devops`), not a
+file to copy. A generated repository reaches it through the version kiln pins,
+as kiln's
+[F6.4](https://github.com/rn-forge/kiln/blob/feature/v1/docs/specs/epics/E6-rebuild-the-repos/F6.4-workspace-pipeline.md)
+specifies, and runs it with `uv run` or `uvx`.
+
 | pykit file | Template file | Notes |
 | -- | -- | -- |
 | `.github/workflows/main.yml` | same path | Has no repository-specific values. |
-| `.github/scripts/workspace_ci.py` | same path | Standard library only, except `smoke`, which the workflow runs with `packaging`. |
 | `.github/actions/setup/action.yml` | same path | Installs uv; `sync` defaults to `"true"`, with `"false"` for jobs that build or install separately. |
 | `.github/dependabot.yml` | same path | Checks GitHub Actions weekly and groups all updates. |
 
 Retire any per-package job template, reusable package workflow, or
-`changed_packages.py` or `check_django_extra.py` copy.
+`changed_packages.py` or `check_django_extra.py` copy. In the workflow,
+`uv run rn-forge-devops` becomes the pinned `uvx` call.
 
 ## What a generated repository provides
 
@@ -81,7 +88,8 @@ setting.
   `git+<server>/<repo>@<tag>#subdirectory=<member dir>`, derived from the run.
   There is no PyPI publishing.
 - A change under `docs/` selects no package; any other change outside the
-  members selects every package. The prefix list is `UNSCOPED` in the script.
+  members selects every package. The prefix list is `UNSCOPED` in
+  `rn_forge.devops.ci`.
 - The docs job's step that copies package sites from `gh-pages` into the root
   site expects members under `packages/`.
 - The PostgreSQL service is `postgres:17`, and it is the only service supported.
@@ -96,9 +104,9 @@ setting.
 ## Checking a generated repository
 
 ```bash
-python3 .github/scripts/workspace_ci.py plan        # every package; prints each job's matrix
+uv run rn-forge-devops plan        # every package; prints each job's matrix
 actionlint .github/workflows/main.yml
-uv run --no-project --with packaging python .github/scripts/workspace_ci.py smoke <package> <extra>
+uv run rn-forge-devops smoke <package> <extra>
 ```
 
 After that, a pull request run should show one `verify` job per changed package

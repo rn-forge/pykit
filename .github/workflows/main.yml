@@ -1,7 +1,8 @@
 name: CICD
 
 # Every package list below comes from the `plan` job, which reads the uv
-# workspace's manifests (.github/scripts/workspace_ci.py). No job names a package.
+# workspace's manifests with the rn-forge-devops package (`uv run rn-forge-devops`).
+# No job names a package.
 
 on:
   push:
@@ -58,6 +59,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: ./.github/actions/setup
+
       - id: plan
         env:
           GH_TOKEN: ${{ github.token }}
@@ -68,7 +71,7 @@ jobs:
           if [ "$EVENT_NAME" = push ]; then
             BASE=$(gh run list --workflow main.yml --branch main --event push --status success --limit 1 --json headSha --jq '.[0].headSha // ""')
           fi
-          python3 .github/scripts/workspace_ci.py plan "$BASE" | tee -a "$GITHUB_OUTPUT"
+          uv run rn-forge-devops plan "$BASE" | tee -a "$GITHUB_OUTPUT"
 
   # Each passing check entry uploads an `ok-<marker>` artifact; `release` tags a
   # package only when all of its markers exist.
@@ -169,7 +172,7 @@ jobs:
           sync: "false"
 
       - name: Install and import
-        run: uv run --no-project --with packaging python .github/scripts/workspace_ci.py smoke ${{ matrix.name }} "${{ matrix.extra }}"
+        run: uv run rn-forge-devops smoke ${{ matrix.name }} "${{ matrix.extra }}"
 
       - run: mkdir ok && touch "ok/${{ matrix.marker }}"
 
@@ -229,7 +232,7 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
-          releasable="$(python3 .github/scripts/workspace_ci.py releasable ok "${names[@]}")"
+          releasable="$(uv run rn-forge-devops releasable ok "${names[@]}")"
           for name in $releasable; do
             version="$(uv version --package "$name" --short)"
             tag="$name-v$version"
@@ -284,7 +287,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          python3 .github/scripts/workspace_ci.py sonar-target >> "$GITHUB_OUTPUT"
+          uv run rn-forge-devops sonar-target >> "$GITHUB_OUTPUT"
 
       - name: Run tests with coverage
         run: uv run pytest ${{ needs.plan.outputs.cov-args }} --cov-report=xml:coverage.xml ${{ needs.plan.outputs.test-paths }}
@@ -319,7 +322,7 @@ jobs:
         run: |
           set -euo pipefail
           tmp=$(mktemp -d)
-          python3 .github/scripts/workspace_ci.py released | while read -r name dir module version; do
+          uv run rn-forge-devops released | while read -r name dir module version; do
             tag="$name-v$version"
             git fetch --no-tags origin "refs/tags/$tag"
             uv venv -q "$tmp/$name"
@@ -360,7 +363,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          python3 .github/scripts/workspace_ci.py released | while read -r _ dir _ version; do
+          uv run rn-forge-devops released | while read -r _ dir _ version; do
             config="$dir/mkdocs.yml"
             [ -f "$config" ] || continue
             first=$(uv run --group docs mike list --deploy-prefix "$dir" -F "$config" 2>/dev/null | wc -l)
