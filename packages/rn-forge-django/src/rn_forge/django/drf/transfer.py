@@ -22,7 +22,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rn_forge.commons.data.excel import write_xlsx
+from rn_forge.data import write_xlsx
 from rn_forge.django import settings as django_settings
 from rn_forge.django.drf._typing import action
 from rn_forge.django.drf.views.mixins import AuditFieldsViewMixin

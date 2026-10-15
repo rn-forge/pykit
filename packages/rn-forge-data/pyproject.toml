@@ -35,8 +35,14 @@ module-name = "rn_forge.data"
 rn-forge-commons = { workspace = true }
 rn-forge-data = { workspace = true }
 
+[tool.workspace-ci]
+adapters = ["pandas"]
+
 [tool.workspace-ci.smoke]
 modules = ["rn_forge.data"]
+
+[tool.workspace-ci.smoke.extras]
+pandas = ["rn_forge.data.pandas"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"

@@ -45,4 +45,6 @@ nav:
   - Home: index.md
   - Reference:
       - reference/index.md
+      - Excel: reference/excel.md
+      - Pandas: reference/pandas.md
   - Changelog: changelog.md

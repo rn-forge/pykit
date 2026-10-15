@@ -2038,32 +2038,22 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "httpx" },
-    { name = "openpyxl" },
     { name = "opentelemetry-instrumentation-logging" },
-    { name = "pandas" },
     { name = "purgatory" },
     { name = "pydantic" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "python-json-logger" },
     { name = "stamina" },
     { name = "structlog" },
-    { name = "tablib", extra = ["xlsx"] },
 ]
 auth = [
     { name = "pyjwt", extra = ["crypto"] },
-]
-excel = [
-    { name = "openpyxl" },
-    { name = "tablib", extra = ["xlsx"] },
 ]
 json = [
     { name = "python-json-logger" },
 ]
 otel = [
     { name = "opentelemetry-instrumentation-logging" },
-]
-pandas = [
-    { name = "pandas" },
 ]
 pydantic = [
     { name = "pydantic" },
@@ -2084,7 +2074,6 @@ testing = [
 [package.dev-dependencies]
 dev = [
     { name = "assertpy" },
-    { name = "pandas-stubs" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -2105,12 +2094,8 @@ requires-dist = [
     { name = "dacite", specifier = ">=1.9.2" },
     { name = "httpx", marker = "extra == 'all'", specifier = ">=0.28" },
     { name = "httpx", marker = "extra == 'resilience'", specifier = ">=0.28" },
-    { name = "openpyxl", marker = "extra == 'all'", specifier = ">=3.1.5" },
-    { name = "openpyxl", marker = "extra == 'excel'", specifier = ">=3.1.5" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'all'", specifier = ">=0.64b0" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'otel'", specifier = ">=0.64b0" },
-    { name = "pandas", marker = "extra == 'all'", specifier = ">=3.0.3" },
-    { name = "pandas", marker = "extra == 'pandas'", specifier = ">=3.0.3" },
     { name = "purgatory", marker = "extra == 'all'", specifier = ">=3.0.1" },
     { name = "purgatory", marker = "extra == 'resilience'", specifier = ">=3.0.1" },
     { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.12" },
@@ -2126,17 +2111,14 @@ requires-dist = [
     { name = "stamina", marker = "extra == 'resilience'", specifier = ">=25.2.0" },
     { name = "structlog", marker = "extra == 'all'", specifier = ">=25.1.0" },
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=25.1.0" },
-    { name = "tablib", extras = ["xlsx"], marker = "extra == 'all'", specifier = ">=3.8" },
-    { name = "tablib", extras = ["xlsx"], marker = "extra == 'excel'", specifier = ">=3.8" },
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "verboselogs", specifier = ">=1.7" },
 ]
-provides-extras = ["auth", "json", "structlog", "resilience", "excel", "otel", "pandas", "pydantic", "testing", "all"]
+provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "testing", "all"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "assertpy", specifier = ">=1.1" },
-    { name = "pandas-stubs", specifier = ">=3.0.5" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
@@ -2274,7 +2256,7 @@ all = [
     { name = "drf-spectacular" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
-    { name = "rn-forge-commons", extra = ["auth", "excel", "pandas"] },
+    { name = "rn-forge-commons", extra = ["auth"] },
     { name = "rn-forge-web", extra = ["security"] },
 ]
 celery = [
@@ -2287,7 +2269,7 @@ drf = [
     { name = "djangorestframework" },
 ]
 fixtures = [
-    { name = "rn-forge-commons", extra = ["excel", "pandas"] },
+    { name = "rn-forge-commons" },
 ]
 jwt = [
     { name = "djangorestframework" },
@@ -2417,7 +2399,7 @@ testing = [
 ]
 transfer = [
     { name = "python-multipart" },
-    { name = "rn-forge-commons", extra = ["excel"] },
+    { name = "rn-forge-commons" },
 ]
 
 [package.dev-dependencies]

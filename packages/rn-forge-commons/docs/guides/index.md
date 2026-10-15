@@ -7,5 +7,4 @@ Start here for the main usage flows:
 - logging setup
 - console output, including quiet and JSON modes
 - config loading
-- pandas / Excel data utilities
 - subprocess and task execution

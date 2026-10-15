@@ -10,9 +10,8 @@ Excel and tabular data helpers for Python programming, built on
 `rn-forge-commons`. The base install carries `openpyxl` and `tablib[xlsx]`; the
 `pandas` extra adds the pandas adapter.
 
-The package is a scaffold. Its modules arrive from `rn-forge-commons` in later
-releases.
-
-- `rn_forge.data` — the core. The facade re-exports the core only.
-- `rn_forge.data.pandas` — the pandas adapter, behind the `pandas` extra, when
-  it arrives. The core never imports it; `.importlinter` proves that.
+- `rn_forge.data` — the core: `ExcelUtils`, `CellFormat`, `WorkbookTemplate` and
+  `write_xlsx`. The facade re-exports the core only.
+- `rn_forge.data.pandas` — the pandas adapter, behind the `pandas` extra:
+  `PandasUtils` and `ExcelAdapter`. The core never imports it; `.importlinter`
+  proves that.

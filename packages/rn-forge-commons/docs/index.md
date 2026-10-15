@@ -11,7 +11,6 @@ It provides:
 - dataclass serialization helpers
 - subprocess and task-pool abstractions
 - managed blocks, structured findings, and testing helpers
-- optional pandas and Excel adapters
 
 The developer-tooling surface — console, Typer wiring, local state, templates
 and installer mechanics — lives in `rn-forge-tooling`, which depends on this

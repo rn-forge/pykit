@@ -180,8 +180,9 @@ Package wiring after the move:
 | `rn_forge.commons.lang.types` | The pandas aliases: the guarded `pandas` import, `SeriesRow`, `series_value` and `series_columns` |
 
 Proposed shape: base dependencies are `openpyxl` and `tablib[xlsx]`, and a
-`pandas` extra holds pandas. `ExcelAdapter` imports pandas only inside its
-dataframe methods, so the base install works without it.
+`pandas` extra holds pandas. `ExcelAdapter` converts between workbooks and
+DataFrames, so it lives in the `rn_forge.data.pandas` adapter with
+`PandasUtils`, and the core never imports pandas.
 
 Commons loses its `excel` and `pandas` extras, which takes it from nine extras
 to six: `json`, `structlog`, `otel`, `pydantic`, `resilience` and `testing`. The

@@ -34,7 +34,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.params import Depends as DependsParam
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model
-from rn_forge.commons.data.excel import write_xlsx
+from rn_forge.data import write_xlsx
 from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.read_mask import read_mask_param
 from rn_forge.web import (

@@ -72,9 +72,6 @@ nav:
           - Hashing: reference/fs/hashing.md
           - Locks: reference/fs/locks.md
           - Paths: reference/fs/paths.md
-      - Data:
-          - Excel: reference/data/excel.md
-          - Pandas: reference/data/pandas.md
       - Logging:
           - Logger: reference/logging/logger.md
           - StructLogger: reference/logging/structlog.md

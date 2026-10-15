@@ -27,8 +27,6 @@ Optional extras:
 | -- | -- |
 | `auth` | JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`) |
 | `json` | JSON-formatted log output (`python-json-logger`) |
-| `excel` | `openpyxl` + `tablib` Excel helpers, including `write_xlsx`; `ExcelAdapter` also needs `pandas` |
-| `pandas` | `pandas`-backed DataFrame/Series helpers |
 | `pydantic` | Strict pydantic models for configuration documents, with every failure named by dotted path |
 | `otel` | OpenTelemetry logging instrumentation |
 | `testing` | `assertpy` + `pytest` integration helpers |
@@ -99,9 +97,6 @@ holds it.
 - **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`:
   JSON/YAML/TOML (de)serialization and file I/O, plus comment-preserving
   round-trip editing of config documents.
-
-**`data/`** (optional extras) — `excel`, `pandas`: Excel workbook helpers and
-DataFrame/Series helpers.
 
 **`logging/`**
 
