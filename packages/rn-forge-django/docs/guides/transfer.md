@@ -1,11 +1,11 @@
 # Transfer: export, import and batch operations
 
 `rn_forge.django.drf.transfer` needs the `transfer` extra
-(`django-import-export[xlsx]`, which brings `tablib` and `openpyxl`). It is not
-imported by `rn_forge.django.drf`, so a project that does not use it installs
-neither. Register viewsets with `CustomMethodRouter` so the extra actions are
-served as `/orders:import` and `/orders:batchCreate` (AIP-136), not
-`/orders/import`.
+(`django-import-export` and `rn-forge-data`, which brings `tablib` and
+`openpyxl`). It is not imported by `rn_forge.django.drf`, so a project that does
+not use it installs neither. Register viewsets with `CustomMethodRouter` so the
+extra actions are served as `/orders:import` and `/orders:batchCreate`
+(AIP-136), not `/orders/import`.
 
 ```python
 from import_export import fields, resources, widgets

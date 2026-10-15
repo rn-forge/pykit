@@ -5,6 +5,20 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Breaking: the `transfer` extra names `rn-forge-data` and no longer pulls
+  `django-import-export[xlsx]`; it installs `django-import-export` alone. The
+  `fixtures` extra names `rn-forge-data[pandas]` in place of
+  `rn-forge-commons[excel,pandas]`.
+
+### Fixed
+
+- `rn_forge.django.drf.transfer` imported `openpyxl` without declaring it, and
+  worked only because another dependency installed it. The `transfer` extra
+  now declares it through `rn-forge-data`, and the extra's smoke check imports
+  the module from a clean install.
+
 ## [0.4.0] - 2026-10-05
 
 ### Added

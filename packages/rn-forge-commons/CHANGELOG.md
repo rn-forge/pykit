@@ -5,6 +5,15 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Removed
+
+- Breaking: `rn_forge.commons.data.excel` and `rn_forge.commons.data.pandas`,
+  and the pandas aliases `SeriesRow`, `series_value` and `series_columns` in
+  `rn_forge.commons.lang.types`. They moved to `rn-forge-data`, with the same
+  class names; import them from `rn_forge.data` and `rn_forge.data.pandas`.
+- Breaking: the `excel` and `pandas` extras. Depend on `rn-forge-data`, or
+  `rn-forge-data[pandas]`, instead.
+
 ## [0.5.0] - 2026-09-27
 
 Released with pykit's first coordinated set of tags (release-1).

@@ -11,8 +11,8 @@ keep them that way. Read it before placing a shared contract or an adapter.
 | `rn-forge-cli` | `rn_forge.cli` | `rn-forge-commons` | Generic Typer application and declared `[cli]` commands |
 | `rn-forge-tooling` | `rn_forge.tooling` | `rn-forge-commons`, `rn-forge-cli` | Generation, local state, templates, installation and documentation mechanics |
 | `rn-forge-web` | `rn_forge.web` | `rn-forge-commons[pydantic]` | Framework-neutral HTTP contracts and conformance cases |
-| `rn-forge-django` | `rn_forge.django` | `rn-forge-commons`, `rn-forge-web` | Django and Django REST framework adapters |
-| `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-web[security]`; `rn-forge-commons[excel]` with the `transfer` extra | FastAPI adapters |
+| `rn-forge-django` | `rn_forge.django` | `rn-forge-commons`, `rn-forge-web`; `rn-forge-data` with the `transfer` and `fixtures` extras | Django and Django REST framework adapters |
+| `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-web[security]`; `rn-forge-data` with the `transfer` extra | FastAPI adapters |
 | `rn-forge-sqlalchemy` | `rn_forge.sqlalchemy` | `rn-forge-web` | Async SQLAlchemy models, upsert and keyset pagination |
 | `rn-forge-data` | `rn_forge.data` | `rn-forge-commons` | Excel and tabular data helpers; the pandas adapter sits behind the `pandas` extra |
 | `rn-forge-devops` | `rn_forge.devops` | None (third-party `packaging` only) | CI and release automation: the planner core with uv and GitHub Actions adapters |

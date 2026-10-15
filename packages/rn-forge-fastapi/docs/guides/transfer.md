@@ -2,11 +2,11 @@
 
 `rn_forge.fastapi.transfer` serves spreadsheet download and upload, an import
 template, and batch get, create, update and delete. It needs the `transfer`
-extra (tablib, openpyxl and `python-multipart`) and is not imported by
-`rn_forge.fastapi`. The wire contract is §17 of `rn-forge-web`'s API
-conventions. Persistence is the application's: each route factory takes a
-**store**, a dependency that returns an object with the methods the factory
-calls.
+extra (`rn-forge-data`, which brings tablib and openpyxl, and
+`python-multipart`) and is not imported by `rn_forge.fastapi`. The wire contract
+is §17 of `rn-forge-web`'s API conventions. Persistence is the application's:
+each route factory takes a **store**, a dependency that returns an object with
+the methods the factory calls.
 
 | Factory | Route | Store | Store methods |
 | -- | -- | -- | -- |
@@ -288,8 +288,8 @@ The export model is a pydantic model. Its `serialization_alias`es are the column
 headers, and a `computed_field` is a column, which covers foreign-key traversal,
 full names and enum display names. Rows are validated with
 `from_attributes=True`, so ORM objects work directly. CSV is streamed; xlsx is
-written with `rn_forge.commons.data.excel.write_xlsx`. `tabular_response` is the
-same without the cap, for a route that applies its own.
+written with `rn_forge.data.write_xlsx`. `tabular_response` is the same without
+the cap, for a route that applies its own.
 
 ## Reading a file yourself
 

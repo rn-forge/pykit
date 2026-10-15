@@ -33,13 +33,13 @@ Optional extras:
 | Extra | Adds |
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
-| `transfer` | `django-import-export[xlsx]` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
+| `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
 | `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
 | `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `drf-spectacular`, for `drf.openapi` |
 | `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
 | `celery` | `celery`, for the `celery` app factory |
-| `fixtures` | `rn-forge-commons[excel,pandas]`, for building Django JSON fixtures from Excel workbooks |
+| `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
 ## What's inside

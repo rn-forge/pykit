@@ -43,6 +43,9 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Guides:
+      - guides/index.md
+      - Excel and pandas: guides/usage.md
   - Reference:
       - reference/index.md
       - Excel: reference/excel.md

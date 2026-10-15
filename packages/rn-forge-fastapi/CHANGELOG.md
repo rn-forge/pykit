@@ -5,6 +5,11 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The `transfer` extra names `rn-forge-data` in place of
+  `rn-forge-commons[excel]`.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added

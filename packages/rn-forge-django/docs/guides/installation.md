@@ -31,13 +31,13 @@ to its own release tag.
 | Extra | Adds |
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
-| `transfer` | `django-import-export[xlsx]` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
+| `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
 | `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth |
 | `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
 | `oidc` | `djangorestframework` + `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
 | `celery` | `celery`, for `rn_forge.django.celery` |
-| `fixtures` | `rn-forge-commons[excel,pandas]`, for building Django JSON fixtures from Excel workbooks |
+| `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
 `oidc` is its own extra rather than part of `jwt`: verifying externally issued
