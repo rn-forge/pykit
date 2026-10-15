@@ -2,11 +2,12 @@
 
 | | |
 | --- | --- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-10-15 |
 
 Split framework-neutral areas out of `rn-forge-commons` into purpose-named packages, only when they pass the three-test rule of [ADR-0011](../../../adr/ADR-0011.md), and give every such package one adapter structure. A new adapter (an auth provider, a file format, a message store, an ORM) is then a module plus an extra, with no refactor of the core. `rn-forge-auth` and `rn-forge-data` qualify now. The messaging, fixtures and Celery areas of `rn-forge-django`, and the web dependency of the ORM packages, are deferred until a trigger fires.
 
-[The design](design.md) holds the evidence, the adapter structure and the package contents. Nothing in it is decided until [F15.1](F15.1-package-boundary-rule.md) turns it into an ADR.
+[The design](design.md) holds the evidence, the adapter structure and the package contents. [ADR-0011](../../../adr/ADR-0011.md) records the rule and the adapter structure.
 
 E15 and [E13](../E13-auth/index.md) divide the auth work. E15 creates the `rn-forge-auth` package and moves existing code into it. E13 owns new auth behaviour: the adapters, the session and HTTP surface, authorization policy and the removal of the locally issued JWT flows. New adapter implementations are deliberately outside E15.
 
@@ -14,7 +15,7 @@ E15 and [E13](../E13-auth/index.md) divide the auth work. E15 creates the `rn-fo
 
 | Feature | Scope | State |
 | --- | --- | --- |
-| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | New |
+| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | Active |
 | [F15.2 — rn-forge-auth package](F15.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | New |
 | [F15.3 — rn-forge-data package](F15.3-data-package.md) | Create the package and move the Excel and pandas code into it. | New |
 | [F15.4 — Domain errors in commons](F15.4-domain-errors.md) | Move `VersionConflict` and `DomainConflict` to commons so the ORM packages need no web import. | New |
@@ -31,6 +32,6 @@ Governing decision: [ADR-0011](../../../adr/ADR-0011.md). Related: [ADR-0002](..
 - A broad split of commons. Its base install is five small libraries, and a split removes no install weight.
 - `rn-forge-logging`, `rn-forge-integration` or `rn-forge-resilience`, `rn-forge-messaging` now, and `rn-forge-fs`, `-lang` or `-runtime`. The [design](design.md#considered-and-rejected) gives the reason for each.
 
-## Open questions
+## Answered questions
 
-The [design](design.md#open-questions) lists the questions, each with a recommendation. They close in [S15.1.1](F15.1-package-boundary-rule.md).
+The owner answered the design's questions on 2026-10-15 in [S15.1.1](F15.1-package-boundary-rule.md). The [design](design.md#answered-questions) records the answers.

@@ -6,7 +6,7 @@
 | **Settled by** | [F15.1](F15.1-package-boundary-rule.md) |
 | **Depends on** | [ADR-0002](../../../adr/ADR-0002.md), [ADR-0003](../../../adr/ADR-0003.md), [ADR-0004](../../../adr/ADR-0004.md), [ADR-0011](../../../adr/ADR-0011.md) |
 
-Which parts of `rn-forge-commons` earn their own package, the one structure every such package uses for its adapters, what moves into `rn-forge-auth` and `rn-forge-data`, and which framework-neutral areas of `rn-forge-django` wait for a trigger. This page is a working proposal. Nothing in it is decided until it becomes an ADR or a feature.
+Which parts of `rn-forge-commons` earn their own package, the one structure every such package uses for its adapters, what moves into `rn-forge-auth` and `rn-forge-data`, and which framework-neutral areas of `rn-forge-django` wait for a trigger. [ADR-0011](../../../adr/ADR-0011.md) accepts the rule and the adapter structure, and the owner answered the open questions on 2026-10-15.
 
 [Back to E15](index.md)
 
@@ -254,12 +254,12 @@ The cost today is two small extra installs and an import. Nothing is functionall
 - **`rn-forge-fs`, `rn-forge-lang`, `rn-forge-runtime`.** These are the foundation every package uses together. Splitting them multiplies pins without letting anyone install less.
 - **`rn-forge-tabular` as the name for the data package.** The owner chose `rn-forge-data` on 2026-10-13.
 
-## Open questions
+## Answered questions
 
-Each carries a recommendation. A question closes when the owner accepts or replaces it, in [S15.1.1](F15.1-package-boundary-rule.md).
+The owner answered these on 2026-10-15, in [S15.1.1](F15.1-package-boundary-rule.md).
 
-- **`rn-forge-data` base dependencies or extras?** The proposal puts openpyxl and tablib in the base and pandas behind an extra. *Recommendation:* keep that shape. Excel is the package's purpose, and pandas is the heavy optional part.
-- **Is `rn-forge-auth`'s JWT verification core or the `oidc` extra?** *Recommendation:* the `oidc` extra, so the core stays dependency-free and follows the adapter structure.
-- **Order of F15.2 and E13's adapter features.** *Recommendation:* F15.2 first, after [F13.1](../E13-auth/F13.1-auth-design.md) settles placement, so the adapters are written inside the package.
-- **Does F15.4 join release 4 if E13 already reshapes web?** *Recommendation:* yes in that case, as one move. Otherwise it stays deferred.
-- **Package versions.** *Recommendation:* `0.1.0` for the new packages, and breaking bumps for commons, web, django and fastapi.
+- **`rn-forge-data` base dependencies or extras?** openpyxl and tablib in the base, pandas behind the `pandas` extra. Excel is the package's purpose and pandas is heavy. If the package grows into data-science utilities, pandas can move into the base in a later breaking release.
+- **Is `rn-forge-auth`'s JWT verification core or the `oidc` extra?** The `oidc` extra, so the core stays dependency-free and follows the adapter structure.
+- **Order of F15.2 and E13's adapter features.** F15.2 first, after [F13.1](../E13-auth/F13.1-auth-design.md) settles placement, so the adapters are written inside the package.
+- **Does F15.4 join release 4 if E13 already reshapes web?** Yes in that case, as one move. Otherwise it stays deferred.
+- **Package versions.** `0.1.0` for the new packages, and breaking bumps for commons, web, django and fastapi.
