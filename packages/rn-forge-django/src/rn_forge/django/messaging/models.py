@@ -32,7 +32,7 @@ class AbstractOutboxMessage(models.Model):
 
     class Meta:
         abstract = True
-        indexes = [models.Index(fields=["published_at", "occurred_at"])]
+        indexes = [models.Index(fields=["published_at", "occurred_at"])]  # noqa: RUF012  # framework class attribute
 
 
 class AbstractInboxMessage(models.Model):

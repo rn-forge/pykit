@@ -1,9 +1,9 @@
+from rn_forge.django.auth.credentials import BaseCredentials
 from rn_forge.django.auth.drf.authentication import (
     BaseLoginAPIView,
     BaseLoginViewMixin,
     LogoutAPIView,
 )
-from rn_forge.django.auth.credentials import BaseCredentials
 from rn_forge.django.auth.drf.mixins import (
     AuthorizationViewMixin,
     PermissionKeyViewMixin,
@@ -28,10 +28,10 @@ from rn_forge.django.auth.drf.views import (
 )
 
 __all__ = [
-    "AuthorizedAPIView",
-    "AuthorizedModelViewSet",
     "AuthorizationPermission",
     "AuthorizationViewMixin",
+    "AuthorizedAPIView",
+    "AuthorizedModelViewSet",
     "BaseCredentials",
     "BaseLoginAPIView",
     "BaseLoginViewMixin",

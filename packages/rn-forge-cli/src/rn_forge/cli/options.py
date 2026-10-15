@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 import tomllib
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any, Self, Sequence, cast
+from typing import Annotated, Any, Self, cast
 
 import typer
-
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.runtime.console import OutputMode, console
 

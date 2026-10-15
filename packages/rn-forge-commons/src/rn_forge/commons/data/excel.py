@@ -110,7 +110,7 @@ class ExcelUtils:
     @staticmethod
     def new_workbook(write_only: bool = False, iso_dates: bool = False) -> Workbook:
         """Create and return a new blank :class:`~openpyxl.workbook.Workbook`."""
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.new_workbook | write_only={} | iso_dates={}",
             write_only,
             iso_dates,
@@ -136,7 +136,7 @@ class ExcelUtils:
             keep_links: Preserve external links.
             rich_text: Preserve rich-text cell content.
         """
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.load_workbook | source={} | read_only={} | keep_vba={} | data_only={} | keep_links={} | rich_text={}",
             source,
             read_only,
@@ -155,7 +155,7 @@ class ExcelUtils:
                 rich_text=rich_text,
             )
         except Exception:
-            _LOGGER.exception("ExcelUtils.load_workbook failed | source={}", source)
+            _LOGGER.exception("ExcelUtils.load_workbook failed | source={}", source)  # noqa: PLE1205  # brace-style log format
             raise
         _LOGGER.verbose(
             "ExcelUtils.load_workbook complete | source={} | sheets={}",
@@ -172,7 +172,7 @@ class ExcelUtils:
         """
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.write_workbook | path={} | sheets={}",
             target,
             workbook.sheetnames,
@@ -180,7 +180,7 @@ class ExcelUtils:
         try:
             workbook.save(target)
         except Exception:
-            _LOGGER.exception("ExcelUtils.write_workbook failed | path={}", target)
+            _LOGGER.exception("ExcelUtils.write_workbook failed | path={}", target)  # noqa: PLE1205  # brace-style log format
             raise
         _LOGGER.verbose("ExcelUtils.write_workbook complete | path={}", target)
         return target
@@ -189,7 +189,7 @@ class ExcelUtils:
     def write_workbook_bytes(workbook: Workbook) -> BytesIO:
         """Serialise *workbook* to an in-memory :class:`~io.BytesIO` buffer."""
         target = BytesIO()
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.write_workbook_bytes | sheets={}",
             workbook.sheetnames,
         )
@@ -271,7 +271,7 @@ class ExcelUtils:
         """
         from openpyxl.worksheet.table import Table, TableStyleInfo
 
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.add_table | sheet={} | table_name={} | range={} | style={}",
             sheet.title,
             table_name,
@@ -299,7 +299,7 @@ class ExcelUtils:
         """
         from openpyxl.cell import Cell
 
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.resize_table | sheet={} | table_name={} | max_row={}",
             sheet.title,
             table_name,
@@ -308,7 +308,7 @@ class ExcelUtils:
         last_row = sheet[sheet.max_row]
         last_cell = last_row[-1]
         if not isinstance(last_cell, Cell):
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "ExcelUtils.resize_table: merged cell prevents resize | sheet={} | table_name={} | row={}",
                 sheet.title,
                 table_name,
@@ -332,7 +332,7 @@ class ExcelUtils:
         """Set each column's width to fit the longest cell value in that column."""
         from openpyxl.cell import Cell
 
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelUtils.auto_adjust_column_width | sheet={} | columns={}",
             sheet.title,
             sheet.max_column,
@@ -378,17 +378,17 @@ class ExcelAdapter:
     """
 
     @staticmethod
-    def read_dataframe(path: str | Path) -> dict[str, "pandas.DataFrame"]:
+    def read_dataframe(path: str | Path) -> dict[str, pandas.DataFrame]:
         """Read a workbook file into a sheet-name keyed DataFrame mapping."""
         import pandas
 
-        _LOGGER.debug("ExcelAdapter.read_dataframe | path={}", path)
+        _LOGGER.debug("ExcelAdapter.read_dataframe | path={}", path)  # noqa: PLE1205  # brace-style log format
         try:
-            workbook: dict[str, "pandas.DataFrame"] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+            workbook: dict[str, pandas.DataFrame] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
                 path, sheet_name=None
             )
         except Exception:
-            _LOGGER.exception("ExcelAdapter.read_dataframe failed | path={}", path)
+            _LOGGER.exception("ExcelAdapter.read_dataframe failed | path={}", path)  # noqa: PLE1205  # brace-style log format
             raise
         _LOGGER.verbose(
             "ExcelAdapter.read_dataframe complete | path={} | sheets={}",
@@ -398,13 +398,13 @@ class ExcelAdapter:
         return workbook
 
     @staticmethod
-    def load_dataframe(source: BytesIO) -> dict[str, "pandas.DataFrame"]:
+    def load_dataframe(source: BytesIO) -> dict[str, pandas.DataFrame]:
         """Load an in-memory workbook into a sheet-name keyed DataFrame mapping."""
         import pandas
 
         _LOGGER.debug("ExcelAdapter.load_dataframe")
         try:
-            workbook: dict[str, "pandas.DataFrame"] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
+            workbook: dict[str, pandas.DataFrame] = pandas.read_excel(  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
                 source, sheet_name=None
             )
         except Exception:
@@ -418,14 +418,14 @@ class ExcelAdapter:
 
     @staticmethod
     def from_dataframe(
-        data: "pandas.DataFrame | dict[str, pandas.DataFrame]",
+        data: pandas.DataFrame | dict[str, pandas.DataFrame],
     ) -> Workbook:
         """Convert DataFrame data to an in-memory workbook."""
         import pandas
 
         buf = BytesIO()
         sheets = data if isinstance(data, dict) else {"Sheet1": data}
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ExcelAdapter.from_dataframe | sheets={}",
             list(sheets),
         )
@@ -442,7 +442,7 @@ class ExcelAdapter:
                     )
                     frame.to_excel(writer, sheet_name=sheet_name, index=False)  # pyright: ignore[reportUnknownMemberType]  # pandas-stubs gap
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "ExcelAdapter.from_dataframe failed | sheets={}",
                 list(sheets),
             )
@@ -477,7 +477,7 @@ class ExcelAdapter:
 
 
 def write_xlsx(
-    dataset: "tablib.Dataset",
+    dataset: tablib.Dataset,
     column_formats: Mapping[str, str] | None = None,
     sheet_title: str = "Sheet1",
 ) -> bytes:

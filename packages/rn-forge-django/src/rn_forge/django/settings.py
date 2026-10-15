@@ -12,10 +12,10 @@ from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 
 __all__ = [
-    "AuthSettings",
-    "AuthSettingsDict",
     "AuthSAMLSettings",
     "AuthSAMLSettingsDict",
+    "AuthSettings",
+    "AuthSettingsDict",
     "CasingSettings",
     "CasingSettingsDict",
     "DRFSettings",
@@ -83,7 +83,7 @@ class DRFSettingsDict(TypedDict, total=False):
 class AuthSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]``."""
 
-    SAML: "AuthSAMLSettingsDict"
+    SAML: AuthSAMLSettingsDict
 
 
 class AuthSAMLSettingsDict(TypedDict, total=False):
@@ -159,7 +159,7 @@ class DRFSettings:
 class AuthSettings:
     """Runtime settings for auth helpers."""
 
-    saml: "AuthSAMLSettings" = field(default_factory=lambda: AuthSAMLSettings())
+    saml: AuthSAMLSettings = field(default_factory=lambda: AuthSAMLSettings())
 
 
 @dataclass(frozen=True)
@@ -264,7 +264,7 @@ def _reload_settings(*, setting: str, **kwargs: Any) -> None:
 
     global rn_forge_django_settings
     rn_forge_django_settings = _build_settings()
-    _LOGGER.debug("{} reloaded", _SETTINGS_NAME)
+    _LOGGER.debug("{} reloaded", _SETTINGS_NAME)  # noqa: PLE1205  # brace-style log format
 
 
-setting_changed.connect(_reload_settings)  # pyright: ignore[reportUnknownMemberType]  # Django signal stubs are incomplete
+setting_changed.connect(_reload_settings)

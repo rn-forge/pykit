@@ -1,13 +1,13 @@
 """Optional SAML login helpers for rn-forge auth."""
 
 from rn_forge.django.auth.saml.views import (
-    SAMLLoginAPIView,
     SAMLJWTLoginAPIView,
+    SAMLLoginAPIView,
     SAMLLoginViewMixin,
 )
 
 __all__ = [
-    "SAMLLoginAPIView",
     "SAMLJWTLoginAPIView",
+    "SAMLLoginAPIView",
     "SAMLLoginViewMixin",
 ]

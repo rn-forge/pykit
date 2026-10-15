@@ -28,7 +28,7 @@ kiln readiness ([E16](../../specs/epics/E16-kiln-adoption/index.md)): the worksp
 | [F15.2](../../specs/epics/E15-package-boundaries/F15.2-auth-package.md) | E15 | New |
 | [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | New |
 | [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Active |
-| [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | New |
+| [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | Active |
 <!-- scope:end -->
 
 ## Order

@@ -10,7 +10,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.django.auth.drf.authentication import BaseLoginAPIView
 from rn_forge.django.auth.jwt.mixins import JWTAuthenticationViewMixin
 from rn_forge.django.auth.jwt.utils import JWTUtils
@@ -23,7 +22,7 @@ _LOGGER = AppLogger.get_logger(__name__)
 
 
 @_LOGGER.audit_class(include_inherited=True)
-class UserTokenView[_UserT](JWTAuthenticationViewMixin[_UserT], BaseLoginAPIView):
+class UserTokenView[UserT](JWTAuthenticationViewMixin[UserT], BaseLoginAPIView):
     """Exchange a short-lived login token for the final JWT pair."""
 
     exchange_token_param = "exchange_token"
@@ -48,7 +47,7 @@ class UserTokenView[_UserT](JWTAuthenticationViewMixin[_UserT], BaseLoginAPIView
     def get_login_exchange_user(
         self,
         exchange_payload: Mapping[str, object],
-    ) -> _UserT:
+    ) -> UserT:
         """Resolve the target user from the exchange token payload."""
         from rest_framework_simplejwt.settings import api_settings
 
@@ -64,7 +63,7 @@ class UserTokenView[_UserT](JWTAuthenticationViewMixin[_UserT], BaseLoginAPIView
         user_model = cast(type[Any], get_user_model())
         try:
             return cast(
-                _UserT, user_model._default_manager.get(**{user_id_field: user_id})
+                UserT, user_model._default_manager.get(**{user_id_field: user_id})
             )
         except user_model.DoesNotExist:
             raise ValidationError(

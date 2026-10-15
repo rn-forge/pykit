@@ -10,7 +10,6 @@ from django.db import router, transaction
 from django.utils import timezone
 from rn_forge.commons.integration.messaging import MessageBus
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.django.messaging.models import AbstractOutboxMessage
 
 __all__ = ["make_outbox_relay"]
@@ -21,7 +20,7 @@ type Log = Callable[[str, Mapping[str, Any]], None]
 
 
 def _default_log(event: str, context: Mapping[str, Any]) -> None:
-    _LOGGER.info("{} {}", event, " ".join(f"{k}={v}" for k, v in context.items()))
+    _LOGGER.info("{} {}", event, " ".join(f"{k}={v}" for k, v in context.items()))  # noqa: PLE1205  # brace-style log format
 
 
 def make_outbox_relay[M: AbstractOutboxMessage](

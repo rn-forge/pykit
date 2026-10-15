@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+from django.contrib import auth as django_auth
+from django.http import HttpResponseBase
 from rest_framework import status
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import AllowAny
@@ -11,12 +13,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django._typing import DjangoAuthProtocol
+from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.drf import RequestUtils
 from rn_forge.django.drf.views.base import BaseAPIView
-from rn_forge.django.auth.payload import LoginPayload
-
-from django.contrib import auth as django_auth
-from django.http import HttpResponseBase
 
 __all__ = [
     "BaseLoginAPIView",
@@ -33,7 +32,7 @@ _DJANGO_AUTH = cast(DjangoAuthProtocol, django_auth)
 # ---------------------------------------------------------------------------
 
 
-class BaseLoginViewMixin[_UserT]:
+class BaseLoginViewMixin[UserT]:
     """Token-agnostic session login and logout helpers for DRF views."""
 
     auto_create_user = False
@@ -87,13 +86,13 @@ class BaseLoginViewMixin[_UserT]:
 class BaseLoginAPIView(BaseAPIView):
     """Common API view base for login/logout endpoints."""
 
-    authentication_classes: list[type[BaseAuthentication]] = []
-    permission_classes = [AllowAny]
+    authentication_classes: list[type[BaseAuthentication]] = []  # noqa: RUF012  # framework class attribute
+    permission_classes = [AllowAny]  # noqa: RUF012  # framework class attribute
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
         """Dispatch ``POST`` requests to :meth:`login`."""
         del args, kwargs
-        login = getattr(self, "login")
+        login = getattr(self, "login")  # noqa: B009  # supplied by the concrete view
         return login(request)
 
 
@@ -101,8 +100,8 @@ class BaseLoginAPIView(BaseAPIView):
 class LogoutAPIView(BaseAPIView):
     """Common API view for logging out the current session."""
 
-    authentication_classes: list[type[BaseAuthentication]] = []
-    permission_classes = [AllowAny]
+    authentication_classes: list[type[BaseAuthentication]] = []  # noqa: RUF012  # framework class attribute
+    permission_classes = [AllowAny]  # noqa: RUF012  # framework class attribute
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Dispatch ``POST`` logout requests."""

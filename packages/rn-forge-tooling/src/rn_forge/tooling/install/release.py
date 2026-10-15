@@ -13,7 +13,6 @@ from typing import Protocol, runtime_checkable
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.tooling.install.archive import extract_archive
 
 __all__ = ["GitHubReleases", "LocalArchive", "ReleaseSource", "fetch_release"]
@@ -76,7 +75,7 @@ class GitHubReleases:
         """
         url = f"{self.api_url}/repos/{self.repo}/releases/latest"
         try:
-            with urllib.request.urlopen(url, timeout=_TIMEOUT) as response:  # noqa: S310 - https coordinates from the product
+            with urllib.request.urlopen(url, timeout=_TIMEOUT) as response:
                 tag = str(json.load(response).get("tag_name") or "")
         except (urllib.error.URLError, ValueError) as error:
             raise AppException(
@@ -102,7 +101,7 @@ class GitHubReleases:
         archive = destination / f"{tag}.tar.gz"
         try:
             with (
-                urllib.request.urlopen(url, timeout=_TIMEOUT) as response,  # noqa: S310 - https coordinates from the product
+                urllib.request.urlopen(url, timeout=_TIMEOUT) as response,
                 archive.open("wb") as out,
             ):
                 shutil.copyfileobj(response, out)

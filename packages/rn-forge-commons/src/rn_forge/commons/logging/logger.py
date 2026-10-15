@@ -25,8 +25,8 @@ from typing import Any, cast
 import verboselogs
 from rich.console import Console
 from rich.theme import Theme
-from rn_forge.commons.lang.types import VerboseLoggerBase
 from rn_forge.commons.lang.reflection import ReflectUtils
+from rn_forge.commons.lang.types import VerboseLoggerBase
 
 # ---------------------------------------------------------------------------
 # TRACE level — below SPAM (5) and DEBUG (10).
@@ -105,7 +105,7 @@ class BraceLogRecord(logging.LogRecord):
             if isinstance(self.args, tuple):
                 return msg.format(*self.args)
             return msg.format(self.args)
-        except Exception:
+        except Exception:  # noqa: BLE001  # formatting must never raise
             return f"{msg} | format_args={self.args!r}"
 
 
@@ -231,7 +231,7 @@ class LoggingConfig:
         """
         try:
             isatty = bool(getattr(sys.stderr, "isatty", lambda: False)())
-        except Exception:
+        except Exception:  # noqa: BLE001  # tty probe must not raise
             isatty = False
 
         return {
@@ -323,7 +323,7 @@ class AppLogger(VerboseLoggerBase):
 
     LOG_FILE: Path | None = None
 
-    __slots__ = ("_init_level", "_audit_level", "_audit_separator")
+    __slots__ = ("_audit_level", "_audit_separator", "_init_level")
 
     _config_lock = threading.Lock()
     _configured: bool = False
@@ -754,8 +754,8 @@ class AppLogger(VerboseLoggerBase):
                 sep.join(formatted_args) if formatted_args else "<empty>",
                 extra={"caller": func_name},
             )
-        except Exception as log_exc:
-            logger.warning(
+        except Exception as log_exc:  # noqa: BLE001  # audit logging must not raise
+            logger.warning(  # noqa: PLE1205  # brace-style log format
                 "audit_entry_error: {} | {}",
                 func_name,
                 f"{type(log_exc).__qualname__}: {log_exc}",
@@ -770,7 +770,7 @@ class AppLogger(VerboseLoggerBase):
         audit_level: int,
     ) -> None:
         if not getattr(exc, "_audit_logged", False):
-            setattr(exc, "_audit_logged", True)
+            setattr(exc, "_audit_logged", True)  # noqa: B010  # dynamic marker attribute
             logger.log(
                 audit_level,
                 "Error -> {} | Time={:.6f} | {}",
@@ -883,7 +883,7 @@ class AppLogger(VerboseLoggerBase):
         """Register TRACE level, AppLogger as the logger class, and BraceLogRecord factory (idempotent)."""
         if not hasattr(logging, "TRACE"):
             logging.addLevelName(TRACE, "TRACE")
-            setattr(logging, "TRACE", TRACE)
+            setattr(logging, "TRACE", TRACE)  # noqa: B010  # dynamic level attribute
         if logging.getLoggerClass() is not AppLogger:
             logging.setLoggerClass(AppLogger)
         if logging.getLogRecordFactory() is not BraceLogRecord:

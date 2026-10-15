@@ -14,8 +14,6 @@ from opentelemetry.instrumentation.propagators import (
     get_global_response_propagator,
     set_global_response_propagator,  # pyright: ignore[reportUnknownVariableType]
 )
-from starlette.types import Lifespan
-
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.fastapi.health import health_router
 from rn_forge.fastapi.openapi import operation_id, repair_problem_schema
@@ -38,6 +36,7 @@ from rn_forge.web.security import (
     HSTS_HEADER,
     SecurityHeadersMiddleware,
 )
+from starlette.types import Lifespan
 
 __all__ = ["AppConfig", "FastApiApp"]
 

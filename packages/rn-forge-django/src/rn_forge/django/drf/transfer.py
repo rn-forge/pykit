@@ -22,12 +22,11 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
-
 from rn_forge.commons.data.excel import write_xlsx
+from rn_forge.django import settings as django_settings
 from rn_forge.django.drf._typing import action
 from rn_forge.django.drf.views.mixins import AuditFieldsViewMixin
 from rn_forge.django.models.concurrency import VersionedModelMixin
-from rn_forge.django import settings as django_settings
 from rn_forge.web import (
     NON_EMPTY_LIST_DETAIL,
     PROBLEM_MEDIA_TYPE,
@@ -329,7 +328,9 @@ class ResourceImportMixin(GenericAPIView):
         )
         try:
             return cast(Any, tablib.Dataset()).load(content, format=fmt.tablib_name)
-        except Exception as exc:  # noqa: BLE001  # tablib and openpyxl raise unrelated types for a corrupt file
+        except (
+            Exception
+        ) as exc:  # tablib and openpyxl raise unrelated types for a corrupt file
             raise ValidationError(
                 {"file": unreadable_file_detail(fmt.extension)}
             ) from exc

@@ -51,8 +51,19 @@ pytest-args = ["-m", "not scaffold"]
 [tool.workspace-ci.suites]
 scaffold = ["-q", "-m", "scaffold"]
 
+[tool.ruff.format]
+# Markdown code blocks are owned by the docs formatting, not ruff.
+exclude = ["*.md"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
+
+[tool.ruff.lint.isort]
+# ruff otherwise sorts these frameworks as first-party, after the rn_forge subpackages that share their names.
+known-third-party = ["django", "fastapi", "sqlalchemy"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Body", "fastapi.Depends", "fastapi.Query", "fastapi.Security"]
 
 [tool.uv.sources]
 rn-forge-cli = { workspace = true }
@@ -97,13 +108,13 @@ dev = [
   { include-group = "workspace" },
   { include-group = "docs" },
   "assertpy>=1.1",
-  "django-stubs>=6.0.7",
+  "django-stubs>=6.1.2",
   "import-linter>=2.3",
   "opentelemetry-instrumentation-asgi>=0.65b0",
   "opentelemetry-sdk>=1.44",
   "pandas-stubs>=3.0.5",
   "psycopg[binary]>=3.3.5",
-  "pyright>=1.1.411",
+  "pyright>=1.1.414",
   "pytest>=9.1.1",
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
@@ -112,5 +123,5 @@ dev = [
   "pytest-django>=4.12.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-commons[excel]",
-  "ruff>=0.15.21",
+  "ruff>=0.17.1",
 ]

@@ -12,7 +12,7 @@ pykit moves onto [kiln](https://github.com/rn-forge/kiln)'s `python-lib` archety
 | Feature | Scope | State |
 | --- | --- | --- |
 | [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | Active |
-| [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | New |
+| [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | Active |
 | [F16.3 — Cut over onto kiln](F16.3-cutover.md) | `kiln init` as `python-lib`, generated CI and tasks, and the files pykit stops owning. | New |
 
 [ADR-0012](../../../adr/ADR-0012.md) records that CI and release logic ships as `rn-forge-devops`, never as workflow logic or copied scripts. kiln's matching decisions are its ADR-0014 (the planner, the `ci:*` tasks, workspace members in the dependency contract, a workspace that owns its import contracts) and ADR-0006 (generated CI runs the pinned kiln read-only).

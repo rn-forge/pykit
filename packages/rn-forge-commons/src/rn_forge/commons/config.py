@@ -31,8 +31,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.fs.documents import JsonUtils, YamlUtils
+from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 
 _SENTINEL = object()
@@ -105,7 +105,7 @@ class Config:
         """
         config_path = Path(*paths)
         if not config_path.exists():
-            _LOGGER.warning("Config.__init__ | path={} | missing=true", config_path)
+            _LOGGER.warning("Config.__init__ | path={} | missing=true", config_path)  # noqa: PLE1205  # brace-style log format
             raise FileNotFoundError(f"Config path not found: {config_path}")
 
         config_files = (
@@ -195,7 +195,7 @@ class Config:
 
     def _resolve_dict(self, data: dict[str, Any], *, depth: int) -> None:
         if depth > _MAX_RESOLVE_DEPTH:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Config._resolve_dict | depth={} | max_depth_exceeded=true",
                 depth,
             )
@@ -210,7 +210,7 @@ class Config:
             _LOGGER.trace("__extends__: {}", parent_ref)
             parent = self._resolve_value(parent_ref, depth=depth)
             if not isinstance(parent, dict):
-                _LOGGER.warning(
+                _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                     "Config._resolve_dict | extends_ref={} | invalid_parent_type={}",
                     parent_ref,
                     type(parent).__name__,
@@ -232,7 +232,7 @@ class Config:
 
     def _resolve_list(self, items: list[Any], *, depth: int) -> list[Any]:
         if depth > _MAX_RESOLVE_DEPTH:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Config._resolve_list | depth={} | max_depth_exceeded=true",
                 depth,
             )
@@ -264,7 +264,7 @@ class Config:
     def _resolve_value(self, value: str, *, depth: int) -> Any:
         """Resolve a single string that may contain one or more references."""
         if depth > _MAX_RESOLVE_DEPTH:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Config._resolve_value | value={} | depth={} | max_depth_exceeded=true",
                 value,
                 depth,
@@ -328,7 +328,7 @@ class Config:
         ref_value = DictUtils.get(self._data, ref_path, default=_SENTINEL)
         _LOGGER.trace("Referenced Value: {} | {}", ref_path, ref_value)
         if ref_value is _SENTINEL:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Config._resolve_value | unresolved_placeholder={}",
                 placeholder,
             )
@@ -358,7 +358,7 @@ class Config:
             return _SENTINEL
         ref = DictUtils.get(self._data, m.group(1), default=_SENTINEL)
         if ref is _SENTINEL:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Config._resolve_value | unresolved_{}_ref={}", kind, m.group(1)
             )
             return resolved
@@ -427,7 +427,7 @@ def _is_reference(value: str) -> bool:
     if (
         _REF_DICT_PATTERN.match(value) or _REF_LIST_PATTERN.match(value)
     ) and _REF_VALUE_PATTERN.search(value):
-        _LOGGER.warning(
+        _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
             "Nested references are discouraged due to complexity: {} | {}",
             value,
             _REF_VALUE_PATTERN.findall(value),

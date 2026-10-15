@@ -7,11 +7,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from rn_forge.sqlalchemy.models import AuditMixin, Base
 from sqlalchemy import Table, select, tuple_
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from rn_forge.sqlalchemy.models import AuditMixin, Base
 
 __all__ = ["UpsertCounts", "upsert"]
 

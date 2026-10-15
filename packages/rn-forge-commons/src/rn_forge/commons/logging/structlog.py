@@ -22,7 +22,6 @@ from collections.abc import MutableMapping
 from typing import Any, Self
 
 import structlog
-
 from rn_forge.commons.logging.logger import AppLogger
 
 __all__ = ["StructLogger", "otel_processor"]

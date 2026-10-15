@@ -34,11 +34,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.params import Depends as DependsParam
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model
-
+from rn_forge.commons.data.excel import write_xlsx
 from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.read_mask import read_mask_param
-
-from rn_forge.commons.data.excel import write_xlsx
 from rn_forge.web import (
     NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
@@ -594,7 +592,7 @@ def import_template_router[T: BaseModel](
 
     async def import_template(
         request: Request,
-        fmt: TabularFormat | None = Depends(tabular_format(offered)),
+        fmt: TabularFormat | None = Depends(tabular_format(offered)),  # noqa: B008  # dependency factory
         prefill: str | None = Query(default=None),
         supplier: TemplateSource = Depends(source),
     ) -> Response:

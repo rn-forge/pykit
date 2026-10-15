@@ -19,8 +19,8 @@ from rn_forge.fastapi.merge_patch import (
     merge_patch_openapi,
 )
 from rn_forge.fastapi.openapi import operation_id
-from rn_forge.fastapi.read_mask import masked, read_mask_param
 from rn_forge.fastapi.problem import Log, register_problem_handlers
+from rn_forge.fastapi.read_mask import masked, read_mask_param
 from rn_forge.fastapi.soft_delete import (
     SoftDeleteState,
     SoftDeleteStore,

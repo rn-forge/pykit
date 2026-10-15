@@ -11,7 +11,6 @@ from django.utils import timezone
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.integration.messaging import HandlerRegistry
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.django.messaging.models import AbstractInboxMessage
 
 __all__ = ["UnknownMessageType", "process_event"]
@@ -62,7 +61,7 @@ def process_event(
     with transaction.atomic(using=alias):
         row = manager.select_for_update().get(message_id=message_id)
         if row.processed_at is not None:
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "Inbox duplicate skipped: id={} type={}", message_id, message_type
             )
             return False
@@ -83,7 +82,7 @@ def process_event(
             row.error = ""
             row.save(update_fields=["attempts", "error", "processed_at"])
             return True
-    _LOGGER.warning(
+    _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
         "Inbox handler failed: id={} type={} error={}",
         message_id,
         message_type,

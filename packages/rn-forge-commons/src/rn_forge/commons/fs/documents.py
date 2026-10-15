@@ -18,11 +18,10 @@ from pathlib import Path, PurePath
 from typing import Any, Self, cast
 
 import tomlkit
-from ruamel.yaml import YAML
-
 from rn_forge.commons.exceptions import AppException
-from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.fs.paths import PathUtils
+from rn_forge.commons.logging import AppLogger
+from ruamel.yaml import YAML
 
 _LOGGER = AppLogger.get_logger(__name__)
 
@@ -94,7 +93,7 @@ class JsonUtils:
         try:
             obj = json.loads(text)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "JsonUtils.load failed | root_key={} | text_length={}",
                 root_key,
                 len(text),
@@ -129,7 +128,7 @@ class JsonUtils:
         try:
             return json.dumps(obj, **kwargs)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "JsonUtils.serialize failed | type={}",
                 type(obj).__name__,
             )
@@ -155,7 +154,7 @@ class JsonUtils:
         try:
             return JsonUtils.load(Path(path).read_text(encoding=encoding))
         except Exception:
-            _LOGGER.exception("JsonUtils.read_file failed | path={}", path)
+            _LOGGER.exception("JsonUtils.read_file failed | path={}", path)  # noqa: PLE1205  # brace-style log format
             raise
 
     @staticmethod
@@ -196,7 +195,7 @@ class JsonUtils:
                 encoding=encoding,
             )
         except Exception:
-            _LOGGER.exception("JsonUtils.write_file failed | path={}", p)
+            _LOGGER.exception("JsonUtils.write_file failed | path={}", p)  # noqa: PLE1205  # brace-style log format
             raise
         return p
 
@@ -239,7 +238,7 @@ class YamlUtils:
         try:
             obj = _yaml_load(_safe_yaml(), text)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "YamlUtils.load failed | root_key={} | text_length={}",
                 root_key,
                 len(text),
@@ -268,7 +267,7 @@ class YamlUtils:
         try:
             docs = _yaml_load_all(_safe_yaml(), text)
         except Exception:
-            _LOGGER.exception("YamlUtils.load_all failed | text_length={}", len(text))
+            _LOGGER.exception("YamlUtils.load_all failed | text_length={}", len(text))  # noqa: PLE1205  # brace-style log format
             raise
         return [doc for doc in docs if doc is not None]
 
@@ -303,7 +302,7 @@ class YamlUtils:
         try:
             _yaml_dump(yaml, obj, stream)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "YamlUtils.serialize failed | type={}", type(obj).__name__
             )
             raise
@@ -332,7 +331,7 @@ class YamlUtils:
         try:
             _yaml_dump_all(yaml, objs, stream)
         except Exception:
-            _LOGGER.exception("YamlUtils.serialize_all failed | count={}", len(objs))
+            _LOGGER.exception("YamlUtils.serialize_all failed | count={}", len(objs))  # noqa: PLE1205  # brace-style log format
             raise
         return stream.getvalue()
 
@@ -369,7 +368,7 @@ class YamlUtils:
                 Path(path).read_text(encoding=encoding), root_key=root_key
             )
         except Exception:
-            _LOGGER.exception("YamlUtils.read_file failed | path={}", path)
+            _LOGGER.exception("YamlUtils.read_file failed | path={}", path)  # noqa: PLE1205  # brace-style log format
             raise
 
     @staticmethod
@@ -394,7 +393,7 @@ class YamlUtils:
         try:
             return YamlUtils.load_all(Path(path).read_text(encoding=encoding))
         except Exception:
-            _LOGGER.exception("YamlUtils.read_file_all failed | path={}", path)
+            _LOGGER.exception("YamlUtils.read_file_all failed | path={}", path)  # noqa: PLE1205  # brace-style log format
             raise
 
     @staticmethod
@@ -428,7 +427,7 @@ class YamlUtils:
         try:
             p.write_text(YamlUtils.serialize(obj, **kwargs), encoding=encoding)
         except Exception:
-            _LOGGER.exception("YamlUtils.write_file failed | path={}", p)
+            _LOGGER.exception("YamlUtils.write_file failed | path={}", p)  # noqa: PLE1205  # brace-style log format
             raise
         return p
 

@@ -13,9 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
-
 from rn_forge.web import EXPOSED_HEADERS, WebError
+from starlette.middleware.cors import CORSMiddleware
 
 __all__ = ["CorsPolicy", "apply_cors"]
 

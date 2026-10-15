@@ -15,7 +15,6 @@ from typing import Any
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ValidationError
-
 from rn_forge.web import (
     MERGE_PATCH_MEDIA_TYPE,
     InvalidMergePatch,

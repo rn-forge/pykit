@@ -32,7 +32,6 @@ from enum import Enum
 from typing import Any, ClassVar, Self, cast
 
 import dacite
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import JsonUtils, YamlUtils
 from rn_forge.commons.logging import AppLogger
@@ -171,7 +170,7 @@ class DataclassMixin:
                 ``@dataclasses.dataclass``.
         """
         if not dataclasses.is_dataclass(cls):
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "DataclassMixin.from_dict: target is not a dataclass | cls={}", cls
             )
             raise TypeError(
@@ -180,7 +179,7 @@ class DataclassMixin:
         if cls.__dacite_config__.strict:
             unknown_keys = _unknown_key_paths(cls, data, "")
             if unknown_keys:
-                _LOGGER.debug(
+                _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                     "DataclassMixin.from_dict: unknown keys | cls={} | keys={}",
                     cls.__name__,
                     unknown_keys,
@@ -193,7 +192,7 @@ class DataclassMixin:
         field_names = {field.name for field in dataclasses.fields(cls)}
         ignored_keys = sorted(set(data) - field_names)
         if ignored_keys:
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "DataclassMixin.from_dict: ignoring unknown keys | cls={} | keys={}",
                 cls.__name__,
                 ignored_keys,
@@ -211,7 +210,7 @@ class DataclassMixin:
             # message the caller acts on. Logging a full traceback at ERROR
             # here double-reports it, and buries a clean message under a dacite
             # stack the reader can do nothing with.
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "DataclassMixin.from_dict failed | cls={} | keys={}",
                 cls.__name__,
                 sorted(data),
@@ -442,7 +441,7 @@ def _element_annotation(origin: object, args: tuple[object, ...], index: int) ->
 def _dataclass_to_dict(obj: Any, *, exclude_hidden: bool) -> dict[str, Any]:
     """Recursively convert a dataclass to a dict, respecting ``exclude`` metadata."""
     if not dataclasses.is_dataclass(obj):
-        _LOGGER.warning(
+        _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
             "_dataclass_to_dict: target is not a dataclass | type={}",
             type(obj).__name__,
         )

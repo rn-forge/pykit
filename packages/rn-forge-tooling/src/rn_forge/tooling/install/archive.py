@@ -16,7 +16,7 @@ def extract_archive(
     archive: str | Path,
     destination: str | Path,
     *,
-    filter: Literal["data", "tar", "fully_trusted"] = "data",  # noqa: A002
+    filter: Literal["data", "tar", "fully_trusted"] = "data",
 ) -> Path:
     """Extract a ``.tar``/``.zip`` *archive* into *destination*, returning its root dir.
 

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from operator import attrgetter
-from typing import Any, Iterable, cast, override
+from typing import Any, cast, override
 
+from django.db import connection, models
+from django.db.models.base import ModelBase
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django._typing import (
     DateField,
@@ -16,9 +19,6 @@ from rn_forge.django._typing import (
 from rn_forge.django.models._meta import get_model_meta
 from rn_forge.django.models.enums import Status
 from rn_forge.django.models.fields import EnumField
-
-from django.db import connection, models
-from django.db.models.base import ModelBase
 
 __all__ = [
     "BaseModel",
@@ -43,7 +43,7 @@ class NaturalKeyLookupManager(models.Manager["BaseModel"]):
     The model must implement :meth:`FixtureModelMixin.natural_keys`.
     """
 
-    def get_by_natural_key(self, *values: str) -> "BaseModel":
+    def get_by_natural_key(self, *values: str) -> BaseModel:
         natural_keys = self.model.natural_keys()
         if len(values) != len(natural_keys):
             raise RuntimeError(
@@ -71,7 +71,7 @@ class TruncateModelMixin:
 
         SQLite falls back to ``DELETE FROM`` because it lacks ``TRUNCATE``.
         """
-        _LOGGER.warning("TruncateModelMixin.truncate: {}", cls.__name__)
+        _LOGGER.warning("TruncateModelMixin.truncate: {}", cls.__name__)  # noqa: PLE1205  # brace-style log format
         table = connection.ops.quote_name(get_model_meta(cls).db_table)
         if connection.vendor == "sqlite":
             sql = f"DELETE FROM {table}"

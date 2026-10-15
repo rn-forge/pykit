@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Final, Literal
 
 from pydantic import ConfigDict, Field
-
 from rn_forge.web.exceptions import WebError
 from rn_forge.web.models import WireModel
 

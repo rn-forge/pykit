@@ -9,8 +9,8 @@ from decimal import Decimal
 from typing import Any
 
 import pandas
-from rn_forge.commons.lang.types import series_columns, series_value
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.types import series_columns, series_value
 from rn_forge.commons.logging import AppLogger
 
 __all__ = ["PandasUtils"]
@@ -51,7 +51,7 @@ class PandasUtils:
             field_value: Any = series_value(row, field_name)
         except Exception:
             columns = series_columns(row) if hasattr(row, "index") else "<unavailable>"
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "PandasUtils.get_field failed | field={} | required={} | columns={}",
                 field_name,
                 required,
@@ -68,7 +68,7 @@ class PandasUtils:
         )
 
         if required and not is_valid:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "PandasUtils.get_field missing required value | field={} | columns={}",
                 field_name,
                 series_columns(row),
@@ -121,7 +121,7 @@ class PandasUtils:
         try:
             result = round(Decimal(str(field_value or 0)), precision)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "PandasUtils.get_decimal_field failed | field={} | precision={} | value={}",
                 field_name,
                 precision,

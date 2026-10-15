@@ -8,12 +8,11 @@ from typing import Any, cast
 from django.contrib.auth import get_user_model, models
 from rest_framework.request import Request
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.django.auth.saml.views import SAMLLoginAPIView
 
 __all__ = [
-    "SampleSAMLLoginAPIView",
     "SampleSAMLJWTLoginAPIView",
+    "SampleSAMLLoginAPIView",
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)

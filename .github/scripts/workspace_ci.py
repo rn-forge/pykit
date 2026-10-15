@@ -153,12 +153,14 @@ def select(packages: dict[str, Package], base: str) -> set[str]:
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         ).returncode
         or subprocess.run(
             ["git", "merge-base", "--is-ancestor", base, "HEAD"],
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         ).returncode
     ):
         print(
@@ -359,7 +361,7 @@ def smoke(package_name: str, extra: str) -> int:
         )
         setup = str(ROOT / package.dir / config["setup"]) if "setup" in config else ""
         return subprocess.run(
-            [str(python), "-c", IMPORT_SNIPPET, setup, *modules]
+            [str(python), "-c", IMPORT_SNIPPET, setup, *modules], check=False
         ).returncode
 
 

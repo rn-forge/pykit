@@ -165,14 +165,17 @@ def check_precondition(
             parsed_version,
             error_code=412,
         )
-    if parsed_entity is not None and entity_id is not None:
-        if parsed_entity != str(entity_id):
-            raise VersionConflict(
-                "Precondition failed: validator is for entity {}, not {}",
-                parsed_entity,
-                entity_id,
-                error_code=412,
-            )
+    if (
+        parsed_entity is not None
+        and entity_id is not None
+        and parsed_entity != str(entity_id)
+    ):
+        raise VersionConflict(
+            "Precondition failed: validator is for entity {}, not {}",
+            parsed_entity,
+            entity_id,
+            error_code=412,
+        )
 
 
 def check_item_precondition(

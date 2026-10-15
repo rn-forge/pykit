@@ -19,7 +19,7 @@ class JWTCredentials(BaseCredentials):
 
         auth = self.auth
         if hasattr(auth, "payload"):
-            payload = getattr(auth, "payload")
+            payload = getattr(auth, "payload")  # noqa: B009  # token-specific attribute
             if isinstance(payload, Mapping):
                 return cast(Mapping[str, object], payload)
 

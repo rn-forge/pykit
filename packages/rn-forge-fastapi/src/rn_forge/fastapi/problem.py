@@ -13,8 +13,6 @@ from typing import Any, cast
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-
 from rn_forge.web import (
     NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
@@ -27,6 +25,7 @@ from rn_forge.web import (
     field_error,
     render_problem,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 __all__ = ["Log", "register_problem_handlers"]
 

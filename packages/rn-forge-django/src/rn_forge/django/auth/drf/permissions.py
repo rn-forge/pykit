@@ -7,8 +7,8 @@ from typing import Any, Protocol, cast, override, runtime_checkable
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rn_forge.commons.logging import AppLogger
-from rn_forge.django.drf import RequestUtils
 from rn_forge.django.auth.credentials import BaseCredentials
+from rn_forge.django.drf import RequestUtils
 from rn_forge.django.models import BaseModel
 
 __all__ = ["AuthorizationPermission"]
@@ -53,7 +53,7 @@ class AuthorizationPermission(BasePermission):
         if not isinstance(credentials, BaseCredentials):
             user = RequestUtils.get_request_user(request)
             if user.is_authenticated:
-                _LOGGER.error(
+                _LOGGER.error(  # noqa: PLE1205  # brace-style log format
                     "Authorization misconfigured: method={} path={} auth={}",
                     request.method,
                     request.path,
@@ -64,7 +64,7 @@ class AuthorizationPermission(BasePermission):
                 )
                 self.code = "InvalidCredentials"
                 return False
-            _LOGGER.error(
+            _LOGGER.error(  # noqa: PLE1205  # brace-style log format
                 "Unauthenticated request: method={} path={}",
                 request.method,
                 request.path,
@@ -79,7 +79,7 @@ class AuthorizationPermission(BasePermission):
         if isinstance(view, AuthorizationViewProtocol):
             if view.validate_permissions():
                 return True
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Forbidden request: method={} path={}", request.method, request.path
             )
             self.message = "User does not have permission to access this resource"

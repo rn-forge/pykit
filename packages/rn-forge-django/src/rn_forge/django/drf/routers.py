@@ -26,7 +26,7 @@ class CustomMethodRouter(DefaultRouter):
         urlpatterns = router.urls
     """
 
-    routes = [
+    routes = [  # noqa: RUF012  # framework class attribute
         Route(
             url=r"^{prefix}{trailing_slash}$",
             mapping={"get": "list", "post": "create"},

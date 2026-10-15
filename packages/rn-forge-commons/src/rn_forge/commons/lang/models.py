@@ -38,7 +38,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, ValidationError
-
 from rn_forge.commons.exceptions import AppException
 
 __all__ = ["FieldError", "ModelValidationError", "StrictModel", "parse_model"]

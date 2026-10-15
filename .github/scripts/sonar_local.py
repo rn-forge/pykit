@@ -126,10 +126,10 @@ def main(argv: list[str] | None = None) -> int:
         print("error: sonar-scanner is not installed", file=sys.stderr)
         return 2
 
-    status = subprocess.run(tests, cwd=ROOT).returncode
+    status = subprocess.run(tests, cwd=ROOT, check=False).returncode
     if status:
         return status
-    return subprocess.run(scanner, cwd=ROOT, env=local_env()).returncode
+    return subprocess.run(scanner, cwd=ROOT, env=local_env(), check=False).returncode
 
 
 if __name__ == "__main__":

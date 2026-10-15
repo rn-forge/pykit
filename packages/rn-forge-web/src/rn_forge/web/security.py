@@ -10,7 +10,6 @@ from collections.abc import Mapping
 from typing import Final
 
 import secure
-
 from rn_forge.web.asgi import ASGIApp, Message, Receive, Scope, Send
 
 __all__ = ["API_SECURITY_HEADERS", "HSTS_HEADER", "SecurityHeadersMiddleware"]

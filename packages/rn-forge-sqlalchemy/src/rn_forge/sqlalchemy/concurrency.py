@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, and_, inspect, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from rn_forge.sqlalchemy.models import VersionMixin
 from rn_forge.web import VersionConflict
+from sqlalchemy import CursorResult, and_, inspect, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 __all__ = ["update_versioned"]
 

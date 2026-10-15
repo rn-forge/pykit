@@ -3,31 +3,31 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, ClassVar, cast, override
 from datetime import date
+from typing import Any, ClassVar, cast, override
 
 from django.http import HttpRequest
-from rn_forge.commons.logging import AppLogger
-from rn_forge.commons.lang.utils import AppUtils
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import ListSerializer, Serializer
 from rest_framework.parsers import BaseParser
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import ListSerializer, Serializer
+from rn_forge.commons.lang.utils import AppUtils
+from rn_forge.commons.logging import AppLogger
 from rn_forge.django.drf import AuthenticatedRequestUser, RequestUtils
-from rn_forge.django.drf.casing import MergePatchParser, camelize_key
-from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.drf._typing import (
-    action,
     CreateModelMixinProtocol,
     GenericAPIViewProtocol,
     QuerySetProtocol,
     SerializerData,
     SerializerProtocol,
     UpdateModelMixinProtocol,
+    action,
 )
+from rn_forge.django.drf.casing import MergePatchParser, camelize_key
+from rn_forge.django.drf.concurrency import enforce_version, etag_for
 from rn_forge.django.models import DateRangeModel
 from rn_forge.django.models.concurrency import VersionedModelMixin
 from rn_forge.django.models.soft_delete import SoftDeleteModelMixin
@@ -182,7 +182,7 @@ class ModelFilterViewMixin:
             return filtered
 
         today = date.today()
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Applying active date-range filter: model={} date={}", filtered.model, today
         )
         return filtered.filter(start_date__lte=today).exclude(end_date__lte=today)
@@ -227,7 +227,7 @@ class AuditFieldsViewMixin(RequestAccessViewMixin):
     def perform_create(self, serializer: SerializerProtocol) -> None:
         """Populate audit fields before DRF persists a new model instance."""
         self.prepare_create_data(serializer.validated_data)
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Preparing create audit fields: actor={}", self.get_audit_user_identifier()
         )
         cast(CreateModelMixinProtocol, super()).perform_create(serializer)
@@ -235,7 +235,7 @@ class AuditFieldsViewMixin(RequestAccessViewMixin):
     def perform_update(self, serializer: SerializerProtocol) -> None:
         """Populate update audit fields before DRF persists an existing model instance."""
         self.prepare_update_data(serializer.validated_data)
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Preparing update audit fields: actor={}", self.get_audit_user_identifier()
         )
         cast(UpdateModelMixinProtocol, super()).perform_update(serializer)

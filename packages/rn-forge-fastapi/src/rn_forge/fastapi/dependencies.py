@@ -10,15 +10,14 @@ from collections.abc import Callable, Collection
 
 from fastapi import Header, Query, Request
 from fastapi.responses import Response
-
 from rn_forge.web import (
     ANY_ETAG,
     DEFAULT_PAGE_SIZE_PARAM,
     DEFAULT_PAGE_TOKEN_PARAM,
+    IDEMPOTENCY_KEY_HEADER,
     ORDER_BY_PARAM,
     Cursor,
     EntityVersionETagCodec,
-    IDEMPOTENCY_KEY_HEADER,
     ETagCodec,
     OrderField,
     check_idempotency_key,

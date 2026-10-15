@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 from django.urls import path
-
 from rn_forge.django.auth.drf.views import (
     GroupViewSet,
     PermissionViewSet,

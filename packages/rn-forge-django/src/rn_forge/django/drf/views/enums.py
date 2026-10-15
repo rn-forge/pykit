@@ -9,7 +9,6 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
-
 from rn_forge.django.drf.views.base import BaseAPIView
 from rn_forge.django.models import BaseEnum
 

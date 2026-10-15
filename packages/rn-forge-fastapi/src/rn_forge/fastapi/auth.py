@@ -18,7 +18,6 @@ from fastapi.security import (
     HTTPBasicCredentials,
     HTTPBearer,
 )
-
 from rn_forge.fastapi.problem import Log
 from rn_forge.web import (
     AsyncAuthenticator,

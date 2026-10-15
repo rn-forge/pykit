@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable, MutableMapping
 from typing import Any
 
 from rn_forge.web.exceptions import ContentTooLarge
-from rn_forge.web.problem import BLANK_TYPE, PROBLEM_MEDIA_TYPE, CONTENT_TOO_LARGE
+from rn_forge.web.problem import BLANK_TYPE, CONTENT_TOO_LARGE, PROBLEM_MEDIA_TYPE
 from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 
 __all__ = [
@@ -52,9 +52,12 @@ def _get_header(headers: object, name: str) -> str | None:
         if not isinstance(entry, (tuple, list)) or len(entry) != 2:  # pyright: ignore[reportUnknownArgumentType]
             continue
         key, value = entry  # pyright: ignore[reportUnknownVariableType]
-        if isinstance(key, bytes) and key.lower() == wanted:
-            if isinstance(value, bytes):
-                return value.decode("latin-1")
+        if (
+            isinstance(key, bytes)
+            and key.lower() == wanted
+            and isinstance(value, bytes)
+        ):
+            return value.decode("latin-1")
     return None
 
 

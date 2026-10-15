@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Any, cast
 
 import pandas
+from rn_forge.commons.data.excel import ExcelAdapter
+from rn_forge.commons.data.pandas import PandasUtils
+from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import JsonUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
-from rn_forge.commons.data.excel import ExcelAdapter
-from rn_forge.commons.exceptions import AppException
-from rn_forge.commons.data.pandas import PandasUtils
 from rn_forge.commons.lang.utils import AppUtils
 
 __all__ = [
@@ -83,7 +83,7 @@ class FixtureManager:
     def __init__(self, config: FixtureManagerConfig) -> None:
         self.config = config
 
-    def prepare_fixtures(self) -> "FixtureManager":
+    def prepare_fixtures(self) -> FixtureManager:
         """Read all configured workbooks and write JSON fixture files."""
         for fixture in self.config.fixtures:
             workbook = ExcelAdapter.read_dataframe(self.config.get_input_file(fixture))

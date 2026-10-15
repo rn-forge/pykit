@@ -29,10 +29,9 @@ import concurrent.futures
 import threading
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import CancelledError
 from types import MappingProxyType, TracebackType
 from typing import Any, Self
-
-from concurrent.futures import CancelledError
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
@@ -131,13 +130,13 @@ class Task(ABC):
 
     def _start(self) -> None:
         """Entry point called by the thread pool. Do not override."""
-        _LOGGER.info("Task.start | name={} | props={}", self._name, self._props)
+        _LOGGER.info("Task.start | name={} | props={}", self._name, self._props)  # noqa: PLE1205  # brace-style log format
         threading.current_thread().name = self._name
         try:
             self.run()
         except Exception as exc:
             self._error = exc
-            _LOGGER.exception("Task.error | name={}", self._name)
+            _LOGGER.exception("Task.error | name={}", self._name)  # noqa: PLE1205  # brace-style log format
             raise
         _LOGGER.verbose("Task.complete | name={} | props={}", self._name, self._props)
 
@@ -152,7 +151,7 @@ class Task(ABC):
         """
 
 
-class TaskPool[_TaskType: Task]:
+class TaskPool[TaskType: Task]:
     """Thread pool that submits :class:`Task` instances and tracks their results.
 
     The type parameter ``_TaskType`` bounds the pool to a specific
@@ -189,7 +188,7 @@ class TaskPool[_TaskType: Task]:
         """
         self._max_workers = max_workers
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
-        self._tasks: dict[str, _TaskType] = {}
+        self._tasks: dict[str, TaskType] = {}
         self._shutdown: bool = False
 
     @property
@@ -211,11 +210,11 @@ class TaskPool[_TaskType: Task]:
         return self._executor
 
     @property
-    def tasks(self) -> MappingProxyType[str, _TaskType]:
+    def tasks(self) -> MappingProxyType[str, TaskType]:
         """Read-only view of submitted tasks keyed by name."""
         return MappingProxyType(self._tasks)
 
-    def submit(self, *tasks: _TaskType) -> Self:
+    def submit(self, *tasks: TaskType) -> Self:
         """Submit one or more tasks for execution and return *self* for chaining.
 
         Args:
@@ -233,16 +232,16 @@ class TaskPool[_TaskType: Task]:
             {name for name in task_names if task_names.count(name) > 1}
         )
         if duplicate_names:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "TaskPool.submit | duplicate_names={}",
                 duplicate_names,
             )
             raise AppException("Duplicate task names in submit(): {}", duplicate_names)
 
-        _LOGGER.debug("TaskPool.submit | task_count={}", len(tasks))
+        _LOGGER.debug("TaskPool.submit | task_count={}", len(tasks))  # noqa: PLE1205  # brace-style log format
         for task in tasks:
             if task.name in self._tasks:
-                _LOGGER.warning(
+                _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                     "TaskPool.submit | already_submitted_name={}",
                     task.name,
                 )
@@ -250,7 +249,7 @@ class TaskPool[_TaskType: Task]:
             future = self._executor.submit(task._start)  # pyright: ignore[reportPrivateUsage]
             task._set_future(future)  # pyright: ignore[reportPrivateUsage]
             self._tasks[task.name] = task
-            _LOGGER.debug("Submitted task | name={}", task.name)
+            _LOGGER.debug("Submitted task | name={}", task.name)  # noqa: PLE1205  # brace-style log format
         return self
 
     def shutdown(
@@ -259,7 +258,7 @@ class TaskPool[_TaskType: Task]:
         cancel_futures: bool = False,
         timeout: float | None = None,
         fail_on_error: bool = True,
-    ) -> list[_TaskType]:
+    ) -> list[TaskType]:
         """Wait for all tasks to finish and shut down the pool.
 
         Args:
@@ -296,7 +295,7 @@ class TaskPool[_TaskType: Task]:
             elapsed,
         )
 
-        failed: list[_TaskType] = []
+        failed: list[TaskType] = []
         for task in self._tasks.values():
             future = task.future
             if future is None:
@@ -310,7 +309,7 @@ class TaskPool[_TaskType: Task]:
                 failed.append(task)
 
         if failed and fail_on_error:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "TaskPool.shutdown | failed_tasks={}",
                 [task.name for task in failed],
             )
