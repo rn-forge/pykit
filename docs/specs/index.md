@@ -7,7 +7,8 @@ What pykit is made of and what is left to do. The board says what is next; the e
 
 | Release | Status | Features |
 | --- | --- | --- |
-| [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | in progress | 8 Closed |
+| [Release 4 — Authentication, package boundaries and kiln readiness](../releases/release-4/index.md) | in progress | 6 New |
+| [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | shipped (2026-10-12) | 8 Closed |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |
 | [Release 1 — the first coordinated tags](../releases/release-1/index.md) | shipped (2026-09-28) | 9 Closed |
 
@@ -19,7 +20,7 @@ Features with no Iteration, by State and epic.
 
 | Epic | Features |
 | --- | --- |
-| [E13 — Authentication and authorization](epics/E13-auth/index.md) | [F13.1](epics/E13-auth/F13.1-auth-design.md) |
+| [E16 — kiln adoption](epics/E16-kiln-adoption/index.md) | [F16.3](epics/E16-kiln-adoption/F16.3-cutover.md) |
 
 ### Deferred
 
@@ -28,9 +29,10 @@ Features with no Iteration, by State and epic.
 | [E6 — Consumer reuse](epics/E6-consumer-reuse/index.md) | [F6.1](epics/E6-consumer-reuse/F6.1-log-redaction.md), [F6.2](epics/E6-consumer-reuse/F6.2-sse.md) | the owner schedules either feature for a release |
 | [E7 — Azure adapters](epics/E7-azure-adapters/index.md) | F7.1, F7.2, F7.3, F7.4, F7.5, F7.6, F7.7, F7.8 | the owner schedules the package and settles its namespace |
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | — | the owner schedules it with a concrete framework template to generate |
+| [E15 — Package boundaries](epics/E15-package-boundaries/index.md) | [F15.4](epics/E15-package-boundaries/F15.4-domain-errors.md), [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md), [F15.6](epics/E15-package-boundaries/F15.6-neutral-fixtures.md), [F15.7](epics/E15-package-boundaries/F15.7-neutral-celery.md) | Per feature; see the epic. |
 <!-- board:end -->
 
-E8 — Django scope and auth was retired on 2026-09-28. Its auth review is [E13](epics/E13-auth/index.md); its package-boundary question is the [django-optional-areas](ideas.md#django-optional-areas) idea.
+E8 — Django scope and auth was retired on 2026-09-28. Its auth review is [E13](epics/E13-auth/index.md); its package-boundary question is part of [E15](epics/E15-package-boundaries/index.md).
 
 Ideas not yet agreed as work are parked in the [ideas list](ideas.md).
 

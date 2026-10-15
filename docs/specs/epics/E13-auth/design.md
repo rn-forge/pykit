@@ -6,7 +6,7 @@
 | **Settled by** | [F13.1](F13.1-auth-design.md) |
 | **Depends on** | [ADR-0006](../../../adr/ADR-0006.md) |
 
-How authentication and authorization work in a new rn-forge web application: a pykit backend (Django or FastAPI) with an ngkit single-page app (SPA). This page is a working proposal shared by every E13 feature. Nothing in it is decided until it becomes an ADR or a feature. Later refinement sessions edit this page rather than starting over.
+How authentication and authorization work in a new rn-forge web application: a pykit backend (Django or FastAPI) with an ngkit single-page app (SPA). This page is a working proposal shared by every E13 feature. Nothing in it is decided until it becomes an ADR or a feature. Later refinement sessions edit this page rather than starting over. [Auth patterns](patterns.md) explains the industry patterns this design chooses from.
 
 [Back to E13](index.md)
 
@@ -61,6 +61,12 @@ An absent or invalid credential produces 401 with a challenge; a valid principal
 - Registration, password reset, MFA enrollment and account recovery. These belong to the IdP, or to Django's own auth for local accounts.
 - A SCIM server, and integration with an external policy engine (OPA, Cedar, OpenFGA). The contracts leave room for both.
 
+Positions on patterns the sections above do not cover (proposed; see [Auth patterns](patterns.md)):
+
+- **Passkeys and WebAuthn:** via the IdP or broker only. The app sees an ordinary OIDC login. No local WebAuthn adapter in the first version.
+- **Magic links and email one-time codes:** out of scope for the first version. Each adds enrollment, delivery and abuse handling that an IdP already owns.
+- **ReBAC and policy engines:** out of scope for the first version. RBAC plus ABAC through `ResourcePolicy` covers the target applications; an engine would sit behind the same contracts later.
+
 ## Principles
 
 Each principle is a candidate ADR (see [Proposed decisions](#proposed-decisions)).
@@ -89,6 +95,18 @@ Each principle is a candidate ADR (see [Proposed decisions](#proposed-decisions)
 | Scope | An OAuth capability delegated to a client by a token. It limits a token; it does not grant a user anything. |
 | Requirement | A declarative check against a principal (`rn_forge.web.Requirement`). |
 | Resource policy | A per-object and per-query check: may this principal do this action to this record, and which records may they list. |
+
+## Layers
+
+The design has three independent layers. Each hands the next one a single contract, so any login method works with any way of carrying identity and any authorization model. [Auth patterns](patterns.md#the-three-layers) gives the background; whether to organize this way is an [open question](F13.1-auth-design.md#open-questions).
+
+| Layer | Ends in | Contract at the boundary |
+| --- | --- | --- |
+| Authentication | `ExternalIdentity` | `IdentityProvider`, then `AccountResolver` turns it into an account |
+| Session and token management | A verified caller as a `Principal` | The session binding (account ID and authentication metadata) or `Authenticator` for bearer tokens |
+| Authorization | Allow or deny | `Requirement` for routes, `ResourcePolicy` for records, fed by `AuthorizationContextProvider` |
+
+Sessions and tokens carry identity; they are not part of authorization.
 
 ## System context
 
@@ -174,14 +192,14 @@ flowchart TB
   S -. "session cookie" .-> C
 ```
 
-| Layer | Contract | Provided by pykit | Written by the application |
+| Step | Contract | Provided by pykit | Written by the application |
 | --- | --- | --- | --- |
-| Protocol adapter | `IdentityProvider` | OIDC, OAuth 2.0, SAML, local-password and development adapters; transaction handling; `return_to` validation | Provider configuration; claim and attribute mapping when the defaults do not fit |
+| Protocol adapter (authentication) | `IdentityProvider` | OIDC, OAuth 2.0, SAML, local-password and development adapters; transaction handling; `return_to` validation | Provider configuration; claim and attribute mapping when the defaults do not fit |
 | Account resolution | `AccountResolver` | Default resolver with a link table: link on (issuer, subject), provisioning policies | Provisioning policy; the rules for syncing IdP attributes onto the account |
-| Session | framework binding | Session start and rotation, timeouts, CSRF, logout | Timeouts, if the defaults do not fit |
-| Authorization context | `AuthorizationContextProvider` | Caching, versioning, invalidation API; a default provider from Django groups and permissions | Where entitlements come from (HR master, tenant tables, role mappings) |
-| Requirement | `Requirement` | Declarative permission, role and scope checks; view action to permission key mapping | Permission keys on views and routes |
-| Resource policy | `ResourcePolicy` | Hooks in both frameworks for object checks and query scoping | Row-level rules |
+| Session (session and token management) | framework binding | Session start and rotation, timeouts, CSRF, logout | Timeouts, if the defaults do not fit |
+| Authorization context (authorization) | `AuthorizationContextProvider` | Caching, versioning, invalidation API; a default provider from Django groups and permissions | Where entitlements come from (HR master, tenant tables, role mappings) |
+| Requirement (authorization) | `Requirement` | Declarative permission, role and scope checks; view action to permission key mapping | Permission keys on views and routes |
+| Resource policy (authorization) | `ResourcePolicy` | Hooks in both frameworks for object checks and query scoping | Row-level rules |
 
 ## Contracts
 
@@ -487,6 +505,13 @@ sequenceDiagram
   API-->>M: 200, 401 or 403
 ```
 
+Positions on other machine-client mechanisms (proposed):
+
+- **API keys:** a custom authenticator, as today. Client credentials through a broker is the standard path, and keys have no expiry, scope or audience unless the application builds them.
+- **Opaque tokens and introspection (RFC 7662):** an optional authenticator, added when a broker issues opaque tokens. JWT verification stays the default.
+- **Refresh tokens:** not held by pykit. Machine clients and native apps manage them with the broker, and the BFF discards upstream tokens by default.
+- **Sender-constrained tokens (DPoP, RFC 9449, and mutual TLS binding):** out of scope for the first version. They need support at the broker and in every API.
+
 This path exists today (`OidcAuthenticator`, `PrincipalBearerAuthentication`, FastAPI `bearer_auth`). The change is that bearer principals also get an authorization context, so a service account has roles the way a user does. A user-delegated token is limited to what both the user's permissions and the token's scopes allow. When the application calls a downstream service, it uses its own client-credentials token. Forwarding a user's identity requires token exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)) at the broker (see [Open questions](F13.1-auth-design.md#open-questions)).
 
 ## Sessions and cookies
@@ -520,6 +545,7 @@ stateDiagram-v2
 - **Roles group permissions.** A role is a named set of permissions. Accounts get roles directly, through groups, or through a mapping from IdP groups.
 - **IdP attributes are a snapshot from login time.** Groups, titles and org units asserted by the IdP are written onto the account by the `AccountResolver` at each login. The authorization context reads them from there, alongside the application's live data (entitlement tables, an HR master, tenancy). Changes at the IdP between logins arrive at the next login, or immediately through SCIM if the application adds it later.
 - **Attributes drive resource policy.** Tenant, org units and ownership feed `ResourcePolicy` for record-level decisions and query scoping. This is attribute-based access control (ABAC) layered on role-based access control (RBAC), which covers most line-of-business applications without an external policy engine.
+- **ReBAC and external policy engines are later, behind the same contracts (proposed).** The first version is RBAC plus attributes. A relationship store (OpenFGA) or a policy engine (OPA, Cedar) would implement `AuthorizationContextProvider` or `ResourcePolicy`.
 - **Scopes limit tokens; they do not grant permissions.** For session principals, scopes are empty and do not apply.
 - **Staff and superuser bypass is explicit.** It is a role that grants every permission, visible in `/auth/session`, not a hidden branch in the permission class.
 
@@ -578,7 +604,7 @@ Why a separate package instead of more extras on `rn-forge-web`:
 - **Security-sensitive code has one home.** It gets its own version, changelog and review focus, and a security fix ships as one package.
 - **The dependency surface is visible.** Authlib and SAML's native `xmlsec1` belong to a package whose purpose is obvious from its name.
 
-The cost is one more package in the release batch, and breaking releases of `rn-forge-web`, `rn-forge-commons`, `rn-forge-django` and `rn-forge-fastapi`, because [ADR-0002](../../../adr/ADR-0002.md) forbids leaving aliases behind. Doing this before more applications adopt release-1 keeps that cost small. The `.importlinter` layers contract gains `rn_forge.auth` between the framework packages and `rn_forge.web`.
+The cost is one more package in the release batch, and breaking releases of `rn-forge-web`, `rn-forge-commons`, `rn-forge-django` and `rn-forge-fastapi`, because [ADR-0002](../../../adr/ADR-0002.md) forbids leaving aliases behind. Doing this before more applications adopt release-1 keeps that cost small. The `.importlinter` layers contract gains `rn_forge.auth` between the framework packages and `rn_forge.web`. [ADR-0011](../../../adr/ADR-0011.md) sets the structure of the package, a dependency-free core with adapters behind extras, and [F15.2](../E15-package-boundaries/F15.2-auth-package.md) creates it and does the move.
 
 ## Package responsibilities
 

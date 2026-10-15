@@ -48,6 +48,10 @@ The first command prints the target branch and the exact test and scanner comman
 
 A scan of uncommitted changes is not CI evidence for a commit.
 
+## Dependabot pull requests
+
+Bring a Dependabot pull request up to date with `@dependabot rebase` or GitHub's "Update with rebase". Do not use "Update branch": it merges `main` into the branch and puts a merge commit on `main`, which breaks its linear history.
+
 ## Documentation builds
 
 Each package also has a standalone MkDocs site. Build it from that package's directory with `uv run --group docs mkdocs build --strict`. The root site includes all seven, but a combined build does not show that each standalone site resolves its own links, so check both. Use a temporary `--site-dir` to keep an existing preview.

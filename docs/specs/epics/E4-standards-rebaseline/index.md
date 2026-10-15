@@ -21,7 +21,7 @@ The standards and native-framework decisions applied across web, Django, FastAPI
 | F4.7 | `rn-forge-sqlalchemy` and cross-stack tabular work | `653ac47` | Closed |
 | F4.8 | Simplification after F4.2: access log removed, OpenTelemetry log processor moved to commons, `traceId` rename | `74b36ff` | Closed |
 
-The Django scope review was not delivered here: the split decision is parked in the [ideas list](../../ideas.md#django-optional-areas) and the auth review is [E13](../E13-auth/index.md). The remaining API-convention items are deferred in [E12](../E12-http-contract-extensions/index.md), and the SQLAlchemy items are parked in the [ideas list](../../ideas.md).
+The Django scope review was not delivered here: the split decision is recorded in [E15's design](../E15-package-boundaries/design.md#framework-neutral-areas-still-in-rn-forge-django) and the auth review is [E13](../E13-auth/index.md). The remaining API-convention items are deferred in [E12](../E12-http-contract-extensions/index.md), and the SQLAlchemy items are parked in the [ideas list](../../ideas.md).
 
 [ADR-0001](../../../adr/ADR-0001.md) states the order of authority. [ADR-0005](../../../adr/ADR-0005.md) states the shared HTTP contract. F4.2 emits `traceresponse` from Trace Context Level 2, a Candidate Recommendation that OpenTelemetry Python marks experimental; that instability is accepted.
 

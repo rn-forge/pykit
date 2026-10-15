@@ -2,8 +2,9 @@
 
 | | |
 | --- | --- |
-| **Status** | in progress |
+| **Status** | shipped |
 | **Start Date** | 2026-10-03 |
+| **Finish Date** | 2026-10-12 |
 
 Wire features that the API conventions describe but no package implements, or only one stack does: JSON Merge Patch (RFC 7396) in `rn-forge-web` with Django and FastAPI bindings (F12.14), FastAPI route factories for `:import`, `:importTemplate`, `:batchCreate`, `:batchDelete` and capped export (F12.15), `Content-Disposition` in `EXPOSED_HEADERS` so a cross-origin browser can read export file names (F12.16), the fix for the Django `RequestUtils` name collision (F12.12), `:batchGet` and `:batchUpdate` (F12.1), soft delete in AIP-164's shape (F12.2), multi-column sorting with nulls last (F12.3), and AIP-157 `readMask` partial responses (F12.9).
 
@@ -45,7 +46,7 @@ pykit has no live consumers, so no deprecation window is kept.
 
 ## Progress
 
-Started 2026-10-04. Every feature in scope is closed (2026-10-04): F12.12, F12.14, F12.15 and F12.16, then F12.3, F12.1, F12.9 and F12.2, which were added to scope the same day. ADR-0010 is accepted. The version bumps are prepared: `rn-forge-web` 0.2.0, `rn-forge-django` 0.4.0, `rn-forge-fastapi` 0.2.0 and `rn-forge-sqlalchemy` 0.2.0, with the internal pins restored to `rn-forge-web-v0.2.0`. What remains is the merge to `main`, CI including the PostgreSQL job and the Sonar gate, and the post-merge checks.
+Shipped 2026-10-12. Every feature in scope is closed (2026-10-04): F12.12, F12.14, F12.15 and F12.16, then F12.3, F12.1, F12.9 and F12.2, which were added to scope the same day. ADR-0010 is accepted. The [push to `main`](https://github.com/rn-forge/pykit/actions/runs/38344811163) at merge commit `258f1d3` passed every verify, postgres, smoke and suite job plus `import-boundaries`, `external-install`, `docs` and the Sonar gate, and published the four new versions below.
 
 ## Commits
 
@@ -64,4 +65,11 @@ git log --format='%h %ad %s' --date=short -E --grep='F12\.(1|2|3|9|12|14|15|16)\
 
 ## Shipped
 
-Filled at the cut.
+The four packages below were tagged and published by [run 38344811163](https://github.com/rn-forge/pykit/actions/runs/38344811163); the other three were already published and skipped. Each package's docs site serves the new version as `latest`.
+
+| Deliverable | Version | Tag | Commit | Verification |
+| --- | --- | --- | --- | --- |
+| `rn-forge-web` | `0.2.0` | `rn-forge-web-v0.2.0` | `258f1d3` | published; `external-install` and `docs` passed |
+| `rn-forge-django` | `0.4.0` | `rn-forge-django-v0.4.0` | `258f1d3` | published; `external-install` and `docs` passed |
+| `rn-forge-fastapi` | `0.2.0` | `rn-forge-fastapi-v0.2.0` | `258f1d3` | published; `external-install` and `docs` passed |
+| `rn-forge-sqlalchemy` | `0.2.0` | `rn-forge-sqlalchemy-v0.2.0` | `258f1d3` | published; `external-install` and `docs` passed |

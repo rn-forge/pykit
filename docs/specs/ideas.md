@@ -6,20 +6,16 @@ Ideas that are not yet agreed as pykit work. An entry has no ID and no status, a
 
 | Idea | Summary | Source |
 | --- | --- | --- |
-| [django-optional-areas](#django-optional-areas) | Decide whether Celery, fixtures and messaging stay in `rn-forge-django`. | Former E8, retired 2026-09-28 |
 | [model-vocabulary](#model-vocabulary) | A shared model vocabulary, normative for both ORM packages: audit-column semantics, a shared `status` enumeration and natural-key rules. Waits for an application that needs one of these to behave the same on Django and SQLAlchemy. | F12.13, retired from E12 2026-09-29 |
 | sqlalchemy-helpers | A SQLAlchemy `AsyncIdempotencyStore`, session and unit-of-work helpers, and readiness checks. Waits for a SQLAlchemy application to ask for them. | F12.5, retired from E12 2026-09-29 |
 | cloudevents-envelope | A CloudEvents envelope builder. Waits for the outbox/inbox subsystem to need one. | F12.6, retired from E12 2026-09-29 |
 | claim-check | The claim-check pattern for large messages. Waits for a second storage backend. | F12.7, retired from E12 2026-09-29 |
-| django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on [django-optional-areas](#django-optional-areas) keeping messaging in `rn-forge-django`. | F12.10, retired from E12 2026-09-29 |
+| django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on messaging staying in `rn-forge-django` until [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md) splits it ([E15 design](epics/E15-package-boundaries/design.md#messaging)). | F12.10, retired from E12 2026-09-29 |
 | product-installer-contract | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. Waits for a second product that needs the same contract. | F12.8, retired from E12 2026-09-29 |
+| devops-adapters | More `rn-forge-devops` adapters ([ADR-0012](../adr/ADR-0012.md)): Azure DevOps Pipelines as a CI platform, and pnpm or nx and Maven or Gradle workspaces that read the graph from the stack's own tool. Waits for kiln to schedule an Azure DevOps pipeline or a multi-package Node or Java archetype. | E16 review, 2026-10-15 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
 | [full-local-sonar-scan](#full-local-sonar-scan) | Run the authorized full local Sonar scan. | S14.4.3, amended 2026-10-03 |
-
-## django-optional-areas
-
-`rn-forge-django` carries Celery, fixtures and messaging behind their own extras. For release-1 the owner kept all of them, and SAML, in the package (2026-09-26). SAML's placement is now part of [E13's design](epics/E13-auth/design.md#package-placement). The question left is whether the other three stay. A move after release-1 is a breaking version of `rn-forge-django`, because [ADR-0002](../adr/ADR-0002.md) forbids aliases.
 
 ## model-vocabulary
 
