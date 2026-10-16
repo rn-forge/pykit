@@ -1246,7 +1246,7 @@
   <span class="md-ellipsis">
     
   
-    Data
+    Logging
   
 
     
@@ -1259,117 +1259,6 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/excel.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Excel
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/pandas.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pandas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1458,10 +1347,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
             
   
   
@@ -1479,8 +1368,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1653,10 +1542,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -1674,8 +1563,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1925,7 +1814,8 @@
 
 
 <h1 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h1>
-<p><code>Config</code> loads one file or a directory of JSON or YAML files, deep-merges them, and optionally resolves references.</p>
+<p><code>Config</code> loads one file or a directory of JSON or YAML files, deep-merges them,
+and optionally resolves references.</p>
 <p>Example YAML:</p>
 <div class="codehilite"><pre><span></span><code><span class="nt">service</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">localhost</span>
@@ -1959,9 +1849,9 @@
 <li><code>__extends__</code> dict inheritance</li>
 </ul>
 <h2 id="validating-a-document-against-a-schema">Validating a document against a schema<a class="headerlink" href="#validating-a-document-against-a-schema" title="Permanent link">&para;</a></h2>
-<p><code>Config</code> merges and resolves; it does not say whether the result is well-formed. When a
-hand-authored document has a fixed shape — a tool's <code>config.toml</code>, a manifest — validate it with
-a <code>StrictModel</code> from the <code>pydantic</code> extra:</p>
+<p><code>Config</code> merges and resolves; it does not say whether the result is well-formed.
+When a hand-authored document has a fixed shape — a tool's <code>config.toml</code>, a
+manifest — validate it with a <code>StrictModel</code> from the <code>pydantic</code> extra:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.lang.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrictModel</span>
@@ -1981,14 +1871,16 @@ a <code>StrictModel</code> from the <code>pydantic</code> extra:</p>
     <span class="n">config</span> <span class="o">=</span> <span class="n">ProjectConfig</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">tomllib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">),</span> <span class="n">source</span><span class="o">=</span><span class="s2">&quot;config.toml&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>A <code>StrictModel</code> is strict (a string is never coerced to an integer), frozen, and rejects any key
-it does not declare. A failure raises <code>ModelValidationError</code>, an <code>AppException</code> whose message
-lists every failing key by dotted path — a missing key, a wrong type and a misspelled key are
-reported together, not one per run. <code>errors</code> holds the same failures as <code>FieldError</code> records.
-<code>parse_model</code> gives the same reporting for a <code>BaseModel</code> that does not subclass <code>StrictModel</code>.</p>
-<p>Choose it over <code>DataclassMixin.from_dict</code> when the author of the document needs every mistake at
-once, or when the schema needs pydantic's validators. The extra is opt-in, and
-<code>rn_forge.commons</code> never imports it, so a program that does not use it pays nothing at import time.</p>
+<p>A <code>StrictModel</code> is strict (a string is never coerced to an integer), frozen, and
+rejects any key it does not declare. A failure raises <code>ModelValidationError</code>, an
+<code>AppException</code> whose message lists every failing key by dotted path — a missing
+key, a wrong type and a misspelled key are reported together, not one per run.
+<code>errors</code> holds the same failures as <code>FieldError</code> records. <code>parse_model</code> gives
+the same reporting for a <code>BaseModel</code> that does not subclass <code>StrictModel</code>.</p>
+<p>Choose it over <code>DataclassMixin.from_dict</code> when the author of the document needs
+every mistake at once, or when the schema needs pydantic's validators. The extra
+is opt-in, and <code>rn_forge.commons</code> never imports it, so a program that does not
+use it pays nothing at import time.</p>
 
 
 

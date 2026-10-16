@@ -1257,7 +1257,7 @@
   <span class="md-ellipsis">
     
   
-    Data
+    Logging
   
 
     
@@ -1270,117 +1270,6 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/excel.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Excel
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/pandas.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pandas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1469,10 +1358,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
             
   
   
@@ -1490,8 +1379,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1664,10 +1553,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -1685,8 +1574,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1947,7 +1836,8 @@
 
 
 <h1 id="console-output">Console output<a class="headerlink" href="#console-output" title="Permanent link">&para;</a></h1>
-<p><code>AppConsole</code> is a thin facade over <code>rich.console.Console</code> with four output modes:</p>
+<p><code>AppConsole</code> is a thin facade over <code>rich.console.Console</code> with four output
+modes:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons</span><span class="w"> </span><span class="kn">import</span> <span class="n">console</span><span class="p">,</span> <span class="n">OutputMode</span>
 
 <span class="n">console</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;job&quot;</span><span class="p">)</span>
@@ -1956,9 +1846,10 @@
 </code></pre></div>
 
 <h2 id="the-quietjson-tri-mode-pattern">The quiet/JSON tri-mode pattern<a class="headerlink" href="#the-quietjson-tri-mode-pattern" title="Permanent link">&para;</a></h2>
-<p>A CLI typically needs three output personalities: normal (styled, human-readable), <code>--quiet</code>
-(suppress everything but an optional one-line summary), and <code>--json</code> (machine-readable only). Model
-that by switching <code>console</code>'s mode instead of writing separate code paths:</p>
+<p>A CLI typically needs three output personalities: normal (styled,
+human-readable), <code>--quiet</code> (suppress everything but an optional one-line
+summary), and <code>--json</code> (machine-readable only). Model that by switching
+<code>console</code>'s mode instead of writing separate code paths:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons</span><span class="w"> </span><span class="kn">import</span> <span class="n">console</span><span class="p">,</span> <span class="n">OutputMode</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">json_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1977,21 +1868,24 @@ that by switching <code>console</code>'s mode instead of writing separate code p
 </code></pre></div>
 
 <p><code>table()</code> follows the same pattern — it renders a Rich table normally, and emits
-<code>[{column: cell, ...}, ...]</code> in JSON mode, so call sites never need an <code>if json: ...</code> branch:</p>
+<code>[{column: cell, ...}, ...]</code> in JSON mode, so call sites never need an
+<code>if json: ...</code> branch:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">console</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">rows</span><span class="p">)</span>
 </code></pre></div>
 
-<p><code>warning()</code>/<code>error()</code> always go to stderr; <code>fail()</code> calls <code>error()</code> then raises <code>SystemExit</code> — no
-Typer dependency, so it works the same from a plain script as from a Typer command. The
-Typer-specific layer built on top of this one is <code>rn-forge-cli</code>.</p>
-<p>The underlying <code>rich.console.Console</code> is always reachable via <code>console.rich</code> for anything this
-facade doesn't cover — a <code>Progress</code> bar, a <code>Live</code> display, or a custom renderable.</p>
+<p><code>warning()</code>/<code>error()</code> always go to stderr; <code>fail()</code> calls <code>error()</code> then raises
+<code>SystemExit</code> — no Typer dependency, so it works the same from a plain script as
+from a Typer command. The Typer-specific layer built on top of this one is
+<code>rn-forge-cli</code>.</p>
+<p>The underlying <code>rich.console.Console</code> is always reachable via <code>console.rich</code> for
+anything this facade doesn't cover — a <code>Progress</code> bar, a <code>Live</code> display, or a
+custom renderable.</p>
 <h2 id="where-the-mode-comes-from-in-a-cli">Where the mode comes from in a CLI<a class="headerlink" href="#where-the-mode-comes-from-in-a-cli" title="Permanent link">&para;</a></h2>
 <p>Nothing in this package sets the mode for you — it is a plain facade, usable
-from a script, a Django management command, a worker or a test. In an
-<code>rn-forge</code> command-line application, <code>rn-forge-cli</code> drives it: its <code>--quiet</code>
-and <code>--json</code> flags call <code>set_mode</code> before the command body runs, so a command
-just calls <code>console.emit(...)</code> and gets the right personality.</p>
+from a script, a Django management command, a worker or a test. In an <code>rn-forge</code>
+command-line application, <code>rn-forge-cli</code> drives it: its <code>--quiet</code> and <code>--json</code>
+flags call <code>set_mode</code> before the command body runs, so a command just calls
+<code>console.emit(...)</code> and gets the right personality.</p>
 
 
 

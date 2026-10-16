@@ -1279,7 +1279,7 @@
   <span class="md-ellipsis">
     
   
-    Data
+    Logging
   
 
     
@@ -1292,117 +1292,6 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/excel.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Excel
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/pandas.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pandas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1491,10 +1380,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
             
   
   
@@ -1512,8 +1401,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1686,10 +1575,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -1707,8 +1596,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1991,9 +1880,9 @@
 
 
 <h1 id="resilience">Resilience<a class="headerlink" href="#resilience" title="Permanent link">&para;</a></h1>
-<p><code>ResilientAsyncHttpClient</code> wraps <code>httpx.AsyncClient</code> with a per-key circuit breaker (<code>purgatory</code>),
-retry with <code>Retry-After</code> awareness (<code>stamina</code>), and a rate limiter clamped from response headers —
-the <code>resilience</code> extra.</p>
+<p><code>ResilientAsyncHttpClient</code> wraps <code>httpx.AsyncClient</code> with a per-key circuit
+breaker (<code>purgatory</code>), retry with <code>Retry-After</code> awareness (<code>stamina</code>), and a
+rate limiter clamped from response headers — the <code>resilience</code> extra.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.integration.resilience</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResilientAsyncHttpClient</span>
 
 <span class="k">async</span> <span class="k">with</span> <span class="n">ResilientAsyncHttpClient</span><span class="p">(</span><span class="s2">&quot;https://api.example.com&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;example-api&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
@@ -2001,19 +1890,19 @@ the <code>resilience</code> extra.</p>
 </code></pre></div>
 
 <h2 id="per-key-breakers">Per-key breakers<a class="headerlink" href="#per-key-breakers" title="Permanent link">&para;</a></h2>
-<p>Pass <code>key=</code> to <code>request</code>/<code>get</code>/<code>post</code>/... to protect several independent upstreams (e.g. one
-breaker per tenant or per upstream organisation) from one client instance — each key gets its own
-circuit, tripped independently:</p>
+<p>Pass <code>key=</code> to <code>request</code>/<code>get</code>/<code>post</code>/... to protect several independent
+upstreams (e.g. one breaker per tenant or per upstream organisation) from one
+client instance — each key gets its own circuit, tripped independently:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/widgets&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;tenant-</span><span class="si">{</span><span class="n">tenant_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Only failures that say something about the upstream count toward <code>fail_max</code>: connection errors,
-timeouts and the transient statuses (429, 500, 502, 503, 504). A 404 or 422 is raised to the caller
-but never opens the circuit.</p>
+<p>Only failures that say something about the upstream count toward <code>fail_max</code>:
+connection errors, timeouts and the transient statuses (429, 500, 502, 503,
+504). A 404 or 422 is raised to the caller but never opens the circuit.</p>
 <h2 id="the-metrics-seam">The metrics seam<a class="headerlink" href="#the-metrics-seam" title="Permanent link">&para;</a></h2>
-<p><code>on_state_change(key, old_state, new_state)</code> is called on every circuit transition. It defaults to
-an <code>AppLogger</code> warning — wire it to your own metrics backend rather than expecting this module to
-import OpenTelemetry:</p>
+<p><code>on_state_change(key, old_state, new_state)</code> is called on every circuit
+transition. It defaults to an <code>AppLogger</code> warning — wire it to your own metrics
+backend rather than expecting this module to import OpenTelemetry:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">ResilientAsyncHttpClient</span><span class="p">(</span>
     <span class="s2">&quot;https://api.example.com&quot;</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">&quot;example-api&quot;</span><span class="p">,</span>
@@ -2022,9 +1911,10 @@ import OpenTelemetry:</p>
 </code></pre></div>
 
 <h2 id="testable-timing">Testable timing<a class="headerlink" href="#testable-timing" title="Permanent link">&para;</a></h2>
-<p>The rate limiter's <code>clock</code>/<code>sleep</code> are constructor-injectable, so a test can run on a fake clock
-instead of real wall time. <code>X-RateLimit-Reset</code> is read as a Unix epoch timestamp, so <code>clock</code> is a
-wall clock (default <code>time.time</code>), not a monotonic one:</p>
+<p>The rate limiter's <code>clock</code>/<code>sleep</code> are constructor-injectable, so a test can run
+on a fake clock instead of real wall time. <code>X-RateLimit-Reset</code> is read as a Unix
+epoch timestamp, so <code>clock</code> is a wall clock (default <code>time.time</code>), not a
+monotonic one:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">client</span> <span class="o">=</span> <span class="n">ResilientAsyncHttpClient</span><span class="p">(</span>
     <span class="s2">&quot;https://api.example.com&quot;</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">&quot;example-api&quot;</span><span class="p">,</span>
@@ -2034,7 +1924,8 @@ wall clock (default <code>time.time</code>), not a monotonic one:</p>
 </code></pre></div>
 
 <h2 id="escape-hatch">Escape hatch<a class="headerlink" href="#escape-hatch" title="Permanent link">&para;</a></h2>
-<p><code>client.client</code> is the underlying <code>httpx.AsyncClient</code>, for anything this facade doesn't cover.</p>
+<p><code>client.client</code> is the underlying <code>httpx.AsyncClient</code>, for anything this facade
+doesn't cover.</p>
 
 
 

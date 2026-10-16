@@ -594,17 +594,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#pandas-and-excel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pandas and Excel
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1279,7 +1268,7 @@
   <span class="md-ellipsis">
     
   
-    Data
+    Logging
   
 
     
@@ -1292,117 +1281,6 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/excel.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Excel
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/pandas.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pandas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1491,10 +1369,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
             
   
   
@@ -1512,8 +1390,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1686,10 +1564,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -1707,8 +1585,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1959,17 +1837,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#pandas-and-excel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pandas and Excel
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1999,8 +1866,8 @@
 <span class="n">grouped</span> <span class="o">=</span> <span class="n">ListUtils</span><span class="o">.</span><span class="n">group_by</span><span class="p">([</span><span class="s2">&quot;aa&quot;</span><span class="p">,</span> <span class="s2">&quot;ab&quot;</span><span class="p">,</span> <span class="s2">&quot;ba&quot;</span><span class="p">],</span> <span class="n">key_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </code></pre></div>
 
-<p><code>get</code> returns <code>Any</code>. To read a parsed TOML/YAML/JSON document under a strict type
-checker, use the typed reads instead. They never raise: a missing path or a
+<p><code>get</code> returns <code>Any</code>. To read a parsed TOML/YAML/JSON document under a strict
+type checker, use the typed reads instead. They never raise: a missing path or a
 value of the wrong shape reads as empty (or the given default).</p>
 <div class="codehilite"><pre><span></span><code><span class="n">doc</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tasks&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;build&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cmds&quot;</span><span class="p">:</span> <span class="s2">&quot;echo hi&quot;</span><span class="p">}},</span> <span class="s2">&quot;dev&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pytest&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;include-group&quot;</span><span class="p">:</span> <span class="s2">&quot;lint&quot;</span><span class="p">}]}</span>
 
@@ -2044,29 +1911,11 @@ Subclass <code>LenientDataclassMixin</code> for the record that wants the value 
 instead — and see that class's docstring for the two annotations dacite cannot
 check, which force the same choice.</p>
 <p>Unknown keys are ignored by default. Subclass <code>StrictDataclassMixin</code> for a
-document whose author should hear about a typo: it rejects any key that names
-no field, in nested sections too — whether or not the nested section's own
-class is strict, since strictness belongs to the document being read — and
-names each one by its dotted path —
+document whose author should hear about a typo: it rejects any key that names no
+field, in nested sections too — whether or not the nested section's own class is
+strict, since strictness belongs to the document being read — and names each one
+by its dotted path —
 <code>AppException: Invalid ProjectConfig: unknown key(s) repository.archtype</code>.</p>
-<h2 id="pandas-and-excel">Pandas and Excel<a class="headerlink" href="#pandas-and-excel" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.data.excel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExcelAdapter</span><span class="p">,</span> <span class="n">ExcelUtils</span>
-
-<span class="n">frames</span> <span class="o">=</span> <span class="n">ExcelAdapter</span><span class="o">.</span><span class="n">read_dataframe</span><span class="p">(</span><span class="s2">&quot;orders.xlsx&quot;</span><span class="p">)</span>
-<span class="n">workbook</span> <span class="o">=</span> <span class="n">ExcelAdapter</span><span class="o">.</span><span class="n">from_dataframe</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
-<span class="n">ExcelUtils</span><span class="o">.</span><span class="n">write_workbook</span><span class="p">(</span><span class="n">workbook</span><span class="p">,</span> <span class="s2">&quot;build/orders-copy.xlsx&quot;</span><span class="p">)</span>
-</code></pre></div>
-
-<p><code>ExcelAdapter</code> needs the <code>pandas</code> extra as well as <code>excel</code>.</p>
-<p><code>write_xlsx</code> writes a <code>tablib.Dataset</code> to <code>.xlsx</code> bytes with per-column number
-formats, which tablib's own xlsx writer does not offer:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">tablib</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.data.excel</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_xlsx</span>
-
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">tablib</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;due&quot;</span><span class="p">,</span> <span class="s2">&quot;total&quot;</span><span class="p">])</span>
-<span class="n">dataset</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span> <span class="mf">42.5</span><span class="p">])</span>
-<span class="n">payload</span> <span class="o">=</span> <span class="n">write_xlsx</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">column_formats</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;due&quot;</span><span class="p">:</span> <span class="s2">&quot;yyyy-mm-dd&quot;</span><span class="p">,</span> <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="s2">&quot;#,##0.00&quot;</span><span class="p">})</span>
-</code></pre></div>
 
 
 

@@ -1257,7 +1257,7 @@
   <span class="md-ellipsis">
     
   
-    Data
+    Logging
   
 
     
@@ -1270,117 +1270,6 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/excel.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Excel
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/data/pandas.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pandas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logging
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1469,10 +1358,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
             
   
   
@@ -1490,8 +1379,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1664,10 +1553,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -1685,8 +1574,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1958,31 +1847,32 @@
 </code></pre></div>
 
 <h2 id="console-rendering">Console rendering<a class="headerlink" href="#console-rendering" title="Permanent link">&para;</a></h2>
-<p>The console handler is selected automatically from <code>use_json</code>, <code>enable_color</code>, and TTY detection
-(<code>isatty</code>), in this precedence order:</p>
+<p>The console handler is selected automatically from <code>use_json</code>, <code>enable_color</code>,
+and TTY detection (<code>isatty</code>), in this precedence order:</p>
 <ol>
-<li><code>use_json=True</code> → a JSON formatter (<code>json</code> extra) on a plain <code>StreamHandler</code>. Machine output is
-   never decorated — JSON always wins over Rich.</li>
-<li><code>enable_color=True</code> (default when stdout is a TTY) → <a href="https://rich.readthedocs.io/en/stable/logging.html"><code>rich.logging.RichHandler</code></a>, with
-   Rich's own time/level/path columns and <code>rich.traceback</code> exception rendering
-   (<code>rich_tracebacks=True</code> by default, <code>show_locals=False</code> since tracebacks routinely carry
-   credentials in locals).</li>
+<li><code>use_json=True</code> → a JSON formatter (<code>json</code> extra) on a plain <code>StreamHandler</code>.
+   Machine output is never decorated — JSON always wins over Rich.</li>
+<li><code>enable_color=True</code> (default when stdout is a TTY) →
+   <a href="https://rich.readthedocs.io/en/stable/logging.html"><code>rich.logging.RichHandler</code></a>, with Rich's own time/level/path columns
+   and <code>rich.traceback</code> exception rendering (<code>rich_tracebacks=True</code> by
+   default, <code>show_locals=False</code> since tracebacks routinely carry credentials
+   in locals).</li>
 <li>Otherwise → a plain <code>StreamHandler</code> with the full format string.</li>
 </ol>
-<p>The <strong>file handler is always a plain <code>logging.FileHandler</code></strong> with the full format string — never
-Rich — regardless of what the console handler is doing, so log files stay free of ANSI codes and
-column wrapping.</p>
-<p>verboselogs' custom levels (<code>TRACE</code>, <code>SPAM</code>, <code>VERBOSE</code>, <code>NOTICE</code>, <code>SUCCESS</code>) are styled via a
-built-in Rich theme. Override per-level styles with <code>level_styles</code>:</p>
+<p>The <strong>file handler is always a plain <code>logging.FileHandler</code></strong> with the full
+format string — never Rich — regardless of what the console handler is doing, so
+log files stay free of ANSI codes and column wrapping.</p>
+<p>verboselogs' custom levels (<code>TRACE</code>, <code>SPAM</code>, <code>VERBOSE</code>, <code>NOTICE</code>, <code>SUCCESS</code>) are
+styled via a built-in Rich theme. Override per-level styles with <code>level_styles</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">AppLogger</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
     <span class="n">root_logger_name</span><span class="o">=</span><span class="s2">&quot;billing&quot;</span><span class="p">,</span>
     <span class="n">level_styles</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;critical&quot;</span><span class="p">:</span> <span class="s2">&quot;bold white on red&quot;</span><span class="p">},</span>
 <span class="p">)</span>
 </code></pre></div>
 
-<p>Log messages are interpolated with untrusted values, so Rich markup is disabled in the logging
-path (<code>markup=False</code>) — a value containing <code>[red]</code> is emitted literally, never styled or crashing
-the markup parser.</p>
+<p>Log messages are interpolated with untrusted values, so Rich markup is disabled
+in the logging path (<code>markup=False</code>) — a value containing <code>[red]</code> is emitted
+literally, never styled or crashing the markup parser.</p>
 <p>Get module loggers later:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">logger</span> <span class="o">=</span> <span class="n">AppLogger</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;request_id=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="p">)</span>
@@ -2004,9 +1894,10 @@ the markup parser.</p>
 </code></pre></div>
 
 <h2 id="structlogger-vs-apploggerget_logger">StructLogger vs. AppLogger.get_logger<a class="headerlink" href="#structlogger-vs-apploggerget_logger" title="Permanent link">&para;</a></h2>
-<p><code>AppLogger.get_logger(__name__)</code> is for one-off, unstructured log calls. Reach for
-<a href="../reference/logging/structlog.html"><code>StructLogger</code></a> (<code>structlog</code> extra) instead when you want context —
-a request id, a tenant — bound once and carried across a chain of log calls:</p>
+<p><code>AppLogger.get_logger(__name__)</code> is for one-off, unstructured log calls. Reach
+for <a href="../reference/logging/structlog.html"><code>StructLogger</code></a> (<code>structlog</code> extra)
+instead when you want context — a request id, a tenant — bound once and carried
+across a chain of log calls:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.logging.structlog</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructLogger</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">StructLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">request_id</span><span class="o">=</span><span class="n">request_id</span><span class="p">)</span>
@@ -2014,12 +1905,14 @@ a request id, a tenant — bound once and carried across a chain of log calls:</
 <span class="n">log</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s2">&quot;order processed&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Every <code>StructLogger</code> call still flows through whatever <code>AppLogger.initialize()</code> configured — the
-same Rich console, file, or JSON output a plain <code>AppLogger.get_logger(__name__)</code> call would use.
-<code>StructLogger</code> adds only context binding (<code>bind</code>/<code>unbind</code>/<code>new</code>) and structured keyword fields on
-top; it does not call <code>dictConfig</code> or install its own formatter. Call <code>AppLogger.initialize()</code>
-before the first <code>StructLogger</code> log call — the underlying logger is resolved lazily, on first use,
-so construction order doesn't matter, only which one logs first.</p>
+<p>Every <code>StructLogger</code> call still flows through whatever <code>AppLogger.initialize()</code>
+configured — the same Rich console, file, or JSON output a plain
+<code>AppLogger.get_logger(__name__)</code> call would use. <code>StructLogger</code> adds only
+context binding (<code>bind</code>/<code>unbind</code>/<code>new</code>) and structured keyword fields on top; it
+does not call <code>dictConfig</code> or install its own formatter. Call
+<code>AppLogger.initialize()</code> before the first <code>StructLogger</code> log call — the
+underlying logger is resolved lazily, on first use, so construction order
+doesn't matter, only which one logs first.</p>
 
 
 
