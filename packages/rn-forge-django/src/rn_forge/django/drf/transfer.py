@@ -328,9 +328,8 @@ class ResourceImportMixin(GenericAPIView):
         )
         try:
             return cast(Any, tablib.Dataset()).load(content, format=fmt.tablib_name)
-        except (
-            Exception
-        ) as exc:  # tablib and openpyxl raise unrelated types for a corrupt file
+        # tablib and openpyxl raise unrelated types for a corrupt file
+        except Exception as exc:
             raise ValidationError(
                 {"file": unreadable_file_detail(fmt.extension)}
             ) from exc

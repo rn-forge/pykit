@@ -17,6 +17,9 @@ from pathlib import Path
 # Changes under these paths select no package.
 UNSCOPED = ("docs/",)
 
+# A revision name never starts with `-`, so it cannot be read as a git option.
+REVISION = r"[A-Za-z0-9_][A-Za-z0-9_./@-]*"
+
 
 def normalize(name: str) -> str:
     """Return `name` in its canonical form: lowercase, runs of `-_.` as one `-`."""
@@ -38,8 +41,8 @@ class Smoke:
         setup: A script, relative to the package directory, run before the imports.
     """
 
-    modules: list[str] = field(default_factory=lambda: list[str]())
-    extras: dict[str, list[str]] = field(default_factory=lambda: dict[str, list[str]]())
+    modules: list[str] = field(default_factory=list[str])
+    extras: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
     setup: str = ""
 
 
@@ -99,8 +102,8 @@ class Workspace:
 
     root: Path
     packages: dict[str, Package]
-    pytest_args: list[str] = field(default_factory=lambda: list[str]())
-    suites: dict[str, list[str]] = field(default_factory=lambda: dict[str, list[str]]())
+    pytest_args: list[str] = field(default_factory=list[str])
+    suites: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
 
 
 def release_order(packages: dict[str, Package], names: set[str]) -> list[str]:
@@ -115,9 +118,15 @@ def release_order(packages: dict[str, Package], names: set[str]) -> list[str]:
 
 
 def changed_files(root: Path, base: str) -> list[str]:
-    """Return the paths changed between `base` and `HEAD`."""
+    """Return the paths changed between `base` and `HEAD`.
+
+    Raises:
+        ValueError: When `base` is not a plain revision name.
+    """
+    if not re.fullmatch(REVISION, base):
+        raise ValueError(f"invalid base {base!r}")
     out = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", "diff", "--name-only", "--end-of-options", f"{base}...HEAD"],
         cwd=root,
         check=True,
         capture_output=True,
@@ -130,21 +139,21 @@ def select(workspace: Workspace, base: str) -> set[str]:
     """Return the packages with changed files, plus every package that depends on one.
 
     An empty, invalid or non-ancestor base, or a change outside every package and
-    `UNSCOPED`, selects all.
+    `UNSCOPED`, selects all. A base is invalid unless it matches `REVISION`.
     """
     packages, root = workspace.packages, workspace.root
     if not base:
         return set(packages)
-    if (
+    if not re.fullmatch(REVISION, base) or (
         subprocess.run(
-            ["git", "cat-file", "-e", f"{base}^{{commit}}"],
+            ["git", "cat-file", "-e", "--end-of-options", f"{base}^{{commit}}"],
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode
         or subprocess.run(
-            ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+            ["git", "merge-base", "--is-ancestor", "--end-of-options", base, "HEAD"],
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,

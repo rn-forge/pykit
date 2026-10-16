@@ -40,6 +40,41 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _releasable(workspace: ci.Workspace, args: argparse.Namespace) -> int:
+    ok, blocked = ci.releasable(workspace.packages, Path(args.ok_dir), args.names)
+    for name in blocked:
+        print(
+            f"not releasing {name}: a check or a prerequisite failed", file=sys.stderr
+        )
+    for name in ok:
+        print(name)
+    return 0
+
+
+def _adapters(workspace: ci.Workspace) -> int:
+    problems = uv.check_adapters(workspace)
+    for problem in problems:
+        print(problem, file=sys.stderr)
+    return 1 if problems else 0
+
+
+def _run(workspace: ci.Workspace, args: argparse.Namespace) -> int:
+    command: str = args.command
+    if command == "plan":
+        for line in github.output_lines(ci.plan(workspace, args.base)):
+            print(line)
+    elif command == "releasable":
+        return _releasable(workspace, args)
+    elif command == "adapters":
+        return _adapters(workspace)
+    elif command == "released":
+        for found in ci.released(workspace):
+            print(*found)
+    else:
+        return uv.smoke(workspace, args.package, args.extra)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run a subcommand and return its exit status.
 
@@ -47,8 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         argv: The arguments after the program name; `sys.argv[1:]` when omitted.
     """
     args = _parser().parse_args(argv)
-    command: str = args.command
-    if command == "sonar-target":
+    if args.command == "sonar-target":
         try:
             print(github.sonar_target())
         except ValueError as error:
@@ -59,26 +93,4 @@ def main(argv: list[str] | None = None) -> int:
         workspace = uv.load_workspace(uv.find_root(Path.cwd()))
     except FileNotFoundError as error:
         sys.exit(str(error))
-    if command == "plan":
-        for line in github.output_lines(ci.plan(workspace, args.base)):
-            print(line)
-    elif command == "releasable":
-        ok, blocked = ci.releasable(workspace.packages, Path(args.ok_dir), args.names)
-        for name in blocked:
-            print(
-                f"not releasing {name}: a check or a prerequisite failed",
-                file=sys.stderr,
-            )
-        for name in ok:
-            print(name)
-    elif command == "adapters":
-        problems = uv.check_adapters(workspace)
-        for problem in problems:
-            print(problem, file=sys.stderr)
-        return 1 if problems else 0
-    elif command == "released":
-        for found in ci.released(workspace):
-            print(*found)
-    else:
-        return uv.smoke(workspace, args.package, args.extra)
-    return 0
+    return _run(workspace, args)
