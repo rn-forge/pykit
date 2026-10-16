@@ -1004,10 +1004,11 @@ adapters the same way.</p>
 <p>It provides:</p>
 <ul>
 <li><strong><code>problem</code></strong> — <code>register_problem_handlers</code>: every error, including FastAPI's
-  own 404, 405 and 422, rendered as an RFC 9457 <code>application/problem+json</code> body</li>
-<li><strong><code>openapi</code></strong> — the problem-response repair <code>FastApiApp.openapi()</code> applies,
-  so the document declares the error responses the app sends, and
-  <code>operation_id</code>, the shared <code>operationId</code> convention</li>
+  own 404, 405 and 422, rendered as an RFC 9457 <code>application/problem+json</code>
+  body</li>
+<li><strong><code>openapi</code></strong> — the problem-response repair <code>FastApiApp.openapi()</code> applies, so
+  the document declares the error responses the app sends, and <code>operation_id</code>,
+  the shared <code>operationId</code> convention</li>
 <li><strong><code>dependencies</code></strong> — <code>page_params</code>, <code>require_idempotency_key</code> and
   <code>require_if_match</code></li>
 <li><strong><code>health</code></strong> — <code>health_router</code>, serving <code>/healthz</code> and <code>/readyz</code></li>

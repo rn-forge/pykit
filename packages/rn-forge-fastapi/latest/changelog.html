@@ -910,6 +910,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -933,7 +961,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1016,6 +1044,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1039,7 +1095,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1097,42 +1153,61 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>Notable changes to <code>rn-forge-fastapi</code>, newest first, in the <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
+<p>Notable changes to <code>rn-forge-fastapi</code>, newest first, in the
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="030-2026-10-16">[0.3.0] - 2026-10-16<a class="headerlink" href="#030-2026-10-16" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>transfer</code> extra names <code>rn-forge-data</code> in place of
+  <code>rn-forge-commons[excel]</code>.</li>
+</ul>
 <h2 id="020-2026-10-05">[0.2.0] - 2026-10-05<a class="headerlink" href="#020-2026-10-05" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Soft delete in AIP-164's shape: <code>soft_delete_router</code> (<code>DELETE {collection}/{id}</code> answering <code>200</code>
-  with the resource, and <code>POST {collection}/{id}:undelete</code>), the <code>SoftDeleteStore</code> protocol and
-  <code>SoftDeleteState</code>, and <code>show_deleted_param()</code>, all exported from <code>rn_forge.fastapi</code>.</li>
-<li><code>read_mask_param(model)</code> and <code>masked(page, mask)</code> for the <code>readMask</code> query parameter.
-  <code>batch_get_router</code> takes a new <code>read_mask</code> parameter (default <code>True</code>) and applies the mask.</li>
-<li><code>batch_get_router</code> (<code>GET :batchGet</code>) and <code>batch_update_router</code> (<code>POST :batchUpdate</code>, one JSON
-  Merge Patch and optional <code>ifMatch</code> per item) in <code>rn_forge.fastapi.transfer</code>, with the
-  <code>BatchGetStore</code>, <code>BatchUpdateStore</code> and <code>Current</code> protocols. <code>batch_update_router</code> takes
-  <code>require_if_match</code> and <code>codec</code>.</li>
-<li>Route factories in <code>rn_forge.fastapi.transfer</code> that match <code>rn-forge-django</code>'s transfer mixins:
-  <code>import_router</code> (<code>POST :import</code>), <code>import_template_router</code> (<code>GET :importTemplate</code>),
-  <code>batch_create_router</code> (<code>POST :batchCreate</code>) and <code>batch_delete_router</code> (<code>POST :batchDelete</code>).
-  Each takes a dependency returning a store (<code>ImportStore</code>, <code>TemplateSource</code>, <code>BatchCreateStore</code>,
-  <code>BatchDeleteStore</code>), <code>max_rows</code> and <code>dependencies=</code>. <code>tabular_export</code> applies the export cap
-  inside an application's own list route. <code>RowsResult</code> gains <code>total</code>, <code>read_rows</code> takes
-  <code>formats=</code> and raises <code>ValueError</code> with the shared unsupported and unreadable file details.
-  A store raises <code>RowsInvalid</code> (422) or <code>ItemsDenied</code> (403) from <code>rn-forge-web</code> for a failure only it can
-  find. The factories answer the shared 422s: a missing file, a missing or empty list, and a row cap.
-  The transfer guide shows a complete resource over <code>rn-forge-sqlalchemy</code>'s <code>upsert</code> and <code>keyset</code>.</li>
+<li>Soft delete in AIP-164's shape: <code>soft_delete_router</code>
+  (<code>DELETE {collection}/{id}</code> answering <code>200</code> with the resource, and
+  <code>POST {collection}/{id}:undelete</code>), the <code>SoftDeleteStore</code> protocol and
+  <code>SoftDeleteState</code>, and <code>show_deleted_param()</code>, all exported from
+  <code>rn_forge.fastapi</code>.</li>
+<li><code>read_mask_param(model)</code> and <code>masked(page, mask)</code> for the <code>readMask</code> query
+  parameter. <code>batch_get_router</code> takes a new <code>read_mask</code> parameter (default
+  <code>True</code>) and applies the mask.</li>
+<li><code>batch_get_router</code> (<code>GET :batchGet</code>) and <code>batch_update_router</code>
+  (<code>POST :batchUpdate</code>, one JSON Merge Patch and optional <code>ifMatch</code> per item)
+  in <code>rn_forge.fastapi.transfer</code>, with the <code>BatchGetStore</code>, <code>BatchUpdateStore</code>
+  and <code>Current</code> protocols. <code>batch_update_router</code> takes <code>require_if_match</code> and
+  <code>codec</code>.</li>
+<li>Route factories in <code>rn_forge.fastapi.transfer</code> that match <code>rn-forge-django</code>'s
+  transfer mixins: <code>import_router</code> (<code>POST :import</code>), <code>import_template_router</code>
+  (<code>GET :importTemplate</code>), <code>batch_create_router</code> (<code>POST :batchCreate</code>) and
+  <code>batch_delete_router</code> (<code>POST :batchDelete</code>). Each takes a dependency
+  returning a store (<code>ImportStore</code>, <code>TemplateSource</code>, <code>BatchCreateStore</code>,
+  <code>BatchDeleteStore</code>), <code>max_rows</code> and <code>dependencies=</code>. <code>tabular_export</code>
+  applies the export cap inside an application's own list route. <code>RowsResult</code>
+  gains <code>total</code>, <code>read_rows</code> takes <code>formats=</code> and raises <code>ValueError</code> with the
+  shared unsupported and unreadable file details. A store raises <code>RowsInvalid</code>
+  (422) or <code>ItemsDenied</code> (403) from <code>rn-forge-web</code> for a failure only it can
+  find. The factories answer the shared 422s: a missing file, a missing or
+  empty list, and a row cap. The transfer guide shows a complete resource over
+  <code>rn-forge-sqlalchemy</code>'s <code>upsert</code> and <code>keyset</code>.</li>
 <li>JSON Merge Patch (RFC 7396) binding: <code>merge_patch_body()</code> checks the
-  <code>application/merge-patch+json</code> media type (415 with <code>Accept-Patch</code>) and returns the raw body,
-  <code>merge_into(model, current, body)</code> parses it, merges and validates against a pydantic model, and
-  <code>merge_patch_openapi()</code> declares the request body. Declare <code>merge_patch_body()</code> before
-  <code>require_if_match</code> and call <code>check_precondition</code> before <code>merge_into</code>. A <code>null</code> on a
-  non-nullable field renders <code>This field may not be null.</code></li>
+  <code>application/merge-patch+json</code> media type (415 with <code>Accept-Patch</code>) and
+  returns the raw body, <code>merge_into(model, current, body)</code> parses it, merges
+  and validates against a pydantic model, and <code>merge_patch_openapi()</code> declares
+  the request body. Declare <code>merge_patch_body()</code> before <code>require_if_match</code> and
+  call <code>check_precondition</code> before <code>merge_into</code>. A <code>null</code> on a non-nullable
+  field renders <code>This field may not be null.</code></li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Breaking:</strong> <code>order_by_param</code> describes <code>orderBy</code> as a comma-separated list of fields and names the sortable fields. It described one field. It returns every term, as <code>parse_order_by</code> in <code>rn-forge-web</code> now accepts several and rejects a repeated field with 400.</li>
-<li><code>read_rows</code> picks the format from the file extension, and uses the content type only when the
-  file name has none, as <code>rn-forge-django</code> does. A <code>.pdf</code> sent as <code>text/csv</code> is now unsupported.</li>
+<li><strong>Breaking:</strong> <code>order_by_param</code> describes <code>orderBy</code> as a comma-separated list
+  of fields and names the sortable fields. It described one field. It returns
+  every term, as <code>parse_order_by</code> in <code>rn-forge-web</code> now accepts several and
+  rejects a repeated field with 400.</li>
+<li><code>read_rows</code> picks the format from the file extension, and uses the content
+  type only when the file name has none, as <code>rn-forge-django</code> does. A <code>.pdf</code>
+  sent as <code>text/csv</code> is now unsupported.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>

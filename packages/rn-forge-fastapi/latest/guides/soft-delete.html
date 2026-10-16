@@ -1001,11 +1001,12 @@
 
 
 <h1 id="soft-delete">Soft delete<a class="headerlink" href="#soft-delete" title="Permanent link">&para;</a></h1>
-<p><code>rn_forge.fastapi</code> serves AIP-164 soft delete: <code>DELETE {collection}/{id}</code> soft-deletes and answers
-200 with the resource, <code>POST {collection}/{id}:undelete</code> restores it, and <code>showDeleted</code> brings
-deleted resources back into a list. The wire contract is §21 of <code>rn-forge-web</code>'s API conventions.
-Persistence is the application's: <code>soft_delete_router</code> takes a <strong>store</strong>, a dependency that returns
-an object with these methods:</p>
+<p><code>rn_forge.fastapi</code> serves AIP-164 soft delete: <code>DELETE {collection}/{id}</code>
+soft-deletes and answers 200 with the resource,
+<code>POST {collection}/{id}:undelete</code> restores it, and <code>showDeleted</code> brings deleted
+resources back into a list. The wire contract is §21 of <code>rn-forge-web</code>'s API
+conventions. Persistence is the application's: <code>soft_delete_router</code> takes a
+<strong>store</strong>, a dependency that returns an object with these methods:</p>
 <table>
 <thead>
 <tr>
@@ -1028,12 +1029,13 @@ an object with these methods:</p>
 </tr>
 </tbody>
 </table>
-<p>The store owns the transaction and the clock. The router checks the resource's state first (404 or
-409), then <code>If-Match</code> on a versioned row (428, 400 or 412), and only then calls the store to write.
-It answers with <code>response_model</code> dumped by alias, and the new <code>ETag</code> read back through <code>find</code>.</p>
+<p>The store owns the transaction and the clock. The router checks the resource's
+state first (404 or 409), then <code>If-Match</code> on a versioned row (428, 400 or 412),
+and only then calls the store to write. It answers with <code>response_model</code> dumped
+by alias, and the new <code>ETag</code> read back through <code>find</code>.</p>
 <h2 id="over-sqlalchemy">Over SQLAlchemy<a class="headerlink" href="#over-sqlalchemy" title="Permanent link">&para;</a></h2>
-<p>The code below is <strong>application code</strong>. It joins <code>rn-forge-fastapi</code> and <code>rn-forge-sqlalchemy</code>, which
-do not import each other.</p>
+<p>The code below is <strong>application code</strong>. It joins <code>rn-forge-fastapi</code> and
+<code>rn-forge-sqlalchemy</code>, which do not import each other.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
@@ -1110,13 +1112,15 @@ do not import each other.</p>
 </code></pre></div>
 
 <p>The list route reads <code>showDeleted</code> with <code>show_deleted_param()</code> and passes it to
-<code>live(select(Note), Note, show_deleted=show_deleted)</code>. The application's own <code>PUT</code> and <code>PATCH</code>
-routes call <code>require_live(note.delete_time, label="Note", id=id)</code> before anything else that can
-fail. <code>batch_delete_router</code> needs no change: its store's <code>find</code> returns only live ids and its
-<code>delete_many</code> soft-deletes them, so a deleted id is a 404 for the whole batch.</p>
+<code>live(select(Note), Note, show_deleted=show_deleted)</code>. The application's own
+<code>PUT</code> and <code>PATCH</code> routes call
+<code>require_live(note.delete_time, label="Note", id=id)</code> before anything else that
+can fail. <code>batch_delete_router</code> needs no change: its store's <code>find</code> returns only
+live ids and its <code>delete_many</code> soft-deletes them, so a deleted id is a 404 for
+the whole batch.</p>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
-<p>The <code>soft-delete</code> cases in <code>rn_forge.web.conformance.CASES</code> run against this binding, and against
-the same routes over SQLite with <code>rn-forge-sqlalchemy</code>.</p>
+<p>The <code>soft-delete</code> cases in <code>rn_forge.web.conformance.CASES</code> run against this
+binding, and against the same routes over SQLite with <code>rn-forge-sqlalchemy</code>.</p>
 
 
 

@@ -1146,11 +1146,12 @@
 
 <h1 id="tabular-export-import-and-batch-operations">Tabular export, import and batch operations<a class="headerlink" href="#tabular-export-import-and-batch-operations" title="Permanent link">&para;</a></h1>
 <p><code>rn_forge.fastapi.transfer</code> serves spreadsheet download and upload, an import
-template, and batch get, create, update and delete. It needs the <code>transfer</code> extra (tablib,
-openpyxl and <code>python-multipart</code>) and is not imported by <code>rn_forge.fastapi</code>. The
-wire contract is §17 of <code>rn-forge-web</code>'s API conventions. Persistence is the
-application's: each route factory takes a <strong>store</strong>, a dependency that returns an
-object with the methods the factory calls.</p>
+template, and batch get, create, update and delete. It needs the <code>transfer</code>
+extra (<code>rn-forge-data</code>, which brings tablib and openpyxl, and
+<code>python-multipart</code>) and is not imported by <code>rn_forge.fastapi</code>. The wire contract
+is §17 of <code>rn-forge-web</code>'s API conventions. Persistence is the application's:
+each route factory takes a <strong>store</strong>, a dependency that returns an object with
+the methods the factory calls.</p>
 <table>
 <thead>
 <tr>
@@ -1203,17 +1204,17 @@ object with the methods the factory calls.</p>
 validates the request, applies the row cap (<code>max_rows</code>) and calls the store only
 with data that passed. The store makes the writes. Because the store is obtained
 through <code>Depends</code>, it can take a database session, the principal or filter
-parameters the ordinary FastAPI way. Every factory also takes <code>dependencies=</code> for
-route-level dependencies such as authorization.</p>
+parameters the ordinary FastAPI way. Every factory also takes <code>dependencies=</code>
+for route-level dependencies such as authorization.</p>
 <h2 id="a-complete-resource">A complete resource<a class="headerlink" href="#a-complete-resource" title="Permanent link">&para;</a></h2>
 <p>The code below is <strong>application code</strong>, not part of rn-forge. It joins
 <code>rn-forge-fastapi</code> and <code>rn-forge-sqlalchemy</code>, which do not import each other:
 the application's store calls <code>upsert</code> and <code>keyset</code>, and <code>rn-forge-fastapi</code>
 calls the store. It serves <code>/orders</code> with a paged list, CSV and xlsx export,
 import, import template, batch create and batch delete.</p>
-<p>The model and the three wire models. <code>OrderImport</code>'s aliases are the
-spreadsheet headers, and it also serves as the export and template model, so a
-downloaded file can be uploaded again.</p>
+<p>The model and the three wire models. <code>OrderImport</code>'s aliases are the spreadsheet
+headers, and it also serves as the export and template model, so a downloaded
+file can be uploaded again.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">FastAPI</span>
@@ -1379,9 +1380,9 @@ transaction that it commits or discards itself.</p>
 end:</p>
 <ul>
 <li><code>import_rows</code> runs <code>upsert</code>, which never commits. A real import then commits.
-  <code>validateOnly</code> rolls back instead, so the report shows the true
-  <code>created</code>, <code>updated</code> and <code>skipped</code> counts and nothing is persisted. Any
-  exception leaves the <code>async with</code> block before the commit, which discards the
+  <code>validateOnly</code> rolls back instead, so the report shows the true <code>created</code>,
+  <code>updated</code> and <code>skipped</code> counts and nothing is persisted. Any exception
+  leaves the <code>async with</code> block before the commit, which discards the
   session's work.</li>
 <li><code>create_many</code> checks every item for permission before it adds any, and raises
   <code>ItemsDenied</code> if one is refused: a 403 whose <code>errors[].pointer</code> is
@@ -1394,22 +1395,27 @@ end:</p>
 layer. A store that shares a request-scoped session instead must roll that
 session back itself when it fails or when <code>validate_only</code> is set.</p>
 <p>A row that fails a check only the store can make, such as a foreign-key lookup,
-is reported by raising <code>RowsInvalid(errors)</code> (from <code>rn_forge.web</code>, built from <code>rn_forge.web.transfer.RowError</code>) from <code>import_rows</code>. It renders the
-same 422 as a cell that failed validation, pointing at <code>/rows/&lt;row&gt;/&lt;column&gt;</code>.</p>
+is reported by raising <code>RowsInvalid(errors)</code> (from <code>rn_forge.web</code>, built from
+<code>rn_forge.web.transfer.RowError</code>) from <code>import_rows</code>. It renders the same 422 as
+a cell that failed validation, pointing at <code>/rows/&lt;row&gt;/&lt;column&gt;</code>.</p>
 <h3 id="batch-get-and-update">Batch get and update<a class="headerlink" href="#batch-get-and-update" title="Permanent link">&para;</a></h3>
-<p><code>batch_get_router</code> reads a repeated <code>ids</code> query parameter. The store's <code>get_many(ids)</code> returns the
-rows that exist within the caller's scope, keyed by id as a string. <code>batch_update_router</code> takes
-<code>{"requests": [{"id", "patch", "ifMatch"}]}</code>: the store's <code>current(ids)</code> returns each existing row
-as an object with <code>row</code> and <code>version</code> (<code>None</code> when the resource is unversioned), the factory merges
-each patch into the row dumped through <code>model</code> by alias and validates the result as <code>model</code>, and
-<code>update_many(items)</code> receives <code>(id, model instance)</code> pairs only after every check has passed. It
-writes them in one transaction, bumps each version and returns the updated rows in the order given.</p>
+<p><code>batch_get_router</code> reads a repeated <code>ids</code> query parameter. The store's
+<code>get_many(ids)</code> returns the rows that exist within the caller's scope, keyed by
+id as a string. <code>batch_update_router</code> takes
+<code>{"requests": [{"id", "patch", "ifMatch"}]}</code>: the store's <code>current(ids)</code> returns
+each existing row as an object with <code>row</code> and <code>version</code> (<code>None</code> when the
+resource is unversioned), the factory merges each patch into the row dumped
+through <code>model</code> by alias and validates the result as <code>model</code>, and
+<code>update_many(items)</code> receives <code>(id, model instance)</code> pairs only after every
+check has passed. It writes them in one transaction, bumps each version and
+returns the updated rows in the order given.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">batch_get_router</span><span class="p">(</span><span class="s2">&quot;/orders&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">OrderOut</span><span class="p">,</span> <span class="n">resource_name</span><span class="o">=</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="n">resource_label</span><span class="o">=</span><span class="s2">&quot;Order&quot;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">order_store</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
 <span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">batch_update_router</span><span class="p">(</span><span class="s2">&quot;/orders&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">OrderDocument</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">OrderOut</span><span class="p">,</span> <span class="n">resource_name</span><span class="o">=</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="n">resource_label</span><span class="o">=</span><span class="s2">&quot;Order&quot;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">order_store</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">require_if_match</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 </code></pre></div>
 
-<p><code>update_many</code> raises <code>ItemsDenied(errors, root="requests")</code> before writing to refuse an item.
-<code>codec=</code> changes the validator format of <code>ifMatch</code>, which defaults to <code>VersionETagCodec</code>.</p>
+<p><code>update_many</code> raises <code>ItemsDenied(errors, root="requests")</code> before writing to
+refuse an item. <code>codec=</code> changes the validator format of <code>ifMatch</code>, which
+defaults to <code>VersionETagCodec</code>.</p>
 <h3 id="what-the-factories-answer">What the factories answer<a class="headerlink" href="#what-the-factories-answer" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1509,11 +1515,11 @@ writes them in one transaction, bumps each version and returns the updated rows 
 tabular request from a list route: the file, or a 422 when there are more rows
 than <code>max_rows</code>.</p>
 <p>The export model is a pydantic model. Its <code>serialization_alias</code>es are the column
-headers, and a <code>computed_field</code> is a column, which covers foreign-key
-traversal, full names and enum display names. Rows are validated with
+headers, and a <code>computed_field</code> is a column, which covers foreign-key traversal,
+full names and enum display names. Rows are validated with
 <code>from_attributes=True</code>, so ORM objects work directly. CSV is streamed; xlsx is
-written with <code>rn_forge.commons.data.excel.write_xlsx</code>. <code>tabular_response</code> is the
-same without the cap, for a route that applies its own.</p>
+written with <code>rn_forge.data.write_xlsx</code>. <code>tabular_response</code> is the same without
+the cap, for a route that applies its own.</p>
 <h2 id="reading-a-file-yourself">Reading a file yourself<a class="headerlink" href="#reading-a-file-yourself" title="Permanent link">&para;</a></h2>
 <p><code>read_rows</code> loads an <code>UploadFile</code> (csv, tsv or xlsx) and validates each row
 against a pydantic model whose aliases are the external headers. A bad cell is
@@ -1524,10 +1530,10 @@ validation run in a worker thread. A route that needs more than <code>import_rou
 offers can call it and answer with <code>problem_response(row_errors_problem(...))</code>.</p>
 <h2 id="paging-a-sqlalchemy-list">Paging a SQLAlchemy list<a class="headerlink" href="#paging-a-sqlalchemy-list" title="Permanent link">&para;</a></h2>
 <p><code>order_by_param</code> and <code>page_params</code> parse the request, <code>rn-forge-sqlalchemy</code>'s
-<code>keyset</code> applies them to a <code>Select</code>, and <code>next_page_token</code> writes the next token.
-The <code>page</code> method of the store above does this: it fetches <code>size + 1</code> rows to
-learn whether another page exists. <code>keyset</code> takes the sort column and the unique
-id column, so the order is stable when the sort column repeats.</p>
+<code>keyset</code> applies them to a <code>Select</code>, and <code>next_page_token</code> writes the next
+token. The <code>page</code> method of the store above does this: it fetches <code>size + 1</code>
+rows to learn whether another page exists. <code>keyset</code> takes the sort column and
+the unique id column, so the order is stable when the sort column repeats.</p>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
 <p><code>tests/test_conformance.py</code> serves <code>/conformance/orders*</code> and
 <code>/conformance/capped*</code> through these factories over one in-memory store, and

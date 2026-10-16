@@ -1243,8 +1243,8 @@
 
 
 <h1 id="wiring-an-application">Wiring an application<a class="headerlink" href="#wiring-an-application" title="Permanent link">&para;</a></h1>
-<p>Promoted from <code>rn-forge-web</code>'s interim FastAPI wiring guide, which was written to
-become this package. What was a page of copy-paste handler, dependency and
+<p>Promoted from <code>rn-forge-web</code>'s interim FastAPI wiring guide, which was written
+to become this package. What was a page of copy-paste handler, dependency and
 router code there is a handful of calls here; what is left is the wiring an
 application genuinely owns.</p>
 <h2 id="the-wiring-module">The wiring module<a class="headerlink" href="#the-wiring-module" title="Permanent link">&para;</a></h2>
@@ -1283,26 +1283,28 @@ tests can pass fakes and the factory never reads the environment or starts a
 resource.</p>
 <h2 id="the-rules-the-wiring-depends-on">The rules the wiring depends on<a class="headerlink" href="#the-rules-the-wiring-depends-on" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Register domain exceptions on the registry before creating <code>AppConfig</code>.</strong> Handlers are registered per exception type,
-   because Starlette re-raises anything handled by an <code>Exception</code> handler. A row
-   added later still renders correctly, but as a logged, re-raised server error.</li>
+<li><strong>Register domain exceptions on the registry before creating <code>AppConfig</code>.</strong>
+   Handlers are registered per exception type, because Starlette re-raises
+   anything handled by an <code>Exception</code> handler. A row added later still renders
+   correctly, but as a logged, re-raised server error.</li>
 <li><strong>Pass that registry to <code>AppConfig</code>.</strong> Its statuses are the problem responses
    the schema declares on every operation.</li>
 <li><strong>Tracing.</strong> <code>FastApiApp</code> instruments itself with
-   <code>FastAPIInstrumentor.instrument_app</code> by default (<code>AppConfig.tracing</code>), after
-   the kit's own middleware, so the instrumentation wraps the whole stack
-   regardless of add order. It also sets a <code>TraceResponsePropagator</code> as the
-   global response propagator, but only when nothing else has — an
+   <code>FastAPIInstrumentor.instrument_app</code> by default (<code>AppConfig.tracing</code>),
+   after the kit's own middleware, so the instrumentation wraps the whole
+   stack regardless of add order. It also sets a <code>TraceResponsePropagator</code> as
+   the global response propagator, but only when nothing else has — an
    application that configures its own response propagator first is left
    alone. Configure a <code>TracerProvider</code> and exporter in the application, or run
    under <code>opentelemetry-instrument</code>; <code>FastApiApp</code> never does either.</li>
-<li><strong>Derive every model from <code>rn_forge.web.WireModel</code>.</strong> camelCase on the wire is enforced by
-   the base class, including in a hand-built
+<li><strong>Derive every model from <code>rn_forge.web.WireModel</code>.</strong> camelCase on the wire
+   is enforced by the base class, including in a hand-built
    <code>JSONResponse(model.model_dump(mode="json"))</code>.</li>
-<li><strong>Spell a non-CRUD route as a custom method.</strong> <code>POST /orders/{order_id}:cancel</code>
-   is named <code>ordersCancel</code> automatically, on both stacks. The same action as a
-   plain path segment (<code>/orders/{order_id}/cancel</code>) is indistinguishable from a
-   sub-collection and needs an explicit <code>operation_id=</code>.</li>
+<li><strong>Spell a non-CRUD route as a custom method.</strong>
+   <code>POST /orders/{order_id}:cancel</code> is named <code>ordersCancel</code> automatically, on
+   both stacks. The same action as a plain path segment
+   (<code>/orders/{order_id}/cancel</code>) is indistinguishable from a sub-collection
+   and needs an explicit <code>operation_id=</code>.</li>
 </ol>
 <h2 id="routes">Routes<a class="headerlink" href="#routes" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
@@ -1341,11 +1343,12 @@ paginated component its own way too, <code>PaginatedOrderOutList</code>.</p>
 <code>Query(le=...)</code> alongside <code>page_params</code>; that is a 422 and a specification
 violation.</p>
 <h2 id="merge-patch">Merge patch<a class="headerlink" href="#merge-patch" title="Permanent link">&para;</a></h2>
-<p><code>merge_patch_body()</code> checks the media type and returns the raw body; <code>merge_into</code> parses it,
-merges it into the current resource and validates the result against the model.
-<code>merge_patch_openapi()</code> declares the request body. Declare <code>merge_patch_body()</code> before the
-<code>If-Match</code> dependency, so the media type answers first (415), and call <code>check_precondition</code>
-before <code>merge_into</code>, so a stale request is 412 whatever the body says.</p>
+<p><code>merge_patch_body()</code> checks the media type and returns the raw body;
+<code>merge_into</code> parses it, merges it into the current resource and validates the
+result against the model. <code>merge_patch_openapi()</code> declares the request body.
+Declare <code>merge_patch_body()</code> before the <code>If-Match</code> dependency, so the media type
+answers first (415), and call <code>check_precondition</code> before <code>merge_into</code>, so a
+stale request is 412 whatever the body says.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Header</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_into</span><span class="p">,</span> <span class="n">merge_patch_body</span><span class="p">,</span> <span class="n">merge_patch_openapi</span>
@@ -1363,15 +1366,18 @@ before <code>merge_into</code>, so a stale request is 412 whatever the body says
     <span class="k">return</span> <span class="n">merge_into</span><span class="p">(</span><span class="n">DocumentOut</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Use <code>require_if_match()</code> in place of the optional header to make it required (428). A <code>null</code> on
-a non-nullable field is a 422 that reads <code>This field may not be null.</code></p>
+<p>Use <code>require_if_match()</code> in place of the optional header to make it required
+(428). A <code>null</code> on a non-nullable field is a 422 that reads
+<code>This field may not be null.</code></p>
 <h2 id="partial-responses">Partial responses<a class="headerlink" href="#partial-responses" title="Permanent link">&para;</a></h2>
-<p><code>read_mask_param(Model)</code> is a dependency yielding the parsed <code>readMask</code>, or <code>None</code> for the whole
-resource. It reads the model's aliases, so a nested model, <code>Model | None</code> or <code>list[Model]</code> field
-can be reached with a dotted path and anything else is a leaf. A path that names nothing is a 400
-problem before the route runs. Apply the mask to the dumped body with <code>mask.apply(...)</code>, or to a
-page with <code>masked(page, mask)</code>. Return a <code>JSONResponse</code> and declare <code>response_model</code> for the
-documentation, because the pruned body no longer validates as the full model.</p>
+<p><code>read_mask_param(Model)</code> is a dependency yielding the parsed <code>readMask</code>, or
+<code>None</code> for the whole resource. It reads the model's aliases, so a nested model,
+<code>Model | None</code> or <code>list[Model]</code> field can be reached with a dotted path and
+anything else is a leaf. A path that names nothing is a 400 problem before the
+route runs. Apply the mask to the dumped body with <code>mask.apply(...)</code>, or to a
+page with <code>masked(page, mask)</code>. Return a <code>JSONResponse</code> and declare
+<code>response_model</code> for the documentation, because the pruned body no longer
+validates as the full model.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONResponse</span>
 
@@ -1398,14 +1404,14 @@ documentation, because the pruned body no longer validates as the full model.</p
 <p><code>batch_get_router</code> accepts <code>readMask</code> unless it is built with <code>read_mask=False</code>.</p>
 <h2 id="security-headers">Security headers<a class="headerlink" href="#security-headers" title="Permanent link">&para;</a></h2>
 <p><code>FastApiApp</code> installs the OWASP REST Security Cheat Sheet response headers by
-default (<code>AppConfig.security_headers</code>). <code>Strict-Transport-Security</code> is
-excluded from the default preset and is opt-in — <code>AppConfig(hsts=True)</code> — for
-a deployment that terminates TLS itself rather than behind a front end that
+default (<code>AppConfig.security_headers</code>). <code>Strict-Transport-Security</code> is excluded
+from the default preset and is opt-in — <code>AppConfig(hsts=True)</code> — for a
+deployment that terminates TLS itself rather than behind a front end that
 already sets it.</p>
 <h2 id="service-discovery">Service discovery<a class="headerlink" href="#service-discovery" title="Permanent link">&para;</a></h2>
 <p><code>FastApiApp</code> serves RFC 9727's <code>/.well-known/api-catalog</code> by default
-(<code>AppConfig.api_catalog</code>), pointing at the OpenAPI document (<code>openapi_url</code>)
-and docs UI (<code>docs_url</code>) it already serves, plus readiness. Set
+(<code>AppConfig.api_catalog</code>), pointing at the OpenAPI document (<code>openapi_url</code>) and
+docs UI (<code>docs_url</code>) it already serves, plus readiness. Set
 <code>AppConfig(api_catalog=False)</code> to turn it off.</p>
 <h2 id="cors">CORS<a class="headerlink" href="#cors" title="Permanent link">&para;</a></h2>
 <p>Opt-in, and the application owns the policy:</p>
@@ -1415,10 +1421,9 @@ and docs UI (<code>docs_url</code>) it already serves, plus readiness. Set
 </code></pre></div>
 
 <p><code>CorsPolicy.expose_headers</code> defaults to <code>rn_forge.web.EXPOSED_HEADERS</code> — the
-response headers this kit emits that a browser cannot read unless a CORS
-policy names them (<code>ETag</code>, <code>Link</code>, <code>Content-Disposition</code>, and so on).
-<code>traceresponse</code> needs no entry here — the OpenTelemetry response propagator
-exposes it itself.
+response headers this kit emits that a browser cannot read unless a CORS policy
+names them (<code>ETag</code>, <code>Link</code>, <code>Content-Disposition</code>, and so on). <code>traceresponse</code>
+needs no entry here — the OpenTelemetry response propagator exposes it itself.
 <code>allow_origins</code> has no default; naming them is the application's decision.
 <code>CorsPolicy(allow_credentials=True, allow_origins=("*",))</code> raises — browsers
 reject that combination.</p>
@@ -1442,8 +1447,8 @@ reject that combination.</p>
 </code></pre></div>
 
 <p><code>deprecated=True</code> and the <code>deprecated(...)</code> dependency are both needed: one
-marks the document, the other stamps the <code>Deprecation</code>/<code>Sunset</code>/<code>Link</code>
-headers on the wire (RFC 9745, RFC 8594).</p>
+marks the document, the other stamps the <code>Deprecation</code>/<code>Sunset</code>/<code>Link</code> headers
+on the wire (RFC 9745, RFC 8594).</p>
 <h2 id="publishing-a-model-no-route-references">Publishing a model no route references<a class="headerlink" href="#publishing-a-model-no-route-references" title="Permanent link">&para;</a></h2>
 <p>A generated client sometimes needs a shape that never appears as a request or
 response body — a webhook payload, an event published to a queue. Override
@@ -1465,50 +1470,54 @@ same composition <code>FastApiApp</code> itself uses to repair the document:</p>
 
 <h2 id="what-an-application-still-writes">What an application still writes<a class="headerlink" href="#what-an-application-still-writes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>The authenticator — unless it is OIDC.</strong> For bearer tokens from an identity
+<li>
+<p><strong>The authenticator — unless it is OIDC.</strong> For bearer tokens from an identity
   provider, install <code>rn-forge-fastapi[oidc]</code> and use the shared implementation
-  rather than writing one:</li>
-</ul>
+  rather than writing one:</p>
 <p>```python
-  from rn_forge.web.oidc import OidcAuthenticator</p>
+from rn_forge.web.oidc import OidcAuthenticator</p>
 <p>authenticator = OidcAuthenticator.from_issuer(
-      "https://idp.example.com/tenant", audience="api://orders"
-  )
-  caller = bearer_auth(authenticator=authenticator, log=log)
-  ```</p>
+    "https://idp.example.com/tenant", audience="api://orders"
+)
+caller = bearer_auth(authenticator=authenticator, log=log)
+```</p>
 <p>Pass <code>caller</code> to <code>requires(caller, Requirement(all_scopes=...))</code>, then use the
-  returned dependency on protected routes. <code>FastApiApp</code> registers the problem
-  handlers that render authentication failures as 401 with a challenge and
-  authorization failures as 403 without one.</p>
+returned dependency on protected routes. <code>FastApiApp</code> registers the problem
+handlers that render authentication failures as 401 with a challenge and
+authorization failures as 403 without one.</p>
 <p>Build it once at startup — it holds the JWKS cache. It is the same
-  authenticator <code>rn-forge-django</code> uses, so both stacks accept the same tokens.
-  For any other scheme, <code>bearer_auth</code> takes any <code>rn_forge.web.Authenticator</code> or
-  <code>AsyncAuthenticator</code>: verify the token, map claims to a <code>Principal</code>, and raise
-  <code>AuthenticationFailed</code> with the reason — the reason reaches <code>log</code>, never the
-  body. A sync <code>Authenticator</code> runs in the threadpool, so a blocking JWKS fetch
-  does not stall the event loop. <code>basic_auth</code> is for local development and
-  simple internal deployments only.
-- <strong>The idempotency store.</strong> Implement <code>rn_forge.web.AsyncIdempotencyStore</code>
-  over the application's database. Race safety comes from a <code>UNIQUE (scope, key)</code>
+authenticator <code>rn-forge-django</code> uses, so both stacks accept the same tokens.
+For any other scheme, <code>bearer_auth</code> takes any <code>rn_forge.web.Authenticator</code>
+or <code>AsyncAuthenticator</code>: verify the token, map claims to a <code>Principal</code>, and
+raise <code>AuthenticationFailed</code> with the reason — the reason reaches <code>log</code>,
+never the body. A sync <code>Authenticator</code> runs in the threadpool, so a blocking
+JWKS fetch does not stall the event loop. <code>basic_auth</code> is for local
+development and simple internal deployments only.</p>
+</li>
+<li>
+<p><strong>The idempotency store.</strong> Implement <code>rn_forge.web.AsyncIdempotencyStore</code> over
+  the application's database. Race safety comes from a <code>UNIQUE (scope, key)</code>
   constraint with <code>INSERT … ON CONFLICT DO NOTHING</code> and a read-back, never a
   check-then-insert. Decorate the route with <code>idempotent(store, scope=...)</code>
   (<code>rn_forge.fastapi.idempotent</code>), which wraps
   <code>rn_forge.web.run_idempotent_async</code>: the decorated route takes
   <code>request: Request</code> and returns a <code>Response</code>.</p>
 <p>```python
-  from fastapi import Request
-  from fastapi.responses import JSONResponse
-  from rn_forge.fastapi import idempotent</p>
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from rn_forge.fastapi import idempotent</p>
 <p>@router.post("/charges", status_code=201)
-  @idempotent(store, scope="charges")
-  async def create_charge(request: Request, body: ChargeIn) -&gt; JSONResponse:
-      ...
-  ```</p>
-<ul>
-<li><strong>The checks.</strong> Zero-argument callables, sync or async, returning a <code>bool</code> or a
-  <code>rn_forge.web.CheckResult</code>. Pass <code>health_router(timeout=...)</code> so a hung
+@idempotent(store, scope="charges")
+async def create_charge(request: Request, body: ChargeIn) -&gt; JSONResponse:
+    ...
+```</p>
+</li>
+<li>
+<p><strong>The checks.</strong> Zero-argument callables, sync or async, returning a <code>bool</code> or
+  a <code>rn_forge.web.CheckResult</code>. Pass <code>health_router(timeout=...)</code> so a hung
   dependency is reported as <code>fail</code> rather than hanging <code>/readyz</code>; the default,
-  <code>None</code>, waits indefinitely.</li>
+  <code>None</code>, waits indefinitely.</p>
+</li>
 </ul>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
 <p><code>tests/test_conformance.py</code> in this package is the FastAPI driver for the
@@ -1517,8 +1526,8 @@ adapters above, <code>depends_on</code> issued first, and equality asserted agai
 table — never against Django's output.</p>
 <h2 id="deploying-it">Deploying it<a class="headerlink" href="#deploying-it" title="Permanent link">&para;</a></h2>
 <p><code>rn-forge-web</code>'s "Deployment" guide maps <code>/livez</code>, <code>/readyz</code>, the security
-headers' <code>hsts</code> flag, CORS and body-size limits onto Kubernetes, App Engine
-and Azure App Service.</p>
+headers' <code>hsts</code> flag, CORS and body-size limits onto Kubernetes, App Engine and
+Azure App Service.</p>
 
 
 
