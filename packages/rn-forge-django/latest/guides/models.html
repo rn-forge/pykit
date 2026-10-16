@@ -1838,8 +1838,8 @@
 
 <h1 id="models">Models<a class="headerlink" href="#models" title="Permanent link">&para;</a></h1>
 <h2 id="basemodel">BaseModel<a class="headerlink" href="#basemodel" title="Permanent link">&para;</a></h2>
-<p>Nearly all concrete models should inherit from <code>BaseModel</code> (or <code>DateModel</code>/<code>DateRangeModel</code>,
-which extend it):</p>
+<p>Nearly all concrete models should inherit from <code>BaseModel</code> (or
+<code>DateModel</code>/<code>DateRangeModel</code>, which extend it):</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
@@ -1857,20 +1857,21 @@ which extend it):</p>
 
 <p><code>BaseModel</code> adds:</p>
 <ul>
-<li><code>status</code> — an <code>EnumField</code> over the <code>Status</code> enum (<code>Active</code>/<code>Inactive</code>/<code>Error</code>/<code>Deleted</code>/
-  <code>Expired</code>), defaulting to <code>Active</code></li>
-<li><code>created_by</code> / <code>create_time</code> / <code>updated_by</code> / <code>update_time</code> audit columns (snake_case Python
-  fields and columns)</li>
-<li><code>objects = NaturalKeyLookupManager()</code> — enables <code>get_by_natural_key()</code> for fixture loading,
-  driven by <code>natural_keys()</code></li>
-<li><code>TruncateModelMixin.truncate()</code> — <code>TRUNCATE TABLE</code> (or <code>DELETE FROM</code> on SQLite), handy for
-  test teardown</li>
+<li><code>status</code> — an <code>EnumField</code> over the <code>Status</code> enum
+  (<code>Active</code>/<code>Inactive</code>/<code>Error</code>/<code>Deleted</code>/ <code>Expired</code>), defaulting to <code>Active</code></li>
+<li><code>created_by</code> / <code>create_time</code> / <code>updated_by</code> / <code>update_time</code> audit columns
+  (snake_case Python fields and columns)</li>
+<li><code>objects = NaturalKeyLookupManager()</code> — enables <code>get_by_natural_key()</code> for
+  fixture loading, driven by <code>natural_keys()</code></li>
+<li><code>TruncateModelMixin.truncate()</code> — <code>TRUNCATE TABLE</code> (or <code>DELETE FROM</code> on
+  SQLite), handy for test teardown</li>
 <li>opt-in validation-on-save: set <code>validate_on_save = True</code> to have <code>save()</code> call
-  <code>full_clean()</code>; override <code>get_full_clean_exclude()</code> to control which fields are excluded on a
-  partial <code>update_fields</code> save</li>
+  <code>full_clean()</code>; override <code>get_full_clean_exclude()</code> to control which fields
+  are excluded on a partial <code>update_fields</code> save</li>
 </ul>
 <h2 id="concurrency-and-immutability">Concurrency and immutability<a class="headerlink" href="#concurrency-and-immutability" title="Permanent link">&para;</a></h2>
-<p>Two opt-in mixins, listed <strong>before</strong> the base so <code>BaseModel</code>'s validation still runs:</p>
+<p>Two opt-in mixins, listed <strong>before</strong> the base so <code>BaseModel</code>'s validation still
+runs:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImmutableModelMixin</span><span class="p">,</span> <span class="n">VersionedModelMixin</span>
 
 
@@ -1882,11 +1883,14 @@ which extend it):</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Any change outside the audit columns, and any delete, raises DomainConflict (409).&quot;&quot;&quot;</span>
 </code></pre></div>
 
-<p>The <code>version</code> bump survives a partial <code>save(update_fields=[...])</code>. The <code>UPDATE</code> only matches the row
-at the version the instance was loaded at, so a save from a stale instance — another request saved
-in between — raises <code>rn_forge.web.VersionConflict</code> (412) rather than silently overwriting it. <code>ImmutableModelMixin</code> re-reads
-the row on every update — one extra query — and does not guard queryset-level <code>update()</code>/<code>delete()</code>.</p>
-<p>Turn a stale write into a 412 from a DRF view, and emit the <code>ETag</code> the client sends back:</p>
+<p>The <code>version</code> bump survives a partial <code>save(update_fields=[...])</code>. The <code>UPDATE</code>
+only matches the row at the version the instance was loaded at, so a save from a
+stale instance — another request saved in between — raises
+<code>rn_forge.web.VersionConflict</code> (412) rather than silently overwriting it.
+<code>ImmutableModelMixin</code> re-reads the row on every update — one extra query — and
+does not guard queryset-level <code>update()</code>/<code>delete()</code>.</p>
+<p>Turn a stale write into a 412 from a DRF view, and emit the <code>ETag</code> the client
+sends back:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">enforce_version</span><span class="p">,</span> <span class="n">etag_for</span>
 
 
@@ -1899,13 +1903,14 @@ the row on every update — one extra query — and does not guard queryset-leve
     <span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
 
-<p>A mismatch is <strong>412</strong>, a missing required precondition <strong>428</strong>, an unparseable one <strong>400</strong> — decided
-by <code>rn_forge.web.check_precondition</code>, not here. The body-<code>version</code> fallback is a Django-only
-convenience; an API meant to be swappable with a FastAPI one should require the header.</p>
+<p>A mismatch is <strong>412</strong>, a missing required precondition <strong>428</strong>, an unparseable
+one <strong>400</strong> — decided by <code>rn_forge.web.check_precondition</code>, not here. The
+body-<code>version</code> fallback is a Django-only convenience; an API meant to be
+swappable with a FastAPI one should require the header.</p>
 <h2 id="soft-delete">Soft delete<a class="headerlink" href="#soft-delete" title="Permanent link">&para;</a></h2>
-<p><code>SoftDeleteModelMixin</code> adds a nullable, indexed <code>delete_time</code>. List it <strong>before</strong> <code>BaseModel</code> so
-that its manager becomes the default one; that manager keeps <code>get_by_natural_key()</code> and adds
-<code>.live()</code> and <code>.deleted()</code>:</p>
+<p><code>SoftDeleteModelMixin</code> adds a nullable, indexed <code>delete_time</code>. List it
+<strong>before</strong> <code>BaseModel</code> so that its manager becomes the default one; that manager
+keeps <code>get_by_natural_key()</code> and adds <code>.live()</code> and <code>.deleted()</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SoftDeleteModelMixin</span><span class="p">,</span> <span class="n">VersionedModelMixin</span>
 
 
@@ -1919,10 +1924,11 @@ that its manager becomes the default one; that manager keeps <code>get_by_natura
 <span class="n">Note</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">deleted</span><span class="p">()</span>  <span class="c1"># delete_time IS NOT NULL</span>
 </code></pre></div>
 
-<p>The default manager is <strong>not</strong> filtered, so the admin, related-object lookups and a <code>GET</code> of a
-deleted resource keep working; the view decides what is visible. A versioned model bumps its
-<code>version</code> on <code>soft_delete</code> and <code>undelete</code> as on any save. Override <code>get_delete_time()</code> to supply the
-recorded time. <code>delete_time</code> is independent of <code>status</code>, and <code>Status.Deleted</code> does not mean
+<p>The default manager is <strong>not</strong> filtered, so the admin, related-object lookups
+and a <code>GET</code> of a deleted resource keep working; the view decides what is
+visible. A versioned model bumps its <code>version</code> on <code>soft_delete</code> and <code>undelete</code>
+as on any save. Override <code>get_delete_time()</code> to supply the recorded time.
+<code>delete_time</code> is independent of <code>status</code>, and <code>Status.Deleted</code> does not mean
 soft-deleted. The view side is in <a href="drf-views.html#soft-delete">DRF Views</a>.</p>
 <h2 id="generating-human-readable-codes">Generating human-readable codes<a class="headerlink" href="#generating-human-readable-codes" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractSequenceCounter</span><span class="p">,</span> <span class="n">SequenceGenerator</span>
@@ -1937,11 +1943,13 @@ soft-deleted. The view side is in <a href="drf-views.html#soft-delete">DRF Views
 <span class="n">ORDER_CODES</span><span class="o">.</span><span class="n">ensure_at_least</span><span class="p">(</span><span class="mi">5_000</span><span class="p">)</span>  <span class="c1"># after an import: the next code is PO-005001</span>
 </code></pre></div>
 
-<p>The counter model is abstract because this package ships no migrations; you declare the concrete
-model and own its migration. A shape like <code>PO-2026-0001</code> is a <code>formatter=</code> you pass, not a default.</p>
-<p><strong>What is and is not proven.</strong> On PostgreSQL a real sequence (<code>nextval</code>) allocates the value;
-elsewhere the counter row is locked with <code>select_for_update()</code>. The test suite runs on sqlite, which
-has no row locks, so only the arithmetic is tested — neither the PostgreSQL path nor behaviour under
+<p>The counter model is abstract because this package ships no migrations; you
+declare the concrete model and own its migration. A shape like <code>PO-2026-0001</code> is
+a <code>formatter=</code> you pass, not a default.</p>
+<p><strong>What is and is not proven.</strong> On PostgreSQL a real sequence (<code>nextval</code>)
+allocates the value; elsewhere the counter row is locked with
+<code>select_for_update()</code>. The test suite runs on sqlite, which has no row locks, so
+only the arithmetic is tested — neither the PostgreSQL path nor behaviour under
 concurrent allocation is covered by this package's suite.</p>
 <h2 id="date-based-variants">Date-based variants<a class="headerlink" href="#date-based-variants" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateModel</span><span class="p">,</span> <span class="n">DateRangeModel</span>
@@ -1973,15 +1981,16 @@ concurrent allocation is covered by this package's suite.</p>
     <span class="n">priority</span> <span class="o">=</span> <span class="n">EnumField</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">enum_type</span><span class="o">=</span><span class="n">Priority</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">Medium</span><span class="p">)</span>
 </code></pre></div>
 
-<p><code>EnumField</code> is a <code>CharField</code> that round-trips database values through the enum type.
-<code>BaseEnum.get_choices()</code> / <code>BaseEnum.lookup(code)</code> return <code>{"code", "name"}</code> dicts, which pairs
-with <code>EnumChoiceField</code> on the DRF side (see <a href="auth.html">Auth</a> and <a href="drf-views.html">DRF Views</a>).</p>
+<p><code>EnumField</code> is a <code>CharField</code> that round-trips database values through the enum
+type. <code>BaseEnum.get_choices()</code> / <code>BaseEnum.lookup(code)</code> return
+<code>{"code", "name"}</code> dicts, which pairs with <code>EnumChoiceField</code> on the DRF side
+(see <a href="auth.html">Auth</a> and <a href="drf-views.html">DRF Views</a>).</p>
 <h2 id="other-helpers">Other helpers<a class="headerlink" href="#other-helpers" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>ModelUtils.as_dict(instance)</code> / <code>.to_json(instance)</code> — recursively serialize a model instance
-  (including related objects) to JSON-safe primitives.</li>
-<li><code>ModelLookupCache</code> — load a reference table once and resolve foreign keys in O(1) instead of
-  per-row queries:</li>
+<li><code>ModelUtils.as_dict(instance)</code> / <code>.to_json(instance)</code> — recursively serialize
+  a model instance (including related objects) to JSON-safe primitives.</li>
+<li><code>ModelLookupCache</code> — load a reference table once and resolve foreign keys in
+  O(1) instead of per-row queries:</li>
 </ul>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelLookupCache</span>
 

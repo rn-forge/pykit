@@ -1793,11 +1793,11 @@
 
 
 <h1 id="messaging-outbox-and-inbox">Messaging: outbox and inbox<a class="headerlink" href="#messaging-outbox-and-inbox" title="Permanent link">&para;</a></h1>
-<p><code>rn_forge.django.messaging</code> makes publishing an event as reliable as the database change that
-caused it, and makes handling a redelivered event a no-op.</p>
+<p><code>rn_forge.django.messaging</code> makes publishing an event as reliable as the
+database change that caused it, and makes handling a redelivered event a no-op.</p>
 <h2 id="1-declare-the-tables">1. Declare the tables<a class="headerlink" href="#1-declare-the-tables" title="Permanent link">&para;</a></h2>
-<p>Add <code>"rn_forge.django.messaging"</code> to <code>INSTALLED_APPS</code>. The models are abstract; your app owns the
-concrete tables and their migrations:</p>
+<p>Add <code>"rn_forge.django.messaging"</code> to <code>INSTALLED_APPS</code>. The models are abstract;
+your app owns the concrete tables and their migrations:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.messaging.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractInboxMessage</span><span class="p">,</span> <span class="n">AbstractOutboxMessage</span>
 
 
@@ -1824,8 +1824,9 @@ concrete tables and their migrations:</p>
 
 <p>Either both commit or neither does.</p>
 <h2 id="3-relay-committed-rows-to-the-bus">3. Relay committed rows to the bus<a class="headerlink" href="#3-relay-committed-rows-to-the-bus" title="Permanent link">&para;</a></h2>
-<p>The bus is any <code>rn_forge.commons.integration.messaging.MessageBus</code> — an Azure Service Bus adapter
-in production, <code>InMemoryMessageBus</code> in tests. The envelope is yours to define:</p>
+<p>The bus is any <code>rn_forge.commons.integration.messaging.MessageBus</code> — an Azure
+Service Bus adapter in production, <code>InMemoryMessageBus</code> in tests. The envelope
+is yours to define:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.celery</span><span class="w"> </span><span class="kn">import</span> <span class="n">RETRYABLE_TASK_KWARGS</span><span class="p">,</span> <span class="n">make_app</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.messaging.relay</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_outbox_relay</span>
 
@@ -1856,8 +1857,9 @@ in production, <code>InMemoryMessageBus</code> in tests. The envelope is yours t
     <span class="k">return</span> <span class="n">relay</span><span class="p">()</span>
 </code></pre></div>
 
-<p>Schedule <code>publish_outbox</code> with Celery beat (or call <code>relay()</code> from a management command loop).
-Each call publishes at most <code>batch_size</code> rows and returns how many; <code>while relay(): pass</code> drains.</p>
+<p>Schedule <code>publish_outbox</code> with Celery beat (or call <code>relay()</code> from a management
+command loop). Each call publishes at most <code>batch_size</code> rows and returns how
+many; <code>while relay(): pass</code> drains.</p>
 <h2 id="4-handle-inbound-events-exactly-once">4. Handle inbound events exactly once<a class="headerlink" href="#4-handle-inbound-events-exactly-once" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.integration.messaging</span><span class="w"> </span><span class="kn">import</span> <span class="n">HandlerRegistry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.messaging.consumer</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_event</span>
@@ -1869,19 +1871,22 @@ Each call publishes at most <code>batch_size</code> rows and returns how many; <
     <span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">registry</span><span class="p">,</span> <span class="n">InboxMessage</span><span class="p">)</span>
 </code></pre></div>
 
-<p>A redelivered event returns <code>False</code> without running the handler. A handler's database writes and
-the "processed" mark commit together. A failing handler has its error recorded on the inbox row and
-is <strong>re-raised</strong>, so the broker can retry or dead-letter it.</p>
+<p>A redelivered event returns <code>False</code> without running the handler. A handler's
+database writes and the "processed" mark commit together. A failing handler has
+its error recorded on the inbox row and is <strong>re-raised</strong>, so the broker can
+retry or dead-letter it.</p>
 <h2 id="guarantees-and-their-limits">Guarantees and their limits<a class="headerlink" href="#guarantees-and-their-limits" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Out: at-least-once.</strong> A publish error rolls the whole batch back, so rows already sent in that
-  batch are sent again. Subscribers must dedupe — which is what the inbox is for.</li>
+<li><strong>Out: at-least-once.</strong> A publish error rolls the whole batch back, so rows
+  already sent in that batch are sent again. Subscribers must dedupe — which
+  is what the inbox is for.</li>
 <li><strong>Concurrent relays need PostgreSQL.</strong> Rows are claimed with
-  <code>select_for_update(skip_locked=True)</code>, so two relays take disjoint batches. sqlite has no row
-  locks: run a single relay there. The locking behaviour is tested by the <code>postgres</code>-marked tests,
-  which run when <code>RN_FORGE_DJANGO_TEST_DATABASE_URL</code> points at a PostgreSQL database.</li>
-<li><strong>No broker adapters here.</strong> Azure Service Bus and friends implement the commons <code>MessageBus</code>
-  protocol in their own packages.</li>
+  <code>select_for_update(skip_locked=True)</code>, so two relays take disjoint batches.
+  sqlite has no row locks: run a single relay there. The locking behaviour is
+  tested by the <code>postgres</code>-marked tests, which run when
+  <code>RN_FORGE_DJANGO_TEST_DATABASE_URL</code> points at a PostgreSQL database.</li>
+<li><strong>No broker adapters here.</strong> Azure Service Bus and friends implement the
+  commons <code>MessageBus</code> protocol in their own packages.</li>
 </ul>
 
 

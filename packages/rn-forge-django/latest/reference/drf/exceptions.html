@@ -1811,15 +1811,18 @@
 <p>Two exception handlers ship, and this package wires neither — name one in
 <code>REST_FRAMEWORK["EXCEPTION_HANDLER"]</code>:</p>
 <ul>
-<li><code>problem_details_exception_handler</code> renders RFC 9457 <code>application/problem+json</code>. It is the wire
-  contract shared with <code>rn-forge-fastapi</code>, so choose it for any new API. The normative description
+<li><code>problem_details_exception_handler</code> renders RFC 9457
+  <code>application/problem+json</code>. It is the wire contract shared with
+  <code>rn-forge-fastapi</code>, so choose it for any new API. The normative description
   of the body, the status mapping and the 401/403 boundary is <code>rn-forge-web</code>'s
   <code>api-conventions.md</code>; this page does not restate it.</li>
-<li><code>drf_exception_handler</code> renders this package's original <code>{"path", "error", "message"}</code> body, for
-  existing consumers.</li>
+<li><code>drf_exception_handler</code> renders this package's original
+  <code>{"path", "error", "message"}</code> body, for existing consumers.</li>
 </ul>
-<p>For Django's own routing errors, name <code>rn_forge.django.exceptions.problem_details_handler404</code> (and
-<code>problem_details_handler500</code>) in your root URLconf — see <a href="../exceptions.html">Exceptions</a>.</p>
+<p>For Django's own routing errors, name
+<code>rn_forge.django.exceptions.problem_details_handler404</code> (and
+<code>problem_details_handler500</code>) in your root URLconf — see
+<a href="../exceptions.html">Exceptions</a>.</p>
 
 
 <div class="doc doc-object doc-module">

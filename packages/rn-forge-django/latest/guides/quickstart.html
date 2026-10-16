@@ -1773,7 +1773,8 @@
         <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;reference&quot;</span><span class="p">]</span>
 </code></pre></div>
 
-<p><code>BaseModel</code> adds <code>status</code>, <code>created_by</code>/<code>create_time</code>/<code>updated_by</code>/<code>update_time</code>, and a
+<p><code>BaseModel</code> adds <code>status</code>,
+<code>created_by</code>/<code>create_time</code>/<code>updated_by</code>/<code>update_time</code>, and a
 <code>NaturalKeyLookupManager</code> default manager — see <a href="models.html">Models</a>.</p>
 <p>Wire a DRF viewset over it:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span>
@@ -1794,8 +1795,9 @@
 </code></pre></div>
 
 <h2 id="wire-it-to-the-shared-api-contract">Wire it to the shared API contract<a class="headerlink" href="#wire-it-to-the-shared-api-contract" title="Permanent link">&para;</a></h2>
-<p>Errors as RFC 9457 problems, W3C Trace Context on every request, AIP-158 cursor pagination and
-camelCase JSON — the same wire an <code>rn-forge-fastapi</code> service speaks:</p>
+<p>Errors as RFC 9457 problems, W3C Trace Context on every request, AIP-158 cursor
+pagination and camelCase JSON — the same wire an <code>rn-forge-fastapi</code> service
+speaks:</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># manage.py, wsgi.py, asgi.py — before Django loads</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.tracing</span><span class="w"> </span><span class="kn">import</span> <span class="n">instrument</span>  <span class="c1"># the `otel` extra</span>
 
@@ -1818,7 +1820,8 @@ camelCase JSON — the same wire an <code>rn-forge-fastapi</code> service speaks
 </code></pre></div>
 
 <h3 id="cors">CORS<a class="headerlink" href="#cors" title="Permanent link">&para;</a></h3>
-<p>Opt-in (the <code>cors</code> extra, <code>django-cors-headers</code>), and the application owns the origins:</p>
+<p>Opt-in (the <code>cors</code> extra, <code>django-cors-headers</code>), and the application owns the
+origins:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.cors</span><span class="w"> </span><span class="kn">import</span> <span class="n">cors_settings</span>
 
 <span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
@@ -1851,11 +1854,11 @@ camelCase JSON — the same wire an <code>rn-forge-fastapi</code> service speaks
 <span class="p">]</span>
 </code></pre></div>
 
-<p><code>health_urlpatterns</code> serves <code>/livez</code> (liveness), <code>/readyz</code> (readiness) and <code>/healthz</code> (a
-deprecated alias of <code>/livez</code>), each with no trailing slash — a probe on every host fails on a
-redirect, and <code>APPEND_SLASH</code> would send one.</p>
-<p>With the <code>otel</code> extra and <code>instrument()</code>, the request span is the access record: method, path,
-status and duration.</p>
+<p><code>health_urlpatterns</code> serves <code>/livez</code> (liveness), <code>/readyz</code> (readiness) and
+<code>/healthz</code> (a deprecated alias of <code>/livez</code>), each with no trailing slash — a
+probe on every host fails on a redirect, and <code>APPEND_SLASH</code> would send one.</p>
+<p>With the <code>otel</code> extra and <code>instrument()</code>, the request span is the access record:
+method, path, status and duration.</p>
 <h3 id="deprecating-a-view">Deprecating a view<a class="headerlink" href="#deprecating-a-view" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
 
@@ -1872,9 +1875,9 @@ status and duration.</p>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span> <span class="o">...</span>
 </code></pre></div>
 
-<p><code>@extend_schema(deprecated=True)</code> and <code>@deprecated(...)</code> are both needed: one marks the
-document, the other stamps the <code>Deprecation</code>/<code>Sunset</code>/<code>Link</code> headers on the wire (RFC 9745,
-RFC 8594).</p>
+<p><code>@extend_schema(deprecated=True)</code> and <code>@deprecated(...)</code> are both needed: one
+marks the document, the other stamps the <code>Deprecation</code>/<code>Sunset</code>/<code>Link</code> headers
+on the wire (RFC 9745, RFC 8594).</p>
 <p>Common imports:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">DateModel</span><span class="p">,</span> <span class="n">DateRangeModel</span><span class="p">,</span> <span class="n">EnumField</span><span class="p">,</span> <span class="n">Status</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">rn_forge_django_settings</span>
@@ -1884,8 +1887,9 @@ RFC 8594).</p>
 
 <p>See <a href="settings.html">Settings</a>, <a href="auth.html">Auth</a>, <a href="drf-views.html">DRF Views</a>, and
 <a href="fixtures.html">Fixtures</a> for the rest of the surface.</p>
-<p><code>rn-forge-web</code>'s "Deployment" guide maps <code>/livez</code>, <code>/readyz</code>, the security headers' <code>hsts</code>
-setting, CORS and body-size limits onto Kubernetes, App Engine and Azure App Service.</p>
+<p><code>rn-forge-web</code>'s "Deployment" guide maps <code>/livez</code>, <code>/readyz</code>, the security
+headers' <code>hsts</code> setting, CORS and body-size limits onto Kubernetes, App Engine
+and Azure App Service.</p>
 
 
 

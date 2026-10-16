@@ -1771,13 +1771,14 @@
 
 
 <h1 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h1>
-<p><code>rn_forge.django.auth</code> is an installable Django app (label <code>rn_forge_django_auth</code>) providing
-login flows and DRF authentication/authorization building blocks. Add it to <code>INSTALLED_APPS</code> to
-use the bundled <code>User</code>/<code>Group</code>/<code>Permission</code> viewsets and migrations.</p>
+<p><code>rn_forge.django.auth</code> is an installable Django app (label
+<code>rn_forge_django_auth</code>) providing login flows and DRF
+authentication/authorization building blocks. Add it to <code>INSTALLED_APPS</code> to use
+the bundled <code>User</code>/<code>Group</code>/<code>Permission</code> viewsets and migrations.</p>
 <h2 id="login-flows">Login flows<a class="headerlink" href="#login-flows" title="Permanent link">&para;</a></h2>
-<p>All login flows produce a normalized <code>LoginPayload(user=..., claims=...)</code> and share a common
-<code>complete_login()</code> hook that decides what happens next (start a Django session, mint an exchange
-token, or mint a final JWT pair).</p>
+<p>All login flows produce a normalized <code>LoginPayload(user=..., claims=...)</code> and
+share a common <code>complete_login()</code> hook that decides what happens next (start a
+Django session, mint an exchange token, or mint a final JWT pair).</p>
 <p><strong>Basic (username/password) → session:</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.basic.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasicLoginAPIView</span>
 
@@ -1788,16 +1789,16 @@ token, or mint a final JWT pair).</p>
 
 <p><strong>Basic/SAML → short-lived exchange token → JWT:</strong> login views that mix in
 <code>LoginExchangeViewMixin</code> (via <code>BasicLoginAPIView</code>/<code>SAMLLoginAPIView</code>) return an
-<code>exchange_token</code> instead of creating a session. The client then calls <code>UserTokenView</code> to trade
-that token for a SimpleJWT access/refresh pair:</p>
+<code>exchange_token</code> instead of creating a session. The client then calls
+<code>UserTokenView</code> to trade that token for a SimpleJWT access/refresh pair:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.jwt.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserTokenView</span>
 </code></pre></div>
 
 <p><strong>SAML:</strong> subclass <code>SAMLLoginViewMixin</code>/<code>SAMLLoginAPIView</code> and implement
 <code>build_saml_request_data()</code>, <code>get_saml_user_lookup()</code>, and <code>get_user()</code> (plus
-<code>create_user_for_login()</code> if <code>auto_create_user = True</code>). <code>RN_FORGE_DJANGO["AUTH"]["SAML"]</code>
-supplies the <code>python3-saml</code> settings dict and default <code>RETURN_TO</code> — see
-<a href="settings.html">Settings</a>.</p>
+<code>create_user_for_login()</code> if <code>auto_create_user = True</code>).
+<code>RN_FORGE_DJANGO["AUTH"]["SAML"]</code> supplies the <code>python3-saml</code> settings dict and
+default <code>RETURN_TO</code> — see <a href="settings.html">Settings</a>.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SAML&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SETTINGS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">&quot;RETURN_TO&quot;</span><span class="p">:</span> <span class="s2">&quot;/app&quot;</span><span class="p">}}}</span>
 </code></pre></div>
 
@@ -1816,13 +1817,16 @@ supplies the <code>python3-saml</code> settings dict and default <code>RETURN_TO
 <span class="p">}</span>
 </code></pre></div>
 
-<p><code>JWTAuthentication</code> wraps SimpleJWT's authenticator so <code>request.auth</code> is a <code>JWTCredentials</code>
-(subclass of <code>BaseCredentials</code>) rather than a raw validated token.</p>
-<p><code>BaseCredentials</code> exposes <code>is_authenticated</code>, <code>is_staff_user</code> (staff/superuser bypass),
-<code>user_id</code>, <code>email</code>, and <code>has_permission(key)</code> / <code>has_any_permission(keys)</code>.</p>
-<p><code>AuthorizationPermission</code> denies unauthenticated requests, allows staff/superuser through, and
-otherwise defers to the view's <code>validate_permissions()</code> — implemented by
-<code>AuthorizationViewMixin</code> (mix into any <code>BaseAPIView</code>/<code>BaseModelViewSet</code>):</p>
+<p><code>JWTAuthentication</code> wraps SimpleJWT's authenticator so <code>request.auth</code> is a
+<code>JWTCredentials</code> (subclass of <code>BaseCredentials</code>) rather than a raw validated
+token.</p>
+<p><code>BaseCredentials</code> exposes <code>is_authenticated</code>, <code>is_staff_user</code> (staff/superuser
+bypass), <code>user_id</code>, <code>email</code>, and <code>has_permission(key)</code> /
+<code>has_any_permission(keys)</code>.</p>
+<p><code>AuthorizationPermission</code> denies unauthenticated requests, allows
+staff/superuser through, and otherwise defers to the view's
+<code>validate_permissions()</code> — implemented by <code>AuthorizationViewMixin</code> (mix into any
+<code>BaseAPIView</code>/<code>BaseModelViewSet</code>):</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthorizationViewMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.drf.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelViewSet</span>
 
@@ -1831,19 +1835,22 @@ otherwise defers to the view's <code>validate_permissions()</code> — implement
     <span class="n">permission_key</span> <span class="o">=</span> <span class="s2">&quot;app.order&quot;</span>
 </code></pre></div>
 
-<p><code>permission_key</code> is combined with the current action (<code>list</code>, <code>retrieve</code>, <code>create</code>, <code>export</code>,
-...) through a permission-action map to build the final key checked against
-<code>credentials.has_permission(...)</code> — e.g. <code>app.order.read</code> for <code>retrieve</code>. The default map lives
-in <code>DEFAULT_PERMISSION_ACTION_MAP</code>; override per-request-app defaults via
+<p><code>permission_key</code> is combined with the current action (<code>list</code>, <code>retrieve</code>,
+<code>create</code>, <code>export</code>, ...) through a permission-action map to build the final key
+checked against <code>credentials.has_permission(...)</code> — e.g. <code>app.order.read</code> for
+<code>retrieve</code>. The default map lives in <code>DEFAULT_PERMISSION_ACTION_MAP</code>; override
+per-request-app defaults via
 <code>RN_FORGE_DJANGO["DRF"]["VIEWS"]["PERMISSION_ACTION_MAP"]</code> or per-view via
 <code>permission_action_map</code>. Override <code>should_validate_object_permissions()</code> /
 <code>validate_object_permissions()</code> for row-level checks.</p>
-<p>Use <code>PermissionKeyViewMixin</code> instead when you want permission-key resolution without full
-<code>AuthorizationViewMixin</code> request-access plumbing (e.g. on plain <code>GenericAPIView</code>s).</p>
+<p>Use <code>PermissionKeyViewMixin</code> instead when you want permission-key resolution
+without full <code>AuthorizationViewMixin</code> request-access plumbing (e.g. on plain
+<code>GenericAPIView</code>s).</p>
 <h2 id="externally-issued-tokens-principalbearerauthentication">Externally issued tokens: <code>PrincipalBearerAuthentication</code><a class="headerlink" href="#externally-issued-tokens-principalbearerauthentication" title="Permanent link">&para;</a></h2>
-<p>For an API whose callers hold tokens issued by an identity provider — Entra ID, Auth0, Okta,
-Keycloak — rather than a local <code>User</code>, bind DRF to the <code>rn_forge.web</code> auth contract. The token is
-verified by an <code>rn_forge.web.Authenticator</code> you supply, and <code>request.user</code> is the resulting
+<p>For an API whose callers hold tokens issued by an identity provider — Entra ID,
+Auth0, Okta, Keycloak — rather than a local <code>User</code>, bind DRF to the
+<code>rn_forge.web</code> auth contract. The token is verified by an
+<code>rn_forge.web.Authenticator</code> you supply, and <code>request.user</code> is the resulting
 <code>rn_forge.web.Principal</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrincipalBearerAuthentication</span><span class="p">,</span> <span class="n">requires</span>
@@ -1863,14 +1870,17 @@ verified by an <code>rn_forge.web.Authenticator</code> you supply, and <code>req
     <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">requires</span><span class="p">(</span><span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">})))]</span>
 </code></pre></div>
 
-<p>With <code>problem_details_exception_handler</code> installed: no or invalid credentials are a <strong>401</strong>
-<code>problem+json</code> with an RFC 6750 <code>WWW-Authenticate: Bearer realm="orders"</code> challenge and a detail that
-never says why verification failed; valid credentials lacking the scope are a <strong>403</strong> with no
-challenge. The same <code>Requirement</code> evaluates identically on <code>rn-forge-fastapi</code>.</p>
+<p>With <code>problem_details_exception_handler</code> installed: no or invalid credentials
+are a <strong>401</strong> <code>problem+json</code> with an RFC 6750
+<code>WWW-Authenticate: Bearer realm="orders"</code> challenge and a detail that never says
+why verification failed; valid credentials lacking the scope are a <strong>403</strong> with
+no challenge. The same <code>Requirement</code> evaluates identically on
+<code>rn-forge-fastapi</code>.</p>
 <p>Verifying the JWT is the authenticator's job, and you do not have to write one:
-<code>rn_forge.web.oidc.OidcAuthenticator</code> (web's <code>auth</code> extra, which Django's <code>oidc</code> extra brings) is
-the shared implementation, so this stack accepts exactly the tokens a FastAPI service accepts.
-<code>JWKSBearerAuthentication</code> below builds one for you from class attributes.</p>
+<code>rn_forge.web.oidc.OidcAuthenticator</code> (web's <code>auth</code> extra, which Django's <code>oidc</code>
+extra brings) is the shared implementation, so this stack accepts exactly the
+tokens a FastAPI service accepts. <code>JWKSBearerAuthentication</code> below builds one
+for you from class attributes.</p>
 <p>For the bundled JWKS binding, install <code>rn-forge-django[oidc]</code> and define one
 subclass with the provider's key-set URL, issuer and audience:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">JWKSBearerAuthentication</span>
@@ -1883,14 +1893,15 @@ subclass with the provider's key-set URL, issuer and audience:</p>
 </code></pre></div>
 
 <p>Use that class in the view's <code>authentication_classes</code>, and install
-<code>problem_details_exception_handler</code> in <code>REST_FRAMEWORK["EXCEPTION_HANDLER"]</code> for the
-shared problem response. The binding caches its authenticator and key set per
-subclass and process. Override <code>claims_to_principal()</code> when the provider uses
-nonstandard role or scope claims.</p>
-<p>Build the authenticator <strong>once, at import or startup</strong> — it holds the JWKS cache, so a
-per-request instance refetches the key set on every call. For an IdP whose roles or scopes sit
-somewhere non-standard (Keycloak's nested <code>realm_access.roles</code>, an Okta group claim), pass a
-<code>claims_to_principal</code> override.</p>
+<code>problem_details_exception_handler</code> in <code>REST_FRAMEWORK["EXCEPTION_HANDLER"]</code> for
+the shared problem response. The binding caches its authenticator and key set
+per subclass and process. Override <code>claims_to_principal()</code> when the provider
+uses nonstandard role or scope claims.</p>
+<p>Build the authenticator <strong>once, at import or startup</strong> — it holds the JWKS
+cache, so a per-request instance refetches the key set on every call. For an IdP
+whose roles or scopes sit somewhere non-standard (Keycloak's nested
+<code>realm_access.roles</code>, an Okta group claim), pass a <code>claims_to_principal</code>
+override.</p>
 <p>The JWKS endpoint an authenticator fetches is IdP configuration:</p>
 <table>
 <thead>
@@ -1914,13 +1925,15 @@ somewhere non-standard (Keycloak's nested <code>realm_access.roles</code>, an Ok
 </tr>
 </tbody>
 </table>
-<p><code>PrincipalBasicAuthentication</code> is the RFC 7617 twin, producing the same <code>Principal</code> and the same
-401. <strong>It is for local development and simple internal deployments only.</strong></p>
+<p><code>PrincipalBasicAuthentication</code> is the RFC 7617 twin, producing the same
+<code>Principal</code> and the same 401. <strong>It is for local development and simple internal
+deployments only.</strong></p>
 <h2 id="built-in-auth-management-viewsets">Built-in auth management viewsets<a class="headerlink" href="#built-in-auth-management-viewsets" title="Permanent link">&para;</a></h2>
-<p><code>rn_forge.django.auth.drf.views</code> ships ready-to-mount viewsets for the standard Django auth
-models, wired through <code>AuthorizedModelViewSet</code>:
-<code>PermissionViewSet</code>, <code>GroupViewSet</code>, <code>UserViewSet</code>. Mount them (or
-<code>rn_forge.django.auth.urls.urlpatterns</code>, which already registers them) under your API root.</p>
+<p><code>rn_forge.django.auth.drf.views</code> ships ready-to-mount viewsets for the standard
+Django auth models, wired through <code>AuthorizedModelViewSet</code>: <code>PermissionViewSet</code>,
+<code>GroupViewSet</code>, <code>UserViewSet</code>. Mount them (or
+<code>rn_forge.django.auth.urls.urlpatterns</code>, which already registers them) under
+your API root.</p>
 
 
 

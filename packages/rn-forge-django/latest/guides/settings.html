@@ -1705,7 +1705,8 @@
 
 
 <h1 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h1>
-<p>All configuration lives in a single <code>RN_FORGE_DJANGO</code> dict in your Django settings module:</p>
+<p>All configuration lives in a single <code>RN_FORGE_DJANGO</code> dict in your Django
+settings module:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;SAML&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1732,9 +1733,10 @@
 <span class="p">}</span>
 </code></pre></div>
 
-<p><code>DRF.PAGINATION</code> is read at request time by <code>CursorPagination</code> and <code>LegacyPageNumberPagination</code>;
-a <code>page_size</code> or <code>max_page_size</code> set on a pagination subclass wins over it. <code>DRF.CASING</code> switches
-<code>CamelCaseJSONRenderer</code> and <code>CamelCaseJSONParser</code> — see <a href="openapi.html">OpenAPI and camelCase</a>.</p>
+<p><code>DRF.PAGINATION</code> is read at request time by <code>CursorPagination</code> and
+<code>LegacyPageNumberPagination</code>; a <code>page_size</code> or <code>max_page_size</code> set on a
+pagination subclass wins over it. <code>DRF.CASING</code> switches <code>CamelCaseJSONRenderer</code>
+and <code>CamelCaseJSONParser</code> — see <a href="openapi.html">OpenAPI and camelCase</a>.</p>
 <p>Read the resolved, typed settings at runtime via the module-level facade:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">rn_forge_django_settings</span>
 
@@ -1742,25 +1744,28 @@ a <code>page_size</code> or <code>max_page_size</code> set on a pagination subcl
 <span class="n">saml_settings</span> <span class="o">=</span> <span class="n">rn_forge_django_settings</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">saml</span><span class="o">.</span><span class="n">settings</span>
 </code></pre></div>
 
-<p><code>rn_forge_django_settings</code> is a frozen dataclass tree rebuilt automatically whenever Django's
-<code>setting_changed</code> signal fires for <code>RN_FORGE_DJANGO</code> — this is what makes
-<code>override_settings(RN_FORGE_DJANGO=...)</code> work transparently in tests. Every field has a
-default, so an empty or missing <code>RN_FORGE_DJANGO</code> dict is valid.</p>
+<p><code>rn_forge_django_settings</code> is a frozen dataclass tree rebuilt automatically
+whenever Django's <code>setting_changed</code> signal fires for <code>RN_FORGE_DJANGO</code> — this is
+what makes <code>override_settings(RN_FORGE_DJANGO=...)</code> work transparently in tests.
+Every field has a default, so an empty or missing <code>RN_FORGE_DJANGO</code> dict is
+valid.</p>
 <h2 id="adding-a-configurable-option">Adding a configurable option<a class="headerlink" href="#adding-a-configurable-option" title="Permanent link">&para;</a></h2>
-<p>The facade is a frozen dataclass tree — <code>RnforgeDjangoSettings</code> → <code>AuthSettings</code>/<code>DRFSettings</code> →
-nested settings — built once by <code>_build_settings()</code> in
+<p>The facade is a frozen dataclass tree — <code>RnforgeDjangoSettings</code> →
+<code>AuthSettings</code>/<code>DRFSettings</code> → nested settings — built once by
+<code>_build_settings()</code> in
 <a href="https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-django/src/rn_forge/django/settings.py"><code>settings.py</code></a>
-and rebuilt by the <code>setting_changed</code> handler. A new option needs three edits, in this order:</p>
+and rebuilt by the <code>setting_changed</code> handler. A new option needs three edits, in
+this order:</p>
 <ol>
-<li>A field on the relevant <code>*SettingsDict</code> <code>TypedDict</code>, naming the <code>RN_FORGE_DJANGO</code> key
-   (uppercase, as the dict is written).</li>
-<li>A field on the matching frozen dataclass, snake_cased, with a default — every field has one,
-   so an absent <code>RN_FORGE_DJANGO</code> stays valid.</li>
-<li>Extraction in <code>_build_settings()</code>, using <code>DictUtils.get</code>/<code>_get_mapping</code> for the nested path
-   (<code>"DRF.VIEWS"</code>, say).</li>
+<li>A field on the relevant <code>*SettingsDict</code> <code>TypedDict</code>, naming the
+   <code>RN_FORGE_DJANGO</code> key (uppercase, as the dict is written).</li>
+<li>A field on the matching frozen dataclass, snake_cased, with a default — every
+   field has one, so an absent <code>RN_FORGE_DJANGO</code> stays valid.</li>
+<li>Extraction in <code>_build_settings()</code>, using <code>DictUtils.get</code>/<code>_get_mapping</code> for
+   the nested path (<code>"DRF.VIEWS"</code>, say).</li>
 </ol>
-<p>Skipping step 3 leaves the field permanently at its default, which no test catches unless it
-asserts the non-default value.</p>
+<p>Skipping step 3 leaves the field permanently at its default, which no test
+catches unless it asserts the non-default value.</p>
 
 
 

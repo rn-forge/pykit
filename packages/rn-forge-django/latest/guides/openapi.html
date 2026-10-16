@@ -1749,12 +1749,13 @@
 
 
 <h1 id="openapi-and-camelcase">OpenAPI and camelCase<a class="headerlink" href="#openapi-and-camelcase" title="Permanent link">&para;</a></h1>
-<p>An <code>rn-forge-django</code> API and an <code>rn-forge-fastapi</code> API describe themselves the same way: OpenAPI
-<strong>3.1.0</strong>, camelCase property names, the shared <code>ProblemDetail</code>, <code>CheckResult</code> and <code>HealthReport</code>
-components, and <code>operationId</code>s of the form <code>&lt;resource&gt;&lt;Verb&gt;</code>. The wire conventions themselves are
-specified by <code>rn-forge-web</code>'s <code>api-conventions.md</code>; this page is only the Django wiring.</p>
-<p>Install the <code>openapi</code> extra (see <a href="installation.html">Installation</a>) and add <code>drf_spectacular</code> to
-<code>INSTALLED_APPS</code>. Then:</p>
+<p>An <code>rn-forge-django</code> API and an <code>rn-forge-fastapi</code> API describe themselves the
+same way: OpenAPI <strong>3.1.0</strong>, camelCase property names, the shared
+<code>ProblemDetail</code>, <code>CheckResult</code> and <code>HealthReport</code> components, and <code>operationId</code>s
+of the form <code>&lt;resource&gt;&lt;Verb&gt;</code>. The wire conventions themselves are specified by
+<code>rn-forge-web</code>'s <code>api-conventions.md</code>; this page is only the Django wiring.</p>
+<p>Install the <code>openapi</code> extra (see <a href="installation.html">Installation</a>) and add
+<code>drf_spectacular</code> to <code>INSTALLED_APPS</code>. Then:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.drf.openapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">SPECTACULAR_SETTINGS</span> <span class="k">as</span> <span class="n">RNF_SPECTACULAR</span>
 
 <span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
@@ -1805,13 +1806,14 @@ specified by <code>rn-forge-web</code>'s <code>api-conventions.md</code>; this p
 </code></pre></div>
 
 <p>Mounts drf-spectacular's <code>SpectacularAPIView</code> at <code>/openapi.json</code>,
-<code>SpectacularSwaggerView</code> at <code>/docs</code>, and RFC 9727's
-<code>/.well-known/api-catalog</code> — an RFC 9264 linkset naming both, plus
-<code>/readyz</code>. Pass <code>readiness_path=</code> if yours differs.</p>
+<code>SpectacularSwaggerView</code> at <code>/docs</code>, and RFC 9727's <code>/.well-known/api-catalog</code> —
+an RFC 9264 linkset naming both, plus <code>/readyz</code>. Pass <code>readiness_path=</code> if yours
+differs.</p>
 <h2 id="opaque-json-values">Opaque JSON values<a class="headerlink" href="#opaque-json-values" title="Permanent link">&para;</a></h2>
-<p>Global casing rewrites every nested key. A field whose value is data keyed by something other than
-a Python name — a vendor payload, a mapping keyed by SKU — must be declared as
-<code>RawPassthroughField</code>, which keeps its keys verbatim in both directions:</p>
+<p>Global casing rewrites every nested key. A field whose value is data keyed by
+something other than a Python name — a vendor payload, a mapping keyed by SKU —
+must be declared as <code>RawPassthroughField</code>, which keeps its keys verbatim in both
+directions:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.drf.serializers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RawPassthroughField</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OrderSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">Serializer</span><span class="p">):</span>
@@ -1819,11 +1821,12 @@ a Python name — a vendor payload, a mapping keyed by SKU — must be declared 
 </code></pre></div>
 
 <h2 id="the-shared-components">The shared components<a class="headerlink" href="#the-shared-components" title="Permanent link">&para;</a></h2>
-<p><code>ProblemDetail</code> and <code>HealthReport</code> (and its <code>CheckResult</code>) are the <code>rn_forge.web</code> pydantic models.
-Name one in <code>@extend_schema(responses=...)</code> and drf-spectacular's pydantic extension emits the
-component under its shared name, camelCase properties included. The <code>ProblemDetail</code> component is
-always present. A page is described by the paginator's own <code>get_paginated_response_schema</code>, not by
-<code>Page</code>.</p>
+<p><code>ProblemDetail</code> and <code>HealthReport</code> (and its <code>CheckResult</code>) are the
+<code>rn_forge.web</code> pydantic models. Name one in <code>@extend_schema(responses=...)</code> and
+drf-spectacular's pydantic extension emits the component under its shared name,
+camelCase properties included. The <code>ProblemDetail</code> component is always present.
+A page is described by the paginator's own <code>get_paginated_response_schema</code>, not
+by <code>Page</code>.</p>
 
 
 

@@ -1771,10 +1771,12 @@
 
 
 <h1 id="transfer-export-import-and-batch-operations">Transfer: export, import and batch operations<a class="headerlink" href="#transfer-export-import-and-batch-operations" title="Permanent link">&para;</a></h1>
-<p><code>rn_forge.django.drf.transfer</code> needs the <code>transfer</code> extra (<code>django-import-export[xlsx]</code>, which
-brings <code>tablib</code> and <code>openpyxl</code>). It is not imported by <code>rn_forge.django.drf</code>, so a project that
-does not use it installs neither. Register viewsets with <code>CustomMethodRouter</code> so the extra
-actions are served as <code>/orders:import</code> and <code>/orders:batchCreate</code> (AIP-136), not <code>/orders/import</code>.</p>
+<p><code>rn_forge.django.drf.transfer</code> needs the <code>transfer</code> extra
+(<code>django-import-export</code> and <code>rn-forge-data</code>, which brings <code>tablib</code> and
+<code>openpyxl</code>). It is not imported by <code>rn_forge.django.drf</code>, so a project that does
+not use it installs neither. Register viewsets with <code>CustomMethodRouter</code> so the
+extra actions are served as <code>/orders:import</code> and <code>/orders:batchCreate</code>
+(AIP-136), not <code>/orders/import</code>.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">import_export</span><span class="w"> </span><span class="kn">import</span> <span class="n">fields</span><span class="p">,</span> <span class="n">resources</span><span class="p">,</span> <span class="n">widgets</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.viewsets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelViewSet</span>
 
@@ -1824,8 +1826,9 @@ actions are served as <code>/orders:import</code> and <code>/orders:batchCreate<
 <span class="n">router</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="n">OrderViewSet</span><span class="p">,</span> <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;orders&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>A viewset takes only the mixins it needs (<code>BatchGetMixin</code>, <code>BatchCreateMixin</code>, <code>BatchUpdateMixin</code>, <code>BatchDeleteMixin</code>). The wire shapes are those of the transfer section of
-the <code>rn-forge-web</code> API conventions.</p>
+<p>A viewset takes only the mixins it needs (<code>BatchGetMixin</code>, <code>BatchCreateMixin</code>,
+<code>BatchUpdateMixin</code>, <code>BatchDeleteMixin</code>). The wire shapes are those of the
+transfer section of the <code>rn-forge-web</code> API conventions.</p>
 <table>
 <thead>
 <tr>
@@ -1864,34 +1867,37 @@ the <code>rn-forge-web</code> API conventions.</p>
 </tr>
 </tbody>
 </table>
-<p>Row numbers in pointers count from 0. A pointer names the column as it appears in the file when
-the failing field is an import field. An error <code>import-export</code> raises outside field validation
-(a <code>ForeignKeyWidget</code> that finds no row, or an exception in <code>before_import_row</code>) points at the
-whole row.</p>
+<p>Row numbers in pointers count from 0. A pointer names the column as it appears
+in the file when the failing field is an import field. An error <code>import-export</code>
+raises outside field validation (a <code>ForeignKeyWidget</code> that finds no row, or an
+exception in <code>before_import_row</code>) points at the whole row.</p>
 <h2 id="per-item-authorization">Per-item authorization<a class="headerlink" href="#per-item-authorization" title="Permanent link">&para;</a></h2>
-<p>Override the hooks and return a message to refuse an item; the response is one 403 problem with
-<code>errors[].pointer</code> naming the item, and nothing is persisted.</p>
+<p>Override the hooks and return a message to refuse an item; the response is one
+403 problem with <code>errors[].pointer</code> naming the item, and nothing is persisted.</p>
 <ul>
 <li><code>prepare_batch_create_item(item)</code> runs on each raw item before validation.</li>
 <li><code>validate_batch_create_item(item)</code> runs on each validated item, after
   <code>AuditFieldsViewMixin.prepare_create_data</code>.</li>
-<li><code>validate_batch_update_item(instance, data)</code> runs on each row and its validated data, after
-  <code>AuditFieldsViewMixin.prepare_update_data</code>.</li>
+<li><code>validate_batch_update_item(instance, data)</code> runs on each row and its
+  validated data, after <code>AuditFieldsViewMixin.prepare_update_data</code>.</li>
 <li><code>validate_batch_delete_instance(instance)</code> runs on each instance to delete.</li>
 </ul>
-<p><code>BatchUpdateMixin</code> checks <code>ifMatch</code> for a <code>VersionedModelMixin</code> row, and an unversioned model
-ignores it. Set <code>batch_update_requires_if_match = True</code> to make a missing <code>ifMatch</code> a 428, and
-<code>etag_codec</code> to change the validator format, as for <code>MergePatchMixin</code>. <code>BatchGetMixin</code> and
-<code>BatchUpdateMixin</code> answer under <code>batch_resource_name</code>, which they share with <code>BatchCreateMixin</code>.</p>
-<p>In an import resource the same check belongs in <code>before_import_row(row, **kwargs)</code>, where
-<code>kwargs["user"]</code> is the request user; raising there is reported as a row error.</p>
+<p><code>BatchUpdateMixin</code> checks <code>ifMatch</code> for a <code>VersionedModelMixin</code> row, and an
+unversioned model ignores it. Set <code>batch_update_requires_if_match = True</code> to
+make a missing <code>ifMatch</code> a 428, and <code>etag_codec</code> to change the validator format,
+as for <code>MergePatchMixin</code>. <code>BatchGetMixin</code> and <code>BatchUpdateMixin</code> answer under
+<code>batch_resource_name</code>, which they share with <code>BatchCreateMixin</code>.</p>
+<p>In an import resource the same check belongs in
+<code>before_import_row(row, **kwargs)</code>, where <code>kwargs["user"]</code> is the request user;
+raising there is reported as a row error.</p>
 <h2 id="committing-the-valid-rows">Committing the valid rows<a class="headerlink" href="#committing-the-valid-rows" title="Permanent link">&para;</a></h2>
-<p>Set <code>import_rollback_on_validation_errors = False</code> on the viewset to commit the valid rows when
-the only failures are field validation errors. The response is <code>200</code> with the failures under
-<code>errors</code>. Any other error still rolls the import back.</p>
+<p>Set <code>import_rollback_on_validation_errors = False</code> on the viewset to commit the
+valid rows when the only failures are field validation errors. The response is
+<code>200</code> with the failures under <code>errors</code>. Any other error still rolls the import
+back.</p>
 <h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
-<p><code>RN_FORGE_DJANGO["DRF"]["TRANSFER"]["MAX_ROWS"]</code> (default 10 000, <code>None</code> for no cap) limits the
-rows of an export or import and the items of a batch request.</p>
+<p><code>RN_FORGE_DJANGO["DRF"]["TRANSFER"]["MAX_ROWS"]</code> (default 10 000, <code>None</code> for no
+cap) limits the rows of an export or import and the items of a batch request.</p>
 <h2 id="migrating-from-ew-loop-api">Migrating from <code>ew-loop-api</code><a class="headerlink" href="#migrating-from-ew-loop-api" title="Permanent link">&para;</a></h2>
 <p>The application moves when it adopts pykit; nothing here gates pykit.</p>
 <table>

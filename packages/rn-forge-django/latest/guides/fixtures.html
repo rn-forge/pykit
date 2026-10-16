@@ -1638,8 +1638,8 @@
 
 
 <h1 id="fixtures">Fixtures<a class="headerlink" href="#fixtures" title="Permanent link">&para;</a></h1>
-<p><code>FixtureManager</code> (requires the <code>fixtures</code> extra) converts Excel workbooks into Django JSON
-fixtures and can load them with <code>loaddata</code>.</p>
+<p><code>FixtureManager</code> (requires the <code>fixtures</code> extra) converts Excel workbooks into
+Django JSON fixtures and can load them with <code>loaddata</code>.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.fixtures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -1675,16 +1675,17 @@ fixtures and can load them with <code>loaddata</code>.</p>
 </code></pre></div>
 
 <p>Each <code>FixtureDefinition</code> reads one worksheet (named after <code>model</code>) from
-<code>root_path/input/&lt;app_label&gt;/&lt;input_file&gt;</code> and writes Django <code>loaddata</code>-ready JSON to
-<code>root_path/output/&lt;app_label&gt;/&lt;output_file&gt;</code>.</p>
+<code>root_path/input/&lt;app_label&gt;/&lt;input_file&gt;</code> and writes Django <code>loaddata</code>-ready
+JSON to <code>root_path/output/&lt;app_label&gt;/&lt;output_file&gt;</code>.</p>
 <ul>
-<li><code>ColumnType.MANY_TO_MANY</code> columns are read from a separate worksheet named after the column,
-  joined back to the main sheet via <code>key_columns</code>.</li>
-<li><code>common_fields</code> on a <code>FixtureDefinition</code> are merged into every generated row (e.g. a constant
-  <code>tenant_id</code>).</li>
-<li><code>load_data(fixture_models=["orders.product"])</code> loads a subset; omit it (or pass <code>["ALL"]</code>) to
-  load everything configured. It bootstraps Django (<code>DJANGO_SETTINGS_MODULE</code> +
-  <code>django.setup()</code>) if not already configured, using <code>settings_module</code>.</li>
+<li><code>ColumnType.MANY_TO_MANY</code> columns are read from a separate worksheet named
+  after the column, joined back to the main sheet via <code>key_columns</code>.</li>
+<li><code>common_fields</code> on a <code>FixtureDefinition</code> are merged into every generated row
+  (e.g. a constant <code>tenant_id</code>).</li>
+<li><code>load_data(fixture_models=["orders.product"])</code> loads a subset; omit it (or
+  pass <code>["ALL"]</code>) to load everything configured. It bootstraps Django
+  (<code>DJANGO_SETTINGS_MODULE</code> + <code>django.setup()</code>) if not already configured,
+  using <code>settings_module</code>.</li>
 </ul>
 
 

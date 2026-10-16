@@ -1636,6 +1636,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#050-2026-10-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.0] - 2026-10-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.0] - 2026-10-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#040-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1659,7 +1698,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1698,7 +1737,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1710,17 +1749,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#earlier-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Earlier releases
-      
-    </span>
-  </a>
   
 </li>
       
@@ -1770,6 +1798,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#050-2026-10-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.0] - 2026-10-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.0] - 2026-10-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#040-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1793,7 +1860,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1832,7 +1899,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1844,17 +1911,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#earlier-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Earlier releases
-      
-    </span>
-  </a>
   
 </li>
       
@@ -1879,58 +1935,111 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>Notable changes to <code>rn-forge-django</code>, newest first, in the <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
+<p>Notable changes to <code>rn-forge-django</code>, newest first, in the
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="050-2026-10-16">[0.5.0] - 2026-10-16<a class="headerlink" href="#050-2026-10-16" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Breaking: the <code>transfer</code> extra names <code>rn-forge-data</code> and no longer pulls
+  <code>django-import-export[xlsx]</code>; it installs <code>django-import-export</code> alone. The
+  <code>fixtures</code> extra names <code>rn-forge-data[pandas]</code> in place of
+  <code>rn-forge-commons[excel,pandas]</code>.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>rn_forge.django.drf.transfer</code> imported <code>openpyxl</code> without declaring it, and
+  worked only because another dependency installed it. The <code>transfer</code> extra
+  now declares it through <code>rn-forge-data</code>, and the extra's smoke check imports
+  the module from a clean install.</li>
+</ul>
 <h2 id="040-2026-10-05">[0.4.0] - 2026-10-05<a class="headerlink" href="#040-2026-10-05" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Soft delete in AIP-164's shape. <code>SoftDeleteModelMixin</code> and <code>SoftDeleteQuerySet</code> in
-  <code>rn_forge.django.models</code> add a nullable, indexed <code>delete_time</code>, <code>soft_delete(actor=)</code>,
-  <code>undelete(actor=)</code>, <code>.live()</code> and <code>.deleted()</code>, with an unfiltered default manager.
-  <code>SoftDeleteMixin</code> in <code>rn_forge.django.drf.views</code> makes <code>DELETE</code> answer <code>200</code> with the resource,
-  adds <code>POST {id}:undelete</code> and <code>showDeleted</code> on <code>list</code>, and answers <code>409</code> to <code>PUT</code> and <code>PATCH</code> on a
-  deleted resource. <code>WireAutoSchema</code> documents the three.</li>
-<li><code>ReadMaskMixin</code> in <code>rn_forge.django.drf</code>: <code>retrieve</code>, <code>list</code> and <code>batch_get</code> accept <code>readMask</code> and
-  answer <code>200</code> with only the named fields. <code>BaseModelViewSet</code> includes it, and <code>WireAutoSchema</code>
-  documents the parameter on those actions.</li>
-<li><code>BatchGetMixin</code> (<code>GET :batchGet?ids=1&amp;ids=2</code>) and <code>BatchUpdateMixin</code> (<code>POST :batchUpdate</code>, one
-  JSON Merge Patch and optional <code>ifMatch</code> per item) in <code>rn_forge.django.drf.transfer</code>.
-  <code>BatchUpdateMixin</code> has <code>batch_update_requires_if_match</code>, <code>etag_codec</code> and
-  <code>validate_batch_update_item(instance, data)</code>. <code>batch_resource_name</code> is shared with
-  <code>BatchCreateMixin</code>.</li>
+<li>Soft delete in AIP-164's shape. <code>SoftDeleteModelMixin</code> and
+  <code>SoftDeleteQuerySet</code> in <code>rn_forge.django.models</code> add a nullable, indexed
+  <code>delete_time</code>, <code>soft_delete(actor=)</code>, <code>undelete(actor=)</code>, <code>.live()</code> and
+  <code>.deleted()</code>, with an unfiltered default manager. <code>SoftDeleteMixin</code> in
+  <code>rn_forge.django.drf.views</code> makes <code>DELETE</code> answer <code>200</code> with the resource,
+  adds <code>POST {id}:undelete</code> and <code>showDeleted</code> on <code>list</code>, and answers <code>409</code> to
+  <code>PUT</code> and <code>PATCH</code> on a deleted resource. <code>WireAutoSchema</code> documents the
+  three.</li>
+<li><code>ReadMaskMixin</code> in <code>rn_forge.django.drf</code>: <code>retrieve</code>, <code>list</code> and <code>batch_get</code>
+  accept <code>readMask</code> and answer <code>200</code> with only the named fields.
+  <code>BaseModelViewSet</code> includes it, and <code>WireAutoSchema</code> documents the parameter
+  on those actions.</li>
+<li><code>BatchGetMixin</code> (<code>GET :batchGet?ids=1&amp;ids=2</code>) and <code>BatchUpdateMixin</code>
+  (<code>POST :batchUpdate</code>, one JSON Merge Patch and optional <code>ifMatch</code> per item)
+  in <code>rn_forge.django.drf.transfer</code>. <code>BatchUpdateMixin</code> has
+  <code>batch_update_requires_if_match</code>, <code>etag_codec</code> and
+  <code>validate_batch_update_item(instance, data)</code>. <code>batch_resource_name</code> is
+  shared with <code>BatchCreateMixin</code>.</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>BatchDeleteMixin</code> deletes each row through the view's <code>perform_destroy</code> in place of <code>instance.delete()</code>, so a
-  <code>SoftDeleteMixin</code> viewset soft-deletes in a batch. For any other viewset the behavior is unchanged.</li>
-<li><strong>Breaking:</strong> <code>CursorPagination</code> and <code>OrderByFilter</code> use every <code>orderBy</code> term, not the first. <code>ordering_fields</code> may name nullable fields and relation paths, <code>NULL</code> sorts last in both directions, and the <code>orderBy</code> OpenAPI description says it takes a comma-separated list. A view's non-primary-key default <code>ordering</code> supplies the terms when the request gives no <code>orderBy</code>. Page tokens issued before the change are rejected with 400.</li>
-<li><strong>Breaking:</strong> <code>BaseModelViewSet</code>'s <code>PATCH</code> now takes <code>application/merge-patch+json</code> (RFC 7396) and answers <code>application/json</code> with 415 and <code>Accept-Patch</code>. <code>PUT</code> and <code>POST</code> still take <code>application/json</code>.</li>
-<li>The merged document is validated as a full update; a top-level <code>null</code> sets the field to <code>null</code>, and read-only or unknown members are ignored.</li>
-<li>A versioned instance enforces <code>If-Match</code> on <code>PATCH</code>, and <code>retrieve</code> and <code>PATCH</code> answer with an <code>ETag</code>.</li>
-<li>New: <code>MergePatchMixin</code> and <code>MergePatchParser</code>, exported from <code>rn_forge.django.drf</code>.</li>
-<li><strong>Breaking:</strong> the import and batch endpoints word their 422 details as <code>rn-forge-web</code> does, which <code>rn-forge-fastapi</code> also uses.</li>
-<li>A request over <code>transfer.max_rows</code> on <code>:import</code>, <code>:batchCreate</code> and <code>:batchDelete</code> is a 422 problem with detail <code>The import exceeds the limit of N rows.</code> or <code>The batch exceeds the limit of N rows.</code> and no <code>errors</code> member. It was an <code>errors</code> entry with an empty pointer.</li>
-<li>A <code>:import</code> request with no <code>file</code> part answers <code>This field is required.</code> at <code>/file</code>, not <code>No file was submitted.</code>.</li>
-<li>A missing <code>requests</code> or <code>ids</code> member answers <code>This field is required.</code> at <code>/requests</code> or <code>/ids</code>. An empty list or a non-list still answers <code>A non-empty list is required.</code>.</li>
-<li><code>validateOnly</code> and <code>prefill</code> accept <code>true</code> or <code>1</code>, ignoring case, as before; the unsupported and unreadable <code>file</code> details are unchanged in wording.</li>
+<li><code>BatchDeleteMixin</code> deletes each row through the view's <code>perform_destroy</code> in
+  place of <code>instance.delete()</code>, so a <code>SoftDeleteMixin</code> viewset soft-deletes in
+  a batch. For any other viewset the behavior is unchanged.</li>
+<li><strong>Breaking:</strong> <code>CursorPagination</code> and <code>OrderByFilter</code> use every <code>orderBy</code> term,
+  not the first. <code>ordering_fields</code> may name nullable fields and relation
+  paths, <code>NULL</code> sorts last in both directions, and the <code>orderBy</code> OpenAPI
+  description says it takes a comma-separated list. A view's non-primary-key
+  default <code>ordering</code> supplies the terms when the request gives no <code>orderBy</code>.
+  Page tokens issued before the change are rejected with 400.</li>
+<li><strong>Breaking:</strong> <code>BaseModelViewSet</code>'s <code>PATCH</code> now takes
+  <code>application/merge-patch+json</code> (RFC 7396) and answers <code>application/json</code>
+  with 415 and <code>Accept-Patch</code>. <code>PUT</code> and <code>POST</code> still take <code>application/json</code>.<ul>
+<li>The merged document is validated as a full update; a top-level <code>null</code> sets
+  the field to <code>null</code>, and read-only or unknown members are ignored.</li>
+<li>A versioned instance enforces <code>If-Match</code> on <code>PATCH</code>, and <code>retrieve</code> and
+  <code>PATCH</code> answer with an <code>ETag</code>.</li>
+<li>New: <code>MergePatchMixin</code> and <code>MergePatchParser</code>, exported from
+  <code>rn_forge.django.drf</code>.</li>
+</ul>
+</li>
+<li><strong>Breaking:</strong> the import and batch endpoints word their 422 details as
+  <code>rn-forge-web</code> does, which <code>rn-forge-fastapi</code> also uses.<ul>
+<li>A request over <code>transfer.max_rows</code> on <code>:import</code>, <code>:batchCreate</code> and
+  <code>:batchDelete</code> is a 422 problem with detail
+  <code>The import exceeds the limit of N rows.</code> or
+  <code>The batch exceeds the limit of N rows.</code> and no <code>errors</code> member. It was an
+  <code>errors</code> entry with an empty pointer.</li>
+<li>A <code>:import</code> request with no <code>file</code> part answers <code>This field is required.</code> at
+  <code>/file</code>, not <code>No file was submitted.</code>.</li>
+<li>A missing <code>requests</code> or <code>ids</code> member answers <code>This field is required.</code> at
+  <code>/requests</code> or <code>/ids</code>. An empty list or a non-list still answers
+  <code>A non-empty list is required.</code>.</li>
+<li><code>validateOnly</code> and <code>prefill</code> accept <code>true</code> or <code>1</code>, ignoring case, as before;
+  the unsupported and unreadable <code>file</code> details are unchanged in wording.</li>
+</ul>
+</li>
 </ul>
 <h3 id="removed">Removed<a class="headerlink" href="#removed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Breaking:</strong> <code>rn_forge.django.utils.RequestUtils</code> and the DRF <code>RequestUtils</code> aliases are gone, so <code>RequestUtils</code> names only the DRF class.</li>
-<li><code>rn_forge.django.utils.RequestUtils.debug_request(request)</code> is now <code>rn_forge.django.views.debug_request(request)</code>.</li>
+<li><strong>Breaking:</strong> <code>rn_forge.django.utils.RequestUtils</code> and the DRF <code>RequestUtils</code>
+  aliases are gone, so <code>RequestUtils</code> names only the DRF class.<ul>
+<li><code>rn_forge.django.utils.RequestUtils.debug_request(request)</code> is now
+  <code>rn_forge.django.views.debug_request(request)</code>.</li>
 <li><code>rn_forge.django.drf.DRFUtils</code> is now <code>rn_forge.django.drf.RequestUtils</code>.</li>
-<li><code>RequestUtils.get_request_param(request, key)</code> is now <code>RequestUtils.get_param(request, key)</code>.</li>
-<li><code>RequestUtils.get_request_data(request)</code> is now <code>RequestUtils.get_data(request)</code>.</li>
-<li><code>RequestUtils.get_request_value(request, key)</code> is now <code>RequestUtils.get_value(request, key)</code>.</li>
+<li><code>RequestUtils.get_request_param(request, key)</code> is now
+  <code>RequestUtils.get_param(request, key)</code>.</li>
+<li><code>RequestUtils.get_request_data(request)</code> is now
+  <code>RequestUtils.get_data(request)</code>.</li>
+<li><code>RequestUtils.get_request_value(request, key)</code> is now
+  <code>RequestUtils.get_value(request, key)</code>.</li>
+</ul>
+</li>
 </ul>
 <h2 id="030-2026-09-27">[0.3.0] - 2026-09-27<a class="headerlink" href="#030-2026-09-27" title="Permanent link">&para;</a></h2>
 <p>Released with pykit's first coordinated set of tags (release-1).</p>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<p><code>rn-forge-django-v0.1.0</code> to <code>rn-forge-django-v0.2.2</code> predate this file; their
+notes are on the <a href="https://github.com/rn-forge/pykit/releases">GitHub Releases</a>
+page.</p>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>BatchCreateMixin</code> reports an invalid item's errors under DRF 3.18, which keys <code>ListSerializer</code> errors by item index instead of listing them.</li>
+<li><code>BatchCreateMixin</code> reports an invalid item's errors under DRF 3.18, which keys
+  <code>ListSerializer</code> errors by item index instead of listing them.</li>
 </ul>
-<h2 id="earlier-releases">Earlier releases<a class="headerlink" href="#earlier-releases" title="Permanent link">&para;</a></h2>
-<p><code>rn-forge-django-v0.1.0</code> to <code>rn-forge-django-v0.2.2</code> predate this file; their notes are on the <a href="https://github.com/rn-forge/pykit/releases">GitHub Releases</a> page.</p>
 
 
 
