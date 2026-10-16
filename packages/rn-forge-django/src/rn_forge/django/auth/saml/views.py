@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from urllib.parse import quote, urldefrag
 from typing import Any
+from urllib.parse import quote, urldefrag
 
+from django.contrib.auth import get_user_model
+from django.http import HttpResponseBase, HttpResponseRedirect
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
@@ -16,9 +18,6 @@ from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.drf import RequestUtils
 from rn_forge.django.settings import rn_forge_django_settings
 
-from django.contrib.auth import get_user_model
-from django.http import HttpResponseBase, HttpResponseRedirect
-
 __all__ = [
     "SAMLLoginAPIView",
     "SAMLLoginViewMixin",
@@ -27,7 +26,7 @@ __all__ = [
 _LOGGER = AppLogger.get_logger(__name__)
 
 
-class SAMLLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
+class SAMLLoginViewMixin[UserT](LoginExchangeViewMixin[UserT]):
     """Hook-driven SAML login flow for consuming apps."""
 
     # -----------------------------------------------------------------------
@@ -111,7 +110,7 @@ class SAMLLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
         """Return the local user lookup extracted from processed SAML data."""
         raise NotImplementedError
 
-    def get_user(self, user_lookup: dict[str, str]) -> _UserT:
+    def get_user(self, user_lookup: dict[str, str]) -> UserT:
         """Resolve and return the target user for login."""
         raise NotImplementedError
 
@@ -119,7 +118,7 @@ class SAMLLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
         self,
         request: Request,
         user_lookup: dict[str, str],
-    ) -> _UserT:
+    ) -> UserT:
         """Provision and return a user when auto-create is enabled."""
         raise NotImplementedError
 
@@ -164,8 +163,8 @@ class SAMLLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
         return LoginPayload(user=user)
 
 
-class SAMLLoginAPIView[_UserT](
-    SAMLLoginViewMixin[_UserT],
+class SAMLLoginAPIView[UserT](
+    SAMLLoginViewMixin[UserT],
     BaseLoginAPIView,
 ):
     """Common SAML login API view that returns an exchange token."""

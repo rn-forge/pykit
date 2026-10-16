@@ -6,7 +6,6 @@ from typing import cast
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, Group, Permission
-
 from rn_forge.django.auth.drf.mixins import (
     AuthorizationViewMixin,
     PermissionKeyViewMixin,

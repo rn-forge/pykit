@@ -224,7 +224,7 @@ class ItemsDenied(PermissionDenied):
 
     def problem_extensions(self) -> Mapping[str, Any]:
         """Return the ``errors`` member."""
-        from rn_forge.web.problem import field_error  # noqa: PLC0415  # problem imports this module
+        from rn_forge.web.problem import field_error  # problem imports this module
 
         entries: list[dict[str, str]] = []
         for index, item in self.errors.items():
@@ -259,7 +259,7 @@ class RowsInvalid(WebError):
 
     def problem_extensions(self) -> Mapping[str, Any]:
         """Return the ``errors`` member."""
-        from rn_forge.web.problem import field_error  # noqa: PLC0415  # problem imports this module
+        from rn_forge.web.problem import field_error  # problem imports this module
 
         return {
             "errors": [

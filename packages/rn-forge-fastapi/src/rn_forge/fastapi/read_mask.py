@@ -9,7 +9,6 @@ from typing import Annotated, Any, Union, cast, get_args, get_origin
 
 from fastapi import Query
 from pydantic import BaseModel
-
 from rn_forge.web import READ_MASK_PARAM, FieldTree, Page, ReadMask, parse_read_mask
 
 __all__ = ["masked", "read_mask_param"]

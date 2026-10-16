@@ -1,17 +1,22 @@
-"""Tests for rn_forge.commons.data.pandas."""
+"""Tests for rn_forge.data.pandas."""
 
 from __future__ import annotations
 
 import decimal
 from decimal import Decimal
+from io import BytesIO
+from pathlib import Path
 
 import pytest
 
 pd = pytest.importorskip("pandas")
 
-import rn_forge.commons.data.pandas as pandas_module
-from rn_forge.commons.data.pandas import PandasUtils
+import rn_forge.data.pandas as pandas_module
+from rn_forge.data.pandas import ExcelAdapter, PandasUtils
+from rn_forge.data.excel import ExcelUtils
+from openpyxl import Workbook
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.testing import raise_
 
 
 def _row(**kwargs) -> pd.Series:
@@ -154,3 +159,125 @@ class TestIsNa:
 # Coverage ROI notes:
 # - pandas missing-value semantics are delegated to pandas itself; tests cover
 #   integration points and error propagation, not pandas internals.
+
+
+# ---------------------------------------------------------------------------
+# ExcelAdapter
+# ---------------------------------------------------------------------------
+
+
+class TestExcelAdapter:
+    def test_read_dataframe_returns_sheet_mapping(self, tmp_path: Path):
+        source = tmp_path / "book.xlsx"
+        with pd.ExcelWriter(source, engine="openpyxl") as writer:
+            pd.DataFrame({"name": ["alice"]}).to_excel(
+                writer,
+                sheet_name="Users",
+                index=False,
+            )
+
+        workbook = ExcelAdapter.read_dataframe(source)
+
+        assert list(workbook) == ["Users"]
+        assert workbook["Users"]["name"].iloc[0] == "alice"
+
+    def test_load_dataframe_reads_from_memory(self) -> None:
+        source = BytesIO()
+        with pd.ExcelWriter(source, engine="openpyxl") as writer:
+            pd.DataFrame({"name": ["alice"]}).to_excel(
+                writer,
+                sheet_name="Users",
+                index=False,
+            )
+        source.seek(0)
+
+        workbook = ExcelAdapter.load_dataframe(source)
+
+        assert workbook["Users"]["name"].iloc[0] == "alice"
+
+    def test_from_dataframe_returns_workbook(self):
+        workbook = ExcelAdapter.from_dataframe(pd.DataFrame({"x": [1, 2, 3]}))
+
+        assert isinstance(workbook, Workbook)
+        assert workbook.active["A1"].value == "x"
+        assert workbook.active["A2"].value == 1
+
+    def test_from_dataframe_supports_sheet_mapping(self):
+        workbook = ExcelAdapter.from_dataframe(
+            {
+                "Users": pd.DataFrame({"name": ["alice"]}),
+                "Roles": pd.DataFrame({"role": ["admin"]}),
+            }
+        )
+
+        assert workbook["Users"]["A1"].value == "name"
+        assert workbook["Roles"]["A2"].value == "admin"
+
+    def test_read_workbook_reads_from_path(self, tmp_path: Path):
+        workbook = Workbook()
+        workbook.active["A1"] = "name"
+        path = ExcelUtils.write_workbook(workbook, tmp_path / "book.xlsx")
+
+        loaded = ExcelAdapter.read_workbook(path)
+
+        assert loaded.active["A1"].value == "name"
+
+    def test_load_workbook_reads_from_memory(self):
+        workbook = Workbook()
+        workbook.active["A1"] = "name"
+        payload = ExcelUtils.write_workbook_bytes(workbook)
+        payload.seek(0)
+
+        loaded = ExcelAdapter.load_workbook(payload)
+
+        assert loaded.active["A1"].value == "name"
+
+    def test_write_workbook_writes_to_path(self, tmp_path: Path):
+        workbook = Workbook()
+        path = ExcelAdapter.write_workbook(workbook, tmp_path / "out.xlsx")
+
+        assert path.exists()
+
+    def test_workbook_to_bytes_returns_buffer(self):
+        workbook = Workbook()
+        payload = ExcelAdapter.workbook_to_bytes(workbook)
+
+        assert isinstance(payload, BytesIO)
+        assert payload.tell() > 0
+
+    def test_read_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(
+            pd,
+            "read_excel",
+            lambda *a, **k: raise_(RuntimeError("read failed")),
+        )
+        with pytest.raises(RuntimeError, match="read failed"):
+            ExcelAdapter.read_dataframe("book.xlsx")
+
+    def test_load_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(
+            pd,
+            "read_excel",
+            lambda *a, **k: raise_(RuntimeError("load failed")),
+        )
+        source = BytesIO()
+        with pytest.raises(RuntimeError, match="load failed"):
+            ExcelAdapter.load_dataframe(source)
+
+    def test_from_dataframe_error_propagates(self, monkeypatch: pytest.MonkeyPatch):
+        frame = pd.DataFrame({"x": [1]})
+
+        class FakeWriter:
+            def __enter__(self):
+                return object()
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        def fail(*args, **kwargs):
+            raise RuntimeError("to_excel failed")
+
+        monkeypatch.setattr(pd, "ExcelWriter", lambda *a, **k: FakeWriter())
+        monkeypatch.setattr(frame, "to_excel", fail)
+        with pytest.raises(RuntimeError, match="to_excel failed"):
+            ExcelAdapter.from_dataframe(frame)

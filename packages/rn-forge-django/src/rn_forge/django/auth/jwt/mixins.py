@@ -6,25 +6,24 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any, cast
 
+from django.http import HttpResponseBase
 from rest_framework import status
 from rest_framework.request import Request
-from django.http import HttpResponseBase
 from rest_framework.response import Response
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.django.auth.drf.authentication import BaseLoginViewMixin
-from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.auth.jwt.utils import JWTUtils
+from rn_forge.django.auth.payload import LoginPayload
 
 __all__ = [
-    "LoginExchangeViewMixin",
     "JWTAuthenticationViewMixin",
+    "LoginExchangeViewMixin",
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)
 
 
-class LoginExchangeViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
+class LoginExchangeViewMixin[UserT](BaseLoginViewMixin[UserT]):
     """Login view mixin that returns a short-lived exchange JWT."""
 
     login_exchange_token_type = "login_exchange"
@@ -59,7 +58,7 @@ class LoginExchangeViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
         )
 
 
-class JWTAuthenticationViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
+class JWTAuthenticationViewMixin[UserT](BaseLoginViewMixin[UserT]):
     """Authentication mixin that returns SimpleJWT access/refresh tokens."""
 
     def get_user_roles(self, login_payload: LoginPayload) -> tuple[str, ...]:
@@ -71,7 +70,7 @@ class JWTAuthenticationViewMixin[_UserT](BaseLoginViewMixin[_UserT]):
 
         try:
             role_names = values_list("name", flat=True)
-        except Exception:  # pragma: no cover - role manager shape is app-specific
+        except Exception:  # noqa: BLE001  # pragma: no cover - role manager shape is app-specific
             return ()
 
         return tuple(

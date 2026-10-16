@@ -29,7 +29,7 @@ class EnumField(EnumFieldBase):
         enum_type: type[BaseEnum],
         default: BaseEnum | None = None,
         **kwargs: Any,
-    ) -> "EnumField":
+    ) -> EnumField:
         """Build an enum-backed field with sensible defaults."""
         kwargs.setdefault("choices", enum_type)
         kwargs.setdefault("default", default.value if default else None)

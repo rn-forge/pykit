@@ -12,8 +12,12 @@ import json
 from typing import Any, Final
 
 from fastapi.routing import APIRoute
-from rn_forge.web import ProblemDetail
-from rn_forge.web import VALIDATION_ERROR, ProblemRegistry, default_registry
+from rn_forge.web import (
+    VALIDATION_ERROR,
+    ProblemDetail,
+    ProblemRegistry,
+    default_registry,
+)
 from rn_forge.web.openapi import (
     add_problem_responses,
     problem_response,

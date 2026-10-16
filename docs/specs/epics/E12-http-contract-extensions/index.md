@@ -1,17 +1,23 @@
 # E12 — HTTP contract extensions
 
-| | |
-| --- | --- |
+|  |  |
+| -- | -- |
 | **State** | Closed |
 | **Start Date** | 2026-10-04 |
 | **Closed Date** | 2026-10-04 |
 
-Wire features that the [API conventions](../../../rn-forge-web/guides/api-conventions.md) describe but no package implements, or only one stack does. [E2](../E2-http-contract/index.md) delivered the contract; this epic extends it. A feature whose trigger has fired has its own feature file with stories and acceptance before any code; the rest are tagged `deferred` until their trigger occurs.
+Wire features that the
+[API conventions](../../../rn-forge-web/guides/api-conventions.md) describe but
+no package implements, or only one stack does.
+[E2](../E2-http-contract/index.md) delivered the contract; this epic extends it.
+A feature whose trigger has fired has its own feature file with stories and
+acceptance before any code; the rest are tagged `deferred` until their trigger
+occurs.
 
 [Back to the work index](../../index.md)
 
 | Feature | Scope | Trigger | Tags | State |
-| --- | --- | --- | --- | --- |
+| -- | -- | -- | -- | -- |
 | [F12.1 — `:batchGet` and `:batchUpdate`](F12.1-batch-get-update.md) | `:batchGet` (AIP-231) and `:batchUpdate` (AIP-234, one merge patch per item) on both stacks, with the shared rules in `rn-forge-web` | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
 | [F12.2 — Soft delete](F12.2-soft-delete.md) | Soft delete in AIP-164's shape (`deleteTime`, `:undelete`, `showDeleted`) on both stacks and both ORM packages. Settles the [model-vocabulary](../../ideas.md#model-vocabulary) idea's status-based soft delete in favor of a `delete_time` column. | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
 | [F12.3 — Multi-column sorting](F12.3-multi-column-sorting.md) | Multi-term `orderBy` with composite keyset tokens and nulls last in both directions, on both stacks and `rn-forge-sqlalchemy` | Fired 2026-10-04: the owner scheduled it for release 3. | — | Closed |
@@ -21,4 +27,8 @@ Wire features that the [API conventions](../../../rn-forge-web/guides/api-conven
 | [F12.15 — FastAPI resource operations](F12.15-fastapi-resource-operations.md) | FastAPI route factories for `:import`, `:importTemplate`, `:batchCreate`, `:batchDelete` and capped export, over application stores; the shared transfer details moved into `rn-forge-web` | Fired 2026-09-28: a browser client's resource screen needs a FastAPI backend serving every row of the resource standards. | — | Closed |
 | [F12.16 — Expose `Content-Disposition` to browsers](F12.16-expose-content-disposition.md) | `Content-Disposition` in `EXPOSED_HEADERS`, so a cross-origin browser can read export file names | Fired 2026-09-28: a cross-origin browser client could not read an export's file name. | — | Closed |
 
-F12.4 and F12.11 were retired on 2026-09-29, now [E13's open questions](../E13-auth/F13.1-auth-design.md#open-questions) on tenancy and Django OIDC settings. F12.5, F12.6, F12.7, F12.8, F12.10 and F12.13 were retired the same day, parked in the [ideas list](../../ideas.md) because they are not HTTP contract work.
+F12.4 and F12.11 were retired on 2026-09-29, now
+[E13's open questions](../E13-auth/F13.1-auth-design.md#open-questions) on
+tenancy and Django OIDC settings. F12.5, F12.6, F12.7, F12.8, F12.10 and F12.13
+were retired the same day, parked in the [ideas list](../../ideas.md) because
+they are not HTTP contract work.

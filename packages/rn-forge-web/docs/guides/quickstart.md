@@ -2,8 +2,8 @@
 
 Five things nearly every application built on this kit wires. None of them
 imports a web framework. For framework setup, see the
-[plain Django recipe](wiring-django.md), or the "Wiring an
-application" guide in the `rn-forge-fastapi` package.
+[plain Django recipe](wiring-django.md), or the "Wiring an application" guide in
+the `rn-forge-fastapi` package.
 
 ## 1. Tracing: W3C Trace Context through OpenTelemetry
 
@@ -19,9 +19,9 @@ current_trace_id()   # 32 lowercase hex chars, or None with no span recording
 current_span_id()    # 16 lowercase hex chars, or None
 ```
 
-For structured logs, `rn_forge.commons.logging.structlog.otel_processor` adds `trace_id` and
-`span_id` to every event. `StructLogger` installs it itself; in a `structlog` chain of your own,
-list it as a processor.
+For structured logs, `rn_forge.commons.logging.structlog.otel_processor` adds
+`trace_id` and `span_id` to every event. `StructLogger` installs it itself; in a
+`structlog` chain of your own, list it as a processor.
 
 ## 2. Every error as an RFC 9457 problem
 
@@ -44,8 +44,8 @@ from rn_forge.web import ProblemType
 registry.register(OrderLocked, ProblemType("order-locked", 409, "Order Locked"))
 ```
 
-A 5xx never carries `str(exc)` — the detail is a fixed generic string unless
-you pass one explicitly.
+A 5xx never carries `str(exc)` — the detail is a fixed generic string unless you
+pass one explicitly.
 
 ## 3. Optimistic concurrency
 
@@ -109,6 +109,5 @@ endpoint at 200. A check that raises becomes a failure, never a 500.
 
 ## Next
 
-The [API conventions](api-conventions.md) page is the normative
-version of all of the above, written so it can be pasted into an application's
-specification.
+The [API conventions](api-conventions.md) page is the normative version of all
+of the above, written so it can be pasted into an application's specification.

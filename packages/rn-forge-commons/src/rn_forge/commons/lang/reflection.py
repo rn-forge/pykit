@@ -15,9 +15,10 @@ Typical usage::
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable
 from operator import attrgetter
 from types import FrameType
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 __all__ = ["ReflectUtils"]
 

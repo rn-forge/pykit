@@ -7,7 +7,8 @@ outbox semantics are the caller's responsibility.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Mapping, Protocol, Self, Sequence, runtime_checkable
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, Protocol, Self, runtime_checkable
 
 __all__ = [
     "AsyncMessageBus",

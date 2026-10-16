@@ -1,9 +1,11 @@
 # Architecture decisions
 
-Each record states one choice that constrains future work across pykit packages, why it was made, and what it costs. Package guides describe the current APIs; the [spec board](../specs/index.md) tracks work.
+Each record states one choice that constrains future work across pykit packages,
+why it was made, and what it costs. Package guides describe the current APIs;
+the [spec board](../specs/index.md) tracks work.
 
 | Decision | Scope | Status |
-| --- | --- | --- |
+| -- | -- | -- |
 | [ADR-0001: Standards and proven libraries come first; pykit wraps, never reimplements](ADR-0001.md) | Design principles | accepted |
 | [ADR-0002: Code is placed by what its API contains, and boundaries are one-way](ADR-0002.md) | Package placement and imports | accepted |
 | [ADR-0003: Optional integrations stay behind explicit extras and outside the facade](ADR-0003.md) | Optional dependencies | accepted |
@@ -14,3 +16,5 @@ Each record states one choice that constrains future work across pykit packages,
 | [ADR-0008: pykit is accepted by its own specs and tests](ADR-0008.md) | Specs, acceptance and releases | accepted |
 | [ADR-0009: Each package publishes its own versioned docs; the root site browses them all](ADR-0009.md) | Package documentation | accepted |
 | [ADR-0010: Soft delete is a nullable `delete_time` column, in AIP-164's shape](ADR-0010.md) | Soft delete | accepted |
+| [ADR-0011: A part of commons becomes its own package only when it passes three tests, and every package takes adapters the same way](ADR-0011.md) | Package boundaries | accepted |
+| [ADR-0012: CI and release logic ships as the rn-forge-devops package, never as workflow logic or copied scripts](ADR-0012.md) | CI and release automation | accepted |

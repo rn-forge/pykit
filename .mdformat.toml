@@ -1,0 +1,42 @@
+# Seeded by kiln — this file is yours.
+#
+# Its presence is what opts this repo into Markdown formatting at all: the
+# task exists in every repo, the style is each repo's own. kiln writes this
+# once and never touches it again.
+#
+# `exclude` is authoritative — `task lint` runs mdformat over the tree rather
+# than over a file list, so this is the single place a path is exempted.
+# `.rn-forge/kiln/standard.md` is not a style exemption: it is a file kiln owns
+# whole (see .rn-forge/kiln/standard.md), and a formatter rewriting it would be
+# a second owner writing the same bytes. Files kiln owns only a *block* of are
+# formatted normally; kiln renders those block bodies already mdformat-clean.
+wrap = 80
+exclude = [
+  ".venv/**",
+  # Tool caches — the same set `task clean` removes and `.gitignore` ignores.
+  # They carry third-party READMEs and licences, none of which are this repo's
+  # prose. mdformat resolves its config per file, from that file's own
+  # directory upward, so a nested repo's caches are that repo's to exempt.
+  # `**/`: a task run with `--directory packages/<pkg>` runs the tool there, so
+  # each workspace member grows its own caches.
+  "**/.uv-cache/**",
+  "**/.pytest_cache/**",
+  "**/.ruff_cache/**",
+  "**/.import_linter_cache/**",
+  ".docs-site/**",
+  "site/**",
+  "node_modules/**",
+  ".nx/**",
+  ".rn-forge/kiln/rendered/**",
+  # `kiln apply` keeps the managed files it replaced here.
+  ".rn-forge/kiln/backups/**",
+  ".rn-forge/kiln/standard.md",
+]
+
+[plugin.tables]
+compact_tables = true
+
+[plugin.mkdocs]
+align_semantic_breaks_in_lists = true
+ignore_missing_references = true
+no_mkdocs_math = true

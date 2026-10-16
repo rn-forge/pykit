@@ -1,14 +1,15 @@
 # Tabular export, import and batch operations
 
 `rn_forge.fastapi.transfer` serves spreadsheet download and upload, an import
-template, and batch get, create, update and delete. It needs the `transfer` extra (tablib,
-openpyxl and `python-multipart`) and is not imported by `rn_forge.fastapi`. The
-wire contract is §17 of `rn-forge-web`'s API conventions. Persistence is the
-application's: each route factory takes a **store**, a dependency that returns an
-object with the methods the factory calls.
+template, and batch get, create, update and delete. It needs the `transfer`
+extra (`rn-forge-data`, which brings tablib and openpyxl, and
+`python-multipart`) and is not imported by `rn_forge.fastapi`. The wire contract
+is §17 of `rn-forge-web`'s API conventions. Persistence is the application's:
+each route factory takes a **store**, a dependency that returns an object with
+the methods the factory calls.
 
 | Factory | Route | Store | Store methods |
-| --- | --- | --- | --- |
+| -- | -- | -- | -- |
 | `import_router` | `POST {collection}:import` | `ImportStore` | `import_rows(rows, *, validate_only)` |
 | `import_template_router` | `GET {collection}:importTemplate` | `TemplateSource` | `rows()` |
 | `batch_create_router` | `POST {collection}:batchCreate` | `BatchCreateStore` | `create_many(items)` |
@@ -20,8 +21,8 @@ The stores are structural protocols, so a store never imports them. A factory
 validates the request, applies the row cap (`max_rows`) and calls the store only
 with data that passed. The store makes the writes. Because the store is obtained
 through `Depends`, it can take a database session, the principal or filter
-parameters the ordinary FastAPI way. Every factory also takes `dependencies=` for
-route-level dependencies such as authorization.
+parameters the ordinary FastAPI way. Every factory also takes `dependencies=`
+for route-level dependencies such as authorization.
 
 ## A complete resource
 
@@ -31,9 +32,9 @@ the application's store calls `upsert` and `keyset`, and `rn-forge-fastapi`
 calls the store. It serves `/orders` with a paged list, CSV and xlsx export,
 import, import template, batch create and batch delete.
 
-The model and the three wire models. `OrderImport`'s aliases are the
-spreadsheet headers, and it also serves as the export and template model, so a
-downloaded file can be uploaded again.
+The model and the three wire models. `OrderImport`'s aliases are the spreadsheet
+headers, and it also serves as the export and template model, so a downloaded
+file can be uploaded again.
 
 ```python
 from collections.abc import Sequence
@@ -206,9 +207,9 @@ Each store method does all its writes in one session and commits once, at the
 end:
 
 - `import_rows` runs `upsert`, which never commits. A real import then commits.
-  `validateOnly` rolls back instead, so the report shows the true
-  `created`, `updated` and `skipped` counts and nothing is persisted. Any
-  exception leaves the `async with` block before the commit, which discards the
+  `validateOnly` rolls back instead, so the report shows the true `created`,
+  `updated` and `skipped` counts and nothing is persisted. Any exception
+  leaves the `async with` block before the commit, which discards the
   session's work.
 - `create_many` checks every item for permission before it adds any, and raises
   `ItemsDenied` if one is refused: a 403 whose `errors[].pointer` is
@@ -222,31 +223,36 @@ layer. A store that shares a request-scoped session instead must roll that
 session back itself when it fails or when `validate_only` is set.
 
 A row that fails a check only the store can make, such as a foreign-key lookup,
-is reported by raising `RowsInvalid(errors)` (from `rn_forge.web`, built from `rn_forge.web.transfer.RowError`) from `import_rows`. It renders the
-same 422 as a cell that failed validation, pointing at `/rows/<row>/<column>`.
+is reported by raising `RowsInvalid(errors)` (from `rn_forge.web`, built from
+`rn_forge.web.transfer.RowError`) from `import_rows`. It renders the same 422 as
+a cell that failed validation, pointing at `/rows/<row>/<column>`.
 
 ### Batch get and update
 
-`batch_get_router` reads a repeated `ids` query parameter. The store's `get_many(ids)` returns the
-rows that exist within the caller's scope, keyed by id as a string. `batch_update_router` takes
-`{"requests": [{"id", "patch", "ifMatch"}]}`: the store's `current(ids)` returns each existing row
-as an object with `row` and `version` (`None` when the resource is unversioned), the factory merges
-each patch into the row dumped through `model` by alias and validates the result as `model`, and
-`update_many(items)` receives `(id, model instance)` pairs only after every check has passed. It
-writes them in one transaction, bumps each version and returns the updated rows in the order given.
+`batch_get_router` reads a repeated `ids` query parameter. The store's
+`get_many(ids)` returns the rows that exist within the caller's scope, keyed by
+id as a string. `batch_update_router` takes
+`{"requests": [{"id", "patch", "ifMatch"}]}`: the store's `current(ids)` returns
+each existing row as an object with `row` and `version` (`None` when the
+resource is unversioned), the factory merges each patch into the row dumped
+through `model` by alias and validates the result as `model`, and
+`update_many(items)` receives `(id, model instance)` pairs only after every
+check has passed. It writes them in one transaction, bumps each version and
+returns the updated rows in the order given.
 
 ```python
 app.include_router(batch_get_router("/orders", response_model=OrderOut, resource_name="orders", resource_label="Order", store=order_store, max_rows=100))
 app.include_router(batch_update_router("/orders", model=OrderDocument, response_model=OrderOut, resource_name="orders", resource_label="Order", store=order_store, max_rows=100, require_if_match=True))
 ```
 
-`update_many` raises `ItemsDenied(errors, root="requests")` before writing to refuse an item.
-`codec=` changes the validator format of `ifMatch`, which defaults to `VersionETagCodec`.
+`update_many` raises `ItemsDenied(errors, root="requests")` before writing to
+refuse an item. `codec=` changes the validator format of `ifMatch`, which
+defaults to `VersionETagCodec`.
 
 ### What the factories answer
 
 | Request | Response |
-| --- | --- |
+| -- | -- |
 | `:import` succeeds | 200 `{created, updated, skipped, validateOnly}` |
 | `:import` has no `file` part | 422, `errors[].pointer` `/file`, `This field is required.` |
 | `:import` has an unsupported or unreadable file | 422 at `/file` with the shared detail |
@@ -279,11 +285,11 @@ tabular request from a list route: the file, or a 422 when there are more rows
 than `max_rows`.
 
 The export model is a pydantic model. Its `serialization_alias`es are the column
-headers, and a `computed_field` is a column, which covers foreign-key
-traversal, full names and enum display names. Rows are validated with
+headers, and a `computed_field` is a column, which covers foreign-key traversal,
+full names and enum display names. Rows are validated with
 `from_attributes=True`, so ORM objects work directly. CSV is streamed; xlsx is
-written with `rn_forge.commons.data.excel.write_xlsx`. `tabular_response` is the
-same without the cap, for a route that applies its own.
+written with `rn_forge.data.write_xlsx`. `tabular_response` is the same without
+the cap, for a route that applies its own.
 
 ## Reading a file yourself
 
@@ -298,10 +304,10 @@ offers can call it and answer with `problem_response(row_errors_problem(...))`.
 ## Paging a SQLAlchemy list
 
 `order_by_param` and `page_params` parse the request, `rn-forge-sqlalchemy`'s
-`keyset` applies them to a `Select`, and `next_page_token` writes the next token.
-The `page` method of the store above does this: it fetches `size + 1` rows to
-learn whether another page exists. `keyset` takes the sort column and the unique
-id column, so the order is stable when the sort column repeats.
+`keyset` applies them to a `Select`, and `next_page_token` writes the next
+token. The `page` method of the store above does this: it fetches `size + 1`
+rows to learn whether another page exists. `keyset` takes the sort column and
+the unique id column, so the order is stable when the sort column repeats.
 
 ## Conformance
 

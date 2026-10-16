@@ -18,8 +18,6 @@ from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from starlette.exceptions import HTTPException as StarletteHTTPException
-
 from rn_forge.web import (
     IDEMPOTENCY_KEY_HEADER,
     PROBLEM_MEDIA_TYPE,
@@ -34,19 +32,20 @@ from rn_forge.web import (
     Principal,
     Requirement,
     ScopeAuthorizer,
+    check_cursor_order,
     check_idempotency_key,
     check_precondition,
-    check_cursor_order,
     clamp_page_size,
-    format_order_by,
-    parse_order_by,
     decode_cursor,
     default_registry,
     encode_cursor,
     field_error,
+    format_order_by,
+    parse_order_by,
     render_problem,
     run_checks,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 REGISTRY = default_registry()
 CODEC = EntityVersionETagCodec()

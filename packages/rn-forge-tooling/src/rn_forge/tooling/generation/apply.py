@@ -10,7 +10,6 @@ from pathlib import Path
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.tooling.generation.artifacts import (
     Action,
     ApplyResult,

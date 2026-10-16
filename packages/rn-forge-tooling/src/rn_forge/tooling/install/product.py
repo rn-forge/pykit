@@ -10,7 +10,6 @@ from pathlib import Path
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding
 from rn_forge.commons.fs.paths import PathUtils
-
 from rn_forge.tooling.install.home import ToolHome
 from rn_forge.tooling.install.release import GitHubReleases, ReleaseSource
 

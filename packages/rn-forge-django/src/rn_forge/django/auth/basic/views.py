@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from django.contrib import auth as django_auth
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rn_forge.commons.logging import AppLogger
@@ -13,18 +14,16 @@ from rn_forge.django.auth.jwt.mixins import LoginExchangeViewMixin
 from rn_forge.django.auth.payload import LoginPayload
 from rn_forge.django.drf import RequestUtils
 
-from django.contrib import auth as django_auth
-
 __all__ = [
-    "BasicLoginViewMixin",
     "BasicLoginAPIView",
+    "BasicLoginViewMixin",
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)
 _DJANGO_AUTH = cast(DjangoAuthProtocol, django_auth)
 
 
-class BasicLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
+class BasicLoginViewMixin[UserT](LoginExchangeViewMixin[UserT]):
     """Username/password login flow backed by Django authentication."""
 
     username_param = "username"
@@ -38,12 +37,12 @@ class BasicLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
         """Return the incoming password from request data."""
         return str(RequestUtils.get_value(request, self.password_param) or "")
 
-    def authenticate_basic_user(self, request: Request) -> _UserT:
+    def authenticate_basic_user(self, request: Request) -> UserT:
         """Authenticate and return the target Django user."""
         username = self.get_basic_username(request)
         password = self.get_basic_password(request)
         user = cast(
-            _UserT | None,
+            UserT | None,
             _DJANGO_AUTH.authenticate(
                 RequestUtils.get_django_request(request),
                 username=username,
@@ -63,8 +62,8 @@ class BasicLoginViewMixin[_UserT](LoginExchangeViewMixin[_UserT]):
 
 
 @_LOGGER.audit_class(include_inherited=True)
-class BasicLoginAPIView[_UserT](
-    BasicLoginViewMixin[_UserT],
+class BasicLoginAPIView[UserT](
+    BasicLoginViewMixin[UserT],
     BaseLoginAPIView,
 ):
     """Username/password login API view that returns an exchange token."""

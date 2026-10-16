@@ -3,10 +3,9 @@
 from typing import Any, cast
 
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
 from django.contrib.auth.models import AbstractUser, Group, Permission
-from django.contrib.auth import get_user_model
-
 from rn_forge.django.auth._typing import PermissionAdminBase, UserAdminBase
 
 register_model = cast(Any, admin.register)

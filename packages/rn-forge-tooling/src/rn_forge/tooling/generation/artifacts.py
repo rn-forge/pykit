@@ -8,12 +8,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-
-from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.blocks import ManagedBlock
 from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.commons.fs.paths import PathUtils
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = [
     "BLOCKING_ACTIONS",

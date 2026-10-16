@@ -9,8 +9,6 @@ import verboselogs
 __all__ = [
     "JsonValue",
     "VerboseLoggerBase",
-    "series_columns",
-    "series_value",
 ]
 
 
@@ -52,29 +50,3 @@ if TYPE_CHECKING:
 
 else:
     VerboseLoggerBase = verboselogs.VerboseLogger
-
-
-# ---------------------------------------------------------------------------
-# pandas
-# ---------------------------------------------------------------------------
-
-if TYPE_CHECKING:
-    import pandas
-
-    type SeriesRow = pandas.Series
-else:
-    SeriesRow = Any
-
-
-def series_value(row: SeriesRow, field_name: str) -> Any:
-    """Return ``row[field_name]``, normalized to ``Any``.
-
-    ``Series.__getitem__`` has a wide overload set; pinning the result to
-    ``Any`` here keeps the variation out of every call site.
-    """
-    return row[field_name]
-
-
-def series_columns(row: SeriesRow) -> list[Any]:
-    """Return the index labels of *row* as a plain list."""
-    return row.index.tolist()

@@ -23,8 +23,8 @@ install Jinja to get one.
 
 Console output lives one layer down, in `rn-forge-commons`: it is a property of
 the process rather than of the command-line parser, and a Django management
-command or a worker entry point needs it without taking a Typer dependency.
-This package drives it — `--quiet`/`--json` set its mode.
+command or a worker entry point needs it without taking a Typer dependency. This
+package drives it — `--quiet`/`--json` set its mode.
 
 `rn_forge.cli` never imports `rn_forge.tooling`, and `rn_forge.commons` never
 imports either; `uv run lint-imports` proves it.

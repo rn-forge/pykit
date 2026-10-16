@@ -115,7 +115,7 @@ def index_view(request: HttpRequest) -> HttpResponse:
             "<h1>rn-forge-django</h1>"
             f"<pre>{pretty}</pre>"
             "</body></html>"
-        ).encode("utf-8"),
+        ).encode(),
         content_type="text/html; charset=utf-8",
     )
 

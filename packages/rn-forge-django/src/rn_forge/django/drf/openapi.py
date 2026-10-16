@@ -47,7 +47,6 @@ from rn_forge.django.drf.casing import camelize_key
 from rn_forge.django.drf.exceptions import problem_registry
 from rn_forge.django.drf.views.mixins import ReadMaskMixin, SoftDeleteMixin
 from rn_forge.web import (
-    ProblemDetail,
     API_CATALOG_PATH,
     DOCS_PATH,
     LINKSET_MEDIA_TYPE,
@@ -55,6 +54,7 @@ from rn_forge.web import (
     READ_MASK_PARAM,
     READINESS_PATH,
     SHOW_DELETED_PARAM,
+    ProblemDetail,
     api_catalog_body,
 )
 from rn_forge.web.openapi import (

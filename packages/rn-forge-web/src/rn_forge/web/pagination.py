@@ -18,7 +18,6 @@ from typing import Any, Final, cast
 from urllib.parse import quote
 
 from pydantic import ConfigDict, Field
-
 from rn_forge.web.exceptions import InvalidCursor, InvalidOrderBy
 from rn_forge.web.models import WireModel
 

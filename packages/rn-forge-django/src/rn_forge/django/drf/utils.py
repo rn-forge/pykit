@@ -5,11 +5,10 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol, cast, runtime_checkable
 
-from rest_framework.request import Request
-from rest_framework.exceptions import ValidationError
-
-from django.http import HttpRequest
 from django.core.files.uploadedfile import UploadedFile
+from django.http import HttpRequest
+from rest_framework.exceptions import ValidationError
+from rest_framework.request import Request
 from rn_forge.django.drf._typing import RequestProtocol
 
 __all__ = [
@@ -106,15 +105,15 @@ class RequestUtils:
         return str(value)
 
     @staticmethod
-    def get_uploaded_file(request: Request, key: str = "file") -> UploadedFile:
+    def get_uploaded_file(request: Request, key: str = "file") -> UploadedFile[bytes]:
         """Return an uploaded file or raise a DRF validation error."""
         files = cast(RequestProtocol, request).FILES
         file = files.get(key) if hasattr(files, "get") else None
         if isinstance(file, UploadedFile):
-            return file
+            return cast(UploadedFile[bytes], file)
         data_file = RequestUtils.get_value(request, key)
         if isinstance(data_file, UploadedFile):
-            return data_file
+            return cast(UploadedFile[bytes], data_file)
         raise ValidationError(f"Missing uploaded file field: {key}")
 
     @staticmethod

@@ -1,6 +1,6 @@
 """Run the workspace's coverage tests and a SonarCloud branch analysis from a local checkout.
 
-The scope comes from `workspace_ci.py plan`. A full run uploads the working tree to
+The scope comes from `rn-forge-devops plan`. A full run uploads the working tree to
 SonarCloud and needs `SONAR_TOKEN` and an installed `sonar-scanner`. The development
 guide describes the prerequisites.
 
@@ -20,7 +20,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PLANNER = Path(__file__).resolve().parent / "workspace_ci.py"
 SONAR_URL = "https://sonarcloud.io"
 SCANNER_DIR = ".sonar-cleanup/scanner"
 
@@ -28,7 +27,7 @@ SCANNER_DIR = ".sonar-cleanup/scanner"
 def read_plan() -> dict[str, str]:
     """Return the planner's `key=value` lines, split on the first `=`."""
     result = subprocess.run(
-        [sys.executable, str(PLANNER), "plan", ""],
+        ["uv", "run", "rn-forge-devops", "plan", ""],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -126,10 +125,10 @@ def main(argv: list[str] | None = None) -> int:
         print("error: sonar-scanner is not installed", file=sys.stderr)
         return 2
 
-    status = subprocess.run(tests, cwd=ROOT).returncode
+    status = subprocess.run(tests, cwd=ROOT, check=False).returncode
     if status:
         return status
-    return subprocess.run(scanner, cwd=ROOT, env=local_env()).returncode
+    return subprocess.run(scanner, cwd=ROOT, env=local_env(), check=False).returncode
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ class Environment:
     @staticmethod
     def set(name: str, value: str) -> str:
         """Set environment variable *name* to *value* and return *value*."""
-        _LOGGER.info("Environment.set() | {} | {}", name, value)
+        _LOGGER.info("Environment.set() | {} | {}", name, value)  # noqa: PLE1205  # brace-style log format
         os.environ[name] = value
         return value
 
@@ -86,7 +86,7 @@ class Environment:
             name for name, value in values.items() if AppUtils.is_empty(value)
         )
         if missing:
-            _LOGGER.warning("Environment.require | missing={}", missing)
+            _LOGGER.warning("Environment.require | missing={}", missing)  # noqa: PLE1205  # brace-style log format
             raise AppException(
                 "Missing required environment variable(s): {}", ", ".join(missing)
             )
@@ -111,7 +111,7 @@ class Environment:
         """
         value = os.environ.get(name)
         if value in forbidden:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Environment.forbid | name={} | matched_forbidden_value=true", name
             )
             raise AppException(

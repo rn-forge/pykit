@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, Self
 
 from pydantic import ConfigDict, Field, model_validator
-
 from rn_forge.web.models import WireModel
 from rn_forge.web.problem import ProblemDetail
 

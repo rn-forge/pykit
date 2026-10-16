@@ -13,7 +13,7 @@ The re-export surface covers configuration, collections, dataclasses,
 logging, subprocesses, task execution, and general utility helpers.
 """
 
-# Modules are grouped by kind of mechanism (lang, fs, data, logging, runtime,
+# Modules are grouped by kind of mechanism (lang, fs, logging, runtime,
 # integration); public class names are unaffected and stay re-exported here.
 # The developer-tooling surface lives in two packages that depend on this one:
 # `rn-forge-cli` (Typer wiring, standard options, exit codes) and
@@ -90,8 +90,8 @@ __all__ = [
     "ConfigFormat",
     "ContentHash",
     "DataclassMixin",
-    "DirectoryLock",
     "DictUtils",
+    "DirectoryLock",
     "DocumentError",
     "DocumentUtils",
     "EntryPointLoader",
@@ -102,8 +102,8 @@ __all__ = [
     "InMemoryMessageBus",
     "InMemoryObjectStore",
     "JsonUtils",
-    "LenientDataclassMixin",
     "JsonValue",
+    "LenientDataclassMixin",
     "ListUtils",
     "LoggingConfig",
     "ManagedBlock",

@@ -18,8 +18,8 @@ class Order(AuditMixin, VersionMixin, Base):
 named after AIP-148, so the wire names are `createTime` and `updateTime`. The
 timestamps are Python-side UTC defaults stored through `UTCDateTime`, which
 rejects a naive value and returns an aware UTC value on SQLite too, so AIP-142's
-`Z` survives a round trip. The actors are explicit: the caller sets
-`created_by` and `updated_by`.
+`Z` survives a round trip. The actors are explicit: the caller sets `created_by`
+and `updated_by`.
 
 ## Optimistic concurrency
 
@@ -48,11 +48,12 @@ undelete(note, actor=principal.subject)
 await session.commit()
 ```
 
-`SoftDeleteMixin` adds a nullable, indexed `delete_time` (AIP-164's `deleteTime`). `soft_delete` and
-`undelete` set it, and set `updated_by` and `update_time` on an `AuditMixin` row and bump `version` on
-a `VersionMixin` row. They do not flush or commit. Pass `now=` to pin the time. Nothing hooks the
-session: a query that should hide deleted rows says so with `live()`, and `session.get()` still
-returns a deleted row.
+`SoftDeleteMixin` adds a nullable, indexed `delete_time` (AIP-164's
+`deleteTime`). `soft_delete` and `undelete` set it, and set `updated_by` and
+`update_time` on an `AuditMixin` row and bump `version` on a `VersionMixin` row.
+They do not flush or commit. Pass `now=` to pin the time. Nothing hooks the
+session: a query that should hide deleted rows says so with `live()`, and
+`session.get()` still returns a deleted row.
 
 ## Import: `upsert`
 
@@ -96,9 +97,9 @@ if more:
 
 `orderBy` is a comma-separated list, so `team, score desc` orders by `team`,
 then by `score` descending, then by the id. The columns need not be unique,
-because the id breaks ties, and they may be nullable: rows whose value is
-`NULL` come last in both directions. A token issued for another `orderBy`, or
-holding a different number of values, is a `400`.
+because the id breaks ties, and they may be nullable: rows whose value is `NULL`
+come last in both directions. A token issued for another `orderBy`, or holding a
+different number of values, is a `400`.
 
 ```python
 columns = {"team": Person.team, "score": Person.score, "id": Person.id}

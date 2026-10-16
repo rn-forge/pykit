@@ -3,7 +3,6 @@
 from typing import Any, cast
 
 from django.urls import URLPattern, path
-
 from rn_forge.django.drf.views.enums import EnumChoicesAPIView
 
 __all__ = ["urlpatterns"]

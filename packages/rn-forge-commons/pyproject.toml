@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-commons"
-version = "0.5.0"
+version = "0.6.0"
 description = "Shared, framework-agnostic utilities for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -18,23 +18,18 @@ auth = ["pyjwt[crypto]>=2.14.0"]
 json = ["python-json-logger>=4.0.0"]
 structlog = ["structlog>=25.1.0"]
 resilience = ["purgatory>=3.0.1", "stamina>=25.2.0", "httpx>=0.28"]
-excel = ["openpyxl>=3.1.5", "tablib[xlsx]>=3.8"]
 otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
-pandas = ["pandas>=3.0.3"]
 pydantic = ["pydantic>=2.12"]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]
 all = [
   "httpx>=0.28",
-  "openpyxl>=3.1.5",
   "opentelemetry-instrumentation-logging>=0.64b0",
-  "pandas>=3.0.3",
   "purgatory>=3.0.1",
   "pydantic>=2.12",
   "pyjwt[crypto]>=2.14.0",
   "python-json-logger>=4.0.0",
   "stamina>=25.2.0",
   "structlog>=25.1.0",
-  "tablib[xlsx]>=3.8",
 ]
 
 [project.urls]
@@ -59,7 +54,6 @@ addopts = "-ra --import-mode=importlib"
 [dependency-groups]
 dev = [
   "assertpy>=1.1",
-  "pandas-stubs>=3.0.5",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",

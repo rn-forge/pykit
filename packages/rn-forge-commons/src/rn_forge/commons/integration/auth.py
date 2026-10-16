@@ -40,7 +40,6 @@ from urllib.request import Request, urlopen
 
 import jwt
 from jwt import PyJWK, PyJWKSet
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
 
@@ -80,9 +79,9 @@ def fetch_json(url: str, *, timeout: float = 5.0) -> Mapping[str, Any]:
         parts.scheme == "http" and parts.hostname in _LOCAL_HOSTS
     ):
         raise TokenVerificationError("Refusing to fetch key material over {}", url)
-    request = Request(url, headers={"Accept": "application/json"})  # noqa: S310 - scheme checked above
+    request = Request(url, headers={"Accept": "application/json"})
     try:
-        with urlopen(request, timeout=timeout) as response:  # noqa: S310 - scheme checked above
+        with urlopen(request, timeout=timeout) as response:
             body = cast(object, json.load(response))
     except (OSError, ValueError) as exc:
         raise TokenVerificationError("Could not fetch {}: {}", url, exc) from exc
@@ -169,7 +168,7 @@ class JwksCache:
                 self._refresh(now)
             key = self._current_keys().get(kid)
             if key is None and now - self._fetched_at >= self._min_refresh_interval:
-                _LOGGER.debug(
+                _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                     "Unknown kid, refetching JWKS: kid={} url={}", kid, self.jwks_url
                 )
                 self._refresh(now)

@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Mapping, Self, Sequence
+from typing import Any, Self
 
 import typer
-
-# Typer 0.26 vendors Click, so `click.UsageError` and Typer's own are different
-# classes and an `except click.UsageError` never fires. These are the ones a
-# Typer command actually raises. The import is private, which is the cost of
-# Typer not re-exporting them; the `typer>=0.26.8` floor is what pins it.
-from typer._click.exceptions import ClickException, UsageError
-
 from rn_forge.cli.options import (
     CliOptions,
     JsonOption,
@@ -27,6 +21,12 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.runtime.console import console
+
+# Typer 0.26 vendors Click, so `click.UsageError` and Typer's own are different
+# classes and an `except click.UsageError` never fires. These are the ones a
+# Typer command actually raises. The import is private, which is the cost of
+# Typer not re-exporting them; the `typer>=0.26.8` floor is what pins it.
+from typer._click.exceptions import ClickException, UsageError
 
 __all__ = ["CliApp", "ExitCode", "run"]
 
@@ -101,7 +101,7 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
         console.error("{}", failure.message)
         _LOGGER.debug("Command failed", exc_info=True)
         return ExitCode.FAILURE
-    except Exception as unexpected:  # noqa: BLE001 - the top-level boundary
+    except Exception as unexpected:
         console.error("Unexpected error: {}", unexpected)
         _LOGGER.exception("Unhandled exception escaped the command")
         return ExitCode.FAILURE
@@ -128,7 +128,7 @@ class CliApp(typer.Typer):
     def __init__(
         self,
         name: str,
-        help: str | None = None,  # noqa: A002
+        help: str | None = None,
         *,
         default_log_level: LogLevel = LogLevel.VERBOSE,
         **typer_kwargs: Any,

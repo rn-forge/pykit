@@ -15,9 +15,10 @@ Typical usage::
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from enum import StrEnum
-from typing import Any, Iterable, NoReturn, Self, Sequence, cast
+from typing import Any, NoReturn, Self, cast
 
 from rich.console import Console
 from rich.prompt import Confirm, Prompt
@@ -25,7 +26,6 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
-
 from rn_forge.commons.fs.documents import JsonUtils
 
 __all__ = ["AppConsole", "OutputMode", "console"]

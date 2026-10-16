@@ -23,7 +23,6 @@ from rn_forge.commons.integration.auth import (
     TokenVerificationError,
     fetch_json,
 )
-
 from rn_forge.web.auth import (
     Credentials,
     Principal,

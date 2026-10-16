@@ -6,7 +6,6 @@ from collections.abc import Callable
 from datetime import datetime
 
 from fastapi import Response
-
 from rn_forge.web import deprecation_headers
 
 __all__ = ["deprecated"]

@@ -7,10 +7,9 @@ from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar, override
 
 from rn_forge.commons.integration.auth import FetchJson, fetch_json
+from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication
 from rn_forge.web import Authenticator, Principal, principal_from_claims
 from rn_forge.web.oidc import OidcAuthenticator
-
-from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication
 
 __all__ = ["JWKSBearerAuthentication"]
 

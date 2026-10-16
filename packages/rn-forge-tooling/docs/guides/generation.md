@@ -10,7 +10,7 @@ all-or-nothing.
 Every artifact declares who owns its bytes:
 
 | Kind | Owner | Hand edits are |
-| --- | --- | --- |
+| -- | -- | -- |
 | `MANAGED` | the generator owns the whole file | drift |
 | `SEEDED` | written once if absent, then the repository's | expected — never inspected |
 | `BLOCK` | the generator owns one fenced block inside a repo-owned file | drift, inside the block only |
@@ -50,7 +50,7 @@ planned = plan(root, artifacts, entries, force=approved_paths)
 is on disk, and what was recorded the last time it was applied:
 
 | Situation | Action |
-| --- | --- |
+| -- | -- |
 | absent, never applied | `CREATE` / `INSERT` |
 | disk, last-applied and render agree | `UNCHANGED` |
 | disk matches last-applied, render moved on | `UPDATE` |

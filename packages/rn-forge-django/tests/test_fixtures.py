@@ -74,7 +74,7 @@ class TestFixtureManager:
         }
 
         monkeypatch.setattr(
-            "rn_forge.commons.data.excel.ExcelAdapter.read_dataframe",
+            "rn_forge.data.pandas.ExcelAdapter.read_dataframe",
             lambda path: workbook,
         )
 
@@ -107,7 +107,7 @@ class TestFixtureManager:
     ) -> None:
         manager = FixtureManager(_fixture_config(tmp_path))
         monkeypatch.setattr(
-            "rn_forge.commons.data.excel.ExcelAdapter.read_dataframe",
+            "rn_forge.data.pandas.ExcelAdapter.read_dataframe",
             lambda path: {"Other": pd.DataFrame()},
         )
 

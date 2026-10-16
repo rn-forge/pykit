@@ -18,8 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Self, cast
 
-from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.lang.reflection import ReflectUtils
 from rn_forge.commons.logging import AppLogger
 
@@ -32,7 +32,7 @@ def _require_executable(name: str) -> str:
     """Return the full path to *name* or raise :exc:`~rn_forge.commons.AppException` if not on PATH."""
     path = shutil.which(name)
     if path is None:
-        _LOGGER.warning("Executable not found on PATH: {}", name)
+        _LOGGER.warning("Executable not found on PATH: {}", name)  # noqa: PLE1205  # brace-style log format
         raise AppException("Executable not found on PATH: {}", name)
     return path
 
@@ -161,7 +161,7 @@ class Process(DataclassMixin):
         stdout = stderr = None
         error: Exception | None = None
         completed: subprocess.CompletedProcess[Any] | None = None
-        _LOGGER.info(
+        _LOGGER.info(  # noqa: PLE1205  # brace-style log format
             "Process.execute | name={} | args={} | cwd={}",
             name,
             args,
@@ -171,13 +171,13 @@ class Process(DataclassMixin):
         try:
             completed = cast(
                 subprocess.CompletedProcess[Any],
-                subprocess.run(args, capture_output=capture_output, **kwargs),
+                subprocess.run(args, capture_output=capture_output, **kwargs),  # noqa: PLW1510  # caller controls check
             )
             return_code = completed.returncode
             if capture_output:
                 stdout = _coerce_process_output(completed.stdout)
                 stderr = _coerce_process_output(completed.stderr)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001  # failure captured in result
             return_code = -1
             stderr = ReflectUtils.get_error_message(exc)
             error = exc
@@ -194,7 +194,7 @@ class Process(DataclassMixin):
         )
 
         if return_code != 0 and fail_on_error:
-            _LOGGER.error(
+            _LOGGER.error(  # noqa: PLE1205  # brace-style log format
                 "Process failed | name={} exit={} stderr={}",
                 name,
                 return_code,
@@ -210,14 +210,14 @@ class Process(DataclassMixin):
             )
 
         if return_code != 0:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Process completed with non-zero exit | name={} exit={} stderr={}",
                 name,
                 return_code,
                 stderr,
             )
         elif completed is None:
-            _LOGGER.warning("Process not executed: {}", name)
+            _LOGGER.warning("Process not executed: {}", name)  # noqa: PLE1205  # brace-style log format
         else:
             _LOGGER.verbose("Process completed successfully: {}[{}]", name, return_code)
 
@@ -249,9 +249,9 @@ class Process(DataclassMixin):
         """
         path = Path(file)
         if not path.is_file():
-            _LOGGER.warning("Python script not found: {}", path)
+            _LOGGER.warning("Python script not found: {}", path)  # noqa: PLE1205  # brace-style log format
             raise AppException("Python script not found: {}", path)
-        _LOGGER.debug("Process.python | path={} | args={}", path, args)
+        _LOGGER.debug("Process.python | path={} | args={}", path, args)  # noqa: PLE1205  # brace-style log format
         return cls.execute(
             kwargs.pop("name", f"python[{path.stem}]"),
             sys.executable,
@@ -278,10 +278,10 @@ class Process(DataclassMixin):
         """
         path = Path(pom)
         if not path.is_file():
-            _LOGGER.warning("POM file not found: {}", path)
+            _LOGGER.warning("POM file not found: {}", path)  # noqa: PLE1205  # brace-style log format
             raise AppException("POM file not found: {}", path)
         goal = args[-1] if args else ""
-        _LOGGER.debug("Process.mvn | pom={} | args={}", path, args)
+        _LOGGER.debug("Process.mvn | pom={} | args={}", path, args)  # noqa: PLE1205  # brace-style log format
         return cls.execute(
             kwargs.pop("name", f"mvn[{path.parent.stem}][{goal}]"),
             _require_executable("mvn"),
@@ -311,9 +311,9 @@ class Process(DataclassMixin):
         project_path = Path(project)
         package_json = project_path / "package.json"
         if not package_json.is_file():
-            _LOGGER.warning("package.json not found: {}", package_json)
+            _LOGGER.warning("package.json not found: {}", package_json)  # noqa: PLE1205  # brace-style log format
             raise AppException("package.json not found: {}", package_json)
-        _LOGGER.debug("Process.npm | project={} | args={}", project_path, args)
+        _LOGGER.debug("Process.npm | project={} | args={}", project_path, args)  # noqa: PLE1205  # brace-style log format
         return cls.execute(
             kwargs.pop("name", f"npm[{project_path.stem}]"),
             _require_executable("npm"),
@@ -343,7 +343,7 @@ class Process(DataclassMixin):
         if not cmd:
             _LOGGER.warning("az: cmd is required")
             raise AppException("az: cmd is required")
-        _LOGGER.debug("Process.az | cmd={} | args={}", cmd, args)
+        _LOGGER.debug("Process.az | cmd={} | args={}", cmd, args)  # noqa: PLE1205  # brace-style log format
         cmd_parts = cmd.split()
         return cls.execute(
             kwargs.pop("name", f"az[{cmd}]"),
@@ -385,9 +385,9 @@ class Process(DataclassMixin):
             raise AppException("pwsh: cmd_or_script is required")
         path = Path(cmd_or_script)
         if mode == "file" and not path.is_file():
-            _LOGGER.warning("PowerShell script not found: {}", path)
+            _LOGGER.warning("PowerShell script not found: {}", path)  # noqa: PLE1205  # brace-style log format
             raise AppException("PowerShell script not found: {}", path)
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Process.pwsh | mode={} | target={} | args={}",
             mode,
             cmd_or_script,

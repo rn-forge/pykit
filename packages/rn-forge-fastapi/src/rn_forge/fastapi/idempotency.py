@@ -9,7 +9,6 @@ from typing import Any, Concatenate
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
-
 from rn_forge.web import (
     IDEMPOTENCY_KEY_HEADER,
     AsyncIdempotencyStore,

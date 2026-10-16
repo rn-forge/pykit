@@ -7,9 +7,9 @@ import difflib
 import importlib
 import numbers
 import pkgutil
-from collections.abc import Sized
+from collections.abc import Callable, Sequence, Sized
 from operator import attrgetter
-from typing import Any, Callable, Sequence, cast
+from typing import Any, cast
 
 from rn_forge.commons.logging import AppLogger
 
@@ -85,7 +85,7 @@ class AppUtils:
             return False
 
         if strict:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "AppUtils.parse_bool | token={} | strict_failure=true", text
             )
             raise ValueError(f"Cannot parse {value!r} as bool")
@@ -150,7 +150,7 @@ class AppUtils:
         """
         if qualname.startswith("."):
             if package is None:
-                _LOGGER.warning(
+                _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                     "AppUtils.import_string | qualname={} | missing_package_for_relative_import=true",
                     qualname,
                 )
@@ -159,16 +159,16 @@ class AppUtils:
                 )
             return AppUtils._import_relative(qualname, package)
 
-        _LOGGER.debug("AppUtils.import_string | qualname={}", qualname)
+        _LOGGER.debug("AppUtils.import_string | qualname={}", qualname)  # noqa: PLE1205  # brace-style log format
         try:
             return pkgutil.resolve_name(qualname)
         except AttributeError as exc:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "AppUtils.import_string | qualname={} | missing_attr=true", qualname
             )
             raise ImportError(f"Cannot import {qualname!r}: {exc}") from exc
         except ImportError:
-            _LOGGER.exception("AppUtils.import_string failed | qualname={}", qualname)
+            _LOGGER.exception("AppUtils.import_string failed | qualname={}", qualname)  # noqa: PLE1205  # brace-style log format
             raise
 
     @staticmethod
@@ -177,7 +177,7 @@ class AppUtils:
         try:
             module_path, attr_name = qualname.rsplit(".", 1)
         except ValueError as exc:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "AppUtils.import_string | qualname={} | invalid_qualified_name=true",
                 qualname,
             )
@@ -186,7 +186,7 @@ class AppUtils:
         try:
             module = importlib.import_module(module_path, package)
         except Exception:
-            _LOGGER.exception(
+            _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
                 "AppUtils.import_string failed | module_path={} | package={}",
                 module_path,
                 package,
@@ -195,7 +195,7 @@ class AppUtils:
         try:
             return getattr(module, attr_name)
         except AttributeError as exc:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "AppUtils.import_string | module_path={} | missing_attr={}",
                 module_path,
                 attr_name,

@@ -11,8 +11,6 @@ from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 from typing import Any, cast
 
-from sqlalchemy import ColumnElement, Select, and_, or_
-
 from rn_forge.web import (
     Cursor,
     InvalidCursor,
@@ -22,6 +20,7 @@ from rn_forge.web import (
     encode_cursor,
     format_order_by,
 )
+from sqlalchemy import ColumnElement, Select, and_, or_
 
 __all__ = ["keyset", "next_page_token"]
 

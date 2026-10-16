@@ -1,13 +1,18 @@
 # rn-forge-sqlalchemy
 
-[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/) · [Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-sqlalchemy/CHANGELOG.md) · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-sqlalchemy) · [All pykit packages](https://rn-forge.github.io/pykit/)
+[Documentation](https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/)
+·
+[Changelog](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-sqlalchemy/CHANGELOG.md)
+·
+[Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-sqlalchemy)
+· [All pykit packages](https://rn-forge.github.io/pykit/)
 
 Async SQLAlchemy building blocks that match the `rn-forge-web` wire: audit and
 version columns, a bulk upsert for imports, and keyset pagination over web's
 opaque page token.
 
 | Module | What it holds |
-| --- | --- |
+| -- | -- |
 | `models` | `Base` (Alembic naming convention), `UTCDateTime`, `AuditMixin` (`create_time`, `update_time`, `created_by`, `updated_by`), `VersionMixin` |
 | `concurrency` | `update_versioned` — optimistic concurrency, raising `rn_forge.web.VersionConflict` (412) |
 | `upsert` | `upsert` — create or update rows by natural key, counting created, updated and skipped |
@@ -23,10 +28,10 @@ commons ──► web ──► sqlalchemy      (this package)
               └───► fastapi
 ```
 
-It depends on `rn-forge-web` and SQLAlchemy. It imports neither `rn_forge.fastapi`
-nor `rn_forge.django`, nor either framework; `uv run lint-imports` proves it.
-An application wires this package to its framework itself: the FastAPI guide
-shows the import and list endpoints.
+It depends on `rn-forge-web` and SQLAlchemy. It imports neither
+`rn_forge.fastapi` nor `rn_forge.django`, nor either framework;
+`uv run lint-imports` proves it. An application wires this package to its
+framework itself: the FastAPI guide shows the import and list endpoints.
 
 ## Installation
 
@@ -40,8 +45,9 @@ dependencies = [
 ]
 ```
 
-Application code catches `rn_forge.web.VersionConflict` and passes `rn_forge.web` pagination
-terms, so declare `rn-forge-web` as well, at the tag this release pins.
+Application code catches `rn_forge.web.VersionConflict` and passes
+`rn_forge.web` pagination terms, so declare `rn-forge-web` as well, at the tag
+this release pins.
 
 No database driver is declared. Add `asyncpg` for PostgreSQL or `aiosqlite` for
 SQLite.
@@ -54,9 +60,10 @@ RN_FORGE_TEST_POSTGRES_DSN=postgresql+asyncpg://user:pw@localhost/db \
   uv run pytest packages/rn-forge-sqlalchemy -m postgres
 ```
 
-The default run uses SQLite. Tests marked `postgres` run only when the DSN is set.
+The default run uses SQLite. Tests marked `postgres` run only when the DSN is
+set.
 
 ## Not included
 
-The SQL idempotency store, session and unit-of-work helpers, readiness checks and
-multi-tenant scoping wait for an application that needs them.
+The SQL idempotency store, session and unit-of-work helpers, readiness checks
+and multi-tenant scoping wait for an application that needs them.

@@ -1,25 +1,27 @@
 # Soft delete
 
-`rn_forge.fastapi` serves AIP-164 soft delete: `DELETE {collection}/{id}` soft-deletes and answers
-200 with the resource, `POST {collection}/{id}:undelete` restores it, and `showDeleted` brings
-deleted resources back into a list. The wire contract is §21 of `rn-forge-web`'s API conventions.
-Persistence is the application's: `soft_delete_router` takes a **store**, a dependency that returns
-an object with these methods:
+`rn_forge.fastapi` serves AIP-164 soft delete: `DELETE {collection}/{id}`
+soft-deletes and answers 200 with the resource,
+`POST {collection}/{id}:undelete` restores it, and `showDeleted` brings deleted
+resources back into a list. The wire contract is §21 of `rn-forge-web`'s API
+conventions. Persistence is the application's: `soft_delete_router` takes a
+**store**, a dependency that returns an object with these methods:
 
 | Store method | Contract |
-| --- | --- |
+| -- | -- |
 | `find(id)` | A `SoftDeleteState` of `row`, `version` (`None` when unversioned) and `delete_time`, or `None` when the resource does not exist. Deleted rows are found. |
 | `soft_delete(id)` | Soft-deletes the row and returns it. |
 | `undelete(id)` | Restores the row and returns it. |
 
-The store owns the transaction and the clock. The router checks the resource's state first (404 or
-409), then `If-Match` on a versioned row (428, 400 or 412), and only then calls the store to write.
-It answers with `response_model` dumped by alias, and the new `ETag` read back through `find`.
+The store owns the transaction and the clock. The router checks the resource's
+state first (404 or 409), then `If-Match` on a versioned row (428, 400 or 412),
+and only then calls the store to write. It answers with `response_model` dumped
+by alias, and the new `ETag` read back through `find`.
 
 ## Over SQLAlchemy
 
-The code below is **application code**. It joins `rn-forge-fastapi` and `rn-forge-sqlalchemy`, which
-do not import each other.
+The code below is **application code**. It joins `rn-forge-fastapi` and
+`rn-forge-sqlalchemy`, which do not import each other.
 
 ```python
 from datetime import datetime
@@ -98,12 +100,14 @@ async def list_notes(show_deleted: bool = Depends(show_deleted_param())): ...
 ```
 
 The list route reads `showDeleted` with `show_deleted_param()` and passes it to
-`live(select(Note), Note, show_deleted=show_deleted)`. The application's own `PUT` and `PATCH`
-routes call `require_live(note.delete_time, label="Note", id=id)` before anything else that can
-fail. `batch_delete_router` needs no change: its store's `find` returns only live ids and its
-`delete_many` soft-deletes them, so a deleted id is a 404 for the whole batch.
+`live(select(Note), Note, show_deleted=show_deleted)`. The application's own
+`PUT` and `PATCH` routes call
+`require_live(note.delete_time, label="Note", id=id)` before anything else that
+can fail. `batch_delete_router` needs no change: its store's `find` returns only
+live ids and its `delete_many` soft-deletes them, so a deleted id is a 404 for
+the whole batch.
 
 ## Conformance
 
-The `soft-delete` cases in `rn_forge.web.conformance.CASES` run against this binding, and against
-the same routes over SQLite with `rn-forge-sqlalchemy`.
+The `soft-delete` cases in `rn_forge.web.conformance.CASES` run against this
+binding, and against the same routes over SQLite with `rn-forge-sqlalchemy`.

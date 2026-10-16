@@ -40,7 +40,7 @@ def json_exception_response(
 ) -> JsonResponse:
     """Build a normalized JSON response for handled exceptions."""
     final_message = message or "An error occurred"
-    _LOGGER.exception(
+    _LOGGER.exception(  # noqa: PLE1205  # brace-style log format
         "Django exception response: path={} message={}", request.path, final_message
     )
     return JsonResponse(
@@ -120,7 +120,7 @@ def problem_details_response(
         headers=headers,
     )
     if rendered.status >= 500:
-        _LOGGER.error(
+        _LOGGER.error(  # noqa: PLE1205  # brace-style log format
             "Problem response: status={} instance={}",
             rendered.status,
             instance,

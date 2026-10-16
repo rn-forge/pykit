@@ -9,8 +9,9 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
-from typing import Any, Literal, Sequence
+from typing import Any, Literal
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
@@ -280,10 +281,10 @@ class PathUtils:
                 return
             raise FileNotFoundError(f"Path does not exist: {p}")
         if p.is_file() or p.is_symlink():
-            _LOGGER.warning("Removing file: {}", p)
+            _LOGGER.warning("Removing file: {}", p)  # noqa: PLE1205  # brace-style log format
             p.unlink()
         else:
-            _LOGGER.warning("Removing directory: {}", p)
+            _LOGGER.warning("Removing directory: {}", p)  # noqa: PLE1205  # brace-style log format
             shutil.rmtree(p)
 
     @staticmethod

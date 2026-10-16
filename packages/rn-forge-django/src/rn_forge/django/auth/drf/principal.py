@@ -52,7 +52,7 @@ class _PrincipalAuthentication(BaseAuthentication):
                 raise AuthenticationFailed("Empty {} credentials", self.scheme)
             principal = self.get_authenticator().authenticate(credentials=credentials)
         except AuthenticationFailed as exc:
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "Authentication failed: scheme={} reason={}", self.scheme, exc.message
             )
             raise DRFAuthenticationFailed(AUTH_FAILED_DETAIL) from exc

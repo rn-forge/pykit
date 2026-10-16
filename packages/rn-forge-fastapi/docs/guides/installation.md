@@ -3,13 +3,12 @@
 ## Releases are pinned git tags, not PyPI versions
 
 None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag** on this repository, and every consumer declares it as a pinned direct
-URL:
+tag** on this repository, and every consumer declares it as a pinned direct URL:
 
 ```toml
 [project]
 dependencies = [
-  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.2.0#subdirectory=packages/rn-forge-fastapi",
+  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.3.0#subdirectory=packages/rn-forge-fastapi",
 ]
 ```
 
@@ -20,8 +19,9 @@ upgrade arrives without anyone deciding it should.
 
 `rn-forge-web` and `rn-forge-commons` come in transitively, each pinned to the
 tag this release was built against. FastAPI comes in as an ordinary PyPI
-dependency, and pydantic and Starlette with it. The optional `oidc` extra adds JWKS bearer auth; `transfer` adds tabular
-export and import (`rn_forge.fastapi.transfer`).
+dependency, and pydantic and Starlette with it. The optional `oidc` extra adds
+JWKS bearer auth; `transfer` adds tabular export and import
+(`rn_forge.fastapi.transfer`).
 
 ## Inside this workspace
 

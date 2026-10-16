@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
-
 from rn_forge.django.drf.serializers import NestedReadPrimaryKeyRelatedField
 
 __all__ = [
@@ -26,12 +25,12 @@ class ContentTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContentType
-        fields = [
+        fields = [  # noqa: RUF012  # framework class attribute
             "id",
             "app_label",
             "model",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id"]  # noqa: RUF012  # framework class attribute
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -45,13 +44,13 @@ class PermissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Permission
-        fields = [
+        fields = [  # noqa: RUF012  # framework class attribute
             "id",
             "name",
             "content_type",
             "codename",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id"]  # noqa: RUF012  # framework class attribute
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -67,12 +66,12 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = [
+        fields = [  # noqa: RUF012  # framework class attribute
             "id",
             "name",
             "permissions",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id"]  # noqa: RUF012  # framework class attribute
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -96,7 +95,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = [  # noqa: RUF012  # framework class attribute
             "id",
             "username",
             "first_name",
@@ -111,7 +110,7 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
         ]
-        read_only_fields = ["id", "last_login", "date_joined"]
+        read_only_fields = ["id", "last_login", "date_joined"]  # noqa: RUF012  # framework class attribute
 
     @staticmethod
     def _pop_many_to_many(validated_data: dict[str, Any]) -> dict[str, object]:
@@ -123,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict[str, Any]) -> AbstractUser:
         many_to_many = self._pop_many_to_many(validated_data)
-        manager = getattr(User, "_default_manager")
+        manager = getattr(User, "_default_manager")  # noqa: B009  # private Django attribute
         user: Any = manager.create_user(**validated_data)
         for field_name, value in many_to_many.items():
             getattr(user, field_name).set(value)
@@ -133,7 +132,7 @@ class UserSerializer(serializers.ModelSerializer):
         self, instance: AbstractUser, validated_data: dict[str, Any]
     ) -> AbstractUser:
         password = validated_data.pop("password", None)
-        update_user = getattr(super(), "update")
+        update_user = getattr(super(), "update")  # noqa: B009  # mixin has no update()
         user: Any = update_user(instance, validated_data)
         if password:
             user.set_password(password)

@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Mapping, Self
+from typing import Annotated, Any, Self
 
 import typer
-
 from rn_forge.cli import CliApp, CliOptions, CliSurface, YesOption
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import DocumentUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.runtime.console import OutputMode, console
-
 from rn_forge.tooling.install import lifecycle
 from rn_forge.tooling.install.product import ToolProduct
 from rn_forge.tooling.install.release import LocalArchive

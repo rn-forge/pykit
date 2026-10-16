@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from rn_forge.commons.lang.types import JsonValue
 from rn_forge.commons.lang.dataclasses import LenientDataclassMixin
+from rn_forge.commons.lang.types import JsonValue
 
 __all__ = ["Finding", "Severity"]
 

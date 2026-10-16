@@ -1,7 +1,6 @@
 """Simple Django URLconf for reusable helper views."""
 
 from django.urls import path
-
 from rn_forge.django.views import (
     debug_request_view,
     index_view,

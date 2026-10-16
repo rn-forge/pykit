@@ -10,7 +10,8 @@ It provides:
   trace and span ids
 - **`problem`** — RFC 9457 problem details, plus an exception→problem registry
   that resolves by MRO, the 5xx detail policy, the two validation-error
-  normalizers, and the parse direction for consuming an upstream's problem body
+  normalizers, and the parse direction for consuming an upstream's problem
+  body
 - **`exceptions`** — the conflict, precondition, cursor, idempotency and auth
   exceptions, all `AppException` subclasses
 - **`concurrency`** — ETag validators and the `If-Match` precondition check,
@@ -52,8 +53,8 @@ imports no web framework, no `rn_forge.cli` and no `rn_forge.tooling`.
 
 **Inbound, not outbound.** Circuit breakers, retries and rate limiting are
 transport-agnostic and live in `rn-forge-commons` — a worker retrying a database
-call needs them and serves no HTTP. This package is about what a server
-promises its callers.
+call needs them and serves no HTTP. This package is about what a server promises
+its callers.
 
 ## Where to start
 

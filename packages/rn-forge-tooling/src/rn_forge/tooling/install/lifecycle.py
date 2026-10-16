@@ -15,7 +15,6 @@ from rn_forge.commons.fs.locks import atomic_symlink
 from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.logging import AppLogger
-
 from rn_forge.tooling.install.home import ToolHome
 from rn_forge.tooling.install.product import Link, ToolProduct
 from rn_forge.tooling.install.release import ReleaseSource, fetch_release

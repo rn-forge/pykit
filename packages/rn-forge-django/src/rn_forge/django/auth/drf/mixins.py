@@ -6,10 +6,10 @@ from collections.abc import Mapping
 from typing import Any, ClassVar, cast
 
 from rest_framework.request import Request
-from rn_forge.django.auth.drf.permissions import AuthorizationPermission
-from rn_forge.django.auth.credentials import BaseCredentials
-from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.lang.utils import AppUtils
+from rn_forge.commons.logging import AppLogger
+from rn_forge.django.auth.credentials import BaseCredentials
+from rn_forge.django.auth.drf.permissions import AuthorizationPermission
 from rn_forge.django.drf import PermissionAwareUser, RequestUtils
 from rn_forge.django.drf.views.mixins import RequestAccessViewMixin
 from rn_forge.django.models import BaseModel
@@ -52,7 +52,7 @@ def _get_permission_action_map(view_map: Mapping[str, str]) -> Mapping[str, str]
 class AuthorizationViewMixin(RequestAccessViewMixin):
     """View contract consumed by auth-aware DRF permissions."""
 
-    permission_classes = [AuthorizationPermission]
+    permission_classes = [AuthorizationPermission]  # noqa: RUF012  # framework class attribute
     permission_key: str | None = None
     permission_action_map: ClassVar[Mapping[str, str]] = {}
 
@@ -94,7 +94,7 @@ class AuthorizationViewMixin(RequestAccessViewMixin):
             base_key if not suffix else AppUtils.join_string(".", base_key, suffix)
         )
 
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Resolved permission key: action={} base={} resolved={}",
             action,
             base_key,
@@ -111,7 +111,7 @@ class AuthorizationViewMixin(RequestAccessViewMixin):
 
         allowed = self.credentials.has_permission(permission_key)
         if not allowed:
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "Forbidden request: method={} path={} permission={}",
                 self.drf_request.method,
                 self.drf_request.path,
@@ -142,7 +142,7 @@ class PermissionKeyViewMixin:
     @property
     def drf_request(self) -> Request:
         """Return ``self.request`` narrowed to a DRF request."""
-        return cast(Request, getattr(self, "request"))
+        return cast(Request, getattr(self, "request"))  # noqa: B009  # supplied by the view
 
     def get_permission_key(self) -> str | None:
         base_key = self.permission_key
@@ -160,7 +160,7 @@ class PermissionKeyViewMixin:
             return base_key
 
         resolved = AppUtils.join_string(".", base_key, suffix)
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "Resolved permission key: action={} base={} resolved={}",
             action,
             base_key,

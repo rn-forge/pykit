@@ -15,10 +15,7 @@ from types import MappingProxyType
 from typing import Any, Final, Protocol, Self, cast, runtime_checkable
 
 from pydantic import ConfigDict, model_validator
-
-from rn_forge.web.models import WireModel
 from rn_forge.web.auth import AUTH_FAILED_DETAIL, challenge_header
-from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     ContentTooLarge,
@@ -42,6 +39,8 @@ from rn_forge.web.exceptions import (
     UnsupportedMediaType,
     VersionConflict,
 )
+from rn_forge.web.models import WireModel
+from rn_forge.web.tracing import TRACE_ID_KEY, current_trace_id
 
 __all__ = [
     "BAD_GATEWAY",

@@ -2,13 +2,13 @@
 
 This is a composition recipe for an application using plain Django/DRF with
 `rn-forge-web`. For the packaged adapters, use the `rn-forge-django` quickstart
-and its Django/DRF guides. Several pieces below already ship there; the
-examples show how an application can compose the shared HTTP primitives itself.
+and its Django/DRF guides. Several pieces below already ship there; the examples
+show how an application can compose the shared HTTP primitives itself.
 
 ## 1. Tracing — instrument once, before Django loads
 
-Tracing is W3C Trace Context, propagated and read through OpenTelemetry —
-not a house header or a WSGI middleware.
+Tracing is W3C Trace Context, propagated and read through OpenTelemetry — not a
+house header or a WSGI middleware.
 
 ```python
 # manage.py, wsgi.py, asgi.py — before Django loads
@@ -17,11 +17,11 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 DjangoInstrumentor().instrument()
 ```
 
-`DjangoInstrumentor` inserts its own middleware into `MIDDLEWARE` at position
-0, so it wraps everything downstream — including the exception handler.
+`DjangoInstrumentor` inserts its own middleware into `MIDDLEWARE` at position 0,
+so it wraps everything downstream — including the exception handler.
 `rn_forge.django.tracing.instrument()` (the `otel` extra) does this call and
-also installs a `TraceResponsePropagator` when the application has not
-already set one.
+also installs a `TraceResponsePropagator` when the application has not already
+set one.
 
 ## 2. Errors — a DRF exception handler
 
@@ -61,10 +61,9 @@ def problem_exception_handler(exc, context):
 `render_problem` adds the current trace id, masks a 401's detail and adds its
 challenge. `rn-forge-django`'s handler also walks nested serializer errors.
 
-Set `EXCEPTION_HANDLER` to it in `REST_FRAMEWORK`. Register DRF's own
-exception classes (`NotFound`, `PermissionDenied`, ...) on `REGISTRY` once,
-rather than branching in the handler — the MRO walk then covers their
-subclasses for free.
+Set `EXCEPTION_HANDLER` to it in `REST_FRAMEWORK`. Register DRF's own exception
+classes (`NotFound`, `PermissionDenied`, ...) on `REGISTRY` once, rather than
+branching in the handler — the MRO walk then covers their subclasses for free.
 
 ## 3. Concurrency
 

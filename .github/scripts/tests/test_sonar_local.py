@@ -19,6 +19,7 @@ sonar_local: ModuleType = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = sonar_local
 _SPEC.loader.exec_module(sonar_local)
 
+PLANNER_PREFIX = ["uv", "run", "rn-forge-devops"]
 TOKEN = "s3cret-token-value"
 PLAN = "\n".join(
     [
@@ -53,7 +54,7 @@ class Fake:
             out = self.branch + "\n"
         elif cmd[0] == "git" and cmd[1] == "status":
             out = self.dirty
-        elif cmd[0] == sys.executable:
+        elif cmd[:3] == PLANNER_PREFIX:
             out = PLAN
         elif cmd[0] == "uv":
             status = self.test_status
@@ -62,7 +63,7 @@ class Fake:
         return subprocess.CompletedProcess(cmd, status, out, "")
 
     def ran(self, name: str) -> list[tuple[list[str], dict[str, Any]]]:
-        return [c for c in self.calls if c[0][0] == name]
+        return [c for c in self.calls if c[0][0] == name and c[0][:3] != PLANNER_PREFIX]
 
 
 @pytest.fixture

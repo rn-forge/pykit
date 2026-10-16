@@ -9,7 +9,7 @@ what a framework package's driver actually asserts.
 This page names no application and assumes no domain. It can be pasted into a
 specification as a normative section as it stands.
 
----
+______________________________________________________________________
 
 ## 1. Tracing
 
@@ -17,25 +17,24 @@ Every request is part of a trace, per **W3C Trace Context**.
 
 - The request headers are **`traceparent`** and **`tracestate`**, read by the
   OpenTelemetry instrumentation. A malformed `traceparent` is never an error:
-  it is discarded and the server starts a new trace.
-  — `tracing.inbound-traceparent-continues-the-trace`,
+  it is discarded and the server starts a new trace. —
+  `tracing.inbound-traceparent-continues-the-trace`,
   `tracing.malformed-traceparent-starts-a-new-trace`
-- Every response carries **`traceresponse`**
-  (`00-<trace-id>-<span-id>-<flags>`, W3C Trace Context Level 2) when a
-  `TracerProvider` is configured.
-- Every error body carries the current trace id as the `traceId`
-  **extension member** (`null` when no span is recording). It is what makes a
-  user-reported error findable in the trace backend and the logs.
-  — `tracing.problem-body-carries-the-trace-id`
+- Every response carries **`traceresponse`** (`00-<trace-id>-<span-id>-<flags>`,
+  W3C Trace Context Level 2) when a `TracerProvider` is configured.
+- Every error body carries the current trace id as the `traceId` **extension
+  member** (`null` when no span is recording). It is what makes a
+  user-reported error findable in the trace backend and the logs. —
+  `tracing.problem-body-carries-the-trace-id`
 - Every structured log line emitted while handling the request carries
   `trace_id` and `span_id`.
-- **`X-Correlation-ID` is not read and not sent.** There is no house
-  correlation header; a caller that still sends one is ignored, and it is
-  never echoed. — `tracing.house-header-is-not-echoed`
+- **`X-Correlation-ID` is not read and not sent.** There is no house correlation
+  header; a caller that still sends one is ignored, and it is never echoed. —
+  `tracing.house-header-is-not-echoed`
 
 `rn_forge.web` never configures a `TracerProvider` or an exporter. The
-application does, or runs under `opentelemetry-instrument`; see
-`deployment.md`, "Logs and traces".
+application does, or runs under `opentelemetry-instrument`; see `deployment.md`,
+"Logs and traces".
 
 ## 2. Errors
 
@@ -53,17 +52,18 @@ application code runs — is an RFC 9457 problem.
   then is `title` the kit's own row title, since it is describing that URI.
 - `instance` is the request path.
 - **A 5xx `detail` never contains `str(exc)`.** It is a fixed generic string.
-  The real reason goes to the log. — `problem.unregistered-is-500-without-detail`
-- An exception with no registered row resolves to `internal-error`/500 by way
-  of an MRO walk, so a subclass inherits its base's row.
-  — `problem.registered-domain-conflict-is-409`
+  The real reason goes to the log. —
+  `problem.unregistered-is-500-without-detail`
+- An exception with no registered row resolves to `internal-error`/500 by way of
+  an MRO walk, so a subclass inherits its base's row. —
+  `problem.registered-domain-conflict-is-409`
 - A framework-raised 404 is a problem body too, not the framework's default
   page. — `problem.framework-404-is-a-problem-body`
 
 ### The standard slugs and status codes
 
 | Slug | Status | Raised by |
-| --- | --- | --- |
+| -- | -- | -- |
 | `bad-request` | 400 | a malformed precondition, cursor or idempotency key |
 | `unauthorized` | 401 | no credentials, or credentials that failed verification |
 | `forbidden` | 403 | valid credentials lacking the required scope or role |
@@ -79,12 +79,11 @@ application code runs — is an RFC 9457 problem.
 | `service-unavailable` | 503 | `ServiceUnavailable`, raised by the application |
 
 `TooManyRequests` and `ServiceUnavailable` (RFC 6585 §4, RFC 9110 §15.6.4) each
-take a `retry_after` in seconds, sent as the `Retry-After` header
-(RFC 9110 §10.2.3) — `problem.too-many-requests-carries-retry-after`,
-`problem.service-unavailable-carries-retry-after`. Enforcing a rate limit is
-not pykit's job: it is a gateway's, or a maintained library's (`slowapi`,
-`limits`); pykit only renders the response once the application decides to
-send one.
+take a `retry_after` in seconds, sent as the `Retry-After` header (RFC 9110
+§10.2.3) — `problem.too-many-requests-carries-retry-after`,
+`problem.service-unavailable-carries-retry-after`. Enforcing a rate limit is not
+pykit's job: it is a gateway's, or a maintained library's (`slowapi`, `limits`);
+pykit only renders the response once the application decides to send one.
 
 ### Validation errors
 
@@ -92,19 +91,19 @@ A `validation-error` body carries an `errors` extension: a list of
 `{"pointer": ..., "detail": ...}` — RFC 9457 §3's own validation example,
 `pointer` an **RFC 6901 JSON pointer**. Both frameworks produce the identical
 list for the identical failure — DRF's `{field: [messages]}` and pydantic's
-`loc`/`msg` list are both normalized, and nested serializers recurse rather
-than being dropped. — `problem.validation-errors-are-rfc6901-pointers`
+`loc`/`msg` list are both normalized, and nested serializers recurse rather than
+being dropped. — `problem.validation-errors-are-rfc6901-pointers`
 
 ### Exception-carried extension members
 
 A domain exception that wants extra members on its problem body implements
 `HasProblemExtensions.problem_extensions()`. `ProblemRegistry.build` merges the
-result beneath an explicit `extensions=` argument, and only for a row below
-500 — a 5xx body says nothing about the cause, so nothing an exception carries
+result beneath an explicit `extensions=` argument, and only for a row below 500
+— a 5xx body says nothing about the cause, so nothing an exception carries
 reaches the wire for one. An application does **not** get this by putting
 arbitrary context on `AppException.error_data`: that dict routinely carries
-credentials and internal identifiers and is never published automatically:
-the application chooses what to expose by implementing the protocol.
+credentials and internal identifiers and is never published automatically: the
+application chooses what to expose by implementing the protocol.
 
 ### Proving the exception table is total
 
@@ -121,10 +120,14 @@ An endpoint that mutates a versioned resource uses ETag preconditions.
   validator. A strong one is refused: a version counter does not assert
   byte-for-byte equality.
 - A write reads `If-Match`.
-- Absent on a route that requires it → **428**. — `concurrency.absent-if-match-on-required-route-is-428`
-- Present and stale → **412**, not 409. — `concurrency.stale-if-match-is-412-not-409`
-- `If-Match: *` matches any current representation and passes. — `concurrency.star-if-match-passes`
-- Present and unparseable → **400**, never a crash. — `concurrency.malformed-if-match-is-400`
+- Absent on a route that requires it → **428**. —
+  `concurrency.absent-if-match-on-required-route-is-428`
+- Present and stale → **412**, not 409. —
+  `concurrency.stale-if-match-is-412-not-409`
+- `If-Match: *` matches any current representation and passes. —
+  `concurrency.star-if-match-passes`
+- Present and unparseable → **400**, never a crash. —
+  `concurrency.malformed-if-match-is-400`
 
 Whether a given route *requires* a precondition is the application's choice,
 made per route and stated in its specification.
@@ -141,7 +144,7 @@ needs a total and a jumpable page index; where it is used, the specification
 says so and says why.
 
 | Direction | Name | Meaning |
-| --- | --- | --- |
+| -- | -- | -- |
 | request | `pageSize` | requested page size |
 | request | `pageToken` | opaque continuation token; absent means the first page |
 | response | `items` | the page's elements |
@@ -150,18 +153,19 @@ says so and says why.
 
 - **`pageSize` above the cap is clamped, never rejected.** A 422 here is a
   specification violation, and it is the single easiest divergence to
-  introduce on FastAPI (`Query(le=...)` does exactly the wrong thing).
-  — `pagination.oversized-page-size-is-clamped-not-rejected`
+  introduce on FastAPI (`Query(le=...)` does exactly the wrong thing). —
+  `pagination.oversized-page-size-is-clamped-not-rejected`
 - **`pageToken` is opaque.** A client must not parse, construct or persist it
   beyond the next request. It is not signed — a cursor is opaque, not secret.
-- **A malformed token is 400**, never 500. — `pagination.tampered-page-token-is-400`
+- **A malformed token is 400**, never 500. —
+  `pagination.tampered-page-token-is-400`
 - **`nextPageToken` is present and `null` on the last page**, not omitted, so a
-  generated client's type does not change shape between pages.
-  — `pagination.last-page-has-a-null-next-token`
+  generated client's type does not change shape between pages. —
+  `pagination.last-page-has-a-null-next-token`
 - `totalSize` is opt-in per endpoint, because a keyset query cannot cheaply
   count. Do not enable it by default to ease a migration from page numbers.
-- **Cursors are forward-only.** There is no `previousPageToken`, and no
-  response carries a token for the preceding page.
+- **Cursors are forward-only.** There is no `previousPageToken`, and no response
+  carries a token for the preceding page.
 - An `RFC 8288` `Link: <...>; rel="next"` header **may** be emitted alongside.
   It is additive; the body field is the contract.
 
@@ -170,37 +174,35 @@ comma-separated list of terms, each a field name on the wire optionally followed
 by `asc` (the default) or `desc`. Whitespace around a term is ignored.
 
 - **A list may sort by several fields.** Each term breaks the ties of the one
-  before it, in its own direction.
-  — `pagination.order-by-several-fields-sorts-by-each-in-turn`
+  before it, in its own direction. —
+  `pagination.order-by-several-fields-sorts-by-each-in-turn`
 - **Each field appears at most once.** A repeated field is 400, detail
   `orderBy names '{field}' more than once`. An empty term (`team,,score`, or a
-  trailing comma) is the malformed-term 400.
-  — `pagination.repeated-order-by-field-is-400`
-- **An endpoint lists the fields it can sort by.** An unlisted or malformed
-  term is 400, never ignored.
-  — `pagination.order-by-unlisted-field-is-400`
+  trailing comma) is the malformed-term 400. —
+  `pagination.repeated-order-by-field-is-400`
+- **An endpoint lists the fields it can sort by.** An unlisted or malformed term
+  is 400, never ignored. — `pagination.order-by-unlisted-field-is-400`
 - **The primary key breaks ties.** It is appended as a final term, in the last
   term's direction, unless it is already a term, so the order is total and a
   field need not be unique.
 - **`null` sorts last, in both directions.** Whatever a database does by
   default, an `asc` or a `desc` term puts the rows whose value is `null` after
   the rows that have one, the same on every stack and every database. A
-  nullable field can be sorted on.
-  — `pagination.nulls-sort-last-ascending`,
+  nullable field can be sorted on. — `pagination.nulls-sort-last-ascending`,
   `pagination.nulls-sort-last-descending`
 - **The page token binds the whole order.** It holds one sort value per term,
   plus the key and the canonical `orderBy` (`team,score desc`). A token
   presented under another `orderBy` is 400 `pageToken does not match orderBy`.
   — `pagination.order-by-descending-binds-the-token`,
   `pagination.token-under-a-different-order-by-is-400`
-- **The token resumes from every term.** The next page is the rows past the
-  last row's values, including within a tie and after a `null`.
-  — `pagination.first-page-carries-a-composite-token`,
+- **The token resumes from every term.** The next page is the rows past the last
+  row's values, including within a tie and after a `null`. —
+  `pagination.first-page-carries-a-composite-token`,
   `pagination.composite-token-resumes-within-a-tie`,
   `pagination.composite-token-resumes-after-a-null`
 - **A token whose number of values does not match the terms is 400**
-  `Malformed page token`.
-  — `pagination.token-with-the-wrong-number-of-values-is-400`
+  `Malformed page token`. —
+  `pagination.token-with-the-wrong-number-of-values-is-400`
 - **Sort values keep their JSON type** in the token: string, number, boolean or
   `null`. Dates and datetimes are ISO 8601 strings. A value that does not fit
   its column is 400 `Malformed page token`, never a 500.
@@ -209,28 +211,27 @@ by `asc` (the default) or `desc`. Whitespace around a term is ignored.
 
 Unsafe endpoints that a client may retry accept an `Idempotency-Key` header.
 
-- The specification says, per endpoint, whether the key is required or
-  optional. Where required and absent → **400**.
-- **The request body is hashed.** The same key with a different body is
-  **422** — `draft-ietf-httpapi-idempotency-key-header-07` §2.7, not a
-  silently-wrong replay. — `idempotency.same-key-different-body-is-422`
+- The specification says, per endpoint, whether the key is required or optional.
+  Where required and absent → **400**.
+- **The request body is hashed.** The same key with a different body is **422**
+  — `draft-ietf-httpapi-idempotency-key-header-07` §2.7, not a silently-wrong
+  replay. — `idempotency.same-key-different-body-is-422`
 - **A duplicate while the original request is still in flight is 409.** The
   store signals this distinctly from first sight (`IdempotencyKeyInFlight`,
   not a silent re-execution) — same section of the draft.
-- A replay returns the **stored status and body**, unchanged.
-  — `idempotency.replay-returns-the-stored-response`
+- A replay returns the **stored status and body**, unchanged. —
+  `idempotency.replay-returns-the-stored-response`
 - The claim is atomic — a uniqueness constraint or an atomic set-if-absent, not
   a check-then-insert — so two concurrent first-sight requests do not both
   execute.
-- Keys are namespaced by an opaque `scope`, so the same key on two endpoints,
-  or in two tenants, does not collide.
+- Keys are namespaced by an opaque `scope`, so the same key on two endpoints, or
+  in two tenants, does not collide.
 
-**The flow is framework-free.** `run_idempotent`/`run_idempotent_async` hold
-all of the above — safe-method bypass, claim, replay, complete, and the
-409/422 from the store — over `IdempotencyStore`/`AsyncIdempotencyStore`. Both
-stacks build on it: FastAPI's `idempotent` route decorator wraps the async
-twin; Django's `@idempotent` wraps the sync one, its public signature
-unchanged.
+**The flow is framework-free.** `run_idempotent`/`run_idempotent_async` hold all
+of the above — safe-method bypass, claim, replay, complete, and the 409/422 from
+the store — over `IdempotencyStore`/`AsyncIdempotencyStore`. Both stacks build
+on it: FastAPI's `idempotent` route decorator wraps the async twin; Django's
+`@idempotent` wraps the sync one, its public signature unchanged.
 
 ## 6. Health
 
@@ -241,43 +242,45 @@ Kubernetes deprecated `/healthz` in v1.16 in favour of them (kubernetes.io
 `deployment.md` for how each host maps its own probes onto liveness and
 readiness.
 
-- **`/livez` — liveness.** Returns 200 unconditionally as long as the process
-  is running. It touches no dependency. A liveness probe that checks the
-  database restarts a healthy process when the database blips.
-  `/healthz` is a deprecated alias of `/livez`, kept for hosts still probing
-  it. — `health.liveness-is-200`
+- **`/livez` — liveness.** Returns 200 unconditionally as long as the process is
+  running. It touches no dependency. A liveness probe that checks the database
+  restarts a healthy process when the database blips. `/healthz` is a
+  deprecated alias of `/livez`, kept for hosts still probing it. —
+  `health.liveness-is-200`
 - **`/readyz` — readiness.** Runs a named check per dependency and returns
   `{"status": ..., "checks": {...}}`.
-  - A check reports `pass`, `warn`, `fail` or **`skipped`**. `skipped` is for a
-    check group that is not configured or not yet implemented, so its absence
-    is visible rather than silent. This vocabulary comes from
-    `draft-inadarei-api-health-check` (expired at -06, 2022); pykit keeps
-    `checks` as an object keyed by name rather than the draft's
-    `application/health+json` arrays.
-  - A failing **required** check → **503**. — `health.required-failure-is-503`
-  - A failing non-required check degrades the reported `status` but the
-    endpoint stays **200**. — `health.optional-failure-is-200-degraded`
-  - A `warn` never changes the HTTP status.
-  - A check that raises is reported as a failure. `/readyz` never 500s: a
-    readiness endpoint that 500s tells a load balancer nothing.
-  - Each check runs with a 2-second timeout by default — below every host's
-    probe timeout — and a check still running at the timeout is reported
-    `fail` with `"timed out after Ns"`.
-  - The response is `application/json`, **not** problem+json, even at 503 — a
-    readiness report is the endpoint's normal representation and the 503 is its
-    verdict, not an error.
-  - The HTTP status is not repeated in the body.
+    - A check reports `pass`, `warn`, `fail` or **`skipped`**. `skipped` is for a
+      check group that is not configured or not yet implemented, so its absence
+      is visible rather than silent. This vocabulary comes from
+      `draft-inadarei-api-health-check` (expired at -06, 2022); pykit keeps
+      `checks` as an object keyed by name rather than the draft's
+      `application/health+json` arrays.
+    - A failing **required** check → **503**. — `health.required-failure-is-503`
+    - A failing non-required check degrades the reported `status` but the endpoint
+      stays **200**. — `health.optional-failure-is-200-degraded`
+    - A `warn` never changes the HTTP status.
+    - A check that raises is reported as a failure. `/readyz` never 500s: a
+      readiness endpoint that 500s tells a load balancer nothing.
+    - Each check runs with a 2-second timeout by default — below every host's
+      probe timeout — and a check still running at the timeout is reported
+      `fail` with `"timed out after Ns"`.
+    - The response is `application/json`, **not** problem+json, even at 503 — a
+      readiness report is the endpoint's normal representation and the 503 is
+      its verdict, not an error.
+    - The HTTP status is not repeated in the body.
 - Every host judges a probe by its **status code and response time only**, never
-  the body, so neither endpoint ever redirects (a trailing-slash 301 would mark
-  the instance unhealthy).
+  the body, so neither endpoint ever redirects (a trailing-slash 301 would
+  mark the instance unhealthy).
 
 ## 7. Authentication and authorization
 
 - **No credentials, or credentials that fail verification → 401**, with a
-  `WWW-Authenticate` challenge. — `auth.no-credentials-is-401-with-a-challenge`
+  `WWW-Authenticate` challenge. —
+  `auth.no-credentials-is-401-with-a-challenge`
 - **Valid credentials lacking the required scope or role → 403**, with **no**
-  challenge. A challenge here tells a browser to re-prompt for credentials that
-  were already correct. — `auth.insufficient-scope-is-403-without-a-challenge`
+  challenge. A challenge here tells a browser to re-prompt for credentials
+  that were already correct. —
+  `auth.insufficient-scope-is-403-without-a-challenge`
 - The challenge follows RFC 6750 §3 for Bearer and RFC 7617 for Basic, and is
   constructed rather than hand-written.
 - **The 401 body never says why verification failed.** Expired, bad signature
@@ -291,7 +294,8 @@ readiness.
 
 ## 8. Field casing
 
-**camelCase on the wire, `snake_case` in Python.** — `casing.response-bodies-are-camel-case`
+**camelCase on the wire, `snake_case` in Python.** —
+`casing.response-bodies-are-camel-case`
 
 This is the Google JSON Style Guide's rule, Microsoft's REST API Guidelines'
 rule, and what proto3's JSON mapping produces — which is also why AIP-158's
@@ -316,15 +320,15 @@ a guide enforces is a convention that holds until the first hurried endpoint.
 ## 9. OpenAPI
 
 The generated client is the real interface, so the schema is part of the
-contract and not a by-product. But **two compliant OpenAPI documents
-describing the same JSON are not required to be the same document** — OpenAPI
-*describes* an API; it does not *prescribe* one. What this kit holds identical
-across stacks is narrower than "the document": wire behaviour, always; a
-generated client's method names and declared error types; nothing about a
-generated client's model, page or enum type names.
+contract and not a by-product. But **two compliant OpenAPI documents describing
+the same JSON are not required to be the same document** — OpenAPI *describes*
+an API; it does not *prescribe* one. What this kit holds identical across stacks
+is narrower than "the document": wire behaviour, always; a generated client's
+method names and declared error types; nothing about a generated client's model,
+page or enum type names.
 
 | Layer | Identical across stacks? |
-| --- | --- |
+| -- | -- |
 | Wire behaviour: status codes, headers, body shapes | **Yes, required** |
 | Schema semantics: which JSON a schema accepts | **Yes**, when the application declares the same model |
 | Document text: component names, `operationId`s, nullability spelling, enum hoisting | **No, not a goal**, except `operationId` (below) |
@@ -333,35 +337,37 @@ generated client's model, page or enum type names.
   own default; nothing pins it.
 - The shared **non-generic** shapes are named identically in
   `components/schemas`: **`ProblemDetail`**, **`CheckResult`**,
-  **`HealthReport`**. A handler that builds an error body by hand is invisible to
-  schema collection, so each framework package injects `ProblemDetail`
-  explicitly — without it a generated TypeScript client has no error type at all.
-- **The paginated envelope's component name is not held identical.**
-  Left to themselves the two stacks disagree — pydantic mangles the type
-  parameters into `Page_OrderOut_`, drf-spectacular emits
-  `PaginatedOrderOutList` — and neither is renamed. A resource's wire *model*
-  (`OrderOut`) still carries the same name on both stacks; only its page
-  wrapper's name differs, and a generated client's page type was never going
-  to be identical across two different generators regardless.
+  **`HealthReport`**. A handler that builds an error body by hand is invisible
+  to schema collection, so each framework package injects `ProblemDetail`
+  explicitly — without it a generated TypeScript client has no error type at
+  all.
+- **The paginated envelope's component name is not held identical.** Left to
+  themselves the two stacks disagree — pydantic mangles the type parameters
+  into `Page_OrderOut_`, drf-spectacular emits `PaginatedOrderOutList` — and
+  neither is renamed. A resource's wire *model* (`OrderOut`) still carries the
+  same name on both stacks; only its page wrapper's name differs, and a
+  generated client's page type was never going to be identical across two
+  different generators regardless.
 - **One `operationId` convention across both stacks**, `<resource><Verb>` in
-  lowerCamelCase: `ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate` for
-  `PUT`, `ordersPartialUpdate` for `PATCH`, `ordersDelete`. `PUT` and `PATCH` get
-  distinct verbs so a resource serving both never produces a duplicate
-  `operationId`. This is the one piece of document text held identical, because
-  it is what a generated client's method names are made from — read from
-  `rn_forge.web.openapi.operation_id`, which both framework packages call
-  rather than deriving names themselves.
+  lowerCamelCase: `ordersList`, `ordersCreate`, `ordersGet`, `ordersUpdate`
+  for `PUT`, `ordersPartialUpdate` for `PATCH`, `ordersDelete`. `PUT` and
+  `PATCH` get distinct verbs so a resource serving both never produces a
+  duplicate `operationId`. This is the one piece of document text held
+  identical, because it is what a generated client's method names are made
+  from — read from `rn_forge.web.openapi.operation_id`, which both framework
+  packages call rather than deriving names themselves.
 - **An operation outside those six is a custom method, spelled
   [AIP-136](https://google.aip.dev/136)-style as `:action` on the resource it
   acts on**, and named `<resource><Action>`: `POST /orders/{orderId}:cancel` →
-  `ordersCancel`, `POST /orders:batchCreate` → `ordersBatchCreate`. The colon is
-  what makes the name derivable. Spelled as a plain path segment, nothing
-  distinguishes an action from a sub-collection — `POST /orders/{orderId}/cancel`
-  and `POST /orders/{orderId}/items` have the same shape — so that spelling
-  yields a mechanical `cancelCreate` and needs an explicit override
-  (`operation_id=` on FastAPI, `@extend_schema(operation_id=...)` on DRF).
-  On DRF the colon spelling is served by `rn_forge.django.drf.routers.CustomMethodRouter`;
-  stock routers cannot express it.
+  `ordersCancel`, `POST /orders:batchCreate` → `ordersBatchCreate`. The colon
+  is what makes the name derivable. Spelled as a plain path segment, nothing
+  distinguishes an action from a sub-collection —
+  `POST /orders/{orderId}/cancel` and `POST /orders/{orderId}/items` have the
+  same shape — so that spelling yields a mechanical `cancelCreate` and needs
+  an explicit override (`operation_id=` on FastAPI,
+  `@extend_schema(operation_id=...)` on DRF). On DRF the colon spelling is
+  served by `rn_forge.django.drf.routers.CustomMethodRouter`; stock routers
+  cannot express it.
 - `operationId` **must be unique across the document**; OpenAPI requires it, and
   a generator that meets a duplicate produces a broken client. drf-spectacular
   warns and appends a numeral; FastAPI does neither, so on that stack a
@@ -381,7 +387,7 @@ generated client's model, page or enum type names.
 ### What a generated client shares across stacks, and what it does not
 
 | Generated client | Same on both stacks? |
-| --- | --- |
+| -- | -- |
 | Method names (`operationId`) | **Yes** |
 | Declared error responses | **Yes** |
 | Model, page and enum type names | No |
@@ -390,77 +396,83 @@ generated client's model, page or enum type names.
 | Path-parameter names | Only when the application spells them the same |
 
 Forcing textual identity beyond this means post-processing each generator's
-output to normalize away its own idioms, which buys nothing until an API must
-be re-implemented on another stack behind a client that cannot change. If that
-need arises, the standard way to get it is spec-first — one owned OpenAPI
-document, each implementation contract-tested against it — not generator
-post-processing.
+output to normalize away its own idioms, which buys nothing until an API must be
+re-implemented on another stack behind a client that cannot change. If that need
+arises, the standard way to get it is spec-first — one owned OpenAPI document,
+each implementation contract-tested against it — not generator post-processing.
 
 ## 10. HTTP methods and status codes
 
 Unremarkable, and worth stating so it does not vary:
 
 | Situation | Status |
-| --- | --- |
+| -- | -- |
 | A successful read | 200 |
 | A successful create | 201, with `Location` |
 | A successful update | 200 with the representation, or 204 with no body |
 | A successful delete | 204; a soft-deleting resource answers 200 with the resource (§21) |
 | An accepted asynchronous operation | 202 |
 
-`PUT` replaces; `PATCH` is RFC 7396 JSON Merge Patch (`Content-Type:
-application/merge-patch+json`), and there is no field-mask parameter (AIP-134 is
-not adopted). A `DELETE` on an already-absent resource is
+`PUT` replaces; `PATCH` is RFC 7396 JSON Merge Patch
+(`Content-Type: application/merge-patch+json`), and there is no field-mask
+parameter (AIP-134 is not adopted). A `DELETE` on an already-absent resource is
 404, not 204 — an idempotent *outcome* is not the same as a silent one, and a
 client that deleted something twice usually wants to know.
 
 ### Merge patch
 
-The body of a merge patch is a partial copy of the resource: a member that is present sets the
-field, an absent member leaves it alone, objects merge recursively and an array is replaced
-whole. The merge runs on the representation the client would read, and the merged document is
-validated as a full update, so a patch never bypasses the serializer or the model. The shared
-implementation is `rn_forge.web.merge_patch`; each adapter only binds it.
+The body of a merge patch is a partial copy of the resource: a member that is
+present sets the field, an absent member leaves it alone, objects merge
+recursively and an array is replaced whole. The merge runs on the representation
+the client would read, and the merged document is validated as a full update, so
+a patch never bypasses the serializer or the model. The shared implementation is
+`rn_forge.web.merge_patch`; each adapter only binds it.
 
-Every stack evaluates a merge-patch request in this order, and the first failure answers:
+Every stack evaluates a merge-patch request in this order, and the first failure
+answers:
 
 | Step | Failure | Status |
-| --- | --- | --- |
+| -- | -- | -- |
 | 1. Media type is `application/merge-patch+json` | `UnsupportedMediaType`, with `Accept-Patch` | 415 |
 | 2. Precondition (`If-Match`), when the resource is versioned | absent and required / malformed / stale | 428 / 400 / 412 |
 | 3. Body is a JSON object | `InvalidMergePatch` | 422 |
 | 4. Merged document validates | field errors with pointers | 422 |
 
-The media type comes first because a body in the wrong language has no meaning to check. The
-precondition comes before the body, so a stale request is 412 whatever it says, and nothing is
-written.
+The media type comes first because a body in the wrong language has no meaning
+to check. The precondition comes before the body, so a stale request is 412
+whatever it says, and nothing is written.
 
-- A `PATCH` with another media type, `application/json` included, is **415** with `Accept-Patch:
-  application/merge-patch+json`. — `patch.json-content-type-is-415`
-- A stale `If-Match` is **412**, and nothing is written. — `patch.stale-if-match-is-412`,
-  `patch.failed-precondition-changes-nothing`
-- A body that is not a JSON object is **422** with detail `A merge patch must be a JSON object.`
-  — `patch.non-object-body-is-422`
+- A `PATCH` with another media type, `application/json` included, is **415**
+  with `Accept-Patch: application/merge-patch+json`. —
+  `patch.json-content-type-is-415`
+- A stale `If-Match` is **412**, and nothing is written. —
+  `patch.stale-if-match-is-412`, `patch.failed-precondition-changes-nothing`
+- A body that is not a JSON object is **422** with detail
+  `A merge patch must be a JSON object.` — `patch.non-object-body-is-422`
 - A merged document that fails validation is **422** with a pointer per field.
 
-**`null` at the top level.** A resource has a fixed set of fields, and a field cannot be absent
-from it, so a `null` member that names a field sets that field to `null`. A nullable field stores
-`null`. — `patch.null-sets-a-nullable-field-to-null`. A non-nullable field fails validation: 422,
-pointer at the field, detail `This field may not be null.` (`NULL_FIELD_DETAIL`).
-— `patch.null-on-a-non-nullable-field-is-422`. Inside a JSON-valued field RFC 7396 applies
-unchanged: `null` removes the member. — `patch.null-inside-a-json-value-removes-the-member`
+**`null` at the top level.** A resource has a fixed set of fields, and a field
+cannot be absent from it, so a `null` member that names a field sets that field
+to `null`. A nullable field stores `null`. —
+`patch.null-sets-a-nullable-field-to-null`. A non-nullable field fails
+validation: 422, pointer at the field, detail `This field may not be null.`
+(`NULL_FIELD_DETAIL`). — `patch.null-on-a-non-nullable-field-is-422`. Inside a
+JSON-valued field RFC 7396 applies unchanged: `null` removes the member. —
+`patch.null-inside-a-json-value-removes-the-member`
 
-**Nested objects and arrays.** Objects merge member by member and keep what the patch does not
-name. — `patch.nested-merge-keeps-absent-members`. An array is replaced whole.
-— `patch.array-is-replaced-whole`
+**Nested objects and arrays.** Objects merge member by member and keep what the
+patch does not name. — `patch.nested-merge-keeps-absent-members`. An array is
+replaced whole. — `patch.array-is-replaced-whole`
 
-**Ignored members.** A member naming a read-only or server-owned field (`id`, `version`, an audit
-field) or a field the resource does not have changes nothing, and the rest of the patch applies,
-so a client can send back a whole representation it read. — `patch.read-only-members-are-ignored`
+**Ignored members.** A member naming a read-only or server-owned field (`id`,
+`version`, an audit field) or a field the resource does not have changes
+nothing, and the rest of the patch applies, so a client can send back a whole
+representation it read. — `patch.read-only-members-are-ignored`
 
-**Media type per method.** Only `PATCH` accepts `application/merge-patch+json`, and a merge-patch
-route's `PATCH` accepts nothing else. `PUT` and `POST` keep `application/json`. A route opts in:
-`BaseModelViewSet` on Django, `merge_patch_body()` on FastAPI.
+**Media type per method.** Only `PATCH` accepts `application/merge-patch+json`,
+and a merge-patch route's `PATCH` accepts nothing else. `PUT` and `POST` keep
+`application/json`. A route opts in: `BaseModelViewSet` on Django,
+`merge_patch_body()` on FastAPI.
 
 ## 11. Request body size
 
@@ -494,8 +506,8 @@ An endpoint scheduled for removal announces it on every response.
 - **FastAPI** pairs the `deprecated(...)` dependency with the route's own
   `deprecated=True`, so the OpenAPI document marks the operation deprecated
   too.
-- **Django** pairs the `@deprecated(...)` view decorator with
-  drf-spectacular's `@extend_schema(deprecated=True)` for the same reason.
+- **Django** pairs the `@deprecated(...)` view decorator with drf-spectacular's
+  `@extend_schema(deprecated=True)` for the same reason.
 
 ## 13. Conditional GET
 
@@ -504,13 +516,12 @@ A `GET`/`HEAD` on a resource that carries an `ETag` honors an inbound
 
 - A weak match — `*`, or any validator in a comma-separated list, compared
   ignoring a leading `W/` on either side — answers **304**, with no body and
-  the `ETag` repeated. —
-  `concurrency.if-none-match-matches-is-304`
+  the `ETag` repeated. — `concurrency.if-none-match-matches-is-304`
 - A miss is an ordinary 200 carrying the current representation and `ETag`. —
   `concurrency.if-none-match-mismatch-is-200`
-- **Django** gets this from its own `ConditionalGetMiddleware`, which does
-  weak `If-None-Match` comparison against any response carrying an `ETag` — no
-  kit code is involved.
+- **Django** gets this from its own `ConditionalGetMiddleware`, which does weak
+  `If-None-Match` comparison against any response carrying an `ETag` — no kit
+  code is involved.
 
 ## 14. Service discovery
 
@@ -518,9 +529,9 @@ A `GET`/`HEAD` on a resource that carries an `ETag` honors an inbound
   `/openapi.json` and `/docs`. Document text is not held identical across
   stacks (§9); only the *paths* are, so a client always knows where to look.
 - **`/.well-known/api-catalog`** (RFC 9727) is an RFC 9264 linkset,
-  `application/linkset+json`, naming the OpenAPI document (`service-desc`,
-  RFC 8631), the docs UI (`service-doc`) and readiness (`status`).
-  — `discovery.api-catalog-is-an-rfc9264-linkset`
+  `application/linkset+json`, naming the OpenAPI document (`service-desc`, RFC
+  8631), the docs UI (`service-doc`) and readiness (`status`). —
+  `discovery.api-catalog-is-an-rfc9264-linkset`
 - **FastAPI** serves it by default (`AppConfig.api_catalog: bool = True`),
   answering `GET` and `HEAD`, excluded from the OpenAPI document itself.
 - **Django** serves it, plus the OpenAPI document and docs UI, from
@@ -540,38 +551,39 @@ The OWASP REST Security Cheat Sheet's response headers, on every response:
   sets it (see `deployment.md`).
 - **A route's own header wins.** Both stacks apply the preset with `setdefault`
   semantics.
-- **web** (the `security` extra, wrapping the `secure` library): `rn_forge.web.security.API_SECURITY_HEADERS`
-  and a pure-ASGI `SecurityHeadersMiddleware`.
-- **FastAPI** installs it by default (`AppConfig.security_headers: bool = True`, `AppConfig.hsts: bool = False`).
-- **Django**: `rn_forge.django.security.SECURITY_SETTINGS` configures Django's own
-  `SecurityMiddleware` and `XFrameOptionsMiddleware` for three of the five headers plus HSTS;
-  `rn_forge.django.security.SecurityHeadersMiddleware` adds the two Django has no setting for
-  (`Cache-Control`, the CSP directive).
+- **web** (the `security` extra, wrapping the `secure` library):
+  `rn_forge.web.security.API_SECURITY_HEADERS` and a pure-ASGI
+  `SecurityHeadersMiddleware`.
+- **FastAPI** installs it by default (`AppConfig.security_headers: bool = True`,
+  `AppConfig.hsts: bool = False`).
+- **Django**: `rn_forge.django.security.SECURITY_SETTINGS` configures Django's
+  own `SecurityMiddleware` and `XFrameOptionsMiddleware` for three of the five
+  headers plus HSTS; `rn_forge.django.security.SecurityHeadersMiddleware` adds
+  the two Django has no setting for (`Cache-Control`, the CSP directive).
 
 ## 16. CORS
 
-**The application owns its CORS policy** — which origins, whether there is
-one at all, and whether credentials are allowed. Neither stack picks a
-default.
+**The application owns its CORS policy** — which origins, whether there is one
+at all, and whether credentials are allowed. Neither stack picks a default.
 
 - **`EXPOSED_HEADERS`** is the one thing only this kit can supply: a browser
   cannot read `ETag`, `Link`, `Location`, `Retry-After`, `Deprecation`,
   `Sunset` or `Content-Disposition` (the file name of §17's exports and import
   templates) unless they are named in `Access-Control-Expose-Headers`,
   comma-joined in that order. `traceresponse` is not in this list — the
-  OpenTelemetry response propagator exposes it itself.
-  — `cors.exposed-headers-are-comma-joined`,
+  OpenTelemetry response propagator exposes it itself. —
+  `cors.exposed-headers-are-comma-joined`,
   `cors.export-exposes-content-disposition`
-- **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's
-  own `CORSMiddleware`. `None` installs nothing.
-- **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the
-  `cors` extra, `django-cors-headers`) sets `CORS_ALLOWED_ORIGINS` and
+- **FastAPI**: `AppConfig.cors: CorsPolicy | None = None`, over Starlette's own
+  `CORSMiddleware`. `None` installs nothing.
+- **Django**: `rn_forge.django.cors.cors_settings(allowed_origins)` (the `cors`
+  extra, `django-cors-headers`) sets `CORS_ALLOWED_ORIGINS` and
   `CORS_EXPOSE_HEADERS`; the application adds `corsheaders` to
   `INSTALLED_APPS` and `CorsMiddleware` to `MIDDLEWARE` itself.
 - `CorsPolicy(allow_credentials=True, allow_origins=("*",))` raises: browsers
   reject that combination outright.
 
----
+______________________________________________________________________
 
 ## 17. Tabular transfer and bulk operations
 
@@ -586,8 +598,7 @@ negotiation (RFC 9110 §12); a wildcard never selects a tabular format.
 export is not paginated. A result above the configured cap is a `422` problem
 whose `detail` names the cap. The response carries
 `Content-Disposition: attachment` with a quoted ASCII `filename` and a UTF-8
-`filename*` (RFC 6266, RFC 8187). —
-`transfer.export-is-negotiated-from-accept`,
+`filename*` (RFC 6266, RFC 8187). — `transfer.export-is-negotiated-from-accept`,
 `transfer.export-format-param-is-the-fallback`,
 `transfer.export-filename-carries-rfc8187-encoding`,
 `transfer.export-over-the-cap-is-422`
@@ -606,8 +617,8 @@ data rows than the configured cap is a `422` whose `detail` is
 `transfer.import-row-errors-are-422-pointers`,
 `transfer.import-without-a-file-is-422`, `transfer.import-over-the-cap-is-422`
 
-**Import template.** `GET /orders:importTemplate`, negotiated like an export,
-is a file whose header row is the import columns, so it round-trips through
+**Import template.** `GET /orders:importTemplate`, negotiated like an export, is
+a file whose header row is the import columns, so it round-trips through
 `:import`. `?prefill=true` adds the current filtered rows (AIP-136). —
 `transfer.import-template-is-the-import-columns`,
 `transfer.import-template-prefill-adds-the-rows`
@@ -628,8 +639,8 @@ the framework. A missing `requests` or `ids` member is a `422` at `/requests` or
 `/ids` with `This field is required.`. A member that is an empty list, or not a
 list, is a `422` at that pointer with `A non-empty list is required.`. A batch
 of more items than the configured cap is a `422` whose `detail` is
-`The batch exceeds the limit of {cap} rows.` and which has no `errors` member.
-— `transfer.batch-create-with-an-empty-list-is-422`,
+`The batch exceeds the limit of {cap} rows.` and which has no `errors` member. —
+`transfer.batch-create-with-an-empty-list-is-422`,
 `transfer.batch-create-over-the-cap-is-422`
 
 **Bulk delete.** `POST /orders:batchDelete` with `{"ids": [...]}` is all or
@@ -641,12 +652,12 @@ batch with `404`. — `transfer.batch-delete-with-unknown-id-is-404`,
 `ids` parameter; a comma-joined value is one id. It answers
 `200 {"books": [...]}` with one entry per requested id, in request order and
 repeating duplicates. Failures are `400` problems, as for `orderBy` and
-`pageToken` (§4): no non-empty `ids` value is `A non-empty ids parameter is
-required.`, and more ids than the configured cap is `The batch exceeds the
-limit of {cap} rows.`. The first id that does not exist within the caller's
-scope is a `404` reading `{Label} {id} not found`; an id outside the scope is a
-`404`, not a `403`, so `:batchGet` reveals nothing a `GET` would not. —
-`transfer.batch-get-returns-resources-in-request-order`,
+`pageToken` (§4): no non-empty `ids` value is
+`A non-empty ids parameter is required.`, and more ids than the configured cap
+is `The batch exceeds the limit of {cap} rows.`. The first id that does not
+exist within the caller's scope is a `404` reading `{Label} {id} not found`; an
+id outside the scope is a `404`, not a `403`, so `:batchGet` reveals nothing a
+`GET` would not. — `transfer.batch-get-returns-resources-in-request-order`,
 `transfer.batch-get-with-an-unknown-id-is-404`,
 `transfer.batch-get-without-ids-is-400`,
 `transfer.batch-get-over-the-cap-is-400`
@@ -661,18 +672,18 @@ the header's syntax and meaning, and a batch response carries no per-item
 
 1. `requests` missing, empty or not a list: `422` at `/requests`, as for
    `:batchCreate`.
-2. More items than the cap: the `422` of the shared list rules.
-3. An item with no `id`, a `patch` that is not a JSON object, or an `ifMatch`
+1. More items than the cap: the `422` of the shared list rules.
+1. An item with no `id`, a `patch` that is not a JSON object, or an `ifMatch`
    that is not a string: `422`, every failing item at `/requests/<i>/id`,
    `/requests/<i>/patch` or `/requests/<i>/ifMatch`.
-4. An id named twice: `422` at `/requests/<i>/id`, `Duplicate id in batch.`,
-   for each later occurrence.
-5. An id that does not exist within the caller's scope: `404`.
-6. A failed precondition on a versioned resource: `428`, `400` or `412`, the
+1. An id named twice: `422` at `/requests/<i>/id`, `Duplicate id in batch.`, for
+   each later occurrence.
+1. An id that does not exist within the caller's scope: `404`.
+1. A failed precondition on a versioned resource: `428`, `400` or `412`, the
    first in request order, with `errors[].pointer = "/requests/<i>/ifMatch"`.
-7. A merged document that is invalid: `422`, every failing item at
+1. A merged document that is invalid: `422`, every failing item at
    `/requests/<i>/patch/<field>`.
-8. An item the application denies: `403` at `/requests/<i>`.
+1. An item the application denies: `403` at `/requests/<i>`.
 
 Step 3 comes before the precondition, unlike a single `PATCH`, because the
 precondition is inside the body. A route may require preconditions, and then an
@@ -690,7 +701,7 @@ item without `ifMatch` is the `428`. An unversioned resource ignores `ifMatch`.
 (AIP-151, §19), with an `Idempotency-Key` (§5,
 `draft-ietf-httpapi-idempotency-key-header`).
 
----
+______________________________________________________________________
 
 ## 18. Timestamps and standard fields
 
@@ -702,8 +713,9 @@ item without `ifMatch` is the `428`. An unversioned resource ignores `ifMatch`.
 - **The audit fields are `createTime`, `updateTime`, `createdBy` and
   `updatedBy`** (AIP-148 for the first two; `createdBy`/`updatedBy` have no
   AIP equivalent). A resource that offers soft delete also carries the
-  read-only **`deleteTime`**, `null` while it is live (AIP-164, §21). `etag` and `requestId` are not fields: RFC 9110 headers
-  (§3) and the `Idempotency-Key` header (§5) govern.
+  read-only **`deleteTime`**, `null` while it is live (AIP-164, §21). `etag`
+  and `requestId` are not fields: RFC 9110 headers (§3) and the
+  `Idempotency-Key` header (§5) govern.
 - Errors are RFC 9457 problems, never `google.rpc.Status`.
 
 ## 19. Versioning, compatibility and operations
@@ -720,8 +732,8 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   field. Enforce it with an OpenAPI diff (`oasdiff`) in CI of the consuming
   repository; the kit does not run it.
 - **`validateOnly`** (AIP-163): a mutating method a UI previews accepts a
-  `validateOnly=true` query parameter, runs validation and every check the real
-  call would, and has no side effects. §17's import uses it.
+  `validateOnly=true` query parameter, runs validation and every check the
+  real call would, and has no side effects. §17's import uses it.
 - **Batch methods** are spelled `:batchCreate`, `:batchGet` and `:batchUpdate`
   (AIP-233, 231, 234); §17 gives their rules.
 - **Long-running operations** (AIP-151): the call returns `202` with a
@@ -730,15 +742,17 @@ already governs, or one that assumes gRPC, is not adopted (last bullet).
   `rn_forge.web.Operation` is that body: unfinished has neither outcome,
   finished has exactly one. Storing operations and running the work are the
   application's. — `operations.start-is-202-with-location`,
-  `operations.finished-carries-its-response`, `operations.failed-carries-a-problem`
+  `operations.finished-carries-its-response`,
+  `operations.failed-carries-a-problem`
 - **Partial responses** (AIP-157) are spelled `readMask`; §20 gives the rules.
 - **Soft delete** (AIP-164) is spelled `deleteTime`, `:undelete` and
   `showDeleted`; §21 gives the rules.
 - **Custom-method paths** (`:cancel`, `:import`, the batch spellings) put a
-  colon in the last path segment. It is valid in a URI, but a gateway or router
-  that treats `:` as a parameter marker must be configured to pass it through.
-- **Not adopted:** AIP-160 `filter` expressions (per-field query parameters
-  are the mechanism) and AIP-122 resource names (ids stay ids).
+  colon in the last path segment. It is valid in a URI, but a gateway or
+  router that treats `:` as a parameter marker must be configured to pass it
+  through.
+- **Not adopted:** AIP-160 `filter` expressions (per-field query parameters are
+  the mechanism) and AIP-122 resource names (ids stay ids).
 
 ## 20. Partial responses
 
@@ -748,18 +762,18 @@ of a collection and `:batchGet`. The mask is applied to the wire representation
 after serialization, so every stack validates and prunes identically.
 
 - **A path is made of wire field names** (camelCase, §8) joined by `.`.
-  Whitespace around a path is ignored. An absent or blank mask returns the whole
-  resource. — `read-mask.get-returns-only-the-masked-fields`,
+  Whitespace around a path is ignored. An absent or blank mask returns the
+  whole resource. — `read-mask.get-returns-only-the-masked-fields`,
   `read-mask.nested-path-selects-a-sub-field`
 - **`*` alone is the whole resource.** `*` combined with any other path is 400
-  `readMask '*' cannot be combined with other paths`.
-  — `read-mask.star-is-the-whole-resource`,
+  `readMask '*' cannot be combined with other paths`. —
+  `read-mask.star-is-the-whole-resource`,
   `read-mask.star-with-other-paths-is-400`
 - **Every path must name a declared field.** Each segment names a field of the
   declared object the previous one reaches. A path through a list of objects
   applies to every element. A path that names nothing, or goes inside a scalar
-  or a free-form JSON field, is 400 `Unknown readMask path '{path}'`, and so is
-  an empty path (`a,,b`). An unknown path is never ignored, as an unknown
+  or a free-form JSON field, is 400 `Unknown readMask path '{path}'`, and so
+  is an empty path (`a,,b`). An unknown path is never ignored, as an unknown
   `orderBy` field is not (§4). —
   `read-mask.path-through-a-list-applies-to-each-element`,
   `read-mask.unknown-path-is-400`,
@@ -768,12 +782,12 @@ after serialization, so every stack validates and prunes identically.
   `address`. — `read-mask.overlapping-paths-merge`
 - **No field is added implicitly.** A mask without `id` returns no `id`.
 - **What it applies to.** A collection `GET` masks each element of `items` and
-  leaves `nextPageToken` and `totalSize` alone. `:batchGet` masks each resource.
-  Writes, problem bodies and tabular exports ignore `readMask`. —
+  leaves `nextPageToken` and `totalSize` alone. `:batchGet` masks each
+  resource. Writes, problem bodies and tabular exports ignore `readMask`. —
   `read-mask.list-masks-each-item`, `read-mask.batch-get-masks-each-item`
-- **Preconditions are unchanged.** A masked `GET` carries the resource's
-  `ETag`, so a client can read a few fields and then send `If-Match` on a merge
-  patch (§10). — `read-mask.masked-read-keeps-the-etag`
+- **Preconditions are unchanged.** A masked `GET` carries the resource's `ETag`,
+  so a client can read a few fields and then send `If-Match` on a merge patch
+  (§10). — `read-mask.masked-read-keeps-the-etag`
 - **OpenAPI.** Each read operation that accepts a mask documents `readMask`.
   Response schemas are not changed: a client that sends a mask treats the
   response as a partial of the declared type.
@@ -783,12 +797,13 @@ fields of a representation, and `ReadMask.apply` prunes a body.
 
 ## 21. Soft delete
 
-A resource either offers soft delete or does not; it never offers both kinds of `DELETE`. A
-soft-deleting resource carries a read-only `deleteTime`, an RFC 3339 UTC timestamp (§18) that is
-`null` while the resource is live. It is a stored fact, independent of any `status` field.
+A resource either offers soft delete or does not; it never offers both kinds of
+`DELETE`. A soft-deleting resource carries a read-only `deleteTime`, an RFC 3339
+UTC timestamp (§18) that is `null` while the resource is live. It is a stored
+fact, independent of any `status` field.
 
 | Request | Resource live | Resource soft-deleted |
-| --- | --- | --- |
+| -- | -- | -- |
 | `GET /notes/{id}` | 200 | 200, with `deleteTime` set |
 | `GET /notes` | listed | omitted, unless `showDeleted=true` |
 | `DELETE /notes/{id}` | 200 with the resource, `deleteTime` set, `version` bumped | 404 |
@@ -796,41 +811,46 @@ soft-deleting resource carries a read-only `deleteTime`, an RFC 3339 UTC timesta
 | `PUT` / `PATCH /notes/{id}` | as today | 409 |
 | `POST /notes:batchDelete` | soft-deletes every id; 204 | the id is not found: 404 for the whole batch |
 
-- **`DELETE` answers 200 with the resource**, in place of §10's 204, so the client gets the
-  `deleteTime` and the new `ETag` without a second request. A hard-deleting resource still answers
-  204. — `soft-delete.delete-returns-the-resource-with-its-delete-time`
-- **A get returns a deleted resource**, as AIP-164 says, and a list leaves it out.
-  `showDeleted` is `true` or `1` (any case) to include deleted resources; any other value excludes
-  them. The page token does not bind it. —
-  `soft-delete.get-returns-a-deleted-resource`, `soft-delete.list-omits-deleted-resources`,
+- **`DELETE` answers 200 with the resource**, in place of §10's 204, so the
+  client gets the `deleteTime` and the new `ETag` without a second request. A
+  hard-deleting resource still answers 204. —
+  `soft-delete.delete-returns-the-resource-with-its-delete-time`
+- **A get returns a deleted resource**, as AIP-164 says, and a list leaves it
+  out. `showDeleted` is `true` or `1` (any case) to include deleted resources;
+  any other value excludes them. The page token does not bind it. —
+  `soft-delete.get-returns-a-deleted-resource`,
+  `soft-delete.list-omits-deleted-resources`,
   `soft-delete.show-deleted-lists-them`
-- **Deleting twice is a 404** reading `{Label} {id} not found`, as §10 says of any absent
-  resource. — `soft-delete.delete-of-a-deleted-resource-is-404`
+- **Deleting twice is a 404** reading `{Label} {id} not found`, as §10 says of
+  any absent resource. — `soft-delete.delete-of-a-deleted-resource-is-404`
 - **`:undelete` restores the resource.** On a live resource it is a 409 reading
-  `{Label} {id} is not deleted`. — `soft-delete.undelete-restores-the-resource`,
+  `{Label} {id} is not deleted`. —
+  `soft-delete.undelete-restores-the-resource`,
   `soft-delete.undeleted-resource-is-listed-again`,
   `soft-delete.undelete-of-a-live-resource-is-409`
-- **A write to a deleted resource is a 409** reading `{Label} {id} is deleted`; undelete it first.
-  — `soft-delete.write-to-a-deleted-resource-is-409`
-- **Preconditions** (§3) apply to `DELETE` and `:undelete` on a versioned resource in the order of a
-  merge patch: absent and required is 428, malformed is 400, stale is 412, and nothing is written.
-  Both answer with the new `ETag`. — `soft-delete.stale-if-match-is-412`,
+- **A write to a deleted resource is a 409** reading `{Label} {id} is deleted`;
+  undelete it first. — `soft-delete.write-to-a-deleted-resource-is-409`
+- **Preconditions** (§3) apply to `DELETE` and `:undelete` on a versioned
+  resource in the order of a merge patch: absent and required is 428,
+  malformed is 400, stale is 412, and nothing is written. Both answer with the
+  new `ETag`. — `soft-delete.stale-if-match-is-412`,
   `soft-delete.failed-precondition-deletes-nothing`
-- **`:batchDelete` stays 204** and soft-deletes every id. A resource deleted in a batch is still
-  readable. — `soft-delete.batch-delete-soft-deletes`,
+- **`:batchDelete` stays 204** and soft-deletes every id. A resource deleted in
+  a batch is still readable. — `soft-delete.batch-delete-soft-deletes`,
   `soft-delete.batch-deleted-resource-is-still-readable`
-- **Purging is out of scope.** The kit offers no route that purges a soft-deleted resource and does
-  not emit AIP-164's `expireTime`. Retention is the application's own authorized operation.
+- **Purging is out of scope.** The kit offers no route that purges a
+  soft-deleted resource and does not emit AIP-164's `expireTime`. Retention is
+  the application's own authorized operation.
 
-`rn_forge.web` supplies `ResourceDeleted` and `ResourceNotDeleted` (both 409), `SHOW_DELETED_PARAM`
-and `require_live`.
+`rn_forge.web` supplies `ResourceDeleted` and `ResourceNotDeleted` (both 409),
+`SHOW_DELETED_PARAM` and `require_live`.
 
 ## Conformance
 
 `rn_forge.web.conformance.CASES` is the executable form of this page. Each
 framework package ships a ~15-line driver that builds a small application over
-these primitives, runs every case through its own stack, and asserts against
-the table — never against the other stack's output, because two stacks
-agreeing on the wrong thing is not conformance.
+these primitives, runs every case through its own stack, and asserts against the
+table — never against the other stack's output, because two stacks agreeing on
+the wrong thing is not conformance.
 
 A rule stated here with no case in that table is treated as unfinished.

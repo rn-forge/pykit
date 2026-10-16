@@ -110,7 +110,7 @@ class DictUtils:
         if isinstance(current, list):
             _list = cast(list[Any], current)
             if not token.isdigit():
-                _LOGGER.warning(
+                _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                     "DictUtils.get | non_numeric_list_index={} | key_path={}",
                     token,
                     key_path,
@@ -337,7 +337,7 @@ class DictUtils:
     def _resolve_list_index(items: list[Any], token: str, key_path: str) -> int:
         """Validate *token* as an in-bounds numeric list index for `DictUtils.set`."""
         if not token.isdigit():
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "DictUtils.set | non_numeric_list_index={} | key_path={}",
                 token,
                 key_path,
@@ -345,7 +345,7 @@ class DictUtils:
             raise KeyError(f"Non-numeric index '{token}' for list in path '{key_path}'")
         index = int(token)
         if index >= len(items):
-            _LOGGER.warning(
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
                 "DictUtils.set | list_index_out_of_bounds={} | length={} | key_path={}",
                 index,
                 len(items),
@@ -407,7 +407,7 @@ class DictUtils:
     @staticmethod
     def _merge_override(target: dict[str, Any], override: dict[str, Any]) -> None:
         """Merge a single *override* dict's keys into *target*."""
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "DictUtils.merge | override_keys={} | target_size={}",
             sorted(override),
             len(target),
@@ -647,7 +647,7 @@ class ListUtils:
         reverse: bool = False,
     ) -> list[Any]:
         """Sort *items* in-place and return it."""
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ListUtils.sort: sorting list | length={} | reverse={}",
             len(items),
             reverse,
@@ -664,7 +664,7 @@ class ListUtils:
         """Return items matching *predicate* or equal to *predicate*."""
         if callable(predicate):
             result = [item for item in items if predicate(item)]
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "ListUtils.filter: predicate applied | input_length={} | output_length={}",
                 len(items),
                 len(result),
@@ -673,7 +673,7 @@ class ListUtils:
             return result
 
         result = [item for item in items if item == predicate]
-        _LOGGER.debug(
+        _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
             "ListUtils.filter: value matched | value={} | input_length={} | output_length={}",
             predicate,
             len(items),
@@ -694,7 +694,7 @@ class ListUtils:
             _LOGGER.trace("ListUtils.group_by: empty list")
             return {}
 
-        _LOGGER.debug("ListUtils.group_by: grouping list | length={}", len(items))
+        _LOGGER.debug("ListUtils.group_by: grouping list | length={}", len(items))  # noqa: PLE1205  # brace-style log format
         sorted_items = sorted(items, key=key_fn)
         grouped: dict[str, Any] = {
             key: [value_fn(item) if value_fn else item for item in group]
@@ -704,14 +704,14 @@ class ListUtils:
 
         if group_fn:
             result = {key: group_fn(value) for key, value in grouped.items()}
-            _LOGGER.debug(
+            _LOGGER.debug(  # noqa: PLE1205  # brace-style log format
                 "ListUtils.group_by: group function applied | groups={}",
                 list(result.keys()),
             )
             _LOGGER.trace("ListUtils.group_by: result={}", result)
             return result
 
-        _LOGGER.debug("ListUtils.group_by: complete | groups={}", list(grouped.keys()))
+        _LOGGER.debug("ListUtils.group_by: complete | groups={}", list(grouped.keys()))  # noqa: PLE1205  # brace-style log format
         return grouped
 
 

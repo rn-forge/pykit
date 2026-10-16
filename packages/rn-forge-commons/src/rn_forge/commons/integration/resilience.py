@@ -13,13 +13,12 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from email.utils import parsedate_to_datetime
-from typing import Any
+from typing import Any, Self
 
 import httpx
 import purgatory
 import stamina
 from purgatory.domain.model import OpenedState
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
 
@@ -250,7 +249,7 @@ class ResilientAsyncHttpClient:
                         response = await self._client.request(method, url, **kwargs)
                         self._rate_limiter.update_from_headers(response.headers)
                         response.raise_for_status()
-                assert response is not None  # noqa: S101 - stamina guarantees this on success
+                assert response is not None
                 return response
         except OpenedState as exc:
             raise CircuitOpenError(f"Circuit {circuit_key!r} is open") from exc
@@ -279,7 +278,7 @@ class ResilientAsyncHttpClient:
         """Close the underlying ``httpx.AsyncClient``."""
         await self._client.aclose()
 
-    async def __aenter__(self) -> ResilientAsyncHttpClient:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *exc: object) -> None:
@@ -294,7 +293,7 @@ class ResilientAsyncHttpClient:
         self._on_state_change(name, old_state, new_state)
 
     def _log_state_change(self, name: str, old_state: str, new_state: str) -> None:
-        _LOGGER.warning(
+        _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
             "ResilientAsyncHttpClient circuit state change | name={} | {} -> {}",
             name,
             old_state,
