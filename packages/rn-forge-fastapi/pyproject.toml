@@ -67,7 +67,7 @@ modules = ["rn_forge.fastapi"]
 transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]
-addopts = "-ra --import-mode=importlib"
+addopts = "-ra --import-mode=importlib -m 'not scaffold'"
 markers = [
   "unit: fast isolated tests",
   "scaffold: installs built wheels into a scaffolded application (slow)",
