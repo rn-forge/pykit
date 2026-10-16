@@ -18,18 +18,17 @@ are deferred until a trigger fires.
 package contents. [ADR-0011](../../../adr/ADR-0011.md) records the rule and the
 adapter structure.
 
-E15 and [E13](../E13-auth/index.md) divide the auth work. E15 creates the
-`rn-forge-auth` package and moves existing code into it. E13 owns new auth
-behaviour: the adapters, the session and HTTP surface, authorization policy and
-the removal of the locally issued JWT flows. New adapter implementations are
-deliberately outside E15.
+[E13](../E13-auth/index.md) owns all of the auth work. Its
+[F13.2](../E13-auth/F13.2-auth-package.md) creates the `rn-forge-auth` package
+under this epic's rule and adapter structure, and the rest of E13 adds the
+adapters in the same release. New adapter implementations are deliberately
+outside E15.
 
 [Back to the work index](../../index.md)
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | Active |
-| [F15.2 — rn-forge-auth package](F15.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | New |
+| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | Closed |
 | [F15.3 — rn-forge-data package](F15.3-data-package.md) | Create the package and move the Excel and pandas code into it. | Closed |
 | [F15.4 — Domain errors in commons](F15.4-domain-errors.md) | Move `VersionConflict` and `DomainConflict` to commons so the ORM packages need no web import. | New |
 | [F15.5 — Framework-neutral messaging core](F15.5-neutral-messaging.md) | Split the outbox and inbox loops from their Django models. | New |

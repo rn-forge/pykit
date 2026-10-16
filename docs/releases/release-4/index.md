@@ -1,27 +1,22 @@
-# Release 4 — Authentication, package boundaries and kiln readiness
+# Release 4 — kiln readiness
 
 |  |  |
 | -- | -- |
 | **Status** | in progress |
 | **Start Date** | 2026-10-13 |
 
-Standards-based authentication and authorization for pykit web applications
-([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
-(F13.1), then the features it produces — the login adapters, the session and
-HTTP surface for Django and FastAPI, authorization context and resource policy,
-and the removal of the locally issued JWT flows.
+Make pykit ready for kiln to render
+([E16](../../specs/epics/E16-kiln-adoption/index.md)). The workspace CI planner
+moves into a new `rn-forge-devops` package that kiln's generated CI can reach
+(F16.1), and pykit passes the shared standard on current lint and type tools,
+mdformat and Keep a Changelog (F16.2).
 
-Package boundaries ([E15](../../specs/epics/E15-package-boundaries/index.md)):
-the rule for when a part of commons becomes a package, the `rn-forge-auth`
-package and the existing auth code moved into it (F15.2), and the
-`rn-forge-data` package for the Excel and pandas helpers (F15.3). Doing both in
-one release gives Django and FastAPI one breaking change.
-
-kiln readiness ([E16](../../specs/epics/E16-kiln-adoption/index.md)): the
-workspace CI planner moves into a new `rn-forge-devops` package (F16.1), and
-pykit passes the shared standard on current lint and type tools, mdformat and
-Keep a Changelog (F16.2). The cutover onto kiln (F16.3) waits for kiln's
-release-1 and is not in this release.
+The package boundaries kiln renders are settled too
+([E15](../../specs/epics/E15-package-boundaries/index.md)): the rule for when a
+part of commons becomes a package (F15.1), and the `rn-forge-data` package for
+the Excel and pandas helpers (F15.3). The cutover onto kiln (F16.3) and
+authentication ([E13](../../specs/epics/E13-auth/index.md)) are in
+[Release 5](../release-5/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -38,9 +33,7 @@ release-1 and is not in this release.
 
 | Feature | Epic | State |
 | -- | -- | -- |
-| [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
-| [F15.1](../../specs/epics/E15-package-boundaries/F15.1-package-boundary-rule.md) | E15 | Active |
-| [F15.2](../../specs/epics/E15-package-boundaries/F15.2-auth-package.md) | E15 | New |
+| [F15.1](../../specs/epics/E15-package-boundaries/F15.1-package-boundary-rule.md) | E15 | Closed |
 | [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | Closed |
 | [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Active |
 | [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | Closed |
@@ -53,12 +46,10 @@ release-1 and is not in this release.
    changelog and all Markdown, which are the files the moves touch. It has no
    predecessor.
 1. **F16.1 in parallel.** It adds a package and touches `main.yml` and the
-   runbooks. `rn-forge-devops` 0.1.0 is tagged as soon as it closes, ahead of
-   the cut, because kiln's F6.4 waits on it.
-1. **F13.1 and F15.1 in parallel.** These are decisions with no code.
-1. **F15.3** after F15.1 and F16.2. **F15.2** after F13.1, F15.1 and F16.2.
-   E13's implementation features follow F15.2, so the adapters are written
-   inside `rn-forge-auth`.
+   runbooks. kiln's F6.4 waits on the `rn-forge-devops-v0.1.0` tag.
+1. **F15.1** in parallel. It is a decision with no code, plus its import
+   contracts.
+1. **F15.3** after F15.1 and F16.2.
 
 ## Decisions
 
@@ -70,44 +61,42 @@ release-1 and is not in this release.
 
 ## Breaking changes
 
-Planned until the decisions behind them are accepted:
+- `rn-forge-commons` 0.6.0 loses its `excel` and `pandas` extras and the code
+  behind them, which moved to the new `rn-forge-data` 0.1.0.
+- `rn-forge-django` 0.5.0 repoints its `transfer` and `fixtures` extras to
+  `rn-forge-data`; `transfer` no longer pulls `django-import-export[xlsx]`.
+- `rn-forge-fastapi` 0.3.0 repoints its `transfer` extra to `rn-forge-data`.
 
-- New packages `rn-forge-auth` and `rn-forge-data`, each at 0.1.0.
-- `rn-forge-commons` loses its `auth`, `excel` and `pandas` extras and the code
-  behind them.
-- `rn-forge-web` loses the auth types it holds and its `auth` extra, and keeps
-  the wire contract. This follows E13's
-  [package placement](../../specs/epics/E13-auth/design.md#package-placement).
-- `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc`, `transfer` and
-  `fixtures` extras to the new packages.
-
-Not breaking: the new package `rn-forge-devops` 0.1.0 (F16.1) ships on its own
-tag before the cut. It depends on no other rn-forge package, so the cut does not
-re-release it.
-
-The removal of Django's locally issued JWT flows is E13's change and is listed
-here once its feature exists.
+Every internal pin to `rn-forge-commons` stays at `rn-forge-commons-v0.5.0`, so
+`rn-forge-web`, `rn-forge-cli` and `rn-forge-tooling` are not re-released.
+`rn-forge-data` needs nothing from commons that 0.5.0 lacks. Not breaking: the
+new package `rn-forge-devops` 0.1.0 (F16.1) depends on no other rn-forge
+package.
 
 ## Progress
 
-Started 2026-10-13. F13.1 is settling the design's open questions; E13's
-implementation features are added to this release once it closes. E15's F15.1 to
-F15.3 and E16's F16.1 and F16.2 are scheduled on it, in the order above.
+Started 2026-10-13. F16.2, F15.1 and F15.3 are closed, and ADR-0011 and ADR-0012
+are accepted. F16.1's code is done (S16.1.2); its last story, S16.1.3, closes
+when the merge to `main` publishes `rn-forge-devops-v0.1.0`. The version bumps
+are prepared: `rn-forge-commons` 0.6.0, `rn-forge-data` 0.1.0, `rn-forge-devops`
+0.1.0, `rn-forge-django` 0.5.0 and `rn-forge-fastapi` 0.3.0. What remains is the
+merge to `main`, CI including the Sonar gate, and the post-merge checks. F16.3
+moved to Release 5.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F15\.|S15\.|F16\.|S16\.'
+git log --format='%h %ad %s' --date=short -E --grep='F15\.[13]|S15\.[13]\.|F16\.[12]|S16\.[12]\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F15.1 to F15.3,
-  F16.1 and F16.2.
-- The design's proposed decisions are accepted as ADRs, including ADR-0011 and
-  ADR-0012.
+- Every feature on this page's Scope is `Closed`: F15.1, F15.3, F16.1 and F16.2.
+- `rn-forge-devops-v0.1.0` and the other tags in Shipped exist with published
+  GitHub Releases, and the external install job passed for each.
+- ADR-0011 and ADR-0012 are accepted.
 - `docs/_update_board.sh --check` passes.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
 

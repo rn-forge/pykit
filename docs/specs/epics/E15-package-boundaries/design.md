@@ -146,12 +146,13 @@ flowchart BT
 ```
 
 The extra names in the target map are illustrative.
-[F15.2](F15.2-auth-package.md) and [F15.3](F15.3-data-package.md) settle them.
+[F13.2](../E13-auth/F13.2-auth-package.md) and [F15.3](F15.3-data-package.md)
+settle them.
 
 ## rn-forge-auth contents
 
 [E13's package placement](../E13-auth/design.md#package-placement) decides why
-auth is a separate package. This section lists what F15.2 moves.
+auth is a separate package. This section lists what E13's F13.2 moves.
 
 | From | Moves to `rn-forge-auth` |
 | -- | -- |
@@ -383,10 +384,10 @@ The owner answered these on 2026-10-15, in
   can move into the base in a later breaking release.
 - **Is `rn-forge-auth`'s JWT verification core or the `oidc` extra?** The `oidc`
   extra, so the core stays dependency-free and follows the adapter structure.
-- **Order of F15.2 and E13's adapter features.** F15.2 first, after
+- **Order of F13.2 and E13's adapter features.** F13.2 first, after
   [F13.1](../E13-auth/F13.1-auth-design.md) settles placement, so the adapters
   are written inside the package.
-- **Does F15.4 join release 4 if E13 already reshapes web?** Yes in that case,
+- **Does F15.4 join release 5 if E13 already reshapes web?** Yes in that case,
   as one move. Otherwise it stays deferred.
 - **Package versions.** `0.1.0` for the new packages, and breaking bumps for
   commons, web, django and fastapi.

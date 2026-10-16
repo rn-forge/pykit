@@ -11,7 +11,8 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 4 — Authentication, package boundaries and kiln readiness](../releases/release-4/index.md) | in progress | 2 Active · 2 New · 2 Closed |
+| [Release 5 — kiln adoption and authentication](../releases/release-5/index.md) | planned | 3 New |
+| [Release 4 — kiln readiness](../releases/release-4/index.md) | in progress | 1 Active · 3 Closed |
 | [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | shipped (2026-10-12) | 8 Closed |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |
 | [Release 1 — the first coordinated tags](../releases/release-1/index.md) | shipped (2026-09-28) | 9 Closed |
@@ -19,12 +20,6 @@ and feature pages, and must not be edited by hand.
 ## Backlog
 
 Features with no Iteration, by State and epic.
-
-### New
-
-| Epic | Features |
-| -- | -- |
-| [E16 — kiln adoption](epics/E16-kiln-adoption/index.md) | [F16.3](epics/E16-kiln-adoption/F16.3-cutover.md) |
 
 ### Deferred
 
@@ -49,8 +44,9 @@ Ideas not yet agreed as work are parked in the [ideas list](ideas.md).
 rules; this is the short form.
 
 - **Taxonomy.** Epic `E<n>` → feature `F<n>.<m>` → story `S<n>.<m>.<k>` (an ADO
-  User Story). IDs are permanent. This maps 1:1 to Azure DevOps's Agile
-  process; see `specs/_structure.md`'s
+  User Story). IDs are permanent once a commit names them or work starts; a
+  `New`, uncommitted item that moves takes its new parent's next ID. This maps
+  1:1 to Azure DevOps's Agile process; see `specs/_structure.md`'s
   [Tracker mapping](_structure.md#tracker-mapping).
 - **State.** `New`, `Active`, `Closed`, or `Removed` (retired in place, with a
   reason). A feature tagged `deferred` is not scheduled and carries entry

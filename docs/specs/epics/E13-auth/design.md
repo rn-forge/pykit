@@ -768,8 +768,7 @@ Doing this before more applications adopt release-1 keeps that cost small. The
 `.importlinter` layers contract gains `rn_forge.auth` between the framework
 packages and `rn_forge.web`. [ADR-0011](../../../adr/ADR-0011.md) sets the
 structure of the package, a dependency-free core with adapters behind extras,
-and [F15.2](../E15-package-boundaries/F15.2-auth-package.md) creates it and does
-the move.
+and [F13.2](F13.2-auth-package.md) creates it and does the move.
 
 ## Package responsibilities
 

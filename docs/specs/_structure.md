@@ -254,7 +254,12 @@ This maps 1:1 to Azure DevOps's Agile process, so the templates port directly:
 Epic and Feature keep their names; a story maps to a User Story. See
 [Tracker mapping](#tracker-mapping) for the field-by-field correspondence.
 
-- IDs are permanent: never renumber; a moved story keeps its ID. Gaps are fine.
+- An ID is permanent once a commit names it or the item is `Active` or `Closed`:
+  from then on it is never renumbered, and a moved story keeps its ID. Gaps
+  are fine.
+- A `New` item that no commit names takes its new parent's next free ID when it
+  moves to another epic or feature, and its stories are renumbered with it
+  ([Moving work](#lifecycle)). Its old ID is left as a gap, not reused.
 - Work no longer needed is retired in place, never deleted and never renumbered:
   a retired story's heading, a retired feature's row in its epic's feature
   table, and a retired epic's line on the board all stay, with State `Removed`
@@ -373,6 +378,18 @@ dropped idea is deleted.
    deleted.
 1. An answered open question becomes an ADR, or a rejected option recorded on
    the feature under *Considered and rejected*; the question is then removed.
+
+**Moving work:** to move a feature to another epic, or a story to another
+feature, first check that it can still be renumbered:
+
+```bash
+git log --oneline -E --grep='<old ID>'   # must print nothing
+```
+
+If it prints nothing and the item is `New`, rename it to the next free ID under
+its new parent (feature file, heading, stories and every link and mention), and
+set `Parent`. Otherwise it keeps its ID under the new parent. Run
+`docs/_update_board.sh` either way.
 
 **Deferred work:** do not start or elaborate an epic or feature tagged
 `deferred` unless the owner asks. When its entry criteria hold, drop the
