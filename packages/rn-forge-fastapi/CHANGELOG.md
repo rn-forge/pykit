@@ -5,6 +5,12 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `FastApiApp` turns off FastAPI's native tracing (0.142 and later) unless the
+  application passes `telemetry=`, so `AppConfig(tracing=False)` records no
+  server spans.
+
 ## [0.3.0] - 2026-10-16
 
 ### Changed
