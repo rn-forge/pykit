@@ -33,14 +33,18 @@ and the framework adapters ship together.
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | New |
+| [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | New |
 
 <!-- scope:end -->
 
 ## Order
 
-1. **F16.3 and F13.1 first, in parallel.** F16.3 cuts pykit over onto kiln; its
-   stories are written once kiln's release-1 tags exist. F13.1 is a decision
-   with no code, and settles the package placement F13.2 follows.
+1. **F16.4 and F13.1 first, in parallel.** F16.4 fixes the two member suites
+   that fail a member-directory run, so the cutover changes tooling only.
+   F13.1 is a decision with no code, and settles the package placement F13.2
+   follows.
+1. **F16.3** after F16.4. It cuts pykit over onto kiln; its stories are written
+   once kiln's release-1 tags exist.
 1. **F13.2** after F16.3 and F13.1. The package joins the kiln-managed workspace
    F16.3 sets up.
 1. E13's implementation features follow F13.2, so the adapters are written
@@ -77,7 +81,7 @@ implementation features are added to this release once it closes.
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.3|S16\.3\.'
+git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.[34]|S16\.[34]\.'
 ```
 
 ## Exit criteria
