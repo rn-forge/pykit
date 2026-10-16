@@ -11,7 +11,7 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 5 — kiln adoption and authentication](../releases/release-5/index.md) | planned | 4 New |
+| [Release 5 — kiln adoption and authentication](../releases/release-5/index.md) | planned | 3 New · 1 Closed |
 | [Release 4 — kiln readiness](../releases/release-4/index.md) | shipped (2026-10-16) | 4 Closed |
 | [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | shipped (2026-10-12) | 8 Closed |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |

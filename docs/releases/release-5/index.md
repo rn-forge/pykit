@@ -33,7 +33,7 @@ and the framework adapters ship together.
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | New |
-| [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | New |
+| [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | Closed |
 
 <!-- scope:end -->
 
@@ -71,7 +71,8 @@ here once its feature exists.
 
 ## Progress
 
-Not started. Release 4 shipped 2026-10-16, publishing the
+F16.4 closed 2026-10-16: every member passes its own suite, and `FastApiApp`
+turns FastAPI's native tracing off. Release 4 shipped 2026-10-16, publishing the
 `rn-forge-devops-v0.1.0` tag kiln's F6.4 waits on. F16.3 waits for kiln's
 release-1 tags. F13.1 is settling the design's open questions; E13's
 implementation features are added to this release once it closes.
