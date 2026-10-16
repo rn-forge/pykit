@@ -67,9 +67,10 @@ here once its feature exists.
 
 ## Progress
 
-Not started. F16.3 waits for kiln's release-1 tags. F13.1 is settling the
-design's open questions; E13's implementation features are added to this release
-once it closes.
+Not started. Release 4 shipped 2026-10-16, publishing the
+`rn-forge-devops-v0.1.0` tag kiln's F6.4 waits on. F16.3 waits for kiln's
+release-1 tags. F13.1 is settling the design's open questions; E13's
+implementation features are added to this release once it closes.
 
 ## Commits
 

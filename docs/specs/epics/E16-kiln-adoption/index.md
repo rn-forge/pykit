@@ -18,7 +18,7 @@ yet, and then the cutover. Acceptance is checked inside pykit
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | Active |
+| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | Closed |
 | [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | Closed |
 | [F16.3 — Cut over onto kiln](F16.3-cutover.md) | `kiln init` as `python-lib`, generated CI and tasks, and the files pykit stops owning. | New |
 
