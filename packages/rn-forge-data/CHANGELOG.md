@@ -5,6 +5,8 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-16
+
 ### Added
 
 - The `rn-forge-data` package: Excel and tabular data helpers. The core,

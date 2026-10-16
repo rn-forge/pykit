@@ -5,6 +5,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-16
+
 ### Removed
 
 - Breaking: `rn_forge.commons.data.excel` and `rn_forge.commons.data.pandas`,

@@ -17,7 +17,7 @@ URL.
 ```toml
 [project]
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.6.0#subdirectory=packages/rn-forge-commons",
 ]
 ```
 

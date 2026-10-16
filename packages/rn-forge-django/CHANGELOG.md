@@ -5,6 +5,8 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-16
+
 ### Changed
 
 - Breaking: the `transfer` extra names `rn-forge-data` and no longer pulls

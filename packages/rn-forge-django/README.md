@@ -16,7 +16,7 @@ and
 Not on PyPI; a release is a git tag. Declare a pinned direct URL:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.4.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
 ```
 
 Application code imports `rn_forge.web` directly (wire models, pagination,

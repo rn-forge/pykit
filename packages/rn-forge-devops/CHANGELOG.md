@@ -5,6 +5,8 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-16
+
 ### Added
 
 - The `rn-forge-devops` package: CI and release automation for rn-forge

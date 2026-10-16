@@ -5,6 +5,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
 ### Changed
 
 - The `transfer` extra names `rn-forge-data` in place of

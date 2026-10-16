@@ -2020,7 +2020,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-commons"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "packages/rn-forge-commons" }
 dependencies = [
     { name = "dacite" },
@@ -2233,7 +2233,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },
@@ -2379,7 +2379,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-fastapi"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },

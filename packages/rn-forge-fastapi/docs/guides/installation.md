@@ -8,7 +8,7 @@ tag** on this repository, and every consumer declares it as a pinned direct URL:
 ```toml
 [project]
 dependencies = [
-  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.2.0#subdirectory=packages/rn-forge-fastapi",
+  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.3.0#subdirectory=packages/rn-forge-fastapi",
 ]
 ```
 
