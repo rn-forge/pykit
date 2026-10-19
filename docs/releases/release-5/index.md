@@ -4,7 +4,7 @@
 | -- | -- |
 | **Status** | planned |
 
-pykit cuts over onto kiln's `python-lib` archetype (F16.3,
+pykit cuts over onto kiln's `python-lib` archetype (F16.5, F16.3,
 [E16](../../specs/epics/E16-kiln-adoption/index.md)), then gains standards-based
 authentication and authorization for its web applications
 ([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
@@ -32,8 +32,9 @@ and the framework adapters ship together.
 | -- | -- | -- |
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
-| [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | New |
+| [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | Closed |
+| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | New |
 
 <!-- scope:end -->
 
@@ -43,8 +44,10 @@ and the framework adapters ship together.
    that fail a member-directory run, so the cutover changes tooling only.
    F13.1 is a decision with no code, and settles the package placement F13.2
    follows.
-1. **F16.3** after F16.4. It cuts pykit over onto kiln; its stories are written
-   once kiln's release-1 tags exist.
+1. **F16.5** after F16.1, in parallel with the above. It makes `rn-forge-devops`
+   meet kiln's CI contract and releases `rn-forge-devops-v0.2.0`.
+1. **F16.3** after F16.4 and F16.5, and once kiln's release-1 tags exist. It
+   cuts pykit over onto kiln.
 1. **F13.2** after F16.3 and F13.1. The package joins the kiln-managed workspace
    F16.3 sets up.
 1. E13's implementation features follow F13.2, so the adapters are written
@@ -74,21 +77,22 @@ here once its feature exists.
 F16.4 closed 2026-10-16: every member passes its own suite, and `FastApiApp`
 turns FastAPI's native tracing off. Release 4 shipped 2026-10-16, publishing the
 `rn-forge-devops-v0.1.0` tag kiln's F6.4 waits on. F16.3 waits for kiln's
-release-1 tags. F13.1 is settling the design's open questions; E13's
-implementation features are added to this release once it closes.
+release-1 tags and for F16.5's `rn-forge-devops-v0.2.0`. F13.1 is settling the
+design's open questions; E13's implementation features are added to this release
+once it closes.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.[34]|S16\.[34]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.[345]|S16\.[345]\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F13.1 and
-  F13.2.
+- Every feature on this page's Scope is `Closed`, including F16.3, F16.5, F13.1
+  and F13.2.
 - The design's proposed decisions are accepted as ADRs.
 - `docs/_update_board.sh --check` passes.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
