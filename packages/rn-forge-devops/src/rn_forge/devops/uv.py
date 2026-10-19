@@ -217,7 +217,8 @@ def _external_requirements(
 
 def smoke(workspace: Workspace, package_name: str, extra: str) -> int:
     """Install `package_name` with only `extra` from wheels built from this checkout
-    into a clean venv, then import the modules its `[tool.workspace-ci.smoke]` lists.
+    into a clean venv, then import the modules its `[tool.workspace-ci.smoke]` lists,
+    or the package's own module when it declares none.
 
     The install uses exactly what the wheels declare, so an extra that omits a
     dependency another extra brings fails here. An empty `extra` installs the
@@ -228,9 +229,11 @@ def smoke(workspace: Workspace, package_name: str, extra: str) -> int:
     """
     root, packages = workspace.root, workspace.packages
     package = packages[normalize(package_name)]
-    config = package.smoke
-    assert config is not None
-    modules = [*config.modules, *(config.extras[extra] if extra else [])]
+    config = package.smoke or Smoke()
+    modules = [
+        *(config.modules if package.smoke else [package.module]),
+        *(config.extras[extra] if extra else []),
+    ]
 
     with tempfile.TemporaryDirectory() as tmp:
         dist = Path(tmp) / "dist"

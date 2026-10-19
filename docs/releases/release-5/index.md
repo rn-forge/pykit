@@ -34,7 +34,7 @@ and the framework adapters ship together.
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | Closed |
-| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | New |
+| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | Active |
 
 <!-- scope:end -->
 

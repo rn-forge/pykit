@@ -57,7 +57,7 @@ class Package:
         requires: Names of the workspace members this package requires.
         postgres_env: Variable that receives a PostgreSQL DSN, or `None` when the
             package needs no database run.
-        smoke: The smoke-test declaration, or `None`.
+        smoke: The smoke-test declaration, or `None` when the package declares none.
         adapters: Names of the package's adapters, or `None` when it declares none.
     """
 
@@ -70,14 +70,15 @@ class Package:
     adapters: list[str] | None = None
 
     def checks(self) -> list[dict[str, str]]:
-        """Every check that must pass before this package may be released."""
+        """Every check that must pass before this package may be released.
+
+        The empty-extra smoke check is listed whether or not `smoke` is set.
+        """
         checks = [{"kind": "verify", "marker": f"{self.name}.verify"}]
         if self.postgres_env is not None:
             checks.append({"kind": "postgres", "marker": f"{self.name}.postgres"})
+        checks.append({"kind": "smoke", "extra": "", "marker": f"{self.name}.smoke"})
         if self.smoke is not None:
-            checks.append(
-                {"kind": "smoke", "extra": "", "marker": f"{self.name}.smoke"}
-            )
             checks += [
                 {
                     "kind": "smoke",

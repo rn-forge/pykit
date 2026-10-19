@@ -22,7 +22,7 @@ yet, and then the cutover. Acceptance is checked inside pykit
 | [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | Closed |
 | [F16.3 — Cut over onto kiln](F16.3-cutover.md) | `kiln init` as `python-lib`, generated CI and tasks, and the files pykit stops owning. | Active |
 | [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Member test runs leave the scaffold suite to the root; `FastApiApp` turns FastAPI's native tracing off unless asked. Precedes F16.3. | Closed |
-| [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | A no-extras smoke entry for every selected package, the `plan` outputs as a documented contract, and `rn-forge-devops` 0.2.0. Precedes F16.3. | New |
+| [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | A no-extras smoke entry for every selected package, the `plan` outputs as a documented contract, and `rn-forge-devops` 0.2.0. Precedes F16.3. | Active |
 
 [ADR-0012](../../../adr/ADR-0012.md) records that CI and release logic ships as
 `rn-forge-devops`, never as workflow logic or copied scripts. kiln's matching
