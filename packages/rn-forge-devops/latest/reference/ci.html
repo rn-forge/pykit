@@ -1013,7 +1013,7 @@ package needs no database run.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The smoke-test declaration, or <code>None</code>.</p>
+                <p>The smoke-test declaration, or <code>None</code> when the package declares none.</p>
               </div>
             </td>
           </tr>
@@ -1064,6 +1064,7 @@ package needs no database run.</p>
     <div class="doc doc-contents ">
 
         <p>Every check that must pass before this package may be released.</p>
+<p>The empty-extra smoke check is listed whether or not <code>smoke</code> is set.</p>
 
 
     </div>

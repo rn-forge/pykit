@@ -930,7 +930,8 @@ declares <code>[tool.uv.workspace]</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Install <code>package_name</code> with only <code>extra</code> from wheels built from this checkout
-into a clean venv, then import the modules its <code>[tool.workspace-ci.smoke]</code> lists.</p>
+into a clean venv, then import the modules its <code>[tool.workspace-ci.smoke]</code> lists,
+or the package's own module when it declares none.</p>
 <p>The install uses exactly what the wheels declare, so an extra that omits a
 dependency another extra brings fails here. An empty <code>extra</code> installs the
 package with no extra.</p>
