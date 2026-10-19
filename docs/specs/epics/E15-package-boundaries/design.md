@@ -387,7 +387,7 @@ The owner answered these on 2026-10-15, in
 - **Order of F13.2 and E13's adapter features.** F13.2 first, after
   [F13.1](../E13-auth/F13.1-auth-design.md) settles placement, so the adapters
   are written inside the package.
-- **Does F15.4 join release 5 if E13 already reshapes web?** Yes in that case,
+- **Does F15.4 join release 6 if E13 already reshapes web?** Yes in that case,
   as one move. Otherwise it stays deferred.
 - **Package versions.** `0.1.0` for the new packages, and breaking bumps for
   commons, web, django and fastapi.

@@ -17,7 +17,7 @@ The package boundaries kiln renders are settled too
 part of commons becomes a package (F15.1), and the `rn-forge-data` package for
 the Excel and pandas helpers (F15.3). The cutover onto kiln (F16.3) and
 authentication ([E13](../../specs/epics/E13-auth/index.md)) are in
-[Release 5](../release-5/index.md).
+[Release 6](../release-6/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
