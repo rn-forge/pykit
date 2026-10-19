@@ -12,7 +12,7 @@ and feature pages, and must not be edited by hand.
 | Release | Status | Features |
 | -- | -- | -- |
 | [Release 6 — kiln adoption and authentication](../releases/release-6/index.md) | planned | 1 Active · 3 New |
-| [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | in progress | 1 Active · 1 Closed |
+| [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | shipped (2026-10-18) | 2 Closed |
 | [Release 4 — kiln readiness](../releases/release-4/index.md) | shipped (2026-10-16) | 4 Closed |
 | [Release 3 — HTTP contract extensions](../releases/release-3/index.md) | shipped (2026-10-12) | 8 Closed |
 | [Release 2 — workspace automation](../releases/release-2/index.md) | shipped (2026-10-03) | 4 Closed |

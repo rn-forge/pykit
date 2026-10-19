@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | in progress |
+| **Status** | shipped |
 | **Start Date** | 2026-10-16 |
+| **Finish Date** | 2026-10-18 |
 
 Make `rn-forge-devops` meet the CI contract kiln's generated workflows read
 ([E16](../../specs/epics/E16-kiln-adoption/index.md)). Every member passes its
@@ -29,7 +30,7 @@ authentication and the retirement of unread outputs are in
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | Closed |
-| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | Active |
+| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | Closed |
 
 <!-- scope:end -->
 
@@ -54,10 +55,13 @@ documentation, no removed key), and `rn-forge-fastapi` 0.3.1 is a patch.
 
 ## Progress
 
-F16.4 closed 2026-10-16: every member passes its own suite, and `FastApiApp`
-turns FastAPI's native tracing off (`rn-forge-fastapi` 0.3.1). F16.5's S16.5.1
-and S16.5.2 are closed; S16.5.3 releases `rn-forge-devops` 0.2.0 when this
-release merges.
+Shipped 2026-10-18. Every feature in scope is closed: F16.4 (2026-10-16) and
+F16.5 (2026-10-18), once `rn-forge-devops-v0.2.0` was published. The
+[push to `main`](https://github.com/rn-forge/pykit/actions/runs/39193046736) at
+merge commit `4770dc6` passed every verify, postgres, smoke and suite job plus
+`import-boundaries`, `external-install`, `docs` and the Sonar gate, and
+published the two versions below. F16.3, F16.6, F13.1 and F13.2 are in
+[Release 6](../release-6/index.md).
 
 ## Commits
 
@@ -77,4 +81,14 @@ git log --format='%h %ad %s' --date=short -E --grep='F16\.[45]|S16\.[45]\.'
 
 ## Shipped
 
-Filled at the cut.
+The two packages below were tagged and published by
+[run 39193046736](https://github.com/rn-forge/pykit/actions/runs/39193046736);
+the other seven were already published and skipped. Each package's docs site
+serves the new version as `latest`. `uvx` runs `rn-forge-devops` from its tag
+outside the workspace and lists an empty-extra smoke entry for every package
+(S16.5.3).
+
+| Deliverable | Version | Tag | Commit | Verification |
+| -- | -- | -- | -- | -- |
+| `rn-forge-devops` | `0.2.0` | `rn-forge-devops-v0.2.0` | `4770dc6` | published; `external-install` and `docs` passed; `uvx` plan from the tag |
+| `rn-forge-fastapi` | `0.3.1` | `rn-forge-fastapi-v0.3.1` | `4770dc6` | published; `external-install` and `docs` passed |

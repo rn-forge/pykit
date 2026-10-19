@@ -71,10 +71,10 @@ here once its feature exists.
 
 ## Progress
 
-Not started. Release 5 took F16.4 and F16.5 and ships first, so
-`rn-forge-devops` 0.2.0 is published before F16.3 begins. F16.3 waits for kiln's
-release-1 tags. F13.1 is settling the design's open questions; E13's
-implementation features are added to this release once it closes.
+Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
+version kiln pins. F16.3 waits for kiln's release-1 tags. F13.1 is settling the
+design's open questions; E13's implementation features are added to this release
+once it closes.
 
 ## Commits
 
