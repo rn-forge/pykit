@@ -5,6 +5,8 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-18
+
 ### Changed
 
 - A package with no `[tool.workspace-ci.smoke]` table is still smoke-tested:
