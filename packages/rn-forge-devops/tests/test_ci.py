@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -128,3 +129,14 @@ def test_select_rejects_option_like_base_without_running_git(
 def test_changed_files_rejects_option_like_base(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="invalid base"):
         changed_files(tmp_path, "--output=x")
+
+
+def test_plan_outputs_match_documented_keys(tmp_path: Path) -> None:
+    page = Path(__file__).parents[1] / "docs" / "reference" / "subcommands.md"
+    text = page.read_text(encoding="utf-8")
+    table = text.split("<!-- plan-outputs:start -->")[1].split(
+        "<!-- plan-outputs:end -->"
+    )[0]
+    documented = set(re.findall(r"^\| `([^`]+)` \|", table, flags=re.MULTILINE))
+    workspace = Workspace(tmp_path, _packages())
+    assert documented == set(plan(workspace, ""))
