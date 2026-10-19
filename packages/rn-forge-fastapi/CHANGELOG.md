@@ -5,6 +5,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-18
+
 ### Fixed
 
 - `FastApiApp` turns off FastAPI's native tracing (0.142 and later) unless the
