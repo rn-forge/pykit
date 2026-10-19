@@ -1230,7 +1230,9 @@ readiness path.</p>
                 <p>Instrument the application with
 <code>FastAPIInstrumentor.instrument_app</code> and, when nothing else has,
 set a :class:<code>~opentelemetry.instrumentation.propagators.TraceResponsePropagator</code>
-as the global response propagator.</p>
+as the global response propagator. This alone decides whether
+server spans are recorded: <code>FastApiApp</code> turns off FastAPI's
+native tracing unless <code>telemetry=</code> is passed.</p>
               </div>
             </td>
             <td>
@@ -1569,7 +1571,8 @@ keyword set remain available.</p>
               <div class="doc-md-description">
                 <p>Forwarded to the :class:<code>fastapi.FastAPI</code>
 constructor. <code>generate_unique_id_function</code> defaults to
-:func:<code>operation_id</code> and may be overridden here.</p>
+:func:<code>operation_id</code> and <code>telemetry</code> to
+<code>{"tracing": False}</code>; both may be overridden here.</p>
               </div>
             </td>
             <td>
