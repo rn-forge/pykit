@@ -36,7 +36,7 @@ class OrderLocked(Exception):
 
 
 def build(*, tracing=True, registry=None, log=None, raise_server_exceptions=False):
-    app = FastAPI()
+    app = FastAPI(telemetry={"tracing": False})
     register_problem_handlers(app, registry=registry, realm="api", log=log)
 
     @app.get("/conflict")

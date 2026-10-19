@@ -56,8 +56,11 @@ resource.
    stack regardless of add order. It also sets a `TraceResponsePropagator` as
    the global response propagator, but only when nothing else has — an
    application that configures its own response propagator first is left
-   alone. Configure a `TracerProvider` and exporter in the application, or run
-   under `opentelemetry-instrument`; `FastApiApp` never does either.
+   alone. `FastApiApp` turns off FastAPI's native tracing unless the
+   application passes `telemetry=`, so `AppConfig.tracing` alone decides
+   whether server spans are recorded. Configure a `TracerProvider` and exporter
+   in the application, or run under `opentelemetry-instrument`; `FastApiApp`
+   never does either.
 1. **Derive every model from `rn_forge.web.WireModel`.** camelCase on the wire
    is enforced by the base class, including in a hand-built
    `JSONResponse(model.model_dump(mode="json"))`.

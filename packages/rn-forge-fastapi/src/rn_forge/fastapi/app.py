@@ -56,7 +56,9 @@ class AppConfig:
         tracing: Instrument the application with
             ``FastAPIInstrumentor.instrument_app`` and, when nothing else has,
             set a :class:`~opentelemetry.instrumentation.propagators.TraceResponsePropagator`
-            as the global response propagator.
+            as the global response propagator. This alone decides whether
+            server spans are recorded: ``FastApiApp`` turns off FastAPI's
+            native tracing unless ``telemetry=`` is passed.
         log: Optional sink for ``problem.server_error`` events, called for
             every 5xx problem response with the exception under ``"exc"``.
         liveness_path: The liveness path.
@@ -125,10 +127,12 @@ class FastApiApp(FastAPI):
             version: OpenAPI document version.
             **fastapi_kwargs: Forwarded to the :class:`fastapi.FastAPI`
                 constructor. ``generate_unique_id_function`` defaults to
-                :func:`operation_id` and may be overridden here.
+                :func:`operation_id` and ``telemetry`` to
+                ``{"tracing": False}``; both may be overridden here.
         """
         resolved = config if config is not None else AppConfig()
         fastapi_kwargs.setdefault("generate_unique_id_function", operation_id)
+        fastapi_kwargs.setdefault("telemetry", {"tracing": False})
         super().__init__(
             title=title,
             description=description,

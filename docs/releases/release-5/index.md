@@ -1,18 +1,17 @@
-# Release 5 — kiln adoption and authentication
+# Release 5 — rn-forge-devops meets kiln's CI contract
 
 |  |  |
 | -- | -- |
-| **Status** | planned |
+| **Status** | in progress |
+| **Start Date** | 2026-10-16 |
 
-pykit cuts over onto kiln's `python-lib` archetype (F16.3,
-[E16](../../specs/epics/E16-kiln-adoption/index.md)), then gains standards-based
-authentication and authorization for its web applications
-([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
-(F13.1), create the `rn-forge-auth` package and move the existing auth code into
-it (F13.2), then the features the design produces — the login adapters, the
-session and HTTP surface for Django and FastAPI, authorization context and
-resource policy, and the removal of the locally issued JWT flows. The package
-and the framework adapters ship together.
+Make `rn-forge-devops` meet the CI contract kiln's generated workflows read
+([E16](../../specs/epics/E16-kiln-adoption/index.md)). Every member passes its
+own gate (F16.4), and the planner emits a no-extras smoke entry for every
+selected package, documents its `plan` outputs as a contract and ships as
+`rn-forge-devops` 0.2.0 (F16.5), the version kiln pins. The cutover onto kiln,
+authentication and the retirement of unread outputs are in
+[Release 6](../release-6/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -20,7 +19,6 @@ and the framework adapters ship together.
 ## Entry criteria
 
 - Release 4 is shipped.
-- kiln's release-1 tags exist.
 
 ## Scope
 
@@ -30,60 +28,50 @@ and the framework adapters ship together.
 
 | Feature | Epic | State |
 | -- | -- | -- |
-| [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
-| [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
-| [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | New |
+| [F16.4](../../specs/epics/E16-kiln-adoption/F16.4-member-gate.md) | E16 | Closed |
+| [F16.5](../../specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md) | E16 | Active |
 
 <!-- scope:end -->
 
 ## Order
 
-1. **F16.3 and F13.1 first, in parallel.** F16.3 cuts pykit over onto kiln; its
-   stories are written once kiln's release-1 tags exist. F13.1 is a decision
-   with no code, and settles the package placement F13.2 follows.
-1. **F13.2** after F16.3 and F13.1. The package joins the kiln-managed workspace
-   F16.3 sets up.
-1. E13's implementation features follow F13.2, so the adapters are written
-   inside `rn-forge-auth`.
+1. **F16.4 first.** It fixes the two member suites that fail a member-directory
+   run.
+1. **F16.5** after F16.1. It makes `rn-forge-devops` meet kiln's CI contract and
+   releases `rn-forge-devops-v0.2.0`.
 
 ## Decisions
 
-None yet.
+- Owner decision, 2026-10-18: Release 5 ships now with F16.4 and F16.5 only,
+  because `rn-forge-devops` 0.2.0 must publish for kiln, which pins it. It
+  never met its entry criterion of kiln's release-1 tags. F16.3, F16.6, F13.1
+  and F13.2 moved to [Release 6](../release-6/index.md).
 
 ## Breaking changes
 
-Planned until the decisions behind them are accepted:
-
-- New package `rn-forge-auth` at 0.1.0.
-- `rn-forge-commons` loses its `auth` extra and the code behind it.
-- `rn-forge-web` loses the auth types it holds and its `auth` extra, and keeps
-  the wire contract. This follows E13's
-  [package placement](../../specs/epics/E13-auth/design.md#package-placement).
-- `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
-  `rn-forge-auth`.
-
-The removal of Django's locally issued JWT flows is E13's change and is listed
-here once its feature exists.
+None. `rn-forge-devops` 0.2.0 is a minor bump (a new smoke entry and
+documentation, no removed key), and `rn-forge-fastapi` 0.3.1 is a patch.
 
 ## Progress
 
-Not started. F16.3 waits for kiln's release-1 tags. F13.1 is settling the
-design's open questions; E13's implementation features are added to this release
-once it closes.
+F16.4 closed 2026-10-16: every member passes its own suite, and `FastApiApp`
+turns FastAPI's native tracing off (`rn-forge-fastapi` 0.3.1). F16.5's S16.5.1
+and S16.5.2 are closed; S16.5.3 releases `rn-forge-devops` 0.2.0 when this
+release merges.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.3|S16\.3\.'
+git log --format='%h %ad %s' --date=short -E --grep='F16\.[45]|S16\.[45]\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F13.1 and
-  F13.2.
-- The design's proposed decisions are accepted as ADRs.
+- Every feature on this page's Scope is `Closed`: F16.4 and F16.5.
+- The tags `rn-forge-devops-v0.2.0` and `rn-forge-fastapi-v0.3.1` exist with
+  published GitHub Releases, and the external install job passed for each.
 - `docs/_update_board.sh --check` passes.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
 

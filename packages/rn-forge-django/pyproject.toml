@@ -115,7 +115,7 @@ openapi = ["rn_forge.django.drf.openapi"]
 saml = ["rn_forge.django.auth.saml"]
 
 [tool.pytest.ini_options]
-addopts = "-ra --import-mode=importlib"
+addopts = "-ra --import-mode=importlib -m 'not scaffold'"
 markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",

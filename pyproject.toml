@@ -44,11 +44,9 @@ markers = [
   "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 
-[tool.workspace-ci]
-# Package jobs; each suite below is its own job over the whole workspace.
-pytest-args = ["-m", "not scaffold"]
-
 [tool.workspace-ci.suites]
+# Each suite is its own job over the whole workspace. Package jobs deselect the
+# scaffold tests through each member's own pytest addopts.
 scaffold = ["-q", "-m", "scaffold"]
 
 [tool.ruff.format]

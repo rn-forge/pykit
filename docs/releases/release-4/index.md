@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | in progress |
+| **Status** | shipped |
 | **Start Date** | 2026-10-13 |
+| **Finish Date** | 2026-10-16 |
 
 Make pykit ready for kiln to render
 ([E16](../../specs/epics/E16-kiln-adoption/index.md)). The workspace CI planner
@@ -16,7 +17,7 @@ The package boundaries kiln renders are settled too
 part of commons becomes a package (F15.1), and the `rn-forge-data` package for
 the Excel and pandas helpers (F15.3). The cutover onto kiln (F16.3) and
 authentication ([E13](../../specs/epics/E13-auth/index.md)) are in
-[Release 5](../release-5/index.md).
+[Release 6](../release-6/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -35,7 +36,7 @@ authentication ([E13](../../specs/epics/E13-auth/index.md)) are in
 | -- | -- | -- |
 | [F15.1](../../specs/epics/E15-package-boundaries/F15.1-package-boundary-rule.md) | E15 | Closed |
 | [F15.3](../../specs/epics/E15-package-boundaries/F15.3-data-package.md) | E15 | Closed |
-| [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Active |
+| [F16.1](../../specs/epics/E16-kiln-adoption/F16.1-devops-package.md) | E16 | Closed |
 | [F16.2](../../specs/epics/E16-kiln-adoption/F16.2-conform-to-the-standard.md) | E16 | Closed |
 
 <!-- scope:end -->
@@ -75,13 +76,13 @@ package.
 
 ## Progress
 
-Started 2026-10-13. F16.2, F15.1 and F15.3 are closed, and ADR-0011 and ADR-0012
-are accepted. F16.1's code is done (S16.1.2); its last story, S16.1.3, closes
-when the merge to `main` publishes `rn-forge-devops-v0.1.0`. The version bumps
-are prepared: `rn-forge-commons` 0.6.0, `rn-forge-data` 0.1.0, `rn-forge-devops`
-0.1.0, `rn-forge-django` 0.5.0 and `rn-forge-fastapi` 0.3.0. What remains is the
-merge to `main`, CI including the Sonar gate, and the post-merge checks. F16.3
-moved to Release 5.
+Shipped 2026-10-16. Every feature in scope is closed: F16.2, F15.1 and F15.3
+(2026-10-15), then F16.1 (2026-10-16) once `rn-forge-devops-v0.1.0` was
+published. ADR-0011 and ADR-0012 are accepted. The
+[push to `main`](https://github.com/rn-forge/pykit/actions/runs/38918392799) at
+merge commit `4dadf2b` passed every verify, postgres, smoke and suite job plus
+`import-boundaries`, `external-install`, `docs` and the Sonar gate, and
+published the five versions below. F16.3 moved to Release 5.
 
 ## Commits
 
@@ -102,4 +103,16 @@ git log --format='%h %ad %s' --date=short -E --grep='F15\.[13]|S15\.[13]\.|F16\.
 
 ## Shipped
 
-Filled at the cut.
+The five packages below were tagged and published by
+[run 38918392799](https://github.com/rn-forge/pykit/actions/runs/38918392799);
+the other four were already published and skipped. Each package's docs site
+serves the new version as `latest`. `uvx` runs `rn-forge-devops` from its tag
+outside the workspace (S16.1.3).
+
+| Deliverable | Version | Tag | Commit | Verification |
+| -- | -- | -- | -- | -- |
+| `rn-forge-commons` | `0.6.0` | `rn-forge-commons-v0.6.0` | `4dadf2b` | published; `external-install` and `docs` passed |
+| `rn-forge-data` | `0.1.0` | `rn-forge-data-v0.1.0` | `4dadf2b` | published; `external-install` and `docs` passed |
+| `rn-forge-devops` | `0.1.0` | `rn-forge-devops-v0.1.0` | `4dadf2b` | published; `external-install` and `docs` passed; `uvx` plan from the tag |
+| `rn-forge-django` | `0.5.0` | `rn-forge-django-v0.5.0` | `4dadf2b` | published; `external-install` and `docs` passed |
+| `rn-forge-fastapi` | `0.3.0` | `rn-forge-fastapi-v0.3.0` | `4dadf2b` | published; `external-install` and `docs` passed |

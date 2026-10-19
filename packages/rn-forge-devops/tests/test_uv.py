@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import subprocess
+import zipfile
 from pathlib import Path
 
 import pytest
 
-from rn_forge.devops import uv
+from rn_forge.devops import Package, Smoke, Workspace, uv
 
 
 def _write(path: Path, text: str) -> None:
@@ -101,3 +103,45 @@ def test_check_adapters_reports_a_duplicate(tmp_path: Path) -> None:
 def test_check_adapters_skips_a_member_without_the_key(tmp_path: Path) -> None:
     _workspace(tmp_path)
     assert uv.check_adapters(uv.load_workspace(tmp_path)) == []
+
+
+def _stub_uv(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    """Replace `subprocess.run` so `uv build` writes a wheel and nothing else runs."""
+    calls: list[list[str]] = []
+
+    def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        if command[:2] == ["uv", "build"]:
+            name = command[command.index("--package") + 1]
+            out = Path(command[command.index("--out-dir") + 1])
+            out.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(out / f"{name}-1-py3-none-any.whl", "w") as wheel:
+                wheel.writestr(f"{name}-1.dist-info/METADATA", f"Name: {name}\n")
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(uv.subprocess, "run", run)
+    return calls
+
+
+def test_smoke_without_a_declaration_imports_the_package_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = _stub_uv(monkeypatch)
+    package = Package("app", "pkgs/app", "app_core")
+    workspace = Workspace(root=tmp_path, packages={"app": package})
+    assert uv.smoke(workspace, "app", "") == 0
+    builds = [c for c in calls if c[:2] == ["uv", "build"]]
+    assert [c[c.index("--package") + 1] for c in builds] == ["app"]
+    assert any("--no-deps" in c for c in calls)
+    assert calls[-1][-1] == "app_core"
+    assert calls[-1][-2] == ""
+
+
+def test_smoke_with_a_declaration_imports_its_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = _stub_uv(monkeypatch)
+    package = Package("app", "pkgs/app", "app", smoke=Smoke(modules=["app.core"]))
+    workspace = Workspace(root=tmp_path, packages={"app": package})
+    assert uv.smoke(workspace, "app", "") == 0
+    assert calls[-1][-1] == "app.core"

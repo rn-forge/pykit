@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -33,7 +34,8 @@ def test_missing_marker_blocks_package_and_dependents(tmp_path: Path) -> None:
 
 def test_passed_markers_release_in_order(tmp_path: Path) -> None:
     for name in ("base", "app"):
-        (tmp_path / f"{name}.verify").touch()
+        for check in Package(name, name, name).checks():
+            (tmp_path / check["marker"]).touch()
     assert releasable(_packages(), tmp_path, ["app", "base"]) == (
         ["base", "app"],
         [],
@@ -47,10 +49,41 @@ def test_plan_lists_smoke_checks_per_extra(tmp_path: Path) -> None:
     outputs = plan(workspace, "")
     assert outputs["release-order"] == ["base", "app"]
     assert outputs["smoke"] == [
+        {"name": "base", "extra": "", "marker": "base.smoke"},
         {"name": "app", "extra": "", "marker": "app.smoke"},
         {"name": "app", "extra": "x", "marker": "app.smoke-x"},
     ]
     assert outputs["sonar"] is False
+
+
+def test_plan_lists_one_empty_extra_smoke_entry_without_a_declaration(
+    tmp_path: Path,
+) -> None:
+    outputs = plan(Workspace(root=tmp_path, packages=_packages()), "")
+    assert outputs["smoke"] == [
+        {"name": "base", "extra": "", "marker": "base.smoke"},
+        {"name": "app", "extra": "", "marker": "app.smoke"},
+    ]
+
+
+def test_plan_omits_smoke_entries_of_unselected_packages(tmp_path: Path) -> None:
+    outputs = plan(_git_workspace(tmp_path), "v1")
+    assert outputs["smoke"] == [{"name": "a", "extra": "", "marker": "a.smoke"}]
+
+
+def test_checks_always_include_the_smoke_marker() -> None:
+    package = Package("base", "packages/base", "base")
+    assert {"kind": "smoke", "extra": "", "marker": "base.smoke"} in package.checks()
+
+
+def test_missing_smoke_marker_blocks_a_package_without_a_declaration(
+    tmp_path: Path,
+) -> None:
+    packages = _packages()
+    (tmp_path / "base.verify").touch()
+    assert releasable(packages, tmp_path, ["base"]) == ([], ["base"])
+    (tmp_path / "base.smoke").touch()
+    assert releasable(packages, tmp_path, ["base"]) == (["base"], [])
 
 
 def _git_workspace(tmp_path: Path) -> Workspace:
@@ -96,3 +129,14 @@ def test_select_rejects_option_like_base_without_running_git(
 def test_changed_files_rejects_option_like_base(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="invalid base"):
         changed_files(tmp_path, "--output=x")
+
+
+def test_plan_outputs_match_documented_keys(tmp_path: Path) -> None:
+    page = Path(__file__).parents[1] / "docs" / "reference" / "subcommands.md"
+    text = page.read_text(encoding="utf-8")
+    table = text.split("<!-- plan-outputs:start -->")[1].split(
+        "<!-- plan-outputs:end -->"
+    )[0]
+    documented = set(re.findall(r"^\| `([^`]+)` \|", table, flags=re.MULTILINE))
+    workspace = Workspace(tmp_path, _packages())
+    assert documented == set(plan(workspace, ""))

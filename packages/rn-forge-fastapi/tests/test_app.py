@@ -9,6 +9,10 @@ import pytest
 from assertpy import assert_that
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
+from opentelemetry import trace
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.trace import SpanKind
 
 from rn_forge.fastapi import AppConfig, CorsPolicy, FastApiApp
 from rn_forge.web import (
@@ -233,3 +237,26 @@ def test_a_subclass_can_extend_openapi_through_super():
     schema = TestClient(app).get("/openapi.json").json()
     assert_that(schema["info"]["x-extra"]).is_equal_to("yes")
     assert_that(schema["components"]["schemas"]).contains_key("ProblemDetail")
+
+
+@pytest.fixture
+def spans():
+    exporter = InMemorySpanExporter()
+    provider = trace.get_tracer_provider()
+    processor = SimpleSpanProcessor(exporter)
+    provider.add_span_processor(processor)  # type: ignore[attr-defined]
+    yield exporter
+    processor.shutdown()
+
+
+def test_tracing_off_records_no_span(spans):
+    client = TestClient(FastApiApp(config=AppConfig(tracing=False)))
+    client.get("/healthz")
+    assert_that([span.name for span in spans.get_finished_spans()]).is_empty()
+
+
+def test_tracing_on_records_one_server_span(spans):
+    client = TestClient(FastApiApp(config=AppConfig(tracing=True)))
+    client.get("/healthz")
+    kinds = [span.kind for span in spans.get_finished_spans()]
+    assert_that(kinds.count(SpanKind.SERVER)).is_equal_to(1)
