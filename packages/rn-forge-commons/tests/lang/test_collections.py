@@ -488,3 +488,25 @@ class TestDictTypedReads:
     def test_get_bool_does_not_coerce(self) -> None:
         assert DictUtils.get_bool({"a": 1, "b": "true"}, "a") is False
         assert DictUtils.get_bool({"a": 1, "b": "true"}, "b", default=True) is True
+
+
+class TestBareValueReads:
+    def test_as_mapping_stringifies_keys(self) -> None:
+        assert DictUtils.as_mapping({1: "a", "b": 2}) == {"1": "a", "b": 2}
+
+    def test_as_mapping_of_non_mapping_is_empty(self) -> None:
+        assert DictUtils.as_mapping(["a"]) == {}
+        assert DictUtils.as_mapping(None) == {}
+
+    def test_as_list(self) -> None:
+        src = [1, 2]
+        out = ListUtils.as_list(src)
+        assert out == src
+        assert out is not src
+        assert ListUtils.as_list(None) == []
+        assert ListUtils.as_list("x") == ["x"]
+        assert ListUtils.as_list({"a": 1}) == [{"a": 1}]
+
+    def test_as_strings_drops_non_strings(self) -> None:
+        assert ListUtils.as_strings(["a", 1, {"b": 2}, "c"]) == ["a", "c"]
+        assert ListUtils.as_strings("a") == ["a"]

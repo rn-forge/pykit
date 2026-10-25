@@ -8,7 +8,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 ### Added
 
 - `DocumentUtils.read` of a package resource; `header` and `multiline_arrays`
-  on `dumps` and `write`; `DocumentUtils.multiline_arrays`.
+  on `dumps` and `write`; `DocumentUtils.multiline_arrays`; `DictUtils.as_mapping`,
+  `ListUtils.as_list` and `ListUtils.as_strings`.
 
 ### Changed
 
