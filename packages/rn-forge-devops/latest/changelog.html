@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/changelog.html">
       
       
-        <link rel="prev" href="reference/github.html">
+        <link rel="prev" href="reference/releases.html">
       
       
       
@@ -435,6 +435,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/index-core.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Package index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/releases.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releases adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -520,6 +576,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-18" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -560,7 +644,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -621,6 +705,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-18" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -661,7 +773,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -700,6 +812,16 @@
 <p>Notable changes to <code>rn-forge-devops</code>, newest first, in the
 <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="030-2026-10-25">[0.3.0] - 2026-10-25<a class="headerlink" href="#030-2026-10-25" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>index</code> subcommand: <code>rn-forge-devops index --repo OWNER/NAME --out DIR</code>
+  writes a PEP 503 simple index of the repository's published <code>rn-forge-*</code>
+  release files.</li>
+<li>The <code>requirements</code> subcommand: it fails when a workspace member's requirement
+  on another member is a URL, excludes that member's current version or has no
+  upper bound.</li>
+</ul>
 <h2 id="020-2026-10-18">[0.2.0] - 2026-10-18<a class="headerlink" href="#020-2026-10-18" title="Permanent link">&para;</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
@@ -708,7 +830,7 @@
   <code>&lt;name&gt;.smoke</code> marker, and <code>smoke</code> imports the package's own module.</li>
 </ul>
 <h2 id="010-2026-10-16">[0.1.0] - 2026-10-16<a class="headerlink" href="#010-2026-10-16" title="Permanent link">&para;</a></h2>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The <code>rn-forge-devops</code> package: CI and release automation for rn-forge
   repositories in any language, run with uv. It holds the workspace planner
