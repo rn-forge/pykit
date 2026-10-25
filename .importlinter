@@ -25,7 +25,8 @@
 #      imports an adapter. `.requirements`, `.index` and `.releases` stay in
 #      pykit, so none imports the planner (`ci`, `uv`, `github`).
 #   9. `rn_forge.data` is a sibling of web over commons, and its core never
-#      imports the `rn_forge.data.pandas` adapter (ADR-0011).
+#      imports the `rn_forge.data.pandas` adapter (ADR-0011). The contract
+#      names the core module, not the package that contains the adapter.
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -72,10 +73,22 @@ source_modules =
     rn_forge.commons.runtime
     rn_forge.commons.testing
 forbidden_modules =
+    rn_forge.commons.generation
     rn_forge.commons.text
     jinja2
     markdown
     markdown_it
+
+[importlinter:contract:generation-core-renders-nothing]
+name = the generation engine imports no template engine; only generation.templated does
+type = forbidden
+source_modules =
+    rn_forge.commons.generation.artifacts
+    rn_forge.commons.generation.plan
+    rn_forge.commons.generation.apply
+forbidden_modules =
+    rn_forge.commons.text
+    jinja2
 
 [importlinter:contract:cli-has-no-tooling]
 name = rn_forge.cli never imports tooling or Jinja
@@ -205,9 +218,9 @@ forbidden_modules =
     rn_forge.devops.github
 
 [importlinter:contract:data-core-has-no-adapter]
-name = rn_forge.data never imports the pandas adapter
+name = rn_forge.data's core modules never import the pandas adapter
 type = forbidden
 source_modules =
-    rn_forge.data
+    rn_forge.data.excel
 forbidden_modules =
     rn_forge.data.pandas

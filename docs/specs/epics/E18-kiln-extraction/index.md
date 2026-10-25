@@ -24,7 +24,7 @@ keeps its own code.
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F18.1 — Templates, generation and state move to commons](F18.1-template-engine-in-commons.md) | `TemplateEngine` in `rn_forge.commons.text.templates` (`templates` extra), with `autoescape` and `cached`; the generation engine in `rn_forge.commons.generation`; `StateStore` in `rn_forge.commons.fs.state`; import contracts that can break. | Active |
+| [F18.1 — Templates, generation and state move to commons](F18.1-template-engine-in-commons.md) | `TemplateEngine` in `rn_forge.commons.text.templates` (`templates` extra), with `autoescape` and `cached`; the generation engine in `rn_forge.commons.generation`; `StateStore` in `rn_forge.commons.fs.state`; import contracts that can break. | Closed |
 | [F18.2 — Templated artifacts and plan diffs](F18.2-templated-artifacts-and-diffs.md) | `TemplateArtifact` and `render_artifacts` in `rn_forge.commons.generation.templated`; public `disk_content` and `diff` in the generation engine. | New |
 | [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | libyaml loading; `tomllib` for plain TOML; package-resource reads; TOML header and array style; value-level typed reads; brace-safe error messages. | Closed |
 | [F18.4 — Markdown structure](F18.4-markdown-structure.md) | `MarkdownUtils` in `rn_forge.commons.text.markdown` behind a `markdown` extra: headings and anchors, links, title, pipe tables. | New |
