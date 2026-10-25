@@ -46,7 +46,7 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 | [F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md) | E18 | New |
 | [F18.3](../../specs/epics/E18-kiln-extraction/F18.3-document-io.md) | E18 | New |
 | [F18.4](../../specs/epics/E18-kiln-extraction/F18.4-markdown-structure.md) | E18 | New |
-| [F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md) | E19 | New |
+| [F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md) | E19 | Closed |
 | [F19.2](../../specs/epics/E19-version-ranges/F19.2-package-index.md) | E19 | New |
 | [F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) | E19 | New |
 
@@ -68,7 +68,7 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 - [ADR-0002](../../adr/ADR-0002.md), amended 2026-10-24: rule 3 keeps only the
   command-line and installation layers in tooling; templates, generation and
   state are placed by rule 1, in commons.
-- [ADR-0004](../../adr/ADR-0004.md), to be revised by S19.1.1: packages declare
+- [ADR-0004](../../adr/ADR-0004.md), revised 2026-10-25 (S19.1.1): packages declare
   each other by range, and pykit publishes an index.
 - Owner decision, 2026-10-24: E18 and E19 ship together in this release, so
   dependents are re-tagged once, on ranges. F18.5 is removed. The kiln cutover
