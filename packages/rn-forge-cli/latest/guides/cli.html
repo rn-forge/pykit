@@ -771,8 +771,8 @@
 
 
 <h1 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h1>
-<p><code>CliApp</code> is a <code>typer.Typer</code> subclass whose root callback wires the standard options into
-<code>AppLogger</code> and the <code>console</code> singleton from <code>rn-forge-commons</code>:</p>
+<p><code>CliApp</code> is a <code>typer.Typer</code> subclass whose root callback wires the standard
+options into <code>AppLogger</code> and the <code>console</code> singleton from <code>rn-forge-commons</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.cli</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">CliApp</span><span class="p">(</span><span class="s2">&quot;my-tool&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Do the thing.&quot;</span><span class="p">)</span>
@@ -787,13 +787,15 @@
 <span class="n">my-tool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_tool.cli:app&quot;</span>
 </code></pre></div>
 
-<p>That is the whole wiring. A generated console script is <code>sys.exit(app())</code>, and <code>CliApp.__call__</code>
-returns a mapped exit code, so the repository writes no <code>main()</code> and no exit-code handling.</p>
-<p><code>my-tool</code> gets four options for free: <code>--log-level</code>/<code>--log-file</code> (feeding <code>AppLogger.initialize</code>)
-and <code>--quiet</code>/<code>--json</code> (feeding <code>console</code>, whose modes are described in the console guide in
-<code>rn-forge-commons</code>).</p>
-<p>Because <code>CliApp</code> <em>is</em> a <code>typer.Typer</code>, every Typer facility works unchanged — <code>@app.command()</code>,
-<code>app.add_typer(...)</code>, and the constructor's full keyword set via <code>**typer_kwargs</code>.</p>
+<p>That is the whole wiring. A generated console script is <code>sys.exit(app())</code>, and
+<code>CliApp.__call__</code> returns a mapped exit code, so the repository writes no
+<code>main()</code> and no exit-code handling.</p>
+<p><code>my-tool</code> gets four options for free: <code>--log-level</code>/<code>--log-file</code> (feeding
+<code>AppLogger.initialize</code>) and <code>--quiet</code>/<code>--json</code> (feeding <code>console</code>, whose modes
+are described in the console guide in <code>rn-forge-commons</code>).</p>
+<p>Because <code>CliApp</code> <em>is</em> a <code>typer.Typer</code>, every Typer facility works unchanged —
+<code>@app.command()</code>, <code>app.add_typer(...)</code>, and the constructor's full keyword set
+via <code>**typer_kwargs</code>.</p>
 <h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -821,9 +823,10 @@ and <code>--quiet</code>/<code>--json</code> (feeding <code>console</code>, whos
 </tr>
 </tbody>
 </table>
-<p>An <code>AppException</code> is a diagnosed failure: it prints as one line, with its traceback logged at debug
-level. Anything else is a defect, and its traceback is logged in full. A command that raises
-<code>typer.Exit(3)</code> exits <code>3</code> — an explicit code is honoured as given.</p>
+<p>An <code>AppException</code> is a diagnosed failure: it prints as one line, with its
+traceback logged at debug level. Anything else is a defect, and its traceback is
+logged in full. A command that raises <code>typer.Exit(3)</code> exits <code>3</code> — an explicit
+code is honoured as given.</p>
 <p>To apply the same mapping to a hand-built <code>typer.Typer</code>, call the free function:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.cli</span><span class="w"> </span><span class="kn">import</span> <span class="n">run</span>
 
@@ -832,9 +835,10 @@ level. Anything else is a defect, and its traceback is logged in full. A command
 </code></pre></div>
 
 <h2 id="reading-the-resolved-flags-in-a-command">Reading the resolved flags in a command<a class="headerlink" href="#reading-the-resolved-flags-in-a-command" title="Permanent link">&para;</a></h2>
-<p>Typer allows <code>--quiet</code>/<code>--json</code> both before and after the subcommand name (<code>my-tool --quiet run</code>
-and <code>my-tool run --quiet</code>). The root callback only sees the former, so a command that declares its
-own copies merges them with <code>CliOptions.from_context</code>:</p>
+<p>Typer allows <code>--quiet</code>/<code>--json</code> both before and after the subcommand name
+(<code>my-tool --quiet run</code> and <code>my-tool run --quiet</code>). The root callback only sees
+the former, so a command that declares its own copies merges them with
+<code>CliOptions.from_context</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">typer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.cli</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliOptions</span><span class="p">,</span> <span class="n">JsonOption</span><span class="p">,</span> <span class="n">QuietOption</span>
 
@@ -845,15 +849,18 @@ own copies merges them with <code>CliOptions.from_context</code>:</p>
         <span class="o">...</span>
 </code></pre></div>
 
-<p>The two steps are separate because they do different things. <code>from_context</code> is pure: it reads what
-the root callback resolved and merges the command-level flags over it. <code>apply</code> is not: it rejects
-the mutually-exclusive <code>--quiet --json</code> pair, switches <code>console</code> into the requested mode, and writes
-the merged result back onto the root context. A caller that only wants to <em>know</em> the options — a
-test, or a command driving its own <code>AppConsole</code> — stops after <code>from_context</code>.</p>
-<p><code>dry_run</code> and <code>yes</code> ride along on the same object, so a command that writes anything reads both off
-the context instead of threading them through.</p>
+<p>The two steps are separate because they do different things. <code>from_context</code> is
+pure: it reads what the root callback resolved and merges the command-level
+flags over it. <code>apply</code> is not: it rejects the mutually-exclusive
+<code>--quiet --json</code> pair, switches <code>console</code> into the requested mode, and writes
+the merged result back onto the root context. A caller that only wants to <em>know</em>
+the options — a test, or a command driving its own <code>AppConsole</code> — stops after
+<code>from_context</code>.</p>
+<p><code>dry_run</code> and <code>yes</code> ride along on the same object, so a command that writes
+anything reads both off the context instead of threading them through.</p>
 <h2 id="cli-overrides">CLI overrides<a class="headerlink" href="#cli-overrides" title="Permanent link">&para;</a></h2>
-<p><code>SetOption</code> and <code>parse_overrides</code> are the two halves of <code>--set dotted.key=value</code>:</p>
+<p><code>SetOption</code> and <code>parse_overrides</code> are the two halves of
+<code>--set dotted.key=value</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.cli</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetOption</span><span class="p">,</span> <span class="n">parse_overrides</span>
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
@@ -863,12 +870,12 @@ the context instead of threading them through.</p>
     <span class="c1"># {&quot;database&quot;: {&quot;port&quot;: 5432}, &quot;feature_flags&quot;: [&quot;a&quot;, &quot;b&quot;]}</span>
 </code></pre></div>
 
-<p>Each value is parsed first as JSON, then as a TOML scalar, falling back to the raw string. The
-nested mapping is exactly the shape <code>DictUtils.merge_layers</code> in <code>rn-forge-commons</code> takes as its
-highest-precedence layer, so an override lands in a layered configuration with its provenance
-tracked.</p>
-<p>Typer's native <code>bool</code> handling (<code>--flag</code>/<code>--no-flag</code>) covers plain boolean options directly — no
-wrapper needed.</p>
+<p>Each value is parsed first as JSON, then as a TOML scalar, falling back to the
+raw string. The nested mapping is exactly the shape <code>DictUtils.merge_layers</code> in
+<code>rn-forge-commons</code> takes as its highest-precedence layer, so an override lands
+in a layered configuration with its provenance tracked.</p>
+<p>Typer's native <code>bool</code> handling (<code>--flag</code>/<code>--no-flag</code>) covers plain boolean
+options directly — no wrapper needed.</p>
 
 
 

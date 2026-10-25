@@ -750,9 +750,9 @@
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
 <p>These packages are not published to PyPI. A release is a <strong>git tag</strong>, and a
-consumer depends on a tag by pinned direct URL — a bare <code>uv add rn-forge-cli</code>
-would not resolve, and a floating branch reference would silently change what a
-build produced.</p>
+consumer declares pykit's package index (<code>https://rn-forge.github.io/pykit/simple/</code>)
+and requires the package by version range, or pins a tag by direct URL. A
+floating branch reference would silently change what a build produced.</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli&quot;</span><span class="p">,</span>
@@ -762,13 +762,13 @@ build produced.</p>
 <p>For a tool whose command line <em>is</em> the product, this belongs in <code>dependencies</code>.
 For an application that only ships a maintenance command, put it in a <code>dev</code>
 dependency group instead.</p>
-<p><code>rn-forge-commons</code> comes with it, pinned the same way. <code>rich</code> and <code>typer</code> are
+<p><code>rn-forge-commons</code> comes with it, as a version range. <code>rich</code> and <code>typer</code> are
 hard dependencies: an application with a command line prints to a terminal and
 parses arguments on every run, so there is nothing to gain from making either
 optional. Jinja2 is <strong>not</strong> a dependency — that lives in <code>rn-forge-tooling</code>.</p>
 <h2 id="upgrading">Upgrading<a class="headerlink" href="#upgrading" title="Permanent link">&para;</a></h2>
-<p>Change the tag in the URL. There is no version range to widen: the pin is the
-whole mechanism, and a lockfile records the resolved commit.</p>
+<p>Raise the version range, or change the tag in a direct URL. A lockfile records
+the resolved version.</p>
 <h2 id="the-boundary-as-an-executable-rule">The boundary, as an executable rule<a class="headerlink" href="#the-boundary-as-an-executable-rule" title="Permanent link">&para;</a></h2>
 <p>The workspace's <code>.importlinter</code> contracts state it, and <code>uv run lint-imports</code>
 proves it:</p>

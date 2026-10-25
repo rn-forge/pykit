@@ -815,10 +815,9 @@
 
 
 <h1 id="declaring-a-cli">Declaring a CLI<a class="headerlink" href="#declaring-a-cli" title="Permanent link">&para;</a></h1>
-<p><code>CliApp.from_config</code> builds a Typer application from a <code>[cli]</code> table in a
-TOML, YAML or JSON document. You write the command functions; the table names
-them, and <code>CliApp</code> supplies the app, the standard options and exit-code
-handling.</p>
+<p><code>CliApp.from_config</code> builds a Typer application from a <code>[cli]</code> table in a TOML,
+YAML or JSON document. You write the command functions; the table names them,
+and <code>CliApp</code> supplies the app, the standard options and exit-code handling.</p>
 <h2 id="the-cli-table">The <code>[cli]</code> table<a class="headerlink" href="#the-cli-table" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="k">[cli]</span>
 <span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;golden-app&quot;</span>
@@ -889,12 +888,12 @@ with the offending key named:</p>
               - should be &quot;str&quot; instead of value &quot;1&quot; of type &quot;int&quot;
 </code></pre></div>
 
-<p>A missing <code>[cli]</code> table, a blank name, duplicate command names and a target
-that cannot be imported are rejected the same way.</p>
+<p>A missing <code>[cli]</code> table, a blank name, duplicate command names and a target that
+cannot be imported are rejected the same way.</p>
 <h2 id="loading-from-a-mapping">Loading from a mapping<a class="headerlink" href="#loading-from-a-mapping" title="Permanent link">&para;</a></h2>
 <p><code>CliSurface.load</code> also accepts an already-parsed mapping, for a test or an
-application with its own config loader. Loading and building are separate
-steps, so a configuration can be validated without building the app:</p>
+application with its own config loader. Loading and building are separate steps,
+so a configuration can be validated without building the app:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.cli</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">CliSurface</span>
 
 <span class="n">surface</span> <span class="o">=</span> <span class="n">CliSurface</span><span class="o">.</span><span class="n">load</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;demo&quot;</span><span class="p">,</span> <span class="s2">&quot;commands&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]})</span>   <span class="c1"># validates</span>

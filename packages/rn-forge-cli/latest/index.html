@@ -677,8 +677,8 @@ rendering, and a repository that only needs a command line should not have to
 install Jinja to get one.</p>
 <p>Console output lives one layer down, in <code>rn-forge-commons</code>: it is a property of
 the process rather than of the command-line parser, and a Django management
-command or a worker entry point needs it without taking a Typer dependency.
-This package drives it — <code>--quiet</code>/<code>--json</code> set its mode.</p>
+command or a worker entry point needs it without taking a Typer dependency. This
+package drives it — <code>--quiet</code>/<code>--json</code> set its mode.</p>
 <p><code>rn_forge.cli</code> never imports <code>rn_forge.tooling</code>, and <code>rn_forge.commons</code> never
 imports either; <code>uv run lint-imports</code> proves it.</p>
 <p>Use the guides for common workflows and the API reference for module details.</p>
