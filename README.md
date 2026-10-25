@@ -83,8 +83,18 @@ linked decisions state each rule in full.
 
 ## Installing a package
 
-A consumer declares each package as a pinned git direct URL with its
-subdirectory:
+A consumer declares pykit's package index once and requires packages by version
+range:
+
+```toml
+dependencies = ["rn-forge-commons>=0.7.0,<0.8"]
+
+[[tool.uv.index]]
+name = "rn-forge"
+url = "https://rn-forge.github.io/pykit/simple/"
+```
+
+The alternative is a pinned git direct URL with its subdirectory:
 
 ```toml
 dependencies = [
@@ -92,7 +102,8 @@ dependencies = [
 ]
 ```
 
-The [release pages](docs/releases/index.md) record which tags exist. Inside this
+The [consuming guide](docs/guides/consuming-packages.md) covers both. The
+[release pages](docs/releases/index.md) record which tags exist. Inside this
 workspace, `[tool.uv.sources]` resolves every package to the local checkout
 instead.
 

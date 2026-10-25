@@ -25,11 +25,14 @@ a library an application depends on.
   `[tool.workspace-ci]` tables, and runs `smoke`.
 - `rn_forge.devops.github` — the GitHub Actions adapter: `$GITHUB_OUTPUT` lines
   and the event context.
+- `rn_forge.devops.index` and `rn_forge.devops.releases` — the `index`
+  subcommand: a PEP 503 simple index rendered from a repository's GitHub
+  Release files, and the adapter that reads them with `gh`.
 - `rn_forge.devops.cli` — the `rn-forge-devops` console script.
 
-The package facade re-exports the core only. The core never imports an adapter,
-and the package never imports another `rn_forge` package; `.importlinter` proves
-both.
+The package facade re-exports the planner core only. The core never imports an
+adapter, and the package never imports another `rn_forge` package;
+`.importlinter` proves both.
 
 ## Usage
 

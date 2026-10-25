@@ -7,6 +7,9 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ### Added
 
+- The `index` subcommand: `rn-forge-devops index --repo OWNER/NAME --out DIR`
+  writes a PEP 503 simple index of the repository's published `rn-forge-*`
+  release files.
 - The `requirements` subcommand: it fails when a workspace member's requirement
   on another member is a URL, excludes that member's current version or has no
   upper bound.
