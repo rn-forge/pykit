@@ -16,7 +16,7 @@
         <link rel="prev" href="index.html">
       
       
-        <link rel="next" href="generation.html">
+        <link rel="next" href="lifecycle.html">
       
       
         
@@ -442,34 +442,6 @@
   
   
     <li class="md-nav__item">
-      <a href="generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="lifecycle.html" class="md-nav__link">
         
   
@@ -608,34 +580,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/install.html" class="md-nav__link">
         
   
@@ -644,62 +588,6 @@
     
   
     Install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/state.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    State
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/templates.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Templates
   
 
     
@@ -828,9 +716,9 @@
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
 <p>These packages are not published to PyPI. A release is a <strong>git tag</strong>, and a
-consumer depends on a tag by pinned direct URL — a bare <code>uv add
-rn-forge-tooling</code> would not resolve, and a floating branch reference would
-silently change what a build produced.</p>
+consumer declares pykit's package index (<code>https://rn-forge.github.io/pykit/simple/</code>)
+and requires the package by version range, or pins a tag by direct URL. A
+floating branch reference would silently change what a build produced.</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;rn-forge-tooling @ git+https://github.com/rn-forge/pykit@rn-forge-tooling-v0.2.0#subdirectory=packages/rn-forge-tooling&quot;</span><span class="p">,</span>
@@ -839,12 +727,10 @@ silently change what a build produced.</p>
 
 <p>It is a <strong>development</strong> dependency. Add it to a <code>dev</code> group, or to a CLI's own
 <code>dependencies</code> when the CLI <em>is</em> the developer tool.</p>
-<p><code>rn-forge-cli</code> and <code>rn-forge-commons</code> come with it, pinned the same way.
-<code>jinja2</code> is a hard dependency: a tool that generates files renders templates on
-every run.</p>
+<p><code>rn-forge-cli</code> and <code>rn-forge-commons</code> come with it, as version ranges.</p>
 <h2 id="upgrading">Upgrading<a class="headerlink" href="#upgrading" title="Permanent link">&para;</a></h2>
-<p>Change the tag in the URL. There is no version range to widen: the pin is the
-whole mechanism, and a lockfile records the resolved commit.</p>
+<p>Raise the version range, or change the tag in a direct URL. A lockfile records
+the resolved version.</p>
 <h2 id="what-lives-where">What lives where<a class="headerlink" href="#what-lives-where" title="Permanent link">&para;</a></h2>
 <p>The three libraries split by what an API's signature <em>contains</em>, not by who
 calls it today:</p>
@@ -861,11 +747,11 @@ calls it today:</p>
 <td><code>rn-forge-cli</code></td>
 </tr>
 <tr>
-<td>Generation, templates, state, install</td>
+<td>Lifecycle verbs, install</td>
 <td><code>rn-forge-tooling</code></td>
 </tr>
 <tr>
-<td>Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols</td>
+<td>Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols, generation, state, templates (<code>templates</code> extra)</td>
 <td><code>rn-forge-commons</code></td>
 </tr>
 </tbody>
@@ -876,8 +762,10 @@ would satisfy a caller and reverse the dependency.</p>
 <p>The workspace's <code>.importlinter</code> contracts state it, and <code>uv run lint-imports</code>
 proves it:</p>
 <ul>
-<li><code>rn_forge.commons</code> never imports <code>rn_forge.cli</code>, <code>rn_forge.tooling</code>, Typer or
-  Jinja.</li>
+<li><code>rn_forge.commons</code> never reaches into <code>rn_forge.cli</code> or <code>rn_forge.tooling</code>
+  and never imports Typer. Jinja and the Markdown parsers enter only through
+  <code>rn_forge.commons.text</code>, and <code>rn_forge.commons.generation</code> and <code>text</code> are
+  imported directly, never by commons' core or facade.</li>
 <li><code>rn_forge.cli</code> never imports <code>rn_forge.tooling</code> or Jinja.</li>
 <li>The three libraries layer strictly: tooling → cli → commons.</li>
 <li><code>rn_forge.django</code>'s runtime surface never imports any of them — only

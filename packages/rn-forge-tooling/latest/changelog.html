@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/changelog.html">
       
       
-        <link rel="prev" href="reference/templates.html">
+        <link rel="prev" href="reference/install.html">
       
       
       
@@ -358,34 +358,6 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="guides/lifecycle.html" class="md-nav__link">
         
   
@@ -524,34 +496,6 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="reference/install.html" class="md-nav__link">
         
   
@@ -560,62 +504,6 @@
     
   
     Install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/state.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    State
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/templates.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Templates
   
 
     
@@ -714,6 +602,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-09-27" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -770,6 +697,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#030-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.0] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.0] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-09-27" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -801,8 +767,23 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>Notable changes to <code>rn-forge-tooling</code>, newest first, in the <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
+<p>Notable changes to <code>rn-forge-tooling</code>, newest first, in the
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="030-2026-10-25">[0.3.0] - 2026-10-25<a class="headerlink" href="#030-2026-10-25" title="Permanent link">&para;</a></h2>
+<h3 id="removed">Removed<a class="headerlink" href="#removed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Breaking: <code>rn_forge.tooling.generation</code>, <code>rn_forge.tooling.state</code> and
+  <code>rn_forge.tooling.templates</code>. Import them from
+  <code>rn_forge.commons.generation</code>, <code>rn_forge.commons.fs.state</code> and
+  <code>rn_forge.commons.text.templates</code> (extra <code>templates</code>); the names are
+  unchanged. Tooling no longer depends on <code>jinja2</code>.</li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Requires its rn-forge dependencies by version range from pykit's index
+  (ADR-0004), not by git URL.</li>
+</ul>
 <h2 id="020-2026-09-27">[0.2.0] - 2026-09-27<a class="headerlink" href="#020-2026-09-27" title="Permanent link">&para;</a></h2>
 <p>Released with pykit's first coordinated set of tags (release-1).</p>
 

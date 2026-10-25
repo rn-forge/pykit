@@ -368,34 +368,6 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="guides/lifecycle.html" class="md-nav__link">
         
   
@@ -534,34 +506,6 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="reference/install.html" class="md-nav__link">
         
   
@@ -570,62 +514,6 @@
     
   
     Install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/state.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    State
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/templates.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Templates
   
 
     
@@ -712,23 +600,21 @@
 
 
 <h1 id="rn-forge-tooling">rn-forge-tooling<a class="headerlink" href="#rn-forge-tooling" title="Permanent link">&para;</a></h1>
-<p><code>rn-forge-tooling</code> is the file-owning half of the developer-tooling stack: for
-command-line tools that install themselves and write files into a repository,
-and for the framework code generators that ship as <code>[codegen]</code> extras.</p>
+<p><code>rn-forge-tooling</code> is the lifecycle and install layer of the developer-tooling
+stack: for command-line tools that install themselves and manage their own
+versions. File generation, local state and templates live in
+<code>rn-forge-commons</code>.</p>
 <p>It provides:</p>
 <ul>
-<li>a locked, atomically-written JSON state store</li>
-<li>a strict Jinja render engine</li>
-<li>a generation engine: artifact kinds, action classification, transactional apply</li>
-<li>the tool lifecycle: <code>$RNF_HOME</code> layout, release fetching and verification,
-  and transactional install/upgrade/uninstall/cleanup/status/doctor verbs</li>
+<li>the tool lifecycle: <code>$RNF_HOME</code> layout, release fetching and verification, and
+  transactional install/upgrade/uninstall/cleanup/status/doctor verbs</li>
 </ul>
 <p>Where <code>rn-forge-commons</code> is runtime-neutral — safe in a web server, a worker or
 a container — and <code>rn-forge-cli</code> is the command-line shape every application
-wants, this package is deliberately workstation-shaped: it assumes a
-developer's filesystem and a tool that owns files in it. A repository that only
-needs a command line takes <code>rn-forge-cli</code> and stops there. A package that ships
-into a deployed runtime must not depend on this one outside a <code>codegen</code> extra;
+wants, this package is deliberately workstation-shaped: it assumes a developer's
+filesystem and a tool that owns files in it. A repository that only needs a
+command line takes <code>rn-forge-cli</code> and stops there. A package that ships into a
+deployed runtime must not depend on this one outside a <code>codegen</code> extra;
 <code>uv run lint-imports</code> enforces that.</p>
 <p>Use the guides for common workflows and the API reference for module details.</p>
 

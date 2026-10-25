@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/guides/lifecycle.html">
       
       
-        <link rel="prev" href="generation.html">
+        <link rel="prev" href="installation.html">
       
       
         <link rel="next" href="../reference/index.html">
@@ -359,34 +359,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -630,34 +602,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/generation.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Generation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/install.html" class="md-nav__link">
         
   
@@ -666,62 +610,6 @@
     
   
     Install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/state.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    State
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/templates.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Templates
   
 
     
@@ -873,8 +761,7 @@
 <h1 id="tool-lifecycle">Tool lifecycle<a class="headerlink" href="#tool-lifecycle" title="Permanent link">&para;</a></h1>
 <p><code>rn_forge.tooling.install</code> gives an installable tool its <code>install</code>, <code>upgrade</code>,
 <code>uninstall</code>, <code>cleanup</code>, <code>status</code> and <code>doctor</code> verbs. The tool describes itself
-with a <code>ToolProduct</code>; this package owns every algorithm around that
-description.</p>
+with a <code>ToolProduct</code>; this package owns every algorithm around that description.</p>
 <h2 id="the-layout-under-rnf_home">The layout under <code>$RNF_HOME</code><a class="headerlink" href="#the-layout-under-rnf_home" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code>$RNF_HOME/                      default ~/.rn-forge
   bin/golden-tool -&gt; ../golden-tool/current/bin/golden-tool
@@ -960,9 +847,10 @@ changes what they resolve to without touching them.</p>
 <p>Return an <code>info</code> finding from a passing check rather than nothing, so <code>doctor</code>
 shows that the check ran.</p>
 <h2 id="what-install-guarantees">What <code>install</code> guarantees<a class="headerlink" href="#what-install-guarantees" title="Permanent link">&para;</a></h2>
-<p><code>install</code> runs in the same shape as <code>generation.apply</code>:</p>
+<p><code>install</code> runs in the same shape as <code>rn_forge.commons.generation.apply</code>:</p>
 <ol>
-<li>fetch into scratch space and verify the checksum, if the source publishes one;</li>
+<li>fetch into scratch space and verify the checksum, if the source publishes
+   one;</li>
 <li>set aside an existing directory for the same version, then build the new one;</li>
 <li>put the links in place, backing up any link already there;</li>
 <li>migrate from the active version, then write <code>state.json</code>;</li>
@@ -970,8 +858,8 @@ shows that the check ran.</p>
 </ol>
 <p>If any step raises, the steps already taken are undone in reverse, and the
 previous version is active again. An <code>Exception</code> is re-raised as an
-<code>AppException</code>. An interruption (<code>KeyboardInterrupt</code>) is re-raised as-is,
-after the rollback.</p>
+<code>AppException</code>. An interruption (<code>KeyboardInterrupt</code>) is re-raised as-is, after
+the rollback.</p>
 <p>Other verbs:</p>
 <ul>
 <li><code>uninstall</code> does not assume the install ever completed.</li>
@@ -1072,16 +960,16 @@ instead of <code>rn-forge-cli</code>'s own <code>CliApp.from_config</code>:</p>
 </tbody>
 </table>
 <p>Without <code>namespace</code>, <code>build_tool_app</code> mounts the verbs at the root:
-<code>golden-tool doctor</code>, not <code>golden-tool lifecycle doctor</code>. With <code>namespace =
-"self"</code>, they mount as a group instead: <code>golden-tool self doctor</code>, the same
-shape as <code>uv self update</code> or <code>rustup self update</code>.</p>
-<p>Whether a verb collides with a <code>[[cli.commands]]</code> name depends on the
-namespace: without one, the verbs and the commands share the root, so a verb
-may not repeat a command's name. With a namespace, only the namespace itself
-occupies the root — a command may share a verb's name (e.g. a root <code>doctor</code>
-next to <code>self doctor</code>), but not the namespace's own name. Either way, an
-unknown verb, a blank or whitespace-containing namespace, or an unimportable
-product raises before the application is built.</p>
+<code>golden-tool doctor</code>, not <code>golden-tool lifecycle doctor</code>. With
+<code>namespace = "self"</code>, they mount as a group instead: <code>golden-tool self doctor</code>,
+the same shape as <code>uv self update</code> or <code>rustup self update</code>.</p>
+<p>Whether a verb collides with a <code>[[cli.commands]]</code> name depends on the namespace:
+without one, the verbs and the commands share the root, so a verb may not repeat
+a command's name. With a namespace, only the namespace itself occupies the root
+— a command may share a verb's name (e.g. a root <code>doctor</code> next to
+<code>self doctor</code>), but not the namespace's own name. Either way, an unknown verb, a
+blank or whitespace-containing namespace, or an unimportable product raises
+before the application is built.</p>
 <p><code>build_tool_app</code> builds the application from <code>[cli]</code> with <code>CliSurface.load</code> and
 <code>CliApp.from_surface</code>, then adds the verbs with <code>CliApp.add_typer</code>. A repository
 that declares <code>[lifecycle]</code> depends on <code>rn-forge-tooling</code>; one that only needs
