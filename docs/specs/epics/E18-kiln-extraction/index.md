@@ -2,7 +2,8 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-10-25 |
 
 kiln, the rn-forge repository generator, grew plumbing that any application
 reading configuration, rendering text or checking Markdown would write again. It
@@ -25,7 +26,7 @@ keeps its own code.
 | -- | -- | -- |
 | [F18.1 — Templates, generation and state move to commons](F18.1-template-engine-in-commons.md) | `TemplateEngine` in `rn_forge.commons.text.templates` (`templates` extra), with `autoescape` and `cached`; the generation engine in `rn_forge.commons.generation`; `StateStore` in `rn_forge.commons.fs.state`; import contracts that can break. | New |
 | [F18.2 — Templated artifacts and plan diffs](F18.2-templated-artifacts-and-diffs.md) | `TemplateArtifact` and `render_artifacts` in `rn_forge.commons.generation.templated`; public `disk_content` and `diff` in the generation engine. | New |
-| [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | libyaml loading; `tomllib` for plain TOML; package-resource reads; TOML header and array style; value-level typed reads; brace-safe error messages. | New |
+| [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | libyaml loading; `tomllib` for plain TOML; package-resource reads; TOML header and array style; value-level typed reads; brace-safe error messages. | Active |
 | [F18.4 — Markdown structure](F18.4-markdown-structure.md) | `MarkdownUtils` in `rn_forge.commons.text.markdown` behind a `markdown` extra: headings and anchors, links, title, pipe tables. | New |
 | [F18.5 — One pin set on the new tags](F18.5-coherent-pins.md) | Removed: F19.3 re-tags every dependent on ranges in the same cut. | Removed |
 

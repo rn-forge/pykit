@@ -5,6 +5,14 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Plain YAML loads use libyaml (`ruamel.yaml[oldlibyaml]`).
+
+### Fixed
+
+- A parser message containing a brace now raises `DocumentError`.
+
 ## [0.6.0] - 2026-10-16
 
 ### Removed

@@ -22,6 +22,7 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.logging import AppLogger
 from ruamel.yaml import YAML
+from ruamel.yaml.emitter import Emitter
 
 _LOGGER = AppLogger.get_logger(__name__)
 
@@ -59,7 +60,7 @@ class ConfigFormat(StrEnum):
         try:
             return cls(raw)
         except ValueError:
-            raise DocumentError(f"Unsupported document format: {raw!r}") from None
+            raise DocumentError("Unsupported document format: {!r}", raw) from None
 
 
 # ---------------------------------------------------------------------------
@@ -469,7 +470,9 @@ class DocumentUtils:
                 case ConfigFormat.JSON:
                     value = JsonUtils.load(text)
         except Exception as exc:
-            raise DocumentError(f"Invalid {fmt.value.upper()} document: {exc}") from exc
+            raise DocumentError(
+                "Invalid {} document: {}", fmt.value.upper(), exc
+            ) from exc
         if not isinstance(value, Mapping):
             raise DocumentError("Document root must be a mapping")
         return _to_plain_mapping(cast(Mapping[Any, Any], value))
@@ -504,7 +507,7 @@ class DocumentUtils:
         if not p.exists():
             if missing_ok:
                 return {}
-            raise DocumentError(f"Document does not exist: {p}")
+            raise DocumentError("Document does not exist: {}", p)
         return DocumentUtils.loads(p.read_text(encoding="utf-8"), ConfigFormat.of(p))
 
     @staticmethod
@@ -537,9 +540,9 @@ class DocumentUtils:
                 case ConfigFormat.JSON:
                     document = json.loads(text)
         except Exception as exc:
-            raise DocumentError(f"Invalid document {p}: {exc}") from exc
+            raise DocumentError("Invalid document {}: {}", p, exc) from exc
         if not isinstance(document, Mapping):
-            raise DocumentError(f"Document root must be a mapping: {p}")
+            raise DocumentError("Document root must be a mapping: {}", p)
         return cast(Mapping[str, Any], document)
 
     @staticmethod
@@ -607,6 +610,8 @@ class DocumentUtils:
 def _safe_yaml(*, sort_keys: bool = False, **kwargs: Any) -> YAML:
     """Build a safe-mode ``YAML`` instance, block-style and insertion-ordered."""
     yaml = YAML(typ="safe")
+    # libyaml loads; its emitter folds lines differently and rejects width=sys.maxsize.
+    yaml.Emitter = Emitter
     yaml.default_flow_style = False
     yaml.representer.sort_base_mapping_type_on_output = sort_keys
     for name, value in kwargs.items():

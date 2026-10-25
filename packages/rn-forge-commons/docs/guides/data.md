@@ -40,6 +40,10 @@ yaml_text = YamlUtils.serialize(data)
 DocumentUtils.update("pyproject.toml", {"project": {"version": "0.4.0"}})
 ```
 
+Plain YAML loads use libyaml. YAML 1.2 rules apply, so `on`, `yes` and `no` load
+as strings, not booleans. A GitHub Actions workflow's `on:` key is the string
+`"on"`.
+
 ## Dataclasses
 
 ```python

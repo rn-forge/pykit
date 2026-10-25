@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import platform
+import sys
+from io import StringIO
 from pathlib import Path
 
 import pytest
 import tomlkit
-from ruamel.yaml import YAMLError
+from ruamel.yaml import YAML, YAMLError
 
 import rn_forge.commons.fs.documents as documents_module
 from rn_forge.commons.fs.documents import (
@@ -454,3 +457,28 @@ class TestYamlFileIO:
 # Coverage ROI notes:
 # - Logger side effects inside collections helpers are exercised indirectly via
 #   success/error-path assertions but are not asserted record-by-record.
+
+
+class TestLibyaml:
+    @pytest.mark.skipif(
+        platform.python_implementation() != "CPython", reason="libyaml is CPython-only"
+    )
+    def test_safe_loader_uses_libyaml(self) -> None:
+        assert documents_module._safe_yaml().Parser.__name__ == "CParser"  # noqa: SLF001
+
+    def test_serialize_unfolded_width(self) -> None:
+        out = YamlUtils.serialize({"k": "x " * 200}, width=sys.maxsize)
+        assert len(out.splitlines()) == 1
+
+    def test_serialize_matches_pure_emitter(self) -> None:
+        data = {"k": "word " * 100}
+        pure = YAML(typ="safe", pure=True)
+        pure.default_flow_style = False
+        pure.representer.sort_base_mapping_type_on_output = False
+        stream = StringIO()
+        pure.dump(data, stream)
+        assert YamlUtils.serialize(data) == stream.getvalue()
+
+    def test_invalid_yaml_with_brace_raises_document_error(self) -> None:
+        with pytest.raises(DocumentError):
+            DocumentUtils.loads("a: {b", "yaml")
