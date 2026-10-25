@@ -49,4 +49,6 @@ nav:
       - Core: reference/ci.md
       - uv adapter: reference/uv.md
       - GitHub Actions adapter: reference/github.md
+      - Package index: reference/index-core.md
+      - Releases adapter: reference/releases.md
   - Changelog: changelog.md

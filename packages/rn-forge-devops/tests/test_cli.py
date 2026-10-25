@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from rn_forge.devops import cli
+from rn_forge.devops.index import ReleaseFile
 
 
 def _env(monkeypatch: pytest.MonkeyPatch, event: str, ref_type: str, name: str) -> None:
@@ -98,3 +101,35 @@ def test_cli_requirements_prints_each_problem_and_exits_1(
     monkeypatch.chdir(tmp_path)
     assert cli.main(["requirements"]) == 1
     assert capsys.readouterr().err == "b: a>=1 has no ceiling\n"
+
+
+def test_cli_index_writes_the_pages(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    file = ReleaseFile("rn-forge-web", "w.whl", "https://dl/w.whl", "aa")
+    monkeypatch.setattr(cli.releases, "release_files", lambda repo: [file])
+    assert cli.main(["index", "--repo", "o/r", "--out", str(tmp_path / "simple")]) == 0
+    assert "rn-forge-web/" in (tmp_path / "simple/index.html").read_text()
+    assert (
+        "https://dl/w.whl#sha256=aa"
+        in (tmp_path / "simple/rn-forge-web/index.html").read_text()
+    )
+    assert (
+        capsys.readouterr().out
+        == f"wrote 1 projects and 1 files to {tmp_path / 'simple'}\n"
+    )
+
+
+def test_index_and_releases_import_no_planner_adapter() -> None:
+    code = (
+        "import sys\n"
+        "import rn_forge.devops.index, rn_forge.devops.releases\n"
+        "print([m for m in ('rn_forge.devops.uv', 'rn_forge.devops.github')"
+        " if m in sys.modules])"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], check=True, capture_output=True, text=True
+    )
+    assert result.stdout.strip() == "[]"
