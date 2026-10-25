@@ -10,6 +10,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `DocumentUtils.read` of a package resource; `header` and `multiline_arrays`
   on `dumps` and `write`; `DocumentUtils.multiline_arrays`; `DictUtils.as_mapping`,
   `ListUtils.as_list` and `ListUtils.as_strings`.
+- `rn_forge.commons.generation`, moved from rn-forge-tooling.
+- `StateStore` (`rn_forge.commons.fs.state`), moved from rn-forge-tooling.
 - `rn_forge.commons.text.templates`, moved from rn-forge-tooling, with
   `autoescape` and `TemplateEngine.cached`.
 - The `templates` extra.

@@ -92,12 +92,17 @@ holds it.
 - **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
 - **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization
   and atomic publication.
+- **`state`** — `StateStore`: a locked, atomically-written JSON key-to-entry
+  store.
 - **`blocks`** — `ManagedBlock`: render, extract and remove a generator-owned
   fenced block inside a file somebody else owns (`.gitignore`, `CLAUDE.md`,
   `mkdocs.yml`), preserving every byte outside the markers.
 - **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`:
   JSON/YAML/TOML (de)serialization and file I/O, plus comment-preserving
   round-trip editing of config documents.
+
+**`generation/`** — plan, diff and atomic apply of owned files (`Artifact`,
+`plan`, `apply`). Imported directly, never through the facade.
 
 **`text/`** — text formats, each module behind its own extra and imported
 directly (never through the facade).
@@ -164,7 +169,7 @@ reverse the dependency. `uv run lint-imports` proves it.
 | Concern | Package |
 | -- | -- |
 | `AppConsole`, Typer app factory, standard options, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| `StateStore`, the generation engine, `extract_archive`, docs checkers | `rn-forge-tooling` |
+| `extract_archive`, the install lifecycle, docs checkers | `rn-forge-tooling` |
 
 ## Docs
 

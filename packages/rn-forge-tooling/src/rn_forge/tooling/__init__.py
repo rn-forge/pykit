@@ -4,10 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from rn_forge.tooling.install import ToolHome, ToolProduct, extract_archive
-    from rn_forge.tooling.state import StateStore
 
 __all__ = [
-    "StateStore",
     "ToolHome",
     "ToolProduct",
     "extract_archive",
@@ -16,7 +14,6 @@ __all__ = [
 _INSTALL = "rn_forge.tooling.install"
 
 _MODULES = {
-    "StateStore": "rn_forge.tooling.state",
     "ToolHome": _INSTALL,
     "ToolProduct": _INSTALL,
     "extract_archive": _INSTALL,

@@ -1,4 +1,4 @@
-"""Tests for rn_forge.tooling.generation."""
+"""Tests for rn_forge.commons.generation."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 
 from rn_forge.commons.fs.blocks import ManagedBlock
 from rn_forge.commons.exceptions import AppException
-from rn_forge.tooling.generation import (
+from rn_forge.commons.generation import (
     Action,
     Artifact,
     ArtifactKind,
@@ -15,7 +15,7 @@ from rn_forge.tooling.generation import (
     classify,
     plan,
 )
-from rn_forge.tooling.state import StateStore
+from rn_forge.commons.fs.state import StateStore
 
 KILN_BLOCK = ManagedBlock("rn-forge kiln")
 

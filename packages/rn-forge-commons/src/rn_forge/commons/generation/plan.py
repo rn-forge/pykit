@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.hashing import ContentHash
-from rn_forge.tooling.generation.artifacts import (
+from rn_forge.commons.generation.artifacts import (
     Action,
     Artifact,
     ArtifactKind,

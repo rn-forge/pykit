@@ -1,4 +1,4 @@
-"""Tests for rn_forge.tooling.state."""
+"""Tests for rn_forge.commons.fs.state."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import pytest
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
-from rn_forge.tooling.state import StateStore
+from rn_forge.commons.fs.state import StateStore
 
 
 @dataclass

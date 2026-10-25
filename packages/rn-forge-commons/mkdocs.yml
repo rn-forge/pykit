@@ -52,6 +52,7 @@ nav:
       - Resilience: guides/resilience.md
       - Config: guides/config.md
       - Data: guides/data.md
+      - Generation: guides/generation.md
       - Text: guides/text.md
       - Processes and Tasks: guides/processes-and-tasks.md
   - Reference:
@@ -59,6 +60,7 @@ nav:
       - Config: reference/config.md
       - Exceptions: reference/exceptions.md
       - Findings: reference/findings.md
+      - Generation: reference/generation.md
       - Testing: reference/testing.md
       - Language:
           - Collections: reference/lang/collections.md
@@ -73,6 +75,7 @@ nav:
           - Hashing: reference/fs/hashing.md
           - Locks: reference/fs/locks.md
           - Paths: reference/fs/paths.md
+          - State: reference/fs/state.md
       - Logging:
           - Logger: reference/logging/logger.md
           - StructLogger: reference/logging/structlog.md

@@ -30,8 +30,8 @@ calls it today:
 | Concern | Package |
 | -- | -- |
 | Typer app factory, standard options, `AppConsole`, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| Generation, templates, state, install | `rn-forge-tooling` |
-| Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols | `rn-forge-commons` |
+| Lifecycle verbs, install | `rn-forge-tooling` |
+| Paths, hashes, locks, managed blocks, documents, findings, logging, integration protocols, generation, state, templates (`templates` extra) | `rn-forge-commons` |
 
 There are deliberately **no compatibility re-exports** in any direction: a shim
 would satisfy a caller and reverse the dependency.
@@ -41,8 +41,10 @@ would satisfy a caller and reverse the dependency.
 The workspace's `.importlinter` contracts state it, and `uv run lint-imports`
 proves it:
 
-- `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or
-  Jinja.
+- `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling`
+  and never imports Typer. Jinja and the Markdown parsers enter only through
+  `rn_forge.commons.text`, and `rn_forge.commons.generation` and `text` are
+  imported directly, never by commons' core or facade.
 - `rn_forge.cli` never imports `rn_forge.tooling` or Jinja.
 - The three libraries layer strictly: tooling → cli → commons.
 - `rn_forge.django`'s runtime surface never imports any of them — only

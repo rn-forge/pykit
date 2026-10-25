@@ -7,9 +7,9 @@
 [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling)
 · [All pykit packages](https://rn-forge.github.io/pykit/)
 
-The file-owning half of the developer-tooling stack: for command-line tools that
-install themselves and write files into a repository, and for framework code
-generators shipped as `[codegen]` extras.
+The lifecycle and install layer of the developer-tooling stack: for
+command-line tools that install themselves and manage their own versions.
+File generation, local state and templates live in `rn-forge-commons`.
 
 Where
 [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons)
@@ -19,10 +19,6 @@ is the command-line shape every application wants, this package is deliberately
 workstation-shaped: it assumes a developer's filesystem and a tool that owns
 files in it. It owns:
 
-- `state` — a locked, atomically-written JSON state store.
-- `generation` — artifact kinds, action classification and transactional apply,
-  split into `artifacts` (the vocabulary), `plan` (what a write would do) and
-  `apply` (making a batch of writes all-or-nothing).
 - `install` — the tool lifecycle: `$RNF_HOME` layout (`ToolHome`), release
   sources and verification, archive extraction, the `ToolProduct` seam, and
   the transactional

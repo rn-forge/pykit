@@ -1,6 +1,11 @@
 # Generation
 
-`rn_forge.tooling.generation` is the engine behind "write a repository's
+Two kinds of user share this engine: a tool that writes a repository's standard
+files, and an application that writes the files it owns into a directory. Both
+want a plan before any write, a diff, an atomic apply with rollback, and drift
+detection. Import it directly; `rn_forge.commons` does not re-export it.
+
+`rn_forge.commons.generation` is the engine behind "write a repository's
 standard files, and refuse to silently clobber a hand edit". It decides what a
 write *would* do before doing anything, and makes a batch of writes
 all-or-nothing.
@@ -17,7 +22,7 @@ Every artifact declares who owns its bytes:
 
 ```python
 from rn_forge.commons.fs.blocks import ManagedBlock
-from rn_forge.tooling.generation import Artifact, ArtifactKind
+from rn_forge.commons.generation import Artifact, ArtifactKind
 
 taskfile = Artifact(path="Taskfile.yml", kind=ArtifactKind.MANAGED, content=rendered)
 ignore = Artifact(
@@ -34,8 +39,8 @@ outside the markers is preserved byte for byte.
 ## Classify, then plan, then apply
 
 ```python
-from rn_forge.tooling.generation import StateEntry, apply, plan
-from rn_forge.tooling.state import StateStore
+from rn_forge.commons.generation import StateEntry, apply, plan
+from rn_forge.commons.fs.state import StateStore
 
 store = StateStore(
     root / ".golden-tool/state.json",
