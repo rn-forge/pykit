@@ -1218,6 +1218,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#021-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.1] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.1] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1241,7 +1269,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1313,6 +1341,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#021-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.1] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.1] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1336,7 +1392,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1383,56 +1439,87 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>Notable changes to <code>rn-forge-web</code>, newest first, in the <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
+<p>Notable changes to <code>rn-forge-web</code>, newest first, in the
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="021-2026-10-25">[0.2.1] - 2026-10-25<a class="headerlink" href="#021-2026-10-25" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Requires its rn-forge dependencies by version range from pykit's index
+  (ADR-0004), not by git URL.</li>
+</ul>
 <h2 id="020-2026-10-05">[0.2.0] - 2026-10-05<a class="headerlink" href="#020-2026-10-05" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li>AIP-164 soft delete rules in <code>rn_forge.web.soft_delete</code> and <code>rn_forge.web.exceptions</code>:
-  <code>ResourceDeleted</code> and <code>ResourceNotDeleted</code> (409, both in <code>default_registry()</code>),
-  <code>SHOW_DELETED_PARAM</code> and <code>require_live</code>. The <code>soft-delete</code> conformance area has thirteen
-  <code>soft-delete.*</code> cases, and the API conventions gain a <em>Soft delete</em> section; <code>DELETE</code> of a
-  soft-deleting resource is 200 with the resource, and <code>deleteTime</code> is a standard field.</li>
-<li>AIP-157 <code>readMask</code> partial responses in <code>rn_forge.web.read_mask</code>: <code>READ_MASK_PARAM</code>, <code>FieldTree</code>,
-  <code>ReadMask</code>, <code>parse_read_mask</code> and <code>InvalidReadMask</code> (400) in <code>default_registry()</code>. Eleven
-  <code>read-mask.*</code> conformance cases, and a <em>Partial responses</em> section in the API conventions.</li>
-<li><code>:batchGet</code> and <code>:batchUpdate</code> wire rules in <code>rn_forge.web.transfer</code>: <code>batch_get_ids</code>,
-  <code>parse_batch_update</code>, <code>BatchUpdateItem</code>, <code>NON_EMPTY_IDS_DETAIL</code> and <code>DUPLICATE_ID_DETAIL</code>, with
-  <code>check_item_precondition</code> in <code>rn_forge.web.concurrency</code> and <code>InvalidBatchGet</code> (400) in
-  <code>default_registry()</code>.</li>
-<li><code>PreconditionRequired</code>, <code>MalformedPrecondition</code> and <code>VersionConflict</code> take an optional <code>errors</code>
-  argument that renders as the problem's <code>errors</code> member. Without it their bodies are unchanged.</li>
+<li>AIP-164 soft delete rules in <code>rn_forge.web.soft_delete</code> and
+  <code>rn_forge.web.exceptions</code>: <code>ResourceDeleted</code> and <code>ResourceNotDeleted</code> (409,
+  both in <code>default_registry()</code>), <code>SHOW_DELETED_PARAM</code> and <code>require_live</code>. The
+  <code>soft-delete</code> conformance area has thirteen <code>soft-delete.*</code> cases, and the
+  API conventions gain a <em>Soft delete</em> section; <code>DELETE</code> of a soft-deleting
+  resource is 200 with the resource, and <code>deleteTime</code> is a standard field.</li>
+<li>AIP-157 <code>readMask</code> partial responses in <code>rn_forge.web.read_mask</code>:
+  <code>READ_MASK_PARAM</code>, <code>FieldTree</code>, <code>ReadMask</code>, <code>parse_read_mask</code> and
+  <code>InvalidReadMask</code> (400) in <code>default_registry()</code>. Eleven <code>read-mask.*</code>
+  conformance cases, and a <em>Partial responses</em> section in the API conventions.</li>
+<li><code>:batchGet</code> and <code>:batchUpdate</code> wire rules in <code>rn_forge.web.transfer</code>:
+  <code>batch_get_ids</code>, <code>parse_batch_update</code>, <code>BatchUpdateItem</code>,
+  <code>NON_EMPTY_IDS_DETAIL</code> and <code>DUPLICATE_ID_DETAIL</code>, with
+  <code>check_item_precondition</code> in <code>rn_forge.web.concurrency</code> and
+  <code>InvalidBatchGet</code> (400) in <code>default_registry()</code>.</li>
+<li><code>PreconditionRequired</code>, <code>MalformedPrecondition</code> and <code>VersionConflict</code> take an
+  optional <code>errors</code> argument that renders as the problem's <code>errors</code> member.
+  Without it their bodies are unchanged.</li>
 <li>Eleven <code>transfer.*</code> conformance cases for <code>:batchGet</code> and <code>:batchUpdate</code>, from
-  <code>batch-get-returns-resources-in-request-order</code> to <code>batch-update-with-an-empty-list-is-422</code>.
-  <code>RequestSpec.query</code> accepts a tuple of values for a repeated parameter.</li>
-<li>Shared transfer rules in <code>rn_forge.web.transfer</code>: <code>ImportCounts</code>, <code>parse_flag</code>,
-  <code>row_cap_problem</code>, <code>NON_EMPTY_LIST_DETAIL</code>, <code>unsupported_file_detail</code> and
-  <code>unreadable_file_detail</code>.</li>
-<li><code>RowsInvalid</code> (422) and <code>ItemsDenied</code> (403) in <code>rn_forge.web.exceptions</code>, both in
-  <code>default_registry()</code>.</li>
+  <code>batch-get-returns-resources-in-request-order</code> to
+  <code>batch-update-with-an-empty-list-is-422</code>. <code>RequestSpec.query</code> accepts a
+  tuple of values for a repeated parameter.</li>
+<li>Shared transfer rules in <code>rn_forge.web.transfer</code>: <code>ImportCounts</code>,
+  <code>parse_flag</code>, <code>row_cap_problem</code>, <code>NON_EMPTY_LIST_DETAIL</code>,
+  <code>unsupported_file_detail</code> and <code>unreadable_file_detail</code>.</li>
+<li><code>RowsInvalid</code> (422) and <code>ItemsDenied</code> (403) in <code>rn_forge.web.exceptions</code>, both
+  in <code>default_registry()</code>.</li>
 <li>JSON Merge Patch (RFC 7396), framework-neutral, in <code>rn_forge.web.merge_patch</code>:
-  <code>MERGE_PATCH_MEDIA_TYPE</code>, <code>apply_merge_patch</code>, <code>merge_representation</code> and <code>require_patch_object</code>.
-  A top-level <code>null</code> sets a field to <code>null</code>; below the top level <code>null</code> removes the member.</li>
+  <code>MERGE_PATCH_MEDIA_TYPE</code>, <code>apply_merge_patch</code>, <code>merge_representation</code> and
+  <code>require_patch_object</code>. A top-level <code>null</code> sets a field to <code>null</code>; below the
+  top level <code>null</code> removes the member.</li>
 <li><code>UNSUPPORTED_MEDIA_TYPE</code> and <code>NULL_FIELD_DETAIL</code> in <code>rn_forge.web.problem</code>.</li>
-<li><code>UnsupportedMediaType</code> (415, with <code>Accept-Patch</code>) and <code>InvalidMergePatch</code> (422) in
-  <code>rn_forge.web.exceptions</code>, both in <code>default_registry()</code>.</li>
+<li><code>UnsupportedMediaType</code> (415, with <code>Accept-Patch</code>) and <code>InvalidMergePatch</code>
+  (422) in <code>rn_forge.web.exceptions</code>, both in <code>default_registry()</code>.</li>
 <li>The <code>patch</code> conformance area, with ten <code>patch.*</code> cases.</li>
-<li>Eight <code>transfer.*</code> conformance cases: <code>import-without-a-file-is-422</code>, <code>import-over-the-cap-is-422</code>,
-  <code>import-template-is-the-import-columns</code>, <code>import-template-prefill-adds-the-rows</code>,
-  <code>batch-create-with-an-empty-list-is-422</code>, <code>batch-create-over-the-cap-is-422</code>,
-  <code>batch-create-denied-item-is-403-pointer</code> and <code>denied-batch-create-persists-nothing</code>.</li>
+<li>Eight <code>transfer.*</code> conformance cases: <code>import-without-a-file-is-422</code>,
+  <code>import-over-the-cap-is-422</code>, <code>import-template-is-the-import-columns</code>,
+  <code>import-template-prefill-adds-the-rows</code>,
+  <code>batch-create-with-an-empty-list-is-422</code>,
+  <code>batch-create-over-the-cap-is-422</code>, <code>batch-create-denied-item-is-403-pointer</code>
+  and <code>denied-batch-create-persists-nothing</code>.</li>
 <li>A reference page for <code>rn_forge.web.transfer</code>.</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Breaking:</strong> <code>orderBy</code> takes a comma-separated list of terms, and <code>null</code> sorts last in both directions.</li>
-<li><code>parse_order_by</code> accepts many terms and rejects a repeated field with <code>orderBy names '{field}' more than once</code>. It rejected a second term.</li>
-<li><code>Cursor(sort_key: str, ...)</code> is now <code>Cursor(sort_keys: tuple[SortValue, ...], ...)</code>, and <code>encode_cursor(sort_key, ...)</code> is now <code>encode_cursor(sort_keys, ...)</code>. <code>SortValue</code> (<code>str | int | float | bool | None</code>) is exported.</li>
-<li>The token's JSON is <code>{"k": [&lt;values&gt;], "id": ..., "o": ...}</code>. Tokens issued before the change are rejected with 400.</li>
-<li><code>check_cursor_order</code> also rejects a token whose value count does not match the terms, with <code>Malformed page token</code>.</li>
-<li>New conformance cases: <code>pagination.order-by-several-fields-sorts-by-each-in-turn</code>, <code>nulls-sort-last-ascending</code>, <code>nulls-sort-last-descending</code>, <code>first-page-carries-a-composite-token</code>, <code>composite-token-resumes-within-a-tie</code>, <code>composite-token-resumes-after-a-null</code>, <code>repeated-order-by-field-is-400</code> and <code>token-with-the-wrong-number-of-values-is-400</code>. The case that asserted the one-field rule is removed.</li>
-<li><code>EXPOSED_HEADERS</code> now ends with <code>Content-Disposition</code>, so a cross-origin browser
-  client can read the file name of an export or an import template.</li>
+<li><strong>Breaking:</strong> <code>orderBy</code> takes a comma-separated list of terms, and <code>null</code>
+  sorts last in both directions.<ul>
+<li><code>parse_order_by</code> accepts many terms and rejects a repeated field with
+  <code>orderBy names '{field}' more than once</code>. It rejected a second term.</li>
+<li><code>Cursor(sort_key: str, ...)</code> is now
+  <code>Cursor(sort_keys: tuple[SortValue, ...], ...)</code>, and
+  <code>encode_cursor(sort_key, ...)</code> is now <code>encode_cursor(sort_keys, ...)</code>.
+  <code>SortValue</code> (<code>str | int | float | bool | None</code>) is exported.</li>
+<li>The token's JSON is <code>{"k": [&lt;values&gt;], "id": ..., "o": ...}</code>. Tokens issued
+  before the change are rejected with 400.</li>
+<li><code>check_cursor_order</code> also rejects a token whose value count does not match
+  the terms, with <code>Malformed page token</code>.</li>
+<li>New conformance cases:
+  <code>pagination.order-by-several-fields-sorts-by-each-in-turn</code>,
+  <code>nulls-sort-last-ascending</code>, <code>nulls-sort-last-descending</code>,
+  <code>first-page-carries-a-composite-token</code>,
+  <code>composite-token-resumes-within-a-tie</code>,
+  <code>composite-token-resumes-after-a-null</code>, <code>repeated-order-by-field-is-400</code>
+  and <code>token-with-the-wrong-number-of-values-is-400</code>. The case that asserted
+  the one-field rule is removed.</li>
+</ul>
+</li>
+<li><code>EXPOSED_HEADERS</code> now ends with <code>Content-Disposition</code>, so a cross-origin
+  browser client can read the file name of an export or an import template.</li>
 </ul>
 <h2 id="010-2026-09-27">[0.1.0] - 2026-09-27<a class="headerlink" href="#010-2026-09-27" title="Permanent link">&para;</a></h2>
 <p>First release.</p>

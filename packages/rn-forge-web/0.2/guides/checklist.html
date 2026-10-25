@@ -1463,47 +1463,47 @@
 
 
 <h1 id="adoption-checklist">Adoption checklist<a class="headerlink" href="#adoption-checklist" title="Permanent link">&para;</a></h1>
-<p>For an application's own review. Each item is phrased so the answer is
-checkable in the codebase rather than in someone's memory — the failure mode
-this catches is an application that uses the primitives <em>almost</em> everywhere.</p>
+<p>For an application's own review. Each item is phrased so the answer is checkable
+in the codebase rather than in someone's memory — the failure mode this catches
+is an application that uses the primitives <em>almost</em> everywhere.</p>
 <h2 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] <code>traceparent</code>/<code>tracestate</code> are the only trace headers read or written.</li>
 <li>[ ] The application configures a <code>TracerProvider</code> (or runs under
-      <code>opentelemetry-instrument</code>); <code>rn_forge.web</code> never does.</li>
+  <code>opentelemetry-instrument</code>); <code>rn_forge.web</code> never does.</li>
 <li>[ ] The log configuration includes
-      <code>rn_forge.commons.logging.structlog.otel_processor</code>.</li>
+  <code>rn_forge.commons.logging.structlog.otel_processor</code>.</li>
 <li>[ ] No module defines its own request-id ContextVar or header constant.</li>
 </ul>
 <h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
 <ul>
-<li>[ ] <strong>Every</strong> error response goes through the registry. <code>grep -rn
-      '"error"\|"detail":'</code> finds no hand-built error body.</li>
-<li>[ ] Domain exceptions are registered on the application's registry instance
-      at startup, in one place.</li>
+<li>[ ] <strong>Every</strong> error response goes through the registry.
+  <code>grep -rn     '"error"\|"detail":'</code> finds no hand-built error body.</li>
+<li>[ ] Domain exceptions are registered on the application's registry instance at
+  startup, in one place.</li>
 <li>[ ] The registry is an <em>instance</em>, not a mutated module-level default.</li>
 <li>[ ] No handler branches on <code>status_code</code> where a registration would do.</li>
 <li>[ ] A 5xx response body has been eyeballed in a real failure: it contains no
-      exception message, no stack frame and no connection string.</li>
+  exception message, no stack frame and no connection string.</li>
 <li>[ ] Validation errors come out as RFC 6901 pointers, including for a
-      <strong>nested</strong> object — tested, not assumed.</li>
+  <strong>nested</strong> object — tested, not assumed.</li>
 </ul>
 <h2 id="concurrency">Concurrency<a class="headerlink" href="#concurrency" title="Permanent link">&para;</a></h2>
 <ul>
-<li>[ ] Every mutating endpoint on a versioned resource either requires
-      <code>If-Match</code> or has a written reason not to.</li>
+<li>[ ] Every mutating endpoint on a versioned resource either requires <code>If-Match</code>
+  or has a written reason not to.</li>
 <li>[ ] Read responses for those resources carry an <code>ETag</code>.</li>
 <li>[ ] No endpoint returns 409 for a stale precondition.</li>
 <li>[ ] No endpoint accepts a version from the request <em>body</em> in place of the
-      header.</li>
+  header.</li>
 </ul>
 <h2 id="pagination">Pagination<a class="headerlink" href="#pagination" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] Every collection endpoint is cursor-paginated, or its specification says
-      why it is page-number.</li>
+  why it is page-number.</li>
 <li>[ ] <strong>No <code>pageSize</code> validator rejects an over-large value.</strong> On FastAPI:
-      <code>grep -rn "le="</code> finds no <code>pageSize</code> constraint. This is the single
-      easiest divergence to introduce.</li>
+  <code>grep -rn "le="</code> finds no <code>pageSize</code> constraint. This is the single easiest
+  divergence to introduce.</li>
 <li>[ ] <code>nextPageToken</code> is <code>null</code>, not absent, on the last page.</li>
 <li>[ ] <code>totalSize</code> appears only where an endpoint opted in and pays for a count.</li>
 <li>[ ] No client code, and no test, parses or constructs a <code>pageToken</code>.</li>
@@ -1511,50 +1511,50 @@ this catches is an application that uses the primitives <em>almost</em> everywhe
 <h2 id="idempotency">Idempotency<a class="headerlink" href="#idempotency" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] Every unsafe endpoint a client may retry accepts <code>Idempotency-Key</code>.</li>
-<li>[ ] The store's claim is atomic — <code>cache.add()</code>, or <code>ON CONFLICT DO
-      NOTHING</code> — and <strong>not</strong> a <code>get</code> followed by a <code>set</code>.</li>
+<li>[ ] The store's claim is atomic — <code>cache.add()</code>, or
+  <code>ON CONFLICT DO     NOTHING</code> — and <strong>not</strong> a <code>get</code> followed by a <code>set</code>.</li>
 <li>[ ] The cache backend is shared across worker processes. It is not
-      <code>LocMemCache</code>.</li>
+  <code>LocMemCache</code>.</li>
 <li>[ ] Replaying a key with a different body has been tested and returns 409.</li>
 <li>[ ] <code>scope</code> distinguishes endpoints (and tenants, where relevant).</li>
 </ul>
 <h2 id="health">Health<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] <code>/healthz</code> touches no dependency.</li>
-<li>[ ] <code>/readyz</code> names every external dependency the process needs, including
-      the ones that are not configured yet — as <code>skipped</code>, not omitted.</li>
+<li>[ ] <code>/readyz</code> names every external dependency the process needs, including the
+  ones that are not configured yet — as <code>skipped</code>, not omitted.</li>
 <li>[ ] <code>required</code> contains exactly the dependencies whose loss should take the
-      instance out of the load-balancer pool, and no more.</li>
-<li>[ ] <code>/readyz</code> has been exercised with a dependency actually down, and
-      returned 503 rather than 500.</li>
+  instance out of the load-balancer pool, and no more.</li>
+<li>[ ] <code>/readyz</code> has been exercised with a dependency actually down, and returned
+  503 rather than 500.</li>
 </ul>
 <h2 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] Missing or invalid credentials → 401 <strong>with</strong> a challenge.</li>
 <li>[ ] Insufficient scope → 403 <strong>without</strong> one.</li>
-<li>[ ] The 401 body is byte-identical whether the token was expired, badly
-      signed or issued by an unknown key.</li>
+<li>[ ] The 401 body is byte-identical whether the token was expired, badly signed
+  or issued by an unknown key.</li>
 <li>[ ] Basic auth, if enabled, is documented as non-production and is off in the
-      production configuration.</li>
+  production configuration.</li>
 </ul>
 <h2 id="casing-and-schema">Casing and schema<a class="headerlink" href="#casing-and-schema" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] The camelCase renderer/parser is wired globally, not per serializer.</li>
 <li>[ ] The emitted schema is OpenAPI 3.1.0.</li>
 <li>[ ] <code>ProblemDetail</code>, <code>Page</code>, <code>CheckResult</code> and <code>HealthReport</code> appear in
-      <code>components/schemas</code> under exactly those names.</li>
+  <code>components/schemas</code> under exactly those names.</li>
 <li>[ ] <code>ProblemDetail</code> is present even though no route declares it as a response
-      model — the explicit injection is in place.</li>
+  model — the explicit injection is in place.</li>
 <li>[ ] <code>operationId</code>s follow the shared convention.</li>
 </ul>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] The conformance driver is present and every case in
-      <code>rn_forge.web.conformance.CASES</code> passes.</li>
-<li>[ ] The driver asserts against the table, not against another stack's
-      recorded output.</li>
-<li>[ ] The driver needs no redaction of its own beyond <code>redact</code>. If it does,
-      that is the finding — report it upstream rather than working around it.</li>
+  <code>rn_forge.web.conformance.CASES</code> passes.</li>
+<li>[ ] The driver asserts against the table, not against another stack's recorded
+  output.</li>
+<li>[ ] The driver needs no redaction of its own beyond <code>redact</code>. If it does, that
+  is the finding — report it upstream rather than working around it.</li>
 </ul>
 
 

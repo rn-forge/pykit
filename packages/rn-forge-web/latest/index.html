@@ -1336,7 +1336,8 @@ shared by Django/DRF, FastAPI/Starlette and anything else that speaks HTTP.</p>
   trace and span ids</li>
 <li><strong><code>problem</code></strong> — RFC 9457 problem details, plus an exception→problem registry
   that resolves by MRO, the 5xx detail policy, the two validation-error
-  normalizers, and the parse direction for consuming an upstream's problem body</li>
+  normalizers, and the parse direction for consuming an upstream's problem
+  body</li>
 <li><strong><code>exceptions</code></strong> — the conflict, precondition, cursor, idempotency and auth
   exceptions, all <code>AppException</code> subclasses</li>
 <li><strong><code>concurrency</code></strong> — ETag validators and the <code>If-Match</code> precondition check,
@@ -1372,8 +1373,8 @@ imports no web framework, no <code>rn_forge.cli</code> and no <code>rn_forge.too
 <code>uv run lint-imports</code> proves it, and CI gates every other job on that.</p>
 <p><strong>Inbound, not outbound.</strong> Circuit breakers, retries and rate limiting are
 transport-agnostic and live in <code>rn-forge-commons</code> — a worker retrying a database
-call needs them and serves no HTTP. This package is about what a server
-promises its callers.</p>
+call needs them and serves no HTTP. This package is about what a server promises
+its callers.</p>
 <h2 id="where-to-start">Where to start<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Writing an application specification?</strong> The

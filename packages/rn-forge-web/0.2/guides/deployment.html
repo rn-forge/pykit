@@ -1331,15 +1331,17 @@
 
 
 <h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
-<p><strong>Normative for operators.</strong> <code>api-conventions.md</code> is the wire contract; this page is its
-companion for whoever deploys the service. The kit's code stays host-neutral — nothing in
-<code>rn-forge-web</code>, <code>rn-forge-fastapi</code> or <code>rn-forge-django</code> knows which platform it runs on. This page
-maps that one contract onto each host's own mechanisms.</p>
-<p>The facts below were read from each vendor's documentation on 2026-09-22. Platform documentation
-changes; recheck them when editing this page.</p>
+<p><strong>Normative for operators.</strong> <code>api-conventions.md</code> is the wire contract; this
+page is its companion for whoever deploys the service. The kit's code stays
+host-neutral — nothing in <code>rn-forge-web</code>, <code>rn-forge-fastapi</code> or
+<code>rn-forge-django</code> knows which platform it runs on. This page maps that one
+contract onto each host's own mechanisms.</p>
+<p>The facts below were read from each vendor's documentation on 2026-09-22.
+Platform documentation changes; recheck them when editing this page.</p>
 <h2 id="health-probes">Health probes<a class="headerlink" href="#health-probes" title="Permanent link">&para;</a></h2>
-<p><code>/livez</code> answers liveness and <code>/readyz</code> answers readiness (<code>api-conventions.md</code> §6). Every host
-judges a probe by status code and response time only, never the body.</p>
+<p><code>/livez</code> answers liveness and <code>/readyz</code> answers readiness (<code>api-conventions.md</code>
+§6). Every host judges a probe by status code and response time only, never the
+body.</p>
 <table>
 <thead>
 <tr>
@@ -1376,9 +1378,10 @@ judges a probe by status code and response time only, never the body.</p>
 </tr>
 </tbody>
 </table>
-<p>App Engine standard's manual/basic-scaling <code>/_ah/start</code> hook: whether the platform counts a 404
-response as a successful start is unconfirmed against current vendor docs. Register the safe
-default — a handler that always answers 200 — rather than leaving the route unhandled:</p>
+<p>App Engine standard's manual/basic-scaling <code>/_ah/start</code> hook: whether the
+platform counts a 404 response as a successful start is unconfirmed against
+current vendor docs. Register the safe default — a handler that always answers
+200 — rather than leaving the route unhandled:</p>
 <div class="codehilite"><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/_ah/start&quot;</span><span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">ah_start</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}</span>
@@ -1386,30 +1389,35 @@ default — a handler that always answers 200 — rather than leaving the route 
 
 <h2 id="cross-cutting-points">Cross-cutting points<a class="headerlink" href="#cross-cutting-points" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>TLS terminates at the host's front end.</strong> Trust <code>X-Forwarded-Proto</code> and <code>X-Forwarded-For</code>:
-  uvicorn <code>--proxy-headers --forwarded-allow-ips</code>, Django <code>SECURE_PROXY_SSL_HEADER</code> and
-  <code>USE_X_FORWARDED_HOST</code>. Otherwise <code>Location</code>, <code>Link</code> and the api-catalog's links (§14) carry
-  <code>http://</code>. Leave the security-headers <code>hsts</code> flag (§15) off unless the host doesn't set HSTS
+<li><strong>TLS terminates at the host's front end.</strong> Trust <code>X-Forwarded-Proto</code> and
+  <code>X-Forwarded-For</code>: uvicorn <code>--proxy-headers --forwarded-allow-ips</code>, Django
+  <code>SECURE_PROXY_SSL_HEADER</code> and <code>USE_X_FORWARDED_HOST</code>. Otherwise <code>Location</code>,
+  <code>Link</code> and the api-catalog's links (§14) carry <code>http://</code>. Leave the
+  security-headers <code>hsts</code> flag (§15) off unless the host doesn't set HSTS
   itself.</li>
-<li><strong>CORS.</strong> Azure App Service has a platform CORS feature. Microsoft's guidance is not to combine
-  it with application CORS, so use the kit's CORS module (§16) and leave the platform's off.</li>
-<li><strong>Body size.</strong> Each host's front end has its own cap. The kit's request-body limit (§11) is the
-  application's, and it should sit at or below the host's.</li>
-<li><strong>Port.</strong> The server binds to the host's port variable (<code>PORT</code> on App Engine and Cloud Run,
-  <code>WEBSITES_PORT</code> for Azure custom containers). That is server configuration, not kit code.</li>
-<li><strong>Logs and traces.</strong> All four hosts collect JSON logs from stdout. Tracing is W3C Trace
-  Context through OpenTelemetry: the application configures a <code>TracerProvider</code>, a span
-  processor and an exporter of its choice — <code>azure-monitor-opentelemetry</code> on Azure,
-  <code>opentelemetry-exporter-gcp-trace</code> on GCP hosts, or OTLP to a collector — or runs under
-  <code>opentelemetry-instrument</code>. <code>rn_forge.web</code>, <code>rn_forge.fastapi</code> and <code>rn_forge.django</code> never
-  configure an exporter themselves (B12's own rule: exporters are host-specific). W3C
-  <code>traceparent</code> is understood by Cloud Trace and Azure Monitor alike, which is why it is the
-  host-neutral choice.</li>
+<li><strong>CORS.</strong> Azure App Service has a platform CORS feature. Microsoft's guidance
+  is not to combine it with application CORS, so use the kit's CORS module
+  (§16) and leave the platform's off.</li>
+<li><strong>Body size.</strong> Each host's front end has its own cap. The kit's request-body
+  limit (§11) is the application's, and it should sit at or below the host's.</li>
+<li><strong>Port.</strong> The server binds to the host's port variable (<code>PORT</code> on App Engine
+  and Cloud Run, <code>WEBSITES_PORT</code> for Azure custom containers). That is server
+  configuration, not kit code.</li>
+<li><strong>Logs and traces.</strong> All four hosts collect JSON logs from stdout. Tracing is
+  W3C Trace Context through OpenTelemetry: the application configures a
+  <code>TracerProvider</code>, a span processor and an exporter of its choice —
+  <code>azure-monitor-opentelemetry</code> on Azure, <code>opentelemetry-exporter-gcp-trace</code>
+  on GCP hosts, or OTLP to a collector — or runs under
+  <code>opentelemetry-instrument</code>. <code>rn_forge.web</code>, <code>rn_forge.fastapi</code> and
+  <code>rn_forge.django</code> never configure an exporter themselves (B12's own rule:
+  exporters are host-specific). W3C <code>traceparent</code> is understood by Cloud Trace
+  and Azure Monitor alike, which is why it is the host-neutral choice.</li>
 </ul>
 <h2 id="not-built">Not built<a class="headerlink" href="#not-built" title="Permanent link">&para;</a></h2>
-<p>Helpers for one host only — validating Azure's <code>x-ms-auth-internal-token</code> on the health path, or
-an App Engine <code>/_ah/warmup</code> handler — are not standards, so the kit does not ship them. Each is a
-short snippet the application adds when it needs it, following the pattern above for <code>/_ah/start</code>.</p>
+<p>Helpers for one host only — validating Azure's <code>x-ms-auth-internal-token</code> on the
+health path, or an App Engine <code>/_ah/warmup</code> handler — are not standards, so the
+kit does not ship them. Each is a short snippet the application adds when it
+needs it, following the pattern above for <code>/_ah/start</code>.</p>
 
 
 

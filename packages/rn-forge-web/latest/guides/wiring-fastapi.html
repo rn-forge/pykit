@@ -1287,10 +1287,10 @@
 
 
 <h1 id="wiring-rn-forge-web-into-fastapi">Wiring rn-forge-web into FastAPI<a class="headerlink" href="#wiring-rn-forge-web-into-fastapi" title="Permanent link">&para;</a></h1>
-<p><strong>This guide moved.</strong> The adapter layer now ships in <code>rn-forge-fastapi</code>.
-Use that package's "Wiring an application" guide for current setup and its
-API reference for the adapter calls. (It is not linked from here: a
-per-package docs build cannot link across packages.)</p>
+<p><strong>This guide moved.</strong> The adapter layer now ships in <code>rn-forge-fastapi</code>. Use
+that package's "Wiring an application" guide for current setup and its API
+reference for the adapter calls. (It is not linked from here: a per-package docs
+build cannot link across packages.)</p>
 <p>The <a href="api-conventions.html">API conventions</a> remain the shared wire contract for
 both framework adapters.</p>
 <h2 id="if-your-application-predates-rn-forge-fastapi">If your application predates rn-forge-fastapi<a class="headerlink" href="#if-your-application-predates-rn-forge-fastapi" title="Permanent link">&para;</a></h2>
@@ -1332,9 +1332,9 @@ describe. Each piece maps to one <code>rn-forge-fastapi</code> call:</p>
 </table>
 <p>Tracing is W3C Trace Context through OpenTelemetry: <code>FastApiApp</code> calls
 <code>FastAPIInstrumentor.instrument_app(self)</code> by default, which wraps the whole
-middleware stack. Configure a <code>TracerProvider</code> and exporter in the
-application, or run under <code>opentelemetry-instrument</code>; <code>rn_forge.web</code> and
-<code>rn_forge.fastapi</code> never do either.</p>
+middleware stack. Configure a <code>TracerProvider</code> and exporter in the application,
+or run under <code>opentelemetry-instrument</code>; <code>rn_forge.web</code> and <code>rn_forge.fastapi</code>
+never do either.</p>
 
 
 

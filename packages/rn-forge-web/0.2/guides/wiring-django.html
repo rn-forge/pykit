@@ -1443,22 +1443,22 @@
 <h1 id="wiring-rn-forge-web-into-plain-django">Wiring rn-forge-web into plain Django<a class="headerlink" href="#wiring-rn-forge-web-into-plain-django" title="Permanent link">&para;</a></h1>
 <p>This is a composition recipe for an application using plain Django/DRF with
 <code>rn-forge-web</code>. For the packaged adapters, use the <code>rn-forge-django</code> quickstart
-and its Django/DRF guides. Several pieces below already ship there; the
-examples show how an application can compose the shared HTTP primitives itself.</p>
+and its Django/DRF guides. Several pieces below already ship there; the examples
+show how an application can compose the shared HTTP primitives itself.</p>
 <h2 id="1-tracing-instrument-once-before-django-loads">1. Tracing — instrument once, before Django loads<a class="headerlink" href="#1-tracing-instrument-once-before-django-loads" title="Permanent link">&para;</a></h2>
-<p>Tracing is W3C Trace Context, propagated and read through OpenTelemetry —
-not a house header or a WSGI middleware.</p>
+<p>Tracing is W3C Trace Context, propagated and read through OpenTelemetry — not a
+house header or a WSGI middleware.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># manage.py, wsgi.py, asgi.py — before Django loads</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry.instrumentation.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">DjangoInstrumentor</span>
 
 <span class="n">DjangoInstrumentor</span><span class="p">()</span><span class="o">.</span><span class="n">instrument</span><span class="p">()</span>
 </code></pre></div>
 
-<p><code>DjangoInstrumentor</code> inserts its own middleware into <code>MIDDLEWARE</code> at position
-0, so it wraps everything downstream — including the exception handler.
+<p><code>DjangoInstrumentor</code> inserts its own middleware into <code>MIDDLEWARE</code> at position 0,
+so it wraps everything downstream — including the exception handler.
 <code>rn_forge.django.tracing.instrument()</code> (the <code>otel</code> extra) does this call and
-also installs a <code>TraceResponsePropagator</code> when the application has not
-already set one.</p>
+also installs a <code>TraceResponsePropagator</code> when the application has not already
+set one.</p>
 <h2 id="2-errors-a-drf-exception-handler">2. Errors — a DRF exception handler<a class="headerlink" href="#2-errors-a-drf-exception-handler" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="c1"># myapp/handlers.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
@@ -1494,10 +1494,9 @@ already set one.</p>
 
 <p><code>render_problem</code> adds the current trace id, masks a 401's detail and adds its
 challenge. <code>rn-forge-django</code>'s handler also walks nested serializer errors.</p>
-<p>Set <code>EXCEPTION_HANDLER</code> to it in <code>REST_FRAMEWORK</code>. Register DRF's own
-exception classes (<code>NotFound</code>, <code>PermissionDenied</code>, ...) on <code>REGISTRY</code> once,
-rather than branching in the handler — the MRO walk then covers their
-subclasses for free.</p>
+<p>Set <code>EXCEPTION_HANDLER</code> to it in <code>REST_FRAMEWORK</code>. Register DRF's own exception
+classes (<code>NotFound</code>, <code>PermissionDenied</code>, ...) on <code>REGISTRY</code> once, rather than
+branching in the handler — the MRO walk then covers their subclasses for free.</p>
 <h2 id="3-concurrency">3. Concurrency<a class="headerlink" href="#3-concurrency" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityVersionETagCodec</span><span class="p">,</span> <span class="n">check_precondition</span>
 

@@ -394,10 +394,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#releases-are-pinned-git-tags-not-pypi-versions" class="md-nav__link">
+  <a href="#releases-are-git-tags-not-pypi-versions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Releases are pinned git tags, not PyPI versions
+        Releases are git tags, not PyPI versions
       
     </span>
   </a>
@@ -1278,10 +1278,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#releases-are-pinned-git-tags-not-pypi-versions" class="md-nav__link">
+  <a href="#releases-are-git-tags-not-pypi-versions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Releases are pinned git tags, not PyPI versions
+        Releases are git tags, not PyPI versions
       
     </span>
   </a>
@@ -1331,22 +1331,21 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<h2 id="releases-are-pinned-git-tags-not-pypi-versions">Releases are pinned git tags, not PyPI versions<a class="headerlink" href="#releases-are-pinned-git-tags-not-pypi-versions" title="Permanent link">&para;</a></h2>
+<h2 id="releases-are-git-tags-not-pypi-versions">Releases are git tags, not PyPI versions<a class="headerlink" href="#releases-are-git-tags-not-pypi-versions" title="Permanent link">&para;</a></h2>
 <p>None of the <code>rn-forge-*</code> packages is published to PyPI. A release is a <strong>git
-tag</strong> on this repository, and every consumer declares it as a pinned direct
-URL:</p>
+tag</strong> on this repository. A consumer declares pykit's package index
+(<code>https://rn-forge.github.io/pykit/simple/</code>) and requires the package by version
+range, or pins a tag by direct URL:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 </code></pre></div>
 
-<p><code>uv add rn-forge-web</code> will not work: there is nothing on the index under that
-name. Pin the tag explicitly rather than tracking a branch — an unpinned
-<code>git+…</code> reference re-resolves on every lock refresh, which is how a library
-upgrade arrives without anyone deciding it should.</p>
-<p><code>rn-forge-commons</code> comes in transitively, itself pinned to the tag this release
-was built against. There is nothing else to install: this package has no
+<p>When using a direct URL, pin the tag rather than tracking a branch — an unpinned <code>git+…</code>
+reference re-resolves on every lock refresh, which is how a library upgrade
+arrives without anyone deciding it should.</p>
+<p><code>rn-forge-commons</code> comes in transitively, as a version range. There is nothing else to install: this package has no
 third-party dependency of its own, and no optional extras.</p>
 <h2 id="inside-this-workspace">Inside this workspace<a class="headerlink" href="#inside-this-workspace" title="Permanent link">&para;</a></h2>
 <p><code>packages/rn-forge-web</code> is a <code>uv</code> workspace member, so the root
@@ -1369,8 +1368,8 @@ the development-layer packages. That claim is executable:</p>
 </code></pre></div>
 
 <p>The <code>web-is-framework-free</code> and <code>web-layers</code> contracts in <code>.importlinter</code> are
-what CI trusts, because they see transitive imports. A grep over the source is
-a useful fast local check but is not the gate.</p>
+what CI trusts, because they see transitive imports. A grep over the source is a
+useful fast local check but is not the gate.</p>
 
 
 

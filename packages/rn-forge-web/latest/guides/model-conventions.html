@@ -1309,7 +1309,9 @@
 
 
 <h1 id="model-conventions">Model conventions<a class="headerlink" href="#model-conventions" title="Permanent link">&para;</a></h1>
-<p>This page compares the model vocabulary available in the Django and SQLAlchemy packages. Application teams can use the remaining proposals as design guidance, not as guarantees supplied by both packages.</p>
+<p>This page compares the model vocabulary available in the Django and SQLAlchemy
+packages. Application teams can use the remaining proposals as design guidance,
+not as guarantees supplied by both packages.</p>
 <h2 id="implemented-building-blocks">Implemented building blocks<a class="headerlink" href="#implemented-building-blocks" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1347,13 +1349,30 @@
 </tr>
 </tbody>
 </table>
-<p>These pieces share field names where shown. They do not create a shared model base, repository protocol, or serializer. Django and SQLAlchemy retain their own persistence and transaction models.</p>
+<p>These pieces share field names where shown. They do not create a shared model
+base, repository protocol, or serializer. Django and SQLAlchemy retain their own
+persistence and transaction models.</p>
 <h2 id="application-design-guidance">Application design guidance<a class="headerlink" href="#application-design-guidance" title="Permanent link">&para;</a></h2>
-<p>An application may use a stable natural key for fixtures and cross-environment references. It may choose a status field. That choice requires application-specific query, update and authorization behavior, and the packages do not enforce a universal lifecycle.</p>
-<p>Soft delete is a nullable <code>delete_time</code> column, never a status value, so that it can be served as AIP-164's <code>deleteTime</code> and survive later writes. Neither package filters deleted rows implicitly: a query asks for live rows with <code>.live()</code> on Django or <code>live()</code> on SQLAlchemy, and a read of one resource can still return a deleted row. Purging is the application's own authorized operation. The wire rules are §21 of the API conventions.</p>
-<p>Keep persisted timestamps timezone-aware and use UTC in application code. <code>rn-forge-sqlalchemy.UTCDateTime</code> enforces UTC normalization for its mapped timestamps. Check the Django project's timezone settings when using <code>BaseModel</code>.</p>
-<p>The <code>version</code> field is a useful concurrency convention. Use Django's <code>VersionedModelMixin.save()</code> or SQLAlchemy's <code>update_versioned()</code> where an endpoint promises conditional writes. Bulk writes and arbitrary SQL are outside those guarantees.</p>
-<p>This page records implemented guarantees and optional advice. A stronger cross-package model requirement would need a separate feature decision; SQLAlchemy status and natural keys are not required here.</p>
+<p>An application may use a stable natural key for fixtures and cross-environment
+references. It may choose a status field. That choice requires
+application-specific query, update and authorization behavior, and the packages
+do not enforce a universal lifecycle.</p>
+<p>Soft delete is a nullable <code>delete_time</code> column, never a status value, so that it
+can be served as AIP-164's <code>deleteTime</code> and survive later writes. Neither
+package filters deleted rows implicitly: a query asks for live rows with
+<code>.live()</code> on Django or <code>live()</code> on SQLAlchemy, and a read of one resource can
+still return a deleted row. Purging is the application's own authorized
+operation. The wire rules are §21 of the API conventions.</p>
+<p>Keep persisted timestamps timezone-aware and use UTC in application code.
+<code>rn-forge-sqlalchemy.UTCDateTime</code> enforces UTC normalization for its mapped
+timestamps. Check the Django project's timezone settings when using <code>BaseModel</code>.</p>
+<p>The <code>version</code> field is a useful concurrency convention. Use Django's
+<code>VersionedModelMixin.save()</code> or SQLAlchemy's <code>update_versioned()</code> where an
+endpoint promises conditional writes. Bulk writes and arbitrary SQL are outside
+those guarantees.</p>
+<p>This page records implemented guarantees and optional advice. A stronger
+cross-package model requirement would need a separate feature decision;
+SQLAlchemy status and natural keys are not required here.</p>
 
 
 

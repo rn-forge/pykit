@@ -1399,8 +1399,8 @@
 <h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <p>Five things nearly every application built on this kit wires. None of them
 imports a web framework. For framework setup, see the
-<a href="wiring-django.html">plain Django recipe</a>, or the "Wiring an
-application" guide in the <code>rn-forge-fastapi</code> package.</p>
+<a href="wiring-django.html">plain Django recipe</a>, or the "Wiring an application" guide in
+the <code>rn-forge-fastapi</code> package.</p>
 <h2 id="1-tracing-w3c-trace-context-through-opentelemetry">1. Tracing: W3C Trace Context through OpenTelemetry<a class="headerlink" href="#1-tracing-w3c-trace-context-through-opentelemetry" title="Permanent link">&para;</a></h2>
 <p>There is no house request-id header. <code>traceparent</code> in, <code>traceresponse</code> out,
 through OpenTelemetry's own ASGI/WSGI instrumentation (or
@@ -1412,9 +1412,9 @@ configures a <code>TracerProvider</code> or an exporter itself:</p>
 <span class="n">current_span_id</span><span class="p">()</span>    <span class="c1"># 16 lowercase hex chars, or None</span>
 </code></pre></div>
 
-<p>For structured logs, <code>rn_forge.commons.logging.structlog.otel_processor</code> adds <code>trace_id</code> and
-<code>span_id</code> to every event. <code>StructLogger</code> installs it itself; in a <code>structlog</code> chain of your own,
-list it as a processor.</p>
+<p>For structured logs, <code>rn_forge.commons.logging.structlog.otel_processor</code> adds
+<code>trace_id</code> and <code>span_id</code> to every event. <code>StructLogger</code> installs it itself; in a
+<code>structlog</code> chain of your own, list it as a processor.</p>
 <h2 id="2-every-error-as-an-rfc-9457-problem">2. Every error as an RFC 9457 problem<a class="headerlink" href="#2-every-error-as-an-rfc-9457-problem" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_registry</span><span class="p">,</span> <span class="n">render_problem</span>
 
@@ -1432,8 +1432,8 @@ list it as a processor.</p>
 <span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">OrderLocked</span><span class="p">,</span> <span class="n">ProblemType</span><span class="p">(</span><span class="s2">&quot;order-locked&quot;</span><span class="p">,</span> <span class="mi">409</span><span class="p">,</span> <span class="s2">&quot;Order Locked&quot;</span><span class="p">))</span>
 </code></pre></div>
 
-<p>A 5xx never carries <code>str(exc)</code> — the detail is a fixed generic string unless
-you pass one explicitly.</p>
+<p>A 5xx never carries <code>str(exc)</code> — the detail is a fixed generic string unless you
+pass one explicitly.</p>
 <h2 id="3-optimistic-concurrency">3. Optimistic concurrency<a class="headerlink" href="#3-optimistic-concurrency" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityVersionETagCodec</span><span class="p">,</span> <span class="n">check_precondition</span>
 
@@ -1486,9 +1486,8 @@ constraint would violate that, and the conformance table has a case for it.</p>
 <p>A failing check outside <code>required</code> degrades the reported status but keeps the
 endpoint at 200. A check that raises becomes a failure, never a 500.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<p>The <a href="api-conventions.html">API conventions</a> page is the normative
-version of all of the above, written so it can be pasted into an application's
-specification.</p>
+<p>The <a href="api-conventions.html">API conventions</a> page is the normative version of all
+of the above, written so it can be pasted into an application's specification.</p>
 
 
 
