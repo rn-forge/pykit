@@ -2,7 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | planned |
+| **Status** | shipped |
+| **Start Date** | 2026-10-18 |
+| **Finish Date** | 2026-10-25 |
 
 The kit becomes fast and complete enough that kiln deletes its own copies
 ([E18](../../specs/epics/E18-kiln-extraction/index.md)), and the `rn-forge-*`
@@ -47,8 +49,8 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 | [F18.3](../../specs/epics/E18-kiln-extraction/F18.3-document-io.md) | E18 | Closed |
 | [F18.4](../../specs/epics/E18-kiln-extraction/F18.4-markdown-structure.md) | E18 | Closed |
 | [F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md) | E19 | Closed |
-| [F19.2](../../specs/epics/E19-version-ranges/F19.2-package-index.md) | E19 | Active |
-| [F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) | E19 | Active |
+| [F19.2](../../specs/epics/E19-version-ranges/F19.2-package-index.md) | E19 | Closed |
+| [F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) | E19 | Closed |
 
 <!-- scope:end -->
 
@@ -101,10 +103,14 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 
 ## Progress
 
-Code complete on `feature/release-6`, 2026-10-25. E18 and F19.1 are closed.
-S19.2.2 and S19.3.2 stay active until the cut's push to `main` deploys the
-index and the by-name install from it passes. Changelog headings are dated
-2026-10-25; the runbook's merge steps remain.
+Shipped 2026-10-25. Every feature in scope is closed, and E18 and E19 are
+closed. The
+[push to `main`](https://github.com/rn-forge/pykit/actions/runs/40242764571) at
+merge commit `9557668` passed every verify, postgres, smoke and suite job plus
+`import-boundaries`, `internal-ranges`, `external-install`, `docs` and the Sonar
+gate, and published the nine versions below. The `docs` job deployed the index,
+and F19.2's and F19.3's by-name installs from it pass, which closed S19.2.2 and
+S19.3.2.
 
 ## Commits
 
@@ -125,4 +131,22 @@ git log --format='%h %ad %s' --date=short -E --grep='E1[89]|F1[89]\.|S1[89]\.'
 
 ## Shipped
 
-Filled at the cut.
+The nine packages below were tagged and published by
+[run 40242764571](https://github.com/rn-forge/pykit/actions/runs/40242764571).
+Each package's docs site serves the new version as `latest`. A project outside
+the workspace that declares `https://rn-forge.github.io/pykit/simple/` locks
+every package below by name from the index and imports `rn_forge.tooling`,
+`rn_forge.django`, `rn_forge.fastapi`, `rn_forge.sqlalchemy`,
+`rn_forge.data.pandas` and `rn_forge.commons.generation` (F19.3).
+
+| Deliverable | Version | Tag | Commit | Verification |
+| -- | -- | -- | -- | -- |
+| `rn-forge-commons` | `0.7.0` | `rn-forge-commons-v0.7.0` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-cli` | `0.1.1` | `rn-forge-cli-v0.1.1` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-tooling` | `0.3.0` | `rn-forge-tooling-v0.3.0` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-web` | `0.2.1` | `rn-forge-web-v0.2.1` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-data` | `0.1.1` | `rn-forge-data-v0.1.1` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-sqlalchemy` | `0.2.1` | `rn-forge-sqlalchemy-v0.2.1` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-django` | `0.5.1` | `rn-forge-django-v0.5.1` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-fastapi` | `0.3.2` | `rn-forge-fastapi-v0.3.2` | `9557668` | published; `external-install` and `docs` passed; by name from the index |
+| `rn-forge-devops` | `0.3.0` | `rn-forge-devops-v0.3.0` | `9557668` | published; `external-install` and `docs` passed |
