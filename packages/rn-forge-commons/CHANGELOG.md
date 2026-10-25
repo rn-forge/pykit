@@ -17,6 +17,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - The `templates` extra.
 - `rn_forge.commons.text.markdown` (`MarkdownUtils`, `MarkdownHeading`,
   `MarkdownTable`) and the `markdown` extra.
+- `TemplateArtifact` and `render_artifacts` in
+  `rn_forge.commons.generation.templated` (extra `templates`).
 
 ### Changed
 

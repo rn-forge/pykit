@@ -36,6 +36,39 @@ ignore = Artifact(
 A block artifact's `content` is the block *body*, not the whole file: everything
 outside the markers is preserved byte for byte.
 
+## Rendering artifacts from templates
+
+With the `templates` extra, `TemplateArtifact` describes an artifact as a row
+and `render_artifacts` renders the enabled rows, in order. `templated` is
+imported directly; `rn_forge.commons.generation` does not load Jinja.
+
+```python
+from rn_forge.commons.fs.blocks import ManagedBlock
+from rn_forge.commons.generation import ArtifactKind
+from rn_forge.commons.generation.templated import TemplateArtifact, render_artifacts
+from rn_forge.commons.text.templates import TemplateEngine
+
+engine = TemplateEngine.cached(package="golden_tool")
+artifacts = render_artifacts(
+    engine,
+    {"name": "demo", "docs": False},
+    [
+        TemplateArtifact("Taskfile.yml"),
+        TemplateArtifact("docs/index.md", ArtifactKind.SEEDED, enabled=False),
+        TemplateArtifact(
+            ".gitignore",
+            ArtifactKind.BLOCK,
+            template="gitignore.j2",
+            block=ManagedBlock("golden-tool"),
+        ),
+    ],
+)
+```
+
+A row without `template` renders `<path>.j2`. `context` replaces the shared
+context for that row alone. A template failure raises `RenderError` whose
+message starts with the row's path.
+
 ## Classify, then plan, then apply
 
 ```python
