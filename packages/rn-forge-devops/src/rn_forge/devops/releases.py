@@ -12,6 +12,7 @@ from typing import Any
 from rn_forge.devops.index import ReleaseFile
 
 _TAG = re.compile(r"^(rn-forge-[a-z0-9-]+)-v\d+\.\d+\.\d+$")
+_REPO = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_.-]*/[A-Za-z0-9_.][A-Za-z0-9_.-]*")
 _SUFFIXES = (".whl", ".tar.gz")
 
 
@@ -43,8 +44,11 @@ def release_files(repo: str) -> list[ReleaseFile]:
     when the asset has none.
 
     Raises:
+        ValueError: If `repo` is not `owner/name`.
         subprocess.CalledProcessError: If `gh api` fails.
     """
+    if not _REPO.fullmatch(repo) or {".", ".."} & set(repo.split("/")):
+        raise ValueError(f"invalid repo {repo!r}")
     files: list[ReleaseFile] = []
     for release in _releases(repo):
         match = _TAG.match(release["tag_name"])

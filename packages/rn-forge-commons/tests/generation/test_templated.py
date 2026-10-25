@@ -73,6 +73,7 @@ def test_entry_context_replaces_shared_context(tmp_path):
 
 def test_render_error_names_the_path(tmp_path):
     engine = TemplateEngine(directory=str(tmp_path))
+    artifacts = [TemplateArtifact("docs/x.md")]
     with pytest.raises(RenderError) as info:
-        render_artifacts(engine, {}, [TemplateArtifact("docs/x.md")])
+        render_artifacts(engine, {}, artifacts)
     assert info.value.message.startswith("docs/x.md: ")

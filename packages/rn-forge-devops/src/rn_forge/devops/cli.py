@@ -51,8 +51,12 @@ def _parser() -> argparse.ArgumentParser:
 def _index(args: argparse.Namespace) -> int:
     files = releases.release_files(args.repo)
     pages = index.render_index(files)
+    out = Path(args.out).resolve()
     for relative, content in pages.items():
-        path = Path(args.out) / relative
+        path = (out / relative).resolve()
+        if not path.is_relative_to(out):
+            print(f"page {relative!r} escapes {args.out}", file=sys.stderr)
+            return 1
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
     projects = len(pages) - 1

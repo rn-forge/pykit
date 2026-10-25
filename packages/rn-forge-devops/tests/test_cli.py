@@ -122,6 +122,21 @@ def test_cli_index_writes_the_pages(
     )
 
 
+def test_cli_index_refuses_a_page_outside_the_out_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli.releases, "release_files", lambda repo: [])
+    monkeypatch.setattr(
+        cli.index, "render_index", lambda files: {"../escape.html": "x"}
+    )
+    out = tmp_path / "simple"
+    assert cli.main(["index", "--repo", "o/r", "--out", str(out)]) == 1
+    assert "escapes" in capsys.readouterr().err
+    assert not (tmp_path / "escape.html").exists()
+
+
 def test_index_and_releases_import_no_planner_adapter() -> None:
     code = (
         "import sys\n"

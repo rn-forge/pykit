@@ -96,3 +96,15 @@ def test_hashes_the_download_when_the_asset_has_no_digest(
     monkeypatch.setattr(releases.urllib.request, "urlopen", lambda _url: _Response())
     [file] = releases.release_files("o/r")
     assert file.sha256 == hashlib.sha256(b"wheel").hexdigest()
+
+
+@pytest.mark.parametrize(
+    "repo", ["x", "a/b/c", "../x", "a/..", "./x", "a b/c", "-x/y", "x/-y", ""]
+)
+def test_rejects_a_repo_that_is_not_owner_name(
+    monkeypatch: pytest.MonkeyPatch, repo: str
+) -> None:
+    calls = _stub_gh(monkeypatch, [])
+    with pytest.raises(ValueError, match="invalid repo"):
+        releases.release_files(repo)
+    assert calls == []
