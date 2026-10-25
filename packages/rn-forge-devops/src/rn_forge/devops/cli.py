@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from rn_forge.devops import ci, github, uv
+from rn_forge.devops import ci, github, requirements, uv
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -34,6 +34,9 @@ def _parser() -> argparse.ArgumentParser:
         "adapters", help="check each declared adapter has a module and an extra"
     )
     commands.add_parser(
+        "requirements", help="check internal requirements are version ranges"
+    )
+    commands.add_parser(
         "sonar-target",
         help="print the `$GITHUB_OUTPUT` line with the Sonar branch argument",
     )
@@ -53,6 +56,13 @@ def _releasable(workspace: ci.Workspace, args: argparse.Namespace) -> int:
 
 def _adapters(workspace: ci.Workspace) -> int:
     problems = uv.check_adapters(workspace)
+    for problem in problems:
+        print(problem, file=sys.stderr)
+    return 1 if problems else 0
+
+
+def _requirements(root: Path) -> int:
+    problems = requirements.check_requirements(root)
     for problem in problems:
         print(problem, file=sys.stderr)
     return 1 if problems else 0
@@ -90,7 +100,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        workspace = uv.load_workspace(uv.find_root(Path.cwd()))
+        root = uv.find_root(Path.cwd())
+        if args.command == "requirements":
+            return _requirements(root)
+        workspace = uv.load_workspace(root)
     except FileNotFoundError as error:
         sys.exit(str(error))
     return _run(workspace, args)

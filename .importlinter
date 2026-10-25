@@ -19,7 +19,8 @@
 #      neither of them nor either framework.
 #   7. `rn_forge.devops` is CI tooling with no rn-forge dependency: it imports
 #      no other `rn_forge` package (ADR-0012).
-#   8. `rn_forge.devops.ci` is the core: it imports neither adapter.
+#   8. `rn_forge.devops.ci` and `rn_forge.devops.requirements` are the core:
+#      neither imports an adapter.
 #   9. `rn_forge.data` is a sibling of web over commons, and its core never
 #      imports the `rn_forge.data.pandas` adapter (ADR-0011).
 #
@@ -157,13 +158,22 @@ forbidden_modules =
     rn_forge.sqlalchemy
 
 [importlinter:contract:devops-core-has-no-adapter]
-name = rn_forge.devops.ci never imports the uv or GitHub adapters
+name = rn_forge.devops.ci and rn_forge.devops.requirements never import the uv or GitHub adapters
 type = forbidden
 source_modules =
     rn_forge.devops.ci
+    rn_forge.devops.requirements
 forbidden_modules =
     rn_forge.devops.uv
     rn_forge.devops.github
+
+[importlinter:contract:devops-requirements-is-standalone]
+name = rn_forge.devops.requirements never imports the planner
+type = forbidden
+source_modules =
+    rn_forge.devops.requirements
+forbidden_modules =
+    rn_forge.devops.ci
 
 [importlinter:contract:data-core-has-no-adapter]
 name = rn_forge.data never imports the pandas adapter

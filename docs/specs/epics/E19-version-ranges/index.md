@@ -29,7 +29,7 @@ has to re-tag dependents for a pin.
 | -- | -- | -- |
 | [F19.1 — How packages find each other by version](F19.1-distribution-decision.md) | The decision: a static PEP 503 index on GitHub Pages of the wheels already on GitHub Releases, ranges between packages, and the compatibility rule; ADR-0004 revised. | Closed |
 | [F19.2 — The package index](F19.2-package-index.md) | `rn-forge-devops index` writes the index from GitHub Releases; the docs job publishes it at `/pykit/simple/`; a consumer guide. | New |
-| [F19.3 — Internal requirements become ranges](F19.3-internal-ranges.md) | Every internal requirement becomes `name>=floor,<next-breaking`; `rn-forge-devops requirements` checks them in CI; the runbook's re-pin step goes away. | New |
+| [F19.3 — Internal requirements become ranges](F19.3-internal-ranges.md) | Every internal requirement becomes `name>=floor,<next-breaking`; `rn-forge-devops requirements` checks them in CI; the runbook's re-pin step goes away. | Active |
 
 ## Context
 

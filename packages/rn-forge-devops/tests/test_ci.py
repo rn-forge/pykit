@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from rn_forge.devops import Package, Smoke, normalize, plan, release_order, releasable
 from rn_forge.devops.ci import Workspace, changed_files, select
+from rn_forge.devops.requirements import check_requirements
 
 
 def _packages() -> dict[str, Package]:
@@ -140,3 +142,71 @@ def test_plan_outputs_match_documented_keys(tmp_path: Path) -> None:
     documented = set(re.findall(r"^\| `([^`]+)` \|", table, flags=re.MULTILINE))
     workspace = Workspace(tmp_path, _packages())
     assert documented == set(plan(workspace, ""))
+
+
+def _members(root: Path, app_requires: str, *, group: bool = False) -> None:
+    (root / "pyproject.toml").write_text('[tool.uv.workspace]\nmembers = ["pkgs/*"]\n')
+    (root / "pkgs/base").mkdir(parents=True)
+    (root / "pkgs/app").mkdir()
+    (root / "pkgs/base/pyproject.toml").write_text(
+        '[project]\nname = "rn-forge-base"\nversion = "0.7.0"\n'
+    )
+    table = (
+        f'[dependency-groups]\ndev = ["{app_requires}"]\n'
+        if group
+        else f'[project.optional-dependencies]\nx = ["{app_requires}"]\n'
+    )
+    (root / "pkgs/app/pyproject.toml").write_text(
+        '[project]\nname = "rn-forge-app"\nversion = "1.0.0"\n'
+        'dependencies = ["requests>=2"]\n\n' + table
+    )
+
+
+def test_requirements_reports_a_url(tmp_path: Path) -> None:
+    _members(tmp_path, "rn-forge-base @ git+https://example.com/x@v1")
+    assert check_requirements(tmp_path) == [
+        "rn-forge-app: rn-forge-base is a URL; use a range (ADR-0004)"
+    ]
+
+
+def test_requirements_reports_a_range_excluding_the_workspace_version(
+    tmp_path: Path,
+) -> None:
+    _members(tmp_path, "rn-forge-base>=0.5,<0.7", group=True)
+    assert check_requirements(tmp_path) == [
+        "rn-forge-app: rn-forge-base<0.7,>=0.5 excludes the workspace's 0.7.0"
+    ]
+
+
+def test_requirements_reports_a_missing_ceiling(tmp_path: Path) -> None:
+    _members(tmp_path, "rn-forge-base>=0.7.0")
+    assert check_requirements(tmp_path) == [
+        "rn-forge-app: rn-forge-base>=0.7.0 has no ceiling"
+    ]
+
+
+def test_requirements_passes_a_range_with_extras(tmp_path: Path) -> None:
+    _members(tmp_path, "rn-forge-base[pydantic]>=0.7.0,<0.8")
+    assert check_requirements(tmp_path) == []
+
+
+def test_requirements_ignores_non_members(tmp_path: Path) -> None:
+    _members(tmp_path, "requests @ https://example.com/r.whl")
+    assert check_requirements(tmp_path) == []
+
+
+def test_requirements_module_imports_neither_planner_nor_adapters() -> None:
+    path = Path(__file__).parents[1] / "src/rn_forge/devops/requirements.py"
+    code = (
+        "import importlib.util, sys\n"
+        f"spec = importlib.util.spec_from_file_location('req', {str(path)!r})\n"
+        "module = importlib.util.module_from_spec(spec)\n"
+        "spec.loader.exec_module(module)\n"
+        "loaded = [m for m in ('ci', 'uv', 'github')"
+        " if f'rn_forge.devops.{m}' in sys.modules]\n"
+        "print(loaded)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], check=True, capture_output=True, text=True
+    )
+    assert result.stdout.strip() == "[]"

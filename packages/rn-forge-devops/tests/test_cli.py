@@ -80,3 +80,21 @@ def test_cli_adapters_prints_each_problem_to_stderr(
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err == "data: adapter pandas has no extra pandas\n"
+
+
+def test_cli_requirements_prints_each_problem_and_exits_1(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.uv.workspace]\nmembers = ["pkgs/*"]\n'
+    )
+    for name, deps in (("a", ""), ("b", 'dependencies = ["a>=1"]\n')):
+        (tmp_path / "pkgs" / name).mkdir(parents=True)
+        (tmp_path / "pkgs" / name / "pyproject.toml").write_text(
+            f'[project]\nname = "{name}"\nversion = "1.0"\n{deps}'
+        )
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["requirements"]) == 1
+    assert capsys.readouterr().err == "b: a>=1 has no ceiling\n"

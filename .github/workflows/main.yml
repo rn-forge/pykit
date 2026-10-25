@@ -36,6 +36,11 @@ jobs:
       - name: adapters
         run: uv run --no-sync rn-forge-devops adapters
 
+  internal-ranges:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/internal-ranges.yml
+
   # Selects the packages whose files changed plus every package that depends on
   # one, and emits each job's matrix.
   plan:
@@ -399,7 +404,7 @@ jobs:
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, plan, verify, postgres, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, internal-ranges, plan, verify, postgres, smoke, suites, release, sonar, external-install, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

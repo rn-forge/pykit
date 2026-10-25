@@ -1,0 +1,24 @@
+name: Internal ranges
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  internal-ranges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # S19.3.2 removes continue-on-error once no manifest names a git URL.
+      - name: requirements
+        continue-on-error: true
+        run: uv run --no-sync rn-forge-devops requirements
