@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import platform
 import sys
+import zipfile
 from io import StringIO
 from pathlib import Path
 
@@ -482,3 +483,33 @@ class TestLibyaml:
     def test_invalid_yaml_with_brace_raises_document_error(self) -> None:
         with pytest.raises(DocumentError):
             DocumentUtils.loads("a: {b", "yaml")
+
+
+class TestReadSources:
+    def test_toml_loads_matches_tomlkit(self) -> None:
+        text = (
+            "d = 2026-10-24\nt = { a = 1, b = [1, 2] }\n"
+            '[[items]]\nname = "x"\n[[items]]\nname = "y"\n'
+        )
+        assert DocumentUtils.loads(text, "toml") == tomlkit.loads(text).unwrap()
+
+    def test_read_package_resource(self, tmp_path: Path) -> None:
+        archive = tmp_path / "res.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("pkg/data.toml", 'a = "b"\n')
+        resource = zipfile.Path(archive, "pkg/data.toml")
+        assert DocumentUtils.read(resource) == {"a": "b"}
+
+    def test_read_missing_resource_ok_is_empty(self, tmp_path: Path) -> None:
+        archive = tmp_path / "res.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("pkg/other.toml", "")
+        resource = zipfile.Path(archive, "pkg/data.toml")
+        assert DocumentUtils.read(resource, missing_ok=True) == {}
+
+    def test_read_invalid_names_the_path(self, tmp_path: Path) -> None:
+        path = tmp_path / "bad.json"
+        path.write_text("{", encoding="utf-8")
+        with pytest.raises(DocumentError) as info:
+            DocumentUtils.read(path)
+        assert info.value.message.startswith(f"{path}: Invalid JSON document: ")

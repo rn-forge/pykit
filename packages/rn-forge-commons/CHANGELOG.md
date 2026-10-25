@@ -5,9 +5,14 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `DocumentUtils.read` of a package resource.
+
 ### Changed
 
-- Plain YAML loads use libyaml (`ruamel.yaml[oldlibyaml]`).
+- Plain YAML loads use libyaml (`ruamel.yaml[oldlibyaml]`); plain TOML reads
+  use `tomllib`; `DocumentUtils.read` names the file in a parse error.
 
 ### Fixed
 

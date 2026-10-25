@@ -8,11 +8,13 @@ edit. YAML also supports multi-document streams.
 from __future__ import annotations
 
 import json
+import tomllib
 from collections.abc import Mapping, MutableMapping
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum, StrEnum
+from importlib.resources.abc import Traversable
 from io import StringIO
 from pathlib import Path, PurePath
 from typing import Any, Self, cast
@@ -462,7 +464,7 @@ class DocumentUtils:
         try:
             match fmt:
                 case ConfigFormat.TOML:
-                    value: Any = tomlkit.loads(text).unwrap()
+                    value: Any = tomllib.loads(text)
                 case ConfigFormat.YAML:
                     value = YamlUtils.load(text)
                     if value is None:
@@ -491,24 +493,34 @@ class DocumentUtils:
                 return json.dumps(plain, indent=2, sort_keys=True) + "\n"
 
     @staticmethod
-    def read(path: str | Path, *, missing_ok: bool = False) -> dict[str, Any]:
-        """Read and parse the document at *path* into a plain mapping.
+    def read(
+        source: str | Path | Traversable, *, missing_ok: bool = False
+    ) -> dict[str, Any]:
+        """Read and parse the document at *source* into a plain mapping.
 
         Args:
-            path: The document file.
+            source: The document file, or a package resource.
             missing_ok: When ``True``, a missing file returns ``{}`` instead
                 of raising.
 
         Raises:
-            DocumentError: *path* does not exist (and ``missing_ok=False``),
-                or the document is invalid.
+            DocumentError: *source* does not exist (and ``missing_ok=False``),
+                or the document is invalid; the message starts with *source*.
+
+        Example:
+            ``DocumentUtils.read(files("my_tool").joinpath("defaults.toml"))``
         """
-        p = Path(path)
-        if not p.exists():
+        if isinstance(source, str):
+            source = Path(source)
+        if not source.is_file():
             if missing_ok:
                 return {}
-            raise DocumentError("Document does not exist: {}", p)
-        return DocumentUtils.loads(p.read_text(encoding="utf-8"), ConfigFormat.of(p))
+            raise DocumentError("Document does not exist: {}", source)
+        text = source.read_text(encoding="utf-8")
+        try:
+            return DocumentUtils.loads(text, ConfigFormat.of(Path(source.name)))
+        except DocumentError as exc:
+            raise DocumentError("{}: {}", source, exc.message) from exc
 
     @staticmethod
     def write(path: str | Path, data: Mapping[str, Any]) -> None:
