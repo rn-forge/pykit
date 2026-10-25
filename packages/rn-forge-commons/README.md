@@ -32,6 +32,7 @@ Optional extras:
 | `testing` | `assertpy` + `pytest` integration helpers |
 | `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
 | `structlog` | Structured logging over the existing stdlib handlers |
+| `templates` | The Jinja template engine, `rn_forge.commons.text.templates` (`jinja2`) |
 | `all` | Everything above |
 
 Console log output is Rich-formatted by default (a hard dependency) when stdout
@@ -98,6 +99,14 @@ holds it.
   JSON/YAML/TOML (de)serialization and file I/O, plus comment-preserving
   round-trip editing of config documents.
 
+**`text/`** — text formats, each module behind its own extra and imported
+directly (never through the facade).
+
+- **`templates`** (`templates` extra) — `TemplateEngine`, `RenderError`: strict
+  Jinja rendering from a directory or a package, with `autoescape`, a
+  process-wide `TemplateEngine.cached` constructor, and `to_toml`/`to_yaml`
+  filters.
+
 **`logging/`**
 
 - **`logging`** — `AppLogger`, `LoggingConfig`: idempotent logging setup via
@@ -155,7 +164,7 @@ reverse the dependency. `uv run lint-imports` proves it.
 | Concern | Package |
 | -- | -- |
 | `AppConsole`, Typer app factory, standard options, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| `StateStore`, `TemplateEngine`, the generation engine, `extract_archive`, docs checkers | `rn-forge-tooling` |
+| `StateStore`, the generation engine, `extract_archive`, docs checkers | `rn-forge-tooling` |
 
 ## Docs
 

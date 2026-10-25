@@ -16,8 +16,6 @@ It is a **development** dependency. Add it to a `dev` group, or to a CLI's own
 `dependencies` when the CLI *is* the developer tool.
 
 `rn-forge-cli` and `rn-forge-commons` come with it, pinned the same way.
-`jinja2` is a hard dependency: a tool that generates files renders templates on
-every run.
 
 ## Upgrading
 

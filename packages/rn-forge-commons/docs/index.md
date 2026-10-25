@@ -12,7 +12,7 @@ It provides:
 - subprocess and task-pool abstractions
 - managed blocks, structured findings, and testing helpers
 
-The developer-tooling surface — console, Typer wiring, local state, templates
+The developer-tooling surface — console, Typer wiring, local state
 and installer mechanics — lives in `rn-forge-tooling`, which depends on this
 package.
 

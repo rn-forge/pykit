@@ -18,6 +18,7 @@ Targeted extras:
 - `json` for JSON-formatted log output (`python-json-logger`)
 - `otel` for OpenTelemetry log correlation
 - `pydantic` for strict configuration models (`rn_forge.commons.lang.models`)
+- `templates` for the Jinja template engine (`rn_forge.commons.text.templates`)
 - `testing` for `assertpy` test helpers
 
 Docs commands:

@@ -1,16 +1,13 @@
-"""Public state, template, and installation APIs for developer tooling."""
+"""Public lifecycle and installation APIs for developer tools."""
 
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from rn_forge.tooling.install import ToolHome, ToolProduct, extract_archive
     from rn_forge.tooling.state import StateStore
-    from rn_forge.tooling.templates import RenderError, TemplateEngine
 
 __all__ = [
-    "RenderError",
     "StateStore",
-    "TemplateEngine",
     "ToolHome",
     "ToolProduct",
     "extract_archive",
@@ -19,9 +16,7 @@ __all__ = [
 _INSTALL = "rn_forge.tooling.install"
 
 _MODULES = {
-    "RenderError": "rn_forge.tooling.templates",
     "StateStore": "rn_forge.tooling.state",
-    "TemplateEngine": "rn_forge.tooling.templates",
     "ToolHome": _INSTALL,
     "ToolProduct": _INSTALL,
     "extract_archive": _INSTALL,

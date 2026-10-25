@@ -2034,6 +2034,7 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "httpx" },
+    { name = "jinja2" },
     { name = "opentelemetry-instrumentation-logging" },
     { name = "purgatory" },
     { name = "pydantic" },
@@ -2061,6 +2062,9 @@ resilience = [
 ]
 structlog = [
     { name = "structlog" },
+]
+templates = [
+    { name = "jinja2" },
 ]
 testing = [
     { name = "assertpy" },
@@ -2090,6 +2094,8 @@ requires-dist = [
     { name = "dacite", specifier = ">=1.9.2" },
     { name = "httpx", marker = "extra == 'all'", specifier = ">=0.28" },
     { name = "httpx", marker = "extra == 'resilience'", specifier = ">=0.28" },
+    { name = "jinja2", marker = "extra == 'all'", specifier = ">=3.1.6" },
+    { name = "jinja2", marker = "extra == 'templates'", specifier = ">=3.1.6" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'all'", specifier = ">=0.64b0" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'otel'", specifier = ">=0.64b0" },
     { name = "purgatory", marker = "extra == 'all'", specifier = ">=3.0.1" },
@@ -2110,7 +2116,7 @@ requires-dist = [
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "verboselogs", specifier = ">=1.7" },
 ]
-provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "testing", "all"]
+provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "templates", "testing", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2516,7 +2522,6 @@ name = "rn-forge-tooling"
 version = "0.2.0"
 source = { editable = "packages/rn-forge-tooling" }
 dependencies = [
-    { name = "jinja2" },
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons" },
 ]
@@ -2547,7 +2552,6 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
-    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },

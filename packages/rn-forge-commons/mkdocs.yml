@@ -52,6 +52,7 @@ nav:
       - Resilience: guides/resilience.md
       - Config: guides/config.md
       - Data: guides/data.md
+      - Text: guides/text.md
       - Processes and Tasks: guides/processes-and-tasks.md
   - Reference:
       - reference/index.md
@@ -75,6 +76,8 @@ nav:
       - Logging:
           - Logger: reference/logging/logger.md
           - StructLogger: reference/logging/structlog.md
+      - Text:
+          - Templates: reference/text/templates.md
       - Runtime:
           - Console: reference/runtime/console.md
           - Environment: reference/runtime/environment.md

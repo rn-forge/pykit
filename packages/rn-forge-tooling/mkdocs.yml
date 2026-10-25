@@ -54,5 +54,4 @@ nav:
       - Generation: reference/generation.md
       - Install: reference/install.md
       - State: reference/state.md
-      - Templates: reference/templates.md
   - Changelog: changelog.md

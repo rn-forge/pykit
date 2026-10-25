@@ -7,7 +7,6 @@ and for the framework code generators that ship as `[codegen]` extras.
 It provides:
 
 - a locked, atomically-written JSON state store
-- a strict Jinja render engine
 - a generation engine: artifact kinds, action classification, transactional
   apply
 - the tool lifecycle: `$RNF_HOME` layout, release fetching and verification, and

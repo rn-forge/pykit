@@ -10,6 +10,9 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `DocumentUtils.read` of a package resource; `header` and `multiline_arrays`
   on `dumps` and `write`; `DocumentUtils.multiline_arrays`; `DictUtils.as_mapping`,
   `ListUtils.as_list` and `ListUtils.as_strings`.
+- `rn_forge.commons.text.templates`, moved from rn-forge-tooling, with
+  `autoescape` and `TemplateEngine.cached`.
+- The `templates` extra.
 
 ### Changed
 
@@ -19,6 +22,7 @@ Notable changes to `rn-forge-commons`, newest first, in the
 ### Fixed
 
 - A parser message containing a brace now raises `DocumentError`.
+- A Jinja error whose message contains a brace now raises `RenderError`.
 
 ## [0.6.0] - 2026-10-16
 

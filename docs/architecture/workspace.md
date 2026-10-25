@@ -9,7 +9,7 @@ keep them that way. Read it before placing a shared contract or an adapter.
 | -- | -- | -- | -- |
 | `rn-forge-commons` | `rn_forge.commons` | None | Runtime-neutral utilities, protocols, logging and process output |
 | `rn-forge-cli` | `rn_forge.cli` | `rn-forge-commons` | Generic Typer application and declared `[cli]` commands |
-| `rn-forge-tooling` | `rn_forge.tooling` | `rn-forge-commons`, `rn-forge-cli` | Generation, local state, templates, installation and documentation mechanics |
+| `rn-forge-tooling` | `rn_forge.tooling` | `rn-forge-commons`, `rn-forge-cli` | Generation, local state, installation and documentation mechanics |
 | `rn-forge-web` | `rn_forge.web` | `rn-forge-commons[pydantic]` | Framework-neutral HTTP contracts and conformance cases |
 | `rn-forge-django` | `rn_forge.django` | `rn-forge-commons`, `rn-forge-web`; `rn-forge-data` with the `transfer` and `fixtures` extras | Django and Django REST framework adapters |
 | `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-web[security]`; `rn-forge-data` with the `transfer` extra | FastAPI adapters |

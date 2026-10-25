@@ -20,7 +20,6 @@ workstation-shaped: it assumes a developer's filesystem and a tool that owns
 files in it. It owns:
 
 - `state` — a locked, atomically-written JSON state store.
-- `templates` — a strict Jinja2 render engine.
 - `generation` — artifact kinds, action classification and transactional apply,
   split into `artifacts` (the vocabulary), `plan` (what a write would do) and
   `apply` (making a batch of writes all-or-nothing).

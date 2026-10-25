@@ -3,8 +3,10 @@
 # Nine rules, all of which a reader of the dependency graph would otherwise
 # have to take on trust:
 #
-#   1. commons is runtime-neutral: it never reaches into cli or tooling, and
-#      never imports Typer or Jinja.
+#   1. commons never reaches into cli or tooling and never imports Typer.
+#      Jinja and the Markdown parsers enter only through
+#      `rn_forge.commons.text`, and `rn_forge.commons.generation` and `text`
+#      are imported directly, never by commons' core or facade.
 #   2. cli is the command-line shape and nothing more: it never imports
 #      tooling, so a batch application can take the CLI layer without the
 #      file-owning machinery (kiln D52, ADR-0002).
@@ -44,7 +46,7 @@ root_packages =
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
-name = rn_forge.commons never imports cli, tooling, Typer or Jinja
+name = rn_forge.commons never imports cli, tooling or Typer
 type = forbidden
 source_modules =
     rn_forge.commons
@@ -53,7 +55,27 @@ forbidden_modules =
     rn_forge.tooling
     typer
     click
+
+[importlinter:contract:commons-core-has-no-extras]
+name = commons' core imports neither generation, text, Jinja nor a Markdown parser
+type = forbidden
+# Sibling sources, never `rn_forge.commons` itself: import-linter does not
+# break a forbidden contract whose forbidden module is inside its source.
+source_modules =
+    rn_forge.commons.config
+    rn_forge.commons.exceptions
+    rn_forge.commons.findings
+    rn_forge.commons.fs
+    rn_forge.commons.integration
+    rn_forge.commons.lang
+    rn_forge.commons.logging
+    rn_forge.commons.runtime
+    rn_forge.commons.testing
+forbidden_modules =
+    rn_forge.commons.text
     jinja2
+    markdown
+    markdown_it
 
 [importlinter:contract:cli-has-no-tooling]
 name = rn_forge.cli never imports tooling or Jinja
