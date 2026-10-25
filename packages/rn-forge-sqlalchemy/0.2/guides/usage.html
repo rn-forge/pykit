@@ -803,8 +803,8 @@
 named after AIP-148, so the wire names are <code>createTime</code> and <code>updateTime</code>. The
 timestamps are Python-side UTC defaults stored through <code>UTCDateTime</code>, which
 rejects a naive value and returns an aware UTC value on SQLite too, so AIP-142's
-<code>Z</code> survives a round trip. The actors are explicit: the caller sets
-<code>created_by</code> and <code>updated_by</code>.</p>
+<code>Z</code> survives a round trip. The actors are explicit: the caller sets <code>created_by</code>
+and <code>updated_by</code>.</p>
 <h2 id="optimistic-concurrency">Optimistic concurrency<a class="headerlink" href="#optimistic-concurrency" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="n">order</span> <span class="o">=</span> <span class="k">await</span> <span class="n">update_versioned</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;renamed&quot;</span><span class="p">)</span>
 </code></pre></div>
@@ -827,11 +827,12 @@ raises <code>rn_forge.web.VersionConflict</code>, which the framework adapters r
 <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 </code></pre></div>
 
-<p><code>SoftDeleteMixin</code> adds a nullable, indexed <code>delete_time</code> (AIP-164's <code>deleteTime</code>). <code>soft_delete</code> and
-<code>undelete</code> set it, and set <code>updated_by</code> and <code>update_time</code> on an <code>AuditMixin</code> row and bump <code>version</code> on
-a <code>VersionMixin</code> row. They do not flush or commit. Pass <code>now=</code> to pin the time. Nothing hooks the
-session: a query that should hide deleted rows says so with <code>live()</code>, and <code>session.get()</code> still
-returns a deleted row.</p>
+<p><code>SoftDeleteMixin</code> adds a nullable, indexed <code>delete_time</code> (AIP-164's
+<code>deleteTime</code>). <code>soft_delete</code> and <code>undelete</code> set it, and set <code>updated_by</code> and
+<code>update_time</code> on an <code>AuditMixin</code> row and bump <code>version</code> on a <code>VersionMixin</code> row.
+They do not flush or commit. Pass <code>now=</code> to pin the time. Nothing hooks the
+session: a query that should hide deleted rows says so with <code>live()</code>, and
+<code>session.get()</code> still returns a deleted row.</p>
 <h2 id="import-upsert">Import: <code>upsert</code><a class="headerlink" href="#import-upsert" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="n">counts</span> <span class="o">=</span> <span class="k">await</span> <span class="n">upsert</span><span class="p">(</span>
     <span class="n">session</span><span class="p">,</span> <span class="n">Order</span><span class="p">,</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">],</span>
@@ -869,9 +870,9 @@ repeated key in the input raises <code>ValueError</code>.</p>
 
 <p><code>orderBy</code> is a comma-separated list, so <code>team, score desc</code> orders by <code>team</code>,
 then by <code>score</code> descending, then by the id. The columns need not be unique,
-because the id breaks ties, and they may be nullable: rows whose value is
-<code>NULL</code> come last in both directions. A token issued for another <code>orderBy</code>, or
-holding a different number of values, is a <code>400</code>.</p>
+because the id breaks ties, and they may be nullable: rows whose value is <code>NULL</code>
+come last in both directions. A token issued for another <code>orderBy</code>, or holding a
+different number of values, is a <code>400</code>.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;team&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">team</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">Person</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
 <span class="n">terms</span> <span class="o">=</span> <span class="n">parse_order_by</span><span class="p">(</span><span class="s2">&quot;team, score desc&quot;</span><span class="p">,</span> <span class="n">allowed</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>  <span class="c1"># score is nullable</span>
 <span class="n">stmt</span> <span class="o">=</span> <span class="n">keyset</span><span class="p">(</span>

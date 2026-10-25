@@ -630,6 +630,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#021-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.1] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.1] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -653,7 +681,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -725,6 +753,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#021-2026-10-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.1] - 2026-10-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.1] - 2026-10-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#020-2026-10-05" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -748,7 +804,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -795,19 +851,31 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>Notable changes to <code>rn-forge-sqlalchemy</code>, newest first, in the <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
+<p>Notable changes to <code>rn-forge-sqlalchemy</code>, newest first, in the
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="021-2026-10-25">[0.2.1] - 2026-10-25<a class="headerlink" href="#021-2026-10-25" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Requires its rn-forge dependencies by version range from pykit's index
+  (ADR-0004), not by git URL.</li>
+</ul>
 <h2 id="020-2026-10-05">[0.2.0] - 2026-10-05<a class="headerlink" href="#020-2026-10-05" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Soft delete: <code>SoftDeleteMixin</code> (a nullable, indexed <code>delete_time</code>), <code>live(stmt, model,
-  show_deleted=)</code>, <code>soft_delete(obj, actor=, now=)</code> and <code>undelete(obj, actor=, now=)</code>. Nothing hooks
-  the session; a query asks for live rows with <code>live()</code>.</li>
+<li>Soft delete: <code>SoftDeleteMixin</code> (a nullable, indexed <code>delete_time</code>),
+  <code>live(stmt, model, show_deleted=)</code>, <code>soft_delete(obj, actor=, now=)</code> and
+  <code>undelete(obj, actor=, now=)</code>. Nothing hooks the session; a query asks for
+  live rows with <code>live()</code>.</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Breaking:</strong> <code>keyset</code> orders and resumes by every <code>orderBy</code> term, with <code>NULL</code> last in both directions, so a term's column may be nullable. It ordered by one term and required a non-null column.</li>
-<li><strong>Breaking:</strong> <code>next_page_token(sort_value, entity_id, terms)</code> is now <code>next_page_token(row_values, entity_id, terms)</code>, with one value per term. Tokens issued before the change are rejected with 400.</li>
+<li><strong>Breaking:</strong> <code>keyset</code> orders and resumes by every <code>orderBy</code> term, with <code>NULL</code>
+  last in both directions, so a term's column may be nullable. It ordered by
+  one term and required a non-null column.</li>
+<li><strong>Breaking:</strong> <code>next_page_token(sort_value, entity_id, terms)</code> is now
+  <code>next_page_token(row_values, entity_id, terms)</code>, with one value per term.
+  Tokens issued before the change are rejected with 400.</li>
 </ul>
 <h2 id="010-2026-09-27">[0.1.0] - 2026-09-27<a class="headerlink" href="#010-2026-09-27" title="Permanent link">&para;</a></h2>
 <p>First release.</p>
