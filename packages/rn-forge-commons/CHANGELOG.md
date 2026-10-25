@@ -15,6 +15,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `rn_forge.commons.text.templates`, moved from rn-forge-tooling, with
   `autoescape` and `TemplateEngine.cached`.
 - The `templates` extra.
+- `rn_forge.commons.text.markdown` (`MarkdownUtils`, `MarkdownHeading`,
+  `MarkdownTable`) and the `markdown` extra.
 
 ### Changed
 

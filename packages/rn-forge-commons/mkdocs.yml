@@ -80,6 +80,7 @@ nav:
           - Logger: reference/logging/logger.md
           - StructLogger: reference/logging/structlog.md
       - Text:
+          - Markdown: reference/text/markdown.md
           - Templates: reference/text/templates.md
       - Runtime:
           - Console: reference/runtime/console.md

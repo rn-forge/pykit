@@ -33,6 +33,7 @@ Optional extras:
 | `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
 | `structlog` | Structured logging over the existing stdlib handlers |
 | `templates` | The Jinja template engine, `rn_forge.commons.text.templates` (`jinja2`) |
+| `markdown` | Markdown structure, `rn_forge.commons.text.markdown` (`markdown`, `markdown-it-py`) |
 | `all` | Everything above |
 
 Console log output is Rich-formatted by default (a hard dependency) when stdout
@@ -107,6 +108,9 @@ holds it.
 **`text/`** — text formats, each module behind its own extra and imported
 directly (never through the facade).
 
+- **`markdown`** (`markdown` extra) — `MarkdownUtils`, `MarkdownHeading`,
+  `MarkdownTable`: headings and MkDocs-compatible anchors, link and image
+  targets, pipe tables with line positions, and text without fenced code.
 - **`templates`** (`templates` extra) — `TemplateEngine`, `RenderError`: strict
   Jinja rendering from a directory or a package, with `autoescape`, a
   process-wide `TemplateEngine.cached` constructor, and `to_toml`/`to_yaml`

@@ -47,3 +47,34 @@ engine = TemplateEngine.cached(
     variable_end_string="]]",
 )
 ```
+
+## Markdown
+
+`rn_forge.commons.text.markdown` reads the structure of a Markdown document. It
+needs the `markdown` extra and is imported directly, never through
+`rn_forge.commons`.
+
+```bash
+uv add "rn-forge-commons[markdown]"
+```
+
+Anchors follow Python-Markdown's `toc` extension, which MkDocs uses. Links and
+tables come from a CommonMark parser, so a link inside code is not a link.
+
+```python
+from rn_forge.commons.text.markdown import MarkdownUtils
+
+page = """# Guide
+
+See [setup](setup.md#install) and [the site](https://example.com).
+
+| Name | Role |
+| -- | -- |
+| ann | dev |
+"""
+
+MarkdownUtils.anchors(page)  # {"guide"}
+[link for link in MarkdownUtils.links(page) if not MarkdownUtils.is_external(link)]
+# ["setup.md#install"]
+MarkdownUtils.tables(page)[0].rows  # (("ann", "dev"),)
+```

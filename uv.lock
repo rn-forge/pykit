@@ -2035,6 +2035,8 @@ dependencies = [
 all = [
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "markdown" },
+    { name = "markdown-it-py" },
     { name = "opentelemetry-instrumentation-logging" },
     { name = "purgatory" },
     { name = "pydantic" },
@@ -2048,6 +2050,10 @@ auth = [
 ]
 json = [
     { name = "python-json-logger" },
+]
+markdown = [
+    { name = "markdown" },
+    { name = "markdown-it-py" },
 ]
 otel = [
     { name = "opentelemetry-instrumentation-logging" },
@@ -2096,6 +2102,10 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'resilience'", specifier = ">=0.28" },
     { name = "jinja2", marker = "extra == 'all'", specifier = ">=3.1.6" },
     { name = "jinja2", marker = "extra == 'templates'", specifier = ">=3.1.6" },
+    { name = "markdown", marker = "extra == 'all'", specifier = ">=3.7" },
+    { name = "markdown", marker = "extra == 'markdown'", specifier = ">=3.7" },
+    { name = "markdown-it-py", marker = "extra == 'all'", specifier = ">=3.0" },
+    { name = "markdown-it-py", marker = "extra == 'markdown'", specifier = ">=3.0" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'all'", specifier = ">=0.64b0" },
     { name = "opentelemetry-instrumentation-logging", marker = "extra == 'otel'", specifier = ">=0.64b0" },
     { name = "purgatory", marker = "extra == 'all'", specifier = ">=3.0.1" },
@@ -2116,7 +2126,7 @@ requires-dist = [
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "verboselogs", specifier = ">=1.7" },
 ]
-provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "templates", "testing", "all"]
+provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "markdown", "templates", "testing", "all"]
 
 [package.metadata.requires-dev]
 dev = [
