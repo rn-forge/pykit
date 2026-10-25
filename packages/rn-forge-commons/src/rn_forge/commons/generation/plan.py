@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
@@ -19,10 +20,10 @@ from rn_forge.commons.generation.artifacts import (
     resolve_within,
 )
 
-__all__ = ["classify", "plan"]
+__all__ = ["classify", "diff", "disk_content", "plan"]
 
 
-def _disk_content(root: Path, artifact: Artifact) -> str | None:
+def disk_content(root: Path, artifact: Artifact) -> str | None:
     """The artifact's current content on disk (block body for a block), or ``None``."""
     path = root / artifact.path
     if not path.is_file():
@@ -31,6 +32,26 @@ def _disk_content(root: Path, artifact: Artifact) -> str | None:
     if artifact.block is None:
         return text
     return artifact.block.extract(text)
+
+
+def diff(root: Path, change: Change) -> str:
+    """A unified diff from *change*'s content on disk to its rendered content.
+
+    A block diffs its body; a missing file diffs from empty. Returns ``""``
+    when the change has no artifact or nothing differs.
+    """
+    artifact = change.artifact
+    if artifact is None:
+        return ""
+    disk = disk_content(root, artifact) or ""
+    return "".join(
+        difflib.unified_diff(
+            disk.splitlines(keepends=True),
+            artifact.content.splitlines(keepends=True),
+            fromfile=artifact.path,
+            tofile=artifact.path,
+        )
+    )
 
 
 def classify(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action:
@@ -45,7 +66,7 @@ def classify(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action
     if artifact.kind is ArtifactKind.SEEDED:
         return Action.SKIP if (root / artifact.path).exists() else Action.CREATE
 
-    disk = _disk_content(root, artifact)
+    disk = disk_content(root, artifact)
     if disk is None:
         if entry is None:
             return Action.CREATE if artifact.block is None else Action.INSERT

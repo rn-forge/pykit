@@ -13,7 +13,7 @@ from rn_forge.commons.generation.artifacts import (
     Plan,
     StateEntry,
 )
-from rn_forge.commons.generation.plan import classify, plan
+from rn_forge.commons.generation.plan import classify, diff, disk_content, plan
 
 __all__ = [
     "BLOCKING_ACTIONS",
@@ -28,5 +28,7 @@ __all__ = [
     "StateEntry",
     "apply",
     "classify",
+    "diff",
+    "disk_content",
     "plan",
 ]

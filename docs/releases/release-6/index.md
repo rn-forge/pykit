@@ -43,7 +43,7 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F18.1](../../specs/epics/E18-kiln-extraction/F18.1-template-engine-in-commons.md) | E18 | Closed |
-| [F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md) | E18 | Active |
+| [F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md) | E18 | Closed |
 | [F18.3](../../specs/epics/E18-kiln-extraction/F18.3-document-io.md) | E18 | Closed |
 | [F18.4](../../specs/epics/E18-kiln-extraction/F18.4-markdown-structure.md) | E18 | Closed |
 | [F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md) | E19 | Closed |
