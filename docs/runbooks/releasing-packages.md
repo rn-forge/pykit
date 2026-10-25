@@ -43,15 +43,15 @@ Three consequences:
 - **Fresh tags share a commit.** New tags point at the pushed commit; resumed
   releases keep their original tag and source.
 - **A partial run is the risk.** If one package's checks fail, packages that
-  depend on it could be tagged, pinning a tag that does not exist. `release`
-  withholds a package with a failed check and every selected package that
-  depends on it, and releases the rest
+  depend on it could be tagged ahead of it. `release` withholds a package with
+  a failed check and every selected package that depends on it, and releases
+  the rest
   ([S9.3.2](../specs/epics/E9-release-readiness/F9.3-release-mechanism.md)). A
-  package that was not selected is not re-tagged, so its existing tag stays
-  the one dependents pin.
+  package that was not selected is not re-tagged, and its existing tag still
+  satisfies its dependents' ranges.
 - **CI never proves external resolution.** Every job syncs with
   `--all-packages`, so internal dependencies resolve from the workspace, not
-  from their pins. The install check after tagging is separate
+  from their ranges. The install check after tagging is separate
   ([F9.5](../specs/epics/E9-release-readiness/F9.5-external-installability.md)).
 
 The docs job runs after `release` and builds with `--strict`, so a broken link
@@ -88,11 +88,15 @@ VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-for
    done.
 1. Confirm every package in scope has the version it should be tagged at, and
    that no tag for that version exists on the remote
-   (`git ls-remote --tags origin`). A local tag proves nothing.
+   (`git ls-remote --tags origin`). A local tag proves nothing. The version
+   follows the bump rule ([ADR-0004](../adr/ADR-0004.md)): before 1.0, minor
+   for a breaking change and patch otherwise.
 1. Move each package's `[Unreleased]` changelog entries under a heading for the
    version being tagged, dated with the merge day.
-1. Restore tag pins: every internal requirement names the tag this release
-   creates (S9.7.2). A pin to `feature/upgrade` must not be tagged.
+1. Run `rn-forge-devops requirements`. A package's ceiling must admit each
+   dependency version this release tags. A breaking release of a dependency
+   needs each dependent to widen its ceiling, after its tests pass on the new
+   version, and to be released with it.
 1. Run the workspace validation from the
    [development guide](../guides/development.md), and get the owner's approval
    to release.
@@ -112,5 +116,8 @@ VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-for
 1. Check each tagged package's docs at
    `https://rn-forge.github.io/pykit/packages/<package>/latest/` show the new
    version ([F9.9](../specs/epics/E9-release-readiness/F9.9-package-docs.md)).
+1. Once the `docs` job has deployed, install the released packages by name
+   from the live index, as the acceptance in
+   [F19.3](../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) does.
 1. Record each package's version, tag, commit and install result on the release
    page, and set it to `shipped` with the date once its exit criteria hold.

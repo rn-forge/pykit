@@ -35,8 +35,9 @@ framework itself: the FastAPI guide shows the import and list endpoints.
 
 ## Installation
 
-None of the `rn-forge-*` packages is on PyPI. A release is a git tag, declared
-as a pinned direct URL:
+None of the `rn-forge-*` packages is on PyPI. A release is a git tag. Declare
+pykit's package index and require packages by version range, or pin a tag by
+direct URL:
 
 ```toml
 dependencies = [
@@ -46,8 +47,7 @@ dependencies = [
 ```
 
 Application code catches `rn_forge.web.VersionConflict` and passes
-`rn_forge.web` pagination terms, so declare `rn-forge-web` as well, at the tag
-this release pins.
+`rn_forge.web` pagination terms, so declare `rn-forge-web` as well.
 
 No database driver is declared. Add `asyncpg` for PostgreSQL or `aiosqlite` for
 SQLite.

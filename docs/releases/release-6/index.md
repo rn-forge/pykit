@@ -101,7 +101,10 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 
 ## Progress
 
-Not started.
+Code complete on `feature/release-6`, 2026-10-25. E18 and F19.1 are closed.
+S19.2.2 and S19.3.2 stay active until the cut's push to `main` deploys the
+index and the by-name install from it passes. Not yet merged: the changelog
+headings and the runbook's merge steps remain.
 
 ## Commits
 

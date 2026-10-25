@@ -35,7 +35,8 @@ Tooling may import cli and commons; neither may import tooling, and
 
 ## Install
 
-Not published to PyPI: a release is a git tag, and a consumer pins one by direct
+Not published to PyPI: a release is a git tag. A consumer declares pykit's
+package index and requires the package by version range, or pins a tag by direct
 URL.
 
 ```toml
@@ -45,7 +46,7 @@ dependencies = [
 ]
 ```
 
-`rn-forge-cli` and `rn-forge-commons` come with it, pinned the same way.
+`rn-forge-cli` and `rn-forge-commons` come with it, as version ranges.
 
 ## Docs
 

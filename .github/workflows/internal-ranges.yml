@@ -18,7 +18,5 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      # S19.3.2 removes continue-on-error once no manifest names a git URL.
       - name: requirements
-        continue-on-error: true
         run: uv run --no-sync rn-forge-devops requirements

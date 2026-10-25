@@ -5,6 +5,10 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Requires its rn-forge dependencies by version range from pykit's index (ADR-0004), not by git URL.
+
 ## [0.1.0] - 2026-10-16
 
 ### Added

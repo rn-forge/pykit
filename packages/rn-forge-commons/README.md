@@ -11,7 +11,8 @@ Shared, framework-agnostic utilities for Python programming.
 
 ## Install
 
-Not published to PyPI: a release is a git tag, and a consumer pins one by direct
+Not published to PyPI: a release is a git tag. A consumer declares pykit's
+package index and requires the package by version range, or pins a tag by direct
 URL.
 
 ```toml

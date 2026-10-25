@@ -39,10 +39,10 @@ takes its place in this graph by the placement rules in
 [ADR-0002](../adr/ADR-0002.md) and adds its contracts to `.importlinter`.
 
 All nine packages require Python 3.14 or later and provide typed package
-markers. They have independent versions and pinned git-tag dependencies
+markers. They have independent versions and require each other by version range
 ([ADR-0004](../adr/ADR-0004.md)). The root workspace overrides those
-dependencies to local members for development. That override does not prove that
-the intended tags install outside the workspace.
+requirements to local members for development. That override does not prove that
+the ranges install outside the workspace.
 
 Package guides own API details: [commons](../rn-forge-commons/index.md),
 [CLI](../rn-forge-cli/index.md), [tooling](../rn-forge-tooling/index.md),

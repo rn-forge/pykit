@@ -1,9 +1,9 @@
 # Installation
 
 These packages are not published to PyPI. A release is a **git tag**, and a
-consumer depends on a tag by pinned direct URL — a bare
-`uv add rn-forge-tooling` would not resolve, and a floating branch reference
-would silently change what a build produced.
+consumer declares pykit's package index (`https://rn-forge.github.io/pykit/simple/`)
+and requires the package by version range, or pins a tag by direct URL. A
+floating branch reference would silently change what a build produced.
 
 ```toml
 [project]
@@ -15,12 +15,12 @@ dependencies = [
 It is a **development** dependency. Add it to a `dev` group, or to a CLI's own
 `dependencies` when the CLI *is* the developer tool.
 
-`rn-forge-cli` and `rn-forge-commons` come with it, pinned the same way.
+`rn-forge-cli` and `rn-forge-commons` come with it, as version ranges.
 
 ## Upgrading
 
-Change the tag in the URL. There is no version range to widen: the pin is the
-whole mechanism, and a lockfile records the resolved commit.
+Raise the version range, or change the tag in a direct URL. A lockfile records
+the resolved version.
 
 ## What lives where
 

@@ -45,8 +45,9 @@ unless a process puts `src/rn_forge/` itself on `sys.path`.
 
 ## Installation
 
-None of the `rn-forge-*` packages is on PyPI. A release is a git tag, declared
-as a pinned direct URL:
+None of the `rn-forge-*` packages is on PyPI. A release is a git tag. Declare
+pykit's package index and require packages by version range, or pin a tag by
+direct URL:
 
 ```toml
 dependencies = [
@@ -57,12 +58,11 @@ dependencies = [
 
 Application code imports `rn_forge.web` directly (wire models, pagination,
 problem types, the auth contract), and this package does not re-export it.
-Declare `rn-forge-web` as well, at the tag this release pins, so the import is
-not an undeclared transitive dependency.
+Declare `rn-forge-web` as well, so the import is not an undeclared transitive
+dependency.
 
-`uv add rn-forge-fastapi` will not work. Inside this workspace,
-`[tool.uv.sources]` overrides the URL with the local checkout, for local
-development only.
+Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
+local checkout, for local development only.
 
 ## What this package deliberately does not ship
 
@@ -90,7 +90,7 @@ development only.
 
 **`rn-forge-web`** — every module adapts one of its primitives.
 `rn-forge-commons` is not declared: nothing here imports it directly, and it
-arrives pinned through `rn-forge-web`.
+arrives through `rn-forge-web`.
 
 **`fastapi`** (`>=0.141.1`) — a hard dependency, not an extra. It is used as
 documented, not abstracted away — an application keeps `APIRouter`, `Depends`,

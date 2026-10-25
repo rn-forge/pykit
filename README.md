@@ -72,8 +72,9 @@ All packages ship a `py.typed` marker and are type-checked in strict mode.
    runtime packages never import tooling. ([ADR-0002](docs/adr/ADR-0002.md))
 1. **Situational dependencies live behind extras**, outside the package facade.
    ([ADR-0003](docs/adr/ADR-0003.md))
-1. **Packages release independently, as pinned git tags.** Each package has its
-   own version and tag; nothing is published to PyPI.
+1. **Packages release independently and depend on each other by range.** Each
+   package has its own version and tag, and requires its dependencies by
+   version range from pykit's index; nothing is published to PyPI.
    ([ADR-0004](docs/adr/ADR-0004.md))
 1. **pykit is upstream.** Applications are built on these libraries rather than
    re-deriving them, so apps sharing pykit share logic and read alike.
@@ -96,7 +97,7 @@ name = "rn-forge"
 url = "https://rn-forge.github.io/pykit/simple/"
 ```
 
-The alternative is a pinned git direct URL with its subdirectory:
+Or pin a tag by git direct URL with its subdirectory:
 
 ```toml
 dependencies = [
