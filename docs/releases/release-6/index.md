@@ -1,18 +1,31 @@
-# Release 6 — kiln adoption and authentication
+# Release 6 — kit upgrades for kiln
 
 |  |  |
 | -- | -- |
 | **Status** | planned |
 
-pykit cuts over onto kiln's `python-lib` archetype (F16.3, then F16.6,
-[E16](../../specs/epics/E16-kiln-adoption/index.md)), then gains standards-based
-authentication and authorization for its web applications
-([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
-(F13.1), create the `rn-forge-auth` package and move the existing auth code into
-it (F13.2), then the features the design produces — the login adapters, the
-session and HTTP surface for Django and FastAPI, authorization context and
-resource policy, and the removal of the locally issued JWT flows. The package
-and the framework adapters ship together.
+The kit becomes fast and complete enough that kiln deletes its own copies
+([E18](../../specs/epics/E18-kiln-extraction/index.md)), and the `rn-forge-*`
+packages depend on each other by version range
+([E19](../../specs/epics/E19-version-ranges/index.md)):
+
+- Template rendering, the generation engine and the state store move to
+  commons, so an application gets them without the CLI and installer layers
+  ([F18.1](../../specs/epics/E18-kiln-extraction/F18.1-template-engine-in-commons.md)).
+- Generators render artifacts from a table, and previews diff a plan
+  ([F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md)).
+- YAML loads through libyaml, and plain TOML through `tomllib`
+  ([F18.3](../../specs/epics/E18-kiln-extraction/F18.3-document-io.md)).
+- Markdown structure gets a CommonMark parser
+  ([F18.4](../../specs/epics/E18-kiln-extraction/F18.4-markdown-structure.md)).
+- pykit publishes a static PEP 503 index of the files already on GitHub
+  Releases, and every internal requirement becomes a range resolved from it
+  ([F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md)–[F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md)).
+
+The cut re-tags every package that depends on commons once, on ranges. After
+it, an additive release of a package needs no release of the packages that
+depend on it. kiln's adoption of this release is kiln's own work; pykit's
+cutover onto kiln is [Release 7](../release-7/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -20,7 +33,6 @@ and the framework adapters ship together.
 ## Entry criteria
 
 - Release 5 is shipped.
-- kiln's release-1 tags exist.
 
 ## Scope
 
@@ -30,67 +42,83 @@ and the framework adapters ship together.
 
 | Feature | Epic | State |
 | -- | -- | -- |
-| [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
-| [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
-| [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
-| [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
+| [F18.1](../../specs/epics/E18-kiln-extraction/F18.1-template-engine-in-commons.md) | E18 | New |
+| [F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md) | E18 | New |
+| [F18.3](../../specs/epics/E18-kiln-extraction/F18.3-document-io.md) | E18 | New |
+| [F18.4](../../specs/epics/E18-kiln-extraction/F18.4-markdown-structure.md) | E18 | New |
+| [F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md) | E19 | New |
+| [F19.2](../../specs/epics/E19-version-ranges/F19.2-package-index.md) | E19 | New |
+| [F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) | E19 | New |
 
 <!-- scope:end -->
 
 ## Order
 
-1. **F13.1 first.** It is a decision with no code, and settles the package
-   placement F13.2 follows. It can run while the cutover waits on kiln.
-1. **F16.3** once kiln's release-1 tags exist. It cuts pykit over onto kiln,
-   with `rn-forge-devops` 0.2.0 (Release 5) already published.
-1. **F13.2** after F16.3 and F13.1. The package joins the kiln-managed workspace
-   F16.3 sets up.
-1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
-   not read.
-1. E13's implementation features follow F13.2, so the adapters are written
-   inside `rn-forge-auth`.
+1. **F18.1 first.** S18.1.1 and S18.1.2 move the code that F18.2 builds on;
+   S18.1.3 fixes the contracts around it.
+1. **F18.2, F18.3 and F18.4** in any order, in parallel.
+1. **F19.1** at any point: the decision, and ADR-0004's revision.
+1. **F19.2** after F19.1. Its index first deploys on the cut's push to `main`.
+1. **F19.3 last**, at the cut. It sets every range and re-tags every dependent,
+   taking over [F18.5](../../specs/epics/E18-kiln-extraction/F18.5-coherent-pins.md)'s
+   re-tag.
 
 ## Decisions
 
-None yet.
+- [ADR-0002](../../adr/ADR-0002.md), amended 2026-10-24: rule 3 keeps only the
+  command-line and installation layers in tooling; templates, generation and
+  state are placed by rule 1, in commons.
+- [ADR-0004](../../adr/ADR-0004.md), to be revised by S19.1.1: packages declare
+  each other by range, and pykit publishes an index.
+- Owner decision, 2026-10-24: E18 and E19 ship together in this release, so
+  dependents are re-tagged once, on ranges. F18.5 is removed. The kiln cutover
+  and authentication move to Release 7.
+- Owner decision, 2026-10-24: E19's range check and index publish live in
+  files pykit owns, which `main.yml` references now and kiln's generated CI
+  references after the cutover. Ranges do not wait on kiln.
 
 ## Breaking changes
 
-Planned until the decisions behind them are accepted:
+- `rn-forge-tooling` 0.3.0 removes three modules; the names inside them are
+  unchanged:
 
-- New package `rn-forge-auth` at 0.1.0.
-- `rn-forge-commons` loses its `auth` extra and the code behind it.
-- `rn-forge-web` loses the auth types it holds and its `auth` extra, and keeps
-  the wire contract. This follows E13's
-  [package placement](../../specs/epics/E13-auth/design.md#package-placement).
-- `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
-  `rn-forge-auth`.
+  | Removed | Import from |
+  | -- | -- |
+  | `rn_forge.tooling.templates` | `rn_forge.commons.text.templates`, with `rn-forge-commons[templates]` |
+  | `rn_forge.tooling.generation` | `rn_forge.commons.generation` |
+  | `rn_forge.tooling.state` | `rn_forge.commons.fs.state`, or `rn_forge.commons` |
 
-The removal of Django's locally issued JWT flows is E13's change and is listed
-here once its feature exists.
+  Tooling no longer depends on `jinja2`.
+- `DocumentUtils.read` treats a path that exists but is not a file as missing,
+  instead of failing to read it.
+- Plain YAML loads follow libyaml. Output and loaded values are unchanged, and
+  libyaml's error messages differ from the pure parser's.
+- Each package's metadata requires its rn-forge dependencies by name and range.
+  A consumer that declares the index, or pins every rn-forge package it uses by
+  direct URL at its root, installs as before. A consumer that relied on a
+  package's own git-URL requirements to pull in its dependencies must do one of
+  the two.
 
 ## Progress
 
-Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F16.3 waits for kiln's release-1 tags. F13.1 is settling the
-design's open questions; E13's implementation features are added to this release
-once it closes.
+Not started.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.[36]|S16\.[36]\.'
+git log --format='%h %ad %s' --date=short -E --grep='E1[89]|F1[89]\.|S1[89]\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1
-  and F13.2.
-- The design's proposed decisions are accepted as ADRs.
+- Every feature on this page's Scope is `Closed`.
+- ADR-0004's revision is accepted.
 - `docs/_update_board.sh --check` passes.
-- The main CI, including the Sonar gate, passes on the release's version bumps.
+- The main CI, including `rn-forge-devops requirements` and the Sonar gate,
+  passes on the release's version bumps.
+- F19.3's by-name install from the live index passes.
 
 ## Shipped
 

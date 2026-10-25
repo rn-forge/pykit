@@ -12,7 +12,7 @@ own gate (F16.4), and the planner emits a no-extras smoke entry for every
 selected package, documents its `plan` outputs as a contract and ships as
 `rn-forge-devops` 0.2.0 (F16.5), the version kiln pins. The cutover onto kiln,
 authentication and the retirement of unread outputs are in
-[Release 6](../release-6/index.md).
+[Release 7](../release-7/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -61,7 +61,7 @@ F16.5 (2026-10-18), once `rn-forge-devops-v0.2.0` was published. The
 merge commit `4770dc6` passed every verify, postgres, smoke and suite job plus
 `import-boundaries`, `external-install`, `docs` and the Sonar gate, and
 published the two versions below. F16.3, F16.6, F13.1 and F13.2 are in
-[Release 6](../release-6/index.md).
+[Release 7](../release-7/index.md).
 
 ## Commits
 
