@@ -1,6 +1,11 @@
 # Generation
 
-`rn_forge.tooling.generation` is the engine behind "write a repository's
+Two kinds of user share this engine: a tool that writes a repository's standard
+files, and an application that writes the files it owns into a directory. Both
+want a plan before any write, a diff, an atomic apply with rollback, and drift
+detection. Import it directly; `rn_forge.commons` does not re-export it.
+
+`rn_forge.commons.generation` is the engine behind "write a repository's
 standard files, and refuse to silently clobber a hand edit". It decides what a
 write *would* do before doing anything, and makes a batch of writes
 all-or-nothing.
@@ -17,7 +22,7 @@ Every artifact declares who owns its bytes:
 
 ```python
 from rn_forge.commons.fs.blocks import ManagedBlock
-from rn_forge.tooling.generation import Artifact, ArtifactKind
+from rn_forge.commons.generation import Artifact, ArtifactKind
 
 taskfile = Artifact(path="Taskfile.yml", kind=ArtifactKind.MANAGED, content=rendered)
 ignore = Artifact(
@@ -31,11 +36,44 @@ ignore = Artifact(
 A block artifact's `content` is the block *body*, not the whole file: everything
 outside the markers is preserved byte for byte.
 
+## Rendering artifacts from templates
+
+With the `templates` extra, `TemplateArtifact` describes an artifact as a row
+and `render_artifacts` renders the enabled rows, in order. `templated` is
+imported directly; `rn_forge.commons.generation` does not load Jinja.
+
+```python
+from rn_forge.commons.fs.blocks import ManagedBlock
+from rn_forge.commons.generation import ArtifactKind
+from rn_forge.commons.generation.templated import TemplateArtifact, render_artifacts
+from rn_forge.commons.text.templates import TemplateEngine
+
+engine = TemplateEngine.cached(package="golden_tool")
+artifacts = render_artifacts(
+    engine,
+    {"name": "demo", "docs": False},
+    [
+        TemplateArtifact("Taskfile.yml"),
+        TemplateArtifact("docs/index.md", ArtifactKind.SEEDED, enabled=False),
+        TemplateArtifact(
+            ".gitignore",
+            ArtifactKind.BLOCK,
+            template="gitignore.j2",
+            block=ManagedBlock("golden-tool"),
+        ),
+    ],
+)
+```
+
+A row without `template` renders `<path>.j2`. `context` replaces the shared
+context for that row alone. A template failure raises `RenderError` whose
+message starts with the row's path.
+
 ## Classify, then plan, then apply
 
 ```python
-from rn_forge.tooling.generation import StateEntry, apply, plan
-from rn_forge.tooling.state import StateStore
+from rn_forge.commons.generation import StateEntry, apply, plan
+from rn_forge.commons.fs.state import StateStore
 
 store = StateStore(
     root / ".golden-tool/state.json",
@@ -84,6 +122,25 @@ the state file are restored and the exception surfaces as an `AppException`.
 
 The state file is written last and never records itself — a baseline that hashed
 its own bytes could never be consistent.
+
+## Previewing a plan
+
+`diff` returns the unified diff from what is on disk to what a change would
+write: a block diffs its body, and a missing file diffs from empty. A CLI
+prints it, and a web page shows it before the user confirms `apply`.
+`disk_content` returns the current content of an artifact, or `None` when it is
+absent.
+
+```python
+from rn_forge.commons.generation import diff, plan
+
+planned = plan(root, artifacts, entries)
+for change in planned.writes:
+    print(diff(root, change))
+```
+
+`diff` reports what differs, whatever the artifact's kind; whether a preview
+shows seeded files is the caller's choice.
 
 ## Generators
 

@@ -145,7 +145,23 @@ class DictUtils:
             DictUtils.get_mapping(doc, "repository")  # {"name": "demo"}
             DictUtils.get_mapping(doc, "docs")        # {}
         """
-        value = DictUtils.get(data, key_path)
+        return DictUtils.as_mapping(DictUtils.get(data, key_path))
+
+    @staticmethod
+    def as_mapping(value: object) -> dict[str, object]:
+        """Return a shallow, string-keyed copy of *value* if it is a mapping.
+
+        Args:
+            value: Any value, such as the root of a parsed document.
+
+        Returns:
+            The mapping with its keys converted to ``str``, or an empty dict for
+            any other value.
+
+        Example::
+
+            DictUtils.get_mapping(DictUtils.as_mapping(YamlUtils.load(text)), "jobs")
+        """
         if not isinstance(value, Mapping):
             return {}
         items = cast(Mapping[object, object], value).items()
@@ -170,10 +186,7 @@ class DictUtils:
             DictUtils.get_list({"cmds": "echo hi"}, "cmds")  # ["echo hi"]
             DictUtils.get_list({"cmds": None}, "cmds")       # []
         """
-        value = DictUtils.get(data, key_path)
-        if isinstance(value, list):
-            return list(cast(list[object], value))
-        return [] if value is None else [value]
+        return ListUtils.as_list(DictUtils.get(data, key_path))
 
     @staticmethod
     def get_strings(data: Mapping[str, Any], key_path: str) -> list[str]:
@@ -193,9 +206,7 @@ class DictUtils:
             doc = {"dev": ["pytest", {"include-group": "lint"}]}
             DictUtils.get_strings(doc, "dev")  # ["pytest"]
         """
-        return [
-            item for item in DictUtils.get_list(data, key_path) if isinstance(item, str)
-        ]
+        return ListUtils.as_strings(DictUtils.get(data, key_path))
 
     @staticmethod
     def get_str(data: Mapping[str, Any], key_path: str, *, default: str = "") -> str:
@@ -621,6 +632,43 @@ class DictUtils:
 
 class ListUtils:
     """Utilities for list access, sorting, filtering, and grouping."""
+
+    @staticmethod
+    def as_list(value: object) -> list[object]:
+        """Return *value* as a list; a lone scalar reads as one element.
+
+        Only a ``list`` is spread; a mapping or string is a single element.
+
+        Args:
+            value: Any value.
+
+        Returns:
+            A copy of a ``list``, ``[]`` for ``None``, else ``[value]``.
+
+        Example::
+
+            ListUtils.as_list("echo hi")  # ["echo hi"]
+            ListUtils.as_list(None)       # []
+        """
+        if isinstance(value, list):
+            return list(cast(list[object], value))
+        return [] if value is None else [value]
+
+    @staticmethod
+    def as_strings(value: object) -> list[str]:
+        """Return the string elements of ``as_list(value)``.
+
+        Args:
+            value: Any value.
+
+        Returns:
+            The ``str`` elements, in order; non-strings are dropped.
+
+        Example::
+
+            ListUtils.as_strings(["pytest", {"include-group": "lint"}])  # ["pytest"]
+        """
+        return [item for item in ListUtils.as_list(value) if isinstance(item, str)]
 
     @staticmethod
     def get(items: list[Any], index: int = 0, *, default: Any = None) -> Any:

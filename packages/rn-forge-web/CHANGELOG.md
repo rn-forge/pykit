@@ -5,6 +5,13 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-25
+
+### Changed
+
+- Requires its rn-forge dependencies by version range from pykit's index
+  (ADR-0004), not by git URL.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added

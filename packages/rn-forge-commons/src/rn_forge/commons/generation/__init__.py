@@ -1,7 +1,7 @@
 """Artifact classification and transactional generation APIs."""
 
-from rn_forge.tooling.generation.apply import apply
-from rn_forge.tooling.generation.artifacts import (
+from rn_forge.commons.generation.apply import apply
+from rn_forge.commons.generation.artifacts import (
     BLOCKING_ACTIONS,
     WRITE_ACTIONS,
     Action,
@@ -13,7 +13,7 @@ from rn_forge.tooling.generation.artifacts import (
     Plan,
     StateEntry,
 )
-from rn_forge.tooling.generation.plan import classify, plan
+from rn_forge.commons.generation.plan import classify, diff, disk_content, plan
 
 __all__ = [
     "BLOCKING_ACTIONS",
@@ -28,5 +28,7 @@ __all__ = [
     "StateEntry",
     "apply",
     "classify",
+    "diff",
+    "disk_content",
     "plan",
 ]

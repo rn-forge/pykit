@@ -16,6 +16,8 @@ deleted. A dropped idea is deleted too.
 | django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on messaging staying in `rn-forge-django` until [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md) splits it ([E15 design](epics/E15-package-boundaries/design.md#messaging)). | F12.10, retired from E12 2026-09-29 |
 | product-installer-contract | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. Waits for a second product that needs the same contract. | F12.8, retired from E12 2026-09-29 |
 | devops-adapters | More `rn-forge-devops` adapters ([ADR-0012](../adr/ADR-0012.md)): Azure DevOps Pipelines as a CI platform, and pnpm or nx and Maven or Gradle workspaces that read the graph from the stack's own tool. Waits for kiln to schedule an Azure DevOps pipeline or a multi-package Node or Java archetype. | E16 review, 2026-10-15 |
+| [typed-application-state](#typed-application-state) | A typed application-state dependency in `rn-forge-fastapi`, replacing untyped `request.app.state.*` reads. Waits for the owner to take it up. | Owner request, 2026-10-21 |
+| [tool-version-probe](#tool-version-probe) | Ask an external executable for its version in `rn-forge-commons`. Waits for a second application that probes tools. | F17.5 review, 2026-10-23 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
 | [full-local-sonar-scan](#full-local-sonar-scan) | Run the authorized full local Sonar scan. | S14.4.3, amended 2026-10-03 |
@@ -96,6 +98,23 @@ thing has a primary key and an `int` `version`, exactly the two values
 Soft delete is a nullable `delete_time` column, not a status, in AIP-164's
 shape, as [ADR-0010](../adr/ADR-0010.md) records.
 [F12.2](epics/E12-http-contract-extensions/F12.2-soft-delete.md) builds it.
+
+## typed-application-state
+
+A FastAPI application that keeps long-lived resources on `app.state` reads them
+back as `request.app.state.<name>`, which is untyped: Apollo does so 195 times.
+The idea is a typed-state dependency in `rn-forge-fastapi`, one declaration of
+the state's attributes and types that a route receives through `Depends`, so a
+misspelt or missing resource fails type checking instead of at request time.
+
+## tool-version-probe
+
+Apollo probes `ffmpeg`, `ffprobe`, `yt-dlp` and `osascript` once at startup and
+reports each as a version, present, or missing. Its version parsing is a
+heuristic with application-specific fallbacks: a presence-only special case for
+`osascript`, and the first 80 characters when no version token matches. Taken
+up, it is a free function returning `str | None`, with `""` for a tool that ran
+and printed no version, not a `Process` classmethod: those return `Self`.
 
 ## release-recovery-drill
 

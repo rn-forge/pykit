@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-devops"
-version = "0.2.0"
+version = "0.3.0"
 description = "CI and release automation for rn-forge repositories in any language, run with uv"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]

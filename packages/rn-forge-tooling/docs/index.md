@@ -1,15 +1,12 @@
 # rn-forge-tooling
 
-`rn-forge-tooling` is the file-owning half of the developer-tooling stack: for
-command-line tools that install themselves and write files into a repository,
-and for the framework code generators that ship as `[codegen]` extras.
+`rn-forge-tooling` is the lifecycle and install layer of the developer-tooling
+stack: for command-line tools that install themselves and manage their own
+versions. File generation, local state and templates live in
+`rn-forge-commons`.
 
 It provides:
 
-- a locked, atomically-written JSON state store
-- a strict Jinja render engine
-- a generation engine: artifact kinds, action classification, transactional
-  apply
 - the tool lifecycle: `$RNF_HOME` layout, release fetching and verification, and
   transactional install/upgrade/uninstall/cleanup/status/doctor verbs
 

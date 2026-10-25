@@ -17,10 +17,10 @@ logging, subprocesses, task execution, and general utility helpers.
 # integration); public class names are unaffected and stay re-exported here.
 # The developer-tooling surface lives in two packages that depend on this one:
 # `rn-forge-cli` (Typer wiring, standard options, exit codes) and
-# `rn-forge-tooling` (state, templates, generation, install, docs checks).
-# There are deliberately no compatibility re-exports in either direction —
-# that would reverse the dependency, and `.importlinter` proves it does not
-# happen. See `docs/guides/installation.md`.
+# `rn-forge-tooling` holds the lifecycle verbs and install mechanics.
+# `generation` and `text` are imported directly, never through this facade: it
+# imports eagerly, so a re-export here would load them for every commons user.
+# There are deliberately no compatibility re-exports in either direction.
 
 from rn_forge.commons.config import Config
 from rn_forge.commons.exceptions import AppException
@@ -36,6 +36,7 @@ from rn_forge.commons.fs.documents import (
 from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.commons.fs.locks import DirectoryLock, atomic_symlink
 from rn_forge.commons.fs.paths import PathUtils
+from rn_forge.commons.fs.state import StateStore
 from rn_forge.commons.integration.messaging import (
     AsyncMessageBus,
     HandlerRegistry,
@@ -119,6 +120,7 @@ __all__ = [
     "SecretNotFound",
     "SecretStore",
     "Severity",
+    "StateStore",
     "StrictDataclassMixin",
     "Task",
     "TaskPool",

@@ -9,7 +9,7 @@ the [spec board](../specs/index.md) tracks work.
 | [ADR-0001: Standards and proven libraries come first; pykit wraps, never reimplements](ADR-0001.md) | Design principles | accepted |
 | [ADR-0002: Code is placed by what its API contains, and boundaries are one-way](ADR-0002.md) | Package placement and imports | accepted |
 | [ADR-0003: Optional integrations stay behind explicit extras and outside the facade](ADR-0003.md) | Optional dependencies | accepted |
-| [ADR-0004: Packages release independently through pinned git tags](ADR-0004.md) | Package distribution | accepted |
+| [ADR-0004: Packages release independently under their own tags and version ranges](ADR-0004.md) | Package distribution | accepted |
 | [ADR-0005: One framework-neutral HTTP contract, adapted natively by each framework](ADR-0005.md) | HTTP contract | accepted |
 | [ADR-0006: pykit verifies tokens but does not issue them](ADR-0006.md) | Authentication scope | accepted |
 | [ADR-0007: pykit's docs follow the shared rn-forge docs standard](ADR-0007.md) | Documentation structure | accepted |

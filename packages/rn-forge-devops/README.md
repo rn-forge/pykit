@@ -17,16 +17,22 @@ a library an application depends on.
 
 - `rn_forge.devops.ci` — the core: the member graph, change selection, check
   matrices and release gating. It knows neither the CI platform nor the stack.
+- `rn_forge.devops.requirements` — the `requirements` check: every requirement
+  between workspace members is a version range that admits the member's current
+  version and has a ceiling.
 - `rn_forge.devops.uv` — the uv workspace adapter: it reads
   `[tool.uv.workspace]` members, their internal requirements and their
   `[tool.workspace-ci]` tables, and runs `smoke`.
 - `rn_forge.devops.github` — the GitHub Actions adapter: `$GITHUB_OUTPUT` lines
   and the event context.
+- `rn_forge.devops.index` and `rn_forge.devops.releases` — the `index`
+  subcommand: a PEP 503 simple index rendered from a repository's GitHub
+  Release files, and the adapter that reads them with `gh`.
 - `rn_forge.devops.cli` — the `rn-forge-devops` console script.
 
-The package facade re-exports the core only. The core never imports an adapter,
-and the package never imports another `rn_forge` package; `.importlinter` proves
-both.
+The package facade re-exports the planner core only. The core never imports an
+adapter, and the package never imports another `rn_forge` package;
+`.importlinter` proves both.
 
 ## Usage
 

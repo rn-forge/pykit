@@ -1,22 +1,18 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.3.1"
+version = "0.3.2"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
-# Pinned direct URL, not a bare name: these packages are not on PyPI, and
-# each pin names its dependency's release tag (ADR-0004).
-# `[tool.uv.sources]` below overrides this with
-# the workspace checkout for local development only — the declaration here is
-# what a consumer outside the workspace actually resolves.
+# Internal requirements are version ranges (ADR-0004).
 #
 # `rn-forge-commons` is not declared: nothing here imports it directly, and it
-# arrives pinned through `rn-forge-web`.
+# arrives through `rn-forge-web`.
 dependencies = [
   # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
   # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
-  "rn-forge-web[security] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[security]>=0.2.1,<0.3",
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",
@@ -32,12 +28,12 @@ testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into web's extras.
 oidc = [
-  "rn-forge-web[auth] @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-web[auth]>=0.2.1,<0.3",
 ]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
 transfer = [
-  "rn-forge-data @ git+https://github.com/rn-forge/pykit@rn-forge-data-v0.1.0#subdirectory=packages/rn-forge-data",
+  "rn-forge-data>=0.1.1,<0.2",
   "python-multipart>=0.0.20",
 ]
 

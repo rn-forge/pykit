@@ -1,0 +1,10 @@
+name: Package index
+description: Write a PEP 503 index of the repository's release files under $SITE_DIR/simple.
+runs:
+  using: composite
+  steps:
+    - name: Write the package index
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: uv run rn-forge-devops index --repo "$GITHUB_REPOSITORY" --out "$SITE_DIR/simple"

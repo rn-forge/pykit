@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Mapping
 from typing import Any
 
@@ -26,6 +27,7 @@ class TemplateEngine:
         package: str | None = None,
         package_path: str = "templates",
         strict: bool = True,
+        autoescape: bool = False,
         **environment_kwargs: Any,
     ) -> None:
         """Initialize :class:`TemplateEngine`.
@@ -42,6 +44,8 @@ class TemplateEngine:
                 Only meaningful with *package*.
             strict: Use ``jinja2.StrictUndefined`` (default) so referencing an
                 undefined variable raises instead of rendering empty.
+            autoescape: HTML-escape every rendered value. Enable it when the
+                output is HTML.
             **environment_kwargs: Forwarded to the ``jinja2.Environment``
                 constructor (e.g. ``trim_blocks``, ``lstrip_blocks``).
                 ``keep_trailing_newline=True`` is the default unless
@@ -62,7 +66,7 @@ class TemplateEngine:
         self._environment = jinja2.Environment(
             loader=loader,
             undefined=jinja2.StrictUndefined if strict else jinja2.Undefined,
-            autoescape=False,
+            autoescape=autoescape,
             **environment_kwargs,
         )
 
@@ -74,6 +78,47 @@ class TemplateEngine:
 
         self._environment.filters["to_toml"] = to_toml
         self._environment.filters["to_yaml"] = to_yaml
+
+    @classmethod
+    def cached(
+        cls,
+        *,
+        directory: str | None = None,
+        package: str | None = None,
+        package_path: str = "templates",
+        strict: bool = True,
+        autoescape: bool = False,
+        **environment_kwargs: Any,
+    ) -> TemplateEngine:
+        """Return the engine already built in this process for equal arguments.
+
+        The engine is built on first use, so each template compiles once per
+        process. It is shared: do not mutate its :attr:`environment`. Every
+        argument must be hashable.
+
+        Args:
+            directory: As for the constructor.
+            package: As for the constructor.
+            package_path: As for the constructor.
+            strict: As for the constructor.
+            autoescape: As for the constructor.
+            **environment_kwargs: As for the constructor.
+
+        Returns:
+            The shared engine for these arguments.
+
+        Raises:
+            ValueError: Both or neither of *directory*/*package* are given.
+        """
+        return _cached_engine(
+            cls,
+            directory,
+            package,
+            package_path,
+            strict,
+            autoescape,
+            tuple(sorted(environment_kwargs.items())),
+        )
 
     @property
     def environment(self) -> jinja2.Environment:
@@ -89,7 +134,7 @@ class TemplateEngine:
         try:
             return self._environment.from_string(template).render(**context)
         except jinja2.TemplateError as exc:
-            raise RenderError(str(exc)) from exc
+            raise RenderError("{}", exc) from exc
 
     def render(self, name: str, context: Mapping[str, Any]) -> str:
         """Render a named template from the configured directory or package.
@@ -100,7 +145,7 @@ class TemplateEngine:
         try:
             return self._environment.get_template(name).render(**context)
         except jinja2.TemplateError as exc:
-            raise RenderError(str(exc)) from exc
+            raise RenderError("{}", exc) from exc
 
     def validate(self) -> list[str]:
         """Compile every template visible to the loader; return error messages.
@@ -119,3 +164,23 @@ class TemplateEngine:
             except jinja2.TemplateError as exc:
                 errors.append(f"{name}: {exc}")
         return errors
+
+
+@functools.cache
+def _cached_engine(
+    cls: type[TemplateEngine],
+    directory: str | None,
+    package: str | None,
+    package_path: str,
+    strict: bool,
+    autoescape: bool,
+    environment_items: tuple[tuple[str, Any], ...],
+) -> TemplateEngine:
+    return cls(
+        directory=directory,
+        package=package,
+        package_path=package_path,
+        strict=strict,
+        autoescape=autoescape,
+        **dict(environment_items),
+    )

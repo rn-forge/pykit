@@ -1,9 +1,9 @@
 # Installation
 
 These packages are not published to PyPI. A release is a **git tag**, and a
-consumer depends on a tag by pinned direct URL — a bare `uv add rn-forge-cli`
-would not resolve, and a floating branch reference would silently change what a
-build produced.
+consumer declares pykit's package index (`https://rn-forge.github.io/pykit/simple/`)
+and requires the package by version range, or pins a tag by direct URL. A
+floating branch reference would silently change what a build produced.
 
 ```toml
 [project]
@@ -16,15 +16,15 @@ For a tool whose command line *is* the product, this belongs in `dependencies`.
 For an application that only ships a maintenance command, put it in a `dev`
 dependency group instead.
 
-`rn-forge-commons` comes with it, pinned the same way. `rich` and `typer` are
+`rn-forge-commons` comes with it, as a version range. `rich` and `typer` are
 hard dependencies: an application with a command line prints to a terminal and
 parses arguments on every run, so there is nothing to gain from making either
 optional. Jinja2 is **not** a dependency — that lives in `rn-forge-tooling`.
 
 ## Upgrading
 
-Change the tag in the URL. There is no version range to widen: the pin is the
-whole mechanism, and a lockfile records the resolved commit.
+Raise the version range, or change the tag in a direct URL. A lockfile records
+the resolved version.
 
 ## The boundary, as an executable rule
 

@@ -24,6 +24,15 @@ DictUtils.get_str(doc, "tasks.build.cmds")     # "echo hi"
 DictUtils.get_bool(doc, "strict", default=True)  # True
 ```
 
+To read a bare value, such as the root of a parsed document that may not be a
+mapping, use `DictUtils.as_mapping`, `ListUtils.as_list` and
+`ListUtils.as_strings`:
+
+```python
+DictUtils.get_mapping(DictUtils.as_mapping(YamlUtils.load(text)), "jobs")
+ListUtils.as_strings(["pytest", {"include-group": "lint"}])  # ["pytest"]
+```
+
 ## Documents
 
 `JsonUtils` and `YamlUtils` cover plain (de)serialization and file I/O.
@@ -39,6 +48,10 @@ yaml_text = YamlUtils.serialize(data)
 # comments and formatting in pyproject.toml survive this edit
 DocumentUtils.update("pyproject.toml", {"project": {"version": "0.4.0"}})
 ```
+
+Plain YAML loads use libyaml. YAML 1.2 rules apply, so `on`, `yes` and `no` load
+as strings, not booleans. A GitHub Actions workflow's `on:` key is the string
+`"on"`.
 
 ## Dataclasses
 

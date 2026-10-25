@@ -67,7 +67,7 @@ shows that the check ran.
 
 ## What `install` guarantees
 
-`install` runs in the same shape as `generation.apply`:
+`install` runs in the same shape as `rn_forge.commons.generation.apply`:
 
 1. fetch into scratch space and verify the checksum, if the source publishes
    one;

@@ -1,4 +1,4 @@
-"""Tests for rn_forge.tooling.templates."""
+"""Tests for rn_forge.commons.text.templates."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("jinja2")
 
-from rn_forge.tooling.templates import RenderError, TemplateEngine  # noqa: E402
+from rn_forge.commons.text.templates import RenderError, TemplateEngine  # noqa: E402
 
 
 class TestConstruction:
@@ -106,3 +106,31 @@ class TestPackageLoader:
         # requiring a dedicated packaged templates/ resource dir.
         engine = TemplateEngine(package="rn_forge.commons", package_path=".")
         assert engine.render_string("{{ x }}", {"x": 1}) == "1"
+
+
+class TestAutoescape:
+    def test_autoescape_off_by_default(self, tmp_path):
+        engine = TemplateEngine(directory=str(tmp_path))
+        assert engine.render_string("{{ v }}", {"v": "<b>"}) == "<b>"
+
+    def test_autoescape_escapes_html(self, tmp_path):
+        engine = TemplateEngine(directory=str(tmp_path), autoescape=True)
+        assert engine.render_string("{{ v }}", {"v": "<b>"}) == "&lt;b&gt;"
+
+
+class TestCached:
+    def test_cached_returns_one_engine_per_arguments(self, tmp_path):
+        first = TemplateEngine.cached(directory=str(tmp_path))
+        assert TemplateEngine.cached(directory=str(tmp_path)) is first
+
+    def test_cached_distinguishes_environment_kwargs(self, tmp_path):
+        plain = TemplateEngine.cached(directory=str(tmp_path))
+        trimmed = TemplateEngine.cached(directory=str(tmp_path), trim_blocks=True)
+        assert trimmed is not plain
+
+
+class TestRenderErrorBraces:
+    def test_render_error_message_may_contain_braces(self, tmp_path):
+        engine = TemplateEngine(directory=str(tmp_path))
+        with pytest.raises(RenderError):
+            engine.render_string("{{ x }", {})

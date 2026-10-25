@@ -5,6 +5,36 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-25
+
+### Added
+
+- `DocumentUtils.read` of a package resource; `header` and `multiline_arrays` on
+  `dumps` and `write`; `DocumentUtils.multiline_arrays`;
+  `DictUtils.as_mapping`, `ListUtils.as_list` and `ListUtils.as_strings`.
+- `rn_forge.commons.generation`, moved from rn-forge-tooling.
+- `StateStore` (`rn_forge.commons.fs.state`), moved from rn-forge-tooling.
+- `rn_forge.commons.text.templates`, moved from rn-forge-tooling, with
+  `autoescape` and `TemplateEngine.cached`.
+- The `templates` extra.
+- `rn_forge.commons.text.markdown` (`MarkdownUtils`, `MarkdownHeading`,
+  `MarkdownTable`) and the `markdown` extra.
+- `TemplateArtifact` and `render_artifacts` in
+  `rn_forge.commons.generation.templated` (extra `templates`).
+- `diff` and `disk_content` in `rn_forge.commons.generation`.
+
+### Changed
+
+- Plain YAML loads use libyaml (`ruamel.yaml[oldlibyaml]`); plain TOML reads use
+  `tomllib`; `DocumentUtils.read` names the file in a parse error.
+- Breaking: `DocumentUtils.read` treats a path that exists but is not a file as
+  missing.
+
+### Fixed
+
+- A parser message containing a brace now raises `DocumentError`.
+- A Jinja error whose message contains a brace now raises `RenderError`.
+
 ## [0.6.0] - 2026-10-16
 
 ### Removed

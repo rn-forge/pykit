@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from rn_forge.devops import ci, github, uv
+from rn_forge.devops import ci, github, index, releases, requirements, uv
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -34,10 +34,34 @@ def _parser() -> argparse.ArgumentParser:
         "adapters", help="check each declared adapter has a module and an extra"
     )
     commands.add_parser(
+        "requirements", help="check internal requirements are version ranges"
+    )
+    commands.add_parser(
         "sonar-target",
         help="print the `$GITHUB_OUTPUT` line with the Sonar branch argument",
     )
+    index_command = commands.add_parser(
+        "index", help="write a PEP 503 simple index of a repository's release files"
+    )
+    index_command.add_argument("--repo", required=True, metavar="OWNER/NAME")
+    index_command.add_argument("--out", required=True, metavar="DIR")
     return parser
+
+
+def _index(args: argparse.Namespace) -> int:
+    files = releases.release_files(args.repo)
+    pages = index.render_index(files)
+    out = Path(args.out).resolve()
+    for relative, content in pages.items():
+        path = (out / relative).resolve()
+        if not path.is_relative_to(out):
+            print(f"page {relative!r} escapes {args.out}", file=sys.stderr)
+            return 1
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    projects = len(pages) - 1
+    print(f"wrote {projects} projects and {len(files)} files to {args.out}")
+    return 0
 
 
 def _releasable(workspace: ci.Workspace, args: argparse.Namespace) -> int:
@@ -53,6 +77,13 @@ def _releasable(workspace: ci.Workspace, args: argparse.Namespace) -> int:
 
 def _adapters(workspace: ci.Workspace) -> int:
     problems = uv.check_adapters(workspace)
+    for problem in problems:
+        print(problem, file=sys.stderr)
+    return 1 if problems else 0
+
+
+def _requirements(root: Path) -> int:
+    problems = requirements.check_requirements(root)
     for problem in problems:
         print(problem, file=sys.stderr)
     return 1 if problems else 0
@@ -88,9 +119,14 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as error:
             sys.exit(str(error))
         return 0
+    if args.command == "index":
+        return _index(args)
 
     try:
-        workspace = uv.load_workspace(uv.find_root(Path.cwd()))
+        root = uv.find_root(Path.cwd())
+        if args.command == "requirements":
+            return _requirements(root)
+        workspace = uv.load_workspace(root)
     except FileNotFoundError as error:
         sys.exit(str(error))
     return _run(workspace, args)

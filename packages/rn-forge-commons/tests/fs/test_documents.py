@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+import platform
+import sys
+import zipfile
+from io import StringIO
 from pathlib import Path
 
 import pytest
 import tomlkit
-from ruamel.yaml import YAMLError
+from ruamel.yaml import YAML, YAMLError
 
 import rn_forge.commons.fs.documents as documents_module
 from rn_forge.commons.fs.documents import (
@@ -454,3 +458,103 @@ class TestYamlFileIO:
 # Coverage ROI notes:
 # - Logger side effects inside collections helpers are exercised indirectly via
 #   success/error-path assertions but are not asserted record-by-record.
+
+
+class TestLibyaml:
+    @pytest.mark.skipif(
+        platform.python_implementation() != "CPython", reason="libyaml is CPython-only"
+    )
+    def test_safe_loader_uses_libyaml(self) -> None:
+        assert documents_module._safe_yaml().Parser.__name__ == "CParser"  # noqa: SLF001
+
+    def test_serialize_unfolded_width(self) -> None:
+        out = YamlUtils.serialize({"k": "x " * 200}, width=sys.maxsize)
+        assert len(out.splitlines()) == 1
+
+    def test_serialize_matches_pure_emitter(self) -> None:
+        data = {"k": "word " * 100}
+        pure = YAML(typ="safe", pure=True)
+        pure.default_flow_style = False
+        pure.representer.sort_base_mapping_type_on_output = False
+        stream = StringIO()
+        pure.dump(data, stream)
+        assert YamlUtils.serialize(data) == stream.getvalue()
+
+    def test_invalid_yaml_with_brace_raises_document_error(self) -> None:
+        with pytest.raises(DocumentError):
+            DocumentUtils.loads("a: {b", "yaml")
+
+
+class TestReadSources:
+    def test_toml_loads_matches_tomlkit(self) -> None:
+        text = (
+            "d = 2026-10-24\nt = { a = 1, b = [1, 2] }\n"
+            '[[items]]\nname = "x"\n[[items]]\nname = "y"\n'
+        )
+        assert DocumentUtils.loads(text, "toml") == tomlkit.loads(text).unwrap()
+
+    def test_read_package_resource(self, tmp_path: Path) -> None:
+        archive = tmp_path / "res.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("pkg/data.toml", 'a = "b"\n')
+        resource = zipfile.Path(archive, "pkg/data.toml")
+        assert DocumentUtils.read(resource) == {"a": "b"}
+
+    def test_read_missing_resource_ok_is_empty(self, tmp_path: Path) -> None:
+        archive = tmp_path / "res.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("pkg/other.toml", "")
+        resource = zipfile.Path(archive, "pkg/data.toml")
+        assert DocumentUtils.read(resource, missing_ok=True) == {}
+
+    def test_read_invalid_names_the_path(self, tmp_path: Path) -> None:
+        path = tmp_path / "bad.json"
+        path.write_text("{", encoding="utf-8")
+        with pytest.raises(DocumentError) as info:
+            DocumentUtils.read(path)
+        assert info.value.message.startswith(f"{path}: Invalid JSON document: ")
+
+
+class TestTomlStyle:
+    def test_dumps_header(self) -> None:
+        out = DocumentUtils.dumps({"a": 1}, "toml", header="one\n\ntwo")
+        assert out == "# one\n#\n# two\na = 1\n"
+
+    def test_dumps_yaml_header(self) -> None:
+        out = DocumentUtils.dumps({"a": 1}, "yaml", header="note")
+        assert out == "# note\na: 1\n"
+
+    def test_dumps_header_rejected_for_json(self) -> None:
+        with pytest.raises(DocumentError, match="no comments"):
+            DocumentUtils.dumps({"a": 1}, "json", header="x")
+
+    def test_dumps_multiline_arrays(self) -> None:
+        data = {"t": {"xs": [1, 2], "none": []}}
+        out = DocumentUtils.dumps(data, "toml", multiline_arrays=True)
+        assert "xs = [\n    1,\n    2,\n]" in out
+        assert "none = []" in out
+        assert tomlkit.loads(out).unwrap() == data
+
+    def test_multiline_arrays_key_paths_only(self) -> None:
+        doc = tomlkit.parse("a = [1, 2]\n[t]\nb = [3, 4]\nc = 5\n")
+        DocumentUtils.multiline_arrays(doc, "t.b", "t.c", "missing")
+        out = tomlkit.dumps(doc)
+        assert "a = [1, 2]" in out
+        assert "b = [\n" in out
+
+    def test_multiline_arrays_respaces_inline_tables(self) -> None:
+        doc = tomlkit.parse('a = [{name="R", email="e"}]\n')
+        DocumentUtils.multiline_arrays(doc)
+        assert '{ name = "R", email = "e" },' in tomlkit.dumps(doc)
+
+    def test_multiline_arrays_reaches_array_of_tables(self) -> None:
+        doc = tomlkit.parse("[[items]]\nxs = [1, 2]\n")
+        DocumentUtils.multiline_arrays(doc)
+        assert "xs = [\n" in tomlkit.dumps(doc)
+
+    def test_write_with_header_reads_back(self, tmp_path: Path) -> None:
+        path = tmp_path / "out.toml"
+        data = {"a": 1, "xs": [1, 2]}
+        DocumentUtils.write(path, data, header="generated", multiline_arrays=True)
+        assert path.read_text(encoding="utf-8").startswith("# generated\n")
+        assert DocumentUtils.read(path) == data

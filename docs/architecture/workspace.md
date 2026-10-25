@@ -9,7 +9,7 @@ keep them that way. Read it before placing a shared contract or an adapter.
 | -- | -- | -- | -- |
 | `rn-forge-commons` | `rn_forge.commons` | None | Runtime-neutral utilities, protocols, logging and process output |
 | `rn-forge-cli` | `rn_forge.cli` | `rn-forge-commons` | Generic Typer application and declared `[cli]` commands |
-| `rn-forge-tooling` | `rn_forge.tooling` | `rn-forge-commons`, `rn-forge-cli` | Generation, local state, templates, installation and documentation mechanics |
+| `rn-forge-tooling` | `rn_forge.tooling` | `rn-forge-commons`, `rn-forge-cli` | Generation, local state, installation and documentation mechanics |
 | `rn-forge-web` | `rn_forge.web` | `rn-forge-commons[pydantic]` | Framework-neutral HTTP contracts and conformance cases |
 | `rn-forge-django` | `rn_forge.django` | `rn-forge-commons`, `rn-forge-web`; `rn-forge-data` with the `transfer` and `fixtures` extras | Django and Django REST framework adapters |
 | `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-web[security]`; `rn-forge-data` with the `transfer` extra | FastAPI adapters |
@@ -39,10 +39,10 @@ takes its place in this graph by the placement rules in
 [ADR-0002](../adr/ADR-0002.md) and adds its contracts to `.importlinter`.
 
 All nine packages require Python 3.14 or later and provide typed package
-markers. They have independent versions and pinned git-tag dependencies
+markers. They have independent versions and require each other by version range
 ([ADR-0004](../adr/ADR-0004.md)). The root workspace overrides those
-dependencies to local members for development. That override does not prove that
-the intended tags install outside the workspace.
+requirements to local members for development. That override does not prove that
+the ranges install outside the workspace.
 
 Package guides own API details: [commons](../rn-forge-commons/index.md),
 [CLI](../rn-forge-cli/index.md), [tooling](../rn-forge-tooling/index.md),

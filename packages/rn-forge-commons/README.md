@@ -11,7 +11,8 @@ Shared, framework-agnostic utilities for Python programming.
 
 ## Install
 
-Not published to PyPI: a release is a git tag, and a consumer pins one by direct
+Not published to PyPI: a release is a git tag. A consumer declares pykit's
+package index and requires the package by version range, or pins a tag by direct
 URL.
 
 ```toml
@@ -32,6 +33,8 @@ Optional extras:
 | `testing` | `assertpy` + `pytest` integration helpers |
 | `resilience` | Async circuit breakers and HTTP retries (`purgatory`, `stamina`, `httpx`) |
 | `structlog` | Structured logging over the existing stdlib handlers |
+| `templates` | The Jinja template engine, `rn_forge.commons.text.templates` (`jinja2`) |
+| `markdown` | Markdown structure, `rn_forge.commons.text.markdown` (`markdown`, `markdown-it-py`) |
 | `all` | Everything above |
 
 Console log output is Rich-formatted by default (a hard dependency) when stdout
@@ -91,12 +94,28 @@ holds it.
 - **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
 - **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization
   and atomic publication.
+- **`state`** — `StateStore`: a locked, atomically-written JSON key-to-entry
+  store.
 - **`blocks`** — `ManagedBlock`: render, extract and remove a generator-owned
   fenced block inside a file somebody else owns (`.gitignore`, `CLAUDE.md`,
   `mkdocs.yml`), preserving every byte outside the markers.
 - **`documents`** — `JsonUtils`, `YamlUtils`, `DocumentUtils`, `ConfigFormat`:
   JSON/YAML/TOML (de)serialization and file I/O, plus comment-preserving
   round-trip editing of config documents.
+
+**`generation/`** — plan, diff and atomic apply of owned files (`Artifact`,
+`plan`, `apply`). Imported directly, never through the facade.
+
+**`text/`** — text formats, each module behind its own extra and imported
+directly (never through the facade).
+
+- **`markdown`** (`markdown` extra) — `MarkdownUtils`, `MarkdownHeading`,
+  `MarkdownTable`: headings and MkDocs-compatible anchors, link and image
+  targets, pipe tables with line positions, and text without fenced code.
+- **`templates`** (`templates` extra) — `TemplateEngine`, `RenderError`: strict
+  Jinja rendering from a directory or a package, with `autoescape`, a
+  process-wide `TemplateEngine.cached` constructor, and `to_toml`/`to_yaml`
+  filters.
 
 **`logging/`**
 
@@ -155,7 +174,7 @@ reverse the dependency. `uv run lint-imports` proves it.
 | Concern | Package |
 | -- | -- |
 | `AppConsole`, Typer app factory, standard options, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| `StateStore`, `TemplateEngine`, the generation engine, `extract_archive`, docs checkers | `rn-forge-tooling` |
+| `extract_archive`, the install lifecycle, docs checkers | `rn-forge-tooling` |
 
 ## Docs
 

@@ -1,4 +1,4 @@
-"""Tests for rn_forge.tooling.generation."""
+"""Tests for rn_forge.commons.generation."""
 
 from __future__ import annotations
 
@@ -6,16 +6,18 @@ import pytest
 
 from rn_forge.commons.fs.blocks import ManagedBlock
 from rn_forge.commons.exceptions import AppException
-from rn_forge.tooling.generation import (
+from rn_forge.commons.generation import (
     Action,
     Artifact,
     ArtifactKind,
+    Change,
     StateEntry,
     apply,
     classify,
+    diff,
     plan,
 )
-from rn_forge.tooling.state import StateStore
+from rn_forge.commons.fs.state import StateStore
 
 KILN_BLOCK = ManagedBlock("rn-forge kiln")
 
@@ -152,6 +154,50 @@ class TestPlan:
         artifacts = [managed(), managed(path="other.yml")]
         planned = plan(tmp_path, artifacts, {}, force=["Taskfile.yml"])
         assert [c.path for c in planned.blocking] == ["other.yml"]
+
+
+class TestDiff:
+    @staticmethod
+    def only_change(tmp_path, artifact):
+        return plan(tmp_path, [artifact], {}).changes[0]
+
+    def test_managed_change_diffs_disk_to_render(self, tmp_path):
+        (tmp_path / "Taskfile.yml").write_text("version: '2'\n")
+        change = self.only_change(tmp_path, managed())
+        text = diff(tmp_path, change)
+        assert "--- Taskfile.yml" in text
+        assert "+++ Taskfile.yml" in text
+        assert "-version: '2'" in text
+        assert "+version: '3'" in text
+
+    def test_identical_content_is_empty(self, tmp_path):
+        (tmp_path / "Taskfile.yml").write_text("version: '3'\n")
+        change = self.only_change(tmp_path, managed())
+        assert diff(tmp_path, change) == ""
+
+    def test_absent_file_diffs_from_empty(self, tmp_path):
+        text = diff(tmp_path, self.only_change(tmp_path, managed()))
+        body = [
+            line
+            for line in text.splitlines()
+            if not line.startswith(("+++", "---", "@@"))
+        ]
+        assert body
+        assert all(line.startswith("+") for line in body)
+
+    def test_block_diffs_only_the_body(self, tmp_path):
+        old = KILN_BLOCK.render("outside text\n", "old body\n")
+        (tmp_path / ".gitignore").write_text(old)
+        text = diff(tmp_path, self.only_change(tmp_path, block(content="new body\n")))
+        assert "-old body" in text
+        assert "+new body" in text
+        assert "outside text" not in text
+
+    def test_change_without_artifact_is_empty(self, tmp_path):
+        stale = Change(
+            key="k", path="a", kind=ArtifactKind.MANAGED, action=Action.DELETE
+        )
+        assert diff(tmp_path, stale) == ""
 
 
 class TestApply:

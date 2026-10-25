@@ -70,6 +70,7 @@ nav:
   - Guides:
       - Overview: guides/index.md
       - Choosing packages: guides/choosing-packages.md
+      - Consuming packages: guides/consuming-packages.md
       - Development: guides/development.md
   - Runbooks:
       - Overview: runbooks/index.md

@@ -62,7 +62,8 @@ response.
 ## Installation
 
 None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag**, and a consumer declares it as a pinned direct URL:
+tag**. A consumer declares pykit's package index and requires it by version
+range, or pins a tag by direct URL:
 
 ```toml
 dependencies = [
@@ -70,8 +71,8 @@ dependencies = [
 ]
 ```
 
-`uv add rn-forge-web` will not work and is not the supported form. Inside this
-workspace, `[tool.uv.sources]` overrides that URL with the local checkout; that
+Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
+local checkout; that
 override is for local development only and does not survive into a built wheel.
 
 ## Dependencies and why
