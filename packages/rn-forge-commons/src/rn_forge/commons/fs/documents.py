@@ -22,9 +22,12 @@ from typing import Any, Self, cast
 import tomlkit
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.paths import PathUtils
+from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 from ruamel.yaml import YAML
 from ruamel.yaml.emitter import Emitter
+from tomlkit.items import AoT, InlineTable
+from tomlkit.items import Array as TomlArray
 
 _LOGGER = AppLogger.get_logger(__name__)
 
@@ -480,17 +483,71 @@ class DocumentUtils:
         return _to_plain_mapping(cast(Mapping[Any, Any], value))
 
     @staticmethod
-    def dumps(data: Mapping[str, Any], fmt: ConfigFormat | str) -> str:
-        """Serialize *data* in format *fmt*, in a stable, human-readable form."""
+    def dumps(
+        data: Mapping[str, Any],
+        fmt: ConfigFormat | str,
+        *,
+        header: str | None = None,
+        multiline_arrays: bool = False,
+    ) -> str:
+        """Serialize *data* in format *fmt*, in a stable, human-readable form.
+
+        Args:
+            data: The mapping to serialize.
+            fmt: The output format.
+            header: Comment text without markers, written before the document
+                with each line prefixed by ``# ``. TOML and YAML only.
+            multiline_arrays: Write each non-empty TOML array one element per
+                line. YAML and JSON already do, and ignore it.
+
+        Raises:
+            DocumentError: *header* is given for JSON.
+        """
         fmt = ConfigFormat(fmt)
+        if header is not None and fmt is ConfigFormat.JSON:
+            raise DocumentError("JSON has no comments; header is not supported")
         plain = _to_plain_mapping(data)
         match fmt:
             case ConfigFormat.TOML:
-                return tomlkit.dumps(plain)
+                if multiline_arrays:
+                    document = tomlkit.parse(tomlkit.dumps(plain))
+                    DocumentUtils.multiline_arrays(document)
+                    body = tomlkit.dumps(document)
+                else:
+                    body = tomlkit.dumps(plain)
             case ConfigFormat.YAML:
-                return YamlUtils.serialize(plain, default_flow_style=False)
+                body = YamlUtils.serialize(plain, default_flow_style=False)
             case ConfigFormat.JSON:
-                return json.dumps(plain, indent=2, sort_keys=True) + "\n"
+                body = json.dumps(plain, indent=2, sort_keys=True) + "\n"
+        if header is None:
+            return body
+        comment = "".join(
+            f"# {line}\n" if line else "#\n" for line in header.split("\n")
+        )
+        return comment + body
+
+    @staticmethod
+    def multiline_arrays(document: Any, *key_paths: str) -> None:
+        """Format arrays of a round-trip TOML *document* one element per line.
+
+        With no *key_paths*, every non-empty array is formatted, found through
+        tables and the tables of arrays of tables. With *key_paths* (dotted, as
+        in :meth:`DictUtils.get`), only the arrays at those paths are formatted;
+        a path that is missing or not a non-empty array is skipped. Inline table
+        elements are rewritten with ``{ key = value }`` spacing.
+
+        Args:
+            document: A round-trip TOML document, such as the result of
+                :meth:`read_document` or ``tomlkit.parse``.
+            *key_paths: Dotted paths of the arrays to format.
+        """
+        if not key_paths:
+            _multiline_tables(document)
+            return
+        for key_path in key_paths:
+            value = DictUtils.get(document, key_path)
+            if isinstance(value, TomlArray) and value:
+                _multiline_array(value)
 
     @staticmethod
     def read(
@@ -523,10 +580,25 @@ class DocumentUtils:
             raise DocumentError("{}: {}", source, exc.message) from exc
 
     @staticmethod
-    def write(path: str | Path, data: Mapping[str, Any]) -> None:
-        """Atomically write *data* to *path*, formatted per its suffix."""
+    def write(
+        path: str | Path,
+        data: Mapping[str, Any],
+        *,
+        header: str | None = None,
+        multiline_arrays: bool = False,
+    ) -> None:
+        """Atomically write *data* to *path*, formatted per its suffix.
+
+        *header* and *multiline_arrays* are as in :meth:`dumps`.
+        """
         p = Path(path)
-        PathUtils.atomic_write(DocumentUtils.dumps(data, ConfigFormat.of(p)), p)
+        text = DocumentUtils.dumps(
+            data,
+            ConfigFormat.of(p),
+            header=header,
+            multiline_arrays=multiline_arrays,
+        )
+        PathUtils.atomic_write(text, p)
 
     # -- round-trip documents (comments and style preserved) -----------------
 
@@ -617,6 +689,32 @@ class DocumentUtils:
 # ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
+
+
+def _multiline_tables(node: Any) -> None:
+    """Format every non-empty array under *node*, recursing through tables."""
+    for value in node.values():
+        if isinstance(value, TomlArray):
+            if value:
+                _multiline_array(value)
+        elif isinstance(value, AoT):
+            for table in cast(list[Any], value):
+                _multiline_tables(table)
+        elif isinstance(value, Mapping) and not isinstance(value, InlineTable):
+            _multiline_tables(value)
+
+
+def _multiline_array(array: TomlArray) -> None:
+    """Write *array* one element per line, with ``{ key = value }`` tables."""
+    for index, element in enumerate(cast(list[Any], array)):
+        if isinstance(element, InlineTable):
+            pairs = cast(Mapping[str, Any], element)
+            fields = ", ".join(
+                f"{tomlkit.key(k).as_string()} = {cast(Any, tomlkit.item(v)).as_string()}"
+                for k, v in pairs.items()
+            )
+            array[index] = tomlkit.parse(f"x = {{ {fields} }}")["x"]
+    array.multiline(True)
 
 
 def _safe_yaml(*, sort_keys: bool = False, **kwargs: Any) -> YAML:

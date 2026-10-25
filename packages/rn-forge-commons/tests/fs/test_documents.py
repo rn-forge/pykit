@@ -513,3 +513,48 @@ class TestReadSources:
         with pytest.raises(DocumentError) as info:
             DocumentUtils.read(path)
         assert info.value.message.startswith(f"{path}: Invalid JSON document: ")
+
+
+class TestTomlStyle:
+    def test_dumps_header(self) -> None:
+        out = DocumentUtils.dumps({"a": 1}, "toml", header="one\n\ntwo")
+        assert out == "# one\n#\n# two\na = 1\n"
+
+    def test_dumps_yaml_header(self) -> None:
+        out = DocumentUtils.dumps({"a": 1}, "yaml", header="note")
+        assert out == "# note\na: 1\n"
+
+    def test_dumps_header_rejected_for_json(self) -> None:
+        with pytest.raises(DocumentError, match="no comments"):
+            DocumentUtils.dumps({"a": 1}, "json", header="x")
+
+    def test_dumps_multiline_arrays(self) -> None:
+        data = {"t": {"xs": [1, 2], "none": []}}
+        out = DocumentUtils.dumps(data, "toml", multiline_arrays=True)
+        assert "xs = [\n    1,\n    2,\n]" in out
+        assert "none = []" in out
+        assert tomlkit.loads(out).unwrap() == data
+
+    def test_multiline_arrays_key_paths_only(self) -> None:
+        doc = tomlkit.parse("a = [1, 2]\n[t]\nb = [3, 4]\nc = 5\n")
+        DocumentUtils.multiline_arrays(doc, "t.b", "t.c", "missing")
+        out = tomlkit.dumps(doc)
+        assert "a = [1, 2]" in out
+        assert "b = [\n" in out
+
+    def test_multiline_arrays_respaces_inline_tables(self) -> None:
+        doc = tomlkit.parse('a = [{name="R", email="e"}]\n')
+        DocumentUtils.multiline_arrays(doc)
+        assert '{ name = "R", email = "e" },' in tomlkit.dumps(doc)
+
+    def test_multiline_arrays_reaches_array_of_tables(self) -> None:
+        doc = tomlkit.parse("[[items]]\nxs = [1, 2]\n")
+        DocumentUtils.multiline_arrays(doc)
+        assert "xs = [\n" in tomlkit.dumps(doc)
+
+    def test_write_with_header_reads_back(self, tmp_path: Path) -> None:
+        path = tmp_path / "out.toml"
+        data = {"a": 1, "xs": [1, 2]}
+        DocumentUtils.write(path, data, header="generated", multiline_arrays=True)
+        assert path.read_text(encoding="utf-8").startswith("# generated\n")
+        assert DocumentUtils.read(path) == data
