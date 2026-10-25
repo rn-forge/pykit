@@ -5,9 +5,12 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-25
+
 ### Changed
 
-- Requires its rn-forge dependencies by version range from pykit's index (ADR-0004), not by git URL.
+- Requires its rn-forge dependencies by version range from pykit's index
+  (ADR-0004), not by git URL.
 
 ## [0.5.0] - 2026-10-16
 
