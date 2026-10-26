@@ -12,7 +12,8 @@ authentication and authorization for its web applications
 it (F13.2), then the features the design produces — the login adapters, the
 session and HTTP surface for Django and FastAPI, authorization context and
 resource policy, and the removal of the locally issued JWT flows. The package
-and the framework adapters ship together.
+and the framework adapters ship together. It also sets a security baseline with
+per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -35,6 +36,11 @@ and the framework adapters ship together.
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
+| [F20.1](../../specs/epics/E20-security-baseline/F20.1-baseline-decision.md) | E20 | New |
+| [F20.2](../../specs/epics/E20-security-baseline/F20.2-dependency-risk.md) | E20 | New |
+| [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | New |
+| [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | New |
+| [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | New |
 
 <!-- scope:end -->
 
@@ -84,13 +90,13 @@ this release once it closes.
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F16\.[36]|S16\.[36]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F16\.[36]|S16\.[36]\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1
-  and F13.2.
+- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1,
+  F13.2 and F20.1 to F20.5.
 - The design's proposed decisions are accepted as ADRs.
 - `docs/_update_board.sh --check` passes.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
