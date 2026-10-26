@@ -14,12 +14,13 @@ dependencies = [
 ]
 ```
 
-When using a direct URL, pin the tag rather than tracking a branch — an unpinned `git+…`
-reference re-resolves on every lock refresh, which is how a library upgrade
-arrives without anyone deciding it should.
+When using a direct URL, pin the tag rather than tracking a branch — an unpinned
+`git+…` reference re-resolves on every lock refresh, which is how a library
+upgrade arrives without anyone deciding it should.
 
-`rn-forge-commons` comes in transitively, as a version range. There is nothing else to install: this package has no
-third-party dependency of its own, and no optional extras.
+`rn-forge-commons` comes in transitively, as a version range. There is nothing
+else to install: this package has no third-party dependency of its own, and no
+optional extras.
 
 ## Inside this workspace
 

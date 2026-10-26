@@ -14,15 +14,14 @@ dependencies = [
 ]
 ```
 
-When using a direct URL, pin the tag rather than tracking a branch — an unpinned `git+…`
-reference re-resolves on every lock refresh, which is how a library upgrade
-arrives without anyone deciding it should.
+When using a direct URL, pin the tag rather than tracking a branch — an unpinned
+`git+…` reference re-resolves on every lock refresh, which is how a library
+upgrade arrives without anyone deciding it should.
 
 `rn-forge-web` and `rn-forge-commons` come in transitively, each as a version
-range. FastAPI comes in as an ordinary PyPI
-dependency, and pydantic and Starlette with it. The optional `oidc` extra adds
-JWKS bearer auth; `transfer` adds tabular export and import
-(`rn_forge.fastapi.transfer`).
+range. FastAPI comes in as an ordinary PyPI dependency, and pydantic and
+Starlette with it. The optional `oidc` extra adds JWKS bearer auth; `transfer`
+adds tabular export and import (`rn_forge.fastapi.transfer`).
 
 ## Inside this workspace
 

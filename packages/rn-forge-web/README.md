@@ -72,8 +72,8 @@ dependencies = [
 ```
 
 Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
-local checkout; that
-override is for local development only and does not survive into a built wheel.
+local checkout; that override is for local development only and does not survive
+into a built wheel.
 
 ## Dependencies and why
 

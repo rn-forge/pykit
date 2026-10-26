@@ -126,10 +126,9 @@ its own bytes could never be consistent.
 ## Previewing a plan
 
 `diff` returns the unified diff from what is on disk to what a change would
-write: a block diffs its body, and a missing file diffs from empty. A CLI
-prints it, and a web page shows it before the user confirms `apply`.
-`disk_content` returns the current content of an artifact, or `None` when it is
-absent.
+write: a block diffs its body, and a missing file diffs from empty. A CLI prints
+it, and a web page shows it before the user confirms `apply`. `disk_content`
+returns the current content of an artifact, or `None` when it is absent.
 
 ```python
 from rn_forge.commons.generation import diff, plan

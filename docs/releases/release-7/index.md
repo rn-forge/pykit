@@ -54,8 +54,8 @@ and the framework adapters ship together.
 
 ## Decisions
 
-- Owner decision, 2026-10-24: the kiln cutover and authentication move here
-  from Release 6, which ships the kit upgrades kiln builds on.
+- Owner decision, 2026-10-24: the kiln cutover and authentication move here from
+  Release 6, which ships the kit upgrades kiln builds on.
 
 ## Breaking changes
 
@@ -75,9 +75,9 @@ here once its feature exists.
 ## Progress
 
 Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is settling the
-design's open questions; E13's implementation features are added to this release
-once it closes.
+version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
+settling the design's open questions; E13's implementation features are added to
+this release once it closes.
 
 ## Commits
 

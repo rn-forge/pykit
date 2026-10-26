@@ -53,8 +53,10 @@ The boundaries between these packages are executable, not conventional.
    language's repository carries no rn-forge dependency (ADR-0012).
 1. `rn_forge.devops.ci`, the core, imports neither the uv nor the GitHub Actions
    adapter.
-1. `rn_forge.data`, the core, never imports the `rn_forge.data.pandas` adapter (the contract names the core module, not the package that contains the adapter),
-   and the framework packages layer over it as siblings of `rn_forge.web`.
+1. `rn_forge.data`, the core, never imports the `rn_forge.data.pandas` adapter
+   (the contract names the core module, not the package that contains the
+   adapter), and the framework packages layer over it as siblings of
+   `rn_forge.web`.
 
 There are deliberately **no compatibility re-exports** in any direction: a shim
 would satisfy a caller and reverse the dependency.

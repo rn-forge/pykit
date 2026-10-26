@@ -7,9 +7,9 @@
 [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling)
 · [All pykit packages](https://rn-forge.github.io/pykit/)
 
-The lifecycle and install layer of the developer-tooling stack: for
-command-line tools that install themselves and manage their own versions.
-File generation, local state and templates live in `rn-forge-commons`.
+The lifecycle and install layer of the developer-tooling stack: for command-line
+tools that install themselves and manage their own versions. File generation,
+local state and templates live in `rn-forge-commons`.
 
 Where
 [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons)

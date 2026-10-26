@@ -154,8 +154,8 @@ settle them.
 [E13's package placement](../E13-auth/design.md#package-placement) decides why
 auth is a separate package. This section lists what E13's F13.2 moves. Of the
 commons token code, F13.2 moves only what E13's
-[library evaluation](../E13-auth/design.md#library-evaluation) keeps, and deletes
-the rest.
+[library evaluation](../E13-auth/design.md#library-evaluation) keeps, and
+deletes the rest.
 
 | From | Moves to `rn-forge-auth` |
 | -- | -- |

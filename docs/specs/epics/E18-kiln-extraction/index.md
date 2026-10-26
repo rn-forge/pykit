@@ -58,8 +58,8 @@ has no dependency set of its own. None of them passes
   files from templates install the CLI and installer layers to get plan, diff,
   atomic apply and drift detection. Rule 1 places code by signature, not by
   today's callers.
-- **A new ADR for the move.** ADR-0002's rule 1 already decides it; what
-  changed is rule 3's wording, which is amended in place.
+- **A new ADR for the move.** ADR-0002's rule 1 already decides it; what changed
+  is rule 3's wording, which is amended in place.
 - **A `rn-forge-text` or `rn-forge-generation` package.** Each fails ADR-0011's
   first test: light dependencies, or none.
 - **A docs-site link checker** (nav targets, orphans, `exclude_docs`). Its rules
@@ -68,5 +68,6 @@ has no dependency set of its own. None of them passes
   kiln's spec model, not Markdown.
 - **A `delimiters` preset on `TemplateEngine`** for YAML whose own `{{ }}`
   syntax clashes with Jinja's. The environment keywords
-  `variable_start_string` and `variable_end_string` already do it, and a preset
-  would only rename them ([ADR-0001](../../../adr/ADR-0001.md), rule 2).
+  `variable_start_string` and `variable_end_string` already do it, and a
+  preset would only rename them ([ADR-0001](../../../adr/ADR-0001.md), rule
+  2).

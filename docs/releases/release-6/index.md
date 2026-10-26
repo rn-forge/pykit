@@ -11,8 +11,8 @@ The kit becomes fast and complete enough that kiln deletes its own copies
 packages depend on each other by version range
 ([E19](../../specs/epics/E19-version-ranges/index.md)):
 
-- Template rendering, the generation engine and the state store move to
-  commons, so an application gets them without the CLI and installer layers
+- Template rendering, the generation engine and the state store move to commons,
+  so an application gets them without the CLI and installer layers
   ([F18.1](../../specs/epics/E18-kiln-extraction/F18.1-template-engine-in-commons.md)).
 - Generators render artifacts from a table, and previews diff a plan
   ([F18.2](../../specs/epics/E18-kiln-extraction/F18.2-templated-artifacts-and-diffs.md)).
@@ -24,10 +24,10 @@ packages depend on each other by version range
   Releases, and every internal requirement becomes a range resolved from it
   ([F19.1](../../specs/epics/E19-version-ranges/F19.1-distribution-decision.md)–[F19.3](../../specs/epics/E19-version-ranges/F19.3-internal-ranges.md)).
 
-The cut re-tags every package that depends on commons once, on ranges. After
-it, an additive release of a package needs no release of the packages that
-depend on it. kiln's adoption of this release is kiln's own work; pykit's
-cutover onto kiln is [Release 7](../release-7/index.md).
+The cut re-tags every package that depends on commons once, on ranges. After it,
+an additive release of a package needs no release of the packages that depend on
+it. kiln's adoption of this release is kiln's own work; pykit's cutover onto
+kiln is [Release 7](../release-7/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -62,7 +62,8 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 1. **F19.1** at any point: the decision, and ADR-0004's revision.
 1. **F19.2** after F19.1. Its index first deploys on the cut's push to `main`.
 1. **F19.3 last**, at the cut. It sets every range and re-tags every dependent,
-   taking over [F18.5](../../specs/epics/E18-kiln-extraction/F18.5-coherent-pins.md)'s
+   taking over
+   [F18.5](../../specs/epics/E18-kiln-extraction/F18.5-coherent-pins.md)'s
    re-tag.
 
 ## Decisions
@@ -70,13 +71,13 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 - [ADR-0002](../../adr/ADR-0002.md), amended 2026-10-24: rule 3 keeps only the
   command-line and installation layers in tooling; templates, generation and
   state are placed by rule 1, in commons.
-- [ADR-0004](../../adr/ADR-0004.md), revised 2026-10-25 (S19.1.1): packages declare
-  each other by range, and pykit publishes an index.
+- [ADR-0004](../../adr/ADR-0004.md), revised 2026-10-25 (S19.1.1): packages
+  declare each other by range, and pykit publishes an index.
 - Owner decision, 2026-10-24: E18 and E19 ship together in this release, so
   dependents are re-tagged once, on ranges. F18.5 is removed. The kiln cutover
   and authentication move to Release 7.
-- Owner decision, 2026-10-24: E19's range check and index publish live in
-  files pykit owns, which `main.yml` references now and kiln's generated CI
+- Owner decision, 2026-10-24: E19's range check and index publish live in files
+  pykit owns, which `main.yml` references now and kiln's generated CI
   references after the cutover. Ranges do not wait on kiln.
 
 ## Breaking changes
@@ -84,22 +85,25 @@ cutover onto kiln is [Release 7](../release-7/index.md).
 - `rn-forge-tooling` 0.3.0 removes three modules; the names inside them are
   unchanged:
 
-  | Removed | Import from |
-  | -- | -- |
-  | `rn_forge.tooling.templates` | `rn_forge.commons.text.templates`, with `rn-forge-commons[templates]` |
-  | `rn_forge.tooling.generation` | `rn_forge.commons.generation` |
-  | `rn_forge.tooling.state` | `rn_forge.commons.fs.state`, or `rn_forge.commons` |
+    | Removed | Import from |
+    | -- | -- |
+    | `rn_forge.tooling.templates` | `rn_forge.commons.text.templates`, with `rn-forge-commons[templates]` |
+    | `rn_forge.tooling.generation` | `rn_forge.commons.generation` |
+    | `rn_forge.tooling.state` | `rn_forge.commons.fs.state`, or `rn_forge.commons` |
 
-  Tooling no longer depends on `jinja2`.
+    Tooling no longer depends on `jinja2`.
+
 - `DocumentUtils.read` treats a path that exists but is not a file as missing,
   instead of failing to read it.
+
 - Plain YAML loads follow libyaml. Output and loaded values are unchanged, and
   libyaml's error messages differ from the pure parser's.
+
 - Each package's metadata requires its rn-forge dependencies by name and range.
-  A consumer that declares the index, or pins every rn-forge package it uses by
-  direct URL at its root, installs as before. A consumer that relied on a
-  package's own git-URL requirements to pull in its dependencies must do one of
-  the two.
+  A consumer that declares the index, or pins every rn-forge package it uses
+  by direct URL at its root, installs as before. A consumer that relied on a
+  package's own git-URL requirements to pull in its dependencies must do one
+  of the two.
 
 ## Progress
 

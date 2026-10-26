@@ -10,10 +10,11 @@ How authentication and authorization work in a new rn-forge web application: a
 pykit backend (Django or FastAPI) with an ngkit single-page app (SPA). This page
 is a working proposal shared by every E13 feature. Nothing in it is decided
 until it becomes an ADR or a feature. The owner has accepted its positions;
-[F13.1](F13.1-auth-design.md) turns the [proposed decisions](#proposed-decisions)
-into ADRs and runs the [library evaluation](#library-evaluation) that decides
-what pykit binds and what it writes. [Auth patterns](patterns.md) explains the
-industry patterns this design chooses from.
+[F13.1](F13.1-auth-design.md) turns the
+[proposed decisions](#proposed-decisions) into ADRs and runs the
+[library evaluation](#library-evaluation) that decides what pykit binds and what
+it writes. [Auth patterns](patterns.md) explains the industry patterns this
+design chooses from.
 
 [Back to E13](index.md)
 
@@ -62,9 +63,9 @@ Each principle is a candidate ADR (see
    browser's only party to the protocol (the backend-for-frontend, or BFF,
    pattern). Tokens, assertions and secrets stay on the server.
 1. **External identity is resolved to an internal account before anything
-   else.** A `sub` is unique only within its issuer. Session and bearer callers
-   alike go from `(issuer, subject)` to an internal account ID, and only then
-   to an authorization context.
+   else.** A `sub` is unique only within its issuer. Session and bearer
+   callers alike go from `(issuer, subject)` to an internal account ID, and
+   only then to an authorization context.
 1. **Identity at login; authorization per request.** The session records who the
    user is and how they signed in. What they may do is computed on the server
    for each request from current data, and cached with explicit invalidation.
@@ -288,16 +289,16 @@ class ResourcePolicy[ResourceT, QueryT](Protocol):
     def scope(self, principal: Principal, action: str, query: QueryT) -> QueryT: ...
 ```
 
-The neutral boundary is the login's result, not its request. A protocol
-handler takes the framework's native request, so it can use its library's
-maintained integration (Authlib's Django or Starlette client, allauth's views)
-instead of bypassing it. What stays neutral is what comes out: an
-`ExternalIdentity`, or an account ID when a library such as allauth owns
-account resolution too, then the `Principal`, the authorization contracts and
-the [session resource](#http-surface). Each login flow on each framework has
-exactly one owner, either a library's integration or pykit's adapter over the
-library's core, never both. The [library evaluation](#library-evaluation)
-assigns the owners.
+The neutral boundary is the login's result, not its request. A protocol handler
+takes the framework's native request, so it can use its library's maintained
+integration (Authlib's Django or Starlette client, allauth's views) instead of
+bypassing it. What stays neutral is what comes out: an `ExternalIdentity`, or an
+account ID when a library such as allauth owns account resolution too, then the
+`Principal`, the authorization contracts and the
+[session resource](#http-surface). Each login flow on each framework has exactly
+one owner, either a library's integration or pykit's adapter over the library's
+core, never both. The [library evaluation](#library-evaluation) assigns the
+owners.
 
 `Principal` and `Requirement` move from `rn-forge-web` to `rn-forge-auth` and
 change as follows. Each field keeps one provenance:
@@ -316,11 +317,11 @@ change as follows. Each field keeps one provenance:
 - `Requirement` gains `any_permission` and `all_permissions`, checked against
   `Principal.permissions`, and loses its role clauses. Every protected action
   requires an effective permission: because scopes already limit effective
-  permissions, no requirement can bypass a token's scopes, whereas a role check
-  would pass an administrator's read-only token on a write route. Roles stay
-  on the `Principal` as an input the context provider used and as a display
-  hint. The scope clauses stay for a route that must name a scope directly;
-  they can only narrow access further.
+  permissions, no requirement can bypass a token's scopes, whereas a role
+  check would pass an administrator's read-only token on a write route. Roles
+  stay on the `Principal` as an input the context provider used and as a
+  display hint. The scope clauses stay for a route that must name a scope
+  directly; they can only narrow access further.
 - The action-to-key mapping (`orders` + `partial_update` → `orders.update`),
   currently in the Django mixins, becomes a neutral helper that builds a
   `Requirement`. Both frameworks can then use it.
@@ -345,9 +346,9 @@ session indexes, and the mapping to `ExternalIdentity`.
 
 The evaluation runs before `rn-forge-auth` is created.
 [F13.2](F13.2-auth-package.md) then moves only the contracts and wrappers it
-keeps. Existing token code that a library replaces (`JwtVerifier`,
-`JwksCache`, `discover_oidc`, `fetch_json` are the candidates) is deleted, not
-moved, so the new package never publishes an API the next feature removes.
+keeps. Existing token code that a library replaces (`JwtVerifier`, `JwksCache`,
+`discover_oidc`, `fetch_json` are the candidates) is deleted, not moved, so the
+new package never publishes an API the next feature removes.
 
 ### Library evaluation
 
@@ -391,8 +392,8 @@ navigates to every kind except `password`, for which it shows a form. Adding a
 kind is a contract change.
 
 The `/auth/session` body is the SPA's only source of identity and permissions.
-It is pykit's own resource, so it follows the camelCase wire rule of the
-API conventions:
+It is pykit's own resource, so it follows the camelCase wire rule of the API
+conventions:
 
 ```json
 {
@@ -543,9 +544,8 @@ Points that are easy to get wrong:
 - **The ACS POST is cross-site.** A `SameSite=Lax` session cookie is not sent
   with it. The login transaction cookie is therefore `SameSite=None; Secure`
   and short-lived, with the `__Host-` prefix. The main session cookie stays
-  `Lax`.
-  The ACS endpoint skips CSRF checks, because the signed response and the
-  transaction binding replace them.
+  `Lax`. The ACS endpoint skips CSRF checks, because the signed response and
+  the transaction binding replace them.
 - **`InResponseTo` is always checked**, which means the transaction's request ID
   is passed to python3-saml. IdP-initiated SSO has no `InResponseTo` and is
   open to login CSRF, so it is off by default. When a provider opts in, it
@@ -742,8 +742,8 @@ only the deployment restrictions in the last column.
 | Logout token | `/auth/backchannel-logout/{provider}` only | [Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html) §2.6: signature, `iss`, `aud`, `iat`, `exp`, `jti` and `events` required, `sid` or `sub` present, `nonce` absent | `typ` `logout+jwt` or none; `iat` within a short window; `jti` not seen before |
 
 Configuration refuses an API audience equal to the OIDC login client ID unless
-the provider is in RFC 9068 mode, because otherwise an ID token would pass
-the access-token profile.
+the provider is in RFC 9068 mode, because otherwise an ID token would pass the
+access-token profile.
 
 ## Sessions and cookies
 
@@ -780,9 +780,9 @@ only supplies the header; the server-side check is what protects.
   its CSRF cookie only when a view uses the token, so `/auth/session` always
   sets it.
 - **FastAPI** uses a synchronizer token, which the OWASP CSRF cheat sheet
-  recommends for applications with server-side state: a random token stored
-  in the session, exposed to Angular through a readable cookie, and compared
-  in constant time with the header on each unsafe request. A library's signed
+  recommends for applications with server-side state: a random token stored in
+  the session, exposed to Angular through a readable cookie, and compared in
+  constant time with the header on each unsafe request. A library's signed
   token bound to the session is an acceptable alternative. A plain
   cookie-equals-header check is not, because a subdomain or a network attacker
   can plant the cookie.
@@ -796,9 +796,9 @@ only supplies the header; the server-side check is what protects.
   of the configured trusted origins, and `Sec-Fetch-Site: cross-site` is
   rejected. Behind a proxy, the scheme and host come from forwarded headers
   only when the proxy is configured as trusted.
-- **Exempt:** the SAML ACS and back-channel logout endpoints, which carry
-  signed content, and bearer-authenticated requests, whose credential the
-  browser never sends on its own.
+- **Exempt:** the SAML ACS and back-channel logout endpoints, which carry signed
+  content, and bearer-authenticated requests, whose credential the browser
+  never sends on its own.
 
 ### Revocation
 
@@ -806,10 +806,10 @@ Revocation takes effect on the next request, without finding and deleting every
 affected session:
 
 - **Session version.** Each account has a session version, carried in its
-  authorization context, and each session records the version it started
-  with. A session whose version no longer matches is invalid and is deleted
-  when it is next read. "Sign out everywhere" (`/auth/logout/all`), disabling
-  the account, and a back-channel logout that names only `sub` all bump the
+  authorization context, and each session records the version it started with.
+  A session whose version no longer matches is invalid and is deleted when it
+  is next read. "Sign out everywhere" (`/auth/logout/all`), disabling the
+  account, and a back-channel logout that names only `sub` all bump the
   version.
 - **Account status.** The authorization context carries `active`. A disabled
   account fails every request with `401`. Changing either value bumps the
@@ -824,8 +824,8 @@ affected session:
   reports whether it removed the record), and logout-token `jti` values and
   SAML assertion IDs are recorded with an atomic set-if-absent until they
   expire.
-- **Tests** cover concurrent requests racing a logout, a back-channel logout
-  and an account disablement, and show that no request after the revocation
+- **Tests** cover concurrent requests racing a logout, a back-channel logout and
+  an account disablement, and show that no request after the revocation
   succeeds.
 
 ### Supported storage
@@ -866,10 +866,10 @@ bindings refuse them outside debug mode.
   policy engine.
 - **Scopes limit tokens; they do not grant permissions.** The application maps
   each scope it accepts to the permission keys it allows (`orders:read` →
-  `orders.list`, `orders.read`). A bearer principal's effective permissions are
-  its account's permissions limited to those its scopes allow, and a scope the
-  map does not name allows nothing. A session principal has no scopes and its
-  effective permissions are its account's.
+  `orders.list`, `orders.read`). A bearer principal's effective permissions
+  are its account's permissions limited to those its scopes allow, and a scope
+  the map does not name allows nothing. A session principal has no scopes and
+  its effective permissions are its account's.
 - **Staff and superuser bypass is explicit.** It is a role that grants every
   permission, visible in `/auth/session`, not a hidden branch in the
   permission class.
@@ -917,21 +917,20 @@ bindings refuse them outside debug mode.
 ## Testing
 
 Every flow runs offline inside this repository
-([ADR-0008](../../../adr/ADR-0008.md)). In-process fake OIDC and SAML IdPs
-serve unit and integration tests: discovery, JWKS, the token endpoint,
-UserInfo, signed assertions and back-channel logout tokens, with switches for
-each failure the [security controls](#security-controls) cover. A Keycloak
-container exercises the broker profile end to end in an optional CI job that
-does not gate merges. Applications use the development provider and
+([ADR-0008](../../../adr/ADR-0008.md)). In-process fake OIDC and SAML IdPs serve
+unit and integration tests: discovery, JWKS, the token endpoint, UserInfo,
+signed assertions and back-channel logout tokens, with switches for each failure
+the [security controls](#security-controls) cover. A Keycloak container
+exercises the broker profile end to end in an optional CI job that does not gate
+merges. Applications use the development provider and
 `provideRnForgeAuthTesting` ([ngkit client contract](#ngkit-client-contract)).
 
 ## Package placement
 
 A new package, `rn-forge-auth`, holds everything about identity and access that
 does not depend on a web framework, including the protocol adapters behind
-extras. The name is `auth`
-rather than `identity` because the package covers authorization as well as
-authentication.
+extras. The name is `auth` rather than `identity` because the package covers
+authorization as well as authentication.
 
 ```mermaid
 flowchart TB
@@ -1000,9 +999,9 @@ builds against: a change here is a change to that contract.
   untouched.
 - On startup the client fetches `/auth/session` and sets the `RNF_CREDENTIALS`
   signal. A `401` from that call means anonymous and never starts a login.
-- `hasPermission` and `hasAnyPermission` read the `permissions` array.
-  `hasRole` is for display only. There is no `hasScope`: scopes do not apply to
-  a session.
+- `hasPermission` and `hasAnyPermission` read the `permissions` array. `hasRole`
+  is for display only. There is no `hasScope`: scopes do not apply to a
+  session.
 - `login(provider, returnTo)` is a full-page navigation
   (`window.location.assign`), never an `HttpClient` call.
 - `logout()` posts to `/auth/logout` and follows the returned `redirect` if
@@ -1018,12 +1017,12 @@ builds against: a change here is a change to that contract.
   once, then shows the forbidden route.
 - **Loop guard.** The client records in `sessionStorage` when it started a
   login. A `401` within a short window after the return navigation goes to the
-  error route with `?error=session_not_established` instead of starting another
-  login. This catches a session cookie that is never stored (a `SameSite` or
-  `Secure` misconfiguration, or a proxy that strips `Set-Cookie`).
-- The client warns before `expiresAt` and offers a fresh login. It does not
-  poll to keep an idle session alive; an idle expiry surfaces as an ordinary
-  `401`.
+  error route with `?error=session_not_established` instead of starting
+  another login. This catches a session cookie that is never stored (a
+  `SameSite` or `Secure` misconfiguration, or a proxy that strips
+  `Set-Cookie`).
+- The client warns before `expiresAt` and offers a fresh login. It does not poll
+  to keep an idle session alive; an idle expiry surfaces as an ordinary `401`.
 - `withXsrfConfiguration` is set to the backend's CSRF cookie and header names.
 - Guards and directives (`authGuard`, `permissionGuard(keys)`, the permission
   directive) keep their current meaning and read the session-backed
@@ -1110,10 +1109,10 @@ protection, both covered above.
 
 The other model for an SPA makes the SPA itself the OAuth client, and the API
 only validates bearer tokens. The SPA would run authorization code with PKCE as
-a public client through a maintained Angular OIDC library, hold tokens in
-memory with rotating refresh tokens, attach the access token only to
-allowlisted API URLs, and read UI hints from token claims (`scope`, RFC 9068's
-`roles` and `groups`).
+a public client through a maintained Angular OIDC library, hold tokens in memory
+with rotating refresh tokens, attach the access token only to allowlisted API
+URLs, and read UI hints from token claims (`scope`, RFC 9068's `roles` and
+`groups`).
 
 It agrees with this design on the essentials: an IdP or broker authenticates
 users, pykit never issues tokens, there is no implicit or password grant and no
@@ -1132,9 +1131,9 @@ and the UI's view of authorization is only a hint.
 | Session renewal | Silent renew with rotating refresh tokens in the SPA | A sliding server session; no SPA code |
 | New backend components | None | The `/auth/*` routes, session store and CSRF check |
 
-The IETF guidance names three architectures in decreasing order of security:
-the BFF, the token-mediating backend (the backend runs the flow and hands the
-SPA an access token), and the browser-based client. It recommends the BFF for
+The IETF guidance names three architectures in decreasing order of security: the
+BFF, the token-mediating backend (the backend runs the flow and hands the SPA an
+access token), and the browser-based client. It recommends the BFF for
 applications that have a backend, especially ones handling personal or business
 data. Keeping tokens in memory stops an XSS attacker from *extracting* stored
 tokens, but a script in the page can still *acquire new ones* through its own
@@ -1193,8 +1192,8 @@ For this pattern:
   refresh-rotation code in every app. This is
   [the browser-client alternative](#the-browser-client-alternative), rejected
   for the reference pattern and not documented as a secondary profile.
-- **The token-mediating backend.** It still puts an access token within reach
-  of script, and adds the whole backend login flow as well.
+- **The token-mediating backend.** It still puts an access token within reach of
+  script, and adds the whole backend login flow as well.
 - **Validating ID tokens with pykit's bearer verifier.** It checks generic JWT
   properties, not the OIDC contract (`nonce`, `azp`, `at_hash`), and one
   verification path for every token type lets one type pass for another.
@@ -1220,10 +1219,9 @@ For this pattern:
   and blurs where revocation and CSRF belong.
 - **Protocol adapters in each framework package.** The protocol code would be
   written twice, and the shared HTTP surface would drift.
-- **An `AUTH.OIDC` block in the Django settings facade.** A second
-  configuration path beside `rn-forge-auth`'s types, with no FastAPI
-  equivalent. Revisit when a second consumer needs OIDC configured through the
-  settings facade.
+- **An `AUTH.OIDC` block in the Django settings facade.** A second configuration
+  path beside `rn-forge-auth`'s types, with no FastAPI equivalent. Revisit
+  when a second consumer needs OIDC configured through the settings facade.
 - **Building the account, session and CSRF components before evaluating
   libraries.** [ADR-0001](../../../adr/ADR-0001.md) requires the
   [library evaluation](#library-evaluation) first.

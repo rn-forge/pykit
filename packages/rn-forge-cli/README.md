@@ -38,8 +38,8 @@ drives it: `--quiet`/`--json` set its mode.
 
 ## Installation
 
-These packages are not published to PyPI; a release is a tag. Declare pykit's package
-index and require this one by version range, or pin a tag by direct URL:
+These packages are not published to PyPI; a release is a tag. Declare pykit's
+package index and require this one by version range, or pin a tag by direct URL:
 
 ```toml
 dependencies = [

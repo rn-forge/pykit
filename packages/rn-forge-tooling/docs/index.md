@@ -2,8 +2,7 @@
 
 `rn-forge-tooling` is the lifecycle and install layer of the developer-tooling
 stack: for command-line tools that install themselves and manage their own
-versions. File generation, local state and templates live in
-`rn-forge-commons`.
+versions. File generation, local state and templates live in `rn-forge-commons`.
 
 It provides:
 

@@ -1,9 +1,10 @@
 # Installation
 
 These packages are not published to PyPI. A release is a **git tag**, and a
-consumer declares pykit's package index (`https://rn-forge.github.io/pykit/simple/`)
-and requires the package by version range, or pins a tag by direct URL. A
-floating branch reference would silently change what a build produced.
+consumer declares pykit's package index
+(`https://rn-forge.github.io/pykit/simple/`) and requires the package by version
+range, or pins a tag by direct URL. A floating branch reference would silently
+change what a build produced.
 
 ```toml
 [project]

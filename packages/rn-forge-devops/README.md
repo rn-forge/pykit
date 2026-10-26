@@ -18,8 +18,8 @@ a library an application depends on.
 - `rn_forge.devops.ci` — the core: the member graph, change selection, check
   matrices and release gating. It knows neither the CI platform nor the stack.
 - `rn_forge.devops.requirements` — the `requirements` check: every requirement
-  between workspace members is a version range that admits the member's current
-  version and has a ceiling.
+  between workspace members is a version range that admits the member's
+  current version and has a ceiling.
 - `rn_forge.devops.uv` — the uv workspace adapter: it reads
   `[tool.uv.workspace]` members, their internal requirements and their
   `[tool.workspace-ci]` tables, and runs `smoke`.

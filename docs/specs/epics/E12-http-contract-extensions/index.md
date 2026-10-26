@@ -29,5 +29,5 @@ occurs.
 
 F12.4 and F12.11 were retired on 2026-09-29; tenancy and Django OIDC settings
 are now covered by [E13's design](../E13-auth/design.md). F12.5, F12.6, F12.7,
-F12.8, F12.10 and F12.13 were retired the same day, parked in the [ideas list](../../ideas.md) because
-they are not HTTP contract work.
+F12.8, F12.10 and F12.13 were retired the same day, parked in the
+[ideas list](../../ideas.md) because they are not HTTP contract work.

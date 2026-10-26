@@ -116,8 +116,8 @@ VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-for
 1. Check each tagged package's docs at
    `https://rn-forge.github.io/pykit/packages/<package>/latest/` show the new
    version ([F9.9](../specs/epics/E9-release-readiness/F9.9-package-docs.md)).
-1. Once the `docs` job has deployed, install the released packages by name
-   from the live index, as the acceptance in
+1. Once the `docs` job has deployed, install the released packages by name from
+   the live index, as the acceptance in
    [F19.3](../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) does.
 1. Record each package's version, tag, commit and install result on the release
    page, and set it to `shipped` with the date once its exit criteria hold.

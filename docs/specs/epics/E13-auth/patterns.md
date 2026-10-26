@@ -8,9 +8,9 @@
 A reference to the industry-standard authentication, session and token, and
 authorization patterns, written so the owner can review [the design](design.md)
 against the field. It describes the patterns and their trade-offs, then marks
-each one's status in this design. A status records the design's position;
-the design's [proposed decisions](design.md#proposed-decisions) become ADRs
-through [F13.1](F13.1-auth-design.md).
+each one's status in this design. A status records the design's position; the
+design's [proposed decisions](design.md#proposed-decisions) become ADRs through
+[F13.1](F13.1-auth-design.md).
 
 [Back to E13](index.md)
 
@@ -330,8 +330,8 @@ Status: BFF is the design's choice; the other two are
 - **Alternatives:** call downstream with the service's own client-credentials
   token (no user identity), or forward the user's token (breaks audience
   restriction, so avoid).
-- **Status:** Via broker; the application uses its own client-credentials
-  token until it needs user delegation
+- **Status:** Via broker; the application uses its own client-credentials token
+  until it needs user delegation
   ([Machine clients](design.md#machine-clients-and-downstream-services)).
 
 ### Revocation and logout

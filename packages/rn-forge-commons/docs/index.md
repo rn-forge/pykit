@@ -13,8 +13,7 @@ It provides:
 - managed blocks, structured findings, and testing helpers
 - a locked JSON state store and a generation engine (plan, diff, atomic apply)
 
-The developer-tooling surface — console, Typer wiring, local state
-and installer mechanics — lives in `rn-forge-tooling`, which depends on this
-package.
+The developer-tooling surface — console, Typer wiring, local state and installer
+mechanics — lives in `rn-forge-tooling`, which depends on this package.
 
 Use the guides for common workflows and the API reference for module details.

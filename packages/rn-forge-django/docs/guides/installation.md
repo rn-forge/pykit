@@ -26,8 +26,8 @@ or, from the command line:
 uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
 ```
 
-Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each required
-by version range.
+Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each
+required by version range.
 
 | Extra | Adds |
 | -- | -- |
