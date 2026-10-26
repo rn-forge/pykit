@@ -31,7 +31,7 @@ and the framework adapters ship together.
 
 | Feature | Epic | State |
 | -- | -- | -- |
-| [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | New |
+| [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | Active |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |

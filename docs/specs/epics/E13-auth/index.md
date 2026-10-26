@@ -2,7 +2,8 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-10-26 |
 
 Standards-based authentication and authorization for new pykit web applications:
 SSO through OIDC and SAML, social login, optional local passwords, server-side
@@ -21,7 +22,7 @@ work, tracked in ngkit's own epic against the same design.
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F13.1 — Auth design](F13.1-auth-design.md) | Settle the design and record its decisions. | New |
+| [F13.1 — Auth design](F13.1-auth-design.md) | Settle the design, evaluate the libraries and record the decisions. | Active |
 | [F13.2 — rn-forge-auth package](F13.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | New |
 
 `rn-forge-auth` follows the package rule and adapter structure that
