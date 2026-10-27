@@ -11,9 +11,9 @@ pykit backend (Django or FastAPI) with an ngkit single-page app (SPA). This page
 is a working proposal shared by every E13 feature. Nothing in it is decided
 until it becomes an ADR or a feature. The owner has accepted its positions;
 [F13.1](F13.1-auth-design.md) turns the
-[proposed decisions](#proposed-decisions) into ADRs and runs the
-[library evaluation](#library-evaluation) that decides what pykit binds and what
-it writes. [Auth patterns](patterns.md) explains the industry patterns this
+[proposed decisions](#proposed-decisions) into ADRs and records the
+[library evaluation](#library-evaluation), which decided what pykit binds and
+what it writes. [Auth patterns](patterns.md) explains the industry patterns this
 design chooses from.
 
 [Back to E13](index.md)
@@ -290,15 +290,13 @@ class ResourcePolicy[ResourceT, QueryT](Protocol):
 ```
 
 The neutral boundary is the login's result, not its request. A protocol handler
-takes the framework's native request, so it can use its library's maintained
-integration (Authlib's Django or Starlette client, allauth's views) instead of
-bypassing it. What stays neutral is what comes out: an `ExternalIdentity`, or an
-account ID when a library such as allauth owns account resolution too, then the
-`Principal`, the authorization contracts and the
+takes the framework's native request; what stays neutral is what comes out: an
+`ExternalIdentity`, then the `Principal`, the authorization contracts and the
 [session resource](#http-surface). Each login flow on each framework has exactly
 one owner, either a library's integration or pykit's adapter over the library's
-core, never both. The [library evaluation](#library-evaluation) assigns the
-owners.
+core, never both. No framework integration met the requirements, so pykit's
+adapters own every flow on both frameworks
+([Login flow owners](#login-flow-owners)).
 
 `Principal` and `Requirement` move from `rn-forge-web` to `rn-forge-auth` and
 change as follows. Each field keeps one provenance:
@@ -334,39 +332,80 @@ session indexes, and the mapping to `ExternalIdentity`.
 
 | Concern | Library | pykit's part |
 | -- | -- | -- |
-| OIDC and OAuth 2.0 client: authorization request, PKCE, token exchange, discovery, ID-token validation (signature, `iss`, `aud`, `azp`, `exp`, `iat`, `nonce`, `at_hash`), UserInfo | Authlib | Provider configuration, the login transaction, the `iss` response check (RFC 9207), the UserInfo `sub` check, claim mapping |
-| Bearer access-token validation and the JWKS cache | Authlib's RFC 9068 validator or PyJWT's `PyJWKClient`, settled by the [evaluation](#library-evaluation) | The [access-token profile](#token-validation) settings; a bound on JWKS refetches for an unknown `kid` if the library has none |
-| Back-channel logout tokens | The same JWT library | The [logout-token profile](#token-validation) checks the library does not ship |
+| OIDC and OAuth 2.0 client: authorization request, PKCE, token exchange, ID-token validation (signature, `iss`, `aud`, `azp`, `exp`, `iat`, `nonce`, `at_hash`), UserInfo | Authlib's core: its OAuth 2.0 client (`OAuth2Session`) and ID-token claims (`CodeIDToken`, over joserfc). Not its Django or Starlette integration. | The adapter that owns the flow on both frameworks: provider configuration, discovery with the issuer check, the login transaction, the `iss` response check (RFC 9207), the UserInfo `sub` check, claim mapping |
+| Bearer access-token validation and the JWKS cache | PyJWT: `jwt.decode` and `PyJWKClient` | The [access-token profile](#token-validation): the required claims of each mode, the `typ` check, rejecting `nonce` and `events`, the algorithm allow-list, an HTTPS `jwks_uri` |
+| Back-channel logout tokens | PyJWT, with the same `PyJWKClient` | The [logout-token profile](#token-validation)'s `typ`, `iat` window and `jti` replay checks |
 | SAML 2.0 service provider | python3-saml | Strict settings by default, the transaction binding, the assertion replay cache |
 | Django sessions and CSRF | `django.contrib.sessions`, `CsrfViewMiddleware` | Cookie names and flags, timeouts, the session-version and revoked-`sid` checks on read |
-| Django accounts, social login and SAML | Candidate: django-allauth (headless) | Whatever the [evaluation](#library-evaluation) finds it cannot do |
-| FastAPI server-side sessions | Candidate: starsessions | The session-version and revoked-`sid` checks on read |
-| FastAPI CSRF | Candidate: an established Starlette CSRF library | The [CSRF](#csrf) properties the library lacks |
+| Django accounts and the link model | Django's auth models. django-allauth is not bound. | A default `AccountResolver` with an external-account link model unique on `(issuer, subject)`, and the provisioning policies of [Account linking](#account-linking). allauth links on its provider configuration ID and takes the subject from UserInfo unchecked. |
+| FastAPI server-side sessions | None bound; redis-py for the Redis store | A session middleware over `SessionStore`. starsessions offers one expiry strategy (idle or absolute, not both), extends the session on every read, keeps the old record after rotation and has no read hook for the [revocation](#revocation) checks. |
+| FastAPI CSRF | None bound | A synchronizer token kept in the server session, including the pre-session one ([CSRF](#csrf)). No evaluated library binds its token to the session. |
+| Login transactions, replay records, revoked `sid` values | Django's Redis cache backend; redis-py on FastAPI | Atomic consume and set-if-absent ([Supported storage](#supported-storage)) |
 | Password hashing | Django's hashers; an application-supplied verifier on FastAPI | Rate limiting and uniform failures |
 
-The evaluation runs before `rn-forge-auth` is created.
-[F13.2](F13.2-auth-package.md) then moves only the contracts and wrappers it
-keeps. Existing token code that a library replaces (`JwtVerifier`, `JwksCache`,
-`discover_oidc`, `fetch_json` are the candidates) is deleted, not moved, so the
-new package never publishes an API the next feature removes.
+Social login and SAML on Django use the same adapters as on FastAPI.
+
+[F13.2](F13.2-auth-package.md) moves only the code the evaluation keeps and
+deletes what a library replaces, so the new package never publishes an API the
+next feature removes. `TokenVerificationError` moves with the code it serves.
+
+| Commons symbol | F13.2 | Reason |
+| -- | -- | -- |
+| `JwtVerifier` | Moves to `rn_forge.auth.oidc`, taking its keys from PyJWT's `PyJWKClient` | It becomes the access-token profile: PyJWT runs the checks, and the profile's restrictions are pykit's |
+| `JwksCache` | Deleted, replaced by PyJWT's `PyJWKClient` | `PyJWKClient` caches the key set and refetches for an unknown `kid` at most once per `cooldown_duration` |
+| `discover_oidc`, with `OidcConfiguration` | Moves | No library checks the discovery document's `issuer` against the configured issuer (RFC 8414 §3.3). The OIDC adapter passes its result to Authlib, and bearer configuration uses it for the `jwks_uri`. |
+| `fetch_json`, with `FetchJson` | Moves, as `discover_oidc`'s transport only | It refuses plain HTTP except to a local host. `PyJWKClient` fetches key sets itself and accepts any HTTP URL, so configuration applies the same rule to the `jwks_uri`. |
 
 ### Library evaluation
 
-Each candidate is assessed for fit, maintenance and the requirements it leaves
-unmet before any equivalent is built. The result is recorded in the table above:
-the library pykit binds, and for each component pykit still writes, the
-requirement no candidate met.
+S13.1.3 assessed each library on 2026-10-27 for fit, maintenance and the
+requirements it leaves unmet. Each fit claim that only running code could settle
+was spiked in a scratch directory on CPython 3.14.6, against an in-process fake
+OIDC IdP and Redis 7.0. The spikes were not kept; this section records what they
+showed. Advisories are PyPI's vulnerability data (OSV) for the latest version.
 
-| Candidate | For | Fits when |
+| Library | Version, release date | Python 3.14 | Typing under strict pyright | Open advisories | Result |
+| -- | -- | -- | -- | -- | -- |
+| Authlib | 1.9.1, 2026-10-14 | Classifier; installs and imports | No `py.typed`; typeshed's `types-authlib` (1.8 stubs) still leaves `OAuth.register` and the RFC 9068 validator partly unknown | None (eleven 2025–2026 advisories, all fixed by 1.6.12) | Core bound; integrations and RFC 9068 validator not bound |
+| PyJWT | 2.15.1, 2026-09-28 | Classifier; installs and imports | `py.typed`, clean | None (about twenty 2026 advisories, fixed in 2.12 to 2.15; require 2.15 or later) | Bound |
+| python3-saml | 1.16.0, 2023-10-09 | No classifier after 3.12; installs and imports with xmlsec 1.3.17 and lxml 6.1.3 | No `py.typed`; unknown types at every call | None | Bound, with a maintenance risk |
+| django-allauth | 65.21.0, 2026-10-26 | Classifier; installs and imports | No `py.typed`; its models are unknown without Django stubs | None | Not bound |
+| starsessions | 2.2.1, 2024-10-23 (2.3.0a1, 2026-03-16) | No classifier after 3.13; runs on 3.14 with Starlette 1.10 | `py.typed`, clean | None | Not bound |
+| starlette-csrf | 3.0.0, 2023-06-27 | No classifier after 3.11; runs | `py.typed`; `CSRFMiddleware` is not re-exported | None | Not bound |
+| fastapi-csrf-protect | 1.0.7, 2025-09-16 | Classifier; runs | `py.typed`, clean | None | Not bound |
+| asgi-csrf | 0.11, 2024-11-15 | No classifiers; runs | No `py.typed` | None | Not bound |
+
+starlette-session (0.4.3, 2022) and fastapi-sessions (0.3.2, 2021) pin Starlette
+and FastAPI below 1.0 and were not spiked.
+
+| Evaluated | For | Fits when | What the spike showed |
+| -- | -- | -- | -- |
+| Authlib's Django and Starlette integrations, against a pykit adapter over Authlib's core | The owner of the OIDC and OAuth 2.0 flows on each framework | The integration supports the transaction storage, `iss` check and UserInfo `sub` check above, and yields an `ExternalIdentity` | Both integrations fail alike. The transaction lives in the framework session (on Starlette's default signed-cookie session the PKCE verifier and nonce reach the browser), expires after an hour and is read, then deleted, not consumed atomically. A callback with a wrong `iss`, or none although discovery advertises `authorization_response_iss_parameter_supported`, completes. A UserInfo `sub` different from the ID token's is returned without error. A discovery document naming another issuer is accepted, and its issuer becomes the expected ID-token `iss`. The adapter over `OAuth2Session` and `CodeIDToken`, holding the transaction in Redis (`GETDEL`, 600-second TTL), rejected each of these, a replayed callback and another browser's callback, and returned the `ExternalIdentity` fields. **The adapter owns the flows.** |
+| django-allauth (headless) | Django accounts, the link model, provisioning, social login and SAML (through python3-saml) | It serves [the HTTP surface](#http-surface) and session body, or a thin binding maps to them; it links on `(issuer, subject)`; its provisioning can follow [Account linking](#account-linking); back-channel logout and bearer lookup work alongside it | Its surface is its own: routes under `/_allauth/browser/v1/`, and a login that starts with a form `POST`. Its session body is `{status, data: {user, methods}, meta}`, with no permissions, roles or expiry. It links on `(provider configuration ID, uid)`: a second configuration for the same issuer treated the same subject as a new identity and started a sign-up. It takes `uid` from UserInfo: a UserInfo `sub` different from the ID token's started a sign-up for the UserInfo subject. It accepted a wrong `iss`, sent no nonce, and enables PKCE only when configured. It has no back-channel logout. Bearer lookup alongside it works, through an issuer-to-configuration map. **Not bound.** |
+| starsessions | FastAPI sessions | It has a Redis store with per-session expiry, and a hook on read for the [revocation](#revocation) checks | The Redis store sets a TTL on each session record, and cookie flags allow `__Host-session`. It has no read hook; a middleware after its autoload middleware cleared a session with a bumped version or a revoked `sid`, deleted the record and expired the cookie. One expiry strategy applies to every session, rolling or fixed, so idle and absolute timeouts cannot both hold. With rolling expiry a `GET` reset the idle TTL to 1,800 seconds, so `/auth/session` would keep a session alive. `regenerate_session_id` left the old record readable. Its session handler is documented as private API. **Not bound.** |
+| starlette-csrf, fastapi-csrf-protect, asgi-csrf | FastAPI CSRF | It provides a synchronizer token kept in the server session, or a signed token bound to it, plus pre-session tokens ([CSRF](#csrf)) | Each is a signed double-submit cookie with no tie to the session. A token pair minted in one browser was accepted with another browser's session cookie (`200` from all three). Each issues tokens before sign-in, unbound. fastapi-csrf-protect expects the unsigned token in the header while its cookie holds the signed one, which Angular's XSRF support cannot send. **None bound.** |
+| Authlib's RFC 9068 validator, PyJWT's `PyJWKClient` | The access-token profile and the JWKS cache | It covers the [access-token profile](#token-validation), including a bound on refetches for an unknown `kid` | Authlib's validator accepted a token with no `typ` header, which RFC 9068 §4 forbids. It caches no keys (`get_jwks` ran once per token) and has no RFC 7519 mode and no algorithm allow-list. `jwt.decode` with the RFC 9068 required claims, plus pykit's `typ` check, accepted only the `at+jwt` token and rejected a missing `jti`, an ID-token-shaped token and an unknown `kid`. `PyJWKClient` with a 30-second `cooldown_duration` fetched once for 200 unknown `kid` values, rejected a newly rotated key during the cooldown and accepted it after. **PyJWT bound.** |
+| python3-saml | The SAML service provider | It runs the SP checks under strict settings and takes the transaction's request ID | On 3.14 it loaded strict settings, built an `AuthnRequest` and exposed its ID, and rejected a forged response whose `InResponseTo` did not match. It has had no release since 2023-10; pysaml2 (7.5.5, 2026-09-17) remains the maintained fallback. **Bound.** |
+
+Authlib's `httpx` client warns that `httpx` is deprecated in favour of `httpx2`,
+so the adapter uses the `requests`-based `OAuth2Session`, and the FastAPI
+binding runs it in the thread pool. Strict pyright needs `types-authlib` in the
+development group, and casts where the adapters call Authlib and python3-saml.
+
+Both frameworks therefore share every protocol adapter. They differ only in
+sessions and CSRF, where Django's built-ins meet the requirements and the
+FastAPI binding uses pykit's own.
+
+#### Login flow owners
+
+| Flow | Django | FastAPI |
 | -- | -- | -- |
-| Authlib's framework integrations, against pykit adapters over Authlib's core | The owner of the OIDC and OAuth 2.0 flows on each framework | The integration supports the transaction storage, `iss` check and UserInfo `sub` check above, and yields an `ExternalIdentity` |
-| django-allauth (headless) | Django accounts, the link model, provisioning, social login and SAML (through python3-saml) | It serves [the HTTP surface](#http-surface) and session body, or a thin binding maps to them; it links on `(issuer, subject)`; its provisioning can follow [Account linking](#account-linking); back-channel logout and bearer lookup work alongside it |
-| starsessions, or another maintained server-side store | FastAPI sessions | It has a Redis store with per-session expiry, and a hook on read for the [revocation](#revocation) checks |
-| A Starlette CSRF library | FastAPI CSRF | It provides a synchronizer token kept in the server session, or a signed token bound to it, plus pre-session tokens ([CSRF](#csrf)) |
-| Authlib's RFC 9068 validator, PyJWT's `PyJWKClient` | The access-token profile and the JWKS cache | It covers the [access-token profile](#token-validation), including a bound on refetches for an unknown `kid` |
-
-The same HTTP surface on both frameworks does not require the same library on
-both: Django may bind allauth while FastAPI binds a thin pykit layer.
+| OIDC, including social and broker logins | pykit's OIDC adapter over Authlib's client | pykit's OIDC adapter over Authlib's client |
+| OAuth 2.0-only social login | pykit's OAuth 2.0 adapter over Authlib's client | pykit's OAuth 2.0 adapter over Authlib's client |
+| SAML | pykit's SAML adapter over python3-saml | pykit's SAML adapter over python3-saml |
+| Local password | pykit's password adapter over Django's auth backends | pykit's password adapter over the application's verifier |
+| Development | pykit's development adapter | pykit's development adapter |
+| Back-channel logout | pykit's handler over PyJWT | pykit's handler over PyJWT |
 
 ## HTTP surface
 
@@ -782,10 +821,11 @@ only supplies the header; the server-side check is what protects.
 - **FastAPI** uses a synchronizer token, which the OWASP CSRF cheat sheet
   recommends for applications with server-side state: a random token stored in
   the session, exposed to Angular through a readable cookie, and compared in
-  constant time with the header on each unsafe request. A library's signed
-  token bound to the session is an acceptable alternative. A plain
-  cookie-equals-header check is not, because a subdomain or a network attacker
-  can plant the cookie.
+  constant time with the header on each unsafe request. pykit writes it: no
+  evaluated library binds its token to the session
+  ([Library evaluation](#library-evaluation)). A plain cookie-equals-header
+  check is not enough, because a subdomain or a network attacker can plant the
+  cookie.
 - **Before sign-in**, a short-lived anonymous session holds the token, so
   `/auth/login/password` is protected against login CSRF. Sign-in replaces it
   with the new session and a new token.
@@ -837,7 +877,7 @@ has one tested production configuration:
 | Framework | Sessions | Transactions, replay records, revoked `sid` values |
 | -- | -- | -- |
 | Django | `django.contrib.sessions` with the `db` or `cached_db` backend | Django's Redis cache backend |
-| FastAPI | The Redis session store chosen by the [library evaluation](#library-evaluation) | Redis |
+| FastAPI | pykit's session middleware over the Redis `SessionStore` from `rn-forge-auth[redis]` | Redis, through the same extra |
 
 In-memory stores, and Django's local-memory cache, are not safe across
 processes. They serve tests and single-process development only, and the
@@ -912,7 +952,7 @@ bindings refuse them outside debug mode.
 | 401 and 403 as RFC 9457 problems, with no detail on verification failures | Existing `rn-forge-web` contract |
 | Rate limiting on `/auth/login/password` and callback endpoints | Framework binding, with configurable limits |
 | Audit events: login success and failure, logout, account provisioned, rejected or disabled, authorization denied | `AppLogger` audit channel |
-| JWKS key rotation, and SAML certificate rollover (two IdP certificates at once) | The JWT library's key cache; SAML provider configuration |
+| JWKS key rotation, and SAML certificate rollover (two IdP certificates at once) | PyJWT's `PyJWKClient`, which refetches for an unknown `kid` at most once per cooldown; SAML provider configuration |
 
 ## Testing
 
@@ -949,10 +989,11 @@ flowchart TB
 
 | Package | Gains | Loses |
 | -- | -- | -- |
-| `rn-forge-auth` (new) | Whatever the [library evaluation](#library-evaluation) keeps of `JwtVerifier`, the JWKS cache, OIDC discovery and `fetch_json` from commons; `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer`, `principal_from_claims` and `OidcAuthenticator` from web; the new contracts; the adapters behind extras: `oidc` (Authlib, PyJWT), `saml` (python3-saml), `redis` (session store) | — |
+| `rn-forge-auth` (new) | `JwtVerifier`, `discover_oidc` and `fetch_json` from commons, as [Libraries](#libraries) decides (`JwksCache` is deleted); `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer`, `principal_from_claims` and `OidcAuthenticator` from web; the new contracts; the adapters behind extras: `oidc` (Authlib with `requests`, PyJWT), `saml` (python3-saml), `redis` (redis-py, for the session, transaction, replay and revoked-`sid` stores) | — |
 | `rn-forge-web` | — | The types above and its `auth` extra. It keeps the wire contract: `Credentials`, `parse_authorization`, `challenge_header`, `AUTH_FAILED_DETAIL`, `AuthenticationFailed`, `PermissionDenied` and the problem responses. |
 | `rn-forge-commons` | — | `rn_forge.commons.integration.auth` and its `auth` extra. Token validation has no consumer outside a web backend: non-web code acquires tokens, which is an HTTP client's job, and does not validate them. |
-| `rn-forge-django`, `rn-forge-fastapi` | Bindings for the new contracts | Protocol code. Django's `saml` extra now depends on `rn-forge-auth[saml]`; its `jwt` extra is removed. |
+| `rn-forge-django` | Bindings for the new contracts. Its `oidc` and `saml` extras now depend on `rn-forge-auth[oidc]` and `rn-forge-auth[saml]`. | Protocol code, and its `jwt` extra. |
+| `rn-forge-fastapi` | Bindings for the new contracts, including the session middleware and CSRF check. Its `oidc` extra now depends on `rn-forge-auth[oidc]`, and a new `redis` extra on `rn-forge-auth[redis]`. | Protocol code. |
 
 Why a separate package instead of more extras on `rn-forge-web`:
 
@@ -974,16 +1015,15 @@ and [F13.2](F13.2-auth-package.md) creates it and does the move.
 
 ## Package responsibilities
 
-Where a row names a component that a [library](#libraries) may supply, the
-library evaluation decides whether pykit binds that library or writes the
-component.
+Each library a row names is the one [Libraries](#libraries) binds; a component
+without one is written by pykit for the requirement recorded there.
 
 | Package | Responsibility |
 | -- | -- |
-| `rn-forge-auth` | The three token validation profiles. The contracts above, `Principal` and `Requirement`, the scope-to-permission limit, the versioned context cache, `return_to` validation, the session-body schema, and the `SessionStore`, transaction and replay store protocols with in-memory stores for tests. Behind optional extras: the OIDC and OAuth 2.0 adapters (Authlib), the SAML adapter (python3-saml) and a Redis store. The local and development adapters need no extra. |
+| `rn-forge-auth` | The contracts above, `Principal` and `Requirement`, the scope-to-permission limit, the versioned context cache, `return_to` validation, the session-body schema, and the `SessionStore`, transaction and replay store protocols with in-memory stores for tests. The local and development adapters need no extra. Behind optional extras: `oidc` holds the three token validation profiles (PyJWT for access and logout tokens, Authlib for ID tokens), discovery, and the OIDC and OAuth 2.0 adapters over Authlib's client; `saml` holds the SAML adapter over python3-saml; `redis` holds the Redis session, transaction, replay and revoked-`sid` stores. |
 | `rn-forge-web` | The HTTP wire contract only: credential parsing, challenge headers, and 401 and 403 problems. |
-| `rn-forge-django` | Binds the HTTP surface as views and URLconf. Provider configuration is built from `rn-forge-auth`'s types and passed to the binding; there is no `AUTH.OIDC` settings block. Transactions and replay records in Django's Redis cache; sessions through `django.contrib.sessions`; CSRF through `CsrfViewMiddleware`. A DRF authentication class that yields a session `Principal`. A default `AccountResolver` on the Django user model with an external-account link model. A default context provider from groups and permissions. DRF permissions built from `Requirement` and `ResourcePolicy`, plus queryset scoping. |
-| `rn-forge-fastapi` | Binds the same HTTP surface as an `APIRouter`. Server-side sessions over a `SessionStore`, the CSRF check, and `current_principal` and `requires` dependencies. |
+| `rn-forge-django` | Binds the HTTP surface as views and URLconf. Provider configuration is built from `rn-forge-auth`'s types and passed to the binding; there is no `AUTH.OIDC` settings block. Transactions and replay records in Django's Redis cache; sessions through `django.contrib.sessions`; CSRF through `CsrfViewMiddleware`. A DRF authentication class that yields a session `Principal`. A default `AccountResolver` on the Django user model with an external-account link model unique on `(issuer, subject)`, instead of django-allauth. A default context provider from groups and permissions. DRF permissions built from `Requirement` and `ResourcePolicy`, plus queryset scoping. |
+| `rn-forge-fastapi` | Binds the same HTTP surface as an `APIRouter`. pykit's session middleware over a `SessionStore` (idle and absolute timeouts, a non-extending read for `/auth/session`, rotation that deletes the old record, revocation checks on read), the synchronizer-token CSRF check, and `current_principal` and `requires` dependencies. No session or CSRF library. |
 | `rn-forge-sqlalchemy` | Later: a link table and default `AccountResolver`, when a FastAPI application with interactive users needs them. Until then FastAPI applications implement the protocols. |
 | ngkit `@rn-forge/ng/auth` | The SPA client described next, tracked in ngkit's own epic. |
 | Application | Provider configuration, claim mapping, provisioning policy, service-account links, permission catalog, scope-to-permission map, `AuthorizationContextProvider`, `ResourcePolicy` implementations, and calls to invalidate the context cache. |
@@ -1052,7 +1092,9 @@ removals follow [ADR-0002](../../../adr/ADR-0002.md): no aliases.
 | `auth.basic` views | The local password provider |
 | `AuthorizationViewMixin`, `PermissionKeyViewMixin`, `AuthorizationPermission` | A `Requirement` built from permission key and action, plus `ResourcePolicy` hooks |
 | `Requirement`'s `any_role` and `all_roles` clauses | Removed: routes check permissions |
-| `rn_forge.web.auth` principal types, `rn_forge.web.oidc`, `rn_forge.commons.integration.auth` | Moved to `rn-forge-auth` ([Package placement](#package-placement)) |
+| `rn_forge.web.auth` principal types, `rn_forge.web.oidc` | Moved to `rn-forge-auth` ([Package placement](#package-placement)) |
+| `rn_forge.commons.integration.auth`: `JwtVerifier`, `discover_oidc`, `fetch_json` | Moved to `rn_forge.auth.oidc`; `JwtVerifier` takes its keys from PyJWT's `PyJWKClient` ([Libraries](#libraries)) |
+| `JwksCache` | Deleted, replaced by PyJWT's `PyJWKClient` |
 | `PrincipalBearerAuthentication`, `JWKSBearerAuthentication`, FastAPI `bearer_auth()`, `requires` | Kept, importing from `rn-forge-auth`; bearer callers are resolved to an account and receive an authorization context |
 | `User`, `Group` and `Permission` viewsets | Kept, as the administration surface for the default context provider |
 | ngkit `JwtToken`, `JwtCredentials`, `LoginResponse`, token storage, `refreshToken` hook, `disableAuth` | Session-backed credentials and the development provider (ngkit's epic) |
