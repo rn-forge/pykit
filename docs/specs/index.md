@@ -11,7 +11,7 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 7 — kiln adoption and authentication](../releases/release-7/index.md) | planned | 2 Active · 7 New |
+| [Release 7 — kiln adoption and authentication](../releases/release-7/index.md) | planned | 3 Active · 10 New |
 | [Release 6 — kit upgrades for kiln](../releases/release-6/index.md) | shipped (2026-10-25) | 7 Closed |
 | [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | shipped (2026-10-18) | 2 Closed |
 | [Release 4 — kiln readiness](../releases/release-4/index.md) | shipped (2026-10-16) | 4 Closed |
@@ -27,6 +27,7 @@ Features with no Iteration, by State and epic.
 
 | Epic | Features |
 | -- | -- |
+| [E13 — Authentication and authorization](epics/E13-auth/index.md) | [F13.3](epics/E13-auth/F13.3-core-contracts.md), [F13.4](epics/E13-auth/F13.4-protocol-adapters.md), [F13.5](epics/E13-auth/F13.5-django-binding.md), [F13.6](epics/E13-auth/F13.6-fastapi-binding.md), [F13.7](epics/E13-auth/F13.7-legacy-removal.md) |
 | [E17 — Local-first web-app extraction](epics/E17-local-first-web-app-extraction/index.md) | [F17.1](epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md), [F17.2](epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md), [F17.3](epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md), [F17.4](epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md), [F17.5](epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) |
 
 ### Deferred
@@ -38,6 +39,7 @@ Features with no Iteration, by State and epic.
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | — | the owner schedules it with a concrete framework template to generate |
 | [E15 — Package boundaries](epics/E15-package-boundaries/index.md) | [F15.4](epics/E15-package-boundaries/F15.4-domain-errors.md), [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md), [F15.6](epics/E15-package-boundaries/F15.6-neutral-fixtures.md), [F15.7](epics/E15-package-boundaries/F15.7-neutral-celery.md) | Per feature; see the epic. |
 | [E17 — Local-first web-app extraction](epics/E17-local-first-web-app-extraction/index.md) | [F17.6](epics/E17-local-first-web-app-extraction/F17.6-durable-job-queue.md) | Per feature; see the epic. |
+| [E21 — Publish to PyPI](epics/E21-pypi-distribution/index.md) | [F21.5](epics/E21-pypi-distribution/F21.5-retire-index.md) | Per feature; see the epic. |
 
 <!-- board:end -->
 

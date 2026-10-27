@@ -1062,7 +1062,16 @@ design is settled.
 
 ## Proposed decisions
 
-These become ADRs when accepted:
+The owner accepted all six on 2026-10-26. S13.1.2
+([F13.1](F13.1-auth-design.md)) records them as follows, and replaces this note
+with links to the ADRs:
+
+| Decisions | Recorded as |
+| -- | -- |
+| 1 and 4 | [ADR-0006](../../../adr/ADR-0006.md), revised in place |
+| 2 and 3 | A new ADR: every caller resolves to an internal account, and authorization is computed on the server per request |
+| 5 | A new ADR: Django and FastAPI expose the same auth surface and security defaults |
+| 6 | No new ADR: [ADR-0011](../../../adr/ADR-0011.md) already places `rn-forge-auth`, and links this design |
 
 1. **Browsers authenticate with a server-side session, never with tokens**
    (BFF). The SPA and API share an origin or a site.

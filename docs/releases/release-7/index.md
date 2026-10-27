@@ -13,7 +13,9 @@ it (F13.2), then the features the design produces — the login adapters, the
 session and HTTP surface for Django and FastAPI, authorization context and
 resource policy, and the removal of the locally issued JWT flows. The package
 and the framework adapters ship together. It also sets a security baseline with
-per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)).
+per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)),
+and every package is published to PyPI
+([E21](../../specs/epics/E21-pypi-distribution/index.md)).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -41,6 +43,10 @@ per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)).
 | [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | New |
 | [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | New |
 | [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | New |
+| [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Active |
+| [F21.2](../../specs/epics/E21-pypi-distribution/F21.2-package-metadata.md) | E21 | New |
+| [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | New |
+| [F21.4](../../specs/epics/E21-pypi-distribution/F21.4-consumer-docs.md) | E21 | New |
 
 <!-- scope:end -->
 
@@ -55,13 +61,31 @@ per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)).
    F16.3 sets up.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
-1. E13's implementation features follow F13.2, so the adapters are written
-   inside `rn-forge-auth`.
+1. **F13.1's remaining stories.** S13.1.2 (the ADRs) and S13.1.3 (the library
+   evaluation) are independent; S13.1.4 writes the stories of F13.3 to F13.7
+   once both close, and sets their `Iteration` to this release.
+1. **F13.3 to F13.7** after F13.2, in order: core contracts, protocol adapters,
+   then the Django and FastAPI bindings (which may run in parallel), then the
+   legacy removal.
+1. **F21.1 and F21.2 any time.** F21.1's owner steps (S21.1.2) come shortly
+   before F21.3's TestPyPI dry run, because a pending PyPI publisher does not
+   reserve a name.
+1. **F21.3 before F16.3 merges.** It is built in `main.yml`, and F16.3 requires
+   the kiln version it pins to render the same release behaviour. S21.3.3
+   closes when this release's merge publishes to PyPI.
+1. **F21.4** in the same merge as F21.3, so the install docs are true when the
+   release ships.
 
 ## Decisions
 
 - Owner decision, 2026-10-24: the kiln cutover and authentication move here from
   Release 6, which ships the kit upgrades kiln builds on.
+- Owner decision, 2026-10-26: all of E13's implementation features (F13.3 to
+  F13.7) ship in this release, with the package.
+- Owner decision, 2026-10-26: E21's F21.1 to F21.4 join this release. Every
+  package takes at least a patch bump so it is published to PyPI with complete
+  metadata, and publishing is built in `main.yml` before the cutover
+  ([E21](../../specs/epics/E21-pypi-distribution/index.md#context)).
 
 ## Breaking changes
 
@@ -74,30 +98,36 @@ Planned until the decisions behind them are accepted:
   [package placement](../../specs/epics/E13-auth/design.md#package-placement).
 - `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
   `rn-forge-auth`.
+- `rn-forge-auth`'s `Principal` and `Requirement` change before its first
+  release: permission clauses replace role clauses (F13.3).
+- `rn-forge-django` loses its `jwt` extra, the locally issued JWT flows, the
+  `auth.basic` and `auth.saml` views and the authorization mixins (F13.7).
 
-The removal of Django's locally issued JWT flows is E13's change and is listed
-here once its feature exists.
+S13.1.4 completes this list from the features' stories.
 
 ## Progress
 
 Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
-settling the design's open questions; E13's implementation features are added to
-this release once it closes.
+version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1's
+design is settled (S13.1.1); the ADRs (S13.1.2) and library evaluation (S13.1.3)
+are next. F13.3 to F13.7 exist without stories; S13.1.4 writes them and puts
+them on this release. S21.1.2's owner steps are under way: the GitHub
+environments exist; the PyPI pending publishers are not yet added.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F16\.[36]|S16\.[36]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F16\.[36]|S16\.[36]\.|F21\.|S21\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1,
-  F13.2 and F20.1 to F20.5.
-- The design's proposed decisions are accepted as ADRs.
+- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1
+  to F13.7, F20.1 to F20.5 and F21.1 to F21.4.
+- E13's proposed decisions are recorded as S13.1.2 describes: ADR-0006 revised
+  and two new ADRs accepted.
 - `docs/_update_board.sh --check` passes.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
 
