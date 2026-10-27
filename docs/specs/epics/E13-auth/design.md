@@ -1018,6 +1018,12 @@ and integration tests: discovery, JWKS, the token endpoint, UserInfo and
 back-channel logout tokens, with switches for each failure the
 [security controls](#security-controls) cover. A Keycloak container exercises
 the broker profile end to end in an optional CI job that does not gate merges.
+The fake is `rn_forge.auth.testing.FakeOidcProvider`, an adapter-level module
+behind the `oidc` extra that the facade does not re-export. Its `Faults`
+dataclass holds one boolean switch per failure: `response_iss`,
+`response_iss_missing`, `discovery_issuer`, `userinfo_sub_mismatch`,
+`wrong_nonce`, `wrong_aud`, `wrong_azp`, `wrong_at_hash`, `expired`, `alg_none`
+and `unknown_kid`.
 Applications use the development provider and `provideRnForgeAuthTesting`
 ([ngkit client contract](#ngkit-client-contract)).
 

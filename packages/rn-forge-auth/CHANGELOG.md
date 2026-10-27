@@ -7,6 +7,10 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Added
 
+- `rn_forge.auth.testing`, behind the `oidc` extra: `FakeOidcProvider`, an
+  in-process OIDC provider with discovery, key rotation, authorization, token
+  and UserInfo endpoints and logout tokens, and `Faults`, a switch for each OIDC
+  failure.
 - `validate_return_to` and `InvalidReturnTo`, which accept only a relative path
   under configured prefixes; `SessionBody`, the camelCase `/auth/session`
   body; and `CallbackError`, the closed list of callback error codes.

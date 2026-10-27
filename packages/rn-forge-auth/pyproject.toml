@@ -53,7 +53,7 @@ env = "RN_FORGE_AUTH_REDIS_URL"
 modules = ["rn_forge.auth"]
 
 [tool.workspace-ci.smoke.extras]
-oidc = ["rn_forge.auth.oidc"]
+oidc = ["rn_forge.auth.oidc", "rn_forge.auth.testing"]
 redis = ["rn_forge.auth.redis"]
 
 [tool.pytest.ini_options]

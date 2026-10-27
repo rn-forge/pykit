@@ -28,7 +28,7 @@
 #      imports the `rn_forge.data.pandas` adapter (ADR-0011). The contract
 #      names the core module, not the package that contains the adapter.
 #  10. `rn_forge.auth` layers over web, and its core never imports the
-#      `rn_forge.auth.oidc` and `rn_forge.auth.redis` adapters (ADR-0011).
+#      `rn_forge.auth.oidc`, `rn_forge.auth.redis` and `rn_forge.auth.testing` adapters (ADR-0011).
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -237,3 +237,4 @@ source_modules =
 forbidden_modules =
     rn_forge.auth.oidc
     rn_forge.auth.redis
+    rn_forge.auth.testing

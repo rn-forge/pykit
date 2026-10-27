@@ -21,3 +21,5 @@ base install carries no third-party dependencies; the `oidc` extra adds
 - `rn_forge.auth.redis` — `RedisTransactionStore`, `RedisSessionStore`,
   `RedisReplayStore` and `RedisAuthorizationVersions`, behind the `redis` extra.
   The core never imports it either.
+- `rn_forge.auth.testing` — `FakeOidcProvider`, an offline OIDC provider for
+  tests, behind the `oidc` extra. The core never imports it.

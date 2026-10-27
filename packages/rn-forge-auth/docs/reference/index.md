@@ -5,4 +5,4 @@ The API reference is generated from source docstrings with `mkdocstrings`:
 [Identity](identity.md), [Accounts](accounts.md),
 [Authorization context](context.md) and [Resource policy](policy.md) and [Session, transaction and replay stores](stores.md),
 [Return target](redirects.md) and [Session body](session_body.md), the core,
-and [OIDC](oidc.md) and [Redis](redis.md), the adapters.
+and [OIDC](oidc.md), [Redis](redis.md) and [Testing](testing.md), the adapters.

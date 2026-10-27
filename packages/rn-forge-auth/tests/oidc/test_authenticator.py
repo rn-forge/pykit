@@ -109,7 +109,7 @@ class TestOidcAuthenticator:
         principal = authenticator.authenticate(credentials=_bearer(idp.token()))
 
         assert_that(principal.subject).is_equal_to("u1")
-        assert_that(idp.requests[0]).ends_with("/.well-known/openid-configuration")
+        assert_that(idp.requests[0].path).ends_with("/.well-known/openid-configuration")
         assert_that(idp.fetches("/keys")).is_equal_to(1)
 
     def test_from_issuer_runs_discovery_once_not_per_request(self, idp) -> None:

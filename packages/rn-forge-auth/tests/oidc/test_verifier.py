@@ -153,7 +153,7 @@ class TestDiscovery:
     def test_from_issuer_reads_the_well_known_document(self, idp):
         verifier = JwtVerifier.from_issuer(idp.issuer, audience=AUDIENCE)
         assert verifier.verify(idp.token())["sub"] == "u1"
-        assert idp.requests[0].endswith(DISCOVERY)
+        assert idp.requests[0].path.endswith(DISCOVERY)
 
     def test_issuer_mismatch_is_rejected(self):
         with pytest.raises(TokenVerificationError, match="does not match"):

@@ -12,7 +12,7 @@ import rn_forge.auth
 SCRIPT = """
 import sys
 import rn_forge.auth
-offenders = [n for n in ("rn_forge.auth.oidc", "rn_forge.auth.redis", "jwt") if n in sys.modules]
+offenders = [n for n in ("rn_forge.auth.oidc", "rn_forge.auth.redis", "rn_forge.auth.testing", "jwt") if n in sys.modules]
 print("\\n".join(offenders))
 """
 
@@ -29,7 +29,7 @@ def test_core_modules_import_only_stdlib_and_rn_forge() -> None:
     core = Path(rn_forge.auth.__file__).parent
     offenders: dict[str, set[str]] = {}
     for path in core.glob("*.py"):
-        if path.stem in {"oidc", "redis"}:
+        if path.stem in {"oidc", "redis", "testing"}:
             continue
         tree = ast.parse(path.read_text())
         roots = {

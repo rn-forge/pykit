@@ -61,4 +61,5 @@ nav:
       - Session body: reference/session_body.md
       - OIDC: reference/oidc.md
       - Redis: reference/redis.md
+      - Testing: reference/testing.md
   - Changelog: changelog.md
