@@ -53,8 +53,8 @@ design chooses from.
 
 ## Principles
 
-Each principle is a candidate ADR (see
-[Proposed decisions](#proposed-decisions)).
+[Proposed decisions](#proposed-decisions) links each principle that became a
+decision to its ADR.
 
 1. **Federate, then forget the protocol.** Every login method (OIDC, SAML,
    social, local, development) ends in the same `ExternalIdentity`. Nothing
@@ -1062,16 +1062,14 @@ design is settled.
 
 ## Proposed decisions
 
-The owner accepted all six on 2026-10-26. S13.1.2
-([F13.1](F13.1-auth-design.md)) records them as follows, and replaces this note
-with links to the ADRs:
+The owner accepted all six on 2026-10-26. Each is recorded as follows:
 
 | Decisions | Recorded as |
 | -- | -- |
 | 1 and 4 | [ADR-0006](../../../adr/ADR-0006.md), revised in place |
-| 2 and 3 | A new ADR: every caller resolves to an internal account, and authorization is computed on the server per request |
-| 5 | A new ADR: Django and FastAPI expose the same auth surface and security defaults |
-| 6 | No new ADR: [ADR-0011](../../../adr/ADR-0011.md) already places `rn-forge-auth`, and links this design |
+| 2 and 3 | [ADR-0013](../../../adr/ADR-0013.md): every caller resolves to an internal account, and authorization is computed on the server per request |
+| 5 | [ADR-0014](../../../adr/ADR-0014.md): Django and FastAPI expose the same auth surface and security defaults |
+| 6 | No new ADR: [ADR-0011](../../../adr/ADR-0011.md) already places `rn-forge-auth`, and links this design's [package placement](#package-placement) |
 
 1. **Browsers authenticate with a server-side session, never with tokens**
    (BFF). The SPA and API share an origin or a site.
