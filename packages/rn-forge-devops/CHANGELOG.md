@@ -5,6 +5,12 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `[tool.workspace-ci.redis]`: a package's tests run again against a Redis
+  service, with the URL in the variable `env` names. The `plan` output gains
+  `redis`, and the check marker is `<package>.redis`.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

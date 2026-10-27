@@ -15,7 +15,7 @@ The import-boundary check and a `plan` job run first.
 on one, read from the manifests' internal requirements; a change outside the
 packages and `docs/`, or a manual run, selects all of them. It emits the
 matrices for the check jobs, which run in parallel: `verify` (ruff, pyright,
-pytest) for each selected package; `postgres` and `smoke` for packages that
+pytest) for each selected package; `postgres`, `redis` and `smoke` for packages that
 declare them in `[tool.workspace-ci]` (today `rn-forge-django`: its tests
 against PostgreSQL, and each extra installed alone from the built wheels); and
 each root suite, such as `scaffold`.

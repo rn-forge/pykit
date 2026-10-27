@@ -1,24 +1,26 @@
 # Authentication and authorization
 
-The package has one core and one adapter. `rn_forge.auth` holds the contracts
+The package has one core and two adapters. `rn_forge.auth` holds the contracts
 and needs no third-party package. `rn_forge.auth.oidc` verifies OIDC bearer
-tokens and imports the core; the core never imports it. The `oidc` extra
-installs `pyjwt[crypto]` and `authlib` for the adapter, and the `rn_forge.auth` facade does
-not re-export the adapter.
+tokens, and `rn_forge.auth.redis` keeps sessions and single-use records in
+Redis; both import the core and the core never imports them. The `oidc` extra
+installs `pyjwt[crypto]` and `authlib`, the `redis` extra installs `redis`, and
+the `rn_forge.auth` facade re-exports neither adapter.
 
 ## Installing
 
-Declare the package from pykit's index, with the extra when you verify OIDC
-tokens:
+Declare the package from pykit's index, with the extras you use:
 
 ```toml
-dependencies = ["rn-forge-auth[oidc]>=0.1.0,<0.2"]
+dependencies = ["rn-forge-auth[oidc,redis]>=0.1.0,<0.2"]
 ```
 
 The base install, `rn-forge-auth`, is enough to write your own authenticator.
 Importing `rn_forge.auth.oidc` without the extra fails with
 `ModuleNotFoundError` for `jwt`. `rn-forge-django[oidc]` and
-`rn-forge-fastapi[oidc]` already name `rn-forge-auth[oidc]`.
+`rn-forge-fastapi[oidc]` already name `rn-forge-auth[oidc]`. Importing
+`rn_forge.auth.redis` without the `redis` extra fails with
+`ModuleNotFoundError` for `redis`.
 
 ## Principal and Requirement
 
@@ -246,6 +248,50 @@ mismatch. The reason is for logs. `OidcAuthenticator` re-raises it as
 `AuthenticationFailed` so the framework binding can log it, and the response
 body must never repeat it: a 401 body is `AUTH_FAILED_DETAIL`, so a caller
 cannot tell which check failed.
+
+## Stores
+
+Four protocols hold server-side state. Each has an in-memory implementation in
+the core and a Redis implementation in `rn_forge.auth.redis`.
+
+| Protocol | Holds | Redis operation it relies on |
+| -- | -- | -- |
+| `TransactionStore` | Login transactions between the redirect and the callback. `consume` returns the transaction to exactly one caller. | `SET ... EX` to save, `GETDEL` to consume |
+| `SessionStore` | Login sessions under random IDs. `create`, `get`, `touch`, `delete` and `rotate`. | `SET ... EX`, `GET`, `EXPIRE`, `GETDEL` |
+| `ReplayStore` | Single-use values, such as logout-token `jti`, and revoked `(issuer, sid)` pairs. | `SET key 1 NX EX` for `record_once`, `SET ... EX` and `EXISTS` for revoked `sid` values |
+| `AuthorizationVersions` | The counters behind `AuthorizationContextCache`. | `INCR` per account and for the global counter, `MGET` to read |
+
+A session ends at its idle expiry or at `SessionInfo.expires_at`, whichever
+comes first. `get` does not extend the idle expiry, so a poll cannot keep an
+idle session alive; `touch` extends it, never past `expires_at`. `rotate`
+returns a new ID and leaves the old one unreadable. The stores do not check
+session versions or revoked `sid` values; the framework binding does that after
+`get`.
+
+```python
+from redis import Redis
+from rn_forge.auth.redis import RedisSessionStore, RedisTransactionStore
+
+client = Redis.from_url("redis://localhost:6379/0")
+sessions = RedisSessionStore(client)
+transactions = RedisTransactionStore(client, prefix="myapp-auth:")
+
+session_id = sessions.create(session_info, idle_ttl=timedelta(minutes=30))
+```
+
+### Supported storage
+
+Transactions, replay records and revoked `sid` values must be shared by every
+worker, so a store used by more than one process must be backed by shared
+storage whose operations above are atomic. The in-memory stores
+(`InMemoryTransactionStore`, `InMemorySessionStore`, `InMemoryReplayStore` and
+`InMemoryAuthorizationVersions`) are thread-safe but are not safe across
+processes; use them in tests and single-process development only. The Redis
+stores need Redis 6.2 or later (for `GETDEL`).
+
+Every Redis store takes a client and a key `prefix` (`"rn-forge-auth:"` by
+default). Expiries are whole seconds, rounded up, and at least one. A session
+is stored as JSON, and a missing, expired or rotated-away key reads as absent.
 
 ## Caching authorization contexts
 

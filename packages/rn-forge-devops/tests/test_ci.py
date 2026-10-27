@@ -73,6 +73,33 @@ def test_plan_omits_smoke_entries_of_unselected_packages(tmp_path: Path) -> None
     assert outputs["smoke"] == [{"name": "a", "extra": "", "marker": "a.smoke"}]
 
 
+def test_plan_lists_redis_runs_of_selected_packages(tmp_path: Path) -> None:
+    packages = _packages()
+    packages["app"].redis_env = "REDIS_URL"
+    outputs = plan(Workspace(root=tmp_path, packages=packages), "")
+    assert outputs["redis"] == [
+        {"name": "app", "dir": "packages/app", "env": "REDIS_URL"}
+    ]
+    assert outputs["postgres"] == []
+
+
+def test_checks_include_the_redis_marker_only_when_declared() -> None:
+    package = Package("app", "packages/app", "app")
+    assert {"kind": "redis", "marker": "app.redis"} not in package.checks()
+    package.redis_env = "REDIS_URL"
+    assert {"kind": "redis", "marker": "app.redis"} in package.checks()
+
+
+def test_missing_redis_marker_blocks_a_package(tmp_path: Path) -> None:
+    packages = _packages()
+    packages["base"].redis_env = "REDIS_URL"
+    for package in packages.values():
+        for check in package.checks():
+            if check["marker"] != "base.redis":
+                (tmp_path / check["marker"]).touch()
+    assert releasable(packages, tmp_path, ["base", "app"]) == ([], ["base", "app"])
+
+
 def test_checks_always_include_the_smoke_marker() -> None:
     package = Package("base", "packages/base", "base")
     assert {"kind": "smoke", "extra": "", "marker": "base.smoke"} in package.checks()

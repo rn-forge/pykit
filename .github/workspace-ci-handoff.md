@@ -60,6 +60,9 @@ e2e = ["-q", "-m", "e2e"]
 [tool.workspace-ci.postgres]
 env = "MYPKG_TEST_DATABASE_URL"              # receives postgresql://ci:ci@localhost:5432/ci
 
+[tool.workspace-ci.redis]
+env = "MYPKG_TEST_REDIS_URL"                 # receives redis://localhost:6379/0
+
 [tool.workspace-ci.smoke]                    # install from built wheels, one extra at a time
 setup = "tests/smoke_setup.py"               # optional; runs before the imports
 modules = ["my_pkg"]                         # imported in every smoke run
@@ -92,7 +95,7 @@ setting.
   `rn_forge.devops.ci`.
 - The docs job's step that copies package sites from `gh-pages` into the root
   site expects members under `packages/`.
-- The PostgreSQL service is `postgres:17`, and it is the only service supported.
+- The services are `postgres:17` and `redis:7`; no other is supported.
 
 ## Setting up a repository
 

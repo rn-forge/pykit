@@ -28,7 +28,8 @@ def _workspace(root: Path) -> None:
     _write(
         root / "pkgs/app/pyproject.toml",
         '[project]\nname = "App_X"\nversion = "1"\ndependencies = ["base>=1"]\n\n'
-        '[tool.workspace-ci.postgres]\nenv = "DSN"\n',
+        '[tool.workspace-ci.postgres]\nenv = "DSN"\n\n'
+        '[tool.workspace-ci.redis]\nenv = "URL"\n',
     )
 
 
@@ -49,6 +50,7 @@ def test_load_workspace_reads_members_and_settings(tmp_path: Path) -> None:
     app = workspace.packages["app-x"]
     assert (app.dir, app.module, app.requires) == ("pkgs/app", "app_x", {"base"})
     assert app.postgres_env == "DSN"
+    assert app.redis_env == "URL"
     assert workspace.pytest_args == ["-m", "not slow"]
 
 

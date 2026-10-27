@@ -1,4 +1,4 @@
-"""The auth facade must not load the OIDC adapter."""
+"""The auth facade must not load the adapters."""
 
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ import rn_forge.auth
 SCRIPT = """
 import sys
 import rn_forge.auth
-offenders = [n for n in ("rn_forge.auth.oidc", "jwt") if n in sys.modules]
+offenders = [n for n in ("rn_forge.auth.oidc", "rn_forge.auth.redis", "jwt") if n in sys.modules]
 print("\\n".join(offenders))
 """
 
 
-def test_facade_imports_no_oidc() -> None:
+def test_facade_imports_no_adapter_modules() -> None:
     result = subprocess.run(
         [sys.executable, "-c", SCRIPT], capture_output=True, text=True, check=True
     )
@@ -29,7 +29,7 @@ def test_core_modules_import_only_stdlib_and_rn_forge() -> None:
     core = Path(rn_forge.auth.__file__).parent
     offenders: dict[str, set[str]] = {}
     for path in core.glob("*.py"):
-        if path.stem == "oidc":
+        if path.stem in {"oidc", "redis"}:
             continue
         tree = ast.parse(path.read_text())
         roots = {

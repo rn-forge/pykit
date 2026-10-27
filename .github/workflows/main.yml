@@ -53,6 +53,7 @@ jobs:
       release-order: ${{ steps.plan.outputs.release-order }}
       packages: ${{ steps.plan.outputs.packages }}
       postgres: ${{ steps.plan.outputs.postgres }}
+      redis: ${{ steps.plan.outputs.redis }}
       smoke: ${{ steps.plan.outputs.smoke }}
       suites: ${{ steps.plan.outputs.suites }}
       pytest-args: ${{ steps.plan.outputs.pytest-args }}
@@ -159,6 +160,46 @@ jobs:
           path: ok/
           retention-days: 1
 
+  # For a package with `[tool.workspace-ci.redis]`: its tests again, with the
+  # URL in the environment variable it names.
+  redis:
+    name: redis (${{ matrix.name }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.redis != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.redis) }}
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      - name: pytest (Redis)
+        run: |
+          export ${{ matrix.env }}=redis://localhost:6379/0
+          uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync pytest ${{ needs.plan.outputs.pytest-args }}
+
+      - run: mkdir ok && touch "ok/${{ matrix.name }}.redis"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ok-${{ matrix.name }}.redis
+          path: ok/
+          retention-days: 1
+
   # Every other job syncs --all-extras, which hides an extra that forgets a
   # dependency another extra brings. Each extra is installed alone, from the
   # built wheel's metadata, into a clean venv and imported.
@@ -213,7 +254,7 @@ jobs:
   # here, prerequisites first. A failed check blocks its package and every
   # selected package that depends on it; the rest still release.
   release:
-    needs: [import-boundaries, plan, verify, postgres, smoke]
+    needs: [import-boundaries, plan, verify, postgres, redis, smoke]
     if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.release-order != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -274,7 +315,7 @@ jobs:
           done
 
   sonar:
-    needs: [plan, verify, postgres, smoke]
+    needs: [plan, verify, postgres, redis, smoke]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.plan.outputs.sonar == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -408,7 +449,7 @@ jobs:
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, internal-ranges, plan, verify, postgres, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

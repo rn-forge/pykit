@@ -94,6 +94,7 @@ def load_workspace(root: Path) -> Workspace:
             requires={r for r in map(requirement_name, requirements) if r in names}
             - {name},
             postgres_env=ci["postgres"]["env"] if "postgres" in ci else None,
+            redis_env=ci["redis"]["env"] if "redis" in ci else None,
             smoke=(
                 Smoke(
                     modules=smoke.get("modules", []),

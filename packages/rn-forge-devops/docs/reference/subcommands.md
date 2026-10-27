@@ -37,6 +37,7 @@ package.
 | `[tool.workspace-ci]` | root | `pytest-args` for package test runs. |
 | `[tool.workspace-ci.suites]` | root | A named workspace-wide pytest run per key, each its own job. |
 | `[tool.workspace-ci.postgres]` | package | `env`: the variable that receives a PostgreSQL DSN; the package's tests run again against a service container. |
+| `[tool.workspace-ci.redis]` | package | `env`: the variable that receives a Redis URL; the package's tests run again against a service container. |
 | `[tool.workspace-ci.smoke]` | package | Optional: a package without it is still smoke-tested with no extra, importing its own module. `modules` imported for every smoke run, an optional `setup` script run first, and `extras`: one smoke job per extra with its own modules. |
 | `[tool.workspace-ci]` | package | `adapters`: the names of the package's adapter modules. Each must be a module or subpackage of the package and have an extra of the same name; `adapters` checks it. |
 
@@ -58,6 +59,7 @@ every workspace member, whatever the change.
 | `release-order` | List of package names. | Selected |
 | `packages` | List of rows `{name, dir}`. | Selected |
 | `postgres` | List of rows `{name, dir, env}`, one per package that declares a PostgreSQL run. `env` is the variable that receives the DSN. | Selected |
+| `redis` | List of rows `{name, dir, env}`, one per package that declares a Redis run. `env` is the variable that receives the URL. | Selected |
 | `smoke` | List of rows `{name, extra, marker}`, one per smoke check. `extra` is empty for the run with no extra. `marker` is the file name a passing check leaves for `releasable`. | Selected |
 | `suites` | List of rows `{name, args}`, one per `[tool.workspace-ci.suites]` key. `args` is a shell-quoted string. | Every suite |
 | `pytest-args` | Shell-quoted string of the root `pytest-args`; empty if none. | Workspace |

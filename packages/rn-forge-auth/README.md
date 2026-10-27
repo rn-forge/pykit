@@ -8,7 +8,8 @@
 
 Authentication primitives for Python programming, built on `rn-forge-web`. The
 base install carries no third-party dependencies; the `oidc` extra adds
-`pyjwt[crypto]` and `authlib` for the OIDC adapter.
+`pyjwt[crypto]` and `authlib` for the OIDC adapter, and the `redis` extra adds
+`redis` for the Redis stores.
 
 - `rn_forge.auth` — the core: `Principal`, `Requirement`, `Authenticator`,
   `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer` and
@@ -17,3 +18,6 @@ base install carries no third-party dependencies; the `oidc` extra adds
   and logout-token verifiers (`JwtVerifier`, `IdTokenVerifier`,
   `LogoutTokenVerifier`), behind the `oidc` extra. The core
   never imports it; `.importlinter` proves that.
+- `rn_forge.auth.redis` — `RedisTransactionStore`, `RedisSessionStore`,
+  `RedisReplayStore` and `RedisAuthorizationVersions`, behind the `redis` extra.
+  The core never imports it either.

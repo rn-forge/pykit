@@ -1,6 +1,7 @@
 """Authentication primitives.
 
-The OIDC adapter, :mod:`rn_forge.auth.oidc`, needs the ``oidc`` extra and is
+The OIDC adapter, :mod:`rn_forge.auth.oidc`, and the Redis adapter,
+:mod:`rn_forge.auth.redis`, need the ``oidc`` and ``redis`` extras and are
 imported directly.
 """
 
@@ -40,7 +41,14 @@ from rn_forge.auth.principal import (
 )
 from rn_forge.auth.redirects import InvalidReturnTo, validate_return_to
 from rn_forge.auth.session_body import CALLBACK_ERRORS, CallbackError, SessionBody
-from rn_forge.auth.stores import InMemoryReplayStore, ReplayStore
+from rn_forge.auth.stores import (
+    InMemoryReplayStore,
+    InMemorySessionStore,
+    InMemoryTransactionStore,
+    ReplayStore,
+    SessionStore,
+    TransactionStore,
+)
 
 __all__ = [
     "CALLBACK_ERRORS",
@@ -60,6 +68,8 @@ __all__ = [
     "IdentityProvider",
     "InMemoryAuthorizationVersions",
     "InMemoryReplayStore",
+    "InMemorySessionStore",
+    "InMemoryTransactionStore",
     "InvalidReturnTo",
     "LoginStart",
     "LoginTransaction",
@@ -72,6 +82,8 @@ __all__ = [
     "ScopeAuthorizer",
     "SessionBody",
     "SessionInfo",
+    "SessionStore",
+    "TransactionStore",
     "effective_permissions",
     "principal_from_claims",
     "requirement_for",

@@ -926,6 +926,14 @@ In-memory stores, and Django's local-memory cache, are not safe across
 processes. They serve tests and single-process development only, and the
 bindings refuse them outside debug mode.
 
+The protocols are `TransactionStore` (`save`, atomic `consume`), `SessionStore`
+(`create` returns the new ID; `get` does not extend the idle timeout; `touch`
+extends it up to `expires_at`; `delete`; `rotate` returns a new ID and removes
+the old record) and `ReplayStore`. The Redis stores take a client and a key
+prefix, and use `SET EX`, `GETDEL`, `SET NX EX`, `EXISTS`, `EXPIRE` and, for
+`AuthorizationVersions`, `INCR` and `MGET`. The version and revoked-`sid` checks
+belong to the bindings, not to the stores.
+
 ## Authorization model
 
 - **Permissions are the unit of enforcement.** Keys are dotted, lowercase and

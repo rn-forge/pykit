@@ -56,8 +56,9 @@ nav:
       - Authorization context: reference/context.md
       - Authorization context cache: reference/context_cache.md
       - Resource policy: reference/policy.md
-      - Replay and revocation stores: reference/stores.md
+      - Session, transaction and replay stores: reference/stores.md
       - Return target: reference/redirects.md
       - Session body: reference/session_body.md
       - OIDC: reference/oidc.md
+      - Redis: reference/redis.md
   - Changelog: changelog.md

@@ -35,6 +35,11 @@ Notable changes to `rn-forge-auth`, newest first, in the
   single-use `jti`.
 - `ReplayStore` and `InMemoryReplayStore`, the single-use and revoked-`sid`
   records.
+- `TransactionStore` and `SessionStore`, with `InMemoryTransactionStore` and
+  `InMemorySessionStore`, which are not safe across processes.
+- The `redis` extra and the `rn_forge.auth.redis` adapter:
+  `RedisTransactionStore`, `RedisSessionStore`, `RedisReplayStore` and
+  `RedisAuthorizationVersions`.
 - `JwtVerifier` and `OidcAuthenticator` take `mode` (`"rfc9068"` or
   `"rfc7519"`) and `login_client_id`; the latter is refused as an audience
   outside RFC 9068 mode.

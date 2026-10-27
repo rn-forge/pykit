@@ -57,6 +57,8 @@ class Package:
         requires: Names of the workspace members this package requires.
         postgres_env: Variable that receives a PostgreSQL DSN, or `None` when the
             package needs no database run.
+        redis_env: Variable that receives a Redis URL, or `None` when the package
+            needs no Redis run.
         smoke: The smoke-test declaration, or `None` when the package declares none.
         adapters: Names of the package's adapters, or `None` when it declares none.
     """
@@ -66,6 +68,7 @@ class Package:
     module: str
     requires: set[str] = field(default_factory=lambda: set[str]())
     postgres_env: str | None = None
+    redis_env: str | None = None
     smoke: Smoke | None = None
     adapters: list[str] | None = None
 
@@ -77,6 +80,8 @@ class Package:
         checks = [{"kind": "verify", "marker": f"{self.name}.verify"}]
         if self.postgres_env is not None:
             checks.append({"kind": "postgres", "marker": f"{self.name}.postgres"})
+        if self.redis_env is not None:
+            checks.append({"kind": "redis", "marker": f"{self.name}.redis"})
         checks.append({"kind": "smoke", "extra": "", "marker": f"{self.name}.smoke"})
         if self.smoke is not None:
             checks += [
@@ -189,7 +194,7 @@ def plan(workspace: Workspace, base: str) -> dict[str, object]:
     """Return every job's matrix and package list for a run against `base`.
 
     Command-line values are shell-quoted strings. The keys are `release-order`,
-    `packages`, `postgres`, `smoke`, `suites`, `pytest-args`, `cov-args`,
+    `packages`, `postgres`, `redis`, `smoke`, `suites`, `pytest-args`, `cov-args`,
     `test-paths`, `sonar-sources`, `sonar-tests`, `sonar` and `docs`.
     """
     packages, root = workspace.packages, workspace.root
@@ -203,6 +208,11 @@ def plan(workspace: Workspace, base: str) -> dict[str, object]:
             {"name": p.name, "dir": p.dir, "env": p.postgres_env}
             for p in chosen
             if p.postgres_env is not None
+        ],
+        "redis": [
+            {"name": p.name, "dir": p.dir, "env": p.redis_env}
+            for p in chosen
+            if p.redis_env is not None
         ],
         "smoke": [
             {"name": p.name, "extra": c["extra"], "marker": c["marker"]}
