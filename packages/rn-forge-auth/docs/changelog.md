@@ -1,0 +1,1 @@
+--8<-- "packages/rn-forge-auth/CHANGELOG.md"

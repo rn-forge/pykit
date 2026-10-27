@@ -64,6 +64,7 @@ known-third-party = ["django", "fastapi", "sqlalchemy"]
 extend-immutable-calls = ["fastapi.Body", "fastapi.Depends", "fastapi.Query", "fastapi.Security"]
 
 [tool.uv.sources]
+rn-forge-auth = { workspace = true }
 rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-data = { workspace = true }
@@ -76,6 +77,7 @@ rn-forge-web = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+  "packages/rn-forge-auth",
   "packages/rn-forge-cli",
   "packages/rn-forge-commons",
   "packages/rn-forge-data",
@@ -89,6 +91,7 @@ members = [
 
 [dependency-groups]
 workspace = [
+  "rn-forge-auth[oidc]",
   "rn-forge-cli",
   "rn-forge-commons[all]",
   "rn-forge-devops",

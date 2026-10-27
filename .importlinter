@@ -1,6 +1,6 @@
 # Executable import boundaries for the pykit workspace (kiln ADR-0003).
 #
-# Nine rules, all of which a reader of the dependency graph would otherwise
+# Ten rules, all of which a reader of the dependency graph would otherwise
 # have to take on trust:
 #
 #   1. commons never reaches into cli or tooling and never imports Typer.
@@ -27,6 +27,8 @@
 #   9. `rn_forge.data` is a sibling of web over commons, and its core never
 #      imports the `rn_forge.data.pandas` adapter (ADR-0011). The contract
 #      names the core module, not the package that contains the adapter.
+#  10. `rn_forge.auth` layers over web, and its core never imports the
+#      `rn_forge.auth.oidc` adapter (ADR-0011).
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
 # would satisfy a caller and reverse the dependency.
@@ -44,6 +46,7 @@ root_packages =
     rn_forge.sqlalchemy
     rn_forge.devops
     rn_forge.data
+    rn_forge.auth
 include_external_packages = True
 
 [importlinter:contract:commons-is-runtime-neutral]
@@ -156,13 +159,14 @@ forbidden_modules =
     rn_forge.tooling
 
 [importlinter:contract:web-layers]
-name = django, fastapi and sqlalchemy depend on web and data, which depend on commons, never the other way round
+name = django, fastapi and sqlalchemy depend on auth, auth on web, web and data on commons, never the other way round
 type = layers
 # The `:` makes django, fastapi and sqlalchemy independent siblings at one
 # layer: none may import another. web and data are likewise independent
-# siblings over commons.
+# siblings over commons; auth sits between them and web.
 layers =
     rn_forge.django : rn_forge.fastapi : rn_forge.sqlalchemy
+    rn_forge.auth
     rn_forge.web : rn_forge.data
     rn_forge.commons
 
@@ -224,3 +228,11 @@ source_modules =
     rn_forge.data.excel
 forbidden_modules =
     rn_forge.data.pandas
+
+[importlinter:contract:auth-core-has-no-adapter]
+name = rn_forge.auth's core never imports the OIDC adapter
+type = forbidden
+source_modules =
+    rn_forge.auth
+forbidden_modules =
+    rn_forge.auth.oidc

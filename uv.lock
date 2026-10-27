@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "pykit",
+    "rn-forge-auth",
     "rn-forge-cli",
     "rn-forge-commons",
     "rn-forge-data",
@@ -1629,6 +1630,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-django" },
     { name = "pytest-randomly" },
+    { name = "rn-forge-auth", extra = ["oidc"] },
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all"] },
     { name = "rn-forge-data", extra = ["pandas"] },
@@ -1652,6 +1654,7 @@ docs = [
     { name = "mkdocstrings", extra = ["python"] },
 ]
 workspace = [
+    { name = "rn-forge-auth", extra = ["oidc"] },
     { name = "rn-forge-cli" },
     { name = "rn-forge-commons", extra = ["all"] },
     { name = "rn-forge-devops" },
@@ -1690,6 +1693,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-django", specifier = ">=4.12.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
+    { name = "rn-forge-auth", extras = ["oidc"], editable = "packages/rn-forge-auth" },
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-data", extras = ["pandas"], editable = "packages/rn-forge-data" },
@@ -1713,6 +1717,7 @@ docs = [
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
 ]
 workspace = [
+    { name = "rn-forge-auth", extras = ["oidc"], editable = "packages/rn-forge-auth" },
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
@@ -1957,6 +1962,60 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c0/8f/0722ca900cc807c13a6a0c696dacf35430f72e0ec571c4275d2371fca3e9/rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36", size = 230680, upload-time = "2026-04-12T08:24:00.75Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl", hash = "sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb", size = 310654, upload-time = "2026-04-12T08:24:02.83Z" },
+]
+
+[[package]]
+name = "rn-forge-auth"
+version = "0.1.0"
+source = { editable = "packages/rn-forge-auth" }
+dependencies = [
+    { name = "rn-forge-web" },
+]
+
+[package.optional-dependencies]
+oidc = [
+    { name = "pyjwt", extra = ["crypto"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "assertpy" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-randomly" },
+    { name = "rn-forge-auth", extra = ["oidc"] },
+    { name = "ruff" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "rn-forge-auth", extra = ["oidc"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'oidc'", specifier = ">=2.15.0" },
+    { name = "rn-forge-web", editable = "packages/rn-forge-web" },
+]
+provides-extras = ["oidc"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "assertpy", specifier = ">=1.1" },
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-randomly", specifier = ">=4.1.0" },
+    { name = "rn-forge-auth", extras = ["oidc"], editable = "packages/rn-forge-auth" },
+    { name = "ruff", specifier = ">=0.15.21" },
+]
+docs = [
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-material", specifier = ">=9.7.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "rn-forge-auth", extras = ["oidc"], editable = "packages/rn-forge-auth" },
 ]
 
 [[package]]

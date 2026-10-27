@@ -1,0 +1,61 @@
+[project]
+name = "rn-forge-auth"
+version = "0.1.0"
+description = "Authentication primitives for Python programming"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+requires-python = ">=3.14"
+# Internal requirements are version ranges (ADR-0004).
+dependencies = [
+  "rn-forge-web>=0.2.1,<0.3",
+]
+
+[project.optional-dependencies]
+oidc = ["pyjwt[crypto]>=2.15.0"]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-auth"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-auth/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.auth"
+
+[tool.uv.sources]
+rn-forge-auth = { workspace = true }
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+
+[tool.workspace-ci]
+adapters = ["oidc"]
+
+[tool.workspace-ci.smoke]
+modules = ["rn_forge.auth"]
+
+[tool.workspace-ci.smoke.extras]
+oidc = ["rn_forge.auth.oidc"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-auth[oidc]",
+  "ruff>=0.15.21",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-auth[oidc]",
+]
