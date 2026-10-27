@@ -38,6 +38,7 @@ from rn_forge.auth.principal import (
     Requirement,
     principal_from_claims,
 )
+from rn_forge.auth.stores import InMemoryReplayStore, ReplayStore
 
 __all__ = [
     "DEFAULT_PERMISSION_ACTION_MAP",
@@ -54,11 +55,13 @@ __all__ = [
     "ExternalIdentity",
     "IdentityProvider",
     "InMemoryAuthorizationVersions",
+    "InMemoryReplayStore",
     "LoginStart",
     "LoginTransaction",
     "Mechanism",
     "Principal",
     "ProviderKind",
+    "ReplayStore",
     "Requirement",
     "ResourcePolicy",
     "ScopeAuthorizer",

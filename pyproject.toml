@@ -134,4 +134,5 @@ dev = [
   "pytest-randomly>=4.1.0",
   "rn-forge-data[pandas]",
   "ruff>=0.17.1",
+  "types-authlib>=1.8.0",
 ]

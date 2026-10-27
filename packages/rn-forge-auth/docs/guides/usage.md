@@ -3,7 +3,7 @@
 The package has one core and one adapter. `rn_forge.auth` holds the contracts
 and needs no third-party package. `rn_forge.auth.oidc` verifies OIDC bearer
 tokens and imports the core; the core never imports it. The `oidc` extra
-installs `pyjwt[crypto]` for the adapter, and the `rn_forge.auth` facade does
+installs `pyjwt[crypto]` and `authlib` for the adapter, and the `rn_forge.auth` facade does
 not re-export the adapter.
 
 ## Installing
@@ -176,6 +176,43 @@ without `exp` is rejected rather than treated as non-expiring. The `algorithms`
 list, `("RS256",)` by default, is an allow-list: a token whose header names
 another algorithm, including `none`, is rejected. The header must carry a `kid`.
 `leeway` tolerates clock skew, in seconds, on `exp`, `nbf` and `iat`.
+
+### Token profiles
+
+An identity provider issues several kinds of JWT, and each has its own verifier
+used at exactly one place. A token valid under one is never accepted by another.
+
+| Verifier | Used at | Accepts |
+| -- | -- | -- |
+| `JwtVerifier` | Bearer authentication on API routes | An access token. |
+| `IdTokenVerifier` | The OIDC callback | An ID token for your login client, checked against the nonce you sent. |
+| `LogoutTokenVerifier` | The back-channel logout endpoint | A logout token, accepted once. |
+
+`JwtVerifier` takes `mode`. With `"rfc7519"` (the default) it accepts a `typ`
+of `JWT` or none, requires `iss`, `aud` and `exp`, and validates `sub`, `nbf`
+and `iat` when present. With `"rfc9068"` it accepts only `typ` `at+jwt` or
+`application/at+jwt` and requires `iss`, `exp`, `aud`, `sub`, `client_id`,
+`iat` and `jti`. In both modes it rejects any token that carries `nonce` or
+`events`, which an ID token and a logout token do.
+
+Pass your OIDC login client ID as `login_client_id`. An API audience equal to
+it is refused with `ValueError` unless `mode="rfc9068"`, because otherwise an ID
+token issued to your login client would pass as an access token.
+
+`IdTokenVerifier.verify(token, nonce=..., access_token=...)` checks signature,
+`iss`, `aud`, `azp`, `exp`, `iat`, `nonce` and, when an access token is given,
+`at_hash`. With `max_age` set, `auth_time` is required and must be no older
+than that many seconds.
+
+`LogoutTokenVerifier` needs a `ReplayStore`, such as `InMemoryReplayStore`
+(one process only). It requires the back-channel logout event, a `sid` or
+`sub`, no `nonce`, an `iat` no older than `max_age_seconds` (120 by default),
+and a `jti` it has not accepted before. The `jti` is stored under
+`"{iss}|{jti}"` until the token expires, and only once every other check has
+passed.
+
+All three build with `from_issuer` or `from_jwks_url`, and all refuse a key-set
+URL that is not HTTPS.
 
 ### The key-set cache
 

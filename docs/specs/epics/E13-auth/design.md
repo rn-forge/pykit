@@ -807,6 +807,21 @@ Configuration refuses an API audience equal to the OIDC login client ID unless
 the provider is in RFC 9068 mode, because otherwise an ID token would pass the
 access-token profile.
 
+Decisions the code settles, in `rn_forge.auth.oidc`:
+
+- The access-token profile is `JwtVerifier`, with `mode` (`TokenMode`:
+  `"rfc9068"` or `"rfc7519"`, default `"rfc7519"`) and `login_client_id`. The
+  audience refusal is a `ValueError` at construction, a configuration error
+  and not a `TokenVerificationError`.
+- `IdTokenVerifier.verify(token, *, nonce, access_token=None)` hands the
+  `PyJWKClient` key to joserfc (Authlib's JOSE layer, avoiding the deprecated
+  `authlib.jose`) and runs `CodeIDToken` on the result. An empty expected nonce
+  is refused because Authlib skips the check for one. `auth_time` is required
+  and bounded when `max_age` is set.
+- `LogoutTokenVerifier` records `jti` in a `ReplayStore` (`rn_forge.auth`) under
+  `"{iss}|{jti}"` until `exp` (at least one second), only after every other
+  check has passed. `iat` may be at most 120 seconds old by default.
+
 ## Sessions and cookies
 
 ```mermaid

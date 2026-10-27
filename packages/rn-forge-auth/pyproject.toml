@@ -12,8 +12,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# `OidcAuthenticator` verifies tokens with PyJWT, keys from its `PyJWKClient`.
+# Bearer and logout tokens are verified with PyJWT, keys from its `PyJWKClient`;
+# ID tokens with Authlib's core over joserfc.
 oidc = [
+  "authlib>=1.9.1",
+  "joserfc>=1.7.7",
   "pyjwt[crypto]>=2.15.0",
 ]
 
@@ -57,6 +60,7 @@ dev = [
   "pytest-randomly>=4.1.0",
   "rn-forge-auth[oidc]",
   "ruff>=0.15.21",
+  "types-authlib>=1.8.0",
 ]
 docs = [
   "mkdocs>=1.6.1",

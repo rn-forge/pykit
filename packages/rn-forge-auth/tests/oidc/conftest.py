@@ -94,6 +94,20 @@ class FakeIdP:
         signing_key = key if key is not None else self.private_keys[kid]
         return jwt.encode(payload, signing_key, algorithm="RS256", headers={"kid": kid})
 
+    def sign(
+        self,
+        claims: dict[str, Any],
+        *,
+        typ: str | None = "JWT",
+        kid: str = "k1",
+        key: Any = None,
+    ) -> str:
+        """A token with exactly *claims* (``None`` values omitted) and header *typ*."""
+        payload = {name: value for name, value in claims.items() if value is not None}
+        headers: dict[str, Any] = {"kid": kid, "typ": typ}
+        signing_key = key if key is not None else self.private_keys[kid]
+        return jwt.encode(payload, signing_key, algorithm="RS256", headers=headers)
+
     def close(self) -> None:
         self._server.shutdown()
         self._server.server_close()

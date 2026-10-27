@@ -26,9 +26,21 @@ Notable changes to `rn-forge-auth`, newest first, in the
   by account and authorization version with a TTL, with
   `AuthorizationVersions`, `InMemoryAuthorizationVersions` and
   `AccountStateWriter`.
+- `IdTokenVerifier`, the ID-token profile, which runs Authlib's `CodeIDToken`
+  and checks `auth_time` against `max_age`, and `LogoutTokenVerifier`, the
+  back-channel logout-token profile, which checks `typ`, the `iat` window and a
+  single-use `jti`.
+- `ReplayStore` and `InMemoryReplayStore`, the single-use and revoked-`sid`
+  records.
+- `JwtVerifier` and `OidcAuthenticator` take `mode` (`"rfc9068"` or
+  `"rfc7519"`) and `login_client_id`; the latter is refused as an audience
+  outside RFC 9068 mode.
 
 ### Changed
 
+- Breaking: `JwtVerifier` rejects a token carrying `nonce` or `events`, and
+  enforces `typ`: `JWT` or none by default, `at+jwt` in RFC 9068 mode.
+- The `oidc` extra adds `authlib>=1.9.1` and `joserfc>=1.7.7`.
 - Breaking: `Principal` gains `external_subject`, `permissions`, `attributes`,
   `auth_time` and `amr`, and `mechanism` is the `Mechanism` literal
   (`"session"`, `"bearer"` or `"basic"`) instead of `str`.
