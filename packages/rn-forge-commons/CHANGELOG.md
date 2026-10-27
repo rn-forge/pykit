@@ -5,6 +5,11 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Security
+
+- The `auth` extra requires PyJWT 2.15.0 or later, which fixes the 2026 PyJWT
+  advisories.
+
 ## [0.7.0] - 2026-10-25
 
 ### Added
