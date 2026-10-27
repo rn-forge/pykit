@@ -62,8 +62,9 @@ and every package is published to PyPI
 1. **F16.3** once kiln's release-1 tags exist. It cuts pykit over onto kiln,
    with `rn-forge-devops` 0.2.0 (Release 5) and Release 6's tags already
    published.
-1. **F13.2** after F16.3 and F13.1. The package joins the kiln-managed workspace
-   F16.3 sets up.
+1. **F13.2** after F13.1, without waiting for F16.3 (owner decision,
+   2026-10-27). Whichever of F13.2 and F16.3 lands second adds `rn-forge-auth`
+   to the kiln config.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
 1. **F13.1's remaining stories.** S13.1.2 (the ADRs) and S13.1.3 (the library
@@ -92,6 +93,7 @@ and every package is published to PyPI
   package takes at least a patch bump so it is published to PyPI with complete
   metadata, and publishing is built in `main.yml` before the cutover
   ([E21](../../specs/epics/E21-pypi-distribution/index.md#context)).
+- Owner decision, 2026-10-27: F13.2 does not wait for the kiln cutover (F16.3).
 
 ## Breaking changes
 
@@ -121,8 +123,9 @@ Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
 version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
 done: the design is settled, ADR-0006 is revised, ADR-0013 and ADR-0014 are
 accepted, the library evaluation is recorded, and F13.3 to F13.7 have stories on
-this release. F13.2 waits for F16.3. S21.1.2's owner steps are under way: the
-GitHub environments exist; the PyPI pending publishers are not yet added.
+this release. F13.2 can start; it no longer waits for F16.3. S21.1.2's owner
+steps are under way: the GitHub environments exist; the PyPI pending publishers
+are not yet added.
 
 ## Commits
 
