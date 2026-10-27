@@ -7,6 +7,9 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Added
 
+- `validate_return_to` and `InvalidReturnTo`, which accept only a relative path
+  under configured prefixes; `SessionBody`, the camelCase `/auth/session`
+  body; and `CallbackError`, the closed list of callback error codes.
 - The `rn-forge-auth` package scaffold: the `rn_forge.auth` core and the
   `oidc` extra for the `rn_forge.auth.oidc` adapter.
 - `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`,

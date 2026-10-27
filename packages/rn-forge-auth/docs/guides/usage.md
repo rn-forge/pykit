@@ -273,6 +273,34 @@ The default `InMemoryAuthorizationVersions` is not shared across processes, so
 with several workers a bump reaches only the worker that made it and the others
 rely on the TTL. A shared `AuthorizationVersions` implementation fixes that.
 
+## Return targets, the session body and callback errors
+
+`validate_return_to` accepts a `return_to` only when it is a relative path under
+one of the configured prefixes, matched on whole segments:
+
+```python
+from rn_forge.auth import InvalidReturnTo, validate_return_to
+
+try:
+    target = validate_return_to(raw, prefixes=["/app"])
+except InvalidReturnTo:
+    target = "/app"
+```
+
+It rejects absolute and scheme-relative URLs, backslashes, control characters,
+percent-encoded slashes, backslashes and dots in the path, `..` segments and
+paths outside the prefixes. A query string and fragment may follow the path.
+The caller falls back to a default on `InvalidReturnTo`.
+
+`SessionBody.build(session, context, name=..., email=..., picture=...)` makes
+the `/auth/session` body; `subject` is the internal account ID. `to_json()`
+returns camelCase keys, RFC 3339 UTC timestamps, sorted `roles`, `permissions`
+and `amr`, and leaves out absent optional fields. The keys of `attributes` are
+converted from snake_case to camelCase at every depth.
+
+`CallbackError` is the closed list of codes a failed callback sends to the error
+route: `access_denied`, `account_not_provisioned` and `login_failed`.
+
 ## With rn-forge-web and the framework packages
 
 `rn-forge-web` owns the wire contract that surrounds these types:

@@ -501,7 +501,9 @@ conventions:
 
 `subject` is the internal account ID, never the IdP's `sub`. `name`, `email`,
 `picture`, `attributes`, `authTime` and `amr` are optional. `attributes` is
-application-defined, holds only what the UI needs, and uses camelCase keys.
+application-defined, holds only what the UI needs, and uses camelCase keys;
+`SessionBody.to_json` also converts snake_case attribute keys to camelCase at
+every depth, so either spelling arrives as camelCase.
 `expiresAt` is the absolute timeout.
 
 A `403` whose problem type is `csrf-failed` is a CSRF rejection, not a
@@ -513,6 +515,10 @@ defaults to `/auth/error`, with one code from a closed list: `access_denied`,
 expired transaction). The client adds `session_not_established` itself
 ([ngkit client contract](#ngkit-client-contract)). Details go to the log, never
 into the URL.
+
+`return_to` validation raises `InvalidReturnTo`; the caller falls back to a
+default target. It rejects percent-encoded `/`, `\` and `.` in the path, and
+C0, DEL and C1 control characters. The codes are the `CallbackError` literal.
 
 A `401` from a route that accepts bearer tokens carries the existing `Bearer`
 challenge. A session-only route (`/auth/*`) sends no `WWW-Authenticate`, a
