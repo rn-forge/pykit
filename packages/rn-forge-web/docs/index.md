@@ -44,8 +44,9 @@ docstring. Those calls are the substance; the code is small.
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi
+commons ──► web ──► auth ──► django
+              │        └───► fastapi
+              └───► sqlalchemy
 ```
 
 It depends on `rn-forge-commons` and nothing else in the workspace, and it

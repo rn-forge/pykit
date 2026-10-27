@@ -1969,6 +1969,7 @@ name = "rn-forge-auth"
 version = "0.1.0"
 source = { editable = "packages/rn-forge-auth" }
 dependencies = [
+    { name = "rn-forge-commons" },
     { name = "rn-forge-web" },
 ]
 
@@ -1997,6 +1998,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'oidc'", specifier = ">=2.15.0" },
+    { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
 ]
 provides-extras = ["oidc"]

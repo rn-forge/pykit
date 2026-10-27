@@ -29,6 +29,7 @@ plugins:
             - packages/rn-forge-devops/src
             - packages/rn-forge-data/src
             - packages/rn-forge-web/src
+            - packages/rn-forge-auth/src
           options:
             docstring_style: auto
             heading_level: 2
@@ -62,6 +63,7 @@ nav:
       - rn-forge-sqlalchemy: '!include packages/rn-forge-sqlalchemy/mkdocs.yml'
       - rn-forge-tooling: '!include packages/rn-forge-tooling/mkdocs.yml'
       - rn-forge-web: '!include packages/rn-forge-web/mkdocs.yml'
+      - rn-forge-auth: '!include packages/rn-forge-auth/mkdocs.yml'
       - rn-forge-devops: '!include packages/rn-forge-devops/mkdocs.yml'
       - rn-forge-data: '!include packages/rn-forge-data/mkdocs.yml'
   - Architecture:

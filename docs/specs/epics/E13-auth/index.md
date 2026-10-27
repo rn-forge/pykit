@@ -23,7 +23,7 @@ work, tracked in ngkit's own epic against the same design.
 | Feature | Scope | State |
 | -- | -- | -- |
 | [F13.1 — Auth design](F13.1-auth-design.md) | Settle the design, evaluate the libraries and record the decisions. | Active |
-| [F13.2 — rn-forge-auth package](F13.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | Active |
+| [F13.2 — rn-forge-auth package](F13.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | Closed |
 | [F13.3 — Core contracts and token profiles](F13.3-core-contracts.md) | The neutral contracts, the three token profiles, the stores and the offline fake IdPs. | New |
 | [F13.4 — Protocol adapters](F13.4-protocol-adapters.md) | OIDC and OAuth 2.0, local-password and development logins. | New |
 | [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | New |

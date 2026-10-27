@@ -7,6 +7,7 @@ authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 dependencies = [
+  "rn-forge-commons>=0.7.0,<0.8",
   "rn-forge-web>=0.2.1,<0.3",
 ]
 

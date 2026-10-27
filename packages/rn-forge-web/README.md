@@ -20,8 +20,9 @@ semantics.
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi
+commons ──► web ──► auth ──► django
+              │        └───► fastapi
+              └───► sqlalchemy
 ```
 
 `rn-forge-web` depends on **`rn-forge-commons` and nothing else in the

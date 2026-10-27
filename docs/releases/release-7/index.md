@@ -35,7 +35,7 @@ and every package is published to PyPI
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | Active |
-| [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | Active |
+| [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | Closed |
 | [F13.3](../../specs/epics/E13-auth/F13.3-core-contracts.md) | E13 | New |
 | [F13.4](../../specs/epics/E13-auth/F13.4-protocol-adapters.md) | E13 | New |
 | [F13.5](../../specs/epics/E13-auth/F13.5-django-binding.md) | E13 | New |
