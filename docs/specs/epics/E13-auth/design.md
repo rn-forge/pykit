@@ -703,6 +703,15 @@ session fetch, and until then any action it still offers fails safely with
 `403`. A time-to-live (TTL) on cache entries bounds staleness when a change
 bypasses the invalidation hook, for example a direct database edit.
 
+The cache (`AuthorizationContextCache`) keeps one entry per account, stamped
+with the `(account version, global version)` it was computed at. An
+`AuthorizationVersions` protocol (`current`, `bump`, `bump_all`) holds the
+counters; `InMemoryAuthorizationVersions` is process-local and a shared
+implementation comes with the Redis stores. An `AccountStateWriter` the
+application implements (`set_active`, `bump_session_version`) lets the cache
+persist `active` and the session version and bump the account's version in one
+call; without a writer those calls raise `RuntimeError`.
+
 ### Logout
 
 ```mermaid

@@ -210,6 +210,32 @@ mismatch. The reason is for logs. `OidcAuthenticator` re-raises it as
 body must never repeat it: a 401 body is `AUTH_FAILED_DETAIL`, so a caller
 cannot tell which check failed.
 
+## Caching authorization contexts
+
+`AuthorizationContextCache` wraps an `AuthorizationContextProvider` so a request
+does not recompute the account's permissions every time. It keeps one entry per
+account in process memory and serves it while the account's authorization
+version and the global version are unchanged and the entry is younger than the
+TTL (60 seconds by default).
+
+```python
+cache = AuthorizationContextCache(provider, ttl=timedelta(seconds=30), writer=writer)
+
+cache.invalidate("acct-1")   # one account's permissions changed
+cache.invalidate_all()       # a role definition or an import changed many
+cache.set_active("acct-1", False)          # writer, then invalidate
+new_version = cache.bump_session_version("acct-1")
+```
+
+Use `set_active` and `bump_session_version` for the two values that revoke
+access, so no cached context outlives the change; they need an
+`AccountStateWriter` that the application implements. A change made behind the
+cache's back, such as a direct database edit, applies once the TTL passes.
+
+The default `InMemoryAuthorizationVersions` is not shared across processes, so
+with several workers a bump reaches only the worker that made it and the others
+rely on the TTL. A shared `AuthorizationVersions` implementation fixes that.
+
 ## With rn-forge-web and the framework packages
 
 `rn-forge-web` owns the wire contract that surrounds these types:

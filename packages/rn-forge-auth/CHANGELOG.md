@@ -22,6 +22,10 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `AuthorizationContextProvider` and `ResourcePolicy`.
 - `requirement_for`, `effective_permissions` and `Mechanism`.
   `DEFAULT_PERMISSION_ACTION_MAP`, moved from `rn-forge-django`.
+- `AuthorizationContextCache`, which caches an `AuthorizationContextProvider`
+  by account and authorization version with a TTL, with
+  `AuthorizationVersions`, `InMemoryAuthorizationVersions` and
+  `AccountStateWriter`.
 
 ### Changed
 

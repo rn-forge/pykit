@@ -12,6 +12,12 @@ from rn_forge.auth.authorization import (
     ScopeAuthorizer,
 )
 from rn_forge.auth.context import AuthorizationContext, AuthorizationContextProvider
+from rn_forge.auth.context_cache import (
+    AccountStateWriter,
+    AuthorizationContextCache,
+    AuthorizationVersions,
+    InMemoryAuthorizationVersions,
+)
 from rn_forge.auth.identity import (
     ExternalIdentity,
     IdentityProvider,
@@ -37,13 +43,17 @@ __all__ = [
     "DEFAULT_PERMISSION_ACTION_MAP",
     "AccountRejected",
     "AccountResolver",
+    "AccountStateWriter",
     "AsyncAuthenticator",
     "Authenticator",
     "AuthorizationContext",
+    "AuthorizationContextCache",
     "AuthorizationContextProvider",
+    "AuthorizationVersions",
     "Authorizer",
     "ExternalIdentity",
     "IdentityProvider",
+    "InMemoryAuthorizationVersions",
     "LoginStart",
     "LoginTransaction",
     "Mechanism",
