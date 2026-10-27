@@ -20,10 +20,21 @@ from rn_forge.auth.identity import (
     ProviderKind,
     SessionInfo,
 )
+from rn_forge.auth.permissions import (
+    DEFAULT_PERMISSION_ACTION_MAP,
+    effective_permissions,
+    requirement_for,
+)
 from rn_forge.auth.policy import ResourcePolicy
-from rn_forge.auth.principal import Principal, Requirement, principal_from_claims
+from rn_forge.auth.principal import (
+    Mechanism,
+    Principal,
+    Requirement,
+    principal_from_claims,
+)
 
 __all__ = [
+    "DEFAULT_PERMISSION_ACTION_MAP",
     "AccountRejected",
     "AccountResolver",
     "AsyncAuthenticator",
@@ -35,11 +46,14 @@ __all__ = [
     "IdentityProvider",
     "LoginStart",
     "LoginTransaction",
+    "Mechanism",
     "Principal",
     "ProviderKind",
     "Requirement",
     "ResourcePolicy",
     "ScopeAuthorizer",
     "SessionInfo",
+    "effective_permissions",
     "principal_from_claims",
+    "requirement_for",
 ]

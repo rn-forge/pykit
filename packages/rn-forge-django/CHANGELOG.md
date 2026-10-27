@@ -7,6 +7,8 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Changed
 
+- Breaking: `DEFAULT_PERMISSION_ACTION_MAP` moved from
+  `rn_forge.django.auth.drf.mixins` to `rn_forge.auth`.
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`
   and the authenticator contracts from it. The `oidc` extra names
   `rn-forge-auth[oidc]` instead of `rn-forge-web[auth]`.

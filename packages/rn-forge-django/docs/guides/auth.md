@@ -84,7 +84,7 @@ class OrderViewSet(AuthorizationViewMixin, BaseModelViewSet):
 `permission_key` is combined with the current action (`list`, `retrieve`,
 `create`, `export`, ...) through a permission-action map to build the final key
 checked against `credentials.has_permission(...)` — e.g. `app.order.read` for
-`retrieve`. The default map lives in `DEFAULT_PERMISSION_ACTION_MAP`; override
+`retrieve`. The default map lives in `rn_forge.auth.DEFAULT_PERMISSION_ACTION_MAP`; override
 per-request-app defaults via
 `RN_FORGE_DJANGO["DRF"]["VIEWS"]["PERMISSION_ACTION_MAP"]` or per-view via
 `permission_action_map`. Override `should_validate_object_permissions()` /

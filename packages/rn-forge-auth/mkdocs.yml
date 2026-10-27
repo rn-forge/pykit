@@ -49,6 +49,7 @@ nav:
   - Reference:
       - reference/index.md
       - Principal: reference/principal.md
+      - Permissions: reference/permissions.md
       - Authorization: reference/authorization.md
       - Identity: reference/identity.md
       - Accounts: reference/accounts.md

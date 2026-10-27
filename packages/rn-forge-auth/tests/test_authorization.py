@@ -9,7 +9,10 @@ from rn_forge.web import PermissionDenied
 pytestmark = pytest.mark.unit
 
 READER = Principal(
-    subject="u1", scopes=frozenset({"read", "list"}), roles=frozenset({"staff"})
+    subject="u1",
+    scopes=frozenset({"read", "list"}),
+    permissions=frozenset({"orders.read"}),
+    roles=frozenset({"staff"}),
 )
 
 
@@ -37,7 +40,7 @@ def test_a_scope_miss_raises_permission_denied_not_authentication_failed():
 def test_the_authorizer_is_silent_when_no_log_is_injected():
     """A library that logs where the consumer did not ask is worse than one that does not."""
     authorizer = ScopeAuthorizer()
-    requirement = Requirement(all_roles=frozenset({"admin"}))
+    requirement = Requirement(all_permissions=frozenset({"orders.update"}))
     with pytest.raises(PermissionDenied):
         authorizer.authorize(READER, requires=requirement)
 
@@ -45,7 +48,7 @@ def test_the_authorizer_is_silent_when_no_log_is_injected():
 def test_the_injected_log_receives_the_refusal():
     seen: list[tuple[str, dict]] = []
     authorizer = ScopeAuthorizer(log=lambda msg, ctx: seen.append((msg, dict(ctx))))
-    requirement = Requirement(all_roles=frozenset({"admin"}))
+    requirement = Requirement(all_permissions=frozenset({"orders.update"}))
     with pytest.raises(PermissionDenied):
         authorizer.authorize(READER, requires=requirement)
     assert_that(seen).is_length(1)

@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any, ClassVar, cast
 
 from rest_framework.request import Request
+from rn_forge.auth import DEFAULT_PERMISSION_ACTION_MAP
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django.auth.credentials import BaseCredentials
@@ -21,18 +22,6 @@ __all__ = [
 ]
 
 _LOGGER = AppLogger.get_logger(__name__)
-DEFAULT_PERMISSION_ACTION_MAP: Mapping[str, str] = {
-    "list": "list",
-    "retrieve": "read",
-    "create": "create",
-    "update": "update",
-    "partial_update": "update",
-    "destroy": "delete",
-    "batch_create": "create",
-    "batch_delete": "delete",
-    "import_items": "upload",
-    "import_template": "upload",
-}
 
 
 def _get_permission_action_map(view_map: Mapping[str, str]) -> Mapping[str, str]:

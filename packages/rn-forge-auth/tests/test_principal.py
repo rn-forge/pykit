@@ -1,5 +1,7 @@
 """Tests for rn_forge.auth.principal."""
 
+from datetime import datetime, timezone
+
 import pytest
 from assertpy import assert_that
 
@@ -28,6 +30,11 @@ def test_principal_round_trips_through_the_dataclass_mixin():
         tenant="t1",
         claims={"email": "u@example.com"},
         mechanism="bearer",
+        external_subject="ext-1",
+        permissions=frozenset({"orders.read"}),
+        attributes={"org": "o1"},
+        auth_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        amr=frozenset({"pwd"}),
     )
     restored = Principal.from_dict(principal.as_dict())
     assert_that(restored).is_equal_to(principal)
@@ -45,7 +52,9 @@ def test_scopes_and_roles_are_separate():
 
 
 READER = Principal(
-    subject="u1", scopes=frozenset({"read", "list"}), roles=frozenset({"staff"})
+    subject="u1",
+    scopes=frozenset({"read", "list"}),
+    permissions=frozenset({"orders.read", "orders.list"}),
 )
 
 
@@ -61,19 +70,34 @@ def test_an_empty_requirement_means_authenticated_not_denied():
         (Requirement(any_scope=frozenset({"write"})), False),
         (Requirement(all_scopes=frozenset({"read", "list"})), True),
         (Requirement(all_scopes=frozenset({"read", "write"})), False),
-        (Requirement(any_role=frozenset({"staff"})), True),
-        (Requirement(any_role=frozenset({"admin"})), False),
-        (Requirement(all_roles=frozenset({"staff"})), True),
-        (Requirement(all_roles=frozenset({"staff", "admin"})), False),
+        (Requirement(any_permission=frozenset({"orders.read", "x.y"})), True),
+        (Requirement(any_permission=frozenset({"orders.update"})), False),
+        (Requirement(all_permissions=frozenset({"orders.read", "orders.list"})), True),
+        (Requirement(all_permissions=frozenset({"orders.read", "x.y"})), False),
     ],
 )
-def test_each_of_the_four_set_forms(requirement, expected):
+def test_each_of_the_set_forms(requirement, expected):
     assert_that(requirement.is_satisfied_by(READER)).is_equal_to(expected)
 
 
 def test_the_clauses_are_anded_together():
-    both = Requirement(all_scopes=frozenset({"read"}), all_roles=frozenset({"admin"}))
+    both = Requirement(
+        all_scopes=frozenset({"read"}), all_permissions=frozenset({"orders.update"})
+    )
     assert_that(both.is_satisfied_by(READER)).is_false()
+
+
+def test_scope_clauses_only_narrow_access():
+    requirement = Requirement(
+        all_permissions=frozenset({"orders.read"}), all_scopes=frozenset({"write"})
+    )
+    assert_that(requirement.is_satisfied_by(READER)).is_false()
+
+
+def test_roles_do_not_satisfy_permission_clauses():
+    admin = Principal(subject="u1", roles=frozenset({"orders.update"}))
+    requirement = Requirement(all_permissions=frozenset({"orders.update"}))
+    assert_that(requirement.is_satisfied_by(admin)).is_false()
 
 
 # --- principal_from_claims ------------------------------------------------
@@ -94,6 +118,7 @@ def test_entra_shaped_claims():
         frozenset({"orders.read", "orders.write"})
     )
     assert_that(principal.roles).is_equal_to(frozenset({"Reader", "Approver"}))
+    assert_that(principal.permissions).is_empty()
     assert_that(principal.tenant).is_equal_to("t")
     assert_that(dict(principal.claims)).is_equal_to(claims)
     assert_that(principal.mechanism).is_equal_to("bearer")

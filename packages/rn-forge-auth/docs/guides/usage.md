@@ -23,8 +23,12 @@ Importing `rn_forge.auth.oidc` without the extra fails with
 ## Principal and Requirement
 
 `Principal` is the verified caller, a frozen dataclass. `subject` is the only
-required field; `issuer`, `scopes`, `roles` and `tenant` are optional,
-`mechanism` defaults to `"bearer"`, and `claims` keeps every verified claim.
+required field. `permissions` holds the effective permissions, `scopes` the
+token's delegated scopes (empty for a session), and `roles`, `tenant` and
+`attributes` the application's authorization data. `mechanism` is `"session"`,
+`"bearer"` or `"basic"` and defaults to `"bearer"`; `claims` keeps every
+verified claim; `external_subject`, `auth_time` and `amr` record how the caller
+authenticated.
 
 `Requirement` is a declarative access check with four frozen sets. The sets are
 ANDed together; the members of an `any_*` set are ORed:
@@ -33,11 +37,12 @@ ANDed together; the members of an `any_*` set are ORed:
 | -- | -- |
 | `any_scope` | empty, or the principal holds at least one of them |
 | `all_scopes` | the principal holds every one of them |
-| `any_role` | empty, or the principal holds at least one of them |
-| `all_roles` | the principal holds every one of them |
+| `any_permission` | empty, or the principal's permissions include at least one of them |
+| `all_permissions` | the principal's permissions include every one of them |
 
 An empty `Requirement()` is satisfied by any principal: it means
-"authenticated", not "denied".
+"authenticated", not "denied". Routes require permissions, never roles; the
+scope clauses can only narrow access further.
 
 ```python
 from rn_forge.auth import Principal, Requirement
@@ -45,6 +50,30 @@ from rn_forge.auth import Principal, Requirement
 requirement = Requirement(any_scope=frozenset({"orders:read", "orders:admin"}))
 caller = Principal(subject="u-1", scopes=frozenset({"orders:read"}))
 requirement.is_satisfied_by(caller)  # True
+```
+
+### Permissions and the scope limit
+
+`requirement_for` builds the requirement for a resource key and an action:
+`requirement_for("orders", "partial_update")` requires `orders.update`.
+`DEFAULT_PERMISSION_ACTION_MAP` maps the action names; an `action_map` argument
+overrides entries of it, and an action named by neither map is used as is.
+
+A token's scopes limit, and never grant, permissions. `effective_permissions`
+returns a session or basic caller's account permissions unchanged, and for a
+bearer caller keeps only the permissions that its scopes allow through your
+scope map. A scope the map does not name allows nothing.
+
+```python
+from rn_forge.auth import effective_permissions, requirement_for
+
+permissions = effective_permissions(
+    frozenset({"orders.read", "orders.update"}),
+    mechanism="bearer",
+    scopes=frozenset({"orders:read"}),
+    scope_map={"orders:read": frozenset({"orders.list", "orders.read"})},
+)  # frozenset({"orders.read"})
+requirement_for("orders", "partial_update")  # needs orders.update: denied
 ```
 
 ## Authenticators and authorizers

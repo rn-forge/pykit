@@ -20,9 +20,16 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `IdentityProvider`, `ProviderKind`, `LoginStart`, `LoginTransaction`,
   `SessionInfo`, `AccountResolver`, `AccountRejected`, `AuthorizationContext`,
   `AuthorizationContextProvider` and `ResourcePolicy`.
+- `requirement_for`, `effective_permissions` and `Mechanism`.
+  `DEFAULT_PERMISSION_ACTION_MAP`, moved from `rn-forge-django`.
 
 ### Changed
 
+- Breaking: `Principal` gains `external_subject`, `permissions`, `attributes`,
+  `auth_time` and `amr`, and `mechanism` is the `Mechanism` literal
+  (`"session"`, `"bearer"` or `"basic"`) instead of `str`.
+- Breaking: `Requirement` gains `any_permission` and `all_permissions`, checked
+  against `Principal.permissions`, and loses `any_role` and `all_roles`.
 - `JwtVerifier` takes its keys from PyJWT's `PyJWKClient`, replacing
   `JwksCache`. `from_issuer` and `from_jwks_url` take `lifespan` (default 300
   seconds) and `cooldown_duration` (default 30 seconds) in place of `max_age`,

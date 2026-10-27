@@ -369,8 +369,13 @@ change as follows. Each field keeps one provenance:
   display hint. The scope clauses stay for a route that must name a scope
   directly; they can only narrow access further.
 - The action-to-key mapping (`orders` + `partial_update` → `orders.update`),
-  currently in the Django mixins, becomes a neutral helper that builds a
-  `Requirement`. Both frameworks can then use it.
+  formerly in the Django mixins, is the neutral helper
+  `requirement_for(permission_key, action, *, action_map=None)` in
+  `rn_forge.auth.permissions`, beside `DEFAULT_PERMISSION_ACTION_MAP`; an
+  explicit `action_map` merges over the default. Both frameworks use it.
+- The scope limit is `effective_permissions(permissions, *, mechanism, scopes,
+  scope_map)`: session and basic callers keep their account's permissions, and
+  a bearer caller gets the intersection with the permissions its scopes map to.
 
 ## Libraries
 

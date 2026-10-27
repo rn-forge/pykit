@@ -6,29 +6,55 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, cast
+from datetime import datetime
+from typing import Any, Literal, cast
 
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.web.exceptions import AuthenticationFailed
 
-__all__ = ["Principal", "Requirement", "principal_from_claims"]
+__all__ = ["Mechanism", "Principal", "Requirement", "principal_from_claims"]
+
+Mechanism = Literal["session", "bearer", "basic"]
 
 
 @dataclass(frozen=True)
 class Principal(DataclassMixin):
     """The verified caller.
 
-    ``subject`` is the only required field. ``claims`` retains verified values
-    not represented by the common fields.
+    ``subject`` is the only required field.
+
+    Attributes:
+        subject: The internal account or service-account ID.
+        issuer: The issuer of the external identity that authenticated, from
+            the session metadata or the verified token.
+        external_subject: The external identity's subject, from the same source.
+        scopes: Delegated scopes from the verified token; empty for a session.
+        permissions: Effective permissions: the authorization context's, limited
+            by scopes for a bearer caller (see :func:`effective_permissions`).
+        roles: Role names from the authorization context.
+        tenant: The tenant, from the authorization context.
+        attributes: Inputs to attribute-based rules, from the authorization
+            context.
+        claims: Verified token claims, retained for the application's own use;
+            empty for a session.
+        mechanism: How the caller authenticated, set by the authenticator.
+        auth_time: When the caller authenticated, from the session metadata or
+            the verified token.
+        amr: Authentication methods used, from the same source.
     """
 
     subject: str
     issuer: str | None = None
+    external_subject: str | None = None
     scopes: frozenset[str] = frozenset()
+    permissions: frozenset[str] = frozenset()
     roles: frozenset[str] = frozenset()
     tenant: str | None = None
+    attributes: Mapping[str, Any] = field(default_factory=dict[str, Any])
     claims: Mapping[str, Any] = field(default_factory=dict[str, Any])
-    mechanism: str = "bearer"
+    mechanism: Mechanism = "bearer"
+    auth_time: datetime | None = None
+    amr: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -36,14 +62,16 @@ class Requirement:
     """A declarative access requirement, evaluated identically by both frameworks.
 
     All four sets are ANDed together; within ``any_*`` the members are ORed.
-    An empty requirement is satisfied by any principal — it means
-    "authenticated", not "denied".
+    Permission clauses are checked against :attr:`Principal.permissions` and
+    scope clauses against :attr:`Principal.scopes`; scope clauses can only
+    narrow access further. An empty requirement is satisfied by any principal:
+    it means "authenticated", not "denied".
     """
 
     any_scope: frozenset[str] = frozenset()
     all_scopes: frozenset[str] = frozenset()
-    any_role: frozenset[str] = frozenset()
-    all_roles: frozenset[str] = frozenset()
+    any_permission: frozenset[str] = frozenset()
+    all_permissions: frozenset[str] = frozenset()
 
     def is_satisfied_by(self, principal: Principal) -> bool:
         """Return whether *principal* meets every clause of this requirement."""
@@ -51,13 +79,13 @@ class Requirement:
             return False
         if not self.all_scopes <= principal.scopes:
             return False
-        if self.any_role and not (self.any_role & principal.roles):
+        if self.any_permission and not (self.any_permission & principal.permissions):
             return False
-        return self.all_roles <= principal.roles
+        return self.all_permissions <= principal.permissions
 
 
 def principal_from_claims(
-    claims: Mapping[str, Any], *, mechanism: str = "bearer"
+    claims: Mapping[str, Any], *, mechanism: Mechanism = "bearer"
 ) -> Principal:
     """The default mapping from verified token claims to a :class:`Principal`.
 
