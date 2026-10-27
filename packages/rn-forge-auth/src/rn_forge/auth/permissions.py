@@ -58,10 +58,10 @@ def effective_permissions(
 ) -> frozenset[str]:
     """The permissions a caller may exercise, after the scope limit.
 
-    A ``session`` or ``basic`` caller acts with its account's credentials, so
-    *permissions* are returned unchanged. A ``bearer`` caller is limited to the
-    permissions that its *scopes* allow through *scope_map*; a scope absent from
-    the map allows nothing, and scopes never add permissions the account lacks.
+    A ``session`` or ``basic`` caller keeps *permissions* unchanged. A
+    ``bearer`` caller keeps only the permissions that its *scopes* allow through
+    *scope_map*; a scope absent from the map allows nothing, and scopes never
+    add permissions the account lacks.
 
     Args:
         permissions: The account's permissions.

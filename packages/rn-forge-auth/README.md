@@ -6,20 +6,14 @@
 · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-auth) ·
 [All pykit packages](https://rn-forge.github.io/pykit/)
 
-Authentication primitives for Python programming, built on `rn-forge-web`. The
-base install carries no third-party dependencies; the `oidc` extra adds
-`pyjwt[crypto]` and `authlib` for the OIDC adapter, and the `redis` extra adds
-`redis` for the Redis stores.
+Authentication and authorization primitives for Python programming, built on
+`rn-forge-web`. The base install carries no third-party dependencies.
 
-- `rn_forge.auth` — the core: `Principal`, `Requirement`, `Authenticator`,
-  `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer` and
-  `principal_from_claims`. The facade re-exports the core only.
-- `rn_forge.auth.oidc` — `OidcAuthenticator` and the access-token, ID-token
-  and logout-token verifiers (`JwtVerifier`, `IdTokenVerifier`,
-  `LogoutTokenVerifier`), behind the `oidc` extra. The core
-  never imports it; `.importlinter` proves that.
-- `rn_forge.auth.redis` — `RedisTransactionStore`, `RedisSessionStore`,
-  `RedisReplayStore` and `RedisAuthorizationVersions`, behind the `redis` extra.
-  The core never imports it either.
-- `rn_forge.auth.testing` — `FakeOidcProvider`, an offline OIDC provider for
-  tests, behind the `oidc` extra. The core never imports it.
+| Module | Extra | Holds |
+| -- | -- | -- |
+| `rn_forge.auth` | none | The core: the identity, account-resolution and authorization-context contracts, `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer`, `principal_from_claims`, permissions and the scope limit, `AuthorizationContextCache`, `ResourcePolicy`, the transaction, session and replay stores (in memory), `validate_return_to` and `SessionBody`. The facade re-exports the core only. |
+| `rn_forge.auth.oidc` | `oidc` (`pyjwt[crypto]`, `authlib`, `joserfc`) | `OidcAuthenticator` and the access-token, ID-token and logout-token verifiers (`JwtVerifier`, `IdTokenVerifier`, `LogoutTokenVerifier`). The core never imports it; `.importlinter` proves that. |
+| `rn_forge.auth.redis` | `redis` | `RedisTransactionStore`, `RedisSessionStore`, `RedisReplayStore` and `RedisAuthorizationVersions`. The core never imports it either. |
+| `rn_forge.auth.testing` | `oidc` | `FakeOidcProvider` and `Faults`, an offline OIDC provider for tests. The core never imports it. |
+
+Start with the [guides](https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/guides/usage.html).

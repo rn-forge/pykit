@@ -59,7 +59,7 @@ class Principal(DataclassMixin):
 
 @dataclass(frozen=True)
 class Requirement:
-    """A declarative access requirement, evaluated identically by both frameworks.
+    """A declarative access requirement.
 
     All four sets are ANDed together; within ``any_*`` the members are ORed.
     Permission clauses are checked against :attr:`Principal.permissions` and
@@ -89,7 +89,7 @@ def principal_from_claims(
 ) -> Principal:
     """The default mapping from verified token claims to a :class:`Principal`.
 
-    Claims are read as the common IdPs issue them:
+    Claims are read as follows:
 
     | Principal | Claim |
     | --- | --- |
@@ -99,9 +99,8 @@ def principal_from_claims(
     | `roles` | `roles` (a list) |
     | `tenant` | `tid` |
 
-    Any other shape — a nested ``realm_access.roles``, a custom group claim —
-    is deployment-specific: override the mapping and read
-    :attr:`Principal.claims`, which retains every verified claim.
+    Any other claim is left in :attr:`Principal.claims`, which retains every
+    verified claim.
 
     Args:
         claims: Claims already verified by the caller.

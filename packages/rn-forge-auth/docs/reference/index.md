@@ -1,8 +1,23 @@
 # Reference
 
-The API reference is generated from source docstrings with `mkdocstrings`:
-[Principal](principal.md), [Authorization](authorization.md),
-[Identity](identity.md), [Accounts](accounts.md),
-[Authorization context](context.md) and [Resource policy](policy.md) and [Session, transaction and replay stores](stores.md),
-[Return target](redirects.md) and [Session body](session_body.md), the core,
-and [OIDC](oidc.md), [Redis](redis.md) and [Testing](testing.md), the adapters.
+The API reference is generated from source docstrings with `mkdocstrings`.
+
+The core, `rn_forge.auth`:
+
+- [Principal](principal.md)
+- [Permissions](permissions.md)
+- [Authorization](authorization.md)
+- [Identity](identity.md)
+- [Accounts](accounts.md)
+- [Authorization context](context.md)
+- [Authorization context cache](context_cache.md)
+- [Resource policy](policy.md)
+- [Session, transaction and replay stores](stores.md)
+- [Return target](redirects.md)
+- [Session body](session_body.md)
+
+The adapters, each imported directly:
+
+- [OIDC](oidc.md), `rn_forge.auth.oidc`, behind the `oidc` extra
+- [Redis](redis.md), `rn_forge.auth.redis`, behind the `redis` extra
+- [Testing](testing.md), `rn_forge.auth.testing`, behind the `oidc` extra

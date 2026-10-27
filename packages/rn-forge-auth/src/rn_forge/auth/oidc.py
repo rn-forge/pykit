@@ -109,9 +109,8 @@ class OidcConfiguration:
 def discover_oidc(issuer: str, *, fetch: FetchJson = fetch_json) -> OidcConfiguration:
     """Read *issuer*'s ``/.well-known/openid-configuration``.
 
-    RFC 8414 §3.3: the document's ``issuer`` must be the issuer it was fetched
-    for. A mismatch is an error, not a warning — accepting it lets one tenant's
-    configuration vouch for another's tokens.
+    Per RFC 8414 §3.3, the document's ``issuer`` must equal the issuer it was
+    fetched for; a mismatch is an error.
 
     Raises:
         TokenVerificationError: The document is unreachable, lacks ``issuer`` or
@@ -187,8 +186,7 @@ class JwtVerifier:
 
     Raises:
         ValueError: *login_client_id* is one of the accepted audiences and
-            *mode* is not ``"rfc9068"``; an ID token for that client would
-            otherwise pass as an access token.
+            *mode* is not ``"rfc9068"``.
     """
 
     def __init__(
@@ -728,19 +726,17 @@ type ClaimsToPrincipal = Callable[[Mapping[str, Any]], Principal]
 class OidcAuthenticator:
     """An :class:`~rn_forge.auth.Authenticator` backed by a :class:`JwtVerifier`.
 
-    Build one at startup and reuse it: the verifier holds the JWKS cache, so a
-    per-request instance refetches the key set on every call.
+    The verifier holds the JWKS cache; build one authenticator and reuse it.
 
     The reason a token was rejected is carried on the raised
-    :class:`~rn_forge.web.exceptions.AuthenticationFailed` for the binding to
-    log. It never reaches the response body — both framework packages render a
-    401 with :data:`~rn_forge.web.AUTH_FAILED_DETAIL`.
+    :class:`~rn_forge.web.exceptions.AuthenticationFailed`, for logging. It is
+    not part of the 401 response body, which is
+    :data:`~rn_forge.web.AUTH_FAILED_DETAIL`.
 
     Args:
         verifier: Verifies the bearer token and returns its claims.
         claims_to_principal: Verified claims → principal. Defaults to
-            :func:`~rn_forge.auth.principal_from_claims`; override it for
-            an IdP whose roles or scopes sit somewhere non-standard.
+            :func:`~rn_forge.auth.principal_from_claims`.
     """
 
     def __init__(
@@ -769,7 +765,7 @@ class OidcAuthenticator:
     ) -> Self:
         """Build an authenticator by OIDC discovery on *issuer*.
 
-        Discovery runs once, here — so call this at startup, not per request.
+        Discovery runs once, here.
 
         Args:
             issuer: The IdP's issuer URL. Its
@@ -820,9 +816,6 @@ class OidcAuthenticator:
         login_client_id: str | None = None,
     ) -> Self:
         """Build an authenticator from a known JWKS URL, skipping discovery.
-
-        For an IdP that publishes no discovery document, or a deployment that
-        pins the key-set URL.
 
         Args:
             jwks_url: Where the key set is served.

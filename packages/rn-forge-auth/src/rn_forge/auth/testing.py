@@ -241,8 +241,6 @@ class FakeOidcProvider:
         self.end_session_endpoint = f"{self.issuer}/logout"
         self.publish(self._next_kid(), current=True)
 
-    # -- lifecycle ---------------------------------------------------------
-
     def start(self) -> Self:
         """Begin serving. Calling it again has no effect."""
         if self._thread is None:
@@ -270,8 +268,6 @@ class FakeOidcProvider:
         traceback: TracebackType | None,
     ) -> None:
         self.close()
-
-    # -- keys --------------------------------------------------------------
 
     @cached_property
     def forged_key(self) -> rsa.RSAPrivateKey:
@@ -310,8 +306,6 @@ class FakeOidcProvider:
             with self._lock:
                 self.keys.pop(old, None)
         return kid
-
-    # -- signing -----------------------------------------------------------
 
     def sign(
         self,
@@ -410,13 +404,9 @@ class FakeOidcProvider:
         }
         return self.sign({**payload, **claims}, typ="logout+jwt")
 
-    # -- request log -------------------------------------------------------
-
     def fetches(self, suffix: str) -> int:
         """How many requests had a path ending with *suffix*."""
         return sum(request.path.endswith(suffix) for request in self.requests)
-
-    # -- HTTP --------------------------------------------------------------
 
     def _handle(
         self,

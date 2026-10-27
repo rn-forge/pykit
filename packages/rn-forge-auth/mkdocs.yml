@@ -46,6 +46,10 @@ nav:
   - Guides:
       - guides/index.md
       - Authentication and authorization: guides/usage.md
+      - Contracts: guides/contracts.md
+      - Token profiles: guides/tokens.md
+      - Stores: guides/stores.md
+      - Testing: guides/testing.md
   - Reference:
       - reference/index.md
       - Principal: reference/principal.md
