@@ -133,9 +133,8 @@ sequenceDiagram
 - **Pitfalls:** XML signature wrapping (use a maintained library, require signed
   assertions, strict mode); trusting `RelayState` as a URL; linking on email
   instead of a persistent NameID; certificate rollover.
-- **Status:** Adapter, SP-initiated by default; IdP-initiated is opt-in per
-  provider. See
-  [SAML login](design.md#saml-login-sp-initiated-http-post-binding).
+- **Status:** Via broker. pykit speaks no SAML; see
+  [SAML identity providers](design.md#saml-identity-providers).
 
 ### The broker pattern
 
@@ -221,7 +220,7 @@ sequenceDiagram
 | -- | -- | -- | -- | -- |
 | OIDC code + PKCE | OIDC Core, RFC 6749, RFC 7636 | Signed identity, mature libraries | Needs an OIDC provider | Adapter |
 | OAuth 2.0 social login | RFC 6749 | Reaches providers without OIDC | Unsigned identity, email caveats | Adapter or broker |
-| SAML 2.0 | OASIS SAML 2.0 | Universal in enterprise | XML signature risks, no native mobile story | Adapter or broker |
+| SAML 2.0 | OASIS SAML 2.0 | Universal in enterprise | XML signature risks, no native mobile story | Via broker |
 | Broker | OIDC upstream, any downstream | One protocol in the app | A service to run | Recommended profile |
 | Local password | NIST 800-63B | No external dependency | Credential liability | Adapter, optional |
 | Passkey | WebAuthn | Phishing-resistant | Enrollment and recovery | Via broker |
@@ -341,7 +340,7 @@ Status: BFF is the design's choice; the other two are
 | Delete the server session | Ends local access at once | Does not end the IdP session | Adapter |
 | OIDC RP-initiated logout | The app redirects to the provider's end-session endpoint | The user may be signed out of other apps too | Adapter, optional per provider |
 | OIDC back-channel logout | The provider posts a signed `logout_token` carrying `sub` or `sid` | Needs the session store to be searchable by `sid` | Adapter |
-| SAML Single Logout | Logout request and response between SP and IdP | Unreliable across IdPs; local timeouts do the real work | Adapter, optional |
+| SAML Single Logout | Logout request and response between SP and IdP | Unreliable across IdPs; local timeouts do the real work | Via broker |
 | Token revocation ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)) | The client asks the authorization server to revoke a token | JWTs still verify locally until expiry | Via broker |
 
 ### Session and token comparison
@@ -438,7 +437,7 @@ request. A stale UI fails safely with 403, and the client refetches. Status:
 
 | Landscape | Authentication | Session and token | Authorization |
 | -- | -- | -- | -- |
-| Internal tool behind corporate SSO | OIDC (or SAML) direct to the corporate IdP | Server session cookie | RBAC from IdP groups mapped to roles, plus a few resource rules |
+| Internal tool behind corporate SSO | OIDC direct to the corporate IdP, or SAML through a broker | Server session cookie | RBAC from IdP groups mapped to roles, plus a few resource rules |
 | B2C app with social login | OIDC and OAuth 2.0 social, optional passkeys through a broker; no local passwords if avoidable | Server session cookie | RBAC for staff; ownership rules through `ResourcePolicy` for user data |
 | B2B multi-tenant SaaS, per-customer SAML or OIDC | Broker that holds each customer's connection; link on (issuer, subject) | Server session for the web UI; bearer tokens for the customers' API clients | Tenant as an attribute, enforced in `ResourcePolicy.scope`; RBAC within a tenant |
 | API-only service for machine clients | Client credentials or `private_key_jwt` at a broker | JWT access tokens (RFC 9068), short-lived; opaque with introspection when immediate revocation matters | Scopes as the ceiling; service-account roles |
@@ -473,12 +472,12 @@ configuration.
 
 | Catalog entry | Position in design.md |
 | -- | -- |
-| OIDC, SAML, OAuth 2.0 social, local, development providers | Adapters behind `IdentityProvider` ([Contracts](design.md#contracts)) |
+| OIDC, OAuth 2.0 social, local, development providers | Adapters behind `IdentityProvider` ([Contracts](design.md#contracts)); SAML through a broker ([SAML identity providers](design.md#saml-identity-providers)) |
 | Broker | Recommended profile, with direct federation as first-class ([Deployment profiles](design.md#deployment-profiles)) |
 | Account linking | On (issuer, subject); email only when verified and authoritative ([Account linking](design.md#account-linking)) |
 | Browser carriage | BFF with a server session ([Sessions and cookies](design.md#sessions-and-cookies)) |
 | Machine carriage | Bearer JWTs from an authorization server, verified by `OidcAuthenticator`; pykit never mints tokens ([Machine clients](design.md#machine-clients-and-downstream-services)) |
-| Logout | RP-initiated, back-channel and optional SAML SLO ([Logout](design.md#logout)) |
+| Logout | RP-initiated and back-channel ([Logout](design.md#logout)) |
 | Authorization | Permissions as the unit, RBAC with ABAC through `ResourcePolicy`, computed per request ([Authorization model](design.md#authorization-model)) |
 | Passkeys, magic links, API keys, opaque tokens, refresh tokens, DPoP, ReBAC, policy engines | Positions in [Goals and non-goals](design.md#goals-and-non-goals), [Machine clients](design.md#machine-clients-and-downstream-services) and [Authorization model](design.md#authorization-model) |
 | The three-layer split | [Layers](design.md#layers) |

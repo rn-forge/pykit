@@ -71,9 +71,9 @@ and every package is published to PyPI
    evaluation) are independent; S13.1.4 writes the stories of F13.3 to F13.7
    once both close, and sets their `Iteration` to this release.
 1. **F13.3 to F13.7** after F13.2, in order: F13.3 (core contracts, token
-   profiles, stores and fake IdPs), F13.4 (protocol adapters over Authlib's
-   core and python3-saml), then F13.5 (Django) and F13.6 (FastAPI), which may
-   run in parallel, then F13.7 (legacy removal).
+   profiles, stores and the fake IdP), F13.4 (protocol adapters over Authlib's
+   core), then F13.5 (Django) and F13.6 (FastAPI), which may run in parallel,
+   then F13.7 (legacy removal).
 1. **F21.1 and F21.2 any time.** F21.1's owner steps (S21.1.2) come shortly
    before F21.3's TestPyPI dry run, because a pending PyPI publisher does not
    reserve a name.
@@ -94,11 +94,13 @@ and every package is published to PyPI
   metadata, and publishing is built in `main.yml` before the cutover
   ([E21](../../specs/epics/E21-pypi-distribution/index.md#context)).
 - Owner decision, 2026-10-27: F13.2 does not wait for the kiln cutover (F16.3).
+- Owner decision, 2026-10-27: pykit drops direct SAML; a SAML IdP federates
+  through a broker (S13.1.5).
 
 ## Breaking changes
 
-- New package `rn-forge-auth` at 0.1.0, with `oidc`, `saml` and `redis` extras
-  (F13.2, F13.3, F13.4).
+- New package `rn-forge-auth` at 0.1.0, with `oidc` and `redis` extras (F13.2,
+  F13.3, F13.4).
 - `rn-forge-commons` loses its `auth` extra and the code behind it; `JwksCache`
   is deleted in favour of PyJWT's `PyJWKClient` (F13.2).
 - `rn-forge-web` loses the auth types it holds, `rn_forge.web.oidc` and its
@@ -114,8 +116,8 @@ and every package is published to PyPI
 - `rn-forge-fastapi` gains a `redis` extra (F13.6).
 - `rn-forge-django` loses its `jwt` extra and simplejwt, the locally issued JWT
   flows, `BaseCredentials`, `LoginPayload`, the `auth.basic` and `auth.saml`
-  views, `SampleSAMLLoginAPIView` and the authorization mixins; its `saml`
-  extra depends on `rn-forge-auth[saml]` (F13.7).
+  views, `SampleSAMLLoginAPIView` and the authorization mixins, and its `saml`
+  extra and python3-saml: a SAML IdP connects through a broker (F13.7).
 
 ## Progress
 

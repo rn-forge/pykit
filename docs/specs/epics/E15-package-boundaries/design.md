@@ -94,7 +94,7 @@ Every package that integrates with external systems takes one shape.
 
 | Package | Core | Adapters (extra) |
 | -- | -- | -- |
-| `rn-forge-auth` | `Principal`, `Requirement`, the authentication and authorization protocols, the session store protocol, an in-memory store | `oidc` (PyJWT now; Authlib arrives with E13), later `saml` (python3-saml) and `redis` (a session store) |
+| `rn-forge-auth` | `Principal`, `Requirement`, the authentication and authorization protocols, the session store protocol, an in-memory store | `oidc` (PyJWT now; Authlib arrives with E13), later `redis` (a session store) |
 | `rn-forge-data` | Workbook and row types, validation, `ColumnType` conversion | `pandas` |
 | A future messaging core | Outbox and inbox store protocols, the relay and consumer loops | `django` and `sqlalchemy` stores |
 
@@ -134,14 +134,14 @@ flowchart BT
   CLI["rn-forge-cli"] --> CO
   TO["rn-forge-tooling"] --> CLI
   WE["rn-forge-web<br/>HTTP wire contract only"] --> CO
-  AU["rn-forge-auth (new)<br/>tokens · Principal · adapters<br/>extras: oidc saml redis"] --> WE
+  AU["rn-forge-auth (new)<br/>tokens · Principal · adapters<br/>extras: oidc redis"] --> WE
   DA["rn-forge-data (new)<br/>Excel · pandas · workbook-to-rows"] --> CO
   SA["rn-forge-sqlalchemy"] --> WE
   FA["rn-forge-fastapi"] --> WE
   FA -.->|"[auth]"| AU
   FA -.->|"[transfer]"| DA
   DJ["rn-forge-django"] --> WE
-  DJ -.->|"[auth] [saml]"| AU
+  DJ -.->|"[auth]"| AU
   DJ -.->|"[transfer] [fixtures]"| DA
 ```
 
