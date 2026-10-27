@@ -21,17 +21,17 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 | `openapi` | `FastApiApp.openapi()` repairs the cached document — adds `ProblemDetail` and the problem responses it can actually produce, accuracy only; `operation_id` — the shared `operationId` convention |
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
-| `auth` | `bearer_auth`, `basic_auth`, `requires` — `Security` dependencies over the web auth contract |
+| `auth` | `bearer_auth`, `basic_auth`, `requires` — `Security` dependencies over the `rn-forge-auth` contracts |
 | `app` | `FastApiApp(config)` — a `FastAPI` subclass with the standard adapters installed |
 
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi      (this package)
+commons ──► web ──► auth ──► django
+                          └───► fastapi      (this package)
 ```
 
-`rn-forge-fastapi` depends on `rn-forge-web` and FastAPI. It never imports
+`rn-forge-fastapi` depends on `rn-forge-web`, `rn-forge-auth` and FastAPI. It never imports
 `rn_forge.django` — the two framework packages are independent siblings — nor
 `rn_forge.cli` or `rn_forge.tooling`. `.importlinter` carries the
 `fastapi-runtime-has-no-tooling` and `web-layers` contracts, and
@@ -79,9 +79,9 @@ local checkout, for local development only.
   way it reaches any other response: `render_problem` reads it from the active
   span, and `ServerErrorMiddleware` sits inside the instrumentation's span,
   not outside it.
-- **A token verifier.** The auth binding takes any `rn_forge.web.Authenticator`;
+- **A token verifier.** The auth binding takes any `rn_forge.auth.Authenticator`;
   verifying a JWT against a JWKS is that authenticator's job. For OIDC that
-  authenticator already exists — `rn_forge.web.oidc.OidcAuthenticator`, via
+  authenticator already exists — `rn_forge.auth.oidc.OidcAuthenticator`, via
   this package's `oidc` extra — and is shared with `rn-forge-django` so both
   stacks accept the same tokens. Nothing here wraps it; pass it to
   `bearer_auth`.
@@ -91,6 +91,10 @@ local checkout, for local development only.
 **`rn-forge-web`** — every module adapts one of its primitives.
 `rn-forge-commons` is not declared: nothing here imports it directly, and it
 arrives through `rn-forge-web`.
+
+**`rn-forge-auth`** — a base dependency: the `auth` module is built on its
+`Principal`, `Requirement` and authenticator contracts. Its OIDC adapter comes
+with this package's `oidc` extra.
 
 **`fastapi`** (`>=0.141.1`) — a hard dependency, not an extra. It is used as
 documented, not abstracted away — an application keeps `APIRouter`, `Depends`,

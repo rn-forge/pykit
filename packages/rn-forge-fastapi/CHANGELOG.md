@@ -5,6 +5,12 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`
+  and the authenticator contracts from it. The `oidc` extra names
+  `rn-forge-auth[oidc]` instead of `rn-forge-web[auth]`.
+
 ## [0.3.2] - 2026-10-25
 
 ### Changed

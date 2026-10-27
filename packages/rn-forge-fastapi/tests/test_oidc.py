@@ -1,7 +1,7 @@
 """`OidcAuthenticator` driven through `bearer_auth()`. No test calls a real IdP.
 
 The point of these cases is that this package writes no OIDC glue of its own:
-the authenticator is `rn_forge.web.oidc`'s, so the token accepted here is the
+the authenticator is `rn_forge.auth.oidc`'s, so the token accepted here is the
 token `rn-forge-django`'s `JWKSBearerAuthentication` accepts.
 """
 
@@ -23,12 +23,11 @@ from rn_forge.fastapi import (  # noqa: E402
     register_problem_handlers,
     requires,
 )
+from rn_forge.auth import Principal, Requirement  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     AUTH_FAILED_DETAIL,
-    Principal,
-    Requirement,
 )
-from rn_forge.web.oidc import OidcAuthenticator  # noqa: E402
+from rn_forge.auth.oidc import OidcAuthenticator  # noqa: E402
 
 pytestmark = pytest.mark.unit
 

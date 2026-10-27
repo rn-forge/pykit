@@ -78,7 +78,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from rn_forge.fastapi import bearer_auth, page_params, require_if_match, requires
-from rn_forge.web import Cursor, Page, Principal, Requirement, check_precondition
+from rn_forge.auth import Principal, Requirement
+from rn_forge.web import Cursor, Page, check_precondition
 
 router = APIRouter()
 caller = bearer_auth(authenticator=jwt_authenticator, log=log)
@@ -265,7 +266,7 @@ class MyApp(FastApiApp):
   rather than writing one:
 
     ```python
-    from rn_forge.web.oidc import OidcAuthenticator
+    from rn_forge.auth.oidc import OidcAuthenticator
 
     authenticator = OidcAuthenticator.from_issuer(
         "https://idp.example.com/tenant", audience="api://orders"
@@ -280,7 +281,7 @@ class MyApp(FastApiApp):
 
     Build it once at startup — it holds the JWKS cache. It is the same
     authenticator `rn-forge-django` uses, so both stacks accept the same tokens.
-    For any other scheme, `bearer_auth` takes any `rn_forge.web.Authenticator`
+    For any other scheme, `bearer_auth` takes any `rn_forge.auth.Authenticator`
     or `AsyncAuthenticator`: verify the token, map claims to a `Principal`, and
     raise `AuthenticationFailed` with the reason — the reason reaches `log`,
     never the body. A sync `Authenticator` runs in the threadpool, so a blocking

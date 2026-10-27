@@ -14,12 +14,11 @@ from rn_forge.fastapi import (
     register_problem_handlers,
     requires,
 )
+from rn_forge.auth import Principal, Requirement
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
-    Principal,
-    Requirement,
 )
 
 pytestmark = pytest.mark.unit

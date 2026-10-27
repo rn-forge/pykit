@@ -55,6 +55,7 @@ from rn_forge.fastapi.transfer import (
     tabular_export,
     tabular_format,
 )
+from rn_forge.auth import Principal, Requirement
 from rn_forge.web import (
     Operation,
     ProblemDetail,
@@ -71,8 +72,6 @@ from rn_forge.web import (
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryAsyncIdempotencyStore,
-    Principal,
-    Requirement,
     ServiceUnavailable,
     TooManyRequests,
     check_precondition,

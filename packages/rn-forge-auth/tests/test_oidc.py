@@ -1,4 +1,4 @@
-"""Tests for rn_forge.web.oidc. No test calls a real IdP."""
+"""Tests for rn_forge.auth.oidc. No test calls a real IdP."""
 
 from __future__ import annotations
 
@@ -13,8 +13,9 @@ pytest.importorskip("cryptography")
 from cryptography.hazmat.primitives.asymmetric import rsa  # noqa: E402
 from jwt.algorithms import RSAAlgorithm  # noqa: E402
 
-from rn_forge.web import AuthenticationFailed, Credentials, Principal  # noqa: E402
-from rn_forge.web.oidc import OidcAuthenticator  # noqa: E402
+from rn_forge.auth import Principal  # noqa: E402
+from rn_forge.auth.oidc import OidcAuthenticator  # noqa: E402
+from rn_forge.web import AuthenticationFailed, Credentials  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -166,6 +167,6 @@ class TestOidcAuthenticator:
         assert_that(principal.scopes).is_equal_to(frozenset({"orders.read"}))
 
     def test_it_satisfies_the_authenticator_protocol(self) -> None:
-        from rn_forge.web import Authenticator
+        from rn_forge.auth import Authenticator
 
         assert_that(isinstance(_authenticator(), Authenticator)).is_true()

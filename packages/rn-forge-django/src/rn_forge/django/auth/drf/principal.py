@@ -1,4 +1,4 @@
-"""Bind ``rn_forge.web`` principal authentication to DRF requests."""
+"""Bind ``rn_forge.auth`` principal authentication to DRF requests."""
 
 from __future__ import annotations
 
@@ -8,17 +8,19 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed as DRFAuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+from rn_forge.auth import (
+    Authenticator,
+    Authorizer,
+    Principal,
+    Requirement,
+    ScopeAuthorizer,
+)
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django.drf import RequestUtils
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,
     AuthenticationFailed,
-    Authenticator,
-    Authorizer,
     Credentials,
-    Principal,
-    Requirement,
-    ScopeAuthorizer,
     challenge_header,
     parse_authorization,
 )
@@ -71,7 +73,7 @@ class _PrincipalAuthentication(BaseAuthentication):
 
 
 class PrincipalBearerAuthentication(_PrincipalAuthentication):
-    """Authenticate ``Authorization: Bearer <token>`` into a :class:`rn_forge.web.Principal`.
+    """Authenticate ``Authorization: Bearer <token>`` into a :class:`rn_forge.auth.Principal`.
 
     Subclass and set ``authenticator`` and, optionally, ``realm``.
     """
@@ -80,7 +82,7 @@ class PrincipalBearerAuthentication(_PrincipalAuthentication):
 
 
 class PrincipalBasicAuthentication(_PrincipalAuthentication):
-    """Authenticate HTTP Basic (RFC 7617) into a :class:`rn_forge.web.Principal`.
+    """Authenticate HTTP Basic (RFC 7617) into a :class:`rn_forge.auth.Principal`.
 
     Intended for local development and simple internal deployments. The
     authenticator receives the base64 credential exactly as sent.
@@ -96,7 +98,7 @@ def requires(
 
     Args:
         requirement: The scopes and roles demanded.
-        authorizer: Defaults to :class:`rn_forge.web.ScopeAuthorizer`.
+        authorizer: Defaults to :class:`rn_forge.auth.ScopeAuthorizer`.
     """
     resolved = authorizer if authorizer is not None else ScopeAuthorizer()
 

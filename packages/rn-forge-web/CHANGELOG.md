@@ -5,6 +5,15 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+### Removed
+
+- Breaking: `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`,
+  `Authorizer`, `ScopeAuthorizer` and `principal_from_claims` moved to
+  `rn_forge.auth` in `rn-forge-auth`, and `OidcAuthenticator` moved from
+  `rn_forge.web.oidc` to `rn_forge.auth.oidc`. `rn_forge.web.oidc` and the
+  `auth` extra are gone. `rn_forge.web.auth` keeps `Credentials`,
+  `parse_authorization`, `challenge_header` and `AUTH_FAILED_DETAIL`.
+
 ## [0.2.1] - 2026-10-25
 
 ### Changed

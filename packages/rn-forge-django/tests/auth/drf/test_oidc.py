@@ -17,7 +17,7 @@ from rest_framework.views import APIView  # noqa: E402
 
 from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication  # noqa: E402
 from rn_forge.django.auth.drf.principal import requires  # noqa: E402
-from rn_forge.web import Principal, Requirement  # noqa: E402
+from rn_forge.auth import Principal, Requirement  # noqa: E402
 
 pytestmark = pytest.mark.unit
 

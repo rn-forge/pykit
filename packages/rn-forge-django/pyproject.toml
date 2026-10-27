@@ -8,6 +8,7 @@ requires-python = ">=3.14"
 dependencies = [
   "django>=6.0.7",
   # Internal requirements are version ranges (ADR-0004).
+  "rn-forge-auth>=0.1.0,<0.2",
   "rn-forge-commons>=0.7.0,<0.8",
   "rn-forge-web>=0.2.1,<0.3",
 ]
@@ -30,12 +31,13 @@ jwt = [
   "djangorestframework-simplejwt>=5.5.1",
 ]
 # JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
-# simplejwt against a local User. The authenticator itself is web's `auth`
-# extra (`rn_forge.web.oidc`), which brings commons' `auth` extra with it.
+# simplejwt against a local User. The authenticator itself is
+# `rn_forge.auth.oidc`; `drf/oidc.py` imports `fetch_json` from commons' `auth`
+# extra.
 oidc = [
   "djangorestframework>=3.17.1",
+  "rn-forge-auth[oidc]>=0.1.0,<0.2",
   "rn-forge-commons[auth]>=0.7.0,<0.8",
-  "rn-forge-web[auth]>=0.2.1,<0.3",
 ]
 celery = ["celery>=5.6.3"]
 # drf-spectacular only. djangorestframework-camel-case was evaluated and not
@@ -71,6 +73,7 @@ all = [
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
+  "rn-forge-auth[oidc]>=0.1.0,<0.2",
   "rn-forge-commons[auth]>=0.7.0,<0.8",
   "rn-forge-data[pandas]>=0.1.1,<0.2",
   "rn-forge-web[security]>=0.2.1,<0.3",
@@ -90,6 +93,7 @@ build-backend = "uv_build"
 module-name = "rn_forge.django"
 
 [tool.uv.sources]
+rn-forge-auth = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-data = { workspace = true }
 rn-forge-django = { workspace = true }

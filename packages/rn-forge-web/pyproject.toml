@@ -17,12 +17,6 @@ dependencies = [
 
 [project.optional-dependencies]
 testing = ["assertpy>=1.1", "pytest>=9.1.1"]
-# `rn_forge.web.oidc` only. The rest of the package stays dependency-free; this
-# extra exists so a binding can reuse one OIDC authenticator instead of each
-# framework package hand-writing the same verifier-to-Principal glue.
-auth = [
-  "rn-forge-commons[auth]>=0.7.0,<0.8",
-]
 # `rn_forge.web.security` only. `secure` is framework-agnostic (no dependencies
 # of its own) and emits the OWASP header preset directly, so it is wrapped
 # rather than hand-rolled.
@@ -42,6 +36,7 @@ build-backend = "uv_build"
 module-name = "rn_forge.web"
 
 [tool.uv.sources]
+rn-forge-auth = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-web = { workspace = true }
 
@@ -60,7 +55,9 @@ dev = [
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-web[auth,security]",
+  # The guide examples, which the tests run, import rn-forge-auth.
+  "rn-forge-auth>=0.1.0,<0.2",
+  "rn-forge-web[security]",
   "ruff>=0.15.21",
 ]
 docs = [
@@ -68,5 +65,6 @@ docs = [
   "mkdocs-material>=9.7.6",
   "mkdocstrings[python]>=1.0.6",
   "opentelemetry-instrumentation-asgi>=0.65b0",
-  "rn-forge-web[auth,security]",
+  "rn-forge-auth>=0.1.0,<0.2",
+  "rn-forge-web[security]",
 ]

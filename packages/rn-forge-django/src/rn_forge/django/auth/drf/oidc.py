@@ -6,10 +6,10 @@ import threading
 from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar, override
 
+from rn_forge.auth import Authenticator, Principal, principal_from_claims
+from rn_forge.auth.oidc import OidcAuthenticator
 from rn_forge.commons.integration.auth import FetchJson, fetch_json
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication
-from rn_forge.web import Authenticator, Principal, principal_from_claims
-from rn_forge.web.oidc import OidcAuthenticator
 
 __all__ = ["JWKSBearerAuthentication"]
 
@@ -21,7 +21,7 @@ class JWKSBearerAuthentication(PrincipalBearerAuthentication):
     and key sets are cached per subclass and process.
 
     Verification and the claims-to-principal mapping are
-    :class:`rn_forge.web.oidc.OidcAuthenticator`'s, so this stack accepts the
+    :class:`rn_forge.auth.oidc.OidcAuthenticator`'s, so this stack accepts the
     same tokens as a FastAPI service wired to the same IdP.
     """
 

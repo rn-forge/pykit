@@ -18,6 +18,7 @@ from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from rn_forge.auth import Principal, Requirement, ScopeAuthorizer
 from rn_forge.web import (
     IDEMPOTENCY_KEY_HEADER,
     PROBLEM_MEDIA_TYPE,
@@ -29,9 +30,6 @@ from rn_forge.web import (
     EntityVersionETagCodec,
     InMemoryIdempotencyStore,
     Page,
-    Principal,
-    Requirement,
-    ScopeAuthorizer,
     check_cursor_order,
     check_idempotency_key,
     check_precondition,

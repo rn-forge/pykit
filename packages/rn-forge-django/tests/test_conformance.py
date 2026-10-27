@@ -66,14 +66,13 @@ from rn_forge.django.models import (
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
+from rn_forge.auth import Principal, Requirement
 from rn_forge.web import (
     Operation,
     ProblemDetail,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
-    Principal,
-    Requirement,
     ServiceUnavailable,
     TooManyRequests,
     run_idempotent,

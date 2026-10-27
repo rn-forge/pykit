@@ -148,8 +148,8 @@ directly (never through the facade).
 - **`resilience`** (`resilience` extra) — async circuit breakers and a retrying
   HTTP client.
 - **`auth`** (`auth` extra) — `JwtVerifier`, `JwksCache` and `discover_oidc`:
-  bearer-token verification returning verified claims. The `Principal` and the
-  401 wire shape are `rn-forge-web`'s.
+  bearer-token verification returning verified claims. The `Principal` is
+  `rn-forge-auth`'s and the 401 wire shape is `rn-forge-web`'s.
 
 Import from the top-level package for the curated public API:
 

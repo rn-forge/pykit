@@ -43,4 +43,9 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Reference:
+      - reference/index.md
+      - Principal: reference/principal.md
+      - Authorization: reference/authorization.md
+      - OIDC: reference/oidc.md
   - Changelog: changelog.md

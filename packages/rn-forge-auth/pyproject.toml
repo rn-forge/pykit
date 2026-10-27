@@ -11,7 +11,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-oidc = ["pyjwt[crypto]>=2.15.0"]
+# `OidcAuthenticator` wraps commons' token verifier, in its `auth` extra.
+oidc = [
+  "pyjwt[crypto]>=2.15.0",
+  "rn-forge-commons[auth]>=0.7.0,<0.8",
+]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/"
@@ -42,6 +46,7 @@ oidc = ["rn_forge.auth.oidc"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
+markers = ["unit: fast isolated tests"]
 
 [dependency-groups]
 dev = [

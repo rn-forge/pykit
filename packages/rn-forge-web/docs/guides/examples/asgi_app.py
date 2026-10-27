@@ -30,6 +30,7 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+from rn_forge.auth import Principal, Requirement, ScopeAuthorizer
 from rn_forge.web import (
     EXPOSED_HEADERS,
     MERGE_PATCH_MEDIA_TYPE,
@@ -51,16 +52,13 @@ from rn_forge.web import (
     Message,
     Operation,
     Page,
-    Principal,
     ProblemDetail,
     ProblemResponse,
     ProblemType,
     Receive,
-    Requirement,
     ResourceNotDeleted,
     RowError,
     Scope,
-    ScopeAuthorizer,
     Send,
     ServiceUnavailable,
     TooManyRequests,

@@ -36,7 +36,7 @@ required by version range.
 | `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth |
 | `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
-| `oidc` | `djangorestframework` + `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
+| `oidc` | `djangorestframework` + `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
 | `celery` | `celery`, for `rn_forge.django.celery` |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |

@@ -38,7 +38,7 @@ Optional extras:
 | `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
 | `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `drf-spectacular`, for `drf.openapi` |
-| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `oidc` | `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
 | `celery` | `celery`, for the `celery` app factory |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
@@ -90,10 +90,12 @@ them.
 ## Dependencies and package behavior
 
 - **`rn-forge-web`** is a base dependency: five modules are adapters over it.
+- **`rn-forge-auth`** is a base dependency: `auth.drf.principal` binds its
+  `Principal`, `Requirement` and authenticator contracts to DRF.
 - **`drf-spectacular`** (`openapi` extra) supplies the OpenAPI schema
   integration.
 - **`drf.casing`** supplies the camelCase renderer and parser.
-- **`oidc` extra** — JWKS verification is `rn-forge-commons[auth]` (PyJWT);
+- **`oidc` extra** — JWKS verification is `rn-forge-auth[oidc]` (PyJWT);
   `auth.drf.oidc` only binds it to DRF. It is separate from `jwt` so JWKS auth
   does not install simplejwt.
 - **`celery` extra** — supplies the Celery app factory.

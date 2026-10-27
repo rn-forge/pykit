@@ -98,15 +98,15 @@ without full `AuthorizationViewMixin` request-access plumbing (e.g. on plain
 
 For an API whose callers hold tokens issued by an identity provider — Entra ID,
 Auth0, Okta, Keycloak — rather than a local `User`, bind DRF to the
-`rn_forge.web` auth contract. The token is verified by an
-`rn_forge.web.Authenticator` you supply, and `request.user` is the resulting
-`rn_forge.web.Principal`:
+`rn_forge.auth` contract. The token is verified by an
+`rn_forge.auth.Authenticator` you supply, and `request.user` is the resulting
+`rn_forge.auth.Principal`:
 
 ```python
 from rest_framework.views import APIView
+from rn_forge.auth import Requirement
+from rn_forge.auth.oidc import OidcAuthenticator
 from rn_forge.django.auth.drf import PrincipalBearerAuthentication, requires
-from rn_forge.web import Requirement
-from rn_forge.web.oidc import OidcAuthenticator
 
 
 class ApiBearer(PrincipalBearerAuthentication):
@@ -129,8 +129,8 @@ no challenge. The same `Requirement` evaluates identically on
 `rn-forge-fastapi`.
 
 Verifying the JWT is the authenticator's job, and you do not have to write one:
-`rn_forge.web.oidc.OidcAuthenticator` (web's `auth` extra, which Django's `oidc`
-extra brings) is the shared implementation, so this stack accepts exactly the
+`rn_forge.auth.oidc.OidcAuthenticator` (`rn-forge-auth`'s `oidc` extra, which
+Django's `oidc` extra brings) is the shared implementation, so this stack accepts exactly the
 tokens a FastAPI service accepts. `JWKSBearerAuthentication` below builds one
 for you from class attributes.
 

@@ -16,11 +16,10 @@ from rn_forge.django.auth.drf.principal import (  # noqa: E402
     PrincipalBearerAuthentication,
     requires,
 )
+from rn_forge.auth import Principal, Requirement  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
-    Principal,
-    Requirement,
 )
 
 pytestmark = pytest.mark.unit

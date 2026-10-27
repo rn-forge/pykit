@@ -71,6 +71,5 @@ nav:
       - OpenAPI naming: reference/openapi.md
       - ASGI: reference/asgi.md
       - Auth: reference/auth.md
-      - OIDC: reference/oidc.md
       - Conformance: reference/conformance.md
   - Changelog: changelog.md

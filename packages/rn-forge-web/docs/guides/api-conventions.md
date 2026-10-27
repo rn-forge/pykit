@@ -286,7 +286,7 @@ readiness.
 - **The 401 body never says why verification failed.** Expired, bad signature
   and unknown `kid` are indistinguishable on the wire; the reason goes to the
   log.
-- The verified caller is a `Principal`: `subject` (required), plus optional
+- The verified caller is a `Principal` (`rn-forge-auth`): `subject` (required), plus optional
   `issuer`, `scopes`, `roles`, `tenant`, raw `claims` and `mechanism`. Scopes
   and roles are separate sets and neither is encoded as the other.
 - Basic auth, where offered, is documented as local-development and

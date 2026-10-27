@@ -1,4 +1,4 @@
-"""FastAPI security dependencies for the web authentication contracts.
+"""FastAPI security dependencies for the authentication contracts.
 
 Framework credential parsers run with ``auto_error=False`` so failures use the
 shared problem response and challenge behavior.
@@ -18,18 +18,16 @@ from fastapi.security import (
     HTTPBasicCredentials,
     HTTPBearer,
 )
-from rn_forge.fastapi.problem import Log
-from rn_forge.web import (
+from rn_forge.auth import (
     AsyncAuthenticator,
-    AuthenticationFailed,
     Authenticator,
     Authorizer,
-    Credentials,
     Principal,
     Requirement,
     ScopeAuthorizer,
-    parse_authorization,
 )
+from rn_forge.fastapi.problem import Log
+from rn_forge.web import AuthenticationFailed, Credentials, parse_authorization
 
 __all__ = ["basic_auth", "bearer_auth", "requires"]
 
@@ -39,7 +37,7 @@ type PrincipalDependency = Callable[..., Awaitable[Principal]]
 def bearer_auth(
     *, authenticator: Authenticator | AsyncAuthenticator, log: Log | None = None
 ) -> PrincipalDependency:
-    """Return a dependency yielding the :class:`rn_forge.web.Principal` for a Bearer token.
+    """Return a dependency yielding the :class:`rn_forge.auth.Principal` for a Bearer token.
 
     Args:
         authenticator: Verifies ``Credentials(scheme="Bearer", token=...)``.
@@ -96,9 +94,9 @@ def requires(
 
     Args:
         authenticate: A dependency from :func:`bearer_auth` or :func:`basic_auth`.
-        requirement: Evaluated by :class:`rn_forge.web.Requirement`'s own rule,
+        requirement: Evaluated by :class:`rn_forge.auth.Requirement`'s own rule,
             identically to Django.
-        authorizer: Defaults to :class:`rn_forge.web.ScopeAuthorizer`.
+        authorizer: Defaults to :class:`rn_forge.auth.ScopeAuthorizer`.
     """
     resolved = authorizer if authorizer is not None else ScopeAuthorizer()
 
