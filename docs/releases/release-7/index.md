@@ -36,6 +36,11 @@ and every package is published to PyPI
 | -- | -- | -- |
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | Active |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | New |
+| [F13.3](../../specs/epics/E13-auth/F13.3-core-contracts.md) | E13 | New |
+| [F13.4](../../specs/epics/E13-auth/F13.4-protocol-adapters.md) | E13 | New |
+| [F13.5](../../specs/epics/E13-auth/F13.5-django-binding.md) | E13 | New |
+| [F13.6](../../specs/epics/E13-auth/F13.6-fastapi-binding.md) | E13 | New |
+| [F13.7](../../specs/epics/E13-auth/F13.7-legacy-removal.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
 | [F20.1](../../specs/epics/E20-security-baseline/F20.1-baseline-decision.md) | E20 | New |
@@ -64,9 +69,10 @@ and every package is published to PyPI
 1. **F13.1's remaining stories.** S13.1.2 (the ADRs) and S13.1.3 (the library
    evaluation) are independent; S13.1.4 writes the stories of F13.3 to F13.7
    once both close, and sets their `Iteration` to this release.
-1. **F13.3 to F13.7** after F13.2, in order: core contracts, protocol adapters,
-   then the Django and FastAPI bindings (which may run in parallel), then the
-   legacy removal.
+1. **F13.3 to F13.7** after F13.2, in order: F13.3 (core contracts, token
+   profiles, stores and fake IdPs), F13.4 (protocol adapters over Authlib's
+   core and python3-saml), then F13.5 (Django) and F13.6 (FastAPI), which may
+   run in parallel, then F13.7 (legacy removal).
 1. **F21.1 and F21.2 any time.** F21.1's owner steps (S21.1.2) come shortly
    before F21.3's TestPyPI dry run, because a pending PyPI publisher does not
    reserve a name.
@@ -89,30 +95,34 @@ and every package is published to PyPI
 
 ## Breaking changes
 
-Planned until the decisions behind them are accepted:
-
-- New package `rn-forge-auth` at 0.1.0.
-- `rn-forge-commons` loses its `auth` extra and the code behind it.
-- `rn-forge-web` loses the auth types it holds and its `auth` extra, and keeps
-  the wire contract. This follows E13's
+- New package `rn-forge-auth` at 0.1.0, with `oidc`, `saml` and `redis` extras
+  (F13.2, F13.3, F13.4).
+- `rn-forge-commons` loses its `auth` extra and the code behind it; `JwksCache`
+  is deleted in favour of PyJWT's `PyJWKClient` (F13.2).
+- `rn-forge-web` loses the auth types it holds, `rn_forge.web.oidc` and its
+  `auth` extra, and keeps the wire contract (F13.2). It gains the
+  `csrf-failed` problem type (F13.3). This follows E13's
   [package placement](../../specs/epics/E13-auth/design.md#package-placement).
-- `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
-  `rn-forge-auth`.
 - `rn-forge-auth`'s `Principal` and `Requirement` change before its first
-  release: permission clauses replace role clauses (F13.3).
-- `rn-forge-django` loses its `jwt` extra, the locally issued JWT flows, the
-  `auth.basic` and `auth.saml` views and the authorization mixins (F13.7).
-
-S13.1.4 completes this list from the features' stories.
+  release: permission clauses replace role clauses, and bearer principals
+  carry effective permissions limited by scopes (F13.3).
+- `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
+  `rn-forge-auth` (F13.2). Their bearer authenticators reject a token whose
+  `(issuer, subject)` has no linked account (F13.5, F13.6).
+- `rn-forge-fastapi` gains a `redis` extra (F13.6).
+- `rn-forge-django` loses its `jwt` extra and simplejwt, the locally issued JWT
+  flows, `BaseCredentials`, `LoginPayload`, the `auth.basic` and `auth.saml`
+  views, `SampleSAMLLoginAPIView` and the authorization mixins; its `saml`
+  extra depends on `rn-forge-auth[saml]` (F13.7).
 
 ## Progress
 
 Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1's
-design is settled (S13.1.1); the ADRs (S13.1.2) and library evaluation (S13.1.3)
-are next. F13.3 to F13.7 exist without stories; S13.1.4 writes them and puts
-them on this release. S21.1.2's owner steps are under way: the GitHub
-environments exist; the PyPI pending publishers are not yet added.
+version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
+done: the design is settled, ADR-0006 is revised, ADR-0013 and ADR-0014 are
+accepted, the library evaluation is recorded, and F13.3 to F13.7 have stories on
+this release. F13.2 waits for F16.3. S21.1.2's owner steps are under way: the
+GitHub environments exist; the PyPI pending publishers are not yet added.
 
 ## Commits
 
