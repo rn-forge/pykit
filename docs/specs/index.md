@@ -11,7 +11,7 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 7 — kiln adoption and authentication](../releases/release-7/index.md) | planned | 2 Active · 9 New · 7 Closed |
+| [Release 7 — kiln adoption and authentication](../releases/release-7/index.md) | planned | 2 Active · 8 New · 8 Closed |
 | [Release 6 — kit upgrades for kiln](../releases/release-6/index.md) | shipped (2026-10-25) | 7 Closed |
 | [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | shipped (2026-10-18) | 2 Closed |
 | [Release 4 — kiln readiness](../releases/release-4/index.md) | shipped (2026-10-16) | 4 Closed |

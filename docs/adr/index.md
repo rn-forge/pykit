@@ -20,3 +20,4 @@ the [spec board](../specs/index.md) tracks work.
 | [ADR-0012: CI and release logic ships as the rn-forge-devops package, never as workflow logic or copied scripts](ADR-0012.md) | CI and release automation | accepted |
 | [ADR-0013: Every caller resolves to an internal account, and authorization is computed on the server per request](ADR-0013.md) | Identity resolution and authorization | accepted |
 | [ADR-0014: Django and FastAPI expose the same auth HTTP surface and security defaults, over whichever library fits each framework](ADR-0014.md) | Auth framework parity | accepted |
+| [ADR-0015: The security baseline is nine named controls, each either failing the build or only reporting, with evidence per release](ADR-0015.md) | Security baseline | accepted |
