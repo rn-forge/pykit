@@ -525,6 +525,12 @@ challenge. A session-only route (`/auth/*`) sends no `WWW-Authenticate`, a
 deviation from RFC 9110 §15.5.2 that the API conventions record, because cookie
 sessions have no registered scheme.
 
+`rn-forge-web` raises these as `SessionRequired` (an `AuthenticationFailed` with
+`challenge = False`, so `render_problem` omits the header) and `CsrfFailed`
+(a 403 of its own type, not a `PermissionDenied`). The conformance cases carry
+`requires` capabilities (`session-routes`, `csrf`) that a binding adds to its
+driver's `PROVIDES` set when it ships them.
+
 ## Flows
 
 ### SPA bootstrap and session expiry

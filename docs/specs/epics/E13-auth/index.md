@@ -39,3 +39,15 @@ stories of F13.3 to F13.7, which all ship in Release 7. F13.2 creates the
 `rn-forge-auth` package and moves the existing code into it. F13.3 to F13.7
 follow it, in order, and are written inside `rn-forge-auth` and the framework
 packages.
+
+## Open questions
+
+- **How a client tells `csrf-failed` from `forbidden` without a `type_base`.**
+  Raised by S13.3.7 (2026-10-27). `rn-forge-web` renders `type: about:blank`
+  unless the application configures a type-URI base, and then RFC 9457 §4.2.1
+  sets `title` to the status phrase, so the two `403`s differ only in `detail`.
+  The [ngkit client contract](design.md#ngkit-client-contract) keys its retry
+  on the type. Proposed: a binding that mounts the auth surface refuses to
+  start without a `type_base`. The alternative, a fixed type URI for
+  `csrf-failed` alone, breaks the `about:blank` rule. Blocks F13.5's and
+  F13.6's CSRF stories, not F13.3.

@@ -175,7 +175,7 @@ Once the above is wired, the driver is short:
 
 ```python
 import pytest
-from rn_forge.web.conformance import CASES, case_by_id, redact
+from rn_forge.web.conformance import case_by_id, cases_provided_by, redact
 
 def issue(client, case):
     return client.generic(
@@ -183,7 +183,7 @@ def issue(client, case):
         data=case.request.body, headers=case.request.headers, **case.request.query,
     )
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", cases_provided_by(), ids=lambda c: c.id)
 def test_conformance(client, case):          # `client` must be a FRESH app per case
     for prerequisite in case.depends_on:     # a replay only replays something
         issue(client, case_by_id(prerequisite))
@@ -196,6 +196,9 @@ def test_conformance(client, case):          # `client` must be a FRESH app per 
         assert name not in response
     assert redact(response.json()) == dict(case.expect_body)
 ```
+
+`cases_provided_by()` omits the cases that need an optional capability
+(`session-routes`, `csrf`); pass the set the application serves to include them.
 
 Two things this driver must get right: a **fresh application per case** (the
 idempotency store must not carry over), and `depends_on` issued first.

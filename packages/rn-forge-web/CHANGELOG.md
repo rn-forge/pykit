@@ -5,6 +5,20 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `csrf-failed` problem type: `CsrfFailed` (403, in `default_registry()`),
+  the `CSRF_FAILED` row and `CSRF_FAILED_DETAIL`. It is not a
+  `PermissionDenied`, and its detail never says which check failed.
+- Session-only 401: `SessionRequired`, an `AuthenticationFailed` whose new
+  `challenge` class attribute is false, so `render_problem` sends no
+  `WWW-Authenticate`. The API conventions record the deviation from RFC 9110
+  §15.5.2.
+- Conformance cases `auth.session-only-401-has-no-challenge` and
+  `auth.csrf-rejection-is-403-csrf-failed`, with `ConformanceCase.requires`,
+  `ConformanceCapability` and `cases_provided_by` so a binding runs only the
+  cases for the capabilities it provides.
+
 ### Removed
 
 - Breaking: `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`,

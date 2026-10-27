@@ -9,7 +9,8 @@ If a case needs more than a line or two over them, the adapter is missing.
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
 
-No case is skipped in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case that
+requires a capability absent from `PROVIDES` is not collected at all. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision Django cannot honour and belongs in the web plan.
 """
@@ -77,7 +78,13 @@ from rn_forge.web import (
     TooManyRequests,
     run_idempotent,
 )
-from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
+from rn_forge.web.conformance import (
+    VARIABLE_MEMBERS,
+    ConformanceCapability,
+    case_by_id,
+    cases_provided_by,
+    redact,
+)
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -87,6 +94,13 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
+PROVIDES: frozenset[ConformanceCapability] = frozenset()
+"""The optional capabilities this stack's fixture serves. Add one when the
+binding that provides it lands; a case needing a capability not listed here is
+not run, and every other case still is."""
+
+SERVED_CASES = cases_provided_by(PROVIDES)
+
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
 CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 URLCONF = __name__
@@ -742,7 +756,7 @@ def casing_violations(node, found=None):
     return found
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", SERVED_CASES, ids=lambda c: c.id)
 def test_django_conforms(client, case):
     for prerequisite in case.depends_on:
         issue(client, case_by_id(prerequisite))
@@ -773,7 +787,7 @@ def test_django_conforms(client, case):
 def test_the_fixture_serves_every_path_the_table_uses():
     """A case added for an endpoint this driver does not serve must fail here."""
     unserved = set()
-    for case in CASES:
+    for case in SERVED_CASES:
         if case.request.path == "/conformance/missing":
             continue
         try:

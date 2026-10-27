@@ -5,7 +5,8 @@ hand-written: if a case needs more than a line or two over them, the adapter is
 missing. Assertions are against the table, never against Django's output — two
 stacks agreeing on the wrong thing is not conformance.
 
-No case is skipped in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case that
+requires a capability absent from `PROVIDES` is not collected at all. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 """
@@ -79,7 +80,13 @@ from rn_forge.web import (
     require_live,
     run_idempotent_async,
 )
-from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
+from rn_forge.web.conformance import (
+    VARIABLE_MEMBERS,
+    ConformanceCapability,
+    case_by_id,
+    cases_provided_by,
+    redact,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -89,6 +96,13 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
+PROVIDES: frozenset[ConformanceCapability] = frozenset()
+"""The optional capabilities this stack's fixture serves. Add one when the
+binding that provides it lands; a case needing a capability not listed here is
+not run, and every other case still is."""
+
+SERVED_CASES = cases_provided_by(PROVIDES)
+
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
 CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
@@ -802,7 +816,7 @@ def casing_violations(node, found=None):
     return found
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", SERVED_CASES, ids=lambda c: c.id)
 def test_fastapi_conforms(case):
     client = TestClient(
         build_app(failing=case.request.query.get("fail")),
@@ -850,7 +864,7 @@ def test_the_fixture_serves_every_path_the_table_uses():
     templates = [
         re.compile(re.sub(r"\{[^}/:]+\}", "[^/:]+", p)) for p in paths if "{" in p
     ]
-    used = {case.request.path for case in CASES}
+    used = {case.request.path for case in SERVED_CASES}
     unserved = {
         path
         for path in used - served - {"/conformance/missing"}

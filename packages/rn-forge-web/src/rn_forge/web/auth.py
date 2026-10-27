@@ -12,6 +12,7 @@ from typing import Any, Final, Literal
 
 __all__ = [
     "AUTH_FAILED_DETAIL",
+    "CSRF_FAILED_DETAIL",
     "BearerErrorCode",
     "Credentials",
     "challenge_header",
@@ -20,6 +21,9 @@ __all__ = [
 
 AUTH_FAILED_DETAIL: Final = "Authentication failed."
 """The non-sensitive detail returned for authentication failures."""
+
+CSRF_FAILED_DETAIL: Final = "CSRF verification failed."
+"""The detail returned for a CSRF rejection; it never names the check that failed."""
 
 type BearerErrorCode = Literal["invalid_request", "invalid_token", "insufficient_scope"]
 """The ``error`` codes RFC 6750 §3 defines for a Bearer challenge."""
