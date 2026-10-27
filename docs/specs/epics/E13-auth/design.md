@@ -222,11 +222,51 @@ flowchart TB
 
 ## Contracts
 
-This is a sketch of the framework-neutral types, proposed for `rn-forge-auth`
-(see [Package placement](#package-placement)). Names and fields are open to
-refinement.
+This is a sketch of the framework-neutral types in `rn-forge-auth` (see
+[Package placement](#package-placement)). The core modules are `identity`
+(`ProviderKind`, `ExternalIdentity`, `LoginTransaction`, `LoginStart`,
+`SessionInfo`, `IdentityProvider`), `accounts` (`AccountResolver`,
+`AccountRejected`), `context` (`AuthorizationContext`,
+`AuthorizationContextProvider`) and `policy` (`ResourcePolicy`), all
+re-exported by `rn_forge.auth`.
 
 ```python
+ProviderKind = Literal["oidc", "oauth2", "password", "development"]
+
+
+@dataclass(frozen=True)
+class LoginTransaction:
+    id: str                       # opaque handle the transaction cookie carries
+    provider: str
+    return_to: str
+    created_at: datetime
+    state: str | None = None
+    nonce: str | None = None
+    code_verifier: str | None = None
+    extra: Mapping[str, str] = field(default_factory=dict)  # provider-specific
+
+
+@dataclass(frozen=True)
+class LoginStart:
+    transaction: LoginTransaction
+    redirect_url: str | None      # None: the provider takes a form (password)
+
+
+@dataclass(frozen=True)
+class SessionInfo:                # the session content; identity only, no store
+    account_id: str
+    session_version: int
+    provider: str
+    issuer: str
+    external_subject: str
+    created_at: datetime
+    expires_at: datetime          # absolute timeout
+    auth_time: datetime | None = None
+    amr: frozenset[str] = frozenset()
+    session_ref: str | None = None
+    id_token: str | None = None
+
+
 @dataclass(frozen=True)
 class ExternalIdentity:
     provider: str                 # configured provider id, e.g. "workspace"
@@ -261,6 +301,10 @@ class IdentityProvider[RequestT](Protocol):
         """Return the IdP's logout URL, or None for local logout only."""
 
 
+class AccountRejected(AppException):
+    reason: str                   # for logs; never rendered to the user
+
+
 class AccountResolver(Protocol):
     def resolve(self, identity: ExternalIdentity) -> str:
         """Link, provision or reject a login; return the account ID.
@@ -279,9 +323,9 @@ class AccountResolver(Protocol):
 class AuthorizationContext:
     active: bool
     session_version: int
-    permissions: frozenset[str]
-    roles: frozenset[str]
-    attributes: Mapping[str, Any]   # ABAC inputs: tenant, org units, locations
+    permissions: frozenset[str] = frozenset()
+    roles: frozenset[str] = frozenset()
+    attributes: Mapping[str, Any] = field(default_factory=dict)  # ABAC inputs
 
 
 class AuthorizationContextProvider(Protocol):

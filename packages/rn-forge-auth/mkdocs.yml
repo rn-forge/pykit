@@ -50,5 +50,9 @@ nav:
       - reference/index.md
       - Principal: reference/principal.md
       - Authorization: reference/authorization.md
+      - Identity: reference/identity.md
+      - Accounts: reference/accounts.md
+      - Authorization context: reference/context.md
+      - Resource policy: reference/policy.md
       - OIDC: reference/oidc.md
   - Changelog: changelog.md

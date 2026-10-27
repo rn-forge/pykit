@@ -16,6 +16,10 @@ Notable changes to `rn-forge-auth`, newest first, in the
 - `JwtVerifier`, `discover_oidc`, `fetch_json`, `FetchJson`, `OidcConfiguration`
   and `TokenVerificationError`, moved from `rn_forge.commons.integration.auth`
   into `rn_forge.auth.oidc`. `JwtVerifier` gains `from_jwks_url`.
+- The identity and authorization contracts: `ExternalIdentity`,
+  `IdentityProvider`, `ProviderKind`, `LoginStart`, `LoginTransaction`,
+  `SessionInfo`, `AccountResolver`, `AccountRejected`, `AuthorizationContext`,
+  `AuthorizationContextProvider` and `ResourcePolicy`.
 
 ### Changed
 
