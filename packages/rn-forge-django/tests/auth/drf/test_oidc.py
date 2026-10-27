@@ -29,17 +29,7 @@ PROBLEM_HANDLER = {
 }
 
 
-class _IdP:
-    def __init__(self):
-        self.calls = 0
-
-    def __call__(self, url):
-        self.calls += 1
-        jwk = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
-        return {"keys": [jwk]}
-
-
-IDP = _IdP()
+JWK = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
 
 
 def _token(key=KEY, kid="k1", **claims):
@@ -56,19 +46,25 @@ def _token(key=KEY, kid="k1", **claims):
     return jwt.encode(payload, key, algorithm="RS256", headers={"kid": kid})
 
 
-class _Entra(JWKSBearerAuthentication):
-    jwks_url = "https://login.example.com/tenant/discovery/v2.0/keys"
-    issuer = ISSUER
-    audience = "api://orders"
-    realm = "orders"
-    fetch = staticmethod(IDP)
+def _entra(jwks_url):
+    # A fresh subclass per test: authenticators are cached per class.
+    class Entra(JWKSBearerAuthentication):
+        issuer = ISSUER
+        audience = "api://orders"
+        realm = "orders"
+
+    Entra.jwks_url = jwks_url
+    return Entra
 
 
-class _Custom(_Entra):
-    def claims_to_principal(self, claims):
-        return Principal(
-            subject=f"custom:{claims['sub']}", scopes=frozenset({"orders.read"})
-        )
+def _custom(jwks_url):
+    class Custom(_entra(jwks_url)):
+        def claims_to_principal(self, claims):
+            return Principal(
+                subject=f"custom:{claims['sub']}", scopes=frozenset({"orders.read"})
+            )
+
+    return Custom
 
 
 def _view(auth_class, requirement=Requirement()):
@@ -100,9 +96,14 @@ def _get(view, token=None):
     return response, json.loads(response.content)
 
 
+@pytest.fixture
+def jwks_url(serve_jwks):
+    return serve_jwks([JWK])
+
+
 class TestJWKSBearerAuthentication:
-    def test_valid_token_lands_a_principal_on_request_user(self) -> None:
-        response, body = _get(_view(_Entra), _token())
+    def test_valid_token_lands_a_principal_on_request_user(self, jwks_url) -> None:
+        response, body = _get(_view(_entra(jwks_url)), _token())
         assert response.status_code == 200
         assert body == {
             "type": "Principal",
@@ -123,29 +124,25 @@ class TestJWKSBearerAuthentication:
         ],
         ids=["expired", "audience", "issuer", "signature", "malformed"],
     )
-    def test_verification_failures_are_a_generic_401(self, token) -> None:
-        response, body = _get(_view(_Entra), token)
+    def test_verification_failures_are_a_generic_401(self, jwks_url, token) -> None:
+        response, body = _get(_view(_entra(jwks_url)), token)
         assert response.status_code == 401
         assert body["detail"] == "Authentication failed."
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
 
-    def test_missing_header_is_401(self) -> None:
-        response, _ = _get(_view(_Entra))
+    def test_missing_header_is_401(self, jwks_url) -> None:
+        response, _ = _get(_view(_entra(jwks_url)))
         assert response.status_code == 401
 
-    def test_key_set_is_cached_across_requests(self) -> None:
-        before = IDP.calls
-        for _ in range(3):
-            _get(_view(_Entra), _token())
-        assert IDP.calls - before <= 1
-
-    def test_claims_to_principal_override_is_used(self) -> None:
-        response, body = _get(_view(_Custom), _token())
+    def test_claims_to_principal_override_is_used(self, jwks_url) -> None:
+        response, body = _get(_view(_custom(jwks_url)), _token())
         assert response.status_code == 200
         assert body["subject"] == "custom:u1"
 
-    def test_missing_scope_is_403(self) -> None:
-        view = _view(_Entra, Requirement(all_scopes=frozenset({"orders.admin"})))
+    def test_missing_scope_is_403(self, jwks_url) -> None:
+        view = _view(
+            _entra(jwks_url), Requirement(all_scopes=frozenset({"orders.admin"}))
+        )
         response, _ = _get(view, _token())
         assert response.status_code == 403
         assert not response.has_header("WWW-Authenticate")

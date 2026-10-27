@@ -10,6 +10,9 @@ Notable changes to `rn-forge-django`, newest first, in the
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`
   and the authenticator contracts from it. The `oidc` extra names
   `rn-forge-auth[oidc]` instead of `rn-forge-web[auth]`.
+- The `oidc` and `all` extras no longer name `rn-forge-commons[auth]`, which no
+  longer exists; `drf/oidc.py` imports `FetchJson` and `fetch_json` from
+  `rn_forge.auth.oidc`.
 
 ## [0.5.1] - 2026-10-25
 

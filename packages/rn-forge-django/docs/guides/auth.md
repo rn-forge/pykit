@@ -150,7 +150,9 @@ class ApiBearer(JWKSBearerAuthentication):
 Use that class in the view's `authentication_classes`, and install
 `problem_details_exception_handler` in `REST_FRAMEWORK["EXCEPTION_HANDLER"]` for
 the shared problem response. The binding caches its authenticator and key set
-per subclass and process. Override `claims_to_principal()` when the provider
+per subclass and process; `cache_timeout` (300 seconds) sets how long a fetched
+key set is kept and `cooldown_duration` (30 seconds) the fewest seconds between
+two fetches, which bounds how often an unknown `kid` can reach the IdP. Override `claims_to_principal()` when the provider
 uses nonstandard role or scope claims.
 
 Build the authenticator **once, at import or startup** — it holds the JWKS

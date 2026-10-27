@@ -11,10 +11,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# `OidcAuthenticator` wraps commons' token verifier, in its `auth` extra.
+# `OidcAuthenticator` verifies tokens with PyJWT, keys from its `PyJWKClient`.
 oidc = [
   "pyjwt[crypto]>=2.15.0",
-  "rn-forge-commons[auth]>=0.7.0,<0.8",
 ]
 
 [project.urls]

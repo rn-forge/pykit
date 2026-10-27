@@ -21,8 +21,12 @@ Django refuses ``skip_locked`` on it, so row-locking production paths are not
 proven by this suite; the modules that rely on them say so.
 """
 
+import json
 import os
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Iterator
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 from urllib.parse import unquote, urlsplit
 
 import django
@@ -122,3 +126,33 @@ def create_tables(django_db_setup, django_db_blocker) -> Callable[..., None]:
                         editor.create_model(model)
 
     return create
+
+
+@pytest.fixture
+def serve_jwks() -> Iterator[Callable[[list[dict[str, Any]]], str]]:
+    """Serve a key set from a loopback port and return its URL; nothing leaves the machine."""
+    servers: list[ThreadingHTTPServer] = []
+
+    def serve(keys: list[dict[str, Any]]) -> str:
+        payload = json.dumps({"keys": keys}).encode()
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802  # http.server hook name
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+        return f"http://127.0.0.1:{server.server_port}/keys"
+
+    yield serve
+    for server in servers:
+        server.shutdown()
+        server.server_close()

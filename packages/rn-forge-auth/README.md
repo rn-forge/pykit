@@ -8,7 +8,7 @@
 
 Authentication primitives for Python programming, built on `rn-forge-web`. The
 base install carries no third-party dependencies; the `oidc` extra adds
-`pyjwt[crypto]` and `rn-forge-commons[auth]` for the OIDC adapter.
+`pyjwt[crypto]` for the OIDC adapter.
 
 - `rn_forge.auth` — the core: `Principal`, `Requirement`, `Authenticator`,
   `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer` and

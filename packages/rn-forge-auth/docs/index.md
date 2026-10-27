@@ -5,5 +5,4 @@
 `ScopeAuthorizer` and `principal_from_claims`.
 
 The base install gives the core, `rn_forge.auth`. The `oidc` extra adds
-`pyjwt[crypto]` and `rn-forge-commons[auth]` for the adapter,
-`rn_forge.auth.oidc`, which the core never imports.
+`pyjwt[crypto]` for the adapter, `rn_forge.auth.oidc`, which the core never imports.

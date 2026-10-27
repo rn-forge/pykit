@@ -13,3 +13,15 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `Authorizer`, `ScopeAuthorizer` and `principal_from_claims`, moved from
   `rn-forge-web` into the `rn_forge.auth` core, and `OidcAuthenticator`, moved
   from `rn_forge.web.oidc` into `rn_forge.auth.oidc`.
+- `JwtVerifier`, `discover_oidc`, `fetch_json`, `FetchJson`, `OidcConfiguration`
+  and `TokenVerificationError`, moved from `rn_forge.commons.integration.auth`
+  into `rn_forge.auth.oidc`. `JwtVerifier` gains `from_jwks_url`.
+
+### Changed
+
+- `JwtVerifier` takes its keys from PyJWT's `PyJWKClient`, replacing
+  `JwksCache`. `from_issuer` and `from_jwks_url` take `lifespan` (default 300
+  seconds) and `cooldown_duration` (default 30 seconds) in place of `max_age`,
+  and `from_jwks_url` no longer takes `fetch`: only the discovery document uses
+  `fetch_json`. The `oidc` extra is `pyjwt[crypto]` alone; it requires PyJWT
+  2.15.0 or later.

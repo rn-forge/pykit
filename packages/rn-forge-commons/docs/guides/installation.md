@@ -14,7 +14,6 @@ uv add "rn-forge-commons[all]"
 
 Targeted extras:
 
-- `auth` for JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`)
 - `json` for JSON-formatted log output (`python-json-logger`)
 - `markdown` for Markdown structure (`rn_forge.commons.text.markdown`)
 - `otel` for OpenTelemetry log correlation

@@ -14,7 +14,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-auth = ["pyjwt[crypto]>=2.15.0"]
 json = ["python-json-logger>=4.0.0"]
 structlog = ["structlog>=25.1.0"]
 resilience = ["purgatory>=3.0.1", "stamina>=25.2.0", "httpx>=0.28"]
@@ -31,7 +30,6 @@ all = [
   "opentelemetry-instrumentation-logging>=0.64b0",
   "purgatory>=3.0.1",
   "pydantic>=2.12",
-  "pyjwt[crypto]>=2.15.0",
   "python-json-logger>=4.0.0",
   "stamina>=25.2.0",
   "structlog>=25.1.0",

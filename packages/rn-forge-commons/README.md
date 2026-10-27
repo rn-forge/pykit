@@ -26,7 +26,6 @@ Optional extras:
 
 | Extra | Adds |
 | -- | -- |
-| `auth` | JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`) |
 | `json` | JSON-formatted log output (`python-json-logger`) |
 | `pydantic` | Strict pydantic models for configuration documents, with every failure named by dotted path |
 | `otel` | OpenTelemetry logging instrumentation |
@@ -147,9 +146,6 @@ directly (never through the facade).
   `SecretStore` and their in-memory implementations.
 - **`resilience`** (`resilience` extra) — async circuit breakers and a retrying
   HTTP client.
-- **`auth`** (`auth` extra) — `JwtVerifier`, `JwksCache` and `discover_oidc`:
-  bearer-token verification returning verified claims. The `Principal` is
-  `rn-forge-auth`'s and the 401 wire shape is `rn-forge-web`'s.
 
 Import from the top-level package for the curated public API:
 

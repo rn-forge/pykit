@@ -33,17 +33,12 @@ pytestmark = pytest.mark.unit
 
 ISSUER = "https://idp.example.com/tenant"
 AUDIENCE = "api://orders"
-JWKS_URL = f"{ISSUER}/keys"
 
 KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 FORGED = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
-def _idp(url):
-    if url.endswith("/.well-known/openid-configuration"):
-        return {"issuer": ISSUER, "jwks_uri": JWKS_URL}
-    jwk = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
-    return {"keys": [jwk]}
+JWK = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
 
 
 def _token(key=KEY, kid="k1", **claims):
@@ -60,9 +55,9 @@ def _token(key=KEY, kid="k1", **claims):
     return jwt.encode(payload, key, algorithm="RS256", headers={"kid": kid})
 
 
-def build(requirement=Requirement()):
+def build(jwks_url, requirement=Requirement()):
     authenticator = OidcAuthenticator.from_jwks_url(
-        JWKS_URL, issuer=ISSUER, audience=AUDIENCE, fetch=_idp
+        jwks_url, issuer=ISSUER, audience=AUDIENCE
     )
     app = FastAPI()
     register_problem_handlers(app, realm="orders")
@@ -85,9 +80,14 @@ def _get(client, token=None):
     return client.get("/orders", headers=headers)
 
 
+@pytest.fixture
+def jwks_url(serve_jwks):
+    return serve_jwks([JWK])
+
+
 class TestOidcThroughBearerAuth:
-    def test_a_valid_token_yields_the_principal(self) -> None:
-        response = _get(build(), _token())
+    def test_a_valid_token_yields_the_principal(self, jwks_url) -> None:
+        response = _get(build(jwks_url), _token())
 
         assert_that(response.status_code).is_equal_to(200)
         assert_that(response.json()).is_equal_to(
@@ -110,8 +110,8 @@ class TestOidcThroughBearerAuth:
         ],
         ids=["expired", "audience", "issuer", "signature", "malformed"],
     )
-    def test_verification_failures_are_a_generic_401(self, token) -> None:
-        response = _get(build(), token)
+    def test_verification_failures_are_a_generic_401(self, jwks_url, token) -> None:
+        response = _get(build(jwks_url), token)
 
         assert_that(response.status_code).is_equal_to(401)
         assert_that(response.json()["detail"]).is_equal_to(AUTH_FAILED_DETAIL)
@@ -119,13 +119,13 @@ class TestOidcThroughBearerAuth:
             'Bearer realm="orders"'
         )
 
-    def test_the_401_body_never_says_why_verification_failed(self) -> None:
-        response = _get(build(), _token(key=FORGED))
+    def test_the_401_body_never_says_why_verification_failed(self, jwks_url) -> None:
+        response = _get(build(jwks_url), _token(key=FORGED))
 
         assert_that(str(response.json())).does_not_contain("signature")
 
-    def test_missing_scope_is_403_without_a_challenge(self) -> None:
-        client = build(Requirement(all_scopes=frozenset({"orders.admin"})))
+    def test_missing_scope_is_403_without_a_challenge(self, jwks_url) -> None:
+        client = build(jwks_url, Requirement(all_scopes=frozenset({"orders.admin"})))
 
         response = _get(client, _token())
 

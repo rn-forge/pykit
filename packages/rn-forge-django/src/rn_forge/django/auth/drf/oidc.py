@@ -8,7 +8,6 @@ from typing import Any, ClassVar, override
 
 from rn_forge.auth import Authenticator, Principal, principal_from_claims
 from rn_forge.auth.oidc import OidcAuthenticator
-from rn_forge.commons.integration.auth import FetchJson, fetch_json
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication
 
 __all__ = ["JWKSBearerAuthentication"]
@@ -29,10 +28,11 @@ class JWKSBearerAuthentication(PrincipalBearerAuthentication):
     issuer: ClassVar[str]
     audience: ClassVar[str | Sequence[str]]
     algorithms: ClassVar[Sequence[str]] = ("RS256",)
-    cache_timeout: ClassVar[int] = 86_400
+    cache_timeout: ClassVar[float] = 300.0
+    """Seconds a fetched key set stays cached."""
+    cooldown_duration: ClassVar[float] = 30.0
+    """The fewest seconds between two key set fetches."""
     leeway: ClassVar[float] = 0.0
-    fetch: ClassVar[FetchJson] = staticmethod(fetch_json)
-    """The key-set transport. Replace it for a proxy, or in tests."""
 
     _authenticators: ClassVar[dict[type, Authenticator]] = {}
     _lock: ClassVar[threading.Lock] = threading.Lock()
@@ -52,10 +52,10 @@ class JWKSBearerAuthentication(PrincipalBearerAuthentication):
                     issuer=cls.issuer,
                     audience=cls.audience,
                     claims_to_principal=self.claims_to_principal,
-                    fetch=cls.fetch,
                     algorithms=cls.algorithms,
                     leeway=cls.leeway,
-                    max_age=cls.cache_timeout,
+                    lifespan=cls.cache_timeout,
+                    cooldown_duration=cls.cooldown_duration,
                 )
                 cls._authenticators[cls] = authenticator
         return authenticator

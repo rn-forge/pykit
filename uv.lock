@@ -1975,7 +1975,6 @@ dependencies = [
 [package.optional-dependencies]
 oidc = [
     { name = "pyjwt", extra = ["crypto"] },
-    { name = "rn-forge-commons", extra = ["auth"] },
 ]
 
 [package.dev-dependencies]
@@ -1998,7 +1997,6 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'oidc'", specifier = ">=2.15.0" },
-    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
 ]
 provides-extras = ["oidc"]
@@ -2101,13 +2099,9 @@ all = [
     { name = "opentelemetry-instrumentation-logging" },
     { name = "purgatory" },
     { name = "pydantic" },
-    { name = "pyjwt", extra = ["crypto"] },
     { name = "python-json-logger" },
     { name = "stamina" },
     { name = "structlog" },
-]
-auth = [
-    { name = "pyjwt", extra = ["crypto"] },
 ]
 json = [
     { name = "python-json-logger" },
@@ -2173,8 +2167,6 @@ requires-dist = [
     { name = "purgatory", marker = "extra == 'resilience'", specifier = ">=3.0.1" },
     { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.12" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12" },
-    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'all'", specifier = ">=2.15.0" },
-    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'auth'", specifier = ">=2.15.0" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "python-json-logger", marker = "extra == 'all'", specifier = ">=4.0.0" },
     { name = "python-json-logger", marker = "extra == 'json'", specifier = ">=4.0.0" },
@@ -2187,7 +2179,7 @@ requires-dist = [
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "verboselogs", specifier = ">=1.7" },
 ]
-provides-extras = ["auth", "json", "structlog", "resilience", "otel", "pydantic", "markdown", "templates", "testing", "all"]
+provides-extras = ["json", "structlog", "resilience", "otel", "pydantic", "markdown", "templates", "testing", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2331,7 +2323,6 @@ all = [
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
     { name = "rn-forge-auth", extra = ["oidc"] },
-    { name = "rn-forge-commons", extra = ["auth"] },
     { name = "rn-forge-data", extra = ["pandas"] },
     { name = "rn-forge-web", extra = ["security"] },
 ]
@@ -2354,7 +2345,6 @@ jwt = [
 oidc = [
     { name = "djangorestframework" },
     { name = "rn-forge-auth", extra = ["oidc"] },
-    { name = "rn-forge-commons", extra = ["auth"] },
 ]
 openapi = [
     { name = "djangorestframework" },
@@ -2427,8 +2417,6 @@ requires-dist = [
     { name = "rn-forge-auth", extras = ["oidc"], marker = "extra == 'all'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-auth", extras = ["oidc"], marker = "extra == 'oidc'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'all'", editable = "packages/rn-forge-commons" },
-    { name = "rn-forge-commons", extras = ["auth"], marker = "extra == 'oidc'", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-data", extras = ["pandas"], marker = "extra == 'all'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-data", extras = ["pandas"], marker = "extra == 'fixtures'", editable = "packages/rn-forge-data" },
