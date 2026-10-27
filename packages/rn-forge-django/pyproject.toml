@@ -32,7 +32,7 @@ jwt = [
 ]
 # JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
 # simplejwt against a local User. The authenticator itself is
-# `rn_forge.auth.oidc`, which `drf/oidc.py` also takes `fetch_json` from.
+# `rn_forge.auth.oidc`.
 oidc = [
   "djangorestframework>=3.17.1",
   "rn-forge-auth[oidc]>=0.1.0,<0.2",
