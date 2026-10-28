@@ -49,7 +49,7 @@ and every package is published to PyPI
 | [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | Active |
 | [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | Active |
 | [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Active |
-| [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Active |
+| [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Closed |
 | [F21.2](../../specs/epics/E21-pypi-distribution/F21.2-package-metadata.md) | E21 | Closed |
 | [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | Active |
 | [F21.4](../../specs/epics/E21-pypi-distribution/F21.4-consumer-docs.md) | E21 | Closed |
@@ -75,9 +75,9 @@ and every package is published to PyPI
    profiles, stores and the fake IdP), F13.4 (protocol adapters over Authlib's
    core), then F13.5 (Django) and F13.6 (FastAPI), which may run in parallel,
    then F13.7 (legacy removal).
-1. **F21.1 and F21.2 any time.** F21.1's owner steps (S21.1.2) come shortly
-   before F21.3's TestPyPI dry run, because a pending PyPI publisher does not
-   reserve a name.
+1. **F21.1 and F21.2 any time.** The pending PyPI publishers are added one
+   per run during F21.3's TestPyPI dry run and first PyPI release, because PyPI
+   holds one at a time and a pending publisher does not reserve a name.
 1. **F21.3 before F16.3 merges.** It is built in `main.yml`, and F16.3 requires
    the kiln version it pins to render the same release behaviour. S21.3.3
    closes when this release's merge publishes to PyPI.
@@ -142,18 +142,17 @@ limits and audit events. F13.6 is closed: `rn-forge-fastapi` serves the same
 surface as an `APIRouter`, with its own session middleware, session-bound CSRF
 token, rate limiting and audit events, and both bindings pass the shared
 security-control cases in `rn_forge.auth.conformance`; F13.7 can start.
-S21.1.2's owner
-steps are under way: the GitHub environments exist and the PyPI organization is
-approved; the pending publishers are not yet added.
+F21.1 is closed: the GitHub environments exist and the PyPI organization is
+approved. The pending publishers are added one per run during the uploads.
 
 E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
-branch after E13's features landed. F20.1, F20.2, F21.2 and F21.4 are closed. The
-open stories need GitHub or the owner:
+branch after E13's features landed. F20.1, F20.2, F21.1, F21.2 and F21.4 are
+closed. The open stories need GitHub or the owner:
 
 - S20.3.3 and S20.5.4: the owner enables secret scanning, push protection and
   private vulnerability reporting.
-- S21.1.2: the owner adds the 20 pending publishers, shortly before S21.3.2's
-  TestPyPI dry run, which needs the branch pushed.
+- S21.3.2: the TestPyPI dry run, which needs the branch pushed. The owner adds
+  each package's `testpypi` publisher before its rerun.
 - S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
   commit.
 
