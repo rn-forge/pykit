@@ -41,6 +41,7 @@ markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+  "broker: needs Keycloak at RN_FORGE_AUTH_KEYCLOAK_URL (rn-forge-auth)",
   "scaffold: installs built wheels into a scaffolded application (slow)",
 ]
 

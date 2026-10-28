@@ -1,0 +1,75 @@
+{
+  "realm": "idp",
+  "enabled": true,
+  "sslRequired": "none",
+  "users": [
+    {
+      "username": "bob",
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Upstream",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bob-pw",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "rn-forge-broker-sp",
+      "protocol": "saml",
+      "enabled": true,
+      "redirectUris": [
+        "http://127.0.0.1:8080/realms/broker/broker/saml-idp/endpoint"
+      ],
+      "attributes": {
+        "saml_assertion_consumer_url_post": "http://127.0.0.1:8080/realms/broker/broker/saml-idp/endpoint",
+        "saml.force.post.binding": "true",
+        "saml.authnstatement": "true",
+        "saml.server.signature": "true",
+        "saml.client.signature": "false",
+        "saml_name_id_format": "username"
+      },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "config": {
+            "user.attribute": "email",
+            "attribute.name": "email",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "email"
+          }
+        },
+        {
+          "name": "firstName",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "config": {
+            "user.attribute": "firstName",
+            "attribute.name": "firstName",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "firstName"
+          }
+        },
+        {
+          "name": "lastName",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "config": {
+            "user.attribute": "lastName",
+            "attribute.name": "lastName",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "lastName"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -60,7 +60,10 @@ redis = ["rn_forge.auth.redis"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
-markers = ["unit: fast isolated tests"]
+markers = [
+  "unit: fast isolated tests",
+  "broker: needs Keycloak at RN_FORGE_AUTH_KEYCLOAK_URL",
+]
 
 [dependency-groups]
 dev = [

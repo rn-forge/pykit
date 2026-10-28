@@ -1,0 +1,49 @@
+name: Broker profile
+
+# Optional: runs rn-forge-auth's Keycloak tests. It is not part of main.yml and
+# is not a required check.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+  pull_request:
+    paths:
+      - packages/rn-forge-auth/**
+      - .github/workflows/broker-profile.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: broker-profile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  keycloak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Start Keycloak
+        run: docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
+
+      - name: pytest -m broker
+        env:
+          RN_FORGE_AUTH_KEYCLOAK_URL: http://127.0.0.1:8080
+        run: uv run --no-sync pytest packages/rn-forge-auth -m broker -p no:randomly
+
+      - name: Keycloak logs
+        if: ${{ failure() }}
+        run: docker compose -f packages/rn-forge-auth/tests/broker/compose.yml logs
+
+      - name: Stop Keycloak
+        if: ${{ always() }}
+        run: docker compose -f packages/rn-forge-auth/tests/broker/compose.yml down -v

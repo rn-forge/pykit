@@ -28,11 +28,21 @@ every docs build exits 1. Python 3.14.2 and later build cleanly.
 | One test by name or keyword | `uv run pytest -k test_name` |
 | Fast isolated tests (`rn-forge-django`, `rn-forge-web`) | `uv run pytest -m unit` |
 | Database-backed tests (`rn-forge-django`) | `uv run pytest -m integration` |
+| Broker profile (`rn-forge-auth`, needs Docker) | see below |
 | Lint | `uv run ruff check .` |
 | Format | `uv run ruff format .`; add `--check` to report without writing |
 | Strict type check | `uv run pyright` |
 | Import boundaries | `uv run lint-imports` |
 | Combined documentation | `uv run --group docs mkdocs build --strict` |
+
+The broker profile tests run against a Keycloak container and skip without
+`RN_FORGE_AUTH_KEYCLOAK_URL`. They are optional in CI (`broker-profile.yml`):
+
+```bash
+docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
+RN_FORGE_AUTH_KEYCLOAK_URL=http://127.0.0.1:8080 uv run pytest packages/rn-forge-auth -m broker
+docker compose -f packages/rn-forge-auth/tests/broker/compose.yml down -v
+```
 
 Per-package commands work the same way with `--directory packages/<pkg>`, or
 from inside the package directory. Each package's `dev` and `docs` dependency
