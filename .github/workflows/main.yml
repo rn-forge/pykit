@@ -36,6 +36,26 @@ jobs:
       - name: adapters
         run: uv run --no-sync rn-forge-devops adapters
 
+  # Audits every locked package, extra and group. Workspace members are not on
+  # PyPI, so the export omits them; --no-deps because the lock is already resolved.
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          sync: "false"
+
+      - name: pip-audit
+        run: |
+          uv export --frozen --all-packages --all-extras --all-groups \
+            --no-emit-workspace --no-hashes --no-annotate --no-header -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --no-deps --disable-pip --strict
+
   internal-ranges:
     permissions:
       contents: read
@@ -449,7 +469,7 @@ jobs:
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, dependency-audit, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

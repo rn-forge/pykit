@@ -49,6 +49,22 @@ from inside the package directory. Each package's `dev` and `docs` dependency
 groups include its own optional extras, so a `--group dev` sync runs every
 optional code path instead of skipping `pytest.importorskip`-gated tests.
 
+## Dependency audit
+
+CI's `dependency-audit` job fails on a known vulnerability in `uv.lock`
+([ADR-0015](../adr/ADR-0015.md)). Run it locally with:
+
+```bash
+uv export --frozen --all-packages --all-extras --all-groups --no-emit-workspace \
+  --no-hashes --no-annotate --no-header -o /tmp/requirements.txt
+uvx pip-audit==2.10.1 -r /tmp/requirements.txt --no-deps --disable-pip --strict
+```
+
+A requirements file holding a vulnerable pin, such as `requests==2.19.0`, exits
+non-zero. To accept a finding, add `--ignore-vuln <ID>` to the CI step with a
+`#` comment beside it giving the reason and when to revisit it; an ignore
+without a reason is not allowed.
+
 ## Sonar feedback
 
 Connect SonarQube for IDE to the project's SonarCloud server (connected mode)
