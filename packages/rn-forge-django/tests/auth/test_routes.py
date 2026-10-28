@@ -48,6 +48,8 @@ from rn_forge.django.auth import (
     AuthRoutesConfig,
     CacheReplayStore,
     CacheTransactionStore,
+    FixedWindowLimiter,
+    RateLimit,
     auth_urlpatterns,
     enforce_csrf,
 )
@@ -1504,3 +1506,234 @@ class TestCsrf:
         response = client.post("/bearer", HTTP_AUTHORIZATION="Basic YTpi")
 
         assert response.status_code == 403
+
+
+FIXED_LIMITER = FixedWindowLimiter(clock=lambda: 1000.0)
+WINDOW = timedelta(minutes=5)
+
+
+class TestRateLimits:
+    def _attempt(
+        self,
+        client: Client,
+        username: str = "ada",
+        address: str = "10.0.0.1",
+        **extra: str,
+    ) -> Any:
+        return client.post(
+            "/auth/login/password",
+            {"username": username, "password": "bad"},
+            content_type="application/json",
+            REMOTE_ADDR=address,
+            **extra,
+        )
+
+    def test_password_login_is_limited_per_account(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, password_account_limit=RateLimit(2, WINDOW)
+        ).client
+
+        statuses = [self._attempt(client, address=f"10.0.0.{n}") for n in range(3)]
+        other = self._attempt(client, username="grace", address="10.0.0.9")
+
+        assert [r.status_code for r in statuses] == [401, 401, 429]
+        assert other.status_code == 401
+
+    def test_password_login_is_limited_per_client(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, password_client_limit=RateLimit(2, WINDOW)
+        ).client
+
+        statuses = [self._attempt(client, username=f"user{n}") for n in range(3)]
+        elsewhere = self._attempt(client, address="10.0.0.2")
+
+        assert [r.status_code for r in statuses] == [401, 401, 429]
+        assert elsewhere.status_code == 401
+
+    def test_a_limited_request_is_a_429_problem_with_retry_after(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, password_client_limit=RateLimit(1, WINDOW)
+        ).client
+        self._attempt(client)
+
+        response = self._attempt(client)
+
+        assert response.status_code == 429
+        assert response["Content-Type"] == "application/problem+json"
+        assert response["Retry-After"] == "200"
+        assert response.json()["type"] == f"{TYPE_BASE}too-many-requests"
+
+    def test_forwarded_for_does_not_choose_the_client(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, password_client_limit=RateLimit(1, WINDOW)
+        ).client
+        self._attempt(client, HTTP_X_FORWARDED_FOR="1.1.1.1")
+
+        response = self._attempt(client, HTTP_X_FORWARDED_FOR="2.2.2.2")
+
+        assert response.status_code == 429
+
+    def test_callbacks_are_limited_per_client(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, callback_client_limit=RateLimit(2, WINDOW)
+        ).client
+
+        statuses = [client.get(CALLBACK, REMOTE_ADDR="10.0.0.1") for _ in range(3)]
+        elsewhere = client.get(CALLBACK, REMOTE_ADDR="10.0.0.2")
+
+        assert [r.status_code for r in statuses] == [302, 302, 429]
+        assert statuses[2]["Retry-After"] == "200"
+        assert elsewhere.status_code == 302
+
+    def test_a_limit_of_none_is_no_limit(self, mount: Callable[..., _World]) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER,
+            password_client_limit=None,
+            password_account_limit=None,
+        ).client
+
+        assert {self._attempt(client).status_code for _ in range(5)} == {401}
+
+    def test_the_window_resets(self, mount: Callable[..., _World]) -> None:
+        now = [1000.0]
+        client = mount(
+            limiter=FixedWindowLimiter(clock=lambda: now[0]),
+            password_client_limit=RateLimit(1, WINDOW),
+        ).client
+        self._attempt(client)
+        assert self._attempt(client).status_code == 429
+
+        now[0] += 300
+
+        assert self._attempt(client).status_code == 401
+
+
+class TestAudit:
+    @staticmethod
+    def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.getMessage().startswith("audit event=")
+        ]
+
+    def test_login_success_and_logout(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        world = mount()
+        _password_login(world.client)
+        world.client.post("/auth/logout")
+
+        assert self._events(caplog) == [
+            "audit event=login.success account_id='acct-ada' provider='password'",
+            "audit event=logout account_id='acct-ada' provider='password'",
+        ]
+
+    def test_login_failure_names_no_credentials(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        world = mount()
+        world.client.post(
+            "/auth/login/password",
+            {"username": "ada@example.com", "password": "hunter2"},
+            content_type="application/json",
+        )
+
+        events = self._events(caplog)
+        assert events == [
+            "audit event=login.failure provider='password' code='login_failed' "
+            "reason='invalid credentials'"
+        ]
+        assert "hunter2" not in caplog.text
+        assert "ada@example.com" not in caplog.text
+
+    def test_logout_all(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        _password_login(world.client)
+        caplog.set_level(logging.INFO)
+
+        world.client.post("/auth/logout/all")
+
+        assert self._events(caplog) == [
+            "audit event=logout.all account_id='acct-ada' provider='password'"
+        ]
+
+    def test_back_channel_logout(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        caplog.set_level(logging.INFO)
+
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            {"logout_token": world.idp.logout_token(sid="sid-secret")},
+        )
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            {"logout_token": world.idp.logout_token(sub="u1")},
+        )
+
+        assert self._events(caplog) == [
+            "audit event=logout.backchannel provider='acme' scope='session'",
+            "audit event=logout.backchannel provider='acme' scope='account' "
+            "account_id='acct-u1'",
+        ]
+        assert "sid-secret" not in caplog.text
+
+    def test_a_rejected_account(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.idp.user = {"sub": "stranger", "email": "x@example.com"}
+        caplog.set_level(logging.INFO)
+
+        world.sign_in_with_idp()
+
+        assert self._events(caplog) == [
+            "audit event=account.rejected provider='acme' reason='not provisioned'",
+            "audit event=login.failure provider='acme' "
+            "code='account_not_provisioned' reason='not provisioned'",
+        ]
+        assert "x@example.com" not in caplog.text
+
+    def test_a_disabled_account(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.contexts.inactive.add("acct-ada")
+        caplog.set_level(logging.INFO)
+
+        _password_login(world.client)
+
+        assert self._events(caplog)[0] == (
+            "audit event=account.disabled account_id='acct-ada' provider='password'"
+        )
+        assert "login.failure" in self._events(caplog)[1]
+
+    def test_a_rate_limited_request(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        client = mount(
+            limiter=FIXED_LIMITER, callback_client_limit=RateLimit(0, WINDOW)
+        ).client
+        caplog.set_level(logging.INFO)
+
+        client.get(CALLBACK)
+
+        assert self._events(caplog) == [
+            "audit event=rate_limited scope='callback' by='client' retry_after=200"
+        ]

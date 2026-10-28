@@ -53,11 +53,13 @@ from rn_forge.auth import (
 )
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django import settings as facade
+from rn_forge.django.auth.audit import audit
 from rn_forge.django.auth.csrf import check_csrf_settings
+from rn_forge.django.auth.rate_limit import FixedWindowLimiter, RateLimit
 from rn_forge.django.auth.sessions import Sessions, check_session_settings
 from rn_forge.django.auth.stores import CacheReplayStore, CacheTransactionStore
 from rn_forge.django.exceptions import problem_details_response
-from rn_forge.web import SessionRequired, default_registry
+from rn_forge.web import SessionRequired, TooManyRequests, default_registry
 
 if TYPE_CHECKING:
     from rn_forge.auth.oidc import BackchannelLogout
@@ -70,6 +72,11 @@ TRANSACTION_COOKIE = "__Host-login-tx"
 """The cookie that binds a callback to the browser that began the login."""
 
 _TRANSACTION_MAX_AGE = 600
+
+
+_PASSWORD_PER_CLIENT = RateLimit(30, timedelta(minutes=5))
+_PASSWORD_PER_ACCOUNT = RateLimit(10, timedelta(minutes=5))
+_CALLBACK_PER_CLIENT = RateLimit(60, timedelta(minutes=5))
 
 
 @dataclass(frozen=True)
@@ -98,6 +105,14 @@ class AuthRoutesConfig:
             extends it, ``GET /auth/session`` does not.
         absolute_timeout: How long a session lives whatever its use, and how
             long a revoked ``sid`` stays revoked.
+        limiter: Counts hits for the rate limits, over a Django cache.
+        password_client_limit: Password login attempts per client address
+            (``REMOTE_ADDR``) in a window; ``None`` for no limit.
+        password_account_limit: Password login attempts per submitted username
+            in a window; ``None`` for no limit.
+        callback_client_limit: Callback requests per client address in a window.
+            Callbacks are limited per client only, because no account is known
+            before the response is verified; ``None`` for no limit.
     """
 
     providers: Mapping[str, IdentityProvider[LoginRequest]]
@@ -116,6 +131,10 @@ class AuthRoutesConfig:
     replay: ReplayStore = field(default_factory=CacheReplayStore)
     idle_timeout: timedelta = timedelta(minutes=30)
     absolute_timeout: timedelta = timedelta(hours=12)
+    limiter: FixedWindowLimiter = field(default_factory=FixedWindowLimiter)
+    password_client_limit: RateLimit | None = _PASSWORD_PER_CLIENT
+    password_account_limit: RateLimit | None = _PASSWORD_PER_ACCOUNT
+    callback_client_limit: RateLimit | None = _CALLBACK_PER_CLIENT
 
 
 @dataclass(frozen=True)
@@ -171,6 +190,7 @@ class _Views:
                     request, provider_id, login_request, start.transaction.id
                 )
         except LoginFailed as exc:
+            self._audit_failure(provider_id, exc)
             return self._redirect(self._error_url(exc.code))
         if start.redirect_url is None:
             return self._not_found(request)
@@ -189,6 +209,13 @@ class _Views:
     def callback(self, request: HttpRequest, provider_id: str) -> HttpResponse:
         if self._navigable(provider_id) is None:
             return self._not_found(request)
+        limited = self._limit(
+            request,
+            "callback",
+            ("client", self._client(request), self._config.callback_client_limit),
+        )
+        if limited is not None:
+            return limited
         try:
             response = self._signed_in(
                 request,
@@ -197,6 +224,7 @@ class _Views:
                 self._transaction_cookie(request),
             )
         except LoginFailed as exc:
+            self._audit_failure(provider_id, exc)
             response = self._redirect(self._error_url(exc.code))
         response.delete_cookie(TRANSACTION_COOKIE, path="/")
         return response
@@ -208,12 +236,22 @@ class _Views:
         if provider is None:
             return self._not_found(request)
         login_request = _Request(query={}, form=_credentials(request))
+        username = login_request.form.get("username", "").strip().lower()
+        limited = self._limit(
+            request,
+            "password",
+            ("client", self._client(request), self._config.password_client_limit),
+            ("account", username, self._config.password_account_limit),
+        )
+        if limited is not None:
+            return limited
         try:
             start = self._flow.begin(
                 provider.id, login_request, return_to=self._config.default_return_to
             )
             self._complete(request, provider.id, login_request, start.transaction.id)
-        except LoginFailed:
+        except LoginFailed as exc:
+            self._audit_failure(provider.id, exc)
             # Every failure answers alike, so the response cannot tell which
             # accounts exist.
             return self._unauthorized(request)
@@ -238,6 +276,7 @@ class _Views:
         )
         self.sessions.end(request)
         rotate_token(request)
+        audit("logout", account_id=info.account_id, provider=info.provider)
         return _no_store(JsonResponse({"redirect": redirect}))
 
     def logout_all(self, request: HttpRequest) -> HttpResponse:
@@ -248,6 +287,7 @@ class _Views:
         self._config.account_state.bump_session_version(info.account_id)
         self.sessions.end(request)
         rotate_token(request)
+        audit("logout.all", account_id=info.account_id, provider=info.provider)
         return _no_store(JsonResponse({"redirect": None}))
 
     def backchannel_logout(
@@ -269,8 +309,15 @@ class _Views:
             self._config.replay.revoke_sid(
                 revocation.issuer, revocation.sid, ttl=self._config.absolute_timeout
             )
+            audit("logout.backchannel", provider=provider_id, scope="session")
         elif revocation.account_id is not None:
             self._config.account_state.bump_session_version(revocation.account_id)
+            audit(
+                "logout.backchannel",
+                provider=provider_id,
+                scope="account",
+                account_id=revocation.account_id,
+            )
         return _no_store(HttpResponse())
 
     # Login ------------------------------------------------------------------
@@ -300,9 +347,11 @@ class _Views:
         try:
             account_id = self._config.accounts.resolve(identity)
         except AccountRejected as exc:
+            audit("account.rejected", provider=provider_id, reason=exc.reason)
             raise self._refused("account_not_provisioned", provider_id, exc.reason)
         context = self._config.contexts.resolve(account_id)
         if not context.active:
+            audit("account.disabled", account_id=account_id, provider=provider_id)
             raise self._refused("access_denied", provider_id, "account is not active")
         moment = self.sessions.now()
         self.sessions.start(
@@ -322,6 +371,7 @@ class _Views:
             ),
         )
         rotate_token(request)
+        audit("login.success", account_id=account_id, provider=provider_id)
         return self._return_to(completed.return_to)
 
     def _return_to(self, return_to: str) -> str:
@@ -331,6 +381,38 @@ class _Views:
             )
         except InvalidReturnTo:
             return self._config.default_return_to
+
+    @staticmethod
+    def _audit_failure(provider_id: str, exc: LoginFailed) -> None:
+        audit("login.failure", provider=provider_id, code=exc.code, reason=exc.reason)
+
+    @staticmethod
+    def _client(request: HttpRequest) -> str:
+        # Django resolves proxies through its own settings; REMOTE_ADDR is
+        # the address it vouches for.
+        return str(request.META.get("REMOTE_ADDR", ""))
+
+    def _limit(
+        self,
+        request: HttpRequest,
+        scope: str,
+        *counters: tuple[str, str, RateLimit | None],
+    ) -> HttpResponse | None:
+        """Count one hit on each counter; answer ``429`` for the first one over."""
+        for by, subject, rate in counters:
+            if rate is None:
+                continue
+            retry_after = self._config.limiter.hit(f"{scope}:{by}", subject, rate)
+            if retry_after is not None:
+                audit("rate_limited", scope=scope, by=by, retry_after=retry_after)
+                return _no_store(
+                    problem_details_response(
+                        TooManyRequests("Too many requests", retry_after=retry_after),
+                        instance=request.path,
+                        registry=self._registry,
+                    )
+                )
+        return None
 
     @staticmethod
     def _refused(code: CallbackError, provider_id: str, reason: str) -> LoginFailed:
@@ -465,6 +547,7 @@ def auth_urlpatterns(
             for store in (config.transactions, config.replay)
             if isinstance(store, (CacheTransactionStore, CacheReplayStore))
         ]
+        + [config.limiter.alias]
     )
     views = _Views(config)
     base = f"{prefix.strip('/')}/" if prefix.strip("/") else ""

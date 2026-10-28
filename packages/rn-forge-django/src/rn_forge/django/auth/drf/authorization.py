@@ -11,6 +11,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rn_forge.auth import Principal, ResourcePolicy, requirement_for
+from rn_forge.django.auth.audit import audit
 from rn_forge.django.drf import RequestUtils
 
 __all__ = ["PermissionKeyPermission", "ResourcePolicyViewMixin"]
@@ -40,9 +41,17 @@ class PermissionKeyPermission(BasePermission):
         action_map: Mapping[str, str] | None = getattr(
             view, "permission_action_map", None
         )
-        return requirement_for(key, action, action_map=action_map).is_satisfied_by(
+        allowed = requirement_for(key, action, action_map=action_map).is_satisfied_by(
             principal
         )
+        if not allowed:
+            audit(
+                "authorization.denied",
+                account_id=principal.subject,
+                permission_key=key,
+                action=action,
+            )
+        return allowed
 
 
 class ResourcePolicyViewMixin(GenericAPIView):
@@ -84,6 +93,13 @@ class ResourcePolicyViewMixin(GenericAPIView):
         if not self.resource_policy.allows(
             self._policy_principal(), self._policy_action(), obj
         ):
+            audit(
+                "authorization.denied",
+                account_id=self._policy_principal().subject,
+                action=self._policy_action(),
+                resource=type(obj).__name__,
+                hidden=self.policy_hides_existence,
+            )
             if self.policy_hides_existence:
                 raise NotFound
             raise PermissionDenied

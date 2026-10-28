@@ -272,3 +272,42 @@ def test_out_of_scope_detail_is_404_and_denied_object_follows_setting() -> None:
         _call(Visible.as_view({"get": "retrieve"}), "get", "/", pk=other.pk).status_code
         == 403
     )
+
+
+def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("audit event=")
+    ]
+
+
+def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO")
+    principal = Principal(subject="7", permissions=frozenset({"orders.read"}))
+    permission = PermissionKeyPermission()
+
+    assert (
+        permission.has_permission(_request(principal), _View("partial_update")) is False
+    )
+
+    assert _events(caplog) == [
+        "audit event=authorization.denied account_id='7' "
+        "permission_key='orders' action='partial_update'"
+    ]
+
+
+def test_a_denied_object_is_audited(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO")
+    other = Group.objects.create(name="b-1")
+
+    class Visible(_GroupView):
+        def get_queryset(self):  # noqa: ANN201
+            return Group.objects.all()
+
+    _call(Visible.as_view({"get": "retrieve"}), "get", "/", pk=other.pk)
+
+    assert _events(caplog) == [
+        "audit event=authorization.denied account_id='1' action='retrieve' "
+        "resource='Group' hidden=False"
+    ]

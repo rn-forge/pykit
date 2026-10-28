@@ -7,6 +7,14 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Added
 
+- Rate limiting and audit events for the `/auth` routes. `FixedWindowLimiter`
+  and `RateLimit` count hits in fixed windows over Django's cache.
+  `/auth/login/password` is limited per client and per username, callbacks per
+  client, with limits configured on `AuthRoutesConfig`; a limited request is a
+  `429` `too-many-requests` problem with `Retry-After`. Login success and
+  failure, logout, account provisioned, rejected or disabled, authorization
+  denied and rate limiting are audit events on the `rn_forge.audit.auth`
+  `AppLogger` channel.
 - Account resolution and DRF authentication. `DjangoAccountResolver`
   (`rn_forge.django.auth.accounts`) is an `AccountResolver` over the Django user
   model and the new `ExternalAccount` link model, unique on `(issuer, subject)`

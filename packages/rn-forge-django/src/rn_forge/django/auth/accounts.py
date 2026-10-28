@@ -12,6 +12,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError, transaction
 from django.db.models import F
 from rn_forge.auth import AccountRejected, ExternalIdentity
+from rn_forge.django.auth.audit import audit
 from rn_forge.django.auth.models import AccountState, ExternalAccount
 
 __all__ = [
@@ -169,6 +170,13 @@ class DjangoAccountResolver:
         )
         user.set_unusable_password()
         user.save()
+        account_id, provider = str(user.pk), identity.provider
+        # A first-login race rolls the loser back; only a committed account is audited.
+        transaction.on_commit(
+            lambda: audit(
+                "account.provisioned", account_id=account_id, provider=provider
+            )
+        )
         return user
 
 
@@ -184,6 +192,8 @@ class DjangoAccountStateWriter:
         _user_model()._default_manager.filter(pk=account_id).update(
             is_active=active
         )  # Django's documented manager access
+        if not active:
+            audit("account.disabled", account_id=account_id)
 
     def bump_session_version(self, account_id: str) -> int:
         """Increase the user's session version and return the new one."""

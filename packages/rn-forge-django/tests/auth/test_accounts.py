@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from django.contrib.auth import get_user_model  # noqa: E402
@@ -136,3 +138,37 @@ def test_state_writer_drives_session_version_and_activity_through_the_cache() ->
         assert not cache.resolve(account).active
     finally:
         disconnect()
+
+
+def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("audit event=")
+    ]
+
+
+def test_jit_provisioning_is_audited_without_the_email(
+    caplog: pytest.LogCaptureFixture,
+    django_capture_on_commit_callbacks: Any,
+) -> None:
+    caplog.set_level("INFO")
+    with django_capture_on_commit_callbacks(execute=True):
+        account = _resolver(provisioning="jit").resolve(
+            _identity(email="a@x.com", email_verified=True)
+        )
+
+    assert _events(caplog) == [
+        f"audit event=account.provisioned account_id='{account}' provider='p'"
+    ]
+
+
+def test_disabling_an_account_is_audited(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO")
+    user = User.objects.create_user("ada")
+    writer = DjangoAccountStateWriter()
+
+    writer.set_active(str(user.pk), True)
+    writer.set_active(str(user.pk), False)
+
+    assert _events(caplog) == [f"audit event=account.disabled account_id='{user.pk}'"]

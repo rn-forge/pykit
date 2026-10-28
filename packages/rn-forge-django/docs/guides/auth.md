@@ -266,6 +266,31 @@ logout that names only `sub` bump the account's session version, which ends
 every session of the account on its next request. A back-channel logout with a
 `sid` revokes that session only.
 
+### Rate limits and audit events
+
+`POST /auth/login/password` and `GET /auth/callback/{provider}` are rate limited
+with a fixed-window counter over Django's cache (`cache.add` and `cache.incr`),
+in the cache alias of `AuthRoutesConfig.limiter` (`FixedWindowLimiter`). The
+client is `REMOTE_ADDR`: Django resolves proxies through its own settings, and
+`X-Forwarded-For` is never read here. Password login is limited per client
+(`password_client_limit`, 30 per 5 minutes) and per submitted username
+(`password_account_limit`, 10 per 5 minutes; the username is hashed in the
+key). Callbacks are limited per client only (`callback_client_limit`, 60 per 5
+minutes), because no account is known before the response is verified. Each
+limit is a `RateLimit(limit, window)`, or `None` for none. A limited request
+is the `429` `too-many-requests` problem with `Retry-After`. The local-memory
+cache is refused for the limiter outside `DEBUG`, as for the other stores.
+
+Security-relevant events are `INFO` records on the `rn_forge.audit.auth`
+`AppLogger` channel, in the form `audit event=<name> key='value' ...`:
+`login.success`, `login.failure` (provider, code, reason), `logout`,
+`logout.all`, `logout.backchannel`, `account.provisioned`, `account.rejected`,
+`account.disabled` (at login, and `DjangoAccountStateWriter.set_active(False)`),
+`authorization.denied` (`PermissionKeyPermission` and `ResourcePolicyViewMixin`)
+and `rate_limited`. They carry account IDs, provider IDs, codes and short
+reasons, and never a token, code, assertion, password, session ID or email
+address.
+
 ### CSRF
 
 Every unsafe method on a session-authenticated route is protected by
