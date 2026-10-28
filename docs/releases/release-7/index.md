@@ -45,7 +45,7 @@ and every package is published to PyPI
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
 | [F20.1](../../specs/epics/E20-security-baseline/F20.1-baseline-decision.md) | E20 | Closed |
-| [F20.2](../../specs/epics/E20-security-baseline/F20.2-dependency-risk.md) | E20 | Active |
+| [F20.2](../../specs/epics/E20-security-baseline/F20.2-dependency-risk.md) | E20 | Closed |
 | [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | New |
 | [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | New |
 | [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Active |

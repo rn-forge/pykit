@@ -56,6 +56,38 @@ jobs:
             --no-emit-workspace --no-hashes --no-annotate --no-header -o "$RUNNER_TEMP/requirements.txt"
           uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --no-deps --disable-pip --strict
 
+  # Workspace members carry no licence metadata, so they are left out of the
+  # environment. --fail-on is partial-match for names ("GNU General Public
+  # License" does not match the Lesser variant) and exact for SPDX ids, because
+  # a partial "GPL-3.0" would also match "LGPL-3.0-only".
+  licenses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          sync: "false"
+
+      - name: pip-licenses
+        run: |
+          uv sync --frozen --all-packages --all-extras --all-groups --no-install-workspace
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --format=json --output-file "$RUNNER_TEMP/licenses.json"
+          # text-unidecode (via python-slugify) is "Artistic License or GPL"; pykit uses it under Artistic.
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --partial-match --ignore-packages text-unidecode \
+            --fail-on "GNU General Public License;GNU Affero;Server Side Public License;AGPL;SSPL"
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --fail-on "UNKNOWN;GPL;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: licenses
+          path: ${{ runner.temp }}/licenses.json
+          if-no-files-found: ignore
+
   internal-ranges:
     permissions:
       contents: read
@@ -469,7 +501,7 @@ jobs:
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, dependency-audit, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, dependency-audit, licenses, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

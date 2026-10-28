@@ -65,6 +65,14 @@ non-zero. To accept a finding, add `--ignore-vuln <ID>` to the CI step with a
 `#` comment beside it giving the reason and when to revisit it; an ignore
 without a reason is not allowed.
 
+CI's `licenses` job also writes the locked environment's licence inventory
+(`pip-licenses`, JSON) to the `licenses` artifact on every run. It fails on GPL,
+AGPL, SSPL or an `UNKNOWN` licence and allows LGPL; the deny lists are the
+`--fail-on` arguments in `.github/workflows/main.yml`. Workspace members are
+left out, so the check covers third-party dependencies only. A dual-licensed
+package used under its permissive option goes in `--ignore-packages`, with the
+reason in a `#` comment beside it.
+
 ## Sonar feedback
 
 Connect SonarQube for IDE to the project's SonarCloud server (connected mode)
