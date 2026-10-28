@@ -78,7 +78,12 @@ what PyPI and GitHub already have. A manual dispatch builds only and does not
 publish releases or deploy Pages. Dispatching it with `testpypi` set uploads
 every package to TestPyPI instead, skipping versions already there, and creates
 no tags or releases; use it from the release branch to prove the uploads before
-the merge. A resumed tag at an older commit is outside that run's automatic
+the merge. A package's first upload to an index needs a pending trusted
+publisher, and PyPI holds only one per workflow and environment. Add the
+publisher for the next package in release order, rerun the failed `release` job
+and repeat
+([F21.3](../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md#registering-the-publishers)).
+A resumed tag at an older commit is outside that run's automatic
 external-install and docs checks. Verify its published assets and package docs,
 then check its install and import by hand, substituting the package, version and
 import module:
