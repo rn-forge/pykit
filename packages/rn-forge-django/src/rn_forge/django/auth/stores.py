@@ -1,8 +1,8 @@
 """Login transactions, replay records and revoked session IDs in Django's cache.
 
-Several processes share these records only over a shared cache backend, such as
-Django's Redis backend (the ``redis`` extra). The local-memory cache serves
-tests and single-process development.
+The records are shared between processes only when the cache is, as Django's
+Redis backend (the ``redis`` extra) is. The local-memory cache is for tests and
+single-process development.
 """
 
 from __future__ import annotations

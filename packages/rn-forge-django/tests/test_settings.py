@@ -71,3 +71,11 @@ class TestOverrideAndReload:
         with pytest.raises(TypeError):
             with override_settings(RN_FORGE_DJANGO={"DRF": {"PAGINATION": 3}}):
                 pass
+
+
+class TestLazyBuild:
+    def test_the_facade_is_built_on_first_use(self) -> None:
+        lazy = rnf_settings._LazySettings()  # pyright: ignore[reportPrivateUsage]
+
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"CASING": {"ENABLED": False}}}):
+            assert lazy.drf.casing.enabled is False

@@ -2,10 +2,9 @@
 
 Every read of the session goes through :meth:`Sessions.read`, which enforces
 the absolute timeout and the revocation checks. Idle expiry is Django's own
-session expiry: it is pushed forward on a normal read and left alone by a read
-that passes ``touch=False``. This works because ``SESSION_SAVE_EVERY_REQUEST``
-is false (see :data:`SESSION_SETTINGS`), so an unmodified session is not
-re-saved and its expiry does not move.
+session expiry: a normal read pushes it forward and a read that passes
+``touch=False`` leaves it alone. ``SESSION_SAVE_EVERY_REQUEST`` must be false
+(see :data:`SESSION_SETTINGS`).
 """
 
 from __future__ import annotations
@@ -54,9 +53,9 @@ SESSION_SETTINGS: Final[dict[str, Any]] = {
 """Django settings for the session and its cookie.
 
 Spread into your settings module: ``globals().update(SESSION_SETTINGS)``.
-The ``__Host-`` prefix forbids a ``Domain`` and requires ``Secure`` and
-``Path=/``. ``SESSION_SAVE_EVERY_REQUEST`` stays false so that reading the
-session does not extend it.
+The ``__Host-`` cookie requires ``Secure``, ``Path=/`` and no ``Domain``.
+``SESSION_SAVE_EVERY_REQUEST`` must stay false: reading the session then does
+not extend it.
 """
 
 _SIGNED_COOKIES = "django.contrib.sessions.backends.signed_cookies"

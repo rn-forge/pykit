@@ -53,11 +53,17 @@ Optional extras:
   `TruncateModelMixin`; the opt-in `VersionedModelMixin`/`ImmutableModelMixin`;
   and `SequenceGenerator` over an abstract counter.
 - **`auth`** — An installable Django app (`rn_forge.django.auth`, label
-  `rn_forge_django_auth`) with sub-packages per mechanism: `auth.basic`
-  (session login views), `auth.jwt` (JWT authentication, credentials, mixins,
-  views), `auth.saml` (SAML login views), and `auth.drf` (shared DRF
-  authentication classes, permissions, mixins, serializers, and the
-  `rn_forge.web` principal binding for externally issued bearer tokens).
+  `rn_forge_django_auth`) that binds `rn-forge-auth` to Django and DRF:
+  `routes` (the `/auth` URLconf and its configuration), `sessions`
+  (`django.contrib.sessions` sessions with timeouts and revocation), `csrf`
+  (CSRF middleware and settings), `stores` (login transactions and replay
+  records in Django's cache), `rate_limit`, `audit` (audit events),
+  `accounts` and `models` (the default account resolver and its link and state
+  tables), `authorization` (the default authorization context provider), and
+  `auth.drf` (session and bearer authentication, permission-key and
+  resource-policy hooks, serializers and the management viewsets). The
+  sub-packages `auth.basic`, `auth.jwt` and `auth.saml` and the `credentials`
+  and `payload` modules are legacy, removed by the next breaking change.
 - **`drf`** — DRF integration outside the auth app: `drf.views` (base view
   classes, mixins, `PermissionByMethodMixin`), `drf.routers`
   (`CustomMethodRouter`, AIP-136 colon custom methods), `drf.transfer`
@@ -91,8 +97,9 @@ them.
 ## Dependencies and package behavior
 
 - **`rn-forge-web`** is a base dependency: five modules are adapters over it.
-- **`rn-forge-auth`** is a base dependency: `auth.drf.principal` binds its
-  `Principal`, `Requirement` and authenticator contracts to DRF.
+- **`rn-forge-auth`** is a base dependency: `auth` binds its login flows,
+  stores, `Principal`, `Requirement` and authorization contracts to Django and
+  DRF.
 - **`drf-spectacular`** (`openapi` extra) supplies the OpenAPI schema
   integration.
 - **`drf.casing`** supplies the camelCase renderer and parser.
@@ -100,8 +107,9 @@ them.
   `auth.drf.oidc` only binds it to DRF. It is separate from `jwt` so JWKS auth
   does not install simplejwt.
 - **`celery` extra** — supplies the Celery app factory.
-- **No migrations.** `SequenceGenerator`'s counter is abstract, so installing
-  this package adds no tables.
+- **Migrations.** The auth app has one, for the external-account link and
+  account-state tables. `SequenceGenerator`'s counter is abstract and adds no
+  table.
 
 ## Configuration
 
@@ -110,7 +118,7 @@ module, e.g.:
 
 ```python
 RN_FORGE_DJANGO = {
-    "AUTH": {"SAML": {"SETTINGS": {...}, "RETURN_TO": "/"}},
+    "AUTH": {"PROBLEM_TYPE_BASE": "https://errors.example.com/"},
     "DRF": {
         "TRANSFER": {"MAX_ROWS": 10_000},
         "PAGINATION": {"PAGE_SIZE": 50, "MAX_PAGE_SIZE": 200},

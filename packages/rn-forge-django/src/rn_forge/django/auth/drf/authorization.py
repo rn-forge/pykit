@@ -65,7 +65,7 @@ class ResourcePolicyViewMixin(GenericAPIView):
 
     Attributes:
         resource_policy: The policy. Required.
-        policy_hides_existence: Report a denied object as ``404`` rather than
+        policy_hides_existence: Report a denied object as ``404`` instead of
             ``403``.
     """
 

@@ -2,12 +2,10 @@
 
 Django's ``CsrfViewMiddleware`` checks the token and, for an ``Origin`` or
 (over HTTPS) ``Referer`` header, that the origin is the request's own or in
-``CSRF_TRUSTED_ORIGINS``. Django takes the request's scheme and host from
-forwarded headers only through ``SECURE_PROXY_SSL_HEADER`` and
-``USE_X_FORWARDED_HOST``, which is how a proxy becomes trusted.
-:class:`AuthCsrfMiddleware` adds what Django lacks: it rejects
-``Sec-Fetch-Site: cross-site`` and skips requests that carry a ``Bearer``
-``Authorization`` header.
+``CSRF_TRUSTED_ORIGINS``. The request's scheme and host come from forwarded
+headers only when ``SECURE_PROXY_SSL_HEADER`` and ``USE_X_FORWARDED_HOST`` say
+so. :class:`AuthCsrfMiddleware` also rejects ``Sec-Fetch-Site: cross-site`` and
+skips requests that carry a ``Bearer`` ``Authorization`` header.
 """
 
 from __future__ import annotations
@@ -145,7 +143,7 @@ def check_csrf_settings() -> None:
     names, ``HttpOnly``, ``CSRF_USE_SESSIONS`` and the failure view match
     :data:`CSRF_SETTINGS`. Outside ``DEBUG``, the other cookie settings must
     match too. ``RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]`` must be set in
-    every mode, so that ``csrf-failed`` and ``forbidden`` differ in ``type``.
+    every mode; ``csrf-failed`` and ``forbidden`` then differ in ``type``.
 
     Raises:
         ImproperlyConfigured: A requirement is not met.

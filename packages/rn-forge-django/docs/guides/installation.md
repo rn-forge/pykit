@@ -37,6 +37,7 @@ required by version range.
 | `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
 | `oidc` | `djangorestframework` + `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
+| `redis` | `rn-forge-auth[redis]`, the client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for `rn_forge.django.celery` |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |

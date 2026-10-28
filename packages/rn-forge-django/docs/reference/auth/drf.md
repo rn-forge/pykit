@@ -19,3 +19,11 @@
 ## Views
 
 ::: rn_forge.django.auth.drf.views
+
+## Session authentication
+
+::: rn_forge.django.auth.drf.session
+
+## Authorization
+
+::: rn_forge.django.auth.drf.authorization

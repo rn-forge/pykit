@@ -26,7 +26,7 @@ work, tracked in ngkit's own epic against the same design.
 | [F13.2 — rn-forge-auth package](F13.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | Closed |
 | [F13.3 — Core contracts and token profiles](F13.3-core-contracts.md) | The neutral contracts, the three token profiles, the stores and the offline fake IdPs. | Closed |
 | [F13.4 — Protocol adapters](F13.4-protocol-adapters.md) | OIDC and OAuth 2.0, local-password and development logins. | Closed |
-| [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | Active |
+| [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | Closed |
 | [F13.6 — FastAPI binding](F13.6-fastapi-binding.md) | The same surface and defaults on FastAPI. | New |
 | [F13.7 — Remove the legacy auth flows](F13.7-legacy-removal.md) | Remove the locally issued JWT flows and the auth code the new surface replaces. | New |
 

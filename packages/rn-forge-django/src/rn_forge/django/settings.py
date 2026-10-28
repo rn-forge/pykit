@@ -256,7 +256,25 @@ def _build_settings() -> RnforgeDjangoSettings:
     )
 
 
-rn_forge_django_settings = _build_settings()
+# Built on first use: a settings module may import this package before it
+# defines RN_FORGE_DJANGO.
+class _LazySettings:
+    """The settings facade, built on first attribute access."""
+
+    def __init__(self) -> None:
+        self._built: RnforgeDjangoSettings | None = None
+
+    def rebuild(self) -> None:
+        self._built = _build_settings()
+
+    def __getattr__(self, name: str) -> Any:
+        if self._built is None:
+            self._built = _build_settings()
+        return getattr(self._built, name)
+
+
+_LAZY = _LazySettings()
+rn_forge_django_settings = cast(RnforgeDjangoSettings, _LAZY)
 
 
 def _reload_settings(*, setting: str, **kwargs: Any) -> None:
@@ -265,8 +283,7 @@ def _reload_settings(*, setting: str, **kwargs: Any) -> None:
     if setting != _SETTINGS_NAME:
         return
 
-    global rn_forge_django_settings
-    rn_forge_django_settings = _build_settings()
+    _LAZY.rebuild()
     _LOGGER.debug("{} reloaded", _SETTINGS_NAME)  # noqa: PLE1205  # brace-style log format
 
 

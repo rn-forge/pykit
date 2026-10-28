@@ -111,8 +111,7 @@ class AuthRoutesConfig:
         password_account_limit: Password login attempts per submitted username
             in a window; ``None`` for no limit.
         callback_client_limit: Callback requests per client address in a window.
-            Callbacks are limited per client only, because no account is known
-            before the response is verified; ``None`` for no limit.
+            Callbacks are limited per client only; ``None`` for no limit.
     """
 
     providers: Mapping[str, IdentityProvider[LoginRequest]]

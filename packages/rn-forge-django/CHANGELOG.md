@@ -7,62 +7,66 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Added
 
-- Rate limiting and audit events for the `/auth` routes. `FixedWindowLimiter`
-  and `RateLimit` count hits in fixed windows over Django's cache.
-  `/auth/login/password` is limited per client and per username, callbacks per
-  client, with limits configured on `AuthRoutesConfig`; a limited request is a
-  `429` `too-many-requests` problem with `Retry-After`. Login success and
-  failure, logout, account provisioned, rejected or disabled, authorization
-  denied and rate limiting are audit events on the `rn_forge.audit.auth`
-  `AppLogger` channel.
-- Account resolution and DRF authentication. `DjangoAccountResolver`
-  (`rn_forge.django.auth.accounts`) is an `AccountResolver` over the Django user
-  model and the new `ExternalAccount` link model, unique on `(issuer, subject)`
-  and shipped with the auth app's first migration, which also adds
+- The `/auth` surface over `rn-forge-auth`, in `rn_forge.django.auth`.
+  `auth_urlpatterns(config, prefix="auth")`, configured by `AuthRoutesConfig`,
+  serves `providers`, `login/{provider}`, `callback/{provider}`, `session`,
+  `logout`, `logout/all`, `backchannel-logout/{provider}` and `login/password`
+  over `LoginFlow`. Providers, the account resolver and the authorization
+  context provider are `rn-forge-auth` objects passed in the configuration;
+  there is no settings block for them. The development provider exists only
+  under `DEBUG`. A callback error redirects to the error route with one of
+  `access_denied`, `account_not_provisioned` and `login_failed`.
+- Login transactions, replay records and revoked session IDs in Django's cache:
+  `CacheTransactionStore` and `CacheReplayStore`, behind the `__Host-login-tx`
+  cookie. The `redis` extra names `rn-forge-auth[redis]`, the client for
+  Django's Redis cache backend.
+- Sessions on `django.contrib.sessions` (`db` or `cached_db`).
+  `SESSION_SETTINGS` carries the `__Host-session` cookie settings. `Sessions`
+  applies a 30-minute sliding idle timeout and a 12-hour absolute timeout
+  (`AuthRoutesConfig.idle_timeout` and `absolute_timeout`), and deletes a
+  session whose version differs from its account's, whose account is inactive,
+  or whose `session_ref` is revoked. `GET /auth/session` does not extend the
+  session. `rotate_session` gives a session a new ID after a privilege change.
+- CSRF protection for session routes. `AuthCsrfMiddleware` adds the
+  `Sec-Fetch-Site: cross-site` rejection and the `Bearer` `Authorization`
+  exemption to `CsrfViewMiddleware`. `CSRF_SETTINGS` configures Angular's
+  `XSRF-TOKEN` cookie and `X-XSRF-TOKEN` header, and `csrf_failure_view`
+  answers the `403` `csrf-failed` problem. `/auth/session` always sets the
+  cookie, and login and logout rotate the token. `enforce_csrf` runs the same
+  check for DRF views, which are `csrf_exempt`.
+- `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]`. `auth_urlpatterns` raises
+  `ImproperlyConfigured` without it, so `csrf-failed` and `forbidden` differ in
+  `type`, and refuses unsafe session, CSRF and cache settings at startup.
+- Rate limiting: `FixedWindowLimiter` and `RateLimit`, a fixed-window counter
+  over Django's cache. `/auth/login/password` is limited per client and per
+  username, callbacks per client, with limits on `AuthRoutesConfig`. A limited
+  request is a `429` `too-many-requests` problem with `Retry-After`.
+- Audit events on the `rn_forge.audit.auth` `AppLogger` channel: login success
+  and failure, logout, account provisioned, rejected and disabled,
+  authorization denied and rate limiting.
+- Account resolution. `DjangoAccountResolver` is an `AccountResolver` over the
+  Django user model and the `ExternalAccount` link model, unique on
+  `(issuer, subject)`, with the auth app's first migration, which also adds
   `AccountState` for the session version. A per-provider `ProviderPolicy` sets
-  `existing` or `jit` provisioning, an email-domain allowlist, and the domains
+  `existing` or `jit` provisioning, an email-domain allowlist and the domains
   for which a verified email links to an existing user; an optional `sync` hook
   copies attributes at each login, and `link` records service accounts.
-  `DjangoAccountStateWriter` persists `/auth/logout/all` session versions and the
-  `active` flag, and `DjangoAuthorizationContextProvider` reads that version by
-  default. `PrincipalSessionAuthentication` yields a `session` principal from
-  `Sessions.read`, and ignores any request with an `Authorization` header.
-  `sessions_for(config)` builds its `Sessions` from `AuthRoutesConfig`.
+  `DjangoAccountStateWriter` persists session versions and the `active` flag.
 - Authorization from Django groups and permissions:
   `DjangoAuthorizationContextProvider` (staff and superuser bypass as roles),
-  `connect_authorization_signals` for cache invalidation, `PermissionKeyPermission`
-  and `ResourcePolicyViewMixin`.
-- CSRF protection for the `/auth` routes. `AuthCsrfMiddleware` adds the
-  `Sec-Fetch-Site: cross-site` rejection and the `Bearer` `Authorization` exemption to
-  `CsrfViewMiddleware`. `CSRF_SETTINGS` and `CSRF_MIDDLEWARE` configure
-  Angular's `XSRF-TOKEN` cookie and `X-XSRF-TOKEN` header, and
-  `csrf_failure_view` answers the `403` `csrf-failed` problem. `/auth/session`
-  always sets the cookie, and login and logout rotate the token.
-  `enforce_csrf` runs the same check for DRF views, which are `csrf_exempt`;
-  `PrincipalSessionAuthentication` calls it for the sessions it authenticates, so
-  an unsafe request without the token is the `403` `csrf-failed` problem.
-  `problem_details_exception_handler` uses `PROBLEM_TYPE_BASE` when set.
-  `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]` is new, and `auth_urlpatterns`
-  raises `ImproperlyConfigured` without it. `AuthRoutesConfig.registry` is
-  removed: the routes build their problem registry from that setting.
-- Sessions for the `/auth` routes. `SESSION_SETTINGS` carries the
-  `__Host-session` cookie settings, and `auth_urlpatterns` raises
-  `ImproperlyConfigured` for `SESSION_SAVE_EVERY_REQUEST`, and outside `DEBUG`
-  for other cookie settings, a session engine other than `db` or `cached_db`, and the local-memory
-  cache. `Sessions.read` applies a 30-minute sliding idle timeout
-  (`AuthRoutesConfig.idle_timeout`), the 12-hour absolute timeout
-  (`absolute_timeout`, formerly `session_timeout`) and the session-version,
-  account-status and revoked-`sid` checks, deleting a failing session.
-  `rotate_session` gives a session a new ID after a privilege change.
-- `rn_forge.django.auth.auth_urlpatterns` serves the shared `/auth` routes
-  (providers, login, callback, session, logout, logout of all sessions,
-  back-channel logout, password login) over `rn-forge-auth`'s `LoginFlow`,
-  configured by `AuthRoutesConfig`. `CacheTransactionStore` and
-  `CacheReplayStore` keep login transactions, replay records and revoked session
-  IDs in Django's cache. The `redis` extra names `rn-forge-auth[redis]`.
+  `connect_authorization_signals` for cache invalidation,
+  `PermissionKeyPermission` and `ResourcePolicyViewMixin`.
+- `PrincipalSessionAuthentication` yields a `session` principal from
+  `Sessions.read` and enforces CSRF; `sessions_for(config)` builds its
+  `Sessions` from `AuthRoutesConfig`. A request with an `Authorization` header
+  is authenticated by the bearer class alone.
 
 ### Changed
 
+- `rn_forge_django_settings` is built on first use, so a settings module can
+  import this package before it defines `RN_FORGE_DJANGO`.
+- `problem_details_exception_handler` renders with `PROBLEM_TYPE_BASE` when it
+  is set.
 - Breaking: `PrincipalBearerAuthentication` and `JWKSBearerAuthentication`
   need `accounts` and `contexts` class attributes. They resolve the token's
   `(issuer, subject)` through `AccountResolver.lookup` (never provisioning) and
