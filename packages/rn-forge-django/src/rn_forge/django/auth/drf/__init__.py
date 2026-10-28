@@ -4,6 +4,10 @@ from rn_forge.django.auth.drf.authentication import (
     BaseLoginViewMixin,
     LogoutAPIView,
 )
+from rn_forge.django.auth.drf.authorization import (
+    PermissionKeyPermission,
+    ResourcePolicyViewMixin,
+)
 from rn_forge.django.auth.drf.mixins import (
     AuthorizationViewMixin,
     PermissionKeyViewMixin,
@@ -38,11 +42,13 @@ __all__ = [
     "GroupSerializer",
     "GroupViewSet",
     "LogoutAPIView",
+    "PermissionKeyPermission",
     "PermissionKeyViewMixin",
     "PermissionSerializer",
     "PermissionViewSet",
     "PrincipalBasicAuthentication",
     "PrincipalBearerAuthentication",
+    "ResourcePolicyViewMixin",
     "UserSerializer",
     "UserViewSet",
     "requires",

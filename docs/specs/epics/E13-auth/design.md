@@ -881,7 +881,9 @@ only supplies the header; the server-side check is what protects.
   with the new session and a new token.
 - **Failure** is a `403` problem with its own type, `csrf-failed`, on both
   frameworks (Django through `CSRF_FAILURE_VIEW`), so the client can tell it
-  from a permission denial.
+  from a permission denial. A binding that mounts the auth surface refuses
+  to start without a problem `type_base`: with `about:blank` the two `403`s
+  would differ only in `detail` (owner decision, 2026-10-28).
 - **Origin check:** `Origin`, or `Referer` when `Origin` is absent, must be one
   of the configured trusted origins, and `Sec-Fetch-Site: cross-site` is
   rejected. Behind a proxy, the scheme and host come from forwarded headers

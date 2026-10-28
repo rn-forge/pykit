@@ -26,7 +26,7 @@ work, tracked in ngkit's own epic against the same design.
 | [F13.2 — rn-forge-auth package](F13.2-auth-package.md) | Create the package and move the existing token, `Principal` and OIDC code into it. | Closed |
 | [F13.3 — Core contracts and token profiles](F13.3-core-contracts.md) | The neutral contracts, the three token profiles, the stores and the offline fake IdPs. | Closed |
 | [F13.4 — Protocol adapters](F13.4-protocol-adapters.md) | OIDC and OAuth 2.0, local-password and development logins. | Closed |
-| [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | New |
+| [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | Active |
 | [F13.6 — FastAPI binding](F13.6-fastapi-binding.md) | The same surface and defaults on FastAPI. | New |
 | [F13.7 — Remove the legacy auth flows](F13.7-legacy-removal.md) | Remove the locally issued JWT flows and the auth code the new surface replaces. | New |
 
@@ -40,14 +40,11 @@ stories of F13.3 to F13.7, which all ship in Release 7. F13.2 creates the
 follow it, in order, and are written inside `rn-forge-auth` and the framework
 packages.
 
-## Open questions
+## Considered and rejected
 
-- **How a client tells `csrf-failed` from `forbidden` without a `type_base`.**
-  Raised by S13.3.7 (2026-10-27). `rn-forge-web` renders `type: about:blank`
-  unless the application configures a type-URI base, and then RFC 9457 §4.2.1
-  sets `title` to the status phrase, so the two `403`s differ only in `detail`.
-  The [ngkit client contract](design.md#ngkit-client-contract) keys its retry
-  on the type. Proposed: a binding that mounts the auth surface refuses to
-  start without a `type_base`. The alternative, a fixed type URI for
-  `csrf-failed` alone, breaks the `about:blank` rule. Blocks F13.5's and
-  F13.6's CSRF stories, not F13.3.
+- **A fixed type URI for `csrf-failed` alone**, so a client can tell it from
+  `forbidden` without a `type_base`. Rejected (owner decision, 2026-10-28): it
+  breaks the `about:blank` rule. A binding that mounts the auth surface instead
+  refuses to start without a problem `type_base`, so the two `403`s differ in
+  `type` ([CSRF](design.md#csrf)). Raised by S13.3.7; applies to S13.5.3 and
+  S13.6.3.

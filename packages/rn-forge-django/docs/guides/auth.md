@@ -180,3 +180,26 @@ Django auth models, wired through `AuthorizedModelViewSet`: `PermissionViewSet`,
 `GroupViewSet`, `UserViewSet`. Mount them (or
 `rn_forge.django.auth.urls.urlpatterns`, which already registers them) under
 your API root.
+
+## Authorization from Django groups and permissions
+
+`rn_forge.django.auth.authorization.DjangoAuthorizationContextProvider` builds
+an `AuthorizationContext` from a user's groups and permissions. Roles are group
+names. Django `app_label.codename` permissions become dotted keys:
+`add`/`change`/`delete`/`view` of a model map to
+`<app_label>.<model>.create`/`update`/`delete`/`read` (`view` also grants
+`list`), so `inventory.change_stock` is `inventory.stock.update`. A custom
+permission keeps `<app_label>.<codename>`. A staff or superuser account gets the
+`staff` or `superuser` role and every permission key, so the bypass shows in
+`/auth/session`. Wrap the provider in an `AuthorizationContextCache` and call
+`connect_authorization_signals(cache)` once at startup: changes to users,
+groups, permissions and their relations, including those made through the
+`User`, `Group` and `Permission` viewsets, then invalidate the affected
+accounts.
+
+On a view, `PermissionKeyPermission` requires the key built by
+`rn_forge.auth.requirement_for` from `permission_key` and the action, and
+`ResourcePolicyViewMixin` applies a `ResourcePolicy`: `scope` narrows the
+queryset (so counts and pages cover only permitted rows) and `allows` guards
+each object, answering `404` instead of `403` when `policy_hides_existence` is
+true. Both are in `rn_forge.django.auth.drf`.
