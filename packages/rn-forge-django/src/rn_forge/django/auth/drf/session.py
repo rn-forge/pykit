@@ -7,6 +7,7 @@ from typing import ClassVar, override
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.request import Request
 from rn_forge.auth import Principal, SessionInfo
+from rn_forge.django.auth.csrf import enforce_csrf
 from rn_forge.django.auth.routes import AuthRoutesConfig
 from rn_forge.django.auth.sessions import Sessions
 from rn_forge.django.drf import RequestUtils
@@ -37,6 +38,10 @@ class PrincipalSessionAuthentication(BaseAuthentication):
     list a bearer class first and the header alone decides, so an invalid token
     is a ``401`` even with a valid session cookie.
 
+    An unsafe method also passes the CSRF check of
+    :func:`~rn_forge.django.auth.csrf.enforce_csrf`; a failure is the ``403``
+    ``csrf-failed`` problem.
+
     As the first authentication class of a view, an unauthenticated request is
     a ``401`` problem with no ``WWW-Authenticate`` header, provided the view
     uses :func:`~rn_forge.django.drf.exceptions.problem_details_exception_handler`.
@@ -53,6 +58,8 @@ class PrincipalSessionAuthentication(BaseAuthentication):
         active = self.sessions.read(django_request)
         if active is None:
             return None
+        # DRF views are csrf_exempt, so the middleware does not guard them.
+        enforce_csrf(django_request)
         info, context = active.info, active.context
         tenant = context.attributes.get("tenant")
         principal = Principal(

@@ -24,6 +24,19 @@ Notable changes to `rn-forge-django`, newest first, in the
   `DjangoAuthorizationContextProvider` (staff and superuser bypass as roles),
   `connect_authorization_signals` for cache invalidation, `PermissionKeyPermission`
   and `ResourcePolicyViewMixin`.
+- CSRF protection for the `/auth` routes. `AuthCsrfMiddleware` adds the
+  `Sec-Fetch-Site: cross-site` rejection and the `Bearer` `Authorization` exemption to
+  `CsrfViewMiddleware`. `CSRF_SETTINGS` and `CSRF_MIDDLEWARE` configure
+  Angular's `XSRF-TOKEN` cookie and `X-XSRF-TOKEN` header, and
+  `csrf_failure_view` answers the `403` `csrf-failed` problem. `/auth/session`
+  always sets the cookie, and login and logout rotate the token.
+  `enforce_csrf` runs the same check for DRF views, which are `csrf_exempt`;
+  `PrincipalSessionAuthentication` calls it for the sessions it authenticates, so
+  an unsafe request without the token is the `403` `csrf-failed` problem.
+  `problem_details_exception_handler` uses `PROBLEM_TYPE_BASE` when set.
+  `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]` is new, and `auth_urlpatterns`
+  raises `ImproperlyConfigured` without it. `AuthRoutesConfig.registry` is
+  removed: the routes build their problem registry from that setting.
 - Sessions for the `/auth` routes. `SESSION_SETTINGS` carries the
   `__Host-session` cookie settings, and `auth_urlpatterns` raises
   `ImproperlyConfigured` for `SESSION_SAVE_EVERY_REQUEST`, and outside `DEBUG`

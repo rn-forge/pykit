@@ -266,6 +266,50 @@ logout that names only `sub` bump the account's session version, which ends
 every session of the account on its next request. A back-channel logout with a
 `sid` revokes that session only.
 
+### CSRF
+
+Every unsafe method on a session-authenticated route is protected by
+`AuthCsrfMiddleware`, a `CsrfViewMiddleware` subclass. Spread `CSRF_SETTINGS`
+into your settings and add `CSRF_MIDDLEWARE` to `MIDDLEWARE`:
+
+```python
+from rn_forge.django.auth import CSRF_MIDDLEWARE, CSRF_SETTINGS
+
+globals().update(CSRF_SETTINGS)
+MIDDLEWARE = [..., CSRF_MIDDLEWARE]
+RN_FORGE_DJANGO = {"AUTH": {"PROBLEM_TYPE_BASE": "https://errors.example.com/"}}
+```
+
+The cookie is `XSRF-TOKEN` and the header `X-XSRF-TOKEN`, Angular's defaults;
+the cookie is not `HttpOnly` so that Angular can copy it into the header.
+`GET /auth/session` always sets the cookie, including when it answers `401`, so
+`POST /auth/login/password` is protected before sign-in. The token rotates at
+login and logout. A rejection is the `403` `csrf-failed` problem
+(`CSRF_FAILURE_VIEW`), and its reason is logged, never sent.
+
+Beyond Django's token and origin check, `AuthCsrfMiddleware` rejects
+`Sec-Fetch-Site: cross-site` on an unsafe method, even from a trusted origin.
+Requests that carry a `Bearer` `Authorization` header skip the check, as does
+the back-channel logout route, which carries a signed token. A `Basic` header
+does not: browsers replay cached Basic credentials on their own.
+
+DRF wraps its views in `csrf_exempt`, so the middleware does not guard them. A
+session authentication class calls `enforce_csrf(request)` for the requests it
+authenticates; it runs the same check and raises `CsrfFailed`.
+
+`CSRF_TRUSTED_ORIGINS` lists the other origins that may post. Behind a proxy,
+Django takes the request's scheme and host from forwarded headers only when you
+set `SECURE_PROXY_SSL_HEADER` and `USE_X_FORWARDED_HOST`, and the forwarded host
+must be in `ALLOWED_HOSTS`; without them a forged `X-Forwarded-*` header does
+not make a foreign `Origin` acceptable.
+
+`auth_urlpatterns` raises `ImproperlyConfigured` when `AuthCsrfMiddleware` is
+not in `MIDDLEWARE`, when the cookie and header names, `HttpOnly`,
+`CSRF_USE_SESSIONS` or `CSRF_FAILURE_VIEW` differ from `CSRF_SETTINGS`, outside
+`DEBUG` when the other CSRF cookie settings differ, and in every mode when
+`PROBLEM_TYPE_BASE` is unset: without a `type_base`, `csrf-failed` and
+`forbidden` differ only in `detail`.
+
 Login transactions (behind the `__Host-login-tx` cookie), replay
 records and revoked session IDs live in Django's cache; use the Redis cache
 backend in production, with the `redis` extra. A callback error redirects to

@@ -19,6 +19,9 @@ from urllib.parse import parse_qsl, urlsplit
 import pytest
 from django.http import HttpRequest, HttpResponse
 from django.urls import path
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ImproperlyConfigured
@@ -35,6 +38,8 @@ from rn_forge.auth import (
 from rn_forge.auth.oidc import BackchannelLogout, LogoutTokenVerifier, OidcProvider
 from rn_forge.auth.testing import FakeOidcProvider
 from rn_forge.django.auth import (
+    CSRF_MIDDLEWARE,
+    CSRF_SETTINGS,
     SESSION_COOKIE,
     SESSION_SETTINGS,
     Sessions,
@@ -44,11 +49,13 @@ from rn_forge.django.auth import (
     CacheReplayStore,
     CacheTransactionStore,
     auth_urlpatterns,
+    enforce_csrf,
 )
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
 CALLBACK = "/auth/callback/acme"
+TYPE_BASE = "https://errors.example/"
 DB_ENGINE = "django.contrib.sessions.backends.db"
 
 
@@ -124,6 +131,24 @@ class _World:
         return self.client.get(self.approve(start["Location"]))
 
 
+class _CsrfAuthentication(BaseAuthentication):
+    """What a DRF session authentication class does for the requests it accepts."""
+
+    def authenticate(self, request: Any) -> None:
+        enforce_csrf(request._request)
+
+
+class _GuardedView(APIView):
+    authentication_classes = [_CsrfAuthentication]
+    permission_classes: list[Any] = []
+
+    def get(self, request: Any) -> Response:
+        return Response({})
+
+    def post(self, request: Any) -> Response:
+        return Response({})
+
+
 @pytest.fixture
 def idp() -> Iterator[FakeOidcProvider]:
     with FakeOidcProvider(
@@ -146,19 +171,29 @@ def mount(
         prefix: str = "auth",
         rp_initiated_logout: bool = False,
         session_engine: str = DB_ENGINE,
+        django_settings: dict[str, Any] | None = None,
         **overrides: Any,
     ) -> _World:
         stack.enter_context(
             override_settings(
                 DEBUG=debug,
                 USE_TZ=True,
-                MIDDLEWARE=["django.contrib.sessions.middleware.SessionMiddleware"],
+                MIDDLEWARE=[
+                    "django.contrib.sessions.middleware.SessionMiddleware",
+                    CSRF_MIDDLEWARE,
+                ],
+                RN_FORGE_DJANGO={"AUTH": {"PROBLEM_TYPE_BASE": TYPE_BASE}},
                 CACHES={
                     "default": {
                         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
                         "LOCATION": str(tmp_path / "cache"),
                     }
                 },
+                REST_FRAMEWORK={
+                    "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler"
+                },
+                **CSRF_SETTINGS,
+                **(django_settings or {}),
                 **{**SESSION_SETTINGS, "SESSION_ENGINE": session_engine},
             )
         )
@@ -216,6 +251,8 @@ def mount(
         module.urlpatterns = [  # type: ignore[attr-defined]
             *auth_urlpatterns(config, prefix=prefix),
             path("touch", touch),
+            path("bearer", lambda request: HttpResponse()),
+            path("drf", _GuardedView.as_view()),
             path("rotate", rotate),
         ]
         monkeypatch.setitem(sys.modules, module.__name__, module)
@@ -1082,6 +1119,46 @@ def _bare_config() -> AuthRoutesConfig:
 
 
 class TestSettingsChecks:
+    @pytest.fixture(autouse=True)
+    def _csrf_settings(self) -> Iterator[None]:
+        with override_settings(
+            MIDDLEWARE=[CSRF_MIDDLEWARE],
+            RN_FORGE_DJANGO={"AUTH": {"PROBLEM_TYPE_BASE": TYPE_BASE}},
+            **CSRF_SETTINGS,
+        ):
+            yield
+
+    def test_mounting_without_a_problem_type_base_is_refused(self) -> None:
+        with override_settings(RN_FORGE_DJANGO={}):
+            with pytest.raises(ImproperlyConfigured, match="PROBLEM_TYPE_BASE"):
+                auth_urlpatterns(_bare_config())
+
+    def test_the_csrf_middleware_is_required_in_every_mode(self) -> None:
+        with override_settings(DEBUG=True, MIDDLEWARE=[]):
+            with pytest.raises(ImproperlyConfigured, match="MIDDLEWARE"):
+                auth_urlpatterns(_bare_config())
+
+    @pytest.mark.parametrize(
+        "setting, value",
+        [
+            ("CSRF_COOKIE_NAME", "csrftoken"),
+            ("CSRF_HEADER_NAME", "HTTP_X_CSRFTOKEN"),
+            ("CSRF_COOKIE_HTTPONLY", True),
+            ("CSRF_USE_SESSIONS", True),
+            ("CSRF_FAILURE_VIEW", "django.views.csrf.csrf_failure"),
+        ],
+    )
+    def test_the_csrf_names_are_required_in_every_mode(
+        self, setting: str, value: object
+    ) -> None:
+        with override_settings(DEBUG=True, **{setting: value}):
+            with pytest.raises(ImproperlyConfigured, match=setting):
+                auth_urlpatterns(_bare_config())
+
+    def test_a_non_secure_csrf_cookie_is_refused_outside_debug_only(self) -> None:
+        with override_settings(DEBUG=True, CSRF_COOKIE_SECURE=False):
+            assert auth_urlpatterns(_bare_config())
+
     def test_the_signed_cookie_engine_is_refused_outside_debug(self) -> None:
         with override_settings(
             DEBUG=False,
@@ -1166,3 +1243,264 @@ class TestSettingsChecks:
         with override_settings(DEBUG=True, SESSION_SAVE_EVERY_REQUEST=True):
             with pytest.raises(ImproperlyConfigured, match="SAVE_EVERY_REQUEST"):
                 auth_urlpatterns(_bare_config())
+
+
+class TestCsrf:
+    @staticmethod
+    def _client(world: _World) -> Client:
+        client = Client(enforce_csrf_checks=True)
+        world.client = client
+        return client
+
+    @staticmethod
+    def _token(client: Client) -> str:
+        """Fetch the CSRF cookie from ``/auth/session``, as the SPA does."""
+        response = client.get("/auth/session")
+        assert response.status_code == 401
+        return client.cookies["XSRF-TOKEN"].value
+
+    def _login(self, client: Client, token: str | None, **headers: str) -> Any:
+        extra = {"HTTP_X_XSRF_TOKEN": token} if token else {}
+        return client.post(
+            "/auth/login/password",
+            {"username": "ada", "password": "correct"},
+            content_type="application/json",
+            **extra,
+            **headers,
+        )
+
+    def test_session_always_sets_a_script_readable_csrf_cookie(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+
+        cookie = client.get("/auth/session").cookies["XSRF-TOKEN"]
+
+        assert cookie.value
+        assert cookie["httponly"] == ""
+        assert cookie["secure"] is True
+        assert cookie["samesite"] == "Lax"
+        client.post(
+            "/auth/login/password",
+            {"username": "ada", "password": "correct"},
+            content_type="application/json",
+            HTTP_X_XSRF_TOKEN=cookie.value,
+        )
+        assert client.get("/auth/session").cookies["XSRF-TOKEN"]["path"] == "/"
+
+    def test_login_is_protected_before_sign_in(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        missing = self._login(client, None)
+        wrong = self._login(client, "x" * 32)
+        ok = self._login(client, token)
+
+        assert (missing.status_code, wrong.status_code) == (403, 403)
+        assert ok.status_code == 200
+
+    def test_a_rejection_is_the_csrf_failed_problem(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+
+        response = self._login(client, None)
+
+        body = response.json()
+        assert response.status_code == 403
+        assert response["Content-Type"] == "application/problem+json"
+        assert body["type"] == f"{TYPE_BASE}csrf-failed"
+        assert body["detail"] == "CSRF verification failed."
+        assert "WWW-Authenticate" not in response
+
+    def test_logout_needs_the_token_and_rotates_it(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+        self._login(client, token)
+        token = client.cookies["XSRF-TOKEN"].value
+
+        assert client.post("/auth/logout").status_code == 403
+        response = client.post("/auth/logout", HTTP_X_XSRF_TOKEN=token)
+
+        assert response.status_code == 200
+        assert response.cookies["XSRF-TOKEN"].value != token
+
+    def test_logout_all_needs_the_token(self, mount: Callable[..., _World]) -> None:
+        client = self._client(mount())
+        self._login(client, self._token(client))
+
+        assert client.post("/auth/logout/all").status_code == 403
+
+    def test_the_token_rotates_at_login(self, mount: Callable[..., _World]) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        response = self._login(client, token)
+
+        assert response.cookies["XSRF-TOKEN"].value != token
+
+    def test_the_token_rotates_at_an_oidc_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._client(world)
+        token = self._token(client)
+
+        response = world.sign_in_with_idp()
+
+        assert response.cookies["XSRF-TOKEN"].value != token
+
+    def test_an_untrusted_origin_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        response = self._login(client, token, HTTP_ORIGIN="https://evil.example")
+
+        assert response.status_code == 403
+
+    @pytest.mark.parametrize("secure", [True])
+    def test_an_untrusted_referer_is_rejected_over_https(
+        self, mount: Callable[..., _World], secure: bool
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        response = client.post(
+            "/auth/login/password",
+            {"username": "ada", "password": "correct"},
+            content_type="application/json",
+            secure=secure,
+            HTTP_X_XSRF_TOKEN=token,
+            HTTP_REFERER="https://evil.example/page",
+        )
+
+        assert response.status_code == 403
+
+    def test_a_trusted_origin_passes(self, mount: Callable[..., _World]) -> None:
+        client = self._client(
+            mount(django_settings={"CSRF_TRUSTED_ORIGINS": ["https://app.example"]})
+        )
+        token = self._token(client)
+
+        response = self._login(client, token, HTTP_ORIGIN="https://app.example")
+
+        assert response.status_code == 200
+
+    def test_cross_site_fetch_metadata_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        cross = self._login(client, token, HTTP_SEC_FETCH_SITE="cross-site")
+        same = self._login(client, token, HTTP_SEC_FETCH_SITE="same-origin")
+
+        assert cross.status_code == 403
+        assert same.status_code == 200
+
+    def test_cross_site_fetch_metadata_is_rejected_even_from_a_trusted_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(
+            mount(django_settings={"CSRF_TRUSTED_ORIGINS": ["https://app.example"]})
+        )
+        token = self._token(client)
+
+        response = self._login(
+            client,
+            token,
+            HTTP_ORIGIN="https://app.example",
+            HTTP_SEC_FETCH_SITE="cross-site",
+        )
+
+        assert response.status_code == 403
+
+    def _forwarded(self, client: Client, token: str) -> Any:
+        return self._login(
+            client,
+            token,
+            HTTP_ORIGIN="https://app.example",
+            HTTP_X_FORWARDED_HOST="app.example",
+            HTTP_X_FORWARDED_PROTO="https",
+        )
+
+    def test_forged_forwarded_headers_do_not_vouch_for_an_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        assert self._forwarded(client, token).status_code == 403
+
+    def test_a_configured_proxy_vouches_for_the_forwarded_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(
+            mount(
+                django_settings={
+                    "ALLOWED_HOSTS": ["testserver", "app.example"],
+                    "USE_X_FORWARDED_HOST": True,
+                    "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https"),
+                }
+            )
+        )
+        token = self._token(client)
+
+        assert self._forwarded(client, token).status_code == 200
+
+    def test_a_drf_view_is_guarded_through_enforce_csrf(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+        token = self._token(client)
+
+        assert client.get("/drf").status_code == 200
+        without = client.post("/drf")
+        with_token = client.post("/drf", HTTP_X_XSRF_TOKEN=token)
+        cross = client.post(
+            "/drf", HTTP_X_XSRF_TOKEN=token, HTTP_SEC_FETCH_SITE="cross-site"
+        )
+        bearer = client.post("/drf", HTTP_AUTHORIZATION="Bearer abc")
+
+        assert without.status_code == 403
+        assert without.json()["detail"] == "CSRF verification failed."
+        assert with_token.status_code == 200
+        assert cross.status_code == 403
+        assert bearer.status_code == 200
+
+    def test_back_channel_logout_is_exempt(self, mount: Callable[..., _World]) -> None:
+        world = mount()
+        client = self._client(world)
+
+        response = client.post(
+            "/auth/backchannel-logout/acme",
+            {"logout_token": world.idp.logout_token(sid="sid-x")},
+        )
+
+        assert response.status_code == 200
+
+    def test_a_request_with_a_bearer_authorization_header_is_exempt(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+
+        response = client.post("/bearer", HTTP_AUTHORIZATION="Bearer abc")
+        without = client.post("/bearer")
+
+        assert response.status_code == 200
+        assert without.status_code == 403
+
+    def test_a_basic_authorization_header_is_not_exempt(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._client(mount())
+
+        response = client.post("/bearer", HTTP_AUTHORIZATION="Basic YTpi")
+
+        assert response.status_code == 403

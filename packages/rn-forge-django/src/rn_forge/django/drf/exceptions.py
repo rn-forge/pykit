@@ -20,6 +20,7 @@ from rest_framework.views import (
     exception_handler,  # pyright: ignore[reportUnknownVariableType]  # DRF stubs leave its parameters untyped
     set_rollback,
 )
+from rn_forge.django import settings as facade
 from rn_forge.django.drf.utils import RequestUtils
 from rn_forge.django.exceptions import (
     json_exception_response,
@@ -84,6 +85,11 @@ def problem_registry(*, type_base: str = "") -> ProblemRegistry:
 _REGISTRY: Final = problem_registry()
 
 
+def _default_registry() -> ProblemRegistry:
+    type_base = facade.rn_forge_django_settings.auth.problem_type_base
+    return problem_registry(type_base=type_base) if type_base else _REGISTRY
+
+
 def problem_details_exception_handler(
     exc: Exception,
     context: Mapping[str, object],
@@ -99,10 +105,10 @@ def problem_details_exception_handler(
     Args:
         exc: The exception DRF caught.
         context: DRF's handler context; ``context["request"]`` gives the path.
-        registry: The rows to render with. Defaults to :func:`problem_registry`,
-            built once at import.
+        registry: The rows to render with. Defaults to :func:`problem_registry`
+            with ``RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]`` when set.
     """
-    rows = registry if registry is not None else _REGISTRY
+    rows = registry if registry is not None else _default_registry()
     drf_response: Response | None = exception_handler(exc, context)
     # DRF only rolls back what it handled; a 500 rendered here must not commit.
     set_rollback()

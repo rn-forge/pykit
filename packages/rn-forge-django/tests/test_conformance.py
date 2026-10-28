@@ -40,6 +40,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rn_forge.django.auth import CSRF_MIDDLEWARE, CSRF_SETTINGS
+from rn_forge.django.exceptions import problem_details_response
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication, requires
 from rn_forge.django.cors import cors_settings
 from rn_forge.django.deprecation import deprecated
@@ -75,6 +77,8 @@ from rn_forge.web import (
     DomainConflict,
     EntityVersionETagCodec,
     ServiceUnavailable,
+    SessionRequired,
+    default_registry,
     TooManyRequests,
     run_idempotent,
 )
@@ -94,7 +98,7 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
-PROVIDES: frozenset[ConformanceCapability] = frozenset()
+PROVIDES: frozenset[ConformanceCapability] = frozenset({"session-routes", "csrf"})
 """The optional capabilities this stack's fixture serves. Add one when the
 binding that provides it lands; a case needing a capability not listed here is
 not run, and every other case still is."""
@@ -400,6 +404,15 @@ class _Open(APIView):
     permission_classes: list = []
 
 
+def _session(request):
+    """A session-only route: anonymous is 401 with no challenge, and `AuthCsrfMiddleware` guards the unsafe methods."""
+    return problem_details_response(
+        SessionRequired("no session"),
+        instance=request.path,
+        registry=default_registry(),
+    )
+
+
 class _Boom(_Open):
     def get(self, request):
         raise RuntimeError("connection to db-primary.internal failed: password=hunter2")
@@ -589,6 +602,7 @@ class _OperationFailed(_Open):
 
 
 urlpatterns = [
+    path("conformance/session", _session),
     path("conformance/boom", _Boom.as_view()),
     path("conformance/conflict", _Conflict.as_view()),
     path("conformance/validate", _Validate.as_view()),
@@ -641,11 +655,13 @@ WIRING = {
         "corsheaders.middleware.CorsMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
         "rn_forge.django.security.SecurityHeadersMiddleware",
+        CSRF_MIDDLEWARE,
     ],
     "USE_TZ": True,
     "TIME_ZONE": "UTC",
     "DATA_UPLOAD_MAX_MEMORY_SIZE": 200,
     **SECURITY_SETTINGS,
+    **CSRF_SETTINGS,
     **cors_settings(["https://example.com"]),
     "REST_FRAMEWORK": {
         "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler",
@@ -725,7 +741,7 @@ def client():
     )
     with override_settings(**WIRING):
         _seed_notes(_ConformanceNote)
-        yield Client(raise_request_exception=False)
+        yield Client(raise_request_exception=False, enforce_csrf_checks=True)
 
 
 def issue(client, case):

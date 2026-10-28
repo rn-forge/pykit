@@ -84,6 +84,7 @@ class AuthSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]``."""
 
     SAML: AuthSAMLSettingsDict
+    PROBLEM_TYPE_BASE: str
 
 
 class AuthSAMLSettingsDict(TypedDict, total=False):
@@ -160,6 +161,7 @@ class AuthSettings:
     """Runtime settings for auth helpers."""
 
     saml: AuthSAMLSettings = field(default_factory=lambda: AuthSAMLSettings())
+    problem_type_base: str = ""
 
 
 @dataclass(frozen=True)
@@ -206,6 +208,7 @@ def _build_settings() -> RnforgeDjangoSettings:
 
     return RnforgeDjangoSettings(
         auth=AuthSettings(
+            problem_type_base=str(auth_config.get("PROBLEM_TYPE_BASE", "")),
             saml=AuthSAMLSettings(
                 settings=cast(
                     Mapping[str, Any],

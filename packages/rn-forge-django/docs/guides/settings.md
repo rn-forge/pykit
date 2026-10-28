@@ -6,6 +6,7 @@ settings module:
 ```python
 RN_FORGE_DJANGO = {
     "AUTH": {
+        "PROBLEM_TYPE_BASE": "https://errors.example.com/",  # required to mount the /auth routes
         "SAML": {
             "SETTINGS": {...},  # python3-saml settings dict
             "RETURN_TO": "/",

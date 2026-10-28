@@ -28,8 +28,10 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.middleware.csrf import get_token, rotate_token
 from django.urls import URLPattern, path
 from django.utils.cache import add_never_cache_headers
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from rn_forge.auth import (
     AccountRejected,
@@ -50,10 +52,12 @@ from rn_forge.auth import (
     validate_return_to,
 )
 from rn_forge.commons.logging import AppLogger
+from rn_forge.django import settings as facade
+from rn_forge.django.auth.csrf import check_csrf_settings
 from rn_forge.django.auth.sessions import Sessions, check_session_settings
 from rn_forge.django.auth.stores import CacheReplayStore, CacheTransactionStore
 from rn_forge.django.exceptions import problem_details_response
-from rn_forge.web import ProblemRegistry, SessionRequired, default_registry
+from rn_forge.web import SessionRequired, default_registry
 
 if TYPE_CHECKING:
     from rn_forge.auth.oidc import BackchannelLogout
@@ -90,7 +94,6 @@ class AuthRoutesConfig:
         backchannel: Back-channel logout handlers, by provider ID.
         transactions: Holds logins between redirect and callback.
         replay: Holds replayed token IDs and revoked ``sid`` values.
-        registry: The problem registry for error responses.
         idle_timeout: How long a session may sit unused; a normal request
             extends it, ``GET /auth/session`` does not.
         absolute_timeout: How long a session lives whatever its use, and how
@@ -111,7 +114,6 @@ class AuthRoutesConfig:
     )
     transactions: TransactionStore = field(default_factory=CacheTransactionStore)
     replay: ReplayStore = field(default_factory=CacheReplayStore)
-    registry: ProblemRegistry | None = None
     idle_timeout: timedelta = timedelta(minutes=30)
     absolute_timeout: timedelta = timedelta(hours=12)
 
@@ -125,7 +127,9 @@ class _Request:
 class _Views:
     def __init__(self, config: AuthRoutesConfig) -> None:
         self._config = config
-        self._registry = config.registry or default_registry()
+        self._registry = default_registry(
+            type_base=facade.rn_forge_django_settings.auth.problem_type_base
+        )
         self.sessions = Sessions(
             contexts=config.contexts,
             replay=config.replay,
@@ -216,6 +220,7 @@ class _Views:
         return self._session_response(request)
 
     def session(self, request: HttpRequest) -> HttpResponse:
+        get_token(request)  # sets the CSRF cookie, whatever the answer
         return self._session_response(request)
 
     def logout(self, request: HttpRequest) -> HttpResponse:
@@ -232,6 +237,7 @@ class _Views:
             else None
         )
         self.sessions.end(request)
+        rotate_token(request)
         return _no_store(JsonResponse({"redirect": redirect}))
 
     def logout_all(self, request: HttpRequest) -> HttpResponse:
@@ -241,6 +247,7 @@ class _Views:
         info = active.info
         self._config.account_state.bump_session_version(info.account_id)
         self.sessions.end(request)
+        rotate_token(request)
         return _no_store(JsonResponse({"redirect": None}))
 
     def backchannel_logout(
@@ -314,6 +321,7 @@ class _Views:
                 id_token=identity.id_token,
             ),
         )
+        rotate_token(request)
         return self._return_to(completed.return_to)
 
     def _return_to(self, return_to: str) -> str:
@@ -450,6 +458,7 @@ def auth_urlpatterns(
     Returns:
         The patterns, named ``rn-forge-auth-<route>``.
     """
+    check_csrf_settings()
     check_session_settings(
         cache_aliases=[
             store.alias
@@ -491,7 +500,7 @@ def auth_urlpatterns(
         ),
         path(
             f"{base}backchannel-logout/<str:provider_id>",
-            require_POST(views.backchannel_logout),
+            csrf_exempt(require_POST(views.backchannel_logout)),
             name="rn-forge-auth-backchannel-logout",
         ),
     ]
