@@ -8,3 +8,12 @@ updates:
       actions:
         patterns:
           - "*"
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      uv:
+        update-types:
+          - minor
+          - patch
