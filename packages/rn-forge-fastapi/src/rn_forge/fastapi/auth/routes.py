@@ -131,9 +131,8 @@ class AuthRoutesConfig:
             stores. Otherwise an in-memory sessions, transactions, replay,
             CSRF or rate-limit store is refused.
         clock: Returns the current time, aware.
-        problem_type_base: Prefix of the ``type`` URI of the problem responses;
-            required, so that ``csrf-failed`` and ``forbidden`` differ in
-            ``type``.
+        problem_type_base: Prefix of the ``type`` URI of the problem responses.
+            Required.
 
     Raises:
         ValueError: *problem_type_base* is empty.

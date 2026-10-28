@@ -50,6 +50,7 @@ nav:
       - Wiring an application: guides/wiring.md
       - Tabular export and import: guides/transfer.md
       - Soft delete: guides/soft-delete.md
+      - Auth: guides/auth.md
   - Reference:
       - reference/index.md
       - Application: reference/app.md
@@ -61,5 +62,13 @@ nav:
       - Soft delete: reference/soft_delete.md
       - Health: reference/health.md
       - Transfer: reference/transfer.md
-      - Auth: reference/auth.md
+      - Auth:
+          - reference/auth/index.md
+          - Routes: reference/auth/routes.md
+          - Sessions: reference/auth/sessions.md
+          - CSRF: reference/auth/csrf.md
+          - Dependencies: reference/auth/dependencies.md
+          - Authorization: reference/auth/authorization.md
+          - Rate limits: reference/auth/rate_limit.md
+          - Redis: reference/auth/redis.md
   - Changelog: changelog.md

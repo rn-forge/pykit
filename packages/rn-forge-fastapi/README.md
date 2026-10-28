@@ -21,7 +21,7 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 | `openapi` | `FastApiApp.openapi()` repairs the cached document — adds `ProblemDetail` and the problem responses it can actually produce, accuracy only; `operation_id` — the shared `operationId` convention |
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
-| `auth` | `bearer_auth`, `basic_auth`, `current_principal`, `requires`, `requires_permission`, `PolicyGuard` — `Security` dependencies over the `rn-forge-auth` contracts |
+| `auth` | `auth_router` and `SessionMiddleware` — the `/auth` routes, login sessions and CSRF protection over `rn-forge-auth`; `bearer_auth`, `basic_auth`, `current_principal`, `requires`, `requires_permission`, `PolicyGuard` — `Security` dependencies; rate limiting; `auth.redis` — the Redis CSRF store and rate limiter (`redis` extra) |
 | `app` | `FastApiApp(config)` — a `FastAPI` subclass with the standard adapters installed |
 
 ## Where it sits
@@ -92,9 +92,10 @@ local checkout, for local development only.
 `rn-forge-commons` is not declared: nothing here imports it directly, and it
 arrives through `rn-forge-web`.
 
-**`rn-forge-auth`** — a base dependency: the `auth` module is built on its
-`Principal`, `Requirement` and authenticator contracts. Its OIDC adapter comes
-with this package's `oidc` extra.
+**`rn-forge-auth`** — a base dependency: the `auth` package is built on its
+login flows, `Principal`, `Requirement` and authenticator contracts. Its OIDC
+adapter comes with this package's `oidc` extra, and its Redis stores with the
+`redis` extra, which also installs the client for `auth.redis`.
 
 **`fastapi`** (`>=0.141.1`) — a hard dependency, not an extra. It is used as
 documented, not abstracted away — an application keeps `APIRouter`, `Depends`,

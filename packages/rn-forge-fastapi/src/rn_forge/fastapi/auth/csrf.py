@@ -47,7 +47,7 @@ CSRF_HEADER: Final = "X-XSRF-TOKEN"
 """The request header that must repeat the token."""
 
 ANONYMOUS_PREFIX: Final = "anon."
-"""Starts the ID of an anonymous session; ``.`` is not in a session store's IDs."""
+"""Starts the ID of an anonymous session."""
 
 ANONYMOUS_TTL: Final = timedelta(minutes=10)
 """How long an anonymous session holds its token."""

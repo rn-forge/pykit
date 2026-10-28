@@ -281,8 +281,7 @@ def requires(
     Args:
         authenticate: A dependency from :func:`bearer_auth`, :func:`basic_auth`
             or :func:`current_principal`.
-        requirement: Evaluated by :class:`rn_forge.auth.Requirement`'s own rule,
-            identically to Django.
+        requirement: Evaluated by :class:`rn_forge.auth.Requirement`'s own rule.
         authorizer: Defaults to :class:`rn_forge.auth.ScopeAuthorizer`.
     """
     resolved = authorizer if authorizer is not None else ScopeAuthorizer()

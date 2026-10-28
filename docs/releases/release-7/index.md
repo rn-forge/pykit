@@ -39,7 +39,7 @@ and every package is published to PyPI
 | [F13.3](../../specs/epics/E13-auth/F13.3-core-contracts.md) | E13 | Closed |
 | [F13.4](../../specs/epics/E13-auth/F13.4-protocol-adapters.md) | E13 | Closed |
 | [F13.5](../../specs/epics/E13-auth/F13.5-django-binding.md) | E13 | Closed |
-| [F13.6](../../specs/epics/E13-auth/F13.6-fastapi-binding.md) | E13 | Active |
+| [F13.6](../../specs/epics/E13-auth/F13.6-fastapi-binding.md) | E13 | Closed |
 | [F13.7](../../specs/epics/E13-auth/F13.7-legacy-removal.md) | E13 | New |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
@@ -117,7 +117,10 @@ and every package is published to PyPI
   `AccountResolver` and an `AuthorizationContextProvider`; it gains a `redis`
   extra on `rn-forge-auth[redis]`, and mounting the auth surface requires
   `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]` (F13.5).
-- `rn-forge-fastapi` gains a `redis` extra (F13.6).
+- `rn-forge-fastapi`'s `bearer_auth()` requires an `AccountResolver` and an
+  `AuthorizationContextProvider`; `rn_forge.fastapi.auth` becomes a package; it
+  gains a `redis` extra on `rn-forge-auth[redis]`, and mounting the auth router
+  requires a problem `type_base` (F13.6).
 - `rn-forge-django` loses its `jwt` extra and simplejwt, the locally issued JWT
   flows, `BaseCredentials`, `LoginPayload`, the `auth.basic` and `auth.saml`
   views, `SampleSAMLLoginAPIView` and the authorization mixins, and its `saml`
@@ -134,8 +137,11 @@ the login adapters (OIDC and OAuth 2.0 over Authlib's core, logout, password
 and development providers, and the optional Keycloak broker job). F13.5 is
 closed: `rn-forge-django` serves the auth surface with sessions, revocation,
 CSRF, account linking, session and bearer authentication, authorization, rate
-limits and audit events; F13.6 can start, and must refuse to mount without a
-problem `type_base` as F13.5 does. S21.1.2's owner
+limits and audit events. F13.6 is closed: `rn-forge-fastapi` serves the same
+surface as an `APIRouter`, with its own session middleware, session-bound CSRF
+token, rate limiting and audit events, and both bindings pass the shared
+security-control cases in `rn_forge.auth.conformance`; F13.7 can start.
+S21.1.2's owner
 steps are under way: the GitHub environments exist; the PyPI pending publishers
 are not yet added.
 
