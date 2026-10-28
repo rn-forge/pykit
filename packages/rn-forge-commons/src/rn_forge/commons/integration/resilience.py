@@ -249,7 +249,7 @@ class ResilientAsyncHttpClient:
                         response = await self._client.request(method, url, **kwargs)
                         self._rate_limiter.update_from_headers(response.headers)
                         response.raise_for_status()
-                assert response is not None
+                assert response is not None  # noqa: S101  # type narrowing, not validation
                 return response
         except OpenedState as exc:
             raise CircuitOpenError(f"Circuit {circuit_key!r} is open") from exc

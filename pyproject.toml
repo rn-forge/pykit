@@ -55,8 +55,15 @@ scaffold = ["-q", "-m", "scaffold"]
 # Markdown code blocks are owned by the docs formatting, not ruff.
 exclude = ["*.md"]
 
+[tool.ruff.lint]
+# Bandit's checks, including the Django ones (S308, S703).
+extend-select = ["S"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
+# Repository tooling outside packages/, which is what the source scan covers.
+"conftest.py" = ["S"]
+".github/scripts/*" = ["S"]
 
 [tool.ruff.lint.isort]
 # ruff otherwise sorts these frameworks as first-party, after the rn_forge subpackages that share their names.

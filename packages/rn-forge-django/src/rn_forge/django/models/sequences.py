@@ -98,7 +98,7 @@ class SequenceGenerator:
             identifier = self._identifier(alias)
             with connections[alias].cursor() as cursor:
                 cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {identifier}")
-                cursor.execute(f"SELECT last_value, is_called FROM {identifier}")
+                cursor.execute(f"SELECT last_value, is_called FROM {identifier}")  # noqa: S608  # identifier is quoted by the database backend
                 last_value, is_called = cursor.fetchone()
                 current = int(last_value) if is_called else int(last_value) - 1
                 if value > current:

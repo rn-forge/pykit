@@ -131,8 +131,8 @@ def changed_files(root: Path, base: str) -> list[str]:
     """
     if not re.fullmatch(REVISION, base):
         raise ValueError(f"invalid base {base!r}")
-    out = subprocess.run(
-        ["git", "diff", "--name-only", "--end-of-options", f"{base}...HEAD"],
+    out = subprocess.run(  # noqa: S603  # fixed argv, no shell
+        ["git", "diff", "--name-only", "--end-of-options", f"{base}...HEAD"],  # noqa: S607  # tool resolved from PATH
         cwd=root,
         check=True,
         capture_output=True,
@@ -151,15 +151,15 @@ def select(workspace: Workspace, base: str) -> set[str]:
     if not base:
         return set(packages)
     if not re.fullmatch(REVISION, base) or (
-        subprocess.run(
-            ["git", "cat-file", "-e", "--end-of-options", f"{base}^{{commit}}"],
+        subprocess.run(  # noqa: S603  # fixed argv, no shell
+            ["git", "cat-file", "-e", "--end-of-options", f"{base}^{{commit}}"],  # noqa: S607  # tool resolved from PATH
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode
-        or subprocess.run(
-            ["git", "merge-base", "--is-ancestor", "--end-of-options", base, "HEAD"],
+        or subprocess.run(  # noqa: S603  # fixed argv, no shell
+            ["git", "merge-base", "--is-ancestor", "--end-of-options", base, "HEAD"],  # noqa: S607  # tool resolved from PATH
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,
@@ -261,7 +261,7 @@ def releasable(
 def released(workspace: Workspace) -> list[tuple[str, str, str, str]]:
     """Return `(name, dir, module, version)` for each `<name>-v<version>` tag at `HEAD`."""
     tags = subprocess.run(
-        ["git", "tag", "--points-at", "HEAD"],
+        ["git", "tag", "--points-at", "HEAD"],  # noqa: S607  # tool resolved from PATH
         cwd=workspace.root,
         check=True,
         capture_output=True,

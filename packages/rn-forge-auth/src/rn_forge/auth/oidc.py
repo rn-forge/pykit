@@ -103,9 +103,9 @@ def fetch_json(url: str, *, timeout: float = 5.0) -> Mapping[str, Any]:
             the request fails, or the body is not a JSON object.
     """
     _require_secure_url(url)
-    request = Request(url, headers={"Accept": "application/json"})
+    request = Request(url, headers={"Accept": "application/json"})  # noqa: S310  # scheme checked by _require_secure_url
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(request, timeout=timeout) as response:  # noqa: S310  # scheme checked by _require_secure_url
             body = cast(object, json.load(response))
     except (OSError, ValueError) as exc:
         raise TokenVerificationError("Could not fetch {}: {}", url, exc) from exc

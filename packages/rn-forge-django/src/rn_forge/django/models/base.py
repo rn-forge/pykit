@@ -74,7 +74,7 @@ class TruncateModelMixin:
         _LOGGER.warning("TruncateModelMixin.truncate: {}", cls.__name__)  # noqa: PLE1205  # brace-style log format
         table = connection.ops.quote_name(get_model_meta(cls).db_table)
         if connection.vendor == "sqlite":
-            sql = f"DELETE FROM {table}"
+            sql = f"DELETE FROM {table}"  # noqa: S608  # identifier is quoted by the database backend
         else:
             sql = f"TRUNCATE TABLE {table}"
         with connection.cursor() as cursor:

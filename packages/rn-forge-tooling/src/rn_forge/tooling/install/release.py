@@ -75,7 +75,7 @@ class GitHubReleases:
         """
         url = f"{self.api_url}/repos/{self.repo}/releases/latest"
         try:
-            with urllib.request.urlopen(url, timeout=_TIMEOUT) as response:
+            with urllib.request.urlopen(url, timeout=_TIMEOUT) as response:  # noqa: S310  # URL built from the configured GitHub host
                 tag = str(json.load(response).get("tag_name") or "")
         except (urllib.error.URLError, ValueError) as error:
             raise AppException(
@@ -101,7 +101,7 @@ class GitHubReleases:
         archive = destination / f"{tag}.tar.gz"
         try:
             with (
-                urllib.request.urlopen(url, timeout=_TIMEOUT) as response,
+                urllib.request.urlopen(url, timeout=_TIMEOUT) as response,  # noqa: S310  # URL built from the configured GitHub host
                 archive.open("wb") as out,
             ):
                 shutil.copyfileobj(response, out)

@@ -149,7 +149,7 @@ def require_if_match(*, codec: ETagCodec | None = None) -> Callable[..., str]:
         if if_match is None:
             # Web owns the 428 and its detail; with required=True this raises.
             check_precondition(None, current_version=0, required=True)
-        assert if_match is not None
+        assert if_match is not None  # noqa: S101  # type narrowing, not validation
         if if_match.strip() != ANY_ETAG:
             parser.parse(if_match)
         return if_match
