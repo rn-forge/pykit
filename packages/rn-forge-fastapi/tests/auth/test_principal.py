@@ -431,6 +431,7 @@ def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> Non
     world = World()
     world.login()
     caplog.set_level(logging.INFO)
+    caplog.clear()
 
     world.client.delete("/delete", headers={"Origin": ORIGIN, **_csrf(world)})
 
@@ -445,6 +446,7 @@ def test_a_denied_requirement_is_audited(caplog: pytest.LogCaptureFixture) -> No
     world = World()
     world.login()
     caplog.set_level(logging.INFO)
+    caplog.clear()
 
     world.client.get("/requirement")
 
@@ -459,6 +461,7 @@ def test_a_denied_object_is_audited(
     world = World(hides=hides)
     world.login()
     caplog.set_level(logging.INFO)
+    caplog.clear()
 
     response = world.client.get("/orders/3")
 
@@ -474,6 +477,7 @@ def test_an_allowed_request_is_not_audited(caplog: pytest.LogCaptureFixture) -> 
     world = World()
     world.login()
     caplog.set_level(logging.INFO)
+    caplog.clear()
 
     world.client.get("/read")
     world.client.get("/orders/1")

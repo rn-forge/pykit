@@ -2014,6 +2014,7 @@ class TestAudit:
         world = mount()
         world.password_login()
         caplog.set_level(logging.INFO)
+        caplog.clear()
 
         world.client.post("/auth/logout/all")
 

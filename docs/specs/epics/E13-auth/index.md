@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-26 |
+| **Closed Date** | 2026-10-28 |
 
 Standards-based authentication and authorization for new pykit web applications:
 SSO through OIDC (with SAML IdPs through a broker), social login, optional local
@@ -28,7 +29,7 @@ work, tracked in ngkit's own epic against the same design.
 | [F13.4 — Protocol adapters](F13.4-protocol-adapters.md) | OIDC and OAuth 2.0, local-password and development logins. | Closed |
 | [F13.5 — Django binding](F13.5-django-binding.md) | The shared HTTP surface, sessions, CSRF and authorization on Django. | Closed |
 | [F13.6 — FastAPI binding](F13.6-fastapi-binding.md) | The same surface and defaults on FastAPI. | Closed |
-| [F13.7 — Remove the legacy auth flows](F13.7-legacy-removal.md) | Remove the locally issued JWT flows and the auth code the new surface replaces. | Active |
+| [F13.7 — Remove the legacy auth flows](F13.7-legacy-removal.md) | Remove the locally issued JWT flows and the auth code the new surface replaces. | Closed |
 
 `rn-forge-auth` follows the package rule and adapter structure that
 [E15](../E15-package-boundaries/index.md) sets

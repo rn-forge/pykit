@@ -1680,6 +1680,7 @@ class TestAudit:
         world = mount()
         _password_login(world.client)
         caplog.set_level(logging.INFO)
+        caplog.clear()
 
         world.client.post("/auth/logout/all")
 
