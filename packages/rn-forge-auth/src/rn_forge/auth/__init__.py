@@ -29,6 +29,13 @@ from rn_forge.auth.identity import (
     ProviderKind,
     SessionInfo,
 )
+from rn_forge.auth.local import (
+    DevelopmentAccount,
+    DevelopmentIdentityProvider,
+    DevelopmentModeRequired,
+    PasswordIdentityProvider,
+    PasswordVerifier,
+)
 from rn_forge.auth.permissions import (
     DEFAULT_PERMISSION_ACTION_MAP,
     effective_permissions,
@@ -66,6 +73,9 @@ __all__ = [
     "AuthorizationVersions",
     "Authorizer",
     "CallbackError",
+    "DevelopmentAccount",
+    "DevelopmentIdentityProvider",
+    "DevelopmentModeRequired",
     "ExternalIdentity",
     "IdentityProvider",
     "InMemoryAuthorizationVersions",
@@ -79,6 +89,8 @@ __all__ = [
     "LoginStart",
     "LoginTransaction",
     "Mechanism",
+    "PasswordIdentityProvider",
+    "PasswordVerifier",
     "Principal",
     "ProviderKind",
     "ReplayStore",

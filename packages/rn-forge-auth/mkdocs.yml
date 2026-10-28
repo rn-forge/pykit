@@ -64,6 +64,7 @@ nav:
       - Session, transaction and replay stores: reference/stores.md
       - Return target: reference/redirects.md
       - Session body: reference/session_body.md
+      - Local login: reference/local.md
       - OIDC: reference/oidc.md
       - Redis: reference/redis.md
       - Testing: reference/testing.md

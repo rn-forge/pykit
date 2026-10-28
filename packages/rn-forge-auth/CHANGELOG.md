@@ -23,6 +23,10 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `AuthorizationContextProvider` and `ResourcePolicy`.
 - `requirement_for`, `effective_permissions` and `Mechanism`, and
   `DEFAULT_PERMISSION_ACTION_MAP`, moved from `rn-forge-django`.
+- `PasswordIdentityProvider` and `DevelopmentIdentityProvider`, the local
+  password and fixture-account login providers in `rn_forge.auth.local`, with
+  `PasswordVerifier`, `DevelopmentAccount`
+  and `DevelopmentModeRequired`. Neither needs an extra.
 - `AuthorizationContextCache`, which caches an `AuthorizationContextProvider`
   by account and authorization version with a TTL, with
   `AuthorizationVersions`, `InMemoryAuthorizationVersions` and
