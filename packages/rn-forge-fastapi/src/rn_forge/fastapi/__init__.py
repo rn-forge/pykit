@@ -1,7 +1,17 @@
 """FastAPI adapters for :mod:`rn_forge.web` contracts."""
 
 from rn_forge.fastapi.app import AppConfig, FastApiApp
-from rn_forge.fastapi.auth import basic_auth, bearer_auth, requires
+from rn_forge.fastapi.auth import (
+    SESSION_COOKIE,
+    TRANSACTION_COOKIE,
+    ActiveSession,
+    AuthRoutesConfig,
+    Sessions,
+    auth_router,
+    basic_auth,
+    bearer_auth,
+    requires,
+)
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.fastapi.dependencies import (
     conditional_get,
@@ -29,13 +39,19 @@ from rn_forge.fastapi.soft_delete import (
 )
 
 __all__ = [
+    "SESSION_COOKIE",
+    "TRANSACTION_COOKIE",
+    "ActiveSession",
     "AppConfig",
+    "AuthRoutesConfig",
     "CorsPolicy",
     "FastApiApp",
     "Log",
+    "Sessions",
     "SoftDeleteState",
     "SoftDeleteStore",
     "apply_cors",
+    "auth_router",
     "basic_auth",
     "bearer_auth",
     "conditional_get",

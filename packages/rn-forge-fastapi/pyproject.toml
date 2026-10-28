@@ -31,6 +31,11 @@ testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
 oidc = [
   "rn-forge-auth[oidc]>=0.1.0,<0.2",
 ]
+# Redis-backed login sessions and transactions for `rn_forge.fastapi.auth`:
+# `rn_forge.auth.redis`.
+redis = [
+  "rn-forge-auth[redis]>=0.1.0,<0.2",
+]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
 transfer = [
@@ -63,6 +68,7 @@ modules = ["rn_forge.fastapi"]
 
 [tool.workspace-ci.smoke.extras]
 oidc = ["rn_forge.auth.oidc"]
+redis = ["rn_forge.auth.redis"]
 transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]
@@ -81,7 +87,7 @@ dev = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[oidc,transfer]",
+  "rn-forge-fastapi[oidc,redis,transfer]",
   "ruff>=0.15.21",
 ]
 docs = [

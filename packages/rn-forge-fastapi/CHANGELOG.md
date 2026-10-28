@@ -5,8 +5,23 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- The `/auth` surface over `rn-forge-auth`: `auth_router(config, prefix="/auth")`,
+  configured by `AuthRoutesConfig`, returns an `APIRouter` serving `providers`,
+  `login/{provider}`, `callback/{provider}`, `session`, `logout`, `logout/all`,
+  `backchannel-logout/{provider}` and `login/password` over `LoginFlow`, with
+  the responses, error codes and `__Host-login-tx` cookie of the Django binding.
+  The development provider exists only with `debug=True`. `Sessions` keeps the
+  login session in an `rn-forge-auth` `SessionStore` behind the `__Host-session`
+  cookie. The stores' synchronous calls and the Authlib providers run in the
+  thread pool.
+- The `redis` extra names `rn-forge-auth[redis]`.
+
 ### Changed
 
+- `rn_forge.fastapi.auth` is a package; `bearer_auth`, `basic_auth` and
+  `requires` import from it as before.
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`
   and the authenticator contracts from it. The `oidc` extra names
   `rn-forge-auth[oidc]` instead of `rn-forge-web[auth]`.
