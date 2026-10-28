@@ -14,6 +14,8 @@ directory at or above the current one whose `pyproject.toml` declares
 | `requirements` | Checks every requirement from one workspace member on another, in dependencies, optional dependencies and dependency groups: it must not be a URL, must admit the member's current version, and must have a `<` or `<=` ceiling. Prints one line per problem to stderr and exits 1 if there are any. |
 | `sonar-target` | Prints the `branch-arg=` line for the Sonar scan, from the `EVENT_NAME`, `REF_TYPE` and `REF_NAME` environment variables. |
 | `index --repo OWNER/NAME --out DIR` | Writes a PEP 503 simple index of the repository's published `rn-forge-<name>-vX.Y.Z` release wheels and sdists under `DIR`, and prints the project and file counts. Needs `gh` and `GH_TOKEN`; it does not need a workspace. |
+| `notes CHANGELOG VERSION` | Prints the body under `## [VERSION]` in a Keep a Changelog file, up to the next `## [` heading. Exits 1 with the reason on stderr when the heading is missing or its body is empty. It does not need a workspace. |
+| `umbrella RELEASES_DIR BODY_FILE --site-url URL` | Reads `git ls-remote --tags --refs origin` output from stdin. When the newest `release-<n>` page whose status starts with `shipped` has no `release-<n>` tag, writes its `## Shipped` section and a link to the page under `URL` to `BODY_FILE`, and prints `tag=` and `title=` lines. Otherwise prints nothing. It does not need a workspace. |
 
 ## What it discovers
 

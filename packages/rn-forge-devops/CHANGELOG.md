@@ -10,6 +10,12 @@ Notable changes to `rn-forge-devops`, newest first, in the
 - `[tool.workspace-ci.redis]`: a package's tests run again against a Redis
   service, with the URL in the variable `env` names. The `plan` output gains
   `redis`, and the check marker is `<package>.redis`.
+- The `notes` subcommand: `rn-forge-devops notes CHANGELOG VERSION` prints a
+  changelog version's section.
+- The `umbrella` subcommand:
+  `rn-forge-devops umbrella RELEASES_DIR BODY_FILE --site-url URL` writes the
+  release notes for the newest shipped release page whose tag is not among the
+  tags read from stdin, and prints its `tag=` and `title=` lines.
 
 ### Changed
 

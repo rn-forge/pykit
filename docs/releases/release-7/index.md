@@ -51,7 +51,7 @@ and every package is published to PyPI
 | [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Active |
 | [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Active |
 | [F21.2](../../specs/epics/E21-pypi-distribution/F21.2-package-metadata.md) | E21 | Closed |
-| [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | New |
+| [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | Active |
 | [F21.4](../../specs/epics/E21-pypi-distribution/F21.4-consumer-docs.md) | E21 | New |
 
 <!-- scope:end -->

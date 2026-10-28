@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import subprocess
 import sys
 from pathlib import Path
@@ -137,10 +138,11 @@ def test_cli_index_refuses_a_page_outside_the_out_dir(
     assert not (tmp_path / "escape.html").exists()
 
 
-def test_index_and_releases_import_no_planner_adapter() -> None:
+def test_index_notes_and_releases_import_no_planner_adapter() -> None:
     code = (
         "import sys\n"
-        "import rn_forge.devops.index, rn_forge.devops.releases\n"
+        "import rn_forge.devops.index, rn_forge.devops.notes,"
+        " rn_forge.devops.releases\n"
         "print([m for m in ('rn_forge.devops.uv', 'rn_forge.devops.github')"
         " if m in sys.modules])"
     )
@@ -148,3 +150,59 @@ def test_index_and_releases_import_no_planner_adapter() -> None:
         [sys.executable, "-c", code], check=True, capture_output=True, text=True
     )
     assert result.stdout.strip() == "[]"
+
+
+def test_notes_prints_section(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("## [1.0.0] - 2026-01-01\n\n- Done.\n", encoding="utf-8")
+    assert cli.main(["notes", str(changelog), "1.0.0"]) == 0
+    assert capsys.readouterr().out == "- Done.\n"
+
+
+def test_notes_exits_1_on_missing_version(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("## [1.0.0]\n\n- Done.\n", encoding="utf-8")
+    assert cli.main(["notes", str(changelog), "2.0.0"]) == 1
+    assert "2.0.0" in capsys.readouterr().err
+
+
+def _releases(tmp_path: Path) -> Path:
+    page = tmp_path / "releases" / "release-6" / "index.md"
+    page.parent.mkdir(parents=True)
+    page.write_text(
+        "# Release 6 — kit\n\n| **Status** | shipped |\n\n## Shipped\n\nDone.\n",
+        encoding="utf-8",
+    )
+    return page.parent.parent
+
+
+def test_umbrella_writes_body_and_prints_outputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    body = tmp_path / "body.md"
+    monkeypatch.setattr("sys.stdin", io.StringIO("abc\trefs/tags/pkg-v1.0.0\n"))
+    args = ["umbrella", str(_releases(tmp_path)), str(body), "--site-url", "https://x/"]
+    assert cli.main(args) == 0
+    assert capsys.readouterr().out == "tag=release-6\ntitle=Release 6 — kit\n"
+    assert body.read_text(encoding="utf-8") == (
+        "Done.\n\nRelease page: https://x/releases/release-6/\n"
+    )
+
+
+def test_umbrella_prints_nothing_when_tag_listed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    body = tmp_path / "body.md"
+    monkeypatch.setattr("sys.stdin", io.StringIO("abc\trefs/tags/release-6\n"))
+    args = ["umbrella", str(_releases(tmp_path)), str(body), "--site-url", "https://x/"]
+    assert cli.main(args) == 0
+    assert capsys.readouterr().out == ""
+    assert not body.exists()

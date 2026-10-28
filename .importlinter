@@ -198,11 +198,12 @@ forbidden_modules =
     rn_forge.sqlalchemy
 
 [importlinter:contract:devops-core-has-no-adapter]
-name = rn_forge.devops.ci, .index and .requirements never import the uv, GitHub or releases adapters
+name = rn_forge.devops.ci, .index, .notes and .requirements never import the uv, GitHub or releases adapters
 type = forbidden
 source_modules =
     rn_forge.devops.ci
     rn_forge.devops.index
+    rn_forge.devops.notes
     rn_forge.devops.requirements
 forbidden_modules =
     rn_forge.devops.uv
@@ -210,11 +211,12 @@ forbidden_modules =
     rn_forge.devops.releases
 
 [importlinter:contract:devops-requirements-is-standalone]
-name = rn_forge.devops.requirements, .index and .releases never import the planner
+name = rn_forge.devops.requirements, .index, .notes and .releases never import the planner
 type = forbidden
 source_modules =
     rn_forge.devops.requirements
     rn_forge.devops.index
+    rn_forge.devops.notes
     rn_forge.devops.releases
 forbidden_modules =
     rn_forge.devops.ci
