@@ -213,7 +213,7 @@ class FakeOidcProvider:
         self,
         *,
         client_id: str = "web-login",
-        client_secret: str | None = "fake-secret",
+        client_secret: str | None = "fake-secret",  # noqa: S107  # test fixture value, not a secret
         redirect_uris: Sequence[str] = ("http://127.0.0.1/callback",),
         user: Mapping[str, Any] | None = None,
         tenant: str = "tenant",

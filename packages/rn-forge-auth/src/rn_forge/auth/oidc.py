@@ -1088,7 +1088,7 @@ class OidcProvider:
         algorithms: Sequence[str] = ("RS256",),
         leeway: float = 0.0,
         timeout: float = 5.0,
-        token_endpoint_auth_method: str = "client_secret_basic",
+        token_endpoint_auth_method: str = "client_secret_basic",  # noqa: S107  # identifier name, not a secret
         rp_initiated_logout: bool = False,
         endpoints: OAuth2Endpoints | None = None,
         subject_field: str = "sub",
@@ -1138,7 +1138,7 @@ class OidcProvider:
         claim_mapper: ClaimMapper = default_claim_mapper,
         token_hook: TokenHook | None = None,
         timeout: float = 5.0,
-        token_endpoint_auth_method: str = "client_secret_basic",
+        token_endpoint_auth_method: str = "client_secret_basic",  # noqa: S107  # identifier name, not a secret
     ) -> Self:
         """Build a provider for an OAuth 2.0 server that issues no ID token.
 
