@@ -23,7 +23,7 @@ from rn_forge.fastapi import (  # noqa: E402
     register_problem_handlers,
     requires,
 )
-from rn_forge.auth import Principal, Requirement  # noqa: E402
+from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     AUTH_FAILED_DETAIL,
 )
@@ -55,13 +55,36 @@ def _token(key=KEY, kid="k1", **claims):
     return jwt.encode(payload, key, algorithm="RS256", headers={"kid": kid})
 
 
+class Accounts:
+    def resolve(self, identity):
+        raise AssertionError("a bearer request must never provision")
+
+    def lookup(self, issuer, subject):
+        return "acct-1" if (issuer, subject) == (ISSUER, "u1") else None
+
+
+class Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(
+            active=True,
+            session_version=1,
+            roles=frozenset({"Reader"}),
+            attributes={"tenant": "t-1"},
+        )
+
+
 def build(jwks_url, requirement=Requirement()):
     authenticator = OidcAuthenticator.from_jwks_url(
         jwks_url, issuer=ISSUER, audience=AUDIENCE
     )
     app = FastAPI()
     register_problem_handlers(app, realm="orders")
-    guarded = requires(bearer_auth(authenticator=authenticator), requirement)
+    guarded = requires(
+        bearer_auth(
+            authenticator=authenticator, accounts=Accounts(), contexts=Contexts()
+        ),
+        requirement,
+    )
 
     @app.get("/orders")
     def orders(principal: Principal = Depends(guarded)):
@@ -92,7 +115,7 @@ class TestOidcThroughBearerAuth:
         assert_that(response.status_code).is_equal_to(200)
         assert_that(response.json()).is_equal_to(
             {
-                "subject": "u1",
+                "subject": "acct-1",
                 "scopes": ["orders.read", "orders.write"],
                 "roles": ["Reader"],
                 "tenant": "t-1",

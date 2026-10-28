@@ -1,5 +1,6 @@
 """FastAPI authentication: security dependencies and the ``/auth`` router."""
 
+from rn_forge.fastapi.auth.authorization import PolicyGuard
 from rn_forge.fastapi.auth.csrf import (
     ANONYMOUS_PREFIX,
     ANONYMOUS_TTL,
@@ -9,7 +10,14 @@ from rn_forge.fastapi.auth.csrf import (
     CsrfStore,
     InMemoryCsrfStore,
 )
-from rn_forge.fastapi.auth.dependencies import basic_auth, bearer_auth, requires
+from rn_forge.fastapi.auth.dependencies import (
+    BearerAuth,
+    basic_auth,
+    bearer_auth,
+    current_principal,
+    requires,
+    requires_permission,
+)
 from rn_forge.fastapi.auth.routes import (
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
@@ -34,16 +42,20 @@ __all__ = [
     "TRANSACTION_COOKIE",
     "ActiveSession",
     "AuthRoutesConfig",
+    "BearerAuth",
     "CsrfProtection",
     "CsrfStore",
     "InMemoryCsrfStore",
+    "PolicyGuard",
     "SessionMiddleware",
     "Sessions",
     "active_session",
     "auth_router",
     "basic_auth",
     "bearer_auth",
+    "current_principal",
     "requires",
+    "requires_permission",
     "rotate_session",
     "sessions_for",
 ]

@@ -14,7 +14,7 @@ from rn_forge.fastapi import (
     register_problem_handlers,
     requires,
 )
-from rn_forge.auth import Principal, Requirement
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,
     PROBLEM_MEDIA_TYPE,
@@ -37,23 +37,68 @@ class Directory:
         if credentials.token in ("good", ALICE):
             return Principal(
                 subject="alice",
+                issuer="idp",
                 scopes=frozenset({"read"}),
                 mechanism=credentials.scheme.lower(),
             )
         if credentials.token == "narrow":
-            return Principal(subject="bob")
+            return Principal(subject="bob", issuer="idp")
         raise AuthenticationFailed("signature verification failed: unknown kid k-9")
 
 
 class AsyncDirectory:
     async def authenticate(self, *, credentials):
-        return Principal(subject="carol", scopes=frozenset({"read"}))
+        return Principal(subject="carol", issuer="idp", scopes=frozenset({"read"}))
+
+
+class Accounts:
+    def __init__(self, links):
+        self.links = links
+        self.looked_up = []
+
+    def resolve(self, identity):
+        raise AssertionError("a bearer request must never provision")
+
+    def lookup(self, issuer, subject):
+        self.looked_up.append((issuer, subject))
+        return self.links.get((issuer, subject))
+
+
+class Contexts:
+    def __init__(self, **contexts):
+        self.contexts = contexts
+
+    def resolve(self, account_id):
+        return self.contexts[account_id]
+
+
+LINKS = {
+    ("idp", "alice"): "acct-a",
+    ("idp", "bob"): "acct-b",
+    ("idp", "carol"): "acct-c",
+}
+
+
+def default_contexts():
+    return Contexts(
+        **{
+            "acct-a": AuthorizationContext(active=True, session_version=1),
+            "acct-b": AuthorizationContext(active=True, session_version=1),
+            "acct-c": AuthorizationContext(active=True, session_version=1),
+        }
+    )
 
 
 def build(authenticator, log=None):
     app = FastAPI()
     register_problem_handlers(app, realm="api")
-    bearer = bearer_auth(authenticator=authenticator, log=log)
+    bearer = bearer_auth(
+        authenticator=authenticator,
+        accounts=Accounts(LINKS),
+        contexts=default_contexts(),
+        scope_map={},
+        log=log,
+    )
     reader = requires(bearer, Requirement(all_scopes=frozenset({"read"})))
     basic = basic_auth(authenticator=authenticator, log=log)
 
@@ -89,7 +134,7 @@ def assert_401(response):
 def test_a_valid_bearer_token_yields_the_principal():
     response = build(Directory()).get("/me", headers={"Authorization": "Bearer good"})
     assert_that(response.json()).is_equal_to(
-        {"subject": "alice", "scopes": ["read"], "mechanism": "bearer"}
+        {"subject": "acct-a", "scopes": ["read"], "mechanism": "bearer"}
     )
 
 
@@ -111,7 +156,7 @@ def test_a_sync_authenticator_runs_off_the_event_loop():
 
 def test_an_async_authenticator_is_awaited():
     response = build(AsyncDirectory()).get("/me", headers={"Authorization": "Bearer x"})
-    assert_that(response.json()["subject"]).is_equal_to("carol")
+    assert_that(response.json()["subject"]).is_equal_to("acct-c")
 
 
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Basic abc"}])

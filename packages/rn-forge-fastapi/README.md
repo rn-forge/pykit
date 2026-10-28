@@ -21,7 +21,7 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 | `openapi` | `FastApiApp.openapi()` repairs the cached document — adds `ProblemDetail` and the problem responses it can actually produce, accuracy only; `operation_id` — the shared `operationId` convention |
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
-| `auth` | `bearer_auth`, `basic_auth`, `requires` — `Security` dependencies over the `rn-forge-auth` contracts |
+| `auth` | `bearer_auth`, `basic_auth`, `current_principal`, `requires`, `requires_permission`, `PolicyGuard` — `Security` dependencies over the `rn-forge-auth` contracts |
 | `app` | `FastApiApp(config)` — a `FastAPI` subclass with the standard adapters installed |
 
 ## Where it sits

@@ -50,9 +50,26 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
   `CsrfProtection`.
 - `AuthRoutesConfig` raises `ValueError` without a `problem_type_base`, and
   outside `debug` an in-memory CSRF store is refused like the other stores.
+- `current_principal(bearer=None)` yields the session `Principal` (roles and
+  permissions from the account's authorization context, `auth_time` and `amr`
+  from the session) or the bearer one. A request with an `Authorization`
+  header is authenticated by `bearer` alone: an invalid token is a `401` even
+  with a valid session cookie. `requires_permission(authenticate, key,
+  action, action_map=None)` enforces `requirement_for(key, action)`.
+- `PolicyGuard(policy, hides_existence=False)` applies a `ResourcePolicy`:
+  `scope(principal, action, query)` narrows a query of any type, and
+  `check(principal, action, obj)` returns the object or raises `403`, or `404`
+  when `hides_existence` is true.
 
 ### Changed
 
+- Breaking: `bearer_auth()` takes `accounts` (an `AccountResolver`) and
+  `contexts` (an `AuthorizationContextProvider`), and optionally `scope_map`.
+  It resolves the token's `(issuer, subject)` with `accounts.lookup`, never
+  provisions, and answers `401` for an unlinked or inactive account. The
+  principal's `subject` is the account ID; roles, tenant and attributes come
+  from the context, and permissions are the context's limited by the token's
+  scopes. It returns a `BearerAuth` dependency.
 - `rn_forge.fastapi.auth` is a package; `bearer_auth`, `basic_auth` and
   `requires` import from it as before.
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`

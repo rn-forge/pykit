@@ -125,7 +125,20 @@ class AnyToken:
     """Verifies every token as a principal with no scopes."""
 
     def authenticate(self, *, credentials):
-        return Principal(subject="u1")
+        return Principal(subject="u1", issuer="idp")
+
+
+class LinkedAccounts:
+    def resolve(self, identity):
+        raise AssertionError("a bearer request must never provision")
+
+    def lookup(self, issuer, subject):
+        return "acct-1"
+
+
+class ActiveContexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=1)
 
 
 PEOPLE = [
@@ -422,7 +435,11 @@ def build_app(*, failing: str | None) -> FastAPI:
     )
     store = InMemoryAsyncIdempotencyStore()
     private = requires(
-        bearer_auth(authenticator=AnyToken()),
+        bearer_auth(
+            authenticator=AnyToken(),
+            accounts=LinkedAccounts(),
+            contexts=ActiveContexts(),
+        ),
         Requirement(all_scopes=frozenset({"read"})),
     )
     app.include_router(

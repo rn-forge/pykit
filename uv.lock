@@ -2540,6 +2540,7 @@ dev = [
     { name = "pytest-randomly" },
     { name = "rn-forge-fastapi", extra = ["oidc", "redis", "transfer"] },
     { name = "ruff" },
+    { name = "sqlalchemy" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -2575,6 +2576,7 @@ dev = [
     { name = "pytest-randomly", specifier = ">=4.1.0" },
     { name = "rn-forge-fastapi", extras = ["oidc", "redis", "transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "ruff", specifier = ">=0.15.21" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },

@@ -89,6 +89,8 @@ dev = [
   "pytest-randomly>=4.1.0",
   "rn-forge-fastapi[oidc,redis,transfer]",
   "ruff>=0.15.21",
+  # Test-only: the ResourcePolicy tests scope real `select()` queries.
+  "sqlalchemy>=2.0",
 ]
 docs = [
   "mkdocs>=1.6.1",
