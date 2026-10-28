@@ -338,7 +338,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      id-token: write # PyPI trusted publishing
+      id-token: write # PyPI trusted publishing and artifact attestations
+      attestations: write
     # An empty name means no environment, so pull requests build without approval.
     environment: ${{ (github.event_name == 'push' && github.ref_name == 'main') && 'pypi' || (github.event_name == 'workflow_dispatch' && inputs.testpypi) && 'testpypi' || '' }}
     steps:
@@ -354,7 +355,8 @@ jobs:
           merge-multiple: true
           path: ok/
 
-      - name: Build and publish releases
+      - name: Build
+        id: build
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISH: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
@@ -405,6 +407,30 @@ jobs:
               sbom . "$name" "$version"
             fi
             uvx twine@7.0.0 check --strict dist/"$name"/*
+            echo "$name $version ${draft:-none} ${remote_tag:+existing}" >> "$RUNNER_TEMP/built.txt"
+          done
+          if [ -s "$RUNNER_TEMP/built.txt" ]; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A failed attestation stops the job before anything is uploaded or released.
+      - name: Attest build provenance
+        if: ${{ steps.build.outputs.built == 'true' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*/*
+            sbom/*
+
+      - name: Upload and release
+        if: ${{ steps.build.outputs.built == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          on_index() { curl -fsS -o /dev/null "https://$1/pypi/$2/$3/json"; }
+          while read -r -u 3 name version draft existing; do
+            tag="$name-v$version"
             # Upload before the GitHub release, so a published release implies the version is on PyPI.
             if on_index pypi.org "$name" "$version"; then
               echo "$name $version is already on PyPI, skipping upload."
@@ -416,12 +442,12 @@ jobs:
             if [ "$draft" = true ]; then
               gh release delete "$tag" --yes
             fi
-            if [ -n "$remote_tag" ]; then
+            if [ -n "$existing" ]; then
               gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
             else
               gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
             fi
-          done
+          done 3< "$RUNNER_TEMP/built.txt"
 
   sonar:
     needs: [plan, verify, postgres, redis, smoke]
