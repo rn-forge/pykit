@@ -120,6 +120,14 @@ git log --format='%h %ad %s' --date=short -E --grep='<pattern>'
 | --- | --- | --- | --- | --- |
 ````
 
+### Security evidence — `releases/release-<n>/security.md`
+
+Purpose: lists the result of every security-baseline control for one release
+([ADR-0015](../adr/ADR-0015.md)).
+
+Path and naming: `release-<n>/security.md`, linked from the release page; filled
+at the cut, with a row per control in the ADR's table.
+
 ## Metadata and scope
 
 - A release's metadata table carries `Status` (`planned`, `in progress` or

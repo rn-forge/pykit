@@ -18,7 +18,8 @@ and every package is published to PyPI
 ([E21](../../specs/epics/E21-pypi-distribution/index.md)).
 
 [Back to releases](../index.md) ·
-[Release runbook](../../runbooks/releasing-packages.md)
+[Release runbook](../../runbooks/releasing-packages.md) ·
+[Security evidence](security.md)
 
 ## Entry criteria
 

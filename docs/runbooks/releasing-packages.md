@@ -119,5 +119,6 @@ VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-for
 1. Once the `docs` job has deployed, install the released packages by name from
    the live index, as the acceptance in
    [F19.3](../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) does.
+1. Fill the release's `security.md` with each control's result and evidence.
 1. Record each package's version, tag, commit and install result on the release
    page, and set it to `shipped` with the date once its exit criteria hold.
