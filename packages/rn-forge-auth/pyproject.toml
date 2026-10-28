@@ -13,11 +13,13 @@ dependencies = [
 
 [project.optional-dependencies]
 # Bearer and logout tokens are verified with PyJWT, keys from its `PyJWKClient`;
-# ID tokens with Authlib's core over joserfc.
+# ID tokens with Authlib's core over joserfc. Authlib's OAuth2Session needs
+# requests, which Authlib does not declare.
 oidc = [
   "authlib>=1.9.1",
   "joserfc>=1.7.7",
   "pyjwt[crypto]>=2.15.0",
+  "requests>=2.34.2",
 ]
 # GETDEL, SET NX and INCR need Redis 6.2 or later.
 redis = [

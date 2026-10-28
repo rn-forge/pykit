@@ -49,6 +49,18 @@ Notable changes to `rn-forge-auth`, newest first, in the
   failure.
 - Guides for the contracts, the token profiles, the stores and the fake
   provider.
+- `LoginFlow` and `LoginFailed`, the framework-neutral login flow: `begin`
+  validates `return_to` and saves the transaction for 600 seconds, and
+  `complete` consumes it once, rejects a missing, expired, used or foreign
+  transaction and ends every failure in a `LoginFailed` carrying a
+  `CallbackError`. `LoginRequest` is the thin request protocol providers read.
+- `OidcProvider` in `rn_forge.auth.oidc`, the OIDC login provider over Authlib's
+  `OAuth2Session`: discovery, `state`, nonce, PKCE S256, the RFC 9207 `iss`
+  check, `max_age`, ID-token verification and UserInfo with a `sub` check, with
+  `default_claim_mapper`, a `claim_mapper` hook and a `token_hook` that alone
+  receives the upstream tokens (`UpstreamTokens`).
+- `OidcConfiguration.metadata` holds the whole discovery document, and
+  `FakeOidcProvider.auth_age` sets the age of the user's authentication.
 
 ### Changed
 

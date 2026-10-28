@@ -8,6 +8,7 @@ The core, `rn_forge.auth`:
 - [Permissions](permissions.md)
 - [Authorization](authorization.md)
 - [Identity](identity.md)
+- [Login flow](flow.md)
 - [Accounts](accounts.md)
 - [Authorization context](context.md)
 - [Authorization context cache](context_cache.md)

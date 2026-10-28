@@ -1,6 +1,9 @@
-"""OIDC token verification: discovery, one validation profile per kind of token
+"""OIDC: discovery, the login provider, one validation profile per kind of token
 (access, ID and logout) and the authenticator that maps verified access-token
 claims to a :class:`~rn_forge.auth.Principal`.
+
+:class:`OidcProvider` runs the authorization code flow with PKCE over Authlib's
+``OAuth2Session`` and verifies the ID token with :class:`IdTokenVerifier`.
 
 A token is accepted only by the profile used at its own place: the claims and
 the ``typ`` header each profile requires exclude the others.
@@ -16,21 +19,33 @@ from __future__ import annotations
 
 import json
 import math
+import secrets
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
-from datetime import timedelta
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Self, cast
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import jwt
+from authlib.common.errors import AuthlibBaseError
+from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.core import CodeIDToken
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from joserfc import jwt as joserfc_jwt
 from joserfc.errors import JoseError
 from joserfc.jwk import import_key
 from jwt import PyJWKClient
+from rn_forge.auth.flow import LoginFailed
+from rn_forge.auth.identity import (
+    ExternalIdentity,
+    LoginRequest,
+    LoginStart,
+    LoginTransaction,
+    ProviderKind,
+    SessionInfo,
+)
 from rn_forge.auth.principal import Principal, principal_from_claims
 from rn_forge.auth.stores import ReplayStore
 from rn_forge.commons.exceptions import AppException
@@ -38,14 +53,19 @@ from rn_forge.web.auth import Credentials
 from rn_forge.web.exceptions import AuthenticationFailed
 
 __all__ = [
+    "ClaimMapper",
     "FetchJson",
     "IdTokenVerifier",
     "JwtVerifier",
     "LogoutTokenVerifier",
     "OidcAuthenticator",
     "OidcConfiguration",
+    "OidcProvider",
+    "TokenHook",
     "TokenMode",
     "TokenVerificationError",
+    "UpstreamTokens",
+    "default_claim_mapper",
     "discover_oidc",
     "fetch_json",
 ]
@@ -100,10 +120,17 @@ def _require_secure_url(url: str) -> None:
 
 @dataclass(frozen=True)
 class OidcConfiguration:
-    """The two members of an OIDC discovery document verification needs."""
+    """The two members of an OIDC discovery document verification needs.
+
+    Attributes:
+        issuer: The document's ``issuer``.
+        jwks_uri: Where the key set is served.
+        metadata: The whole discovery document.
+    """
 
     issuer: str
     jwks_uri: str
+    metadata: Mapping[str, Any] = field(default_factory=dict[str, Any])
 
 
 def discover_oidc(issuer: str, *, fetch: FetchJson = fetch_json) -> OidcConfiguration:
@@ -125,7 +152,9 @@ def discover_oidc(issuer: str, *, fetch: FetchJson = fetch_json) -> OidcConfigur
         raise TokenVerificationError(
             "Discovery document issuer {} does not match {}", found_issuer, issuer
         )
-    return OidcConfiguration(issuer=found_issuer, jwks_uri=jwks_uri)
+    return OidcConfiguration(
+        issuer=found_issuer, jwks_uri=jwks_uri, metadata=dict(document)
+    )
 
 
 def _new_jwks_client(
@@ -865,3 +894,371 @@ class OidcAuthenticator:
         except TokenVerificationError as exc:
             raise AuthenticationFailed(exc.message, error_code=401) from exc
         return self._claims_to_principal(claims)
+
+
+type ClaimMapper = Callable[[str, Mapping[str, Any]], ExternalIdentity]
+"""Maps ``(provider ID, verified claims)`` to an identity.
+
+The claims are the ID token's, completed by UserInfo for any claim the ID token
+lacks. Raise :class:`~rn_forge.auth.LoginFailed` to refuse the login."""
+
+_PROTOCOL_CLAIMS = frozenset(
+    {"iss", "aud", "exp", "iat", "nbf", "jti", "nonce", "at_hash", "c_hash", "azp"}
+)
+_PROFILE_CLAIMS = frozenset(
+    {
+        "sub",
+        "email",
+        "email_verified",
+        "name",
+        "picture",
+        "groups",
+        "auth_time",
+        "amr",
+        "sid",
+    }
+)
+
+
+def _optional_str(claims: Mapping[str, Any], name: str) -> str | None:
+    value = claims.get(name)
+    return value if isinstance(value, str) else None
+
+
+def _string_set(claims: Mapping[str, Any], name: str) -> frozenset[str]:
+    value = cast(Any, claims.get(name))
+    if not isinstance(value, list):
+        return frozenset()
+    items = cast(list[Any], value)
+    return frozenset(item for item in items if isinstance(item, str))
+
+
+def default_claim_mapper(provider: str, claims: Mapping[str, Any]) -> ExternalIdentity:
+    """Map standard OIDC claims to an :class:`~rn_forge.auth.ExternalIdentity`.
+
+    ``sub``, ``email``, ``email_verified``, ``name``, ``picture``, ``groups``,
+    ``auth_time`` and ``amr`` fill the fields of the same name, and ``sid``
+    fills ``session_ref``. A claim of the wrong type is ignored. Every other
+    claim except the token-protocol ones (``iss``, ``aud``, ``exp``, ``iat``,
+    ``nbf``, ``jti``, ``nonce``, ``at_hash``, ``c_hash``, ``azp``) goes to
+    ``attributes``.
+
+    Raises:
+        LoginFailed: ``sub`` or ``iss`` is missing.
+    """
+    subject, issuer = _optional_str(claims, "sub"), _optional_str(claims, "iss")
+    if not subject or not issuer:
+        raise LoginFailed("login_failed", "claims lack sub or iss")
+    auth_time = cast(Any, claims.get("auth_time"))
+    verified = claims.get("email_verified")
+    return ExternalIdentity(
+        provider=provider,
+        issuer=issuer,
+        subject=subject,
+        email=_optional_str(claims, "email"),
+        email_verified=verified is True,
+        name=_optional_str(claims, "name"),
+        picture=_optional_str(claims, "picture"),
+        groups=_string_set(claims, "groups"),
+        attributes={
+            name: value
+            for name, value in claims.items()
+            if name not in _PROTOCOL_CLAIMS | _PROFILE_CLAIMS
+        },
+        auth_time=(
+            datetime.fromtimestamp(auth_time, UTC)
+            if isinstance(auth_time, int | float) and not isinstance(auth_time, bool)
+            else None
+        ),
+        amr=_string_set(claims, "amr"),
+        session_ref=_optional_str(claims, "sid"),
+    )
+
+
+@dataclass(frozen=True)
+class UpstreamTokens:
+    """The tokens the provider returned from the code exchange.
+
+    Attributes:
+        access_token: The access token.
+        id_token: The verified ID token.
+        refresh_token: The refresh token, if issued.
+        scope: The granted scope, if the provider reported it.
+    """
+
+    access_token: str = field(repr=False)
+    id_token: str = field(repr=False)
+    refresh_token: str | None = field(default=None, repr=False)
+    scope: str | None = None
+
+
+type TokenHook = Callable[[ExternalIdentity, UpstreamTokens], None]
+"""Receives the identity and the upstream tokens of a successful login."""
+
+type UserInfoMode = Literal["auto", "always", "never"]
+
+
+class OidcProvider:
+    """An OIDC :class:`~rn_forge.auth.IdentityProvider`: authorization code flow
+    with PKCE (S256), over Authlib's ``OAuth2Session``.
+
+    The authorization request carries ``state``, a nonce, the PKCE challenge and
+    ``max_age`` when set; all of them are recorded on the login transaction.
+    The callback is accepted only when its ``state`` equals the transaction's,
+    its ``iss`` (RFC 9207) names the issuer, the code exchange succeeds and the
+    ID token satisfies :class:`IdTokenVerifier`. The upstream tokens are
+    discarded unless *token_hook* is given.
+
+    Args:
+        id: The provider ID.
+        issuer: The IdP's issuer URL; its discovery document is read on first
+            use.
+        client_id: The registered client.
+        client_secret: The client's secret; ``None`` for a public client.
+        redirect_uri: The registered callback URL.
+        scopes: The requested scopes; must include ``openid``.
+        max_age: When set, the most seconds since the user authenticated; sent
+            on the authorization request and enforced on the ID token.
+        userinfo: ``"always"`` calls the UserInfo endpoint, ``"never"`` does
+            not, and ``"auto"`` calls it when the ID token has no ``email``. The
+            UserInfo ``sub`` must equal the ID token's.
+        claim_mapper: Replaces :func:`default_claim_mapper`.
+        token_hook: Called with the identity and the upstream tokens after a
+            successful login.
+        fetch: The transport for the discovery document.
+        algorithms: The ID-token signature algorithms accepted.
+        leeway: Seconds of clock skew tolerated.
+        timeout: Seconds before a back-channel request fails.
+        token_endpoint_auth_method: How the client authenticates at the token
+            endpoint.
+
+    Attributes:
+        id: The provider ID.
+        kind: Always ``"oidc"``.
+    """
+
+    kind: ProviderKind = "oidc"
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        issuer: str,
+        client_id: str,
+        client_secret: str | None,
+        redirect_uri: str,
+        scopes: Sequence[str] = ("openid", "email", "profile"),
+        max_age: int | None = None,
+        userinfo: UserInfoMode = "auto",
+        claim_mapper: ClaimMapper = default_claim_mapper,
+        token_hook: TokenHook | None = None,
+        fetch: FetchJson = fetch_json,
+        algorithms: Sequence[str] = ("RS256",),
+        leeway: float = 0.0,
+        timeout: float = 5.0,
+        token_endpoint_auth_method: str = "client_secret_basic",
+    ) -> None:
+        if "openid" not in scopes:
+            raise ValueError("scopes must include openid")
+        self.id = id
+        self._issuer = issuer
+        self._client_id = client_id
+        self._client_secret = client_secret
+        self._redirect_uri = redirect_uri
+        self._scopes = list(scopes)
+        self._max_age = max_age
+        self._userinfo = userinfo
+        self._claim_mapper = claim_mapper
+        self._token_hook = token_hook
+        self._fetch = fetch
+        self._algorithms = list(algorithms)
+        self._leeway = leeway
+        self._timeout = timeout
+        self._auth_method = (
+            token_endpoint_auth_method if client_secret is not None else "none"
+        )
+        self._discovered: tuple[OidcConfiguration, IdTokenVerifier] | None = None
+
+    def begin(self, request: LoginRequest, *, return_to: str) -> LoginStart:
+        """Return the authorization redirect and the transaction to persist.
+
+        Raises:
+            TokenVerificationError: Discovery failed or lacks an endpoint.
+        """
+        configuration, _ = self._configuration()
+        endpoint = self._endpoint(configuration, "authorization_endpoint")
+        state = secrets.token_urlsafe(32)
+        nonce = secrets.token_urlsafe(32)
+        verifier = secrets.token_urlsafe(64)
+        params: dict[str, Any] = {"nonce": nonce}
+        if self._max_age is not None:
+            params["max_age"] = self._max_age
+        # Authlib's stubs leave create_authorization_url partly Unknown.
+        session = cast(Any, self._session())
+        url, _ = session.create_authorization_url(
+            endpoint, state=state, code_verifier=verifier, **params
+        )
+        transaction = LoginTransaction(
+            id=secrets.token_urlsafe(32),
+            provider=self.id,
+            return_to=return_to,
+            created_at=datetime.now(UTC),
+            state=state,
+            nonce=nonce,
+            code_verifier=verifier,
+        )
+        return LoginStart(transaction=transaction, redirect_url=url)
+
+    def complete(
+        self, request: LoginRequest, transaction: LoginTransaction
+    ) -> ExternalIdentity:
+        """Validate the callback in *request* against *transaction*.
+
+        Raises:
+            LoginFailed: ``access_denied`` when the provider reported
+                ``error=access_denied``; ``login_failed`` for every other
+                failure. The reason is for logs.
+        """
+        try:
+            return self._complete(request.query, transaction)
+        except (TokenVerificationError, AuthlibBaseError, OSError, ValueError) as exc:
+            raise LoginFailed("login_failed", f"{type(exc).__name__}: {exc}") from exc
+
+    def logout_redirect(
+        self, session: SessionInfo, *, post_logout_redirect: str
+    ) -> str | None:
+        """Return ``None``: RP-initiated logout is not enabled."""
+        return None
+
+    def _complete(
+        self, query: Mapping[str, str], transaction: LoginTransaction
+    ) -> ExternalIdentity:
+        configuration, id_verifier = self._configuration()
+        expected_state = transaction.state or ""
+        if not expected_state or not secrets.compare_digest(
+            query.get("state", "").encode(), expected_state.encode()
+        ):
+            raise LoginFailed("login_failed", "state does not match the transaction")
+        self._check_response_issuer(query, configuration)
+        error = query.get("error")
+        if error is not None:
+            code = "access_denied" if error == "access_denied" else "login_failed"
+            raise LoginFailed(code, f"provider returned error {error}")
+        code = query.get("code")
+        if not code or not transaction.code_verifier or not transaction.nonce:
+            raise LoginFailed("login_failed", "callback lacks a code")
+        session = self._session()
+        token = cast(
+            Mapping[str, Any],
+            cast(Any, session).fetch_token(
+                self._endpoint(configuration, "token_endpoint"),
+                grant_type="authorization_code",
+                code=code,
+                code_verifier=transaction.code_verifier,
+            ),
+        )
+        access_token, raw_id_token = token.get("access_token"), token.get("id_token")
+        if not isinstance(access_token, str) or not isinstance(raw_id_token, str):
+            raise LoginFailed("login_failed", "token response lacks a token")
+        claims = dict(
+            id_verifier.verify(
+                raw_id_token, nonce=transaction.nonce, access_token=access_token
+            )
+        )
+        if self._wants_userinfo(claims):
+            claims = {
+                **self._fetch_userinfo(session, configuration, claims),
+                **claims,
+            }
+        identity = self._claim_mapper(self.id, claims)
+        if self._token_hook is not None:
+            refresh = token.get("refresh_token")
+            scope = token.get("scope")
+            self._token_hook(
+                identity,
+                UpstreamTokens(
+                    access_token=access_token,
+                    id_token=raw_id_token,
+                    refresh_token=refresh if isinstance(refresh, str) else None,
+                    scope=scope if isinstance(scope, str) else None,
+                ),
+            )
+        return identity
+
+    @staticmethod
+    def _check_response_issuer(
+        query: Mapping[str, str], configuration: OidcConfiguration
+    ) -> None:
+        issuer = query.get("iss")
+        if issuer is None:
+            if (
+                configuration.metadata.get(
+                    "authorization_response_iss_parameter_supported"
+                )
+                is True
+            ):
+                raise LoginFailed("login_failed", "response lacks iss")
+        elif issuer != configuration.issuer:
+            raise LoginFailed(
+                "login_failed", f"response iss {issuer} is not the issuer"
+            )
+
+    def _wants_userinfo(self, claims: Mapping[str, Any]) -> bool:
+        if self._userinfo == "auto":
+            return "email" not in claims
+        return self._userinfo == "always"
+
+    def _fetch_userinfo(
+        self,
+        session: OAuth2Session,
+        configuration: OidcConfiguration,
+        claims: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        endpoint = configuration.metadata.get("userinfo_endpoint")
+        if not isinstance(endpoint, str):
+            if self._userinfo == "always":
+                raise LoginFailed("login_failed", "provider has no userinfo_endpoint")
+            return {}
+        _require_secure_url(endpoint)
+        response = session.get(endpoint, timeout=self._timeout)
+        response.raise_for_status()
+        info = cast(object, response.json())
+        if not isinstance(info, Mapping):
+            raise LoginFailed("login_failed", "UserInfo is not a JSON object")
+        info = cast(Mapping[str, Any], info)
+        if info.get("sub") != claims.get("sub"):
+            raise LoginFailed("login_failed", "UserInfo sub differs from ID token sub")
+        return {name: value for name, value in info.items() if name != "iss"}
+
+    def _session(self) -> OAuth2Session:
+        return OAuth2Session(
+            self._client_id,
+            self._client_secret,
+            scope=" ".join(self._scopes),
+            redirect_uri=self._redirect_uri,
+            token_endpoint_auth_method=self._auth_method,
+            code_challenge_method="S256",
+            default_timeout=self._timeout,
+        )
+
+    def _configuration(self) -> tuple[OidcConfiguration, IdTokenVerifier]:
+        if self._discovered is None:
+            configuration = discover_oidc(self._issuer, fetch=self._fetch)
+            verifier = IdTokenVerifier.from_jwks_url(
+                configuration.jwks_uri,
+                issuer=configuration.issuer,
+                client_id=self._client_id,
+                algorithms=self._algorithms,
+                leeway=self._leeway,
+                max_age=self._max_age,
+            )
+            self._discovered = (configuration, verifier)
+        return self._discovered
+
+    @staticmethod
+    def _endpoint(configuration: OidcConfiguration, name: str) -> str:
+        endpoint = configuration.metadata.get(name)
+        if not isinstance(endpoint, str):
+            raise TokenVerificationError("Discovery document has no {}", name)
+        _require_secure_url(endpoint)
+        return endpoint

@@ -195,6 +195,9 @@ class FakeOidcProvider:
         deny_authorization: When true the authorization endpoint answers
             ``access_denied`` instead of approving.
         advertise_end_session: Whether discovery lists ``end_session_endpoint``.
+        auth_age: Seconds before each authorization request that the approved
+            user is recorded as having authenticated; it sets the ID token's
+            ``auth_time``.
         requests: Every request received, in order.
         issuer: The issuer URL.
         jwks_url: Where the key set is served.
@@ -220,6 +223,7 @@ class FakeOidcProvider:
         self.faults = Faults()
         self.deny_authorization = False
         self.advertise_end_session = True
+        self.auth_age = 0.0
         self.requests: list[RecordedRequest] = []
         self.private_keys: dict[str, rsa.RSAPrivateKey] = {}
         self.keys: dict[str, dict[str, Any]] = {}
@@ -488,7 +492,7 @@ class FakeOidcProvider:
                 nonce=query["nonce"],
                 scope=query.get("scope", "openid"),
                 user=dict(self.user),
-                auth_time=int(time.time()),
+                auth_time=int(time.time() - self.auth_age),
             )
         return back(code=code)
 

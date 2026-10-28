@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -2014,6 +2014,7 @@ oidc = [
     { name = "authlib" },
     { name = "joserfc" },
     { name = "pyjwt", extra = ["crypto"] },
+    { name = "requests" },
 ]
 redis = [
     { name = "redis" },
@@ -2043,6 +2044,7 @@ requires-dist = [
     { name = "joserfc", marker = "extra == 'oidc'", specifier = ">=1.7.7" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'oidc'", specifier = ">=2.15.0" },
     { name = "redis", marker = "extra == 'redis'", specifier = ">=8.1.0" },
+    { name = "requests", marker = "extra == 'oidc'", specifier = ">=2.34.2" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
 ]

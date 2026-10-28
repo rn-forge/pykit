@@ -210,6 +210,14 @@ class TestCodeFlow:
             (200, {"sub": "u1", "email": "u1@example.com", "name": "User One"})
         )
 
+    def test_auth_age_sets_the_id_token_auth_time(self, provider) -> None:
+        provider.auth_age = 3600.0
+        tokens = _login(provider)
+        claims = _id_token_verifier(provider).verify(
+            tokens["id_token"], nonce=NONCE, access_token=tokens["access_token"]
+        )
+        assert_that(time.time() - claims["auth_time"]).is_between(3600, 3610)
+
     def test_basic_client_authentication_is_accepted(self, provider) -> None:
         code = _authorize(provider)["code"][0]
         assert_that(_exchange(provider, code, basic=True)[0]).is_equal_to(200)

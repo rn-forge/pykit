@@ -19,9 +19,11 @@ from rn_forge.auth.context_cache import (
     AuthorizationVersions,
     InMemoryAuthorizationVersions,
 )
+from rn_forge.auth.flow import LoginFailed, LoginFlow
 from rn_forge.auth.identity import (
     ExternalIdentity,
     IdentityProvider,
+    LoginRequest,
     LoginStart,
     LoginTransaction,
     ProviderKind,
@@ -71,6 +73,9 @@ __all__ = [
     "InMemorySessionStore",
     "InMemoryTransactionStore",
     "InvalidReturnTo",
+    "LoginFailed",
+    "LoginFlow",
+    "LoginRequest",
     "LoginStart",
     "LoginTransaction",
     "Mechanism",

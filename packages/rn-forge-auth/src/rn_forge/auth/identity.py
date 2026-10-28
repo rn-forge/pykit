@@ -15,6 +15,7 @@ from typing import Any, Literal, Protocol, runtime_checkable
 __all__ = [
     "ExternalIdentity",
     "IdentityProvider",
+    "LoginRequest",
     "LoginStart",
     "LoginTransaction",
     "ProviderKind",
@@ -126,6 +127,28 @@ class SessionInfo:
     amr: frozenset[str] = frozenset()
     session_ref: str | None = None
     id_token: str | None = None
+
+
+class LoginRequest(Protocol):
+    """The part of a framework request that login providers read.
+
+    A binding passes its native request when it has these two members, or a
+    small adapter around it when it does not.
+
+    Attributes:
+        query: The URL query parameters; the provider's callback arrives here.
+        form: The decoded form fields of a ``POST`` body, empty otherwise.
+    """
+
+    @property
+    def query(self) -> Mapping[str, str]:
+        """The URL query parameters."""
+        ...
+
+    @property
+    def form(self) -> Mapping[str, str]:
+        """The decoded form fields."""
+        ...
 
 
 @runtime_checkable
