@@ -69,6 +69,15 @@ Notable changes to `rn-forge-auth`, newest first, in the
   (`subject_field` picks the subject, numbers are stringified); the `iss`
   response check applies only with `response_issuer`. `FakeOidcProvider`
   gains `oauth2_only` and `Faults.userinfo_error`.
+- `OidcProvider.logout_redirect` returns the discovered `end_session_endpoint`
+  with `id_token_hint`, `post_logout_redirect_uri` and `client_id` when the
+  provider is built with `rp_initiated_logout=True`, and `None` otherwise, for
+  an OAuth 2.0 provider, without an endpoint or without a session ID token.
+- `BackchannelLogout` and `LogoutRevocation`: validate a back-channel logout
+  token under the logout-token profile and return the `(issuer, sid)` to revoke,
+  or, for a token with only `sub`, the account whose session version to bump
+  (`None` when unlinked). A failure raises `TokenVerificationError`. The binding
+  applies the result.
 - `OidcConfiguration.metadata` holds the whole discovery document, and
   `FakeOidcProvider.auth_age` sets the age of the user's authentication.
 

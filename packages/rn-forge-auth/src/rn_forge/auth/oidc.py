@@ -25,7 +25,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Self, cast
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 import jwt
@@ -37,6 +37,7 @@ from joserfc import jwt as joserfc_jwt
 from joserfc.errors import JoseError
 from joserfc.jwk import import_key
 from jwt import PyJWKClient
+from rn_forge.auth.accounts import AccountResolver
 from rn_forge.auth.flow import LoginFailed
 from rn_forge.auth.identity import (
     ExternalIdentity,
@@ -53,10 +54,12 @@ from rn_forge.web.auth import Credentials
 from rn_forge.web.exceptions import AuthenticationFailed
 
 __all__ = [
+    "BackchannelLogout",
     "ClaimMapper",
     "FetchJson",
     "IdTokenVerifier",
     "JwtVerifier",
+    "LogoutRevocation",
     "LogoutTokenVerifier",
     "OAuth2Endpoints",
     "OidcAuthenticator",
@@ -1053,6 +1056,9 @@ class OidcProvider:
         timeout: Seconds before a back-channel request fails.
         token_endpoint_auth_method: How the client authenticates at the token
             endpoint.
+        rp_initiated_logout: Whether :meth:`logout_redirect` returns the
+            provider's ``end_session_endpoint``. Ignored for an OAuth 2.0
+            provider, which has none.
         endpoints: When given, makes an OAuth 2.0 provider; see :meth:`oauth2`.
         subject_field: The user-endpoint member that is the subject.
         response_issuer: The ``iss`` an OAuth 2.0 authorization response must
@@ -1083,6 +1089,7 @@ class OidcProvider:
         leeway: float = 0.0,
         timeout: float = 5.0,
         token_endpoint_auth_method: str = "client_secret_basic",
+        rp_initiated_logout: bool = False,
         endpoints: OAuth2Endpoints | None = None,
         subject_field: str = "sub",
         response_issuer: str | None = None,
@@ -1109,6 +1116,7 @@ class OidcProvider:
         self._auth_method = (
             token_endpoint_auth_method if client_secret is not None else "none"
         )
+        self._rp_initiated_logout = rp_initiated_logout
         self._endpoints = endpoints
         self._subject_field = subject_field
         self._response_issuer = response_issuer
@@ -1229,8 +1237,35 @@ class OidcProvider:
     def logout_redirect(
         self, session: SessionInfo, *, post_logout_redirect: str
     ) -> str | None:
-        """Return ``None``: RP-initiated logout is not enabled."""
-        return None
+        """Return the provider's RP-initiated logout URL, if enabled.
+
+        The URL is the discovered ``end_session_endpoint`` with
+        ``id_token_hint`` (the session's ID token), ``post_logout_redirect_uri``
+        and ``client_id``.
+
+        Returns:
+            The URL, or ``None`` when RP-initiated logout is not enabled, the
+            provider is OAuth 2.0, the provider advertises no
+            ``end_session_endpoint`` or the session kept no ID token.
+        """
+        if (
+            not self._rp_initiated_logout
+            or self._endpoints is not None
+            or not session.id_token
+        ):
+            return None
+        endpoint = self._configuration()[0].metadata.get("end_session_endpoint")
+        if not isinstance(endpoint, str):
+            return None
+        _require_secure_url(endpoint)
+        query = urlencode(
+            {
+                "id_token_hint": session.id_token,
+                "post_logout_redirect_uri": post_logout_redirect,
+                "client_id": self._client_id,
+            }
+        )
+        return f"{endpoint}{'&' if urlsplit(endpoint).query else '?'}{query}"
 
     def _complete(
         self, query: Mapping[str, str], transaction: LoginTransaction
@@ -1407,3 +1442,71 @@ class OidcProvider:
             raise TokenVerificationError("Discovery document has no {}", name)
         _require_secure_url(endpoint)
         return endpoint
+
+
+@dataclass(frozen=True)
+class LogoutRevocation:
+    """What a valid back-channel logout token asks to revoke.
+
+    With a ``sid``, revoke that one session: ``ReplayStore.revoke_sid(issuer,
+    sid, ...)``. Without one, bump the session version of ``account_id``, or do
+    nothing when it is ``None``.
+
+    Attributes:
+        issuer: The token's ``iss``.
+        sid: The session ID to revoke, if the token names one.
+        subject: The token's ``sub``, if present.
+        account_id: For a token without ``sid``, the account linked to
+            ``(issuer, subject)``; ``None`` when none is linked.
+    """
+
+    issuer: str
+    sid: str | None = None
+    subject: str | None = None
+    account_id: str | None = None
+
+
+class BackchannelLogout:
+    """Validates a back-channel logout token and says what it revokes.
+
+    The handler changes no state besides the verifier's ``jti`` record: the
+    binding applies the returned :class:`LogoutRevocation`, because the
+    revoked-``sid`` lifetime (the sessions' absolute timeout) and the
+    session-version store belong to it.
+
+    Args:
+        verifier: The logout-token profile for this provider.
+        accounts: Finds the account behind ``(issuer, sub)``; never provisions.
+    """
+
+    def __init__(
+        self, verifier: LogoutTokenVerifier, accounts: AccountResolver
+    ) -> None:
+        self._verifier = verifier
+        self._accounts = accounts
+
+    def handle(self, logout_token: str) -> LogoutRevocation:
+        """Verify *logout_token* and return what to revoke.
+
+        A token with a ``sid`` revokes that session only, even if it also has a
+        ``sub``.
+
+        Raises:
+            TokenVerificationError: The token fails the logout-token profile,
+                including a replayed ``jti``. The message is for logs; answer
+                ``400``.
+        """
+        claims = self._verifier.verify(logout_token)
+        issuer = cast(str, claims["iss"])
+        sid, subject = claims.get("sid"), claims.get("sub")
+        if isinstance(sid, str) and sid:
+            return LogoutRevocation(
+                issuer, sid=sid, subject=subject if isinstance(subject, str) else None
+            )
+        if not isinstance(subject, str) or not subject:
+            raise TokenVerificationError("Logout token has no usable sid or sub")
+        return LogoutRevocation(
+            issuer,
+            subject=subject,
+            account_id=self._accounts.lookup(issuer, subject),
+        )
