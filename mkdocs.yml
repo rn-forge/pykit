@@ -73,6 +73,7 @@ nav:
       - Overview: guides/index.md
       - Choosing packages: guides/choosing-packages.md
       - Consuming packages: guides/consuming-packages.md
+      - Verifying releases: guides/verifying-releases.md
       - Development: guides/development.md
   - Runbooks:
       - Overview: runbooks/index.md

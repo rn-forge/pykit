@@ -45,3 +45,6 @@ dependencies = [
 
 A tag exists once its release is cut. The [release pages](../releases/index.md)
 record which tags exist.
+
+[Verifying releases](verifying-releases.md) shows how to check a file's origin
+and read its SBOM.
