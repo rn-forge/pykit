@@ -363,6 +363,13 @@ jobs:
         run: |
           set -euo pipefail
           on_index() { curl -fsS -o /dev/null "https://$1/pypi/$2/$3/json"; }
+          # The SBOM lists the package's locked third-party dependencies, kept out of
+          # dist/ so neither twine nor uv publish sees it.
+          sbom() {
+            mkdir -p "$GITHUB_WORKSPACE/sbom"
+            uv export --directory "$1" --frozen --package "$2" --no-dev --all-extras --no-emit-workspace --no-hashes --no-header --no-annotate -o "$RUNNER_TEMP/$2.txt"
+            uvx --from cyclonedx-bom==7.5.0 cyclonedx-py requirements "$RUNNER_TEMP/$2.txt" --of JSON -o "$GITHUB_WORKSPACE/sbom/$2-$3.cdx.json"
+          }
           mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
           releasable="$(uv run rn-forge-devops releasable ok "${names[@]}")"
           for name in $releasable; do
@@ -391,9 +398,11 @@ jobs:
               worktree=$(mktemp -d)
               git worktree add --detach "$worktree" FETCH_HEAD
               uv build --directory "$worktree" --package "$name" --out-dir "$GITHUB_WORKSPACE/dist/$name"
+              sbom "$worktree" "$name" "$version"
               git worktree remove "$worktree"
             else
               uv build --package "$name" --out-dir "dist/$name"
+              sbom . "$name" "$version"
             fi
             uvx twine@7.0.0 check --strict dist/"$name"/*
             # Upload before the GitHub release, so a published release implies the version is on PyPI.
@@ -408,9 +417,9 @@ jobs:
               gh release delete "$tag" --yes
             fi
             if [ -n "$remote_tag" ]; then
-              gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
+              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
             else
-              gh release create "$tag" dist/"$name"/* --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
+              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
             fi
           done
 
