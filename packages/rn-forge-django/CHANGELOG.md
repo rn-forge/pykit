@@ -7,6 +7,15 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Added
 
+- Sessions for the `/auth` routes. `SESSION_SETTINGS` carries the
+  `__Host-session` cookie settings, and `auth_urlpatterns` raises
+  `ImproperlyConfigured` for `SESSION_SAVE_EVERY_REQUEST`, and outside `DEBUG`
+  for other cookie settings, a session engine other than `db` or `cached_db`, and the local-memory
+  cache. `Sessions.read` applies a 30-minute sliding idle timeout
+  (`AuthRoutesConfig.idle_timeout`), the 12-hour absolute timeout
+  (`absolute_timeout`, formerly `session_timeout`) and the session-version,
+  account-status and revoked-`sid` checks, deleting a failing session.
+  `rotate_session` gives a session a new ID after a privilege change.
 - `rn_forge.django.auth.auth_urlpatterns` serves the shared `/auth` routes
   (providers, login, callback, session, logout, logout of all sessions,
   back-channel logout, password login) over `rn-forge-auth`'s `LoginFlow`,

@@ -76,6 +76,7 @@ def pytest_configure(config: pytest.Config) -> None:
             INSTALLED_APPS=[
                 "django.contrib.contenttypes",
                 "django.contrib.auth",
+                "django.contrib.sessions",
                 "rn_forge.django.auth",
                 # Installed so the suite fails if the app package ever imports
                 # its models at package import time.
@@ -84,6 +85,7 @@ def pytest_configure(config: pytest.Config) -> None:
             ALLOWED_HOSTS=["localhost", "testserver"],
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             USE_TZ=False,
+            SECRET_KEY="rn-forge-django-tests",
         )
         django.setup()
 

@@ -35,10 +35,13 @@ class CacheTransactionStore:
     Args:
         alias: The cache alias in ``CACHES``.
         prefix: Prepended to every key.
+
+    Attributes:
+        alias: The cache alias in ``CACHES``.
     """
 
     def __init__(self, *, alias: str = "default", prefix: str = "rn-forge:tx:") -> None:
-        self._alias = alias
+        self.alias = alias
         self._prefix = prefix
 
     def save(self, transaction: LoginTransaction, *, ttl: timedelta) -> None:
@@ -53,13 +56,13 @@ class CacheTransactionStore:
             "code_verifier": transaction.code_verifier,
             "extra": dict(transaction.extra),
         }
-        caches[self._alias].set(
+        caches[self.alias].set(
             _key(self._prefix, transaction.id), document, _timeout(ttl)
         )
 
     def consume(self, transaction_id: str) -> LoginTransaction | None:
         """See :meth:`rn_forge.auth.TransactionStore.consume`."""
-        cache = caches[self._alias]
+        cache = caches[self.alias]
         key = _key(self._prefix, transaction_id)
         document: dict[str, Any] | None = cache.get(key)
         # Of the callers that read the record, only the one whose delete finds
@@ -84,28 +87,27 @@ class CacheReplayStore:
     Args:
         alias: The cache alias in ``CACHES``.
         prefix: Prepended to every key.
+
+    Attributes:
+        alias: The cache alias in ``CACHES``.
     """
 
     def __init__(
         self, *, alias: str = "default", prefix: str = "rn-forge:replay:"
     ) -> None:
-        self._alias = alias
+        self.alias = alias
         self._prefix = prefix
 
     def record_once(self, key: str, *, ttl: timedelta) -> bool:
         """See :meth:`rn_forge.auth.ReplayStore.record_once`."""
-        return caches[self._alias].add(
-            _key(self._prefix, "seen", key), 1, _timeout(ttl)
-        )
+        return caches[self.alias].add(_key(self._prefix, "seen", key), 1, _timeout(ttl))
 
     def revoke_sid(self, issuer: str, sid: str, *, ttl: timedelta) -> None:
         """See :meth:`rn_forge.auth.ReplayStore.revoke_sid`."""
-        caches[self._alias].set(
-            _key(self._prefix, "sid", issuer, sid), 1, _timeout(ttl)
-        )
+        caches[self.alias].set(_key(self._prefix, "sid", issuer, sid), 1, _timeout(ttl))
 
     def is_sid_revoked(self, issuer: str, sid: str) -> bool:
         """See :meth:`rn_forge.auth.ReplayStore.is_sid_revoked`."""
         return (
-            caches[self._alias].get(_key(self._prefix, "sid", issuer, sid)) is not None
+            caches[self.alias].get(_key(self._prefix, "sid", issuer, sid)) is not None
         )

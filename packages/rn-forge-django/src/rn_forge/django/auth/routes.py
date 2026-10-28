@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
@@ -35,7 +35,6 @@ from rn_forge.auth import (
     AccountRejected,
     AccountResolver,
     AccountStateWriter,
-    AuthorizationContext,
     AuthorizationContextProvider,
     CallbackError,
     DevelopmentIdentityProvider,
@@ -51,7 +50,7 @@ from rn_forge.auth import (
     validate_return_to,
 )
 from rn_forge.commons.logging import AppLogger
-from rn_forge.django.auth.sessions import end_session, read_session, start_session
+from rn_forge.django.auth.sessions import Sessions, check_session_settings
 from rn_forge.django.auth.stores import CacheReplayStore, CacheTransactionStore
 from rn_forge.django.exceptions import problem_details_response
 from rn_forge.web import ProblemRegistry, SessionRequired, default_registry
@@ -92,7 +91,10 @@ class AuthRoutesConfig:
         transactions: Holds logins between redirect and callback.
         replay: Holds replayed token IDs and revoked ``sid`` values.
         registry: The problem registry for error responses.
-        session_timeout: The absolute session timeout.
+        idle_timeout: How long a session may sit unused; a normal request
+            extends it, ``GET /auth/session`` does not.
+        absolute_timeout: How long a session lives whatever its use, and how
+            long a revoked ``sid`` stays revoked.
     """
 
     providers: Mapping[str, IdentityProvider[LoginRequest]]
@@ -110,7 +112,8 @@ class AuthRoutesConfig:
     transactions: TransactionStore = field(default_factory=CacheTransactionStore)
     replay: ReplayStore = field(default_factory=CacheReplayStore)
     registry: ProblemRegistry | None = None
-    session_timeout: timedelta = timedelta(hours=12)
+    idle_timeout: timedelta = timedelta(minutes=30)
+    absolute_timeout: timedelta = timedelta(hours=12)
 
 
 @dataclass(frozen=True)
@@ -123,6 +126,12 @@ class _Views:
     def __init__(self, config: AuthRoutesConfig) -> None:
         self._config = config
         self._registry = config.registry or default_registry()
+        self.sessions = Sessions(
+            contexts=config.contexts,
+            replay=config.replay,
+            idle_timeout=config.idle_timeout,
+            absolute_timeout=config.absolute_timeout,
+        )
         self._flow = LoginFlow[LoginRequest](
             config.providers,
             config.transactions,
@@ -210,9 +219,10 @@ class _Views:
         return self._session_response(request)
 
     def logout(self, request: HttpRequest) -> HttpResponse:
-        info = read_session(request)
-        if info is None:
+        active = self.sessions.read(request, touch=False)
+        if active is None:
             return self._unauthorized(request)
+        info = active.info
         provider = self._config.providers.get(info.provider)
         redirect = (
             provider.logout_redirect(
@@ -221,15 +231,16 @@ class _Views:
             if provider is not None
             else None
         )
-        end_session(request)
+        self.sessions.end(request)
         return _no_store(JsonResponse({"redirect": redirect}))
 
     def logout_all(self, request: HttpRequest) -> HttpResponse:
-        info = read_session(request)
-        if info is None:
+        active = self.sessions.read(request, touch=False)
+        if active is None:
             return self._unauthorized(request)
+        info = active.info
         self._config.account_state.bump_session_version(info.account_id)
-        end_session(request)
+        self.sessions.end(request)
         return _no_store(JsonResponse({"redirect": None}))
 
     def backchannel_logout(
@@ -249,7 +260,7 @@ class _Views:
             return _no_store(HttpResponse(status=HTTPStatus.BAD_REQUEST))
         if revocation.sid is not None:
             self._config.replay.revoke_sid(
-                revocation.issuer, revocation.sid, ttl=self._config.session_timeout
+                revocation.issuer, revocation.sid, ttl=self._config.absolute_timeout
             )
         elif revocation.account_id is not None:
             self._config.account_state.bump_session_version(revocation.account_id)
@@ -286,8 +297,8 @@ class _Views:
         context = self._config.contexts.resolve(account_id)
         if not context.active:
             raise self._refused("access_denied", provider_id, "account is not active")
-        now = datetime.now(UTC)
-        start_session(
+        moment = self.sessions.now()
+        self.sessions.start(
             request,
             SessionInfo(
                 account_id=account_id,
@@ -295,15 +306,14 @@ class _Views:
                 provider=identity.provider,
                 issuer=identity.issuer,
                 external_subject=identity.subject,
-                created_at=now,
-                expires_at=now + self._config.session_timeout,
+                created_at=moment,
+                expires_at=moment + self._config.absolute_timeout,
                 auth_time=identity.auth_time,
                 amr=identity.amr,
                 session_ref=identity.session_ref,
                 id_token=identity.id_token,
             ),
         )
-        request.session.set_expiry(self._config.session_timeout)
         return self._return_to(completed.return_to)
 
     def _return_to(self, return_to: str) -> str:
@@ -361,11 +371,10 @@ class _Views:
     # Responses --------------------------------------------------------------
 
     def _session_response(self, request: HttpRequest) -> HttpResponse:
-        info = read_session(request)
-        if info is None:
+        active = self.sessions.read(request, touch=False)
+        if active is None:
             return self._unauthorized(request)
-        context: AuthorizationContext = self._config.contexts.resolve(info.account_id)
-        body = SessionBody.build(info, context)
+        body = SessionBody.build(active.info, active.context)
         return _no_store(JsonResponse(body.to_json()))
 
     def _error_url(self, code: str) -> str:
@@ -441,6 +450,13 @@ def auth_urlpatterns(
     Returns:
         The patterns, named ``rn-forge-auth-<route>``.
     """
+    check_session_settings(
+        cache_aliases=[
+            store.alias
+            for store in (config.transactions, config.replay)
+            if isinstance(store, (CacheTransactionStore, CacheReplayStore))
+        ]
+    )
     views = _Views(config)
     base = f"{prefix.strip('/')}/" if prefix.strip("/") else ""
     return [

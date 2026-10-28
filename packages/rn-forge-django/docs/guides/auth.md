@@ -230,8 +230,43 @@ urlpatterns = [
 ]
 ```
 
-Sessions are `django.contrib.sessions`, so `SessionMiddleware` must be
-installed. Login transactions (behind the `__Host-login-tx` cookie), replay
+Sessions are `django.contrib.sessions` with the `db` or `cached_db` engine, so
+`SessionMiddleware` must be installed. Spread `SESSION_SETTINGS` into your
+settings for the `__Host-session` cookie (`HttpOnly`, `Secure`,
+`SameSite=Lax`, `Path=/`, no `Domain`) and keep
+`SESSION_SAVE_EVERY_REQUEST` false:
+
+```python
+from rn_forge.django.auth import SESSION_SETTINGS
+
+globals().update(SESSION_SETTINGS)
+```
+
+`auth_urlpatterns` checks these settings when the URLconf is built and raises
+`ImproperlyConfigured`. In every mode it refuses `SESSION_SAVE_EVERY_REQUEST`
+(it would let `GET /auth/session` extend the session). Outside `DEBUG` it also
+refuses cookie settings that differ from `SESSION_SETTINGS`, any session engine other than `db` or `cached_db` (the signed-cookie
+engine cannot revoke sessions), and Django's local-memory cache for the session cache and for the
+login-transaction and replay stores.
+
+The session holds the account ID, the account's session version at login,
+provider, issuer, external subject, `auth_time`, `amr`, `session_ref` and the
+ID token (only with RP-initiated logout), and never permissions. It has a
+30-minute sliding idle timeout and a 12-hour absolute timeout
+(`AuthRoutesConfig.idle_timeout` and `absolute_timeout`). `Sessions.read`
+is the one place that reads the session: it deletes it, and the caller answers
+`401`, when the absolute timeout has passed, the recorded version differs from
+the account's, the account is inactive, or the `session_ref` is revoked. A
+normal read moves the idle expiry forward; `touch=False`, which
+`GET /auth/session` uses, does not. Call `rotate_session(request)` after a
+change of the account's privileges to give the session a new ID.
+
+`/auth/logout` ends the current session. `/auth/logout/all` and a back-channel
+logout that names only `sub` bump the account's session version, which ends
+every session of the account on its next request. A back-channel logout with a
+`sid` revokes that session only.
+
+Login transactions (behind the `__Host-login-tx` cookie), replay
 records and revoked session IDs live in Django's cache; use the Redis cache
 backend in production, with the `redis` extra. A callback error redirects to
 `error_route` with `?error=` set to `access_denied`, `account_not_provisioned`
