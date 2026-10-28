@@ -11,15 +11,11 @@ Shared, framework-agnostic utilities for Python programming.
 
 ## Install
 
-Not published to PyPI: a release is a git tag. A consumer declares pykit's
-package index and requires the package by version range, or pins a tag by direct
-URL.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.6.0#subdirectory=packages/rn-forge-commons",
-]
+dependencies = ["rn-forge-commons>=0.8,<0.9"]
 ```
 
 Optional extras:

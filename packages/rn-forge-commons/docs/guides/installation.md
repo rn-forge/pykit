@@ -3,13 +3,13 @@
 Base package:
 
 ```bash
-uv add rn-forge-commons
+uv add "rn-forge-commons>=0.8,<0.9"
 ```
 
 All optional integrations:
 
 ```bash
-uv add "rn-forge-commons[all]"
+uv add "rn-forge-commons[all]>=0.8,<0.9"
 ```
 
 Targeted extras:

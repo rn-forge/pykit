@@ -44,8 +44,7 @@ at or above the current one whose `pyproject.toml` declares
 `[tool.uv.workspace]`.
 
 ```bash
-uvx --from "rn-forge-devops @ git+https://github.com/rn-forge/pykit@rn-forge-devops-v0.1.0#subdirectory=packages/rn-forge-devops" \
-  rn-forge-devops plan
+uvx --from "rn-forge-devops>=0.3,<0.4" rn-forge-devops plan
 ```
 
 The subcommands and the `[tool.workspace-ci]` tables are described in the

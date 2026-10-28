@@ -91,22 +91,17 @@ linked decisions state each rule in full.
 
 ## Installing a package
 
-A consumer declares pykit's package index once and requires packages by version
-range:
+Every package is published to PyPI. A consumer requires one by version range:
 
 ```toml
-dependencies = ["rn-forge-commons>=0.7.0,<0.8"]
-
-[[tool.uv.index]]
-name = "rn-forge"
-url = "https://rn-forge.github.io/pykit/simple/"
+dependencies = ["rn-forge-commons>=0.7,<0.8"]
 ```
 
 Or pin a tag by git direct URL with its subdirectory:
 
 ```toml
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.5.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.7.1#subdirectory=packages/rn-forge-commons",
 ]
 ```
 

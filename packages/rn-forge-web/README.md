@@ -62,14 +62,10 @@ response.
 
 ## Installation
 
-None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag**. A consumer declares pykit's package index and requires it by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
-dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
-]
+dependencies = ["rn-forge-web>=0.3,<0.4"]
 ```
 
 Inside this workspace, `[tool.uv.sources]` overrides the requirement with the

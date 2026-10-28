@@ -35,15 +35,11 @@ Tooling may import cli and commons; neither may import tooling, and
 
 ## Install
 
-Not published to PyPI: a release is a git tag. A consumer declares pykit's
-package index and requires the package by version range, or pins a tag by direct
-URL.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-tooling @ git+https://github.com/rn-forge/pykit@rn-forge-tooling-v0.2.0#subdirectory=packages/rn-forge-tooling",
-]
+dependencies = ["rn-forge-tooling>=0.3,<0.4"]
 ```
 
 `rn-forge-cli` and `rn-forge-commons` come with it, as version ranges.

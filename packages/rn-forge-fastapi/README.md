@@ -31,9 +31,9 @@ commons ──► web ──► auth ──► django
                           └───► fastapi      (this package)
 ```
 
-`rn-forge-fastapi` depends on `rn-forge-web`, `rn-forge-auth` and FastAPI. It never imports
-`rn_forge.django` — the two framework packages are independent siblings — nor
-`rn_forge.cli` or `rn_forge.tooling`. `.importlinter` carries the
+`rn-forge-fastapi` depends on `rn-forge-web`, `rn-forge-auth` and FastAPI. It
+never imports `rn_forge.django` — the two framework packages are independent
+siblings — nor `rn_forge.cli` or `rn_forge.tooling`. `.importlinter` carries the
 `fastapi-runtime-has-no-tooling` and `web-layers` contracts, and
 `uv run lint-imports` proves them.
 
@@ -45,14 +45,12 @@ unless a process puts `src/rn_forge/` itself on `sys.path`.
 
 ## Installation
 
-None of the `rn-forge-*` packages is on PyPI. A release is a git tag. Declare
-pykit's package index and require packages by version range, or pin a tag by
-direct URL:
+Require the packages by version range:
 
 ```toml
 dependencies = [
-  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.3.0#subdirectory=packages/rn-forge-fastapi",
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-fastapi>=0.4,<0.5",
+  "rn-forge-web>=0.3,<0.4",
 ]
 ```
 
@@ -79,12 +77,12 @@ local checkout, for local development only.
   way it reaches any other response: `render_problem` reads it from the active
   span, and `ServerErrorMiddleware` sits inside the instrumentation's span,
   not outside it.
-- **A token verifier.** The auth binding takes any `rn_forge.auth.Authenticator`;
-  verifying a JWT against a JWKS is that authenticator's job. For OIDC that
-  authenticator already exists — `rn_forge.auth.oidc.OidcAuthenticator`, via
-  this package's `oidc` extra — and is shared with `rn-forge-django` so both
-  stacks accept the same tokens. Nothing here wraps it; pass it to
-  `bearer_auth`.
+- **A token verifier.** The auth binding takes any
+  `rn_forge.auth.Authenticator`; verifying a JWT against a JWKS is that
+  authenticator's job. For OIDC that authenticator already exists —
+  `rn_forge.auth.oidc.OidcAuthenticator`, via this package's `oidc` extra —
+  and is shared with `rn-forge-django` so both stacks accept the same tokens.
+  Nothing here wraps it; pass it to `bearer_auth`.
 
 ## Dependencies
 

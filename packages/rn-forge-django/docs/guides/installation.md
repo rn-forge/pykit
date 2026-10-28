@@ -1,29 +1,22 @@
 # Installation
 
-`rn-forge-django` is not on PyPI. A release is a git tag
-(`rn-forge-django-v<version>`), and a consumer declares pykit's package index
-(`https://rn-forge.github.io/pykit/simple/`) and requires the package by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django",
-]
+dependencies = ["rn-forge-django>=0.6,<0.7"]
 ```
 
-Extras use the same form, with the extra before the `@`:
+Extras go in brackets after the name:
 
 ```toml
-dependencies = [
-  "rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django",
-]
+dependencies = ["rn-forge-django[drf]>=0.6,<0.7"]
 ```
 
 or, from the command line:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all]>=0.6,<0.7"
 ```
 
 Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each

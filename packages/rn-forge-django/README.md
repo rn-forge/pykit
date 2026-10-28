@@ -13,11 +13,10 @@ and
 
 ## Install
 
-Not on PyPI; a release is a git tag. Declare pykit's package index and require
-the package by version range, or pin a tag by direct URL:
+Require the package by version range:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all]>=0.6,<0.7"
 ```
 
 Application code imports `rn_forge.web` directly (wire models, pagination,
@@ -26,7 +25,7 @@ Declare `rn-forge-web` as well, so the import is not an undeclared transitive
 dependency:
 
 ```bash
-uv add "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web"
+uv add "rn-forge-web>=0.3,<0.4"
 ```
 
 Optional extras:
