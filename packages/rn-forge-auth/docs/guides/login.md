@@ -58,8 +58,9 @@ start = flow.begin("acme", request, return_to="/app/orders")
 # Set a cookie holding start.transaction.id; redirect to start.redirect_url.
 
 # GET /auth/callback/acme
-identity = flow.complete("acme", request, transaction_id=cookie_value)
-# Clear the cookie, resolve the account, start the session.
+login = flow.complete("acme", request, transaction_id=cookie_value)
+# login.identity is the verified identity; login.return_to is where to send
+# the user. Clear the cookie, resolve the account, start the session.
 ```
 
 `begin` checks `return_to` with `validate_return_to`, asks the provider for the
@@ -156,7 +157,9 @@ returns the discovered `end_session_endpoint` with `id_token_hint`,
 `post_logout_redirect_uri` and `client_id`. It returns `None`, and the binding
 logs out locally only, when the flag is off, the provider advertises no
 endpoint, or the session kept no ID token. A session keeps its ID token
-(`SessionInfo.id_token`) only when the application enables RP-initiated logout.
+(`SessionInfo.id_token`) only when the application enables RP-initiated logout:
+with the flag on, the provider sets `ExternalIdentity.id_token` and the binding
+copies it into the session; with it off the field stays `None`.
 Signing out of the app does not normally need to sign the user out of their
 whole IdP session, so the flag is off by default.
 

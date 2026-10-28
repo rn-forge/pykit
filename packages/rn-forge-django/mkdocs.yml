@@ -73,6 +73,7 @@ nav:
           - DRF: reference/auth/drf.md
           - Principal (bearer and basic): reference/auth/principal.md
           - OIDC (JWKS bearer): reference/auth/oidc.md
+          - Routes: reference/auth/routes.md
       - DRF:
           - reference/drf/index.md
           - Views: reference/drf/views.md

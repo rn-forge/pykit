@@ -43,6 +43,8 @@ class ExternalIdentity:
         auth_time: When the user authenticated.
         amr: How the user authenticated, such as ``pwd``, ``mfa`` or ``hwk``.
         session_ref: The OIDC ``sid``, used for logout.
+        id_token: The raw ID token, set only when the provider has
+            RP-initiated logout enabled.
     """
 
     provider: str
@@ -57,6 +59,7 @@ class ExternalIdentity:
     auth_time: datetime | None = None
     amr: frozenset[str] = frozenset()
     session_ref: str | None = None
+    id_token: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)

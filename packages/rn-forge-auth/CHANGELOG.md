@@ -7,6 +7,10 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Added
 
+- `LoginFlow.complete` returns `CompletedLogin` (`identity` and the consumed
+  transaction's `return_to`). `ExternalIdentity` gains `id_token`, set by
+  `OidcProvider` only with `rp_initiated_logout`, so a binding can keep it in
+  the session.
 - The `rn-forge-auth` package: the `rn_forge.auth` core, the `oidc` extra for
   the `rn_forge.auth.oidc` adapter and the `redis` extra for the
   `rn_forge.auth.redis` adapter.

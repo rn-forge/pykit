@@ -78,12 +78,23 @@ def _flow(
     return flow, store
 
 
+def test_complete_returns_the_transactions_return_to() -> None:
+    flow, _ = _flow(_Provider("a"))
+    start = flow.begin("a", _Request(), return_to="/app/orders")
+
+    completed = flow.complete("a", _Request(), transaction_id=start.transaction.id)
+
+    assert_that(completed.return_to).is_equal_to("/app/orders")
+
+
 def test_begin_saves_the_transaction_and_returns_the_start() -> None:
     provider = _Provider("a")
     flow, _ = _flow(provider)
 
     start = flow.begin("a", _Request(), return_to="/app/orders")
-    identity = flow.complete("a", _Request(), transaction_id=start.transaction.id)
+    identity = flow.complete(
+        "a", _Request(), transaction_id=start.transaction.id
+    ).identity
 
     assert_that(start.redirect_url).is_equal_to("https://idp.example/authorize")
     assert_that(identity.subject).is_equal_to("u1")

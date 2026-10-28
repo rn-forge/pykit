@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import timedelta
 
 from rn_forge.auth.identity import ExternalIdentity, IdentityProvider, LoginStart
@@ -18,7 +19,7 @@ from rn_forge.auth.session_body import CallbackError
 from rn_forge.auth.stores import TransactionStore
 from rn_forge.commons import AppException
 
-__all__ = ["LoginFailed", "LoginFlow"]
+__all__ = ["CompletedLogin", "LoginFailed", "LoginFlow"]
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +45,20 @@ class LoginFailed(AppException):
         super().__init__("Login failed ({}): {}", code, reason, code=code)
         self.code: CallbackError = code
         self.reason = reason
+
+
+@dataclass(frozen=True)
+class CompletedLogin:
+    """A verified login and where to send the user next.
+
+    Attributes:
+        identity: The verified identity.
+        return_to: The consumed transaction's ``return_to``, validated when the
+            login began.
+    """
+
+    identity: ExternalIdentity
+    return_to: str
 
 
 class LoginFlow[RequestT]:
@@ -104,7 +119,7 @@ class LoginFlow[RequestT]:
 
     def complete(
         self, provider_id: str, request: RequestT, *, transaction_id: str | None
-    ) -> ExternalIdentity:
+    ) -> CompletedLogin:
         """Finish a login.
 
         The transaction is consumed whatever the outcome, so a callback works
@@ -117,7 +132,7 @@ class LoginFlow[RequestT]:
                 ``None`` when it sent none.
 
         Returns:
-            The verified identity.
+            The verified identity and the transaction's ``return_to``.
 
         Raises:
             LoginFailed: The transaction is missing, expired, already consumed
@@ -139,12 +154,13 @@ class LoginFlow[RequestT]:
                 f"transaction belongs to provider {transaction.provider}",
             )
         try:
-            return provider.complete(request, transaction)
+            identity = provider.complete(request, transaction)
         except LoginFailed as exc:
             _logger.warning("Login with %s failed: %s", provider_id, exc.reason)
             raise
         except Exception as exc:
             raise self._unexpected(provider_id, "complete", exc) from exc
+        return CompletedLogin(identity, transaction.return_to)
 
     def _provider(self, provider_id: str) -> IdentityProvider[RequestT]:
         provider = self._providers.get(provider_id)

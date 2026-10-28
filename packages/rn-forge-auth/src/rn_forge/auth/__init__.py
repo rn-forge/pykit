@@ -19,7 +19,7 @@ from rn_forge.auth.context_cache import (
     AuthorizationVersions,
     InMemoryAuthorizationVersions,
 )
-from rn_forge.auth.flow import LoginFailed, LoginFlow
+from rn_forge.auth.flow import CompletedLogin, LoginFailed, LoginFlow
 from rn_forge.auth.identity import (
     ExternalIdentity,
     IdentityProvider,
@@ -73,6 +73,7 @@ __all__ = [
     "AuthorizationVersions",
     "Authorizer",
     "CallbackError",
+    "CompletedLogin",
     "DevelopmentAccount",
     "DevelopmentIdentityProvider",
     "DevelopmentModeRequired",

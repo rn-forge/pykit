@@ -52,13 +52,40 @@ def _failure(
     return caught.value
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+def test_the_id_token_is_kept_only_for_rp_initiated_logout(
+    make_provider: Make, browser: Browser, request_of: Any, enabled: bool
+) -> None:
+    flow = _flow(make_provider(rp_initiated_logout=enabled))
+    transaction_id, callback = _login(flow, browser, request_of)
+
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
+
+    if enabled:
+        assert_that(identity.id_token).is_not_none()
+    else:
+        assert_that(identity.id_token).is_none()
+    assert_that(repr(identity)).does_not_contain("id_token")
+
+
+def test_a_login_returns_the_return_to(
+    make_provider: Make, browser: Browser, request_of: Any
+) -> None:
+    flow = _flow(make_provider())
+    transaction_id, callback = _login(flow, browser, request_of)
+
+    completed = flow.complete("acme", callback, transaction_id=transaction_id)
+
+    assert_that(completed.return_to).is_equal_to("/app/orders")
+
+
 def test_a_login_returns_the_identity(
     idp: FakeOidcProvider, make_provider: Make, browser: Browser, request_of: Any
 ) -> None:
     flow = _flow(make_provider())
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(identity.provider).is_equal_to("acme")
     assert_that(identity.issuer).is_equal_to(idp.issuer)
@@ -173,7 +200,7 @@ def test_a_recent_authentication_passes_max_age(
     flow = _flow(make_provider(max_age=300))
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(identity.subject).is_equal_to("u1")
 
@@ -258,7 +285,7 @@ def test_a_claim_mapper_replaces_the_default(
     flow = _flow(make_provider(claim_mapper=mapper))
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(identity.name).is_equal_to("mapped")
     assert_that(seen).contains_key("nonce", "email")
@@ -277,7 +304,7 @@ def test_the_default_mapper_maps_the_standard_claims(
     flow = _flow(make_provider())
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(identity.email_verified).is_true()
     assert_that(identity.picture).is_equal_to("https://img.example/u1.png")
@@ -293,7 +320,7 @@ def test_userinfo_is_skipped_when_never(
     flow = _flow(make_provider(userinfo="never"))
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(idp.fetches("/userinfo")).is_zero()
     assert_that(identity.email).is_none()
@@ -306,7 +333,7 @@ def test_tokens_reach_only_the_token_hook(
     flow = _flow(make_provider(token_hook=lambda i, t: received.append((i, t))))
     transaction_id, callback = _login(flow, browser, request_of)
 
-    identity = flow.complete("acme", callback, transaction_id=transaction_id)
+    identity = flow.complete("acme", callback, transaction_id=transaction_id).identity
 
     assert_that(received).is_length(1)
     hooked_identity, tokens = received[0]
@@ -379,7 +406,9 @@ class TestOAuth2Mode:
         flow = _flow(provider)
         transaction_id, callback = _login(flow, browser, request_of, "social")
 
-        identity = flow.complete("social", callback, transaction_id=transaction_id)
+        identity = flow.complete(
+            "social", callback, transaction_id=transaction_id
+        ).identity
 
         assert_that(provider.kind).is_equal_to("oauth2")
         assert_that(identity.provider).is_equal_to("social")
@@ -411,7 +440,9 @@ class TestOAuth2Mode:
         flow = _flow(make_oauth2_provider())
         transaction_id, callback = _login(flow, browser, request_of, "social")
 
-        identity = flow.complete("social", callback, transaction_id=transaction_id)
+        identity = flow.complete(
+            "social", callback, transaction_id=transaction_id
+        ).identity
 
         assert_that(identity.subject).is_equal_to("u1")
 
@@ -470,7 +501,9 @@ class TestOAuth2Mode:
         lenient = _flow(make_oauth2_provider())
         transaction_id, callback = _login(lenient, browser, request_of, "social")
         assert_that(
-            lenient.complete("social", callback, transaction_id=transaction_id).subject
+            lenient.complete(
+                "social", callback, transaction_id=transaction_id
+            ).identity.subject
         ).is_equal_to("u1")
 
         strict = _flow(make_oauth2_provider(response_issuer=idp.issuer))

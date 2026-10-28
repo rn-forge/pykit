@@ -5,6 +5,15 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `rn_forge.django.auth.auth_urlpatterns` serves the shared `/auth` routes
+  (providers, login, callback, session, logout, logout of all sessions,
+  back-channel logout, password login) over `rn-forge-auth`'s `LoginFlow`,
+  configured by `AuthRoutesConfig`. `CacheTransactionStore` and
+  `CacheReplayStore` keep login transactions, replay records and revoked session
+  IDs in Django's cache. The `redis` extra names `rn-forge-auth[redis]`.
+
 ### Changed
 
 - Breaking: `DEFAULT_PERMISSION_ACTION_MAP` moved from

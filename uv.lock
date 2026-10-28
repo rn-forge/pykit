@@ -2372,7 +2372,7 @@ all = [
     { name = "drf-spectacular" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
-    { name = "rn-forge-auth", extra = ["oidc"] },
+    { name = "rn-forge-auth", extra = ["oidc", "redis"] },
     { name = "rn-forge-data", extra = ["pandas"] },
     { name = "rn-forge-web", extra = ["security"] },
 ]
@@ -2402,6 +2402,9 @@ openapi = [
 ]
 otel = [
     { name = "opentelemetry-instrumentation-django" },
+]
+redis = [
+    { name = "rn-forge-auth", extra = ["redis"] },
 ]
 saml = [
     { name = "djangorestframework" },
@@ -2464,8 +2467,9 @@ requires-dist = [
     { name = "python3-saml", marker = "extra == 'all'", specifier = ">=1.16.0" },
     { name = "python3-saml", marker = "extra == 'saml'", specifier = ">=1.16.0" },
     { name = "rn-forge-auth", editable = "packages/rn-forge-auth" },
-    { name = "rn-forge-auth", extras = ["oidc"], marker = "extra == 'all'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-auth", extras = ["oidc"], marker = "extra == 'oidc'", editable = "packages/rn-forge-auth" },
+    { name = "rn-forge-auth", extras = ["oidc", "redis"], marker = "extra == 'all'", editable = "packages/rn-forge-auth" },
+    { name = "rn-forge-auth", extras = ["redis"], marker = "extra == 'redis'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-data", extras = ["pandas"], marker = "extra == 'all'", editable = "packages/rn-forge-data" },
@@ -2474,7 +2478,7 @@ requires-dist = [
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'all'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'security'", editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["drf", "transfer", "fixtures", "jwt", "oidc", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
+provides-extras = ["drf", "transfer", "fixtures", "jwt", "oidc", "redis", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
 
 [package.metadata.requires-dev]
 dev = [

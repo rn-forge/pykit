@@ -129,7 +129,9 @@ def _login(
     assert start.redirect_url is not None
     url = start.redirect_url + (f"&kc_idp_hint={hint}" if hint else "")
     callback = _follow_to_callback(HttpSession(), url, username, password)
-    return flow.complete("keycloak", callback, transaction_id=start.transaction.id)
+    return flow.complete(
+        "keycloak", callback, transaction_id=start.transaction.id
+    ).identity
 
 
 def test_oidc_login(flow: LoginFlow[CallbackRequest]) -> None:

@@ -203,3 +203,37 @@ On a view, `PermissionKeyPermission` requires the key built by
 queryset (so counts and pages cover only permitted rows) and `allows` guards
 each object, answering `404` instead of `403` when `policy_hides_existence` is
 true. Both are in `rn_forge.django.auth.drf`.
+
+## Auth routes
+
+`auth_urlpatterns(config, prefix="auth")` serves the shared `/auth` surface:
+`providers`, `login/{provider}`, `callback/{provider}`, `session`, `logout`,
+`logout/all`, `backchannel-logout/{provider}` and `login/password`. The project
+builds the providers from `rn_forge.auth` (`OidcProvider`,
+`PasswordIdentityProvider`, `DevelopmentIdentityProvider`) and an
+`AccountResolver`, an `AuthorizationContextProvider` and an `AccountStateWriter`,
+and passes them in `AuthRoutesConfig`; there is no settings block for providers:
+
+```python
+from rn_forge.django.auth import AuthRoutesConfig, auth_urlpatterns
+
+urlpatterns = [
+    *auth_urlpatterns(
+        AuthRoutesConfig(
+            providers={"acme": acme_provider},
+            accounts=accounts,
+            contexts=contexts,
+            account_state=account_state,
+            return_to_prefixes=["/app"],
+        )
+    ),
+]
+```
+
+Sessions are `django.contrib.sessions`, so `SessionMiddleware` must be
+installed. Login transactions (behind the `__Host-login-tx` cookie), replay
+records and revoked session IDs live in Django's cache; use the Redis cache
+backend in production, with the `redis` extra. A callback error redirects to
+`error_route` with `?error=` set to `access_denied`, `account_not_provisioned`
+or `login_failed`. `/auth/login/development` answers only while
+`settings.DEBUG` is true.

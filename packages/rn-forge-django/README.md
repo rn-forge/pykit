@@ -39,6 +39,7 @@ Optional extras:
 | `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `drf-spectacular`, for `drf.openapi` |
 | `oidc` | `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `redis` | `rn-forge-auth[redis]`, the Redis client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for the `celery` app factory |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |

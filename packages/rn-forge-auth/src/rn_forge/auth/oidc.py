@@ -22,7 +22,7 @@ import math
 import secrets
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Self, cast
 from urllib.parse import urlencode, urlsplit
@@ -1314,6 +1314,8 @@ class OidcProvider:
                 session, raw_id_token, access_token, transaction.nonce
             )
         identity = self._claim_mapper(self.id, claims)
+        if self._rp_initiated_logout and raw_id_token is not None:
+            identity = replace(identity, id_token=raw_id_token)
         if self._token_hook is not None:
             refresh = token.get("refresh_token")
             scope = token.get("scope")
