@@ -10,6 +10,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch: # manual trigger
+    inputs:
+      testpypi:
+        type: boolean
+        default: false
+        description: Upload every package to TestPyPI; no tags or releases
 
 permissions:
   contents: read
@@ -333,6 +338,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      id-token: write # PyPI trusted publishing
+    # An empty name means no environment, so pull requests build without approval.
+    environment: ${{ (github.event_name == 'push' && github.ref_name == 'main') && 'pypi' || (github.event_name == 'workflow_dispatch' && inputs.testpypi) && 'testpypi' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -350,9 +358,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISH: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          TESTPYPI: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
           SELECTED: ${{ needs.plan.outputs.release-order }}
         run: |
           set -euo pipefail
+          on_index() { curl -fsS -o /dev/null "https://$1/pypi/$2/$3/json"; }
           mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
           releasable="$(uv run rn-forge-devops releasable ok "${names[@]}")"
           for name in $releasable; do
@@ -360,6 +370,14 @@ jobs:
             tag="$name-v$version"
             if [ "$PUBLISH" != true ]; then
               uv build --package "$name" --out-dir "dist/$name"
+              uvx twine@7.0.0 check --strict dist/"$name"/*
+              if [ "$TESTPYPI" = true ]; then
+                if on_index test.pypi.org "$name" "$version"; then
+                  echo "$name $version is already on TestPyPI, skipping."
+                else
+                  uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ dist/"$name"/*
+                fi
+              fi
               continue
             fi
             draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || true)
@@ -377,13 +395,22 @@ jobs:
             else
               uv build --package "$name" --out-dir "dist/$name"
             fi
+            uvx twine@7.0.0 check --strict dist/"$name"/*
+            # Upload before the GitHub release, so a published release implies the version is on PyPI.
+            if on_index pypi.org "$name" "$version"; then
+              echo "$name $version is already on PyPI, skipping upload."
+            else
+              uv publish --trusted-publishing always dist/"$name"/*
+            fi
+            notes=$(mktemp)
+            uv run rn-forge-devops notes "packages/$name/CHANGELOG.md" "$version" > "$notes"
             if [ "$draft" = true ]; then
               gh release delete "$tag" --yes
             fi
             if [ -n "$remote_tag" ]; then
-              gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --generate-notes
+              gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
             else
-              gh release create "$tag" dist/"$name"/* --target "$GITHUB_SHA" --title "$name v$version" --generate-notes
+              gh release create "$tag" dist/"$name"/* --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
             fi
           done
 
@@ -425,7 +452,7 @@ jobs:
             ${{ steps.target.outputs.branch-arg }}
 
   # Package checks resolve internal dependencies from the workspace, which
-  # never proves a tag installs on its own.
+  # never proves the PyPI upload installs on its own.
   external-install:
     needs: [release]
     if: ${{ !cancelled() && needs.release.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
@@ -444,12 +471,19 @@ jobs:
         run: |
           set -euo pipefail
           tmp=$(mktemp -d)
-          uv run rn-forge-devops released | while read -r name dir module version; do
+          uv run rn-forge-devops released | while read -r name _ module version; do
             tag="$name-v$version"
             git fetch --no-tags origin "refs/tags/$tag"
             uv venv -q "$tmp/$name"
-            VIRTUAL_ENV="$tmp/$name" uv pip install -q \
-              "$name @ git+${{ github.server_url }}/${{ github.repository }}@$tag#subdirectory=$dir"
+            installed=false
+            for _ in $(seq 10); do
+              if VIRTUAL_ENV="$tmp/$name" uv pip install -q --refresh "$name==$version"; then
+                installed=true
+                break
+              fi
+              sleep 30 # PyPI's CDN lags the upload
+            done
+            [ "$installed" = true ]
             "$tmp/$name/bin/python" -c "import $module"
           done
 
@@ -519,10 +553,17 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
+  umbrella-release:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    needs: [import-boundaries]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/umbrella-release.yml
+
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, dependency-audit, licenses, secret-scan, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, dependency-audit, licenses, secret-scan, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, umbrella-release, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
