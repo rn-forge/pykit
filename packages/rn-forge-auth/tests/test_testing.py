@@ -451,6 +451,21 @@ class TestFaults:
         )
         assert_that(discover_oidc(provider.issuer).issuer).is_equal_to(provider.issuer)
 
+    def test_userinfo_error_answers_500(self, provider) -> None:
+        tokens = _login(provider)
+        provider.faults.userinfo_error = True
+        assert_that(_userinfo(provider, tokens["access_token"])[0]).is_equal_to(500)
+
+    def test_oauth2_only_needs_no_openid_scope_or_nonce_and_issues_no_id_token(
+        self, provider
+    ) -> None:
+        provider.oauth2_only = True
+        response = _authorize(provider, scope="read:user", nonce=None)
+        status, tokens = _exchange(provider, response["code"][0])
+        assert_that(status).is_equal_to(200)
+        assert_that(tokens).does_not_contain_key("id_token")
+        assert_that(_userinfo(provider, tokens["access_token"])[0]).is_equal_to(200)
+
     def test_discovery_issuer_is_rejected_by_discovery(self, provider) -> None:
         provider.faults.discovery_issuer = True
         with pytest.raises(TokenVerificationError, match="does not match"):

@@ -58,6 +58,7 @@ __all__ = [
     "IdTokenVerifier",
     "JwtVerifier",
     "LogoutTokenVerifier",
+    "OAuth2Endpoints",
     "OidcAuthenticator",
     "OidcConfiguration",
     "OidcProvider",
@@ -981,13 +982,13 @@ class UpstreamTokens:
 
     Attributes:
         access_token: The access token.
-        id_token: The verified ID token.
+        id_token: The verified ID token; ``None`` for an OAuth 2.0 provider.
         refresh_token: The refresh token, if issued.
         scope: The granted scope, if the provider reported it.
     """
 
     access_token: str = field(repr=False)
-    id_token: str = field(repr=False)
+    id_token: str | None = field(default=None, repr=False)
     refresh_token: str | None = field(default=None, repr=False)
     scope: str | None = None
 
@@ -996,6 +997,21 @@ type TokenHook = Callable[[ExternalIdentity, UpstreamTokens], None]
 """Receives the identity and the upstream tokens of a successful login."""
 
 type UserInfoMode = Literal["auto", "always", "never"]
+
+
+@dataclass(frozen=True)
+class OAuth2Endpoints:
+    """The endpoints of an OAuth 2.0 provider that has no discovery document.
+
+    Attributes:
+        authorization: The authorization endpoint.
+        token: The token endpoint.
+        user: The endpoint that returns the signed-in user as a JSON object.
+    """
+
+    authorization: str
+    token: str
+    user: str
 
 
 class OidcProvider:
@@ -1009,14 +1025,20 @@ class OidcProvider:
     ID token satisfies :class:`IdTokenVerifier`. The upstream tokens are
     discarded unless *token_hook* is given.
 
+    :meth:`oauth2` builds the provider for a server with no ID token: ``kind``
+    is ``"oauth2"``, the request carries no nonce, and the identity comes from
+    the user endpoint called with the access token.
+
     Args:
         id: The provider ID.
         issuer: The IdP's issuer URL; its discovery document is read on first
-            use.
+            use. For an OAuth 2.0 provider, the fixed ``issuer`` of its
+            identities.
         client_id: The registered client.
         client_secret: The client's secret; ``None`` for a public client.
         redirect_uri: The registered callback URL.
-        scopes: The requested scopes; must include ``openid``.
+        scopes: The requested scopes; OIDC requires ``openid``. Defaults to
+            ``openid email profile``, or to none for an OAuth 2.0 provider.
         max_age: When set, the most seconds since the user authenticated; sent
             on the authorization request and enforced on the ID token.
         userinfo: ``"always"`` calls the UserInfo endpoint, ``"never"`` does
@@ -1031,13 +1053,17 @@ class OidcProvider:
         timeout: Seconds before a back-channel request fails.
         token_endpoint_auth_method: How the client authenticates at the token
             endpoint.
+        endpoints: When given, makes an OAuth 2.0 provider; see :meth:`oauth2`.
+        subject_field: The user-endpoint member that is the subject.
+        response_issuer: The ``iss`` an OAuth 2.0 authorization response must
+            carry; ``None`` skips the check.
 
     Attributes:
         id: The provider ID.
-        kind: Always ``"oidc"``.
+        kind: ``"oidc"``, or ``"oauth2"`` for an OAuth 2.0 provider.
     """
 
-    kind: ProviderKind = "oidc"
+    kind: ProviderKind
 
     def __init__(
         self,
@@ -1047,7 +1073,7 @@ class OidcProvider:
         client_id: str,
         client_secret: str | None,
         redirect_uri: str,
-        scopes: Sequence[str] = ("openid", "email", "profile"),
+        scopes: Sequence[str] | None = None,
         max_age: int | None = None,
         userinfo: UserInfoMode = "auto",
         claim_mapper: ClaimMapper = default_claim_mapper,
@@ -1057,10 +1083,16 @@ class OidcProvider:
         leeway: float = 0.0,
         timeout: float = 5.0,
         token_endpoint_auth_method: str = "client_secret_basic",
+        endpoints: OAuth2Endpoints | None = None,
+        subject_field: str = "sub",
+        response_issuer: str | None = None,
     ) -> None:
-        if "openid" not in scopes:
+        if scopes is None:
+            scopes = () if endpoints else ("openid", "email", "profile")
+        if endpoints is None and "openid" not in scopes:
             raise ValueError("scopes must include openid")
         self.id = id
+        self.kind = "oidc" if endpoints is None else "oauth2"
         self._issuer = issuer
         self._client_id = client_id
         self._client_secret = client_secret
@@ -1077,7 +1109,70 @@ class OidcProvider:
         self._auth_method = (
             token_endpoint_auth_method if client_secret is not None else "none"
         )
+        self._endpoints = endpoints
+        self._subject_field = subject_field
+        self._response_issuer = response_issuer
         self._discovered: tuple[OidcConfiguration, IdTokenVerifier] | None = None
+
+    @classmethod
+    def oauth2(
+        cls,
+        *,
+        id: str,
+        issuer: str,
+        endpoints: OAuth2Endpoints,
+        client_id: str,
+        client_secret: str | None,
+        redirect_uri: str,
+        scopes: Sequence[str] = (),
+        subject_field: str = "sub",
+        response_issuer: str | None = None,
+        claim_mapper: ClaimMapper = default_claim_mapper,
+        token_hook: TokenHook | None = None,
+        timeout: float = 5.0,
+        token_endpoint_auth_method: str = "client_secret_basic",
+    ) -> Self:
+        """Build a provider for an OAuth 2.0 server that issues no ID token.
+
+        The flow keeps ``state`` and PKCE and sends no nonce. After the code
+        exchange the user endpoint is called with the access token; its JSON
+        object is the claim set, with ``iss`` set to *issuer* and ``sub`` set to
+        the *subject_field* member as a string (numbers are stringified), then
+        passed to *claim_mapper*.
+
+        Args:
+            id: The provider ID.
+            issuer: The fixed issuer of the identities.
+            endpoints: The provider's endpoints.
+            client_id: The registered client.
+            client_secret: The client's secret; ``None`` for a public client.
+            redirect_uri: The registered callback URL.
+            scopes: The requested scopes.
+            subject_field: The user-endpoint member that is the subject, such
+                as ``"id"``.
+            response_issuer: The ``iss`` the authorization response must carry;
+                ``None`` skips the check, as for a provider that sends none.
+            claim_mapper: Replaces :func:`default_claim_mapper`.
+            token_hook: Called with the identity and the upstream tokens.
+            timeout: Seconds before a back-channel request fails.
+            token_endpoint_auth_method: How the client authenticates at the
+                token endpoint.
+        """
+        return cls(
+            id=id,
+            issuer=issuer,
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            scopes=scopes,
+            claim_mapper=claim_mapper,
+            token_hook=token_hook,
+            timeout=timeout,
+            token_endpoint_auth_method=token_endpoint_auth_method,
+            endpoints=endpoints,
+            subject_field=subject_field,
+            response_issuer=response_issuer,
+        )
 
     def begin(self, request: LoginRequest, *, return_to: str) -> LoginStart:
         """Return the authorization redirect and the transaction to persist.
@@ -1085,13 +1180,20 @@ class OidcProvider:
         Raises:
             TokenVerificationError: Discovery failed or lacks an endpoint.
         """
-        configuration, _ = self._configuration()
-        endpoint = self._endpoint(configuration, "authorization_endpoint")
+        if self._endpoints is None:
+            endpoint = self._endpoint(
+                self._configuration()[0], "authorization_endpoint"
+            )
+        else:
+            endpoint = self._endpoints.authorization
+            _require_secure_url(endpoint)
         state = secrets.token_urlsafe(32)
-        nonce = secrets.token_urlsafe(32)
+        nonce = secrets.token_urlsafe(32) if self._endpoints is None else None
         verifier = secrets.token_urlsafe(64)
-        params: dict[str, Any] = {"nonce": nonce}
-        if self._max_age is not None:
+        params: dict[str, Any] = {}
+        if nonce is not None:
+            params["nonce"] = nonce
+        if self._max_age is not None and self._endpoints is None:
             params["max_age"] = self._max_age
         # Authlib's stubs leave create_authorization_url partly Unknown.
         session = cast(Any, self._session())
@@ -1133,7 +1235,7 @@ class OidcProvider:
     def _complete(
         self, query: Mapping[str, str], transaction: LoginTransaction
     ) -> ExternalIdentity:
-        configuration, id_verifier = self._configuration()
+        configuration = self._configuration()[0] if self._endpoints is None else None
         expected_state = transaction.state or ""
         if not expected_state or not secrets.compare_digest(
             query.get("state", "").encode(), expected_state.encode()
@@ -1145,31 +1247,37 @@ class OidcProvider:
             code = "access_denied" if error == "access_denied" else "login_failed"
             raise LoginFailed(code, f"provider returned error {error}")
         code = query.get("code")
-        if not code or not transaction.code_verifier or not transaction.nonce:
+        if not code or not transaction.code_verifier:
             raise LoginFailed("login_failed", "callback lacks a code")
         session = self._session()
+        token_endpoint = (
+            self._endpoints.token
+            if self._endpoints is not None
+            else self._endpoint(self._configuration()[0], "token_endpoint")
+        )
+        _require_secure_url(token_endpoint)
         token = cast(
             Mapping[str, Any],
             cast(Any, session).fetch_token(
-                self._endpoint(configuration, "token_endpoint"),
+                token_endpoint,
                 grant_type="authorization_code",
                 code=code,
                 code_verifier=transaction.code_verifier,
             ),
         )
-        access_token, raw_id_token = token.get("access_token"), token.get("id_token")
-        if not isinstance(access_token, str) or not isinstance(raw_id_token, str):
-            raise LoginFailed("login_failed", "token response lacks a token")
-        claims = dict(
-            id_verifier.verify(
-                raw_id_token, nonce=transaction.nonce, access_token=access_token
+        access_token = token.get("access_token")
+        if not isinstance(access_token, str):
+            raise LoginFailed("login_failed", "token response lacks an access token")
+        raw_id_token: str | None = None
+        if self._endpoints is not None:
+            claims = self._oauth2_claims(session, self._endpoints)
+        else:
+            raw_id_token = token.get("id_token")
+            if not isinstance(raw_id_token, str) or not transaction.nonce:
+                raise LoginFailed("login_failed", "token response lacks an ID token")
+            claims = self._oidc_claims(
+                session, raw_id_token, access_token, transaction.nonce
             )
-        )
-        if self._wants_userinfo(claims):
-            claims = {
-                **self._fetch_userinfo(session, configuration, claims),
-                **claims,
-            }
         identity = self._claim_mapper(self.id, claims)
         if self._token_hook is not None:
             refresh = token.get("refresh_token")
@@ -1185,20 +1293,57 @@ class OidcProvider:
             )
         return identity
 
-    @staticmethod
+    def _oidc_claims(
+        self, session: OAuth2Session, id_token: str, access_token: str, nonce: str
+    ) -> dict[str, Any]:
+        configuration, id_verifier = self._configuration()
+        claims = dict(
+            id_verifier.verify(id_token, nonce=nonce, access_token=access_token)
+        )
+        if self._wants_userinfo(claims):
+            claims = {**self._fetch_userinfo(session, configuration, claims), **claims}
+        return claims
+
+    def _oauth2_claims(
+        self, session: OAuth2Session, endpoints: OAuth2Endpoints
+    ) -> dict[str, Any]:
+        _require_secure_url(endpoints.user)
+        response = session.get(endpoints.user, timeout=self._timeout)
+        response.raise_for_status()
+        user = cast(object, response.json())
+        if not isinstance(user, Mapping):
+            raise LoginFailed("login_failed", "user endpoint did not return an object")
+        claims = dict(cast(Mapping[str, Any], user))
+        subject = claims.get(self._subject_field)
+        if isinstance(subject, int) and not isinstance(subject, bool):
+            subject = str(subject)
+        if not isinstance(subject, str) or not subject:
+            raise LoginFailed(
+                "login_failed", f"user has no usable {self._subject_field}"
+            )
+        return {**claims, "iss": self._issuer, "sub": subject}
+
     def _check_response_issuer(
-        query: Mapping[str, str], configuration: OidcConfiguration
+        self, query: Mapping[str, str], configuration: OidcConfiguration | None
     ) -> None:
-        issuer = query.get("iss")
-        if issuer is None:
-            if (
+        if configuration is None:
+            expected, required = (
+                self._response_issuer,
+                self._response_issuer is not None,
+            )
+        else:
+            expected = configuration.issuer
+            required = (
                 configuration.metadata.get(
                     "authorization_response_iss_parameter_supported"
                 )
                 is True
-            ):
+            )
+        issuer = query.get("iss")
+        if issuer is None:
+            if required:
                 raise LoginFailed("login_failed", "response lacks iss")
-        elif issuer != configuration.issuer:
+        elif expected is not None and issuer != expected:
             raise LoginFailed(
                 "login_failed", f"response iss {issuer} is not the issuer"
             )
@@ -1234,7 +1379,7 @@ class OidcProvider:
         return OAuth2Session(
             self._client_id,
             self._client_secret,
-            scope=" ".join(self._scopes),
+            scope=" ".join(self._scopes) or None,
             redirect_uri=self._redirect_uri,
             token_endpoint_auth_method=self._auth_method,
             code_challenge_method="S256",

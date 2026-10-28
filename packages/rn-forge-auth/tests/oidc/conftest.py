@@ -19,7 +19,7 @@ import pytest
 pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from rn_forge.auth.oidc import OidcProvider  # noqa: E402
+from rn_forge.auth.oidc import OAuth2Endpoints, OidcProvider  # noqa: E402
 from rn_forge.auth.testing import FakeOidcProvider  # noqa: E402
 
 AUDIENCE = "api://orders"
@@ -98,5 +98,27 @@ def make_provider(idp: FakeIdP) -> Callable[..., OidcProvider]:
             **overrides,
         }
         return OidcProvider(**options)
+
+    return make
+
+
+@pytest.fixture
+def make_oauth2_provider(idp: FakeIdP) -> Callable[..., OidcProvider]:
+    """A provider over the fake in OAuth 2.0 mode, with explicit endpoints."""
+    idp.oauth2_only = True
+
+    def make(**overrides: Any) -> OidcProvider:
+        options: dict[str, Any] = {
+            "id": "social",
+            "issuer": "https://social.example",
+            "endpoints": OAuth2Endpoints(
+                idp.authorization_endpoint, idp.token_endpoint, idp.userinfo_endpoint
+            ),
+            "client_id": idp.client_id,
+            "client_secret": idp.client_secret,
+            "redirect_uri": idp.redirect_uris[0],
+            **overrides,
+        }
+        return OidcProvider.oauth2(**options)
 
     return make

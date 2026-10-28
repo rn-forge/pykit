@@ -59,6 +59,12 @@ Notable changes to `rn-forge-auth`, newest first, in the
   check, `max_age`, ID-token verification and UserInfo with a `sub` check, with
   `default_claim_mapper`, a `claim_mapper` hook and a `token_hook` that alone
   receives the upstream tokens (`UpstreamTokens`).
+- `OidcProvider.oauth2` and `OAuth2Endpoints`: the same provider for an
+  OAuth 2.0 server that issues no ID token. It keeps `state` and PKCE, sends no
+  nonce, calls the user endpoint with the access token and maps the result
+  (`subject_field` picks the subject, numbers are stringified); the `iss`
+  response check applies only with `response_issuer`. `FakeOidcProvider`
+  gains `oauth2_only` and `Faults.userinfo_error`.
 - `OidcConfiguration.metadata` holds the whole discovery document, and
   `FakeOidcProvider.auth_age` sets the age of the user's authentication.
 

@@ -62,6 +62,7 @@ class Faults:
         discovery_issuer: The discovery document names another issuer.
         userinfo_sub_mismatch: UserInfo returns a ``sub`` that differs from the
             ID token's.
+        userinfo_error: UserInfo answers ``500``.
         wrong_nonce: The ID token carries a different ``nonce``.
         wrong_aud: The ID token's ``aud`` is another client.
         wrong_azp: The ID token's ``aud`` lists the client and another one, and
@@ -77,6 +78,7 @@ class Faults:
     response_iss_missing: bool = False
     discovery_issuer: bool = False
     userinfo_sub_mismatch: bool = False
+    userinfo_error: bool = False
     wrong_nonce: bool = False
     wrong_aud: bool = False
     wrong_azp: bool = False
@@ -194,6 +196,10 @@ class FakeOidcProvider:
         faults: The failure switches; assign :class:`Faults` or set fields.
         deny_authorization: When true the authorization endpoint answers
             ``access_denied`` instead of approving.
+        oauth2_only: When true the provider behaves as a plain OAuth 2.0
+            server: the authorization endpoint accepts a request without the
+            ``openid`` scope or a nonce, and the token response carries no ID
+            token. The UserInfo endpoint then serves as the user endpoint.
         advertise_end_session: Whether discovery lists ``end_session_endpoint``.
         auth_age: Seconds before each authorization request that the approved
             user is recorded as having authenticated; it sets the ID token's
@@ -222,6 +228,7 @@ class FakeOidcProvider:
         self.id_token_ttl = id_token_ttl
         self.faults = Faults()
         self.deny_authorization = False
+        self.oauth2_only = False
         self.advertise_end_session = True
         self.auth_age = 0.0
         self.requests: list[RecordedRequest] = []
@@ -489,22 +496,21 @@ class FakeOidcProvider:
                 client_id=self.client_id,
                 redirect_uri=redirect_uri,
                 code_challenge=query["code_challenge"],
-                nonce=query["nonce"],
+                nonce=query.get("nonce", ""),
                 scope=query.get("scope", "openid"),
                 user=dict(self.user),
                 auth_time=int(time.time() - self.auth_age),
             )
         return back(code=code)
 
-    @staticmethod
-    def _request_problem(query: Mapping[str, str]) -> str | None:
+    def _request_problem(self, query: Mapping[str, str]) -> str | None:
         if query.get("response_type") != "code":
             return "response_type must be code"
-        if "openid" not in query.get("scope", "").split():
+        if not self.oauth2_only and "openid" not in query.get("scope", "").split():
             return "scope must include openid"
         if not query.get("state"):
             return "state is required"
-        if not query.get("nonce"):
+        if not self.oauth2_only and not query.get("nonce"):
             return "nonce is required"
         if not query.get("code_challenge"):
             return "code_challenge is required"
@@ -553,16 +559,15 @@ class FakeOidcProvider:
         access_token = secrets.token_urlsafe(24)
         with self._lock:
             self._access_tokens[access_token] = dict(grant.user)
-        return _Reply.json(
-            200,
-            {
-                "access_token": access_token,
-                "token_type": "Bearer",
-                "expires_in": int(self.id_token_ttl),
-                "scope": grant.scope,
-                "id_token": self._id_token(grant, access_token),
-            },
-        )
+        body: dict[str, Any] = {
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "expires_in": int(self.id_token_ttl),
+            "scope": grant.scope,
+        }
+        if not self.oauth2_only:
+            body["id_token"] = self._id_token(grant, access_token)
+        return _Reply.json(200, body)
 
     def _id_token(self, grant: _Grant, access_token: str) -> str:
         faults = self.faults
@@ -603,6 +608,8 @@ class FakeOidcProvider:
             return _Reply(
                 401, headers=(("WWW-Authenticate", 'Bearer error="invalid_token"'),)
             )
+        if self.faults.userinfo_error:
+            return _Reply(500)
         if self.faults.userinfo_sub_mismatch:
             user = {**user, "sub": f"not-{user['sub']}"}
         return _Reply.json(200, user)

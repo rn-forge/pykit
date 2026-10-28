@@ -36,15 +36,19 @@ def _flow(provider: OidcProvider) -> LoginFlow[Any]:
     )
 
 
-def _login(flow: LoginFlow[Any], browser: Browser, request_of: Any) -> Any:
-    start = flow.begin("acme", request_of(), return_to="/app/orders")
+def _login(
+    flow: LoginFlow[Any], browser: Browser, request_of: Any, provider: str = "acme"
+) -> Any:
+    start = flow.begin(provider, request_of(), return_to="/app/orders")
     assert start.redirect_url is not None
     return start.transaction.id, browser(start.redirect_url)
 
 
-def _failure(flow: LoginFlow[Any], transaction_id: str, callback: Any) -> LoginFailed:
+def _failure(
+    flow: LoginFlow[Any], transaction_id: str, callback: Any, provider: str = "acme"
+) -> LoginFailed:
     with pytest.raises(LoginFailed) as caught:
-        flow.complete("acme", callback, transaction_id=transaction_id)
+        flow.complete(provider, callback, transaction_id=transaction_id)
     return caught.value
 
 
@@ -360,3 +364,196 @@ def test_no_flow_logs_a_token_code_or_verifier(
     secrets_seen.discard("")
     for secret in secrets_seen:
         assert_that(caplog.text).does_not_contain(secret)
+
+
+class TestOAuth2Mode:
+    def test_a_login_maps_the_user_endpoint(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        idp.user.update(id=4711, picture="https://img.example/p.png")
+        provider = make_oauth2_provider(subject_field="id")
+        flow = _flow(provider)
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        identity = flow.complete("social", callback, transaction_id=transaction_id)
+
+        assert_that(provider.kind).is_equal_to("oauth2")
+        assert_that(identity.provider).is_equal_to("social")
+        assert_that(identity.issuer).is_equal_to("https://social.example")
+        assert_that(identity.subject).is_equal_to("4711")
+        assert_that(identity.email).is_equal_to("u1@example.com")
+        assert_that(identity.name).is_equal_to("User One")
+        assert_that(identity.picture).is_equal_to("https://img.example/p.png")
+        assert_that(idp.fetches("/userinfo")).is_equal_to(1)
+
+    def test_the_request_has_state_and_pkce_but_no_nonce(
+        self, idp: FakeOidcProvider, make_oauth2_provider: Make, request_of: Any
+    ) -> None:
+        start = make_oauth2_provider().begin(request_of(), return_to="/app")
+
+        query = parse_qs(urlsplit(start.redirect_url or "").query)
+        assert_that(query).contains_key("state", "code_challenge")
+        assert_that(query).does_not_contain_key("nonce", "scope")
+        assert_that(query["code_challenge_method"]).is_equal_to(["S256"])
+        assert_that(start.transaction.nonce).is_none()
+
+    def test_the_default_subject_field_is_sub(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        flow = _flow(make_oauth2_provider())
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        identity = flow.complete("social", callback, transaction_id=transaction_id)
+
+        assert_that(identity.subject).is_equal_to("u1")
+
+    def test_a_failed_user_call_is_login_failed(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        idp.faults.userinfo_error = True
+        flow = _flow(make_oauth2_provider())
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        failure = _failure(flow, transaction_id, callback, "social")
+
+        assert_that(failure.code).is_equal_to("login_failed")
+
+    def test_a_user_without_the_subject_field_fails(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        flow = _flow(make_oauth2_provider(subject_field="login"))
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        assert_that(
+            _failure(flow, transaction_id, callback, "social").code
+        ).is_equal_to("login_failed")
+
+    def test_access_denied_is_reported_as_such(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        idp.deny_authorization = True
+        flow = _flow(make_oauth2_provider())
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        assert_that(
+            _failure(flow, transaction_id, callback, "social").code
+        ).is_equal_to("access_denied")
+
+    def test_the_response_iss_is_checked_only_when_configured(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        idp.faults.response_iss = True
+        lenient = _flow(make_oauth2_provider())
+        transaction_id, callback = _login(lenient, browser, request_of, "social")
+        assert_that(
+            lenient.complete("social", callback, transaction_id=transaction_id).subject
+        ).is_equal_to("u1")
+
+        strict = _flow(make_oauth2_provider(response_issuer=idp.issuer))
+        transaction_id, callback = _login(strict, browser, request_of, "social")
+        assert_that(
+            _failure(strict, transaction_id, callback, "social").code
+        ).is_equal_to("login_failed")
+
+    def test_the_token_hook_receives_the_access_token_only(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        received: list[UpstreamTokens] = []
+        flow = _flow(make_oauth2_provider(token_hook=lambda _, t: received.append(t)))
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+
+        flow.complete("social", callback, transaction_id=transaction_id)
+
+        assert_that(received).is_length(1)
+        assert_that(received[0].access_token).is_not_empty()
+        assert_that(received[0].id_token).is_none()
+
+    def test_a_replayed_callback_fails(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+    ) -> None:
+        flow = _flow(make_oauth2_provider())
+        transaction_id, callback = _login(flow, browser, request_of, "social")
+        flow.complete("social", callback, transaction_id=transaction_id)
+
+        assert_that(
+            _failure(flow, transaction_id, callback, "social").code
+        ).is_equal_to("login_failed")
+
+    def test_no_flow_logs_a_token_code_or_verifier(
+        self,
+        idp: FakeOidcProvider,
+        make_oauth2_provider: Make,
+        browser: Browser,
+        request_of: Any,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        caplog.set_level(logging.DEBUG)
+        seen: set[str] = {idp.client_secret or ""}
+        captured: list[UpstreamTokens] = []
+        flow = _flow(
+            make_oauth2_provider(
+                token_hook=lambda _, t: captured.append(t),
+                response_issuer=idp.issuer,
+            )
+        )
+
+        def run() -> None:
+            start = flow.begin("social", request_of(), return_to="/app")
+            assert start.redirect_url is not None
+            callback = browser(start.redirect_url)
+            seen.update(
+                [callback.query.get("code", ""), start.transaction.code_verifier or ""]
+            )
+            try:
+                flow.complete("social", callback, transaction_id=start.transaction.id)
+            except LoginFailed:
+                pass
+
+        run()
+        idp.faults.userinfo_error = True
+        run()
+        idp.faults.userinfo_error = False
+        idp.faults.response_iss = True
+        run()
+        idp.faults.response_iss = False
+        idp.deny_authorization = True
+        run()
+        seen.update(t.access_token for t in captured)
+
+        assert_that(captured).is_not_empty()
+        assert_that(caplog.records).is_not_empty()
+        seen.discard("")
+        for secret in seen:
+            assert_that(caplog.text).does_not_contain(secret)
