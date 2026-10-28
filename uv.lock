@@ -1989,7 +1989,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-cli"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "packages/rn-forge-cli" }
 dependencies = [
     { name = "rich" },
@@ -2049,7 +2049,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-commons"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/rn-forge-commons" }
 dependencies = [
     { name = "dacite" },
@@ -2169,7 +2169,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-data"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "packages/rn-forge-data" }
 dependencies = [
     { name = "openpyxl" },
@@ -2229,7 +2229,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-devops"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "packages/rn-forge-devops" }
 dependencies = [
     { name = "packaging" },
@@ -2272,7 +2272,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.5.1"
+version = "0.5.2"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },
@@ -2404,7 +2404,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-fastapi"
-version = "0.3.2"
+version = "0.3.3"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },
@@ -2488,7 +2488,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-sqlalchemy"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "packages/rn-forge-sqlalchemy" }
 dependencies = [
     { name = "rn-forge-web" },
@@ -2545,7 +2545,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-tooling"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "packages/rn-forge-tooling" }
 dependencies = [
     { name = "rn-forge-cli" },
@@ -2603,7 +2603,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-web"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "packages/rn-forge-web" }
 dependencies = [
     { name = "opentelemetry-api" },

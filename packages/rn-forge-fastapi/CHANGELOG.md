@@ -87,6 +87,7 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement` and
   the authenticator contracts from it. The `oidc` extra names
   `rn-forge-auth[oidc]` instead of `rn-forge-web[auth]`.
+- The package declares the MIT licence and is published to PyPI.
 
 ## [0.3.2] - 2026-10-25
 

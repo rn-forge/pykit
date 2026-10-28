@@ -19,6 +19,10 @@ Notable changes to `rn-forge-web`, newest first, in the
   `ConformanceCapability` and `cases_provided_by` so a binding runs only the
   cases for the capabilities it provides.
 
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ### Removed
 
 - Breaking: `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`,

@@ -93,6 +93,7 @@ Notable changes to `rn-forge-django`, newest first, in the
   `Requirement` or a `ResourcePolicy`. The principal now comes from
   `request.user`, the staff and superuser bypass comes from the authorization
   context, and an action map is the view's `permission_action_map`.
+- The package declares the MIT licence and is published to PyPI.
 
 ### Removed
 

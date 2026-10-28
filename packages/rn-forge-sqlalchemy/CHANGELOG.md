@@ -5,6 +5,10 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ## [0.2.1] - 2026-10-25
 
 ### Changed

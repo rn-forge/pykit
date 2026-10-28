@@ -25,7 +25,7 @@ the self-hosted index retires once consumers have moved.
 | Feature | Scope | State |
 | -- | -- | -- |
 | [F21.1 — PyPI as the index](F21.1-pypi-decision.md) | The decision, with ADR-0004 revised; the PyPI projects, trusted publishers and GitHub environments set up by the owner. | Active |
-| [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | The MIT licence, classifiers and a patch release of every package, so each one passes `twine check --strict`. | New |
+| [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | The MIT licence, classifiers and a patch release of every package, so each one passes `twine check --strict`. | Closed |
 | [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | `main.yml` uploads each package to PyPI via OIDC, with a TestPyPI dry run; per-package GitHub releases take their changelog section as notes and are never "Latest"; an umbrella `release-<n>` release per shipped release page; external install checked from PyPI. | New |
 | [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | The README, consuming guide, per-package install guides and release runbook describe PyPI with no index declaration. | New |
 | [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | `rn-forge-devops index`, its adapter, the `package-index` action and `simple/` on Pages are removed. | New |

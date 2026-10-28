@@ -109,3 +109,4 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `fetch_json`.
 - The `oidc` extra is `pyjwt[crypto]` with `authlib>=1.9.1` and
   `joserfc>=1.7.7`; it requires PyJWT 2.15.0 or later.
+- The package declares the MIT licence and is published to PyPI.

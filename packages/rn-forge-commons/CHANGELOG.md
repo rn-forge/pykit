@@ -5,12 +5,17 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ### Removed
 
 - Breaking: `rn_forge.commons.integration.auth` and the `auth` extra.
-  `JwtVerifier`, `discover_oidc`, `fetch_json`, `FetchJson`, `OidcConfiguration`
-  and `TokenVerificationError` moved to `rn_forge.auth.oidc` in `rn-forge-auth`;
-  `JwksCache` is deleted in favour of PyJWT's `PyJWKClient`.
+  `JwtVerifier`, `discover_oidc`, `fetch_json`, `FetchJson`,
+  `OidcConfiguration` and `TokenVerificationError` moved to
+  `rn_forge.auth.oidc` in `rn-forge-auth`; `JwksCache` is deleted in favour of
+  PyJWT's `PyJWKClient`.
 
 ## [0.7.0] - 2026-10-25
 

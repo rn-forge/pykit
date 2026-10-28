@@ -5,6 +5,10 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ## [0.3.0] - 2026-10-25
 
 ### Removed

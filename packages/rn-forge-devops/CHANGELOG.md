@@ -11,6 +11,10 @@ Notable changes to `rn-forge-devops`, newest first, in the
   service, with the URL in the variable `env` names. The `plan` output gains
   `redis`, and the check marker is `<package>.redis`.
 
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

@@ -1,9 +1,21 @@
 [project]
 name = "rn-forge-django"
-version = "0.5.1"
+version = "0.5.2"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Framework :: Django",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
 requires-python = ">=3.14"
 dependencies = [
   "django>=6.0.7",
