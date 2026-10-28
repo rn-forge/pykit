@@ -28,7 +28,7 @@ in [E13](../E13-auth/index.md), which owns them.
 | [F20.2 — Dependency risk](F20.2-dependency-risk.md) | Vulnerability audit of `uv.lock` in CI, a `uv` Dependabot ecosystem, and a dependency licence inventory. | New |
 | [F20.3 — Source and secret scanning](F20.3-source-and-secret-scanning.md) | A security linter with Django rules in CI, gitleaks over full history, and GitHub push protection. | New |
 | [F20.4 — Release provenance](F20.4-release-provenance.md) | A CycloneDX SBOM per package tag, and artifact attestations on release tags so a consumer can verify a tag's origin. | New |
-| [F20.5 — Disclosure and posture](F20.5-disclosure-and-posture.md) | `SECURITY.md`, OpenSSF Scorecard, and a per-release evidence page. | New |
+| [F20.5 — Disclosure and posture](F20.5-disclosure-and-posture.md) | `SECURITY.md`, OpenSSF Scorecard, and a per-release evidence page. | Active |
 
 [F20.1](F20.1-baseline-decision.md) comes first: every other feature depends on
 the controls and thresholds it settles.
