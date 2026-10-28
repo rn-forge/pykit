@@ -6,6 +6,7 @@ imported directly.
 """
 
 from rn_forge.auth.accounts import AccountRejected, AccountResolver
+from rn_forge.auth.audit import AUDIT_LOGGER, audit
 from rn_forge.auth.authorization import (
     AsyncAuthenticator,
     Authenticator,
@@ -60,6 +61,7 @@ from rn_forge.auth.stores import (
 )
 
 __all__ = [
+    "AUDIT_LOGGER",
     "CALLBACK_ERRORS",
     "DEFAULT_PERMISSION_ACTION_MAP",
     "AccountRejected",
@@ -102,6 +104,7 @@ __all__ = [
     "SessionInfo",
     "SessionStore",
     "TransactionStore",
+    "audit",
     "effective_permissions",
     "principal_from_claims",
     "requirement_for",

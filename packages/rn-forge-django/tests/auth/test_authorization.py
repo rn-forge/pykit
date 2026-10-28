@@ -282,6 +282,7 @@ def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
     ]
 
 
+@pytest.mark.security_control("audit-events")
 def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level("INFO")
     principal = Principal(subject="7", permissions=frozenset({"orders.read"}))
@@ -297,6 +298,7 @@ def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> Non
     ]
 
 
+@pytest.mark.security_control("audit-events")
 def test_a_denied_object_is_audited(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level("INFO")
     other = Group.objects.create(name="b-1")

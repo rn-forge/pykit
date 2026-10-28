@@ -10,13 +10,14 @@ import urllib.request
 from collections.abc import Callable, Iterator
 from http.cookies import SimpleCookie
 from typing import Any
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import pytest
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 from rn_forge.auth import (
     LoginTransaction,
+    audit,
     SessionInfo,
     AccountRejected,
     AuthorizationContext,
@@ -35,6 +36,8 @@ from rn_forge.fastapi import (
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
     InMemoryCsrfStore,
+    InMemoryRateLimiter,
+    RateLimit,
     SessionMiddleware,
     active_session,
     auth_router,
@@ -184,6 +187,14 @@ class _SharedCsrf:
         self.inner.delete(key)
 
 
+class _SharedLimiter:
+    def __init__(self, inner: InMemoryRateLimiter) -> None:
+        self.inner = inner
+
+    def hit(self, scope: str, subject: str, rate: RateLimit) -> int | None:
+        return self.inner.hit(scope, subject, rate)
+
+
 class _Clock:
     def __init__(self) -> None:
         self.moment = datetime(2026, 10, 28, 9, 0, tzinfo=UTC)
@@ -272,7 +283,7 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
             providers["development"] = DevelopmentIdentityProvider(
                 [DevelopmentAccount("alice", name="Alice")], debug=True
             )
-        accounts = _Accounts()
+        accounts = overrides.pop("accounts", None) or _Accounts()
         contexts = _Contexts()
         now = clock.now if clock else None
         sessions = overrides.pop("sessions", None) or InMemorySessionStore(
@@ -298,6 +309,8 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
             },
             replay=_SharedReplay(replay),
             csrf=_SharedCsrf(InMemoryCsrfStore(**({"clock": now} if now else {}))),
+            limiter=overrides.pop("limiter", None)
+            or _SharedLimiter(InMemoryRateLimiter()),
             sessions=_SharedSessions(sessions),
             transactions=_SharedTransactions(
                 overrides.pop("transactions", None) or InMemoryTransactionStore()
@@ -431,6 +444,7 @@ class TestOidcLogin:
     @pytest.mark.parametrize(
         "return_to", ["https://evil.example/", "//evil.example", "/elsewhere"]
     )
+    @pytest.mark.security_control("return-to-relative")
     def test_a_bad_return_to_goes_to_the_error_route(
         self, mount: Callable[..., _World], return_to: str
     ) -> None:
@@ -482,6 +496,7 @@ class TestOidcLogin:
         assert response.headers["location"] == "/auth/error?error=access_denied"
         assert SESSION_COOKIE not in _set_cookies(response)
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_without_the_cookie_is_login_failed(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -493,6 +508,7 @@ class TestOidcLogin:
 
         assert response.headers["location"] == "/auth/error?error=login_failed"
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_works_once(self, mount: Callable[..., _World]) -> None:
         world = mount()
         start = world.client.get("/auth/login/acme", params={"return_to": "/orders"})
@@ -503,6 +519,7 @@ class TestOidcLogin:
 
         assert replay.headers["location"] == "/auth/error?error=login_failed"
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_with_two_transaction_cookies_is_rejected(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -523,6 +540,7 @@ class TestOidcLogin:
         assert SESSION_COOKIE not in _set_cookies(response)
 
     @pytest.mark.parametrize("outcome", ["success", "replay", "denied", "no_cookie"])
+    @pytest.mark.security_control("no-tokens-in-urls-or-logs")
     def test_no_secret_reaches_a_location_url_or_log_record(
         self,
         mount: Callable[..., _World],
@@ -679,6 +697,7 @@ class TestPasswordLogin:
 
         assert response.status_code == 200
 
+    @pytest.mark.security_control("problem-responses")
     def test_failures_are_alike_and_carry_no_challenge(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -707,6 +726,7 @@ class TestPasswordLogin:
 
 
 class TestSessionAndLogout:
+    @pytest.mark.security_control("problem-responses")
     def test_session_without_a_login_is_401_without_a_challenge(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -924,6 +944,7 @@ class TestSessionMiddleware:
         assert SESSION_COOKIE not in _set_cookies(mount().client.get("/touch"))
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestTimeouts:
     def test_an_idle_session_expires_after_30_minutes(
         self, mount: Callable[..., _World]
@@ -1007,6 +1028,7 @@ class TestTimeouts:
         assert world.client.get("/auth/session").status_code == 401
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestRotation:
     def test_login_gives_a_new_id_and_the_old_one_is_unreadable(
         self, mount: Callable[..., _World]
@@ -1065,6 +1087,7 @@ class TestRotation:
         assert SESSION_COOKIE not in _set_cookies(response)
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestRevocation:
     def test_a_version_mismatch_deletes_the_session_and_answers_401(
         self, mount: Callable[..., _World]
@@ -1224,6 +1247,7 @@ def _race(world: _World, revoke: Callable[[], None]) -> tuple[int, int]:
     )
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestRevocationRaces:
     def test_no_request_succeeds_after_a_logout(
         self, mount: Callable[..., _World]
@@ -1280,6 +1304,7 @@ class TestInMemoryStoresOutsideDebug:
                 "transactions": _SharedTransactions(InMemoryTransactionStore()),
                 "replay": _SharedReplay(InMemoryReplayStore()),
                 "csrf": _SharedCsrf(InMemoryCsrfStore()),
+                "limiter": _SharedLimiter(InMemoryRateLimiter()),
             }
             | overrides,
         )
@@ -1291,6 +1316,7 @@ class TestInMemoryStoresOutsideDebug:
             (InMemoryTransactionStore, "transactions", "transactions"),
             (InMemoryReplayStore, "replay", "replay"),
             (InMemoryCsrfStore, "csrf", "CSRF"),
+            (InMemoryRateLimiter, "limiter", "rate limiter"),
         ],
     )
     def test_the_router_refuses_an_in_memory_store(
@@ -1329,6 +1355,7 @@ class TestInMemoryStoresOutsideDebug:
             transactions=InMemoryTransactionStore(),
             replay=InMemoryReplayStore(),
             csrf=InMemoryCsrfStore(),
+            limiter=InMemoryRateLimiter(),
             debug=True,
         )
 
@@ -1336,6 +1363,7 @@ class TestInMemoryStoresOutsideDebug:
         sessions_for(config)
 
 
+@pytest.mark.security_control("csrf-and-origin")
 class TestCsrf:
     """The synchronizer token, driven by a client that does not add the header itself."""
 
@@ -1763,3 +1791,395 @@ class TestCsrf:
 
     def test_safe_methods_are_not_checked(self, mount: Callable[..., _World]) -> None:
         assert self._bare(mount()).get("/touch").status_code == 200
+
+
+CALLBACK = "/auth/callback/acme"
+WINDOW = timedelta(minutes=5)
+
+
+def _fixed_limiter() -> _SharedLimiter:
+    return _SharedLimiter(InMemoryRateLimiter(clock=lambda: 1000.0))
+
+
+def _from(world: _World, address: str) -> TestClient:
+    """A browser whose connection comes from *address*."""
+    return _Browser(
+        world.app, base_url=BASE_URL, follow_redirects=False, client=(address, 50000)
+    )
+
+
+def _attempt(client: TestClient, username: str = "ada", **headers: str) -> Any:
+    return client.post(
+        "/auth/login/password",
+        json={"username": username, "password": "bad"},
+        headers=headers,
+    )
+
+
+def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("audit event=")
+    ]
+
+
+@pytest.mark.security_control("rate-limiting")
+class TestRateLimits:
+    def test_password_login_is_limited_per_account(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount(
+            limiter=_fixed_limiter(), password_account_limit=RateLimit(2, WINDOW)
+        )
+
+        statuses = [_attempt(_from(world, f"10.0.0.{n}")).status_code for n in range(3)]
+        other = _attempt(_from(world, "10.0.0.9"), username="grace")
+
+        assert statuses == [401, 401, 429]
+        assert other.status_code == 401
+
+    def test_the_account_is_counted_whatever_its_case_or_padding(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount(
+            limiter=_fixed_limiter(), password_account_limit=RateLimit(1, WINDOW)
+        )
+
+        _attempt(_from(world, "10.0.0.1"), username="ada")
+
+        assert _attempt(_from(world, "10.0.0.2"), username=" ADA ").status_code == 429
+
+    def test_password_login_is_limited_per_client(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount(
+            limiter=_fixed_limiter(), password_client_limit=RateLimit(2, WINDOW)
+        )
+        client = _from(world, "10.0.0.1")
+
+        statuses = [_attempt(client, username=f"user{n}").status_code for n in range(3)]
+        elsewhere = _attempt(_from(world, "10.0.0.2"))
+
+        assert statuses == [401, 401, 429]
+        assert elsewhere.status_code == 401
+
+    def test_a_limited_request_is_a_429_problem_with_retry_after(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=_fixed_limiter(), password_client_limit=RateLimit(1, WINDOW)
+        ).client
+        _attempt(client)
+
+        response = _attempt(client)
+
+        assert response.status_code == 429
+        assert response.headers["content-type"] == "application/problem+json"
+        assert response.headers["retry-after"] == "200"
+        assert response.json()["type"] == f"{TYPE_BASE}too-many-requests"
+        assert SESSION_COOKIE not in _set_cookies(response)
+
+    def test_forwarded_for_does_not_choose_the_client_of_an_untrusted_peer(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = mount(
+            limiter=_fixed_limiter(), password_client_limit=RateLimit(1, WINDOW)
+        ).client
+        _attempt(client, **{"X-Forwarded-For": "1.1.1.1"})
+
+        response = _attempt(client, **{"X-Forwarded-For": "2.2.2.2"})
+
+        assert response.status_code == 429
+
+    def test_a_trusted_proxy_names_the_client_in_forwarded_for(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount(
+            limiter=_fixed_limiter(),
+            password_client_limit=RateLimit(1, WINDOW),
+            trusted_proxies=["10.0.0.0/8"],
+        )
+        proxy = _from(world, "10.0.0.1")
+
+        first = _attempt(proxy, **{"X-Forwarded-For": "1.1.1.1"})
+        other = _attempt(proxy, **{"X-Forwarded-For": "2.2.2.2"})
+        again = _attempt(proxy, **{"X-Forwarded-For": "1.1.1.1"})
+        # A client cannot prepend a name of its own to the proxy's chain.
+        spoofed = _attempt(proxy, **{"X-Forwarded-For": "9.9.9.9, 1.1.1.1"})
+
+        assert [r.status_code for r in (first, other, again, spoofed)] == [
+            401,
+            401,
+            429,
+            429,
+        ]
+
+    def test_callbacks_are_limited_per_client(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount(
+            limiter=_fixed_limiter(), callback_client_limit=RateLimit(2, WINDOW)
+        )
+        client = _from(world, "10.0.0.1")
+
+        statuses = [client.get(CALLBACK) for _ in range(3)]
+        elsewhere = _from(world, "10.0.0.2").get(CALLBACK)
+
+        assert [r.status_code for r in statuses] == [302, 302, 429]
+        assert statuses[2].headers["retry-after"] == "200"
+        assert elsewhere.status_code == 302
+
+    def test_a_limit_of_none_is_no_limit(self, mount: Callable[..., _World]) -> None:
+        client = mount(
+            limiter=_fixed_limiter(),
+            password_client_limit=None,
+            password_account_limit=None,
+        ).client
+
+        assert {_attempt(client).status_code for _ in range(5)} == {401}
+
+    def test_the_default_limits_are_the_same_as_djangos(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        config = mount().config
+
+        assert config.password_client_limit == RateLimit(30, WINDOW)
+        assert config.password_account_limit == RateLimit(10, WINDOW)
+        assert config.callback_client_limit == RateLimit(60, WINDOW)
+
+    def test_the_window_resets(self, mount: Callable[..., _World]) -> None:
+        now = [1000.0]
+        client = mount(
+            limiter=_SharedLimiter(InMemoryRateLimiter(clock=lambda: now[0])),
+            password_client_limit=RateLimit(1, WINDOW),
+        ).client
+        _attempt(client)
+        assert _attempt(client).status_code == 429
+
+        now[0] += 300
+
+        assert _attempt(client).status_code == 401
+
+
+@pytest.mark.security_control("audit-events")
+class TestAudit:
+    def test_login_success_and_logout(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        world = mount()
+        world.password_login()
+        world.client.post("/auth/logout")
+
+        assert _events(caplog) == [
+            "audit event=login.success account_id='acct-ada' provider='password'",
+            "audit event=logout account_id='acct-ada' provider='password'",
+        ]
+
+    def test_login_failure_names_no_credentials(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO)
+
+        mount().client.post(
+            "/auth/login/password",
+            json={"username": "ada@example.com", "password": "hunter2"},
+        )
+
+        assert _events(caplog) == [
+            "audit event=login.failure provider='password' code='login_failed' "
+            "reason='invalid credentials'"
+        ]
+        assert "hunter2" not in caplog.text
+        assert "ada@example.com" not in caplog.text
+
+    def test_an_oidc_login_failure(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.idp.deny_authorization = True
+        caplog.set_level(logging.INFO)
+
+        world.sign_in_with_idp()
+
+        assert len(_events(caplog)) == 1
+        assert _events(caplog)[0].startswith(
+            "audit event=login.failure provider='acme' code='access_denied'"
+        )
+
+    def test_logout_all(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.password_login()
+        caplog.set_level(logging.INFO)
+
+        world.client.post("/auth/logout/all")
+
+        assert _events(caplog) == [
+            "audit event=logout.all account_id='acct-ada' provider='password'"
+        ]
+
+    def test_back_channel_logout(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        caplog.set_level(logging.INFO)
+
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sid="sid-secret")},
+        )
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sub="u1")},
+        )
+
+        assert _events(caplog) == [
+            "audit event=logout.backchannel provider='acme' scope='session'",
+            "audit event=logout.backchannel provider='acme' scope='account' "
+            "account_id='acct-u1'",
+        ]
+        assert "sid-secret" not in caplog.text
+
+    def test_a_rejected_account(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.idp.user = {"sub": "stranger", "email": "x@example.com"}
+        caplog.set_level(logging.INFO)
+
+        world.sign_in_with_idp()
+
+        assert _events(caplog) == [
+            "audit event=account.rejected provider='acme' reason='not provisioned'",
+            "audit event=login.failure provider='acme' "
+            "code='account_not_provisioned' reason='not provisioned'",
+        ]
+        assert "x@example.com" not in caplog.text
+
+    def test_a_disabled_account(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        world = mount()
+        world.contexts.inactive.add("acct-ada")
+        caplog.set_level(logging.INFO)
+
+        world.password_login()
+
+        events = _events(caplog)
+        assert events[0] == (
+            "audit event=account.disabled account_id='acct-ada' provider='password'"
+        )
+        assert "login.failure" in events[1]
+        assert len(events) == 2
+
+    def test_a_provisioning_resolver_records_account_provisioned(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        class Provisioning(_Accounts):
+            def resolve(self, identity: ExternalIdentity) -> str:
+                account = super().resolve(identity)
+                audit("account.provisioned", account_id=account, provider="acme")
+                return account
+
+        world = mount(accounts=Provisioning())
+        caplog.set_level(logging.INFO)
+
+        world.sign_in_with_idp()
+
+        assert _events(caplog) == [
+            "audit event=account.provisioned account_id='acct-u1' provider='acme'",
+            "audit event=login.success account_id='acct-u1' provider='acme'",
+        ]
+
+    def test_a_rate_limited_request(
+        self, mount: Callable[..., _World], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        client = mount(
+            limiter=_fixed_limiter(), callback_client_limit=RateLimit(0, WINDOW)
+        ).client
+        caplog.set_level(logging.INFO)
+
+        client.get(CALLBACK)
+
+        assert _events(caplog) == [
+            "audit event=rate_limited scope='callback' by='client' retry_after=200"
+        ]
+
+
+class TestOidcResponseChecks:
+    """The adapter's checks, shown through the callback route."""
+
+    @pytest.mark.security_control("oidc-response-checks", "token-profiles")
+    @pytest.mark.parametrize(
+        "fault",
+        [
+            "response_iss",
+            "response_iss_missing",
+            "wrong_nonce",
+            "wrong_aud",
+            "wrong_azp",
+            "wrong_at_hash",
+            "expired",
+            "alg_none",
+            "unknown_kid",
+        ],
+    )
+    def test_a_faulty_identity_provider_response_fails_the_login(
+        self,
+        mount: Callable[..., _World],
+        caplog: pytest.LogCaptureFixture,
+        fault: str,
+    ) -> None:
+        world = mount()
+        setattr(world.idp.faults, fault, True)
+        caplog.set_level(logging.INFO)
+
+        response = world.sign_in_with_idp()
+
+        assert response.headers["location"] == "/auth/error?error=login_failed"
+        assert SESSION_COOKIE not in _set_cookies(response)
+        assert [e.split(" code=")[0] for e in _events(caplog)] == [
+            "audit event=login.failure provider='acme'"
+        ]
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_a_userinfo_subject_that_differs_fails_the_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.idp.faults.userinfo_sub_mismatch = True
+
+        response = world.sign_in_with_idp()
+
+        assert response.headers["location"] == "/auth/error?error=login_failed"
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_the_request_carries_state_nonce_and_an_s256_challenge(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+
+        start = world.client.get("/auth/login/acme", params={"return_to": "/orders"})
+
+        query = dict(parse_qsl(urlsplit(start.headers["location"]).query))
+        assert query["state"]
+        assert query["nonce"]
+        assert query["code_challenge"]
+        assert query["code_challenge_method"] == "S256"
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_a_callback_with_another_state_fails_the_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        start = world.client.get("/auth/login/acme", params={"return_to": "/orders"})
+        parts = urlsplit(world.approve(start.headers["location"]))
+        query = {**dict(parse_qsl(parts.query)), "state": "forged"}
+
+        response = world.client.get(f"{parts.path}?{urlencode(query)}")
+
+        assert response.headers["location"] == "/auth/error?error=login_failed"
+        assert SESSION_COOKIE not in _set_cookies(response)

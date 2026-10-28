@@ -160,6 +160,7 @@ def test_an_async_authenticator_is_awaited():
 
 
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Basic abc"}])
+@pytest.mark.security_control("problem-responses")
 def test_missing_bearer_credentials_are_a_401_with_the_rfc6750_challenge(headers):
     assert_401(build(Directory()).get("/me", headers=headers))
 
@@ -176,6 +177,7 @@ def test_an_invalid_token_logs_the_reason_and_never_returns_it():
     assert_that(context["reason"]).contains("unknown kid k-9")
 
 
+@pytest.mark.security_control("problem-responses")
 def test_a_valid_token_without_the_scope_is_a_403_without_a_challenge():
     response = build(Directory()).get(
         "/read", headers={"Authorization": "Bearer narrow"}

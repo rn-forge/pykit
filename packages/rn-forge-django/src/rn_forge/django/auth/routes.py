@@ -51,9 +51,9 @@ from rn_forge.auth import (
     TransactionStore,
     validate_return_to,
 )
+from rn_forge.auth.audit import audit
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django import settings as facade
-from rn_forge.django.auth.audit import audit
 from rn_forge.django.auth.csrf import check_csrf_settings
 from rn_forge.django.auth.rate_limit import FixedWindowLimiter, RateLimit
 from rn_forge.django.auth.sessions import Sessions, check_session_settings

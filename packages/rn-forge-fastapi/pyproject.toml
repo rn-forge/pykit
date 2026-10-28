@@ -76,6 +76,7 @@ addopts = "-ra --import-mode=importlib -m 'not scaffold'"
 markers = [
   "unit: fast isolated tests",
   "scaffold: installs built wheels into a scaffolded application (slow)",
+  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [dependency-groups]

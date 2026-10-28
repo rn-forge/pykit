@@ -47,9 +47,12 @@ from rn_forge.auth import (
     SessionInfo,
     SessionStore,
     TransactionStore,
+    audit,
     validate_return_to,
 )
 from rn_forge.fastapi.auth.csrf import CsrfProtection, CsrfStore, InMemoryCsrfStore
+from rn_forge.fastapi.auth.proxies import TrustedProxies
+from rn_forge.fastapi.auth.rate_limit import InMemoryRateLimiter, RateLimit, RateLimiter
 from rn_forge.fastapi.auth.sessions import (
     ActiveSession,
     Sessions,
@@ -60,6 +63,7 @@ from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     ProblemType,
     SessionRequired,
+    TooManyRequests,
     default_registry,
     render_problem,
 )
@@ -75,6 +79,9 @@ TRANSACTION_COOKIE = "__Host-login-tx"
 """The cookie that binds a callback to the browser that began the login."""
 
 _TRANSACTION_MAX_AGE = 600
+_PASSWORD_PER_CLIENT = RateLimit(30, timedelta(minutes=5))
+_PASSWORD_PER_ACCOUNT = RateLimit(10, timedelta(minutes=5))
+_CALLBACK_PER_CLIENT = RateLimit(60, timedelta(minutes=5))
 _NO_STORE = {"Cache-Control": "max-age=0, no-cache, no-store, must-revalidate, private"}
 
 
@@ -105,14 +112,24 @@ class AuthRoutesConfig:
         trusted_origins: Origins, besides the request's own, that may send an
             unsafe request.
         trusted_proxies: Peer addresses or CIDR networks whose
-            ``X-Forwarded-Proto`` and ``X-Forwarded-Host`` are believed.
+            ``X-Forwarded-Proto``, ``X-Forwarded-Host`` and
+            ``X-Forwarded-For`` are believed.
         replay: Holds replayed token IDs and revoked ``sid`` values.
         idle_timeout: How long a session may sit unused.
         absolute_timeout: How long a session lives whatever its use, and how
             long a revoked ``sid`` stays revoked.
+        limiter: Counts hits for the rate limits.
+        password_client_limit: Password login attempts per client address in a
+            window; ``None`` for no limit. The client is the peer, or the
+            forwarded client when the peer is in ``trusted_proxies``.
+        password_account_limit: Password login attempts per submitted username
+            in a window; ``None`` for no limit.
+        callback_client_limit: Callback requests per client address in a window.
+            Callbacks are limited per client only, because no account is known
+            before the response is verified; ``None`` for no limit.
         debug: Serves the ``development`` provider and accepts in-memory
-            stores. Otherwise an in-memory sessions, transactions, replay or
-            CSRF store is refused.
+            stores. Otherwise an in-memory sessions, transactions, replay,
+            CSRF or rate-limit store is refused.
         clock: Returns the current time, aware.
         problem_type_base: Prefix of the ``type`` URI of the problem responses;
             required, so that ``csrf-failed`` and ``forbidden`` differ in
@@ -140,6 +157,10 @@ class AuthRoutesConfig:
     csrf: CsrfStore = field(default_factory=InMemoryCsrfStore)
     trusted_origins: Sequence[str] = ()
     trusted_proxies: Sequence[str] = ()
+    limiter: RateLimiter = field(default_factory=InMemoryRateLimiter)
+    password_client_limit: RateLimit | None = _PASSWORD_PER_CLIENT
+    password_account_limit: RateLimit | None = _PASSWORD_PER_ACCOUNT
+    callback_client_limit: RateLimit | None = _CALLBACK_PER_CLIENT
     idle_timeout: timedelta = timedelta(minutes=30)
     absolute_timeout: timedelta = timedelta(hours=12)
     debug: bool = False
@@ -175,7 +196,10 @@ class _Views:
         self._config = config
         self._registry = default_registry(type_base=config.problem_type_base)
         if not config.debug:
-            refuse_in_memory(transaction_store=config.transactions)
+            refuse_in_memory(
+                transaction_store=config.transactions, rate_limiter=config.limiter
+            )
+        self._proxies = TrustedProxies(config.trusted_proxies)
         self.sessions = sessions_for(config)
         self._flow = LoginFlow[LoginRequest](
             config.providers,
@@ -218,6 +242,7 @@ class _Views:
                     request, provider_id, login_request, start.transaction.id
                 )
         except LoginFailed as exc:
+            self._audit_failure(provider_id, exc)
             return self._redirect(self._error_url(exc.code))
         if start.redirect_url is None:
             return self._not_found(request)
@@ -236,6 +261,13 @@ class _Views:
     async def callback(self, request: Request, provider_id: str) -> Response:
         if self._navigable(provider_id) is None:
             return self._not_found(request)
+        limited = await self._limit(
+            request,
+            "callback",
+            ("client", self._client(request), self._config.callback_client_limit),
+        )
+        if limited is not None:
+            return limited
         try:
             response = await self._signed_in(
                 request,
@@ -244,6 +276,7 @@ class _Views:
                 self._transaction_cookie(request),
             )
         except LoginFailed as exc:
+            self._audit_failure(provider_id, exc)
             response = self._redirect(self._error_url(exc.code))
         response.delete_cookie(
             TRANSACTION_COOKIE, path="/", secure=True, httponly=True, samesite="lax"
@@ -257,11 +290,21 @@ class _Views:
         if provider is None:
             return self._not_found(request)
         login_request = _Request(query={}, form=await _credentials(request))
+        username = login_request.form.get("username", "").strip().lower()
+        limited = await self._limit(
+            request,
+            "password",
+            ("client", self._client(request), self._config.password_client_limit),
+            ("account", username, self._config.password_account_limit),
+        )
+        if limited is not None:
+            return limited
         try:
             started = await run_in_threadpool(
                 self._begin_and_complete, provider.id, login_request, request
             )
-        except LoginFailed:
+        except LoginFailed as exc:
+            self._audit_failure(provider.id, exc)
             # Every failure answers alike, so the response cannot tell which
             # accounts exist.
             return self._unauthorized(request)
@@ -293,6 +336,7 @@ class _Views:
         )
         response = _no_store(JSONResponse({"redirect": redirect}))
         await self._end(response, session_id)
+        audit("logout", account_id=info.account_id, provider=info.provider)
         return response
 
     async def logout_all(self, request: Request) -> Response:
@@ -304,6 +348,11 @@ class _Views:
         )
         response = _no_store(JSONResponse({"redirect": None}))
         await self._end(response, session_id)
+        audit(
+            "logout.all",
+            account_id=active.info.account_id,
+            provider=active.info.provider,
+        )
         return response
 
     async def _end(self, response: Response, session_id: str | None) -> None:
@@ -338,9 +387,16 @@ class _Views:
                 revocation.sid,
                 ttl=self._config.absolute_timeout,
             )
+            audit("logout.backchannel", provider=provider_id, scope="session")
         elif revocation.account_id is not None:
             await run_in_threadpool(
                 self._config.account_state.bump_session_version, revocation.account_id
+            )
+            audit(
+                "logout.backchannel",
+                provider=provider_id,
+                scope="account",
+                account_id=revocation.account_id,
             )
         return _no_store(Response())
 
@@ -392,9 +448,11 @@ class _Views:
         try:
             account_id = self._config.accounts.resolve(identity)
         except AccountRejected as exc:
+            audit("account.rejected", provider=provider_id, reason=exc.reason)
             raise self._refused("account_not_provisioned", provider_id, exc.reason)
         context = self._config.contexts.resolve(account_id)
         if not context.active:
+            audit("account.disabled", account_id=account_id, provider=provider_id)
             raise self._refused("access_denied", provider_id, "account is not active")
         moment = self.sessions.now()
         info = SessionInfo(
@@ -411,6 +469,7 @@ class _Views:
             id_token=identity.id_token,
         )
         session_id, token = self.sessions.start(info, previous=previous_session_id)
+        audit("login.success", account_id=account_id, provider=provider_id)
         return _Started(self._return_to(completed.return_to), session_id, token, info)
 
     def _return_to(self, return_to: str) -> str:
@@ -420,6 +479,37 @@ class _Views:
             )
         except InvalidReturnTo:
             return self._config.default_return_to
+
+    @staticmethod
+    def _audit_failure(provider_id: str, exc: LoginFailed) -> None:
+        audit("login.failure", provider=provider_id, code=exc.code, reason=exc.reason)
+
+    def _client(self, request: Request) -> str:
+        peer = request.client.host if request.client else None
+        return self._proxies.client(peer, request.headers.getlist("x-forwarded-for"))
+
+    async def _limit(
+        self,
+        request: Request,
+        scope: str,
+        *counters: tuple[str, str, RateLimit | None],
+    ) -> Response | None:
+        """Count one hit on each counter; answer ``429`` for the first one over."""
+        for by, subject, rate in counters:
+            if rate is None:
+                continue
+            retry_after = await run_in_threadpool(
+                self._config.limiter.hit, f"{scope}:{by}", subject, rate
+            )
+            if retry_after is not None:
+                audit("rate_limited", scope=scope, by=by, retry_after=retry_after)
+                return _no_store(
+                    self._problem(
+                        request,
+                        TooManyRequests("Too many requests", retry_after=retry_after),
+                    )
+                )
+        return None
 
     @staticmethod
     def _refused(code: CallbackError, provider_id: str, reason: str) -> LoginFailed:

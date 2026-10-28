@@ -18,6 +18,11 @@ from rn_forge.fastapi.auth.dependencies import (
     requires,
     requires_permission,
 )
+from rn_forge.fastapi.auth.rate_limit import (
+    InMemoryRateLimiter,
+    RateLimit,
+    RateLimiter,
+)
 from rn_forge.fastapi.auth.routes import (
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
@@ -46,7 +51,10 @@ __all__ = [
     "CsrfProtection",
     "CsrfStore",
     "InMemoryCsrfStore",
+    "InMemoryRateLimiter",
     "PolicyGuard",
+    "RateLimit",
+    "RateLimiter",
     "SessionMiddleware",
     "Sessions",
     "active_session",

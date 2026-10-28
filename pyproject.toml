@@ -43,6 +43,7 @@ markers = [
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
   "broker: needs Keycloak at RN_FORGE_AUTH_KEYCLOAK_URL (rn-forge-auth)",
   "scaffold: installs built wheels into a scaffolded application (slow)",
+  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [tool.workspace-ci.suites]

@@ -29,6 +29,7 @@ from rn_forge.auth import (
     Principal,
     Requirement,
     ScopeAuthorizer,
+    audit,
     effective_permissions,
     requirement_for,
 )
@@ -37,6 +38,7 @@ from rn_forge.fastapi.problem import Log
 from rn_forge.web import (
     AuthenticationFailed,
     Credentials,
+    PermissionDenied,
     SessionRequired,
     parse_authorization,
 )
@@ -286,7 +288,11 @@ def requires(
     resolved = authorizer if authorizer is not None else ScopeAuthorizer()
 
     async def dependency(principal: Principal = Depends(authenticate)) -> Principal:
-        resolved.authorize(principal, requires=requirement)
+        try:
+            resolved.authorize(principal, requires=requirement)
+        except PermissionDenied:
+            audit("authorization.denied", account_id=principal.subject)
+            raise
         return principal
 
     return dependency
@@ -318,7 +324,16 @@ def requires_permission(
     requirement = requirement_for(permission_key, action, action_map=action_map)
 
     async def dependency(principal: Principal = Depends(authenticate)) -> Principal:
-        resolved.authorize(principal, requires=requirement)
+        try:
+            resolved.authorize(principal, requires=requirement)
+        except PermissionDenied:
+            audit(
+                "authorization.denied",
+                account_id=principal.subject,
+                permission_key=permission_key,
+                action=action,
+            )
+            raise
         return principal
 
     return dependency

@@ -19,7 +19,6 @@ skips the check.
 from __future__ import annotations
 
 import hmac
-import ipaddress
 import secrets
 import threading
 from collections.abc import Callable, Collection, Mapping
@@ -28,6 +27,7 @@ from typing import Final, Protocol, runtime_checkable
 from urllib.parse import urlsplit
 
 from fastapi import Response
+from rn_forge.fastapi.auth.proxies import TrustedProxies
 from rn_forge.web import CsrfFailed, ProblemRegistry, default_registry
 
 __all__ = [
@@ -147,9 +147,7 @@ class CsrfProtection:
         self.store = store
         self.registry: ProblemRegistry = default_registry(type_base=problem_type_base)
         self._origins = frozenset(_origin(origin) for origin in trusted_origins)
-        self._proxies = tuple(
-            ipaddress.ip_network(proxy, strict=False) for proxy in trusted_proxies
-        )
+        self._proxies = TrustedProxies(trusted_proxies)
 
     @staticmethod
     def is_anonymous(key: str | None) -> bool:
@@ -238,16 +236,7 @@ class CsrfProtection:
         self, headers: Mapping[str, str], scheme: str, peer: str | None
     ) -> str:
         host = headers.get("host", "")
-        if self._trusts(peer):
+        if self._proxies.trusts(peer):
             scheme = _first(headers.get("x-forwarded-proto")) or scheme
             host = _first(headers.get("x-forwarded-host")) or host
         return f"{scheme}://{host}".lower()
-
-    def _trusts(self, peer: str | None) -> bool:
-        if peer is None:
-            return False
-        try:
-            address = ipaddress.ip_address(peer)
-        except ValueError:
-            return False
-        return any(address in network for network in self._proxies)

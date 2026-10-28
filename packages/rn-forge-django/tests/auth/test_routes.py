@@ -345,6 +345,7 @@ class TestOidcLogin:
     @pytest.mark.parametrize(
         "return_to", ["https://evil.example/", "//evil.example", "/elsewhere"]
     )
+    @pytest.mark.security_control("return-to-relative")
     def test_a_bad_return_to_goes_to_the_error_route(
         self, mount: Callable[..., _World], return_to: str
     ) -> None:
@@ -389,6 +390,7 @@ class TestOidcLogin:
 
         assert response["Location"] == "/auth/error?error=access_denied"
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_without_the_cookie_is_login_failed(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -400,6 +402,7 @@ class TestOidcLogin:
 
         assert response["Location"] == "/auth/error?error=login_failed"
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_works_once(self, mount: Callable[..., _World]) -> None:
         world = mount()
         start = world.client.get("/auth/login/acme", {"return_to": "/orders"})
@@ -410,6 +413,7 @@ class TestOidcLogin:
 
         assert replay["Location"] == "/auth/error?error=login_failed"
 
+    @pytest.mark.security_control("one-time-transactions")
     def test_a_callback_with_two_transaction_cookies_is_rejected(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -428,6 +432,7 @@ class TestOidcLogin:
         assert SESSION_COOKIE not in response.cookies
 
     @pytest.mark.parametrize("outcome", ["success", "replay", "denied", "no_cookie"])
+    @pytest.mark.security_control("no-tokens-in-urls-or-logs")
     def test_no_secret_reaches_a_location_url_or_log_record(
         self,
         mount: Callable[..., _World],
@@ -557,6 +562,7 @@ class TestPasswordLogin:
 
         assert response.status_code == 200
 
+    @pytest.mark.security_control("problem-responses")
     def test_failures_are_alike_and_carry_no_challenge(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -594,6 +600,7 @@ class TestSessionAndLogout:
             content_type="application/json",
         )
 
+    @pytest.mark.security_control("problem-responses")
     def test_session_without_a_login_is_401_without_a_challenge(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -769,6 +776,7 @@ class TestSessionContent:
             "id_token",
         }
 
+    @pytest.mark.security_control("session-lifecycle")
     def test_login_gives_a_new_session_id(self, mount: Callable[..., _World]) -> None:
         world = mount()
         anonymous = world.client.session
@@ -782,6 +790,7 @@ class TestSessionContent:
         assert _session_key(world.client) != before
         assert not SessionStore(before).exists(before)
 
+    @pytest.mark.security_control("session-lifecycle")
     def test_rotate_session_changes_the_id_and_keeps_the_login(
         self, mount: Callable[..., _World]
     ) -> None:
@@ -799,6 +808,7 @@ class TestSessionContent:
         assert stale.get("/auth/session").status_code == 401
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestTimeouts:
     def test_an_idle_session_expires_after_30_minutes(
         self, mount: Callable[..., _World], clock: _Clock
@@ -864,6 +874,7 @@ class TestTimeouts:
         assert world.client.get("/auth/session").status_code == 401
 
 
+@pytest.mark.security_control("session-lifecycle")
 class TestRevocation:
     def _row_exists(self, key: str) -> bool:
         return Session.objects.filter(session_key=key).exists()
@@ -1093,6 +1104,7 @@ class _RaceScenarios:
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.security_control("session-lifecycle")
 class TestRevocationRaces(_RaceScenarios):
     serialize = True
 
@@ -1247,6 +1259,7 @@ class TestSettingsChecks:
                 auth_urlpatterns(_bare_config())
 
 
+@pytest.mark.security_control("csrf-and-origin")
 class TestCsrf:
     @staticmethod
     def _client(world: _World) -> Client:
@@ -1512,6 +1525,7 @@ FIXED_LIMITER = FixedWindowLimiter(clock=lambda: 1000.0)
 WINDOW = timedelta(minutes=5)
 
 
+@pytest.mark.security_control("rate-limiting")
 class TestRateLimits:
     def _attempt(
         self,
@@ -1618,6 +1632,7 @@ class TestRateLimits:
         assert self._attempt(client).status_code == 401
 
 
+@pytest.mark.security_control("audit-events")
 class TestAudit:
     @staticmethod
     def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
@@ -1737,3 +1752,84 @@ class TestAudit:
         assert self._events(caplog) == [
             "audit event=rate_limited scope='callback' by='client' retry_after=200"
         ]
+
+
+class TestOidcResponseChecks:
+    """The adapter's checks, shown through the callback route."""
+
+    @pytest.mark.security_control("oidc-response-checks", "token-profiles")
+    @pytest.mark.parametrize(
+        "fault",
+        [
+            "response_iss",
+            "response_iss_missing",
+            "wrong_nonce",
+            "wrong_aud",
+            "wrong_azp",
+            "wrong_at_hash",
+            "expired",
+            "alg_none",
+            "unknown_kid",
+        ],
+    )
+    def test_a_faulty_identity_provider_response_fails_the_login(
+        self,
+        mount: Callable[..., _World],
+        caplog: pytest.LogCaptureFixture,
+        fault: str,
+    ) -> None:
+        world = mount()
+        setattr(world.idp.faults, fault, True)
+        caplog.set_level(logging.INFO)
+
+        response = world.sign_in_with_idp()
+
+        assert response["Location"] == "/auth/error?error=login_failed"
+        assert SESSION_COOKIE not in response.cookies
+        events = [
+            r.getMessage()
+            for r in caplog.records
+            if r.getMessage().startswith("audit event=")
+        ]
+        assert [e.split(" code=")[0] for e in events] == [
+            "audit event=login.failure provider='acme'"
+        ]
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_a_userinfo_subject_that_differs_fails_the_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.idp.faults.userinfo_sub_mismatch = True
+
+        response = world.sign_in_with_idp()
+
+        assert response["Location"] == "/auth/error?error=login_failed"
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_the_request_carries_state_nonce_and_an_s256_challenge(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+
+        start = world.client.get("/auth/login/acme", {"return_to": "/orders"})
+
+        query = dict(parse_qsl(urlsplit(start["Location"]).query))
+        assert query["state"]
+        assert query["nonce"]
+        assert query["code_challenge"]
+        assert query["code_challenge_method"] == "S256"
+
+    @pytest.mark.security_control("oidc-response-checks")
+    def test_a_callback_with_another_state_fails_the_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        start = world.client.get("/auth/login/acme", {"return_to": "/orders"})
+        parts = urlsplit(world.approve(start["Location"]))
+        query = {**dict(parse_qsl(parts.query)), "state": "forged"}
+
+        response = world.client.get(parts.path, query)
+
+        assert response["Location"] == "/auth/error?error=login_failed"
+        assert SESSION_COOKIE not in response.cookies

@@ -22,7 +22,3 @@ events. See the [Auth guide](../../guides/auth.md).
 ## Rate limits
 
 ::: rn_forge.django.auth.rate_limit
-
-## Audit
-
-::: rn_forge.django.auth.audit

@@ -43,6 +43,7 @@ from rn_forge.fastapi.auth.csrf import (
     CsrfStore,
     InMemoryCsrfStore,
 )
+from rn_forge.fastapi.auth.rate_limit import InMemoryRateLimiter, RateLimiter
 from rn_forge.web import PROBLEM_MEDIA_TYPE, CsrfFailed, render_problem
 from starlette.datastructures import Headers, MutableHeaders
 
@@ -293,6 +294,7 @@ def refuse_in_memory(
     replay_store: ReplayStore | None = None,
     transaction_store: TransactionStore | None = None,
     csrf_store: CsrfStore | None = None,
+    rate_limiter: RateLimiter | None = None,
 ) -> None:
     """Refuse stores held in process memory, which processes do not share.
 
@@ -304,6 +306,7 @@ def refuse_in_memory(
         ("replay", replay_store, InMemoryReplayStore),
         ("transactions", transaction_store, InMemoryTransactionStore),
         ("CSRF", csrf_store, InMemoryCsrfStore),
+        ("rate limiter", rate_limiter, InMemoryRateLimiter),
     ):
         if isinstance(store, kind):
             raise RuntimeError(  # noqa: TRY004  # a configuration error

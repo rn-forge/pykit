@@ -11,7 +11,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rn_forge.auth import Principal, ResourcePolicy, requirement_for
-from rn_forge.django.auth.audit import audit
+from rn_forge.auth.audit import audit
 from rn_forge.django.drf import RequestUtils
 
 __all__ = ["PermissionKeyPermission", "ResourcePolicyViewMixin"]

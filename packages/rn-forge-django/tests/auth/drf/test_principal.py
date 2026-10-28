@@ -105,12 +105,14 @@ class TestBearer:
             "type": "Principal",
         }
 
+    @pytest.mark.security_control("problem-responses")
     def test_missing_credentials_is_401_problem_with_rfc6750_challenge(self) -> None:
         response = _get()
         assert response.status_code == 401
         assert response["Content-Type"] == PROBLEM_MEDIA_TYPE
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
 
+    @pytest.mark.security_control("problem-responses")
     def test_invalid_token_is_401_without_the_reason(self) -> None:
         response = _get(Authorization="Bearer forged")
         body = json.loads(response.content)
@@ -128,6 +130,7 @@ class TestBearer:
     def test_other_scheme_is_treated_as_no_credentials(self) -> None:
         assert _get(Authorization="Token good-read").status_code == 401
 
+    @pytest.mark.security_control("problem-responses")
     def test_valid_token_without_scope_is_403_without_a_challenge(self) -> None:
         response = _get(Authorization="Bearer good")
         body = json.loads(response.content)
@@ -157,3 +160,39 @@ class TestBasic:
         response = _get(_BasicView)
         assert response.status_code == 401
         assert response["WWW-Authenticate"] == "Basic"
+
+
+class _WideContexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(
+            active=True,
+            session_version=0,
+            permissions=frozenset({"orders.read", "orders.delete"}),
+        )
+
+
+class _Ceiling(_Bearer):
+    contexts = _WideContexts()
+    scope_map = {"read": frozenset({"orders.read"})}
+
+
+class _CeilingView(APIView):
+    authentication_classes = [_Ceiling]
+    permission_classes = [requires(Requirement())]
+
+    def get(self, request):
+        return Response({"permissions": sorted(request.user.permissions)})
+
+
+class TestScopeCeiling:
+    @pytest.mark.security_control("bearer-scope-ceiling")
+    def test_the_token_scopes_limit_the_accounts_permissions(self) -> None:
+        response = _get(_CeilingView, Authorization="Bearer good-read")
+
+        assert json.loads(response.content) == {"permissions": ["orders.read"]}
+
+    @pytest.mark.security_control("bearer-scope-ceiling")
+    def test_a_token_without_scopes_allows_nothing(self) -> None:
+        response = _get(_CeilingView, Authorization="Bearer good")
+
+        assert json.loads(response.content) == {"permissions": []}

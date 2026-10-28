@@ -123,6 +123,7 @@ markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
   "scaffold: installs built wheels into a scaffolded application (slow)",
+  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [dependency-groups]

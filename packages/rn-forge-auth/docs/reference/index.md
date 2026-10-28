@@ -16,6 +16,8 @@ The core, `rn_forge.auth`:
 - [Session, transaction and replay stores](stores.md)
 - [Return target](redirects.md)
 - [Session body](session_body.md)
+- [Audit events](audit.md)
+- [Security-control conformance](conformance.md)
 
 The adapters, each imported directly:
 

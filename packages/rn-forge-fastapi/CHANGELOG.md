@@ -7,6 +7,25 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ### Added
 
+- Rate limits on `/auth/login/password` (per client and per submitted username)
+  and the callback routes (per client), with the defaults of the Django
+  binding. `AuthRoutesConfig` takes `limiter` and `password_client_limit`,
+  `password_account_limit` and `callback_client_limit` (`RateLimit(limit,
+  window)`, or `None` for no limit). A limited request is the
+  `too-many-requests` problem, `429` with `Retry-After`. `InMemoryRateLimiter`
+  counts in a fixed window and is refused outside `debug`; `RedisRateLimiter`
+  in `rn_forge.fastapi.auth.redis` counts with `INCR` and `EXPIRE`. The client
+  is the connection's peer, or the nearest address in `X-Forwarded-For` that is
+  not a trusted proxy when the peer is in `trusted_proxies`.
+- Audit events on the `rn_forge.audit.auth` channel, with the names and fields
+  of the Django binding: `login.success`, `login.failure`, `logout`,
+  `logout.all`, `logout.backchannel`, `account.rejected`, `account.disabled`,
+  `rate_limited` from the routes, and `authorization.denied` from `requires`,
+  `requires_permission` and `PolicyGuard`. A provisioning `AccountResolver`
+  records `account.provisioned` with `rn_forge.auth.audit`.
+- Tests tag each security control of `rn_forge.auth.conformance` with
+  `@pytest.mark.security_control`, and fail when a control has no test.
+
 - The `/auth` surface over `rn-forge-auth`: `auth_router(config, prefix="/auth")`,
   configured by `AuthRoutesConfig`, returns an `APIRouter` serving `providers`,
   `login/{provider}`, `callback/{provider}`, `session`, `logout`, `logout/all`,

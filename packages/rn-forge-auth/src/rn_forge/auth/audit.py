@@ -4,6 +4,11 @@ An event is one ``INFO`` record on the ``rn_forge.audit.auth`` logger:
 ``audit event=<name> key='value' ...``. Fields are account IDs, provider IDs,
 codes and short reasons; callers never pass a token, code, assertion, password
 or email address.
+
+Both framework bindings emit these events with the same names and fields; an
+:class:`~rn_forge.auth.AccountResolver` that provisions accounts records
+``account.provisioned`` (fields ``account_id`` and ``provider``) with
+:func:`audit` when its account is committed.
 """
 
 from __future__ import annotations

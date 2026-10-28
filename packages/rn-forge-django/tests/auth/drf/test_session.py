@@ -100,6 +100,7 @@ def test_session_yields_a_session_principal() -> None:
     assert response.data == {"mechanism": "session", "roles": ["staff"]}
 
 
+@pytest.mark.security_control("one-credential-per-request")
 def test_authorization_header_is_decided_by_the_bearer_path_alone() -> None:
     user = User.objects.create_user("ada")
     assert (

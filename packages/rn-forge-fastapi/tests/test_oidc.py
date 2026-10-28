@@ -133,6 +133,7 @@ class TestOidcThroughBearerAuth:
         ],
         ids=["expired", "audience", "issuer", "signature", "malformed"],
     )
+    @pytest.mark.security_control("problem-responses")
     def test_verification_failures_are_a_generic_401(self, jwks_url, token) -> None:
         response = _get(build(jwks_url), token)
 
@@ -142,6 +143,7 @@ class TestOidcThroughBearerAuth:
             'Bearer realm="orders"'
         )
 
+    @pytest.mark.security_control("problem-responses")
     def test_the_401_body_never_says_why_verification_failed(self, jwks_url) -> None:
         response = _get(build(jwks_url), _token(key=FORGED))
 
@@ -154,3 +156,118 @@ class TestOidcThroughBearerAuth:
 
         assert_that(response.status_code).is_equal_to(403)
         assert_that(response.headers).does_not_contain_key("WWW-Authenticate")
+
+
+@pytest.fixture
+def idp():
+    from rn_forge.auth.testing import FakeOidcProvider
+
+    with FakeOidcProvider(user={"sub": "u1"}) as fake:
+        yield fake
+
+
+def _build_for(idp, *, cooldown=30.0, mode="rfc7519"):
+    authenticator = OidcAuthenticator.from_issuer(
+        idp.issuer, audience=AUDIENCE, cooldown_duration=cooldown, mode=mode
+    )
+    app = FastAPI()
+    register_problem_handlers(app, realm="orders")
+
+    class IdpAccounts(Accounts):
+        def lookup(self, issuer, subject):
+            return "acct-1" if (issuer, subject) == (idp.issuer, "u1") else None
+
+    guarded = requires(
+        bearer_auth(
+            authenticator=authenticator, accounts=IdpAccounts(), contexts=Contexts()
+        ),
+        Requirement(),
+    )
+
+    @app.get("/orders")
+    def orders(principal: Principal = Depends(guarded)):
+        return {"subject": principal.subject}
+
+    return TestClient(app)
+
+
+class TestAgainstTheFakeProvider:
+    @pytest.mark.security_control("token-profiles")
+    def test_an_access_token_is_accepted(self, idp) -> None:
+        response = _get(_build_for(idp), idp.access_token(profile="rfc7519"))
+
+        assert_that(response.status_code).is_equal_to(200)
+
+    @pytest.mark.security_control("token-profiles")
+    def test_an_rfc9068_token_needs_rfc9068_mode(self, idp) -> None:
+        token = idp.access_token(profile="rfc7519")
+
+        response = _get(_build_for(idp, mode="rfc9068"), token)
+
+        assert_that(response.status_code).is_equal_to(401)
+
+    @pytest.mark.security_control("token-profiles")
+    def test_a_logout_token_is_not_a_bearer_token(self, idp) -> None:
+        response = _get(_build_for(idp), idp.logout_token(sub="u1", audience=AUDIENCE))
+
+        assert_that(response.status_code).is_equal_to(401)
+
+    @pytest.mark.security_control("token-profiles")
+    def test_an_id_token_is_not_a_bearer_token(self, idp) -> None:
+        token = idp.access_token(audience=AUDIENCE, nonce="n-0S6_WzA2Mj")
+
+        response = _get(_build_for(idp), token)
+
+        assert_that(response.status_code).is_equal_to(401)
+
+    @pytest.mark.security_control("token-profiles")
+    def test_an_unsigned_token_is_a_401(self, idp) -> None:
+        now = int(time.time())
+        token = idp.sign(
+            {"sub": "u1", "iss": idp.issuer, "aud": AUDIENCE, "exp": now + 300},
+            alg="none",
+        )
+
+        response = _get(_build_for(idp), token)
+
+        assert_that(response.status_code).is_equal_to(401)
+        assert_that(response.json()["detail"]).is_equal_to(AUTH_FAILED_DETAIL)
+
+    @pytest.mark.security_control("jwks-rotation")
+    def test_a_token_under_a_rotated_key_is_accepted_after_the_cooldown(
+        self, idp
+    ) -> None:
+        client = _build_for(idp, cooldown=0.0)
+        token = {"profile": "rfc7519"}
+        assert_that(_get(client, idp.access_token(**token)).status_code).is_equal_to(
+            200
+        )
+
+        idp.rotate_key()
+
+        assert_that(_get(client, idp.access_token(**token)).status_code).is_equal_to(
+            200
+        )
+
+    @pytest.mark.security_control("jwks-rotation")
+    def test_an_unknown_kid_is_a_401_and_refetches_at_most_once_per_cooldown(
+        self, idp
+    ) -> None:
+        client = _build_for(idp, cooldown=3600.0)
+        _get(client, idp.access_token(profile="rfc7519"))
+        fetched = idp.fetches("/keys")
+        forged = idp.sign(
+            {
+                "sub": "u1",
+                "iss": idp.issuer,
+                "aud": AUDIENCE,
+                "exp": int(time.time()) + 300,
+            },
+            kid="nope",
+            key=idp.forged_key,
+        )
+
+        statuses = [_get(client, forged).status_code for _ in range(3)]
+
+        assert_that(statuses).is_equal_to([401, 401, 401])
+        assert_that(idp.fetches("/keys") - fetched).is_less_than_or_equal_to(1)

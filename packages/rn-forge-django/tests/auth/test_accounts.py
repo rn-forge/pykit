@@ -148,6 +148,7 @@ def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
     ]
 
 
+@pytest.mark.security_control("audit-events")
 def test_jit_provisioning_is_audited_without_the_email(
     caplog: pytest.LogCaptureFixture,
     django_capture_on_commit_callbacks: Any,
@@ -163,6 +164,7 @@ def test_jit_provisioning_is_audited_without_the_email(
     ]
 
 
+@pytest.mark.security_control("audit-events")
 def test_disabling_an_account_is_audited(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level("INFO")
     user = User.objects.create_user("ada")

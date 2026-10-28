@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import pytest
@@ -258,6 +259,7 @@ def test_no_credentials_without_bearer_is_a_401_without_a_challenge() -> None:
     assert_that("www-authenticate" in response.headers).is_false()
 
 
+@pytest.mark.security_control("bearer-scope-ceiling")
 def test_a_bearer_token_yields_the_linked_account_limited_by_scopes() -> None:
     world = World()
 
@@ -291,6 +293,7 @@ def test_an_inactive_account_is_a_401() -> None:
     assert_that(world.client.get("/me", headers=GOOD).status_code).is_equal_to(401)
 
 
+@pytest.mark.security_control("one-credential-per-request")
 def test_an_invalid_bearer_is_a_401_even_with_a_valid_session_cookie() -> None:
     world = World()
     world.login()
@@ -301,6 +304,7 @@ def test_an_invalid_bearer_is_a_401_even_with_a_valid_session_cookie() -> None:
     assert_that(response.headers["www-authenticate"]).is_equal_to('Bearer realm="api"')
 
 
+@pytest.mark.security_control("one-credential-per-request")
 def test_an_authorization_header_without_bearer_auth_ignores_the_session() -> None:
     world = World(with_bearer=False)
     world.login()
@@ -308,6 +312,7 @@ def test_an_authorization_header_without_bearer_auth_ignores_the_session() -> No
     assert_that(world.client.get("/me", headers=GOOD).status_code).is_equal_to(401)
 
 
+@pytest.mark.security_control("one-credential-per-request")
 def test_a_valid_bearer_wins_over_the_session() -> None:
     world = World()
     world.login()
@@ -343,6 +348,7 @@ def test_a_named_action_is_mapped_to_its_permission_suffix() -> None:
     assert_that(response.status_code).is_equal_to(200)
 
 
+@pytest.mark.security_control("bearer-scope-ceiling")
 def test_a_bearer_scope_that_does_not_allow_the_permission_is_a_403() -> None:
     world = World()
 
@@ -410,3 +416,70 @@ def test_the_password_provider_uses_the_applications_verifier() -> None:
 
     assert_that(response.status_code).is_equal_to(401)
     assert_that(world.verified).is_equal_to([("ada", "wrong")])
+
+
+def _events(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("audit event=")
+    ]
+
+
+@pytest.mark.security_control("audit-events")
+def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> None:
+    world = World()
+    world.login()
+    caplog.set_level(logging.INFO)
+
+    world.client.delete("/delete", headers={"Origin": ORIGIN, **_csrf(world)})
+
+    assert _events(caplog) == [
+        "audit event=authorization.denied account_id='acct-ada' "
+        "permission_key='orders' action='destroy'"
+    ]
+
+
+@pytest.mark.security_control("audit-events")
+def test_a_denied_requirement_is_audited(caplog: pytest.LogCaptureFixture) -> None:
+    world = World()
+    world.login()
+    caplog.set_level(logging.INFO)
+
+    world.client.get("/requirement")
+
+    assert _events(caplog) == ["audit event=authorization.denied account_id='acct-ada'"]
+
+
+@pytest.mark.security_control("audit-events")
+@pytest.mark.parametrize(("hides", "status"), [(False, 403), (True, 404)])
+def test_a_denied_object_is_audited(
+    caplog: pytest.LogCaptureFixture, hides: bool, status: int
+) -> None:
+    world = World(hides=hides)
+    world.login()
+    caplog.set_level(logging.INFO)
+
+    response = world.client.get("/orders/3")
+
+    assert_that(response.status_code).is_equal_to(status)
+    assert _events(caplog) == [
+        "audit event=authorization.denied account_id='acct-ada' action='read' "
+        f"resource='Order' hidden={hides}"
+    ]
+
+
+@pytest.mark.security_control("audit-events")
+def test_an_allowed_request_is_not_audited(caplog: pytest.LogCaptureFixture) -> None:
+    world = World()
+    world.login()
+    caplog.set_level(logging.INFO)
+
+    world.client.get("/read")
+    world.client.get("/orders/1")
+
+    assert _events(caplog) == []
+
+
+def _csrf(world: World) -> dict[str, str]:
+    return {"X-XSRF-TOKEN": world.client.cookies["XSRF-TOKEN"]}

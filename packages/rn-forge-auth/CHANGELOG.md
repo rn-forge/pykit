@@ -7,6 +7,13 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Added
 
+- `rn_forge.auth.conformance`: `CASES`, one `SecurityControlCase` per row of the
+  design's security controls, `case_by_id`, and `tagged_tests`, which finds the
+  tests of a suite that carry `@pytest.mark.security_control("<id>")`. Both
+  framework bindings' suites fail when a case has no tagged test.
+- `rn_forge.auth.audit` (`audit`, `AUDIT_LOGGER`), the audit event helper on the
+  `rn_forge.audit.auth` `AppLogger` channel, which both framework bindings
+  emit their auth events through.
 - `LoginFlow.complete` returns `CompletedLogin` (`identity` and the consumed
   transaction's `return_to`). `ExternalIdentity` gains `id_token`, set by
   `OidcProvider` only with `rp_initiated_logout`, so a binding can keep it in

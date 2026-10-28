@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from rn_forge.auth import Principal, ResourcePolicy
+from rn_forge.auth import Principal, ResourcePolicy, audit
 from rn_forge.web import PermissionDenied
 
 __all__ = ["PolicyGuard"]
@@ -50,6 +50,13 @@ class PolicyGuard[ResourceT, QueryT]:
         """
         if self._policy.allows(principal, action, resource):
             return resource
+        audit(
+            "authorization.denied",
+            account_id=principal.subject,
+            action=action,
+            resource=type(resource).__name__,
+            hidden=self._hides_existence,
+        )
         if self._hides_existence:
             raise LookupError("Not found")
         raise PermissionDenied("The policy denies the action")

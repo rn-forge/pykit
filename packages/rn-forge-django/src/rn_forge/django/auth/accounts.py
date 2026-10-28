@@ -12,7 +12,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError, transaction
 from django.db.models import F
 from rn_forge.auth import AccountRejected, ExternalIdentity
-from rn_forge.django.auth.audit import audit
+from rn_forge.auth.audit import audit
 from rn_forge.django.auth.models import AccountState, ExternalAccount
 
 __all__ = [
