@@ -5,6 +5,13 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `plan` no longer hangs on a dependency cycle. Release order and `releasable`
+  follow dependencies and optional dependencies only, not dependency groups;
+  selection still follows all three. A cycle among the former raises a
+  `ValueError` naming the packages.
+
 ### Added
 
 - `[tool.workspace-ci.redis]`: a package's tests run again against a Redis

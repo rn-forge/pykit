@@ -7,7 +7,7 @@ directory at or above the current one whose `pyproject.toml` declares
 | Subcommand | Does |
 | -- | -- |
 | `plan [BASE]` | Selects the packages a change affects, and writes every job's matrix and package list as `$GITHUB_OUTPUT` lines. |
-| `releasable OK_DIR NAME...` | Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites are releasable. |
+| `releasable OK_DIR NAME...` | Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites (dependencies and optional dependencies) are releasable. |
 | `released` | Prints `name dir module version` for each `<name>-v<version>` tag at `HEAD`, for `external-install` and `docs`. |
 | `smoke PACKAGE [EXTRA]` | Builds the package and its internal requirements as wheels, installs one extra into a clean venv from the wheels' metadata, and imports the configured modules, or the package's own module when it has no smoke table. |
 | `adapters` | Checks each package that declares `adapters`: every name has a module or subpackage under the package's source directory and an extra of the same name, and none is repeated. Prints one line per problem to stderr and exits 1 if there are any. |
@@ -22,7 +22,11 @@ directory at or above the current one whose `pyproject.toml` declares
 - **Packages:** the members of the root `[tool.uv.workspace]`, including
   `exclude`. No name prefix is assumed.
 - **Internal requirements:** workspace members named in a package's
-  dependencies, optional dependencies and dependency groups.
+  dependencies, optional dependencies and dependency groups. Selection follows
+  all three. Release order and release gating follow dependencies and optional
+  dependencies only, so a cycle through a dependency group does not block a
+  release; a cycle through the other two fails `plan` with an error naming the
+  packages.
 - **Import name:** `[tool.uv.build-backend].module-name`, used for `--cov`, the
   external-install import and the smoke imports.
 - **Optional jobs:** `sonar` runs only if `sonar-project.properties` exists;

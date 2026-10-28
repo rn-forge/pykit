@@ -81,6 +81,7 @@ def load_workspace(root: Path) -> Workspace:
         requirements: list[str] = list(project.get("dependencies", []))
         for extra in project.get("optional-dependencies", {}).values():
             requirements += extra
+        release_requirements = list(requirements)
         for group in member.get("dependency-groups", {}).values():
             requirements += [item for item in group if isinstance(item, str)]
         name = normalize(project["name"])
@@ -92,6 +93,10 @@ def load_workspace(root: Path) -> Workspace:
             module=tool.get("uv", {}).get("build-backend", {}).get("module-name")
             or name.replace("-", "_"),
             requires={r for r in map(requirement_name, requirements) if r in names}
+            - {name},
+            release_requires={
+                r for r in map(requirement_name, release_requirements) if r in names
+            }
             - {name},
             postgres_env=ci["postgres"]["env"] if "postgres" in ci else None,
             redis_env=ci["redis"]["env"] if "redis" in ci else None,
