@@ -16,7 +16,7 @@ from rn_forge.django.auth.drf.principal import (  # noqa: E402
     PrincipalBearerAuthentication,
     requires,
 )
-from rn_forge.auth import Principal, Requirement  # noqa: E402
+from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
@@ -38,17 +38,33 @@ class _Tokens:
     def authenticate(self, *, credentials):
         self.seen.append(credentials)
         if credentials.token == "good-read":
-            return Principal(subject="u1", scopes=frozenset({"read"}))
+            return Principal(subject="u1", issuer="iss", scopes=frozenset({"read"}))
+        if credentials.token == "stranger":
+            return Principal(subject="u2", issuer="iss")
         if credentials.token in ("good", "dTE6cHc="):
-            return Principal(subject="u1", mechanism=credentials.scheme.lower())
+            return Principal(
+                subject="u1", issuer="iss", mechanism=credentials.scheme.lower()
+            )
         raise AuthenticationFailed("signature mismatch for kid k-7")
 
 
 TOKENS = _Tokens()
 
 
+class _Accounts:
+    def lookup(self, issuer, subject):
+        return "acct-1" if subject == "u1" else None
+
+
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
+
+
 class _Bearer(PrincipalBearerAuthentication):
     authenticator = TOKENS
+    accounts = _Accounts()
+    contexts = _Contexts()
     realm = "orders"
 
 
@@ -84,7 +100,10 @@ class TestBearer:
     def test_valid_token_puts_the_principal_on_request_user(self) -> None:
         response = _get(Authorization="Bearer good-read")
         assert response.status_code == 200
-        assert json.loads(response.content) == {"subject": "u1", "type": "Principal"}
+        assert json.loads(response.content) == {
+            "subject": "acct-1",
+            "type": "Principal",
+        }
 
     def test_missing_credentials_is_401_problem_with_rfc6750_challenge(self) -> None:
         response = _get()
@@ -99,6 +118,9 @@ class TestBearer:
         assert body["detail"] == "Authentication failed."
         assert "kid" not in response.content.decode()
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
+
+    def test_unlinked_subject_is_401(self) -> None:
+        assert _get(Authorization="Bearer stranger").status_code == 401
 
     def test_empty_token_is_401(self) -> None:
         assert _get(Authorization="Bearer ").status_code == 401

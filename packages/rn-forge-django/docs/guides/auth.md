@@ -272,3 +272,55 @@ backend in production, with the `redis` extra. A callback error redirects to
 `error_route` with `?error=` set to `access_denied`, `account_not_provisioned`
 or `login_failed`. `/auth/login/development` answers only while
 `settings.DEBUG` is true.
+
+## Accounts and authentication
+
+`rn_forge.django.auth.accounts.DjangoAccountResolver` links external identities
+to Django users through the `ExternalAccount` model (unique on
+`(issuer, subject)`; run the auth app's migration). Give it a `ProviderPolicy`
+per provider ID:
+
+- `provisioning="existing"` rejects an identity with no account;
+  `provisioning="jit"` creates one on first login, limited to
+  `email_domains` when set (which also requires a verified email).
+- `authoritative_domains` lists the email domains for which the provider is
+  authoritative: only there does a verified email link to an existing user.
+  Unverified emails never link and are not stored on provisioned users.
+- `sync(user, identity)` runs at every login to copy attributes onto the user.
+- `resolver.link(issuer, subject, user)` links a service account explicitly.
+
+A rejected login redirects to the error route with
+`?error=account_not_provisioned`. The session version behind
+`/auth/logout/all` is kept by `DjangoAccountStateWriter` (pass it as
+`AuthRoutesConfig.account_state`) and read by the default
+`DjangoAuthorizationContextProvider`.
+
+For DRF, list the classes the view accepts. A session-only view, or one listing
+the session class first, answers `401` without a `WWW-Authenticate` header; a
+view listing the bearer class first answers with its `Bearer` challenge. This
+needs the problem-details exception handler:
+
+```python
+class Bearer(JWKSBearerAuthentication):
+    jwks_url, issuer, audience = ..., ..., ...
+    accounts = resolver
+    contexts = cache
+    scope_map = {"orders:read": frozenset({"orders.list", "orders.read"})}
+
+class Session(PrincipalSessionAuthentication):
+    sessions = sessions_for(config)
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [Session, Bearer],
+    "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler",
+}
+```
+
+A request with an `Authorization` header is authenticated by the bearer class
+alone: an invalid token, or one whose subject has no linked account, is `401`
+even with a valid session cookie. Bearer lookup never provisions. The bearer
+principal's permissions are the account's, limited to what its scopes allow
+through `scope_map`.
+
+The `/auth/session` body does not yet carry `name`, `email` or `picture`;
+the default resolver does not store them.

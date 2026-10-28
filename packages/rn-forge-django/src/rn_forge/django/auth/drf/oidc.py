@@ -21,7 +21,9 @@ class JWKSBearerAuthentication(PrincipalBearerAuthentication):
 
     Verification and the claims-to-principal mapping are
     :class:`rn_forge.auth.oidc.OidcAuthenticator`'s, so this stack accepts the
-    same tokens as a FastAPI service wired to the same IdP.
+    same tokens as a FastAPI service wired to the same IdP. Accounts are linked
+    as in :class:`PrincipalBearerAuthentication`, so set ``accounts`` and
+    ``contexts`` too.
     """
 
     jwks_url: ClassVar[str]

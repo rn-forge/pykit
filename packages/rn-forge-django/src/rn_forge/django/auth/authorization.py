@@ -10,6 +10,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db.models import Model, Q
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from rn_forge.auth import AuthorizationContext, AuthorizationContextCache
+from rn_forge.django.auth.accounts import account_session_version
 
 __all__ = [
     "BYPASS_ROLES",
@@ -73,14 +74,16 @@ class DjangoAuthorizationContextProvider:
     Args:
         catalog: Permission keys that exist outside Django's permission table,
             such as a viewset's ``orders.read``, which the bypass also grants.
-        session_version: Returns a user's session version. Defaults to ``0``.
+        session_version: Returns a user's session version. Defaults to the
+            one :class:`~rn_forge.django.auth.accounts.DjangoAccountStateWriter`
+            bumps.
     """
 
     def __init__(
         self,
         *,
         catalog: Iterable[str] = (),
-        session_version: Callable[[AbstractUser], int] = lambda _user: 0,
+        session_version: Callable[[AbstractUser], int] = account_session_version,
     ) -> None:
         self._catalog = frozenset(catalog)
         self._session_version = session_version

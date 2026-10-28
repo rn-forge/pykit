@@ -30,15 +30,22 @@ from rn_forge.web import (
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemType,
+    SessionRequired,
     default_registry,
     field_error,
 )
 
 __all__ = [
+    "NO_CHALLENGE",
     "drf_exception_handler",
     "problem_details_exception_handler",
     "problem_registry",
 ]
+
+
+NO_CHALLENGE: Final = "x-rn-forge-no-challenge"
+"""An ``authenticate_header`` value that makes DRF answer ``401`` while
+:func:`problem_details_exception_handler` sends no ``WWW-Authenticate``."""
 
 
 def drf_exception_handler(
@@ -86,7 +93,8 @@ def problem_details_exception_handler(
     """Render an exception as an RFC 9457 ``application/problem+json`` response.
 
     DRF determines the status and headers first; the registry then supplies the
-    problem body. Validation field errors appear in the ``errors`` extension.
+    problem body. Validation field errors appear in the ``errors`` extension. A
+    ``WWW-Authenticate`` value of :data:`NO_CHALLENGE` is dropped.
 
     Args:
         exc: The exception DRF caught.
@@ -121,6 +129,10 @@ def problem_details_exception_handler(
         if drf_response is not None
         else None
     )
+    if headers is not None and headers.get("WWW-Authenticate") == NO_CHALLENGE:
+        del headers["WWW-Authenticate"]
+        # SessionRequired is the exception that renders a 401 with no challenge.
+        exc = SessionRequired(str(exc))
     return problem_details_response(
         exc,
         instance=instance,

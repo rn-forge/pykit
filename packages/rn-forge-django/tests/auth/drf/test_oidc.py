@@ -17,7 +17,7 @@ from rest_framework.views import APIView  # noqa: E402
 
 from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication  # noqa: E402
 from rn_forge.django.auth.drf.principal import requires  # noqa: E402
-from rn_forge.auth import Principal, Requirement  # noqa: E402
+from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -46,12 +46,29 @@ def _token(key=KEY, kid="k1", **claims):
     return jwt.encode(payload, key, algorithm="RS256", headers={"kid": kid})
 
 
+class _Accounts:
+    def lookup(self, issuer, subject):
+        return "acct-1" if subject == "u1" else None
+
+
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(
+            active=True,
+            session_version=0,
+            roles=frozenset({"Reader"}),
+            attributes={"tenant": "t-1"},
+        )
+
+
 def _entra(jwks_url):
     # A fresh subclass per test: authenticators are cached per class.
     class Entra(JWKSBearerAuthentication):
         issuer = ISSUER
         audience = "api://orders"
         realm = "orders"
+        accounts = _Accounts()
+        contexts = _Contexts()
 
     Entra.jwks_url = jwks_url
     return Entra
@@ -61,7 +78,9 @@ def _custom(jwks_url):
     class Custom(_entra(jwks_url)):
         def claims_to_principal(self, claims):
             return Principal(
-                subject=f"custom:{claims['sub']}", scopes=frozenset({"orders.read"})
+                subject=claims["sub"],
+                issuer=claims["iss"],
+                scopes=frozenset({"orders.read"}),
             )
 
     return Custom
@@ -107,7 +126,7 @@ class TestJWKSBearerAuthentication:
         assert response.status_code == 200
         assert body == {
             "type": "Principal",
-            "subject": "u1",
+            "subject": "acct-1",
             "scopes": ["orders.read", "orders.write"],
             "roles": ["Reader"],
             "tenant": "t-1",
@@ -137,7 +156,7 @@ class TestJWKSBearerAuthentication:
     def test_claims_to_principal_override_is_used(self, jwks_url) -> None:
         response, body = _get(_view(_custom(jwks_url)), _token())
         assert response.status_code == 200
-        assert body["subject"] == "custom:u1"
+        assert body["subject"] == "acct-1"
 
     def test_missing_scope_is_403(self, jwks_url) -> None:
         view = _view(
@@ -146,3 +165,10 @@ class TestJWKSBearerAuthentication:
         response, _ = _get(view, _token())
         assert response.status_code == 403
         assert not response.has_header("WWW-Authenticate")
+
+
+class TestUnlinkedSubject:
+    def test_token_without_a_linked_account_is_401(self, jwks_url) -> None:
+        response, body = _get(_view(_entra(jwks_url)), _token(sub="stranger"))
+        assert response.status_code == 401
+        assert body["detail"] == "Authentication failed."

@@ -23,6 +23,10 @@ from rn_forge.django.auth.drf.serializers import (
     PermissionSerializer,
     UserSerializer,
 )
+from rn_forge.django.auth.drf.session import (
+    PrincipalSessionAuthentication,
+    sessions_for,
+)
 from rn_forge.django.auth.drf.views import (
     AuthorizedAPIView,
     AuthorizedModelViewSet,
@@ -48,8 +52,10 @@ __all__ = [
     "PermissionViewSet",
     "PrincipalBasicAuthentication",
     "PrincipalBearerAuthentication",
+    "PrincipalSessionAuthentication",
     "ResourcePolicyViewMixin",
     "UserSerializer",
     "UserViewSet",
     "requires",
+    "sessions_for",
 ]

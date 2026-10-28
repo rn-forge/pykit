@@ -7,6 +7,23 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Added
 
+- Account resolution and DRF authentication. `DjangoAccountResolver`
+  (`rn_forge.django.auth.accounts`) is an `AccountResolver` over the Django user
+  model and the new `ExternalAccount` link model, unique on `(issuer, subject)`
+  and shipped with the auth app's first migration, which also adds
+  `AccountState` for the session version. A per-provider `ProviderPolicy` sets
+  `existing` or `jit` provisioning, an email-domain allowlist, and the domains
+  for which a verified email links to an existing user; an optional `sync` hook
+  copies attributes at each login, and `link` records service accounts.
+  `DjangoAccountStateWriter` persists `/auth/logout/all` session versions and the
+  `active` flag, and `DjangoAuthorizationContextProvider` reads that version by
+  default. `PrincipalSessionAuthentication` yields a `session` principal from
+  `Sessions.read`, and ignores any request with an `Authorization` header.
+  `sessions_for(config)` builds its `Sessions` from `AuthRoutesConfig`.
+- Authorization from Django groups and permissions:
+  `DjangoAuthorizationContextProvider` (staff and superuser bypass as roles),
+  `connect_authorization_signals` for cache invalidation, `PermissionKeyPermission`
+  and `ResourcePolicyViewMixin`.
 - Sessions for the `/auth` routes. `SESSION_SETTINGS` carries the
   `__Host-session` cookie settings, and `auth_urlpatterns` raises
   `ImproperlyConfigured` for `SESSION_SAVE_EVERY_REQUEST`, and outside `DEBUG`
@@ -25,6 +42,12 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Changed
 
+- Breaking: `PrincipalBearerAuthentication` and `JWKSBearerAuthentication`
+  need `accounts` and `contexts` class attributes. They resolve the token's
+  `(issuer, subject)` through `AccountResolver.lookup` (never provisioning) and
+  answer `401` for an unlinked or inactive account. The principal's `subject` is
+  the account ID, its roles, tenant and attributes come from the authorization
+  context, and its permissions are the context's limited by `scope_map`.
 - Breaking: `DEFAULT_PERMISSION_ACTION_MAP` moved from
   `rn_forge.django.auth.drf.mixins` to `rn_forge.auth`.
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`

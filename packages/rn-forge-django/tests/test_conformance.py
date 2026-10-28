@@ -67,7 +67,7 @@ from rn_forge.django.models import (
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
-from rn_forge.auth import Principal, Requirement
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.web import (
     Operation,
     ProblemDetail,
@@ -377,11 +377,21 @@ class _AnyToken:
     """Verifies every token as a principal with no scopes."""
 
     def authenticate(self, *, credentials):
-        return Principal(subject="u1")
+        return Principal(subject="u1", issuer="iss")
+
+
+class _LinkedAccounts:
+    def lookup(self, issuer, subject):
+        return "acct-1"
+
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
 
 
 class _Bearer(PrincipalBearerAuthentication):
     authenticator = _AnyToken()
+    accounts = _LinkedAccounts()
+    contexts = _LinkedAccounts()
     realm = "conformance"
 
 
