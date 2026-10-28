@@ -7,7 +7,7 @@ single-page application through a server-side session, and API clients through
 bearer tokens, with one account and one authorization model behind both.
 
 The app is installable (label `rn_forge_django_auth`). It also carries
-[legacy](#legacy-login-and-credential-code) JWT, SAML and basic-login code.
+[legacy](#legacy-login-and-credential-code) credential and authorization code.
 
 ## Setup
 
@@ -519,63 +519,17 @@ The code below predates the surface above. It is kept for existing applications
 and is removed by the next breaking change; new applications should not adopt
 it.
 
-### Login flows
-
-All login flows produce a normalized `LoginPayload(user=..., claims=...)` and
-share a common `complete_login()` hook that decides what happens next (start a
-Django session, mint an exchange token, or mint a final JWT pair).
-
-**Basic (username/password) to session:**
-
-```python
-from rn_forge.django.auth.basic.views import BasicLoginAPIView
-
-
-class LoginView(BasicLoginAPIView):
-    """POST {username, password} -> Django session + build_login_response() payload."""
-```
-
-**Basic/SAML → short-lived exchange token → JWT:** login views that mix in
-`LoginExchangeViewMixin` (via `BasicLoginAPIView`/`SAMLLoginAPIView`) return an
-`exchange_token` instead of creating a session. The client then calls
-`UserTokenView` to trade that token for a SimpleJWT access/refresh pair:
-
-```python
-from rn_forge.django.auth.jwt.views import UserTokenView
-```
-
-**SAML:** subclass `SAMLLoginViewMixin`/`SAMLLoginAPIView` and implement
-`build_saml_request_data()`, `get_saml_user_lookup()`, and `get_user()` (plus
-`create_user_for_login()` if `auto_create_user = True`).
-`RN_FORGE_DJANGO["AUTH"]["SAML"]` supplies the `python3-saml` settings dict and
-default `RETURN_TO` — see [Settings](settings.md).
-
-```python
-RN_FORGE_DJANGO = {"AUTH": {"SAML": {"SETTINGS": {...}, "RETURN_TO": "/app"}}}
-```
-
-Reusable router + `user-token/` endpoint:
-
-```python
-from rn_forge.django.auth.urls import urlpatterns
-```
-
-### JWT authentication and credential permissions
+### Credential permissions
 
 ```python
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rn_forge.django.auth.jwt.authentication.JWTAuthentication",
-    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rn_forge.django.auth.drf.permissions.AuthorizationPermission",
     ],
 }
 ```
 
-`JWTAuthentication` wraps SimpleJWT's authenticator so `request.auth` is a
-`JWTCredentials` (subclass of `BaseCredentials`) rather than a raw validated
-token.
+`BaseCredentials` is the base for a `request.auth` object that wraps a user.
 
 `BaseCredentials` exposes `is_authenticated`, `is_staff_user` (staff/superuser
 bypass), `user_id`, `email`, and `has_permission(key)` /

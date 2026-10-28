@@ -35,8 +35,7 @@ Optional extras:
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
 | `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
-| `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
+| `saml` | `python3-saml` |
 | `openapi` | `drf-spectacular`, for `drf.openapi` |
 | `oidc` | `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
 | `redis` | `rn-forge-auth[redis]`, the Redis client for Django's Redis cache backend that holds login transactions and revoked session IDs |
@@ -62,8 +61,7 @@ Optional extras:
   tables), `authorization` (the default authorization context provider), and
   `auth.drf` (session and bearer authentication, permission-key and
   resource-policy hooks, serializers and the management viewsets). The
-  sub-packages `auth.basic`, `auth.jwt` and `auth.saml` and the `credentials`
-  and `payload` modules are legacy, removed by the next breaking change.
+  `credentials` and `payload` modules are legacy, removed by the next breaking change.
 - **`drf`** — DRF integration outside the auth app: `drf.views` (base view
   classes, mixins, `PermissionByMethodMixin`), `drf.routers`
   (`CustomMethodRouter`, AIP-136 colon custom methods), `drf.transfer`
@@ -104,8 +102,7 @@ them.
   integration.
 - **`drf.casing`** supplies the camelCase renderer and parser.
 - **`oidc` extra** — JWKS verification is `rn-forge-auth[oidc]` (PyJWT);
-  `auth.drf.oidc` only binds it to DRF. It is separate from `jwt` so JWKS auth
-  does not install simplejwt.
+  `auth.drf.oidc` only binds it to DRF.
 - **`celery` extra** — supplies the Celery app factory.
 - **Migrations.** The auth app has one, for the external-account link and
   account-state tables. `SequenceGenerator`'s counter is abstract and adds no

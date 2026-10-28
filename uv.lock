@@ -536,20 +536,6 @@ wheels = [
 ]
 
 [[package]]
-name = "djangorestframework-simplejwt"
-version = "5.5.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "djangorestframework" },
-    { name = "pyjwt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/27/2874a325c11112066139769f7794afae238a07ce6adf96259f08fd37a9d7/djangorestframework_simplejwt-5.5.1.tar.gz", hash = "sha256:e72c5572f51d7803021288e2057afcbd03f17fe11d484096f40a460abc76e87f", size = 101265, upload-time = "2025-07-21T16:52:25.026Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/94/fdfb7b2f0b16cd3ed4d4171c55c1c07a2d1e3b106c5978c8ad0c15b4a48b/djangorestframework_simplejwt-5.5.1-py3-none-any.whl", hash = "sha256:2c30f3707053d384e9f315d11c2daccfcb548d4faa453111ca19a542b732e469", size = 107674, upload-time = "2025-07-21T16:52:07.493Z" },
-]
-
-[[package]]
 name = "drf-spectacular"
 version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2368,7 +2354,6 @@ all = [
     { name = "django-cors-headers" },
     { name = "django-import-export" },
     { name = "djangorestframework" },
-    { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "python3-saml" },
@@ -2388,10 +2373,6 @@ drf = [
 fixtures = [
     { name = "rn-forge-data", extra = ["pandas"] },
 ]
-jwt = [
-    { name = "djangorestframework" },
-    { name = "djangorestframework-simplejwt" },
-]
 oidc = [
     { name = "djangorestframework" },
     { name = "rn-forge-auth", extra = ["oidc"] },
@@ -2408,7 +2389,6 @@ redis = [
 ]
 saml = [
     { name = "djangorestframework" },
-    { name = "djangorestframework-simplejwt" },
     { name = "python3-saml" },
 ]
 security = [
@@ -2452,14 +2432,10 @@ requires-dist = [
     { name = "django-import-export", marker = "extra == 'transfer'", specifier = ">=4.4.1" },
     { name = "djangorestframework", marker = "extra == 'all'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.17.1" },
-    { name = "djangorestframework", marker = "extra == 'jwt'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'oidc'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'openapi'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'saml'", specifier = ">=3.17.1" },
     { name = "djangorestframework", marker = "extra == 'transfer'", specifier = ">=3.17.1" },
-    { name = "djangorestframework-simplejwt", marker = "extra == 'all'", specifier = ">=5.5.1" },
-    { name = "djangorestframework-simplejwt", marker = "extra == 'jwt'", specifier = ">=5.5.1" },
-    { name = "djangorestframework-simplejwt", marker = "extra == 'saml'", specifier = ">=5.5.1" },
     { name = "drf-spectacular", marker = "extra == 'all'", specifier = ">=0.30.0" },
     { name = "drf-spectacular", marker = "extra == 'openapi'", specifier = ">=0.30.0" },
     { name = "opentelemetry-instrumentation-django", marker = "extra == 'all'", specifier = ">=0.65b0" },
@@ -2478,7 +2454,7 @@ requires-dist = [
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'all'", editable = "packages/rn-forge-web" },
     { name = "rn-forge-web", extras = ["security"], marker = "extra == 'security'", editable = "packages/rn-forge-web" },
 ]
-provides-extras = ["drf", "transfer", "fixtures", "jwt", "oidc", "redis", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
+provides-extras = ["drf", "transfer", "fixtures", "oidc", "redis", "celery", "openapi", "saml", "security", "cors", "otel", "all"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -24,7 +24,6 @@ class TestDefaults:
         assert conf.drf.views == DRFViewsSettings()
         assert conf.drf.pagination == PaginationSettings()
         assert conf.drf.casing == CasingSettings()
-        assert conf.auth.saml.return_to is None
 
     def test_pagination_defaults(self) -> None:
         assert PaginationSettings() == PaginationSettings(
@@ -44,7 +43,6 @@ class TestOverrideAndReload:
                     "PAGINATION": {"PAGE_SIZE": 10},
                     "CASING": {"ENABLED": False},
                 },
-                "AUTH": {"SAML": {"RETURN_TO": "/home"}},
             }
         ):
             conf = _current()
@@ -52,7 +50,6 @@ class TestOverrideAndReload:
             assert conf.drf.pagination.page_size == 10
             assert conf.drf.pagination.max_page_size == 200
             assert conf.drf.casing.enabled is False
-            assert conf.auth.saml.return_to == "/home"
 
     def test_leaving_the_override_restores_the_previous_values(self) -> None:
         before = _current()

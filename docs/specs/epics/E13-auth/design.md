@@ -1154,6 +1154,8 @@ removals follow [ADR-0002](../../../adr/ADR-0002.md): no aliases.
 | `BaseCredentials`, `LoginPayload` | `Principal` and `ExternalIdentity` |
 | `auth.saml` views, `SampleSAMLLoginAPIView` and the `saml` extra | Removed: a SAML IdP federates through a broker ([SAML identity providers](#saml-identity-providers)). An application with its own direct SAML integration, such as ew-loop, keeps that code until its IdP connection moves to OIDC. |
 | `auth.basic` views | The local password provider |
+| `BaseLoginViewMixin`, `BaseLoginAPIView`, `LogoutAPIView` | The `login` and `logout` routes of the auth surface |
+| `AuthorizedAPIView`, `AuthorizedModelViewSet` | Kept, checking `PermissionKeyPermission` |
 | `AuthorizationViewMixin`, `PermissionKeyViewMixin`, `AuthorizationPermission` | A `Requirement` built from permission key and action, plus `ResourcePolicy` hooks |
 | `Requirement`'s `any_role` and `all_roles` clauses | Removed: routes check permissions |
 | `rn_forge.web.auth` principal types, `rn_forge.web.oidc` | Moved to `rn-forge-auth` ([Package placement](#package-placement)) |

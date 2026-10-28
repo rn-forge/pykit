@@ -12,8 +12,6 @@ from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 
 __all__ = [
-    "AuthSAMLSettings",
-    "AuthSAMLSettingsDict",
     "AuthSettings",
     "AuthSettingsDict",
     "CasingSettings",
@@ -83,15 +81,7 @@ class DRFSettingsDict(TypedDict, total=False):
 class AuthSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]``."""
 
-    SAML: AuthSAMLSettingsDict
     PROBLEM_TYPE_BASE: str
-
-
-class AuthSAMLSettingsDict(TypedDict, total=False):
-    """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]["SAML"]``."""
-
-    SETTINGS: Mapping[str, Any]
-    RETURN_TO: str | None
 
 
 class RnforgeDjangoSettingsDict(TypedDict, total=False):
@@ -160,18 +150,7 @@ class DRFSettings:
 class AuthSettings:
     """Runtime settings for auth helpers."""
 
-    saml: AuthSAMLSettings = field(default_factory=lambda: AuthSAMLSettings())
     problem_type_base: str = ""
-
-
-@dataclass(frozen=True)
-class AuthSAMLSettings:
-    """Runtime settings for SAML auth helpers."""
-
-    settings: Mapping[str, Any] = field(
-        default_factory=lambda: cast(Mapping[str, Any], {})
-    )
-    return_to: str | None = None
 
 
 @dataclass(frozen=True)
@@ -209,16 +188,6 @@ def _build_settings() -> RnforgeDjangoSettings:
     return RnforgeDjangoSettings(
         auth=AuthSettings(
             problem_type_base=str(auth_config.get("PROBLEM_TYPE_BASE", "")),
-            saml=AuthSAMLSettings(
-                settings=cast(
-                    Mapping[str, Any],
-                    _get_mapping(auth_config, "SAML").get("SETTINGS", {}),
-                ),
-                return_to=cast(
-                    str | None,
-                    _get_mapping(auth_config, "SAML").get("RETURN_TO"),
-                ),
-            ),
         ),
         drf=DRFSettings(
             views=DRFViewsSettings(

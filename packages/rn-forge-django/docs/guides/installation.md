@@ -33,8 +33,7 @@ required by version range.
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
 | `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
-| `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
+| `saml` | `djangorestframework` + `python3-saml` |
 | `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
 | `oidc` | `djangorestframework` + `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
 | `redis` | `rn-forge-auth[redis]`, the client for Django's Redis cache backend that holds login transactions and revoked session IDs |
@@ -42,9 +41,7 @@ required by version range.
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
-`oidc` is its own extra rather than part of `jwt`: verifying externally issued
-tokens against a JWKS endpoint has nothing to do with simplejwt, and should not
-install it. There is deliberately no `messaging` extra —
+There is deliberately no `messaging` extra —
 `rn_forge.django.messaging` is Django ORM plus stdlib.
 
 To use the bundled auth app, add `"rn_forge.django.auth"` to `INSTALLED_APPS`.

@@ -9,8 +9,8 @@ It provides:
   opt-in validation-on-save
 - a typed, auto-reloading settings facade for the `RN_FORGE_DJANGO` Django
   setting
-- an installable auth app with basic, JWT, and SAML login flows plus DRF
-  authentication/ permission classes
+- an installable auth app: the `/auth` routes over `rn-forge-auth`, sessions,
+  and DRF authentication and permission classes
 - DRF base views and mixins: tabular export/import and batch create/delete
   (`transfer` extra), audit-field population, auth-aware permissions
 - Excel-to-fixture generation for Django `loaddata`

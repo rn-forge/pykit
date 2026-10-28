@@ -26,12 +26,7 @@ transfer = [
 fixtures = [
   "rn-forge-data[pandas]>=0.1.1,<0.2",
 ]
-jwt = [
-  "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
-]
-# JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
-# simplejwt against a local User. The authenticator itself is
+# JWKS bearer auth for externally issued tokens. The authenticator itself is
 # `rn_forge.auth.oidc`.
 oidc = [
   "djangorestframework>=3.17.1",
@@ -50,7 +45,6 @@ openapi = [
 ]
 saml = [
   "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
   "python3-saml>=1.16.0",
 ]
 # `rn_forge.django.security` only, for the OWASP header preset
@@ -70,7 +64,6 @@ all = [
   "django-cors-headers>=4.9.0",
   "django-import-export>=4.4.1",
   "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
   "python3-saml>=1.16.0",
@@ -111,11 +104,9 @@ modules = ["rn_forge.django", "rn_forge.django.models"]
 drf = ["rn_forge.django.drf", "rn_forge.django.drf.views", "rn_forge.django.auth.drf"]
 fixtures = ["rn_forge.django.fixtures"]
 transfer = ["rn_forge.django.drf.transfer"]
-jwt = ["rn_forge.django.auth.jwt"]
 oidc = ["rn_forge.django.auth.drf.oidc"]
 celery = ["rn_forge.django.celery"]
 openapi = ["rn_forge.django.drf.openapi"]
-saml = ["rn_forge.django.auth.saml"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib -m 'not scaffold'"

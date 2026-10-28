@@ -85,6 +85,20 @@ Notable changes to `rn-forge-django`, newest first, in the
 - The `oidc` and `all` extras no longer name `rn-forge-commons[auth]`, which no
   longer exists.
 
+### Removed
+
+- **Breaking:** the locally issued JWT flows are gone, with the `jwt` extra and
+  `djangorestframework-simplejwt`: `rn_forge.django.auth.jwt`
+  (`JWTAuthentication`, `JWTCredentials`, `JWTUtils`, `LoginExchangeViewMixin`,
+  `JWTAuthenticationViewMixin`, `UserTokenView`) and the `user-token/` route of
+  `rn_forge.django.auth.urls`. Authenticate API clients with the OIDC bearer
+  classes in `rn_forge.django.auth.drf`.
+- **Breaking:** the `rn_forge.django.auth.basic` and `rn_forge.django.auth.saml`
+  views (`BasicLoginAPIView`, `BasicLoginViewMixin`, `SAMLLoginAPIView`,
+  `SAMLLoginViewMixin`, `SampleSAMLLoginAPIView`) are gone, along with the
+  `RN_FORGE_DJANGO["AUTH"]["SAML"]` setting and `AuthSAMLSettings`. A SAML IdP
+  federates through a broker that speaks OIDC.
+
 ## [0.5.1] - 2026-10-25
 
 ### Changed

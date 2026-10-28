@@ -7,10 +7,6 @@ settings module:
 RN_FORGE_DJANGO = {
     "AUTH": {
         "PROBLEM_TYPE_BASE": "https://errors.example.com/",  # required to mount the /auth routes
-        "SAML": {
-            "SETTINGS": {...},  # python3-saml settings dict
-            "RETURN_TO": "/",
-        },
     },
     "DRF": {
         "VIEWS": {
@@ -42,7 +38,7 @@ Read the resolved, typed settings at runtime via the module-level facade:
 from rn_forge.django.settings import rn_forge_django_settings
 
 max_rows = rn_forge_django_settings.drf.transfer.max_rows
-saml_settings = rn_forge_django_settings.auth.saml.settings
+problem_type_base = rn_forge_django_settings.auth.problem_type_base
 ```
 
 `rn_forge_django_settings` is a frozen dataclass tree rebuilt automatically

@@ -10,7 +10,6 @@ from rest_framework.parsers import JSONParser  # noqa: E402
 from rest_framework.test import APIRequestFactory  # noqa: E402
 
 from rn_forge.django.auth.credentials import BaseCredentials  # noqa: E402
-from rn_forge.django.auth.basic.views import BasicLoginViewMixin  # noqa: E402
 from rn_forge.django.auth.drf.authentication import (  # noqa: E402
     BaseLoginViewMixin,
 )
@@ -107,10 +106,6 @@ class _AuthView(BaseLoginViewMixin[_FakeUser]):
     def build_login_response(self, login_payload: LoginPayload) -> dict[str, object]:
         user = login_payload.user
         return {"authenticated": True, "email": user.email}
-
-
-class _BasicAuthView(BasicLoginViewMixin[_FakeUser]):
-    pass
 
 
 class TestBaseCredentials:
@@ -260,44 +255,3 @@ class TestBaseLoginViewMixin:
         assert response.status_code == 200
         assert response.data == {"authenticated": True, "email": "user@example.com"}
         assert calls == ["user@example.com"]
-
-
-class TestBasicLoginViewMixin:
-    def test_login_uses_django_authenticate(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        request = Request(
-            APIRequestFactory().post(
-                "/",
-                {"username": "user", "password": "secret"},
-                format="json",
-            ),
-            parsers=[JSONParser()],
-        )
-        calls: list[str] = []
-
-        monkeypatch.setattr(
-            django.contrib.auth,
-            "authenticate",
-            lambda _request, username, password: (
-                _FakeUser(email=f"{username}@example.com")
-                if password == "secret"
-                else None
-            ),
-        )
-        monkeypatch.setattr(
-            "rn_forge.django.auth.jwt.mixins.JWTUtils.build_login_exchange_token",
-            lambda _user, **_kwargs: "exchange-token",
-        )
-        monkeypatch.setattr(
-            django.contrib.auth,
-            "login",
-            lambda _request, user: calls.append(user.email),
-        )
-
-        response = _BasicAuthView().login(request)
-
-        assert response.status_code == 200
-        assert response.data == {"exchange_token": "exchange-token"}
-        assert calls == []
