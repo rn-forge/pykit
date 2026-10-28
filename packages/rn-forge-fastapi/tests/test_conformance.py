@@ -14,7 +14,7 @@ the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -27,7 +27,11 @@ from pydantic import ConfigDict, Field, field_validator
 from rn_forge.fastapi import (
     AppConfig,
     CorsPolicy,
+    CsrfProtection,
     FastApiApp,
+    InMemoryCsrfStore,
+    SessionMiddleware,
+    Sessions,
     bearer_auth,
     conditional_get,
     deprecated,
@@ -56,11 +60,18 @@ from rn_forge.fastapi.transfer import (
     tabular_export,
     tabular_format,
 )
-from rn_forge.auth import Principal, Requirement
+from rn_forge.auth import (
+    AuthorizationContext,
+    InMemoryReplayStore,
+    InMemorySessionStore,
+    Principal,
+    Requirement,
+)
 from rn_forge.web import (
     Operation,
     ProblemDetail,
     API_CATALOG_PATH,
+    PROBLEM_MEDIA_TYPE,
     check_cursor_order,
     format_order_by,
     TabularFormat,
@@ -74,9 +85,12 @@ from rn_forge.web import (
     EntityVersionETagCodec,
     InMemoryAsyncIdempotencyStore,
     ServiceUnavailable,
+    SessionRequired,
     TooManyRequests,
     check_precondition,
+    default_registry,
     encode_cursor,
+    render_problem,
     require_live,
     run_idempotent_async,
 )
@@ -96,7 +110,7 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
-PROVIDES: frozenset[ConformanceCapability] = frozenset()
+PROVIDES: frozenset[ConformanceCapability] = frozenset({"session-routes", "csrf"})
 """The optional capabilities this stack's fixture serves. Add one when the
 binding that provides it lands; a case needing a capability not listed here is
 not run, and every other case still is."""
@@ -367,6 +381,24 @@ class NoteBatchStore:
 
 
 EXPORT_CAP = 1
+
+
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
+
+
+def session_sessions() -> Sessions:
+    """The session middleware's stores; the fixture has no login, so they stay empty."""
+    return Sessions(
+        store=InMemorySessionStore(),
+        contexts=_Contexts(),
+        replay=InMemoryReplayStore(),
+        csrf=CsrfProtection(store=InMemoryCsrfStore(), problem_type_base=""),
+        idle_timeout=timedelta(minutes=30),
+        absolute_timeout=timedelta(hours=12),
+        debug=True,
+    )
 
 
 def build_app(*, failing: str | None) -> FastAPI:
@@ -767,6 +799,27 @@ def build_app(*, failing: str | None) -> FastAPI:
             store=lambda: NoteBatchStore(notes),
         )
     )
+
+    # The fixture has no login route; its session-only path stands in for the
+    # login path, which the middleware checks even with no cookie.
+    app.add_middleware(
+        SessionMiddleware,
+        sessions=session_sessions(),
+        login_path="/conformance/session",
+    )
+
+    @app.api_route("/conformance/session", methods=["GET", "POST"])
+    async def session_only(request: Request):
+        """A session-only route: anonymous is 401 with no challenge, and the session middleware guards the unsafe methods."""
+        rendered = render_problem(
+            default_registry(), SessionRequired("no session"), instance=request.url.path
+        )
+        return JSONResponse(
+            rendered.body,
+            status_code=rendered.status,
+            media_type=PROBLEM_MEDIA_TYPE,
+            headers=dict(rendered.headers),
+        )
 
     return app
 

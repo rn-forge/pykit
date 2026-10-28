@@ -32,7 +32,7 @@ oidc = [
   "rn-forge-auth[oidc]>=0.1.0,<0.2",
 ]
 # Redis-backed login sessions and transactions for `rn_forge.fastapi.auth`:
-# `rn_forge.auth.redis`.
+# `rn_forge.auth.redis`, and the CSRF token store `rn_forge.fastapi.auth.redis`.
 redis = [
   "rn-forge-auth[redis]>=0.1.0,<0.2",
 ]
@@ -68,7 +68,7 @@ modules = ["rn_forge.fastapi"]
 
 [tool.workspace-ci.smoke.extras]
 oidc = ["rn_forge.auth.oidc"]
-redis = ["rn_forge.auth.redis"]
+redis = ["rn_forge.auth.redis", "rn_forge.fastapi.auth.redis"]
 transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]

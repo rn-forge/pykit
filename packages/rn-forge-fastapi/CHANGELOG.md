@@ -29,6 +29,27 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 - Outside `debug`, `auth_router` and `Sessions` refuse in-memory session,
   transaction and replay stores with a `RuntimeError`.
 - The `redis` extra names `rn-forge-auth[redis]`.
+- Synchronizer-token CSRF protection. `SessionMiddleware` checks an unsafe
+  request that carries the `__Host-session` cookie (live, anonymous or stale),
+  or goes to `/auth/login/password` (`login_path`), and never back-channel
+  logout; a cookie-less request to an application route is left alone: the `X-XSRF-TOKEN` header must equal, in
+  constant time, the token stored for the session, which the readable
+  `XSRF-TOKEN` cookie carries. The `Origin` (or `Referer` over HTTPS) must be
+  the request's own origin or one of `trusted_origins`, `Sec-Fetch-Site:
+  cross-site` is rejected, forwarded scheme and host count only from a
+  `trusted_proxies` peer, and a `Bearer` `Authorization` header skips the check.
+  A failure is the `403` `csrf-failed` problem. Tokens live in a `CsrfStore`
+  keyed by session ID: `InMemoryCsrfStore`, and `RedisCsrfStore` in
+  `rn_forge.fastapi.auth.redis` (the `redis` extra, not imported by the
+  facade). `GET /auth/session` always sets the cookie, starting a 10-minute
+  anonymous session behind `__Host-session` when there is no session, so
+  `/auth/login/password` is protected. Login replaces the session ID and the
+  token, logout starts a new anonymous session with a new token, and
+  `rotate_session` carries the token to the new ID. `AuthRoutesConfig` gains
+  `csrf`, `trusted_origins` and `trusted_proxies`, and `Sessions` takes a
+  `CsrfProtection`.
+- `AuthRoutesConfig` raises `ValueError` without a `problem_type_base`, and
+  outside `debug` an in-memory CSRF store is refused like the other stores.
 
 ### Changed
 

@@ -2,7 +2,11 @@
 
 Mount it with :func:`auth_router`::
 
+    app.add_middleware(SessionMiddleware, sessions=sessions_for(config))
     app.include_router(auth_router(config))
+
+:class:`~rn_forge.fastapi.auth.sessions.SessionMiddleware` resolves the session
+and runs the CSRF check; a router mounted without it is unprotected.
 
 The identity providers, account resolver, authorization context provider and
 stores are :mod:`rn_forge.auth` objects the application builds and passes in
@@ -45,6 +49,7 @@ from rn_forge.auth import (
     TransactionStore,
     validate_return_to,
 )
+from rn_forge.fastapi.auth.csrf import CsrfProtection, CsrfStore, InMemoryCsrfStore
 from rn_forge.fastapi.auth.sessions import (
     ActiveSession,
     Sessions,
@@ -95,15 +100,26 @@ class AuthRoutesConfig:
         backchannel: Back-channel logout handlers, by provider ID.
         sessions: Holds the login sessions.
         transactions: Holds logins between redirect and callback.
+        csrf: Holds each session's CSRF token and the anonymous sessions that
+            protect the login request.
+        trusted_origins: Origins, besides the request's own, that may send an
+            unsafe request.
+        trusted_proxies: Peer addresses or CIDR networks whose
+            ``X-Forwarded-Proto`` and ``X-Forwarded-Host`` are believed.
         replay: Holds replayed token IDs and revoked ``sid`` values.
         idle_timeout: How long a session may sit unused.
         absolute_timeout: How long a session lives whatever its use, and how
             long a revoked ``sid`` stays revoked.
         debug: Serves the ``development`` provider and accepts in-memory
-            stores. Otherwise an in-memory sessions, transactions or replay
-            store is refused.
+            stores. Otherwise an in-memory sessions, transactions, replay or
+            CSRF store is refused.
         clock: Returns the current time, aware.
-        problem_type_base: Prefix of the ``type`` URI of the problem responses.
+        problem_type_base: Prefix of the ``type`` URI of the problem responses;
+            required, so that ``csrf-failed`` and ``forbidden`` differ in
+            ``type``.
+
+    Raises:
+        ValueError: *problem_type_base* is empty.
     """
 
     providers: Mapping[str, IdentityProvider[LoginRequest]]
@@ -121,11 +137,21 @@ class AuthRoutesConfig:
     sessions: SessionStore = field(default_factory=InMemorySessionStore)
     transactions: TransactionStore = field(default_factory=InMemoryTransactionStore)
     replay: ReplayStore = field(default_factory=InMemoryReplayStore)
+    csrf: CsrfStore = field(default_factory=InMemoryCsrfStore)
+    trusted_origins: Sequence[str] = ()
+    trusted_proxies: Sequence[str] = ()
     idle_timeout: timedelta = timedelta(minutes=30)
     absolute_timeout: timedelta = timedelta(hours=12)
     debug: bool = False
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
     problem_type_base: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.problem_type_base:
+            raise ValueError(
+                "problem_type_base must be set: without it csrf-failed and "
+                "forbidden differ only in detail"
+            )
 
 
 @dataclass(frozen=True)
@@ -140,6 +166,7 @@ class _Started:
 
     return_to: str
     session_id: str
+    csrf_token: str
     info: SessionInfo
 
 
@@ -241,7 +268,15 @@ class _Views:
         return await self._session_response(request, started=started)
 
     async def session(self, request: Request) -> Response:
-        return await self._session_response(request)
+        response = await self._session_response(request)
+        _, active = await self._resolve(request)
+        token, anonymous_id = await run_in_threadpool(
+            self.sessions.ensure_csrf, self.sessions.session_id(request), active
+        )
+        if anonymous_id is not None:
+            self.sessions.set_anonymous_cookie(response, anonymous_id)
+        self.sessions.csrf.set_cookie(response, token)
+        return response
 
     async def logout(self, request: Request) -> Response:
         session_id, active = await self._resolve(request)
@@ -256,9 +291,8 @@ class _Views:
             if provider is not None
             else None
         )
-        await run_in_threadpool(self.sessions.end, session_id)
         response = _no_store(JSONResponse({"redirect": redirect}))
-        self.sessions.clear_cookie(response)
+        await self._end(response, session_id)
         return response
 
     async def logout_all(self, request: Request) -> Response:
@@ -268,10 +302,20 @@ class _Views:
         await run_in_threadpool(
             self._config.account_state.bump_session_version, active.info.account_id
         )
-        await run_in_threadpool(self.sessions.end, session_id)
         response = _no_store(JSONResponse({"redirect": None}))
-        self.sessions.clear_cookie(response)
+        await self._end(response, session_id)
         return response
+
+    async def _end(self, response: Response, session_id: str | None) -> None:
+        """End the session and hand the browser a fresh anonymous session and token."""
+
+        def end() -> tuple[str, str]:
+            self.sessions.end(session_id)
+            return self.sessions.start_anonymous()
+
+        anonymous_id, token = await run_in_threadpool(end)
+        self.sessions.set_anonymous_cookie(response, anonymous_id)
+        self.sessions.csrf.set_cookie(response, token)
 
     async def backchannel_logout(self, request: Request, provider_id: str) -> Response:
         from rn_forge.auth.oidc import TokenVerificationError  # needs the oidc extra
@@ -317,7 +361,7 @@ class _Views:
             self.sessions.session_id(request),
         )
         response = self._redirect(started.return_to)
-        self.sessions.set_cookie(response, started.session_id, started.info)
+        self._start_cookies(response, started)
         return response
 
     def _begin_and_complete(
@@ -366,8 +410,8 @@ class _Views:
             session_ref=identity.session_ref,
             id_token=identity.id_token,
         )
-        session_id = self.sessions.start(info, previous=previous_session_id)
-        return _Started(self._return_to(completed.return_to), session_id, info)
+        session_id, token = self.sessions.start(info, previous=previous_session_id)
+        return _Started(self._return_to(completed.return_to), session_id, token, info)
 
     def _return_to(self, return_to: str) -> str:
         try:
@@ -451,8 +495,12 @@ class _Views:
         body = SessionBody.build(active.info, active.context)
         response = _no_store(JSONResponse(body.to_json()))
         if started is not None:
-            self.sessions.set_cookie(response, started.session_id, started.info)
+            self._start_cookies(response, started)
         return response
+
+    def _start_cookies(self, response: Response, started: _Started) -> None:
+        self.sessions.set_cookie(response, started.session_id, started.info)
+        self.sessions.csrf.set_cookie(response, started.csrf_token)
 
     def _error_url(self, code: str) -> str:
         return f"{self._config.error_route}?{urlencode({'error': code})}"
@@ -506,6 +554,12 @@ def sessions_for(config: AuthRoutesConfig) -> Sessions:
         store=config.sessions,
         contexts=config.contexts,
         replay=config.replay,
+        csrf=CsrfProtection(
+            store=config.csrf,
+            problem_type_base=config.problem_type_base,
+            trusted_origins=config.trusted_origins,
+            trusted_proxies=config.trusted_proxies,
+        ),
         idle_timeout=config.idle_timeout,
         absolute_timeout=config.absolute_timeout,
         debug=config.debug,

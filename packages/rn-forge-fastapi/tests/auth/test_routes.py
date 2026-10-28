@@ -34,6 +34,7 @@ from rn_forge.fastapi import (
     SESSION_COOKIE,
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
+    InMemoryCsrfStore,
     SessionMiddleware,
     active_session,
     auth_router,
@@ -90,7 +91,28 @@ def _verify(username: str, password: str) -> str | None:
     return username if password == "correct" and username == "ada" else None
 
 
+class _Browser(TestClient):
+    """A test client that sends ``Origin`` and copies the ``XSRF-TOKEN`` cookie into the header."""
+
+    def request(self, method: str, url: Any, **kwargs: Any) -> Any:  # type: ignore[override]
+        if method.upper() not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+            headers = dict(kwargs.get("headers") or {})
+            headers.setdefault("Origin", BASE_URL)
+            if not any(name.lower() == "x-xsrf-token" for name in headers):
+                if not self.cookies.get("XSRF-TOKEN"):
+                    super().request("GET", "/auth/session")
+                token = self.cookies.get("XSRF-TOKEN")
+                if token:
+                    headers["X-XSRF-TOKEN"] = token
+            kwargs["headers"] = headers
+        return super().request(method, url, **kwargs)
+
+
 def _client(app: FastAPI) -> TestClient:
+    return _Browser(app, base_url=BASE_URL, follow_redirects=False)
+
+
+def _bare_client(app: FastAPI) -> TestClient:
     return TestClient(app, base_url=BASE_URL, follow_redirects=False)
 
 
@@ -146,6 +168,20 @@ class _SharedTransactions:
 
     def consume(self, transaction_id: str) -> LoginTransaction | None:
         return self.inner.consume(transaction_id)
+
+
+class _SharedCsrf:
+    def __init__(self, inner: InMemoryCsrfStore) -> None:
+        self.inner = inner
+
+    def save(self, key: str, token: str, *, ttl: timedelta) -> None:
+        self.inner.save(key, token, ttl=ttl)
+
+    def get(self, key: str) -> str | None:
+        return self.inner.get(key)
+
+    def delete(self, key: str) -> None:
+        self.inner.delete(key)
 
 
 class _Clock:
@@ -261,6 +297,7 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
                 )
             },
             replay=_SharedReplay(replay),
+            csrf=_SharedCsrf(InMemoryCsrfStore(**({"clock": now} if now else {}))),
             sessions=_SharedSessions(sessions),
             transactions=_SharedTransactions(
                 overrides.pop("transactions", None) or InMemoryTransactionStore()
@@ -683,12 +720,13 @@ class TestSessionAndLogout:
     def test_logout_ends_the_session(self, mount: Callable[..., _World]) -> None:
         world = mount()
         world.password_login()
+        session_id = _session_id(world)
 
         response = world.client.post("/auth/logout")
 
         assert response.status_code == 200
         assert response.json() == {"redirect": None}
-        assert _set_cookies(response)[SESSION_COOKIE]["max-age"] == "0"
+        assert world.config.sessions.get(session_id) is None
         assert world.client.get("/auth/session").status_code == 401
 
     def test_logout_without_a_session_is_401(
@@ -1237,35 +1275,49 @@ class TestInMemoryStoresOutsideDebug:
             contexts=contexts,
             account_state=_State(contexts),
             **{
+                "problem_type_base": TYPE_BASE,
                 "sessions": _SharedSessions(InMemorySessionStore()),
                 "transactions": _SharedTransactions(InMemoryTransactionStore()),
                 "replay": _SharedReplay(InMemoryReplayStore()),
+                "csrf": _SharedCsrf(InMemoryCsrfStore()),
             }
             | overrides,
         )
 
     @pytest.mark.parametrize(
-        ("store", "name"),
+        ("store", "name", "label"),
         [
-            (InMemorySessionStore, "sessions"),
-            (InMemoryTransactionStore, "transactions"),
-            (InMemoryReplayStore, "replay"),
+            (InMemorySessionStore, "sessions", "sessions"),
+            (InMemoryTransactionStore, "transactions", "transactions"),
+            (InMemoryReplayStore, "replay", "replay"),
+            (InMemoryCsrfStore, "csrf", "CSRF"),
         ],
     )
     def test_the_router_refuses_an_in_memory_store(
-        self, store: Callable[[], Any], name: str
+        self, store: Callable[[], Any], name: str, label: str
     ) -> None:
         config = self._config(**{name: store()})
 
-        with pytest.raises(RuntimeError, match=f"The {name} store"):
+        with pytest.raises(RuntimeError, match=f"The {label} store"):
             auth_router(config)
 
-    @pytest.mark.parametrize("name", ["sessions", "replay"])
-    def test_the_middleware_sessions_refuse_an_in_memory_store(self, name: str) -> None:
-        stores = {"sessions": InMemorySessionStore(), "replay": InMemoryReplayStore()}
+    @pytest.mark.parametrize(
+        ("store", "name", "label"),
+        [
+            (InMemorySessionStore, "sessions", "sessions"),
+            (InMemoryReplayStore, "replay", "replay"),
+            (InMemoryCsrfStore, "csrf", "CSRF"),
+        ],
+    )
+    def test_the_middleware_sessions_refuse_an_in_memory_store(
+        self, store: Callable[[], Any], name: str, label: str
+    ) -> None:
+        with pytest.raises(RuntimeError, match=f"The {label} store"):
+            sessions_for(self._config(**{name: store()}))
 
-        with pytest.raises(RuntimeError, match=f"The {name} store"):
-            sessions_for(self._config(**{name: stores[name]}))
+    def test_mounting_without_a_problem_type_base_fails(self) -> None:
+        with pytest.raises(ValueError, match="problem_type_base"):
+            self._config(problem_type_base="")
 
     def test_stores_shared_between_processes_are_accepted(self) -> None:
         auth_router(self._config())
@@ -1276,8 +1328,438 @@ class TestInMemoryStoresOutsideDebug:
             sessions=InMemorySessionStore(),
             transactions=InMemoryTransactionStore(),
             replay=InMemoryReplayStore(),
+            csrf=InMemoryCsrfStore(),
             debug=True,
         )
 
         auth_router(config)
         sessions_for(config)
+
+
+class TestCsrf:
+    """The synchronizer token, driven by a client that does not add the header itself."""
+
+    @staticmethod
+    def _bare(world: _World) -> TestClient:
+        client = _bare_client(world.app)
+        world.client = client
+        return client
+
+    @staticmethod
+    def _token(client: TestClient) -> str:
+        """Fetch the CSRF cookie from ``/auth/session``, as the SPA does."""
+        response = client.get("/auth/session")
+        assert response.status_code == 401
+        return client.cookies["XSRF-TOKEN"]
+
+    @staticmethod
+    def _login(client: TestClient, token: str | None, **headers: str) -> Any:
+        extra = {"X-XSRF-TOKEN": token} if token else {}
+        return client.post(
+            "/auth/login/password",
+            json={"username": "ada", "password": "correct"},
+            headers={"Origin": BASE_URL, **extra, **headers},
+        )
+
+    def test_session_always_sets_a_script_readable_csrf_cookie(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        response = client.get("/auth/session")
+
+        cookie = _set_cookies(response)["XSRF-TOKEN"]
+        assert cookie.value
+        assert cookie["httponly"] == ""
+        assert cookie["secure"] is True
+        assert cookie["samesite"].lower() == "lax"
+        assert cookie["path"] == "/"
+
+    def test_an_anonymous_session_holds_the_token_for_ten_minutes(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+
+        response = client.get("/auth/session")
+
+        session = _set_cookies(response)[SESSION_COOKIE]
+        assert session.value.startswith("anon.")
+        assert session["max-age"] == "600"
+        assert session["httponly"] is True
+        assert world.config.sessions.get(session.value) is None
+        assert world.config.csrf.get(session.value) == client.cookies["XSRF-TOKEN"]
+
+    def test_session_keeps_the_token_while_the_session_is_anonymous(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+        token = self._token(client)
+
+        assert self._token(client) == token
+
+    def test_login_is_protected_before_sign_in(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+        token = self._token(client)
+
+        missing = self._login(client, None)
+        wrong = self._login(client, "x" * 43)
+        ok = self._login(client, token)
+
+        assert (missing.status_code, wrong.status_code) == (403, 403)
+        assert ok.status_code == 200
+
+    def test_a_cookie_less_unsafe_request_to_an_app_route_is_not_checked(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        assert client.post("/rotate").status_code == 200
+
+    def test_an_unsafe_request_with_a_session_cookie_and_no_token_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        stale = client.post("/rotate", cookies={SESSION_COOKIE: "unknown-id"})
+        anonymous = client.post("/rotate", cookies={SESSION_COOKIE: "anon.unknown"})
+
+        assert (stale.status_code, anonymous.status_code) == (403, 403)
+
+    def test_password_login_with_no_cookie_and_no_token_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        response = client.post(
+            "/auth/login/password",
+            json={"username": "ada", "password": "correct"},
+            headers={"Origin": BASE_URL},
+        )
+
+        assert response.status_code == 403
+
+    def test_a_request_with_no_anonymous_session_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        response = self._login(client, "x" * 43)
+
+        assert response.status_code == 403
+
+    def test_an_expired_anonymous_session_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        client = self._bare(world)
+        token = self._token(client)
+        clock.advance(minutes=11)
+
+        response = self._login(client, token)
+
+        assert response.status_code == 403
+        # The SPA refetches the session, which starts a new anonymous one.
+        client.get("/auth/session")
+        assert self._login(client, client.cookies["XSRF-TOKEN"]).status_code == 200
+
+    def test_a_rejection_is_the_csrf_failed_problem(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        response = self._login(client, None)
+
+        body = response.json()
+        assert response.status_code == 403
+        assert response.headers["content-type"] == "application/problem+json"
+        assert body["type"] == f"{TYPE_BASE}csrf-failed"
+        assert body["detail"] == "CSRF verification failed."
+        assert "www-authenticate" not in response.headers
+
+    def test_login_replaces_the_session_and_the_token(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        token = self._token(client)
+        anonymous = client.cookies[SESSION_COOKIE]
+
+        response = self._login(client, token)
+
+        cookies = _set_cookies(response)
+        assert cookies["XSRF-TOKEN"].value != token
+        assert cookies[SESSION_COOKIE].value != anonymous
+        assert world.config.csrf.get(anonymous) is None
+        assert world.config.csrf.get(cookies[SESSION_COOKIE].value) == (
+            cookies["XSRF-TOKEN"].value
+        )
+        # The anonymous pair no longer protects anything.
+        assert (
+            client.post(
+                "/auth/logout",
+                headers={"Origin": BASE_URL, "X-XSRF-TOKEN": token},
+            ).status_code
+            == 403
+        )
+
+    def test_an_oidc_login_replaces_the_token(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        token = self._token(client)
+
+        response = world.sign_in_with_idp()
+
+        assert _set_cookies(response)["XSRF-TOKEN"].value != token
+        assert client.get("/auth/session").status_code == 200
+
+    def test_logout_needs_the_token_and_rotates_it(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        self._login(client, self._token(client))
+        token = client.cookies["XSRF-TOKEN"]
+        session_id = client.cookies[SESSION_COOKIE]
+        origin = {"Origin": BASE_URL}
+
+        assert client.post("/auth/logout", headers=origin).status_code == 403
+        response = client.post(
+            "/auth/logout", headers={**origin, "X-XSRF-TOKEN": token}
+        )
+
+        cookies = _set_cookies(response)
+        assert response.status_code == 200
+        assert cookies["XSRF-TOKEN"].value != token
+        assert world.config.csrf.get(session_id) is None
+        # The fresh anonymous session protects the next login.
+        assert self._login(client, cookies["XSRF-TOKEN"].value).status_code == 200
+
+    def test_logout_all_needs_the_token(self, mount: Callable[..., _World]) -> None:
+        client = self._bare(mount())
+        self._login(client, self._token(client))
+
+        response = client.post("/auth/logout/all", headers={"Origin": BASE_URL})
+
+        assert response.status_code == 403
+
+    def test_session_mints_a_token_for_a_session_that_has_none(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        self._login(client, self._token(client))
+        world.config.csrf.delete(client.cookies[SESSION_COOKIE])
+
+        response = client.get("/auth/session")
+
+        assert response.status_code == 200
+        token = _set_cookies(response)["XSRF-TOKEN"].value
+        assert world.config.csrf.get(client.cookies[SESSION_COOKIE]) == token
+
+    def test_a_token_pair_from_another_browser_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        victim = self._bare(world)
+        self._login(victim, self._token(victim))
+        attacker = _bare_client(world.app)
+        attacker_token = self._token(attacker)
+        origin = {"Origin": BASE_URL}
+
+        replayed = victim.post(
+            "/auth/logout",
+            headers={**origin, "X-XSRF-TOKEN": attacker_token},
+            cookies={"XSRF-TOKEN": attacker_token},
+        )
+
+        assert replayed.status_code == 403
+        assert replayed.json()["type"] == f"{TYPE_BASE}csrf-failed"
+        assert victim.get("/auth/session").status_code == 200
+
+    def test_the_apps_own_unsafe_routes_are_protected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+        self._login(client, self._token(client))
+        token = client.cookies["XSRF-TOKEN"]
+
+        assert client.post("/rotate", headers={"Origin": BASE_URL}).status_code == 403
+        ok = client.post("/rotate", headers={"Origin": BASE_URL, "X-XSRF-TOKEN": token})
+        assert ok.status_code == 200
+
+    def test_rotate_session_carries_the_token(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        self._login(client, self._token(client))
+        token = client.cookies["XSRF-TOKEN"]
+        old = client.cookies[SESSION_COOKIE]
+
+        client.post("/rotate", headers={"Origin": BASE_URL, "X-XSRF-TOKEN": token})
+
+        new = client.cookies[SESSION_COOKIE]
+        assert new != old
+        assert world.config.csrf.get(old) is None
+        assert world.config.csrf.get(new) == token
+        assert (
+            client.post(
+                "/rotate", headers={"Origin": BASE_URL, "X-XSRF-TOKEN": token}
+            ).status_code
+            == 200
+        )
+
+    def test_an_ended_session_deletes_its_token(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        client = self._bare(world)
+        self._login(client, self._token(client))
+        session_id = client.cookies[SESSION_COOKIE]
+        world.contexts.inactive.add("acct-ada")
+
+        assert client.get("/touch").status_code == 200
+        assert world.config.sessions.get(session_id) is None
+        assert world.config.csrf.get(session_id) is None
+
+    def test_an_untrusted_origin_is_rejected(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+        token = self._token(client)
+
+        response = self._login(client, token, Origin="https://evil.example")
+
+        assert response.status_code == 403
+
+    def test_a_null_origin_is_rejected(self, mount: Callable[..., _World]) -> None:
+        client = self._bare(mount())
+
+        assert (
+            self._login(client, self._token(client), Origin="null").status_code == 403
+        )
+
+    def test_a_trusted_origin_passes(self, mount: Callable[..., _World]) -> None:
+        client = self._bare(mount(trusted_origins=["https://app.example"]))
+        token = self._token(client)
+
+        response = self._login(client, token, Origin="https://app.example")
+
+        assert response.status_code == 200
+
+    def test_a_missing_origin_needs_a_trusted_referer_over_https(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+        token = self._token(client)
+        body = {"username": "ada", "password": "correct"}
+        headers = {"X-XSRF-TOKEN": token}
+
+        none = client.post("/auth/login/password", json=body, headers=headers)
+        evil = client.post(
+            "/auth/login/password",
+            json=body,
+            headers={**headers, "Referer": "https://evil.example/page"},
+        )
+        own = client.post(
+            "/auth/login/password",
+            json=body,
+            headers={**headers, "Referer": f"{BASE_URL}/page"},
+        )
+
+        assert (none.status_code, evil.status_code) == (403, 403)
+        assert own.status_code == 200
+
+    def test_cross_site_fetch_metadata_is_rejected_even_from_a_trusted_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount(trusted_origins=["https://app.example"]))
+        token = self._token(client)
+
+        cross = self._login(
+            client,
+            token,
+            Origin="https://app.example",
+            **{"Sec-Fetch-Site": "cross-site"},
+        )
+        same = self._login(client, token, **{"Sec-Fetch-Site": "same-origin"})
+
+        assert cross.status_code == 403
+        assert same.status_code == 200
+
+    def _forwarded(self, client: TestClient, token: str) -> Any:
+        return self._login(
+            client,
+            token,
+            Origin="https://app.example",
+            **{"X-Forwarded-Host": "app.example", "X-Forwarded-Proto": "https"},
+        )
+
+    def test_forged_forwarded_headers_do_not_vouch_for_an_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        assert self._forwarded(client, self._token(client)).status_code == 403
+
+    def test_a_trusted_proxy_vouches_for_the_forwarded_origin(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        trusted = self._behind_proxy(mount, "203.0.113.0/24")
+        token = self._token(trusted)
+
+        assert self._forwarded(trusted, token).status_code == 200
+
+    def test_a_proxy_that_is_not_trusted_does_not_vouch(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        other = self._behind_proxy(mount, "198.51.100.0/24")
+
+        assert self._forwarded(other, self._token(other)).status_code == 403
+
+    @staticmethod
+    def _behind_proxy(mount: Callable[..., _World], network: str) -> TestClient:
+        world = mount(trusted_proxies=[network])
+        return TestClient(
+            world.app,
+            base_url=BASE_URL,
+            follow_redirects=False,
+            client=("203.0.113.9", 4000),
+        )
+
+    def test_back_channel_logout_is_exempt(self, mount: Callable[..., _World]) -> None:
+        world = mount()
+        client = self._bare(world)
+
+        response = client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sid="sid-x")},
+        )
+
+        assert response.status_code == 200
+
+    def test_a_request_with_a_bearer_authorization_header_is_exempt(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        client = self._bare(mount())
+
+        cookies = {SESSION_COOKIE: "unknown-id"}
+        bearer = client.post(
+            "/rotate", headers={"Authorization": "Bearer abc"}, cookies=cookies
+        )
+        basic = client.post(
+            "/rotate", headers={"Authorization": "Basic YTpi"}, cookies=cookies
+        )
+        none = client.post("/rotate", cookies=cookies)
+
+        assert bearer.status_code == 200
+        assert (basic.status_code, none.status_code) == (403, 403)
+
+    def test_safe_methods_are_not_checked(self, mount: Callable[..., _World]) -> None:
+        assert self._bare(mount()).get("/touch").status_code == 200
