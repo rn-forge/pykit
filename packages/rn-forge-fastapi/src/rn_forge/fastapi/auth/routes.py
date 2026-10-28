@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qsl, urlencode
@@ -45,7 +45,12 @@ from rn_forge.auth import (
     TransactionStore,
     validate_return_to,
 )
-from rn_forge.fastapi.auth.sessions import Sessions
+from rn_forge.fastapi.auth.sessions import (
+    ActiveSession,
+    Sessions,
+    refuse_in_memory,
+    request_session,
+)
 from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     ProblemType,
@@ -57,7 +62,7 @@ from rn_forge.web import (
 if TYPE_CHECKING:
     from rn_forge.auth.oidc import BackchannelLogout
 
-__all__ = ["TRANSACTION_COOKIE", "AuthRoutesConfig", "auth_router"]
+__all__ = ["TRANSACTION_COOKIE", "AuthRoutesConfig", "auth_router", "sessions_for"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,7 +99,10 @@ class AuthRoutesConfig:
         idle_timeout: How long a session may sit unused.
         absolute_timeout: How long a session lives whatever its use, and how
             long a revoked ``sid`` stays revoked.
-        debug: Serves the ``development`` provider.
+        debug: Serves the ``development`` provider and accepts in-memory
+            stores. Otherwise an in-memory sessions, transactions or replay
+            store is refused.
+        clock: Returns the current time, aware.
         problem_type_base: Prefix of the ``type`` URI of the problem responses.
     """
 
@@ -116,6 +124,7 @@ class AuthRoutesConfig:
     idle_timeout: timedelta = timedelta(minutes=30)
     absolute_timeout: timedelta = timedelta(hours=12)
     debug: bool = False
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC)
     problem_type_base: str = ""
 
 
@@ -138,12 +147,9 @@ class _Views:
     def __init__(self, config: AuthRoutesConfig) -> None:
         self._config = config
         self._registry = default_registry(type_base=config.problem_type_base)
-        self.sessions = Sessions(
-            store=config.sessions,
-            contexts=config.contexts,
-            idle_timeout=config.idle_timeout,
-            absolute_timeout=config.absolute_timeout,
-        )
+        if not config.debug:
+            refuse_in_memory(transaction_store=config.transactions)
+        self.sessions = sessions_for(config)
         self._flow = LoginFlow[LoginRequest](
             config.providers,
             config.transactions,
@@ -238,8 +244,7 @@ class _Views:
         return await self._session_response(request)
 
     async def logout(self, request: Request) -> Response:
-        session_id = self.sessions.session_id(request)
-        active = await run_in_threadpool(self.sessions.read, session_id)
+        session_id, active = await self._resolve(request)
         if active is None:
             return self._unauthorized(request)
         info = active.info
@@ -257,8 +262,7 @@ class _Views:
         return response
 
     async def logout_all(self, request: Request) -> Response:
-        session_id = self.sessions.session_id(request)
-        active = await run_in_threadpool(self.sessions.read, session_id)
+        session_id, active = await self._resolve(request)
         if active is None:
             return self._unauthorized(request)
         await run_in_threadpool(
@@ -418,16 +422,30 @@ class _Views:
 
     # Responses --------------------------------------------------------------
 
+    async def _resolve(
+        self, request: Request
+    ) -> tuple[str | None, ActiveSession | None]:
+        """The request's session: the middleware's, else a read that does not extend it."""
+        resolved = request_session(request)
+        if resolved is not None:
+            return resolved
+        session_id = self.sessions.session_id(request)
+        return session_id, await run_in_threadpool(
+            self.sessions.read, session_id, touch=False
+        )
+
     async def _session_response(
         self,
         request: Request,
         *,
         started: _Started | None = None,
     ) -> Response:
-        session_id = (
-            started.session_id if started else self.sessions.session_id(request)
-        )
-        active = await run_in_threadpool(self.sessions.read, session_id)
+        if started is not None:
+            active = await run_in_threadpool(
+                self.sessions.read, started.session_id, touch=False
+            )
+        else:
+            _, active = await self._resolve(request)
         if active is None:
             return self._unauthorized(request)
         body = SessionBody.build(active.info, active.context)
@@ -473,6 +491,26 @@ class _Views:
             media_type=PROBLEM_MEDIA_TYPE,
             headers=dict(rendered.headers),
         )
+
+
+def sessions_for(config: AuthRoutesConfig) -> Sessions:
+    """A :class:`Sessions` with the stores and timeouts of *config*.
+
+    Pass it to :class:`~rn_forge.fastapi.auth.sessions.SessionMiddleware` so the
+    middleware and the routes of ``auth_router(config)`` agree.
+
+    Raises:
+        RuntimeError: ``config.debug`` is false and a store is held in memory.
+    """
+    return Sessions(
+        store=config.sessions,
+        contexts=config.contexts,
+        replay=config.replay,
+        idle_timeout=config.idle_timeout,
+        absolute_timeout=config.absolute_timeout,
+        debug=config.debug,
+        clock=config.clock,
+    )
 
 
 def _no_store[ResponseT: Response](response: ResponseT) -> ResponseT:

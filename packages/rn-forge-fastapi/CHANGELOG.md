@@ -16,6 +16,18 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
   login session in an `rn-forge-auth` `SessionStore` behind the `__Host-session`
   cookie. The stores' synchronous calls and the Authlib providers run in the
   thread pool.
+- `SessionMiddleware` resolves the login session once per request over a
+  `SessionStore`, extends the 30-minute idle expiry and refreshes the
+  `__Host-session` cookie on every request except `GET /auth/session`, and
+  clears a cookie that names no valid session. `Sessions.read` enforces the
+  12-hour absolute timeout and deletes a session whose version differs from
+  its account's, whose account is inactive or whose `session_ref` is revoked.
+  `active_session(request)` returns the resolved session, and
+  `await rotate_session(request)` gives it a new ID after a privilege change.
+  `sessions_for(config)` builds the `Sessions` the routes use; `AuthRoutesConfig`
+  gains `clock`.
+- Outside `debug`, `auth_router` and `Sessions` refuse in-memory session,
+  transaction and replay stores with a `RuntimeError`.
 - The `redis` extra names `rn-forge-auth[redis]`.
 
 ### Changed

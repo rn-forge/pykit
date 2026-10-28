@@ -6,11 +6,15 @@ from rn_forge.fastapi.auth import (
     TRANSACTION_COOKIE,
     ActiveSession,
     AuthRoutesConfig,
+    SessionMiddleware,
     Sessions,
+    active_session,
     auth_router,
     basic_auth,
     bearer_auth,
     requires,
+    rotate_session,
+    sessions_for,
 )
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.fastapi.dependencies import (
@@ -47,9 +51,11 @@ __all__ = [
     "CorsPolicy",
     "FastApiApp",
     "Log",
+    "SessionMiddleware",
     "Sessions",
     "SoftDeleteState",
     "SoftDeleteStore",
+    "active_session",
     "apply_cors",
     "auth_router",
     "basic_auth",
@@ -70,6 +76,8 @@ __all__ = [
     "require_idempotency_key",
     "require_if_match",
     "requires",
+    "rotate_session",
+    "sessions_for",
     "show_deleted_param",
     "soft_delete_router",
 ]

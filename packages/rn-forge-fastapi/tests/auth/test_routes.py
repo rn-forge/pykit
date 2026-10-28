@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import threading
+from datetime import UTC, datetime, timedelta
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Iterator
@@ -11,9 +13,11 @@ from typing import Any
 from urllib.parse import parse_qsl, urlsplit
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 from rn_forge.auth import (
+    LoginTransaction,
+    SessionInfo,
     AccountRejected,
     AuthorizationContext,
     DevelopmentAccount,
@@ -30,7 +34,11 @@ from rn_forge.fastapi import (
     SESSION_COOKIE,
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
+    SessionMiddleware,
+    active_session,
     auth_router,
+    rotate_session,
+    sessions_for,
 )
 
 pytestmark = pytest.mark.unit
@@ -93,6 +101,64 @@ def _set_cookies(response: Any) -> dict[str, Any]:
     return dict(cookies)
 
 
+class _SharedSessions:
+    """Stands in for a store shared between processes: it wraps the in-memory one."""
+
+    def __init__(self, inner: InMemorySessionStore) -> None:
+        self.inner = inner
+
+    def create(self, session: SessionInfo, *, idle_ttl: timedelta) -> str:
+        return self.inner.create(session, idle_ttl=idle_ttl)
+
+    def get(self, session_id: str) -> SessionInfo | None:
+        return self.inner.get(session_id)
+
+    def touch(self, session_id: str, *, idle_ttl: timedelta) -> bool:
+        return self.inner.touch(session_id, idle_ttl=idle_ttl)
+
+    def delete(self, session_id: str) -> None:
+        self.inner.delete(session_id)
+
+    def rotate(self, session_id: str, *, idle_ttl: timedelta) -> str | None:
+        return self.inner.rotate(session_id, idle_ttl=idle_ttl)
+
+
+class _SharedReplay:
+    def __init__(self, inner: InMemoryReplayStore) -> None:
+        self.inner = inner
+
+    def record_once(self, key: str, *, ttl: timedelta) -> bool:
+        return self.inner.record_once(key, ttl=ttl)
+
+    def revoke_sid(self, issuer: str, sid: str, *, ttl: timedelta) -> None:
+        self.inner.revoke_sid(issuer, sid, ttl=ttl)
+
+    def is_sid_revoked(self, issuer: str, sid: str) -> bool:
+        return self.inner.is_sid_revoked(issuer, sid)
+
+
+class _SharedTransactions:
+    def __init__(self, inner: InMemoryTransactionStore) -> None:
+        self.inner = inner
+
+    def save(self, transaction: LoginTransaction, *, ttl: timedelta) -> None:
+        self.inner.save(transaction, ttl=ttl)
+
+    def consume(self, transaction_id: str) -> LoginTransaction | None:
+        return self.inner.consume(transaction_id)
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.moment = datetime(2026, 10, 28, 9, 0, tzinfo=UTC)
+
+    def advance(self, **kwargs: float) -> None:
+        self.moment += timedelta(**kwargs)
+
+    def now(self) -> datetime:
+        return self.moment
+
+
 class _World:
     """The mounted application: a client plus the fakes behind it."""
 
@@ -151,6 +217,7 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
         debug: bool = False,
         prefix: str = "/auth",
         rp_initiated_logout: bool = False,
+        clock: _Clock | None = None,
         **overrides: Any,
     ) -> _World:
         acme = OidcProvider(
@@ -171,6 +238,10 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
             )
         accounts = _Accounts()
         contexts = _Contexts()
+        now = clock.now if clock else None
+        sessions = overrides.pop("sessions", None) or InMemorySessionStore(
+            **({"clock": now} if now else {})
+        )
         replay = InMemoryReplayStore()
         state = _State(contexts)
         config = AuthRoutesConfig(
@@ -189,13 +260,40 @@ def mount(idp: FakeOidcProvider) -> Callable[..., _World]:
                     accounts,
                 )
             },
-            replay=replay,
+            replay=_SharedReplay(replay),
+            sessions=_SharedSessions(sessions),
+            transactions=_SharedTransactions(
+                overrides.pop("transactions", None) or InMemoryTransactionStore()
+            ),
             debug=debug,
             problem_type_base=TYPE_BASE,
+            **({"clock": now} if now else {}),
             **overrides,
         )
         app = FastAPI()
+        app.add_middleware(SessionMiddleware, sessions=sessions_for(config))
         app.include_router(auth_router(config, prefix=prefix))
+
+        @app.get("/touch")
+        async def touch() -> dict[str, str]:
+            return {}
+
+        @app.post("/rotate")
+        async def rotate(request: Request) -> dict[str, str]:
+            await rotate_session(request)
+            return {}
+
+        @app.get("/guarded")
+        async def guarded(request: Request) -> dict[str, str]:
+            if active_session(request) is None:
+                raise HTTPException(status_code=401)
+            return {}
+
+        @app.get("/whoami")
+        async def whoami(request: Request) -> dict[str, str | None]:
+            active = active_session(request)
+            return {"account": active.info.account_id if active else None}
+
         return _World(app, idp, config, contexts, state)
 
     return build
@@ -712,3 +810,474 @@ class TestBackchannelLogout:
         response = mount().client.post("/auth/backchannel-logout/other", data={})
 
         assert response.status_code == 404
+
+
+def _session_id(world: _World) -> str:
+    return world.client.cookies[SESSION_COOKIE]
+
+
+def _sid(world: _World) -> str:
+    info = world.config.sessions.get(_session_id(world))
+    assert info is not None
+    assert info.session_ref is not None
+    return info.session_ref
+
+
+def _other_browser(world: _World, session_id: str | None = None) -> TestClient:
+    other = _client(world.app)
+    other.cookies.set(
+        SESSION_COOKIE, session_id or _session_id(world), domain="testserver.local"
+    )
+    return other
+
+
+def _max_age(response: Any) -> int | None:
+    cookie = _set_cookies(response).get(SESSION_COOKIE)
+    return int(cookie["max-age"]) if cookie else None
+
+
+class TestSessionMiddleware:
+    def test_the_session_is_available_to_routes(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        assert world.client.get("/whoami").json() == {"account": None}
+
+        world.password_login()
+
+        assert world.client.get("/whoami").json() == {"account": "acct-ada"}
+
+    def test_a_normal_request_refreshes_the_cookie_max_age(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.password_login()
+
+        response = world.client.get("/touch")
+
+        assert _max_age(response) == 1800
+        cookie = _set_cookies(response)[SESSION_COOKIE]
+        assert cookie["httponly"] is True
+        assert cookie["secure"] is True
+        assert cookie["samesite"].lower() == "lax"
+        assert cookie["path"] == "/"
+
+    def test_get_session_leaves_the_cookie_alone(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.password_login()
+
+        assert SESSION_COOKIE not in _set_cookies(world.client.get("/auth/session"))
+
+    def test_a_cookie_naming_no_valid_session_is_cleared(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.client.cookies.set(SESSION_COOKIE, "stale", domain="testserver.local")
+
+        response = world.client.get("/touch")
+
+        assert _max_age(response) == 0
+
+    def test_a_request_without_a_cookie_sets_none(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        assert SESSION_COOKIE not in _set_cookies(mount().client.get("/touch"))
+
+
+class TestTimeouts:
+    def test_an_idle_session_expires_after_30_minutes(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        world.password_login()
+
+        clock.advance(minutes=29)
+        assert world.client.get("/auth/session").status_code == 200
+        clock.advance(minutes=2)
+
+        assert world.client.get("/auth/session").status_code == 401
+
+    def test_a_normal_request_slides_the_idle_expiry(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        world.password_login()
+
+        for _ in range(3):
+            clock.advance(minutes=20)
+            assert world.client.get("/touch").status_code == 200
+
+        assert world.client.get("/auth/session").status_code == 200
+        clock.advance(minutes=31)
+        assert world.client.get("/auth/session").status_code == 401
+
+    def test_get_session_does_not_extend_the_session(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        world.password_login()
+
+        clock.advance(minutes=20)
+        assert world.client.get("/auth/session").status_code == 200
+        clock.advance(minutes=15)
+
+        assert world.client.get("/auth/session").status_code == 401
+
+    def test_the_absolute_timeout_ends_an_active_session(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        world.password_login()
+
+        for _ in range(35):
+            clock.advance(minutes=20)
+            assert world.client.get("/touch").status_code == 200
+        assert world.client.get("/auth/session").json()["expiresAt"] == (
+            "2026-10-28T21:00:00Z"
+        )
+        # Twenty minutes remain; the cookie never outlives the session.
+        assert _max_age(world.client.get("/touch")) == 1200
+        clock.advance(minutes=21)
+
+        assert world.client.get("/auth/session").status_code == 401
+
+    def test_an_expired_session_is_deleted(self, mount: Callable[..., _World]) -> None:
+        clock = _Clock()
+        store = InMemorySessionStore(clock=clock.now)
+        world = mount(clock=clock, sessions=store)
+        world.password_login()
+        session_id = _session_id(world)
+
+        clock.advance(hours=13)
+        assert world.client.get("/auth/session").status_code == 401
+
+        assert store.get(session_id) is None
+
+    def test_the_timeouts_are_configurable(self, mount: Callable[..., _World]) -> None:
+        clock = _Clock()
+        world = mount(clock=clock, idle_timeout=timedelta(minutes=5))
+        world.password_login()
+
+        clock.advance(minutes=6)
+
+        assert world.client.get("/auth/session").status_code == 401
+
+
+class TestRotation:
+    def test_login_gives_a_new_id_and_the_old_one_is_unreadable(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        store = InMemorySessionStore()
+        world = mount(sessions=store)
+        world.password_login()
+        before = _session_id(world)
+        stale = _other_browser(world)
+
+        world.password_login()
+
+        assert _session_id(world) != before
+        assert store.get(before) is None
+        assert stale.get("/auth/session").status_code == 401
+
+    def test_rotate_session_changes_the_id_and_keeps_the_login(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        store = InMemorySessionStore()
+        world = mount(sessions=store)
+        world.password_login()
+        before = _session_id(world)
+        stale = _other_browser(world)
+
+        response = world.client.post("/rotate")
+
+        after = _session_id(world)
+        assert response.status_code == 200
+        assert after != before
+        assert _max_age(response) == 1800
+        assert store.get(before) is None
+        assert store.get(after) is not None
+        assert world.client.get("/auth/session").status_code == 200
+        assert stale.get("/auth/session").status_code == 401
+
+    def test_rotation_does_not_extend_the_absolute_timeout(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        clock = _Clock()
+        world = mount(clock=clock)
+        world.password_login()
+        expires = world.client.get("/auth/session").json()["expiresAt"]
+
+        clock.advance(minutes=20)
+        world.client.post("/rotate")
+
+        assert world.client.get("/auth/session").json()["expiresAt"] == expires
+
+    def test_rotating_without_a_session_changes_nothing(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        response = mount().client.post("/rotate")
+
+        assert response.status_code == 200
+        assert SESSION_COOKIE not in _set_cookies(response)
+
+
+class TestRevocation:
+    def test_a_version_mismatch_deletes_the_session_and_answers_401(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        store = InMemorySessionStore()
+        world = mount(sessions=store)
+        world.password_login()
+        session_id = _session_id(world)
+        world.state.bump_session_version("acct-ada")
+
+        response = world.client.get("/auth/session")
+
+        assert response.status_code == 401
+        assert store.get(session_id) is None
+
+    def test_a_disabled_account_deletes_the_session_and_answers_401(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        store = InMemorySessionStore()
+        world = mount(sessions=store)
+        world.password_login()
+        session_id = _session_id(world)
+        world.contexts.inactive.add("acct-ada")
+
+        assert world.client.get("/auth/session").status_code == 401
+        assert store.get(session_id) is None
+
+    def test_a_revoked_sid_deletes_the_session_and_answers_401(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        store = InMemorySessionStore()
+        world = mount(sessions=store)
+        world.sign_in_with_idp()
+        session_id = _session_id(world)
+        assert world.client.get("/auth/session").status_code == 200
+
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sid=_sid(world))},
+        )
+
+        assert world.client.get("/auth/session").status_code == 401
+        assert store.get(session_id) is None
+
+    def test_logout_ends_this_session_only(self, mount: Callable[..., _World]) -> None:
+        world = mount()
+        other = _client(world.app)
+        world.password_login()
+        world.password_login(other)
+
+        world.client.post("/auth/logout")
+
+        assert world.client.get("/auth/session").status_code == 401
+        assert other.get("/auth/session").status_code == 200
+
+    def test_logout_all_ends_every_session_of_the_account(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        other = _client(world.app)
+        world.password_login()
+        world.password_login(other)
+
+        world.client.post("/auth/logout/all")
+
+        assert other.get("/auth/session").status_code == 401
+
+    def test_a_sid_backchannel_logout_ends_that_session_only(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.sign_in_with_idp()
+        other = _client(world.app)
+        world.password_login(other)
+
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sid=_sid(world))},
+        )
+
+        assert world.client.get("/auth/session").status_code == 401
+        assert other.get("/auth/session").status_code == 200
+
+    def test_a_sub_backchannel_logout_ends_every_session_of_the_account(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.sign_in_with_idp()
+        second = _client(world.app)
+        start = second.get("/auth/login/acme", params={"return_to": "/orders"})
+        second.get(world.approve(start.headers["location"]))
+
+        world.client.post(
+            "/auth/backchannel-logout/acme",
+            data={"logout_token": world.idp.logout_token(sub="u1")},
+        )
+
+        assert world.client.get("/auth/session").status_code == 401
+        assert second.get("/auth/session").status_code == 401
+
+
+WORKERS = 4
+REQUESTS_PER_PHASE = 3
+
+
+def _race(world: _World, revoke: Callable[[], None]) -> tuple[int, int]:
+    """Hammer the session routes from threads while *revoke* runs.
+
+    The workers alternate ``GET /auth/session`` with a guarded request that
+    extends the session, so a request in flight at the revocation may write the session
+    back. A request that began after *revoke* returned must not succeed, and a
+    fresh request at the end must be refused. Returns the number of requests
+    seen before and after the revocation.
+    """
+    session_id = _session_id(world)
+    revoked = threading.Event()
+    stop = threading.Event()
+    barrier = threading.Barrier(WORKERS + 1)
+    lock = threading.Lock()
+    seen: list[tuple[bool, int]] = []
+
+    def worker() -> None:
+        client = _other_browser(world, session_id)
+        barrier.wait()
+        turn = 0
+        while not stop.is_set():
+            after = revoked.is_set()
+            status = client.get("/guarded" if turn % 2 else "/auth/session").status_code
+            with lock:
+                seen.append((after, status))
+            turn += 1
+
+    def wait_for(phase_after: bool) -> None:
+        while True:
+            with lock:
+                total = sum(1 for after, _ in seen if after is phase_after)
+            if total >= WORKERS * REQUESTS_PER_PHASE:
+                return
+            threading.Event().wait(0.001)
+
+    threads = [threading.Thread(target=worker) for _ in range(WORKERS)]
+    for thread in threads:
+        thread.start()
+    barrier.wait()
+    wait_for(False)
+    revoke()
+    revoked.set()
+    wait_for(True)
+    stop.set()
+    for thread in threads:
+        thread.join()
+    assert [status for after, status in seen if after and status == 200] == []
+    assert _other_browser(world, session_id).get("/auth/session").status_code == 401
+    return (
+        sum(1 for after, _ in seen if not after),
+        sum(1 for after, _ in seen if after),
+    )
+
+
+class TestRevocationRaces:
+    def test_no_request_succeeds_after_a_logout(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.password_login()
+
+        before, after = _race(world, lambda: world.client.post("/auth/logout"))
+
+        assert before
+        assert after
+
+    def test_no_request_succeeds_after_a_backchannel_logout(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.sign_in_with_idp()
+        token = world.idp.logout_token(sid=_sid(world))
+
+        def revoke() -> None:
+            response = _client(world.app).post(
+                "/auth/backchannel-logout/acme", data={"logout_token": token}
+            )
+            assert response.status_code == 200
+
+        before, after = _race(world, revoke)
+
+        assert before
+        assert after
+
+    def test_no_request_succeeds_after_an_account_is_disabled(
+        self, mount: Callable[..., _World]
+    ) -> None:
+        world = mount()
+        world.password_login()
+
+        before, after = _race(world, lambda: world.contexts.inactive.add("acct-ada"))
+
+        assert before
+        assert after
+
+
+class TestInMemoryStoresOutsideDebug:
+    def _config(self, **overrides: Any) -> AuthRoutesConfig:
+        contexts = _Contexts()
+        return AuthRoutesConfig(
+            providers={},
+            accounts=_Accounts(),
+            contexts=contexts,
+            account_state=_State(contexts),
+            **{
+                "sessions": _SharedSessions(InMemorySessionStore()),
+                "transactions": _SharedTransactions(InMemoryTransactionStore()),
+                "replay": _SharedReplay(InMemoryReplayStore()),
+            }
+            | overrides,
+        )
+
+    @pytest.mark.parametrize(
+        ("store", "name"),
+        [
+            (InMemorySessionStore, "sessions"),
+            (InMemoryTransactionStore, "transactions"),
+            (InMemoryReplayStore, "replay"),
+        ],
+    )
+    def test_the_router_refuses_an_in_memory_store(
+        self, store: Callable[[], Any], name: str
+    ) -> None:
+        config = self._config(**{name: store()})
+
+        with pytest.raises(RuntimeError, match=f"The {name} store"):
+            auth_router(config)
+
+    @pytest.mark.parametrize("name", ["sessions", "replay"])
+    def test_the_middleware_sessions_refuse_an_in_memory_store(self, name: str) -> None:
+        stores = {"sessions": InMemorySessionStore(), "replay": InMemoryReplayStore()}
+
+        with pytest.raises(RuntimeError, match=f"The {name} store"):
+            sessions_for(self._config(**{name: stores[name]}))
+
+    def test_stores_shared_between_processes_are_accepted(self) -> None:
+        auth_router(self._config())
+        sessions_for(self._config())
+
+    def test_debug_accepts_in_memory_stores(self) -> None:
+        config = self._config(
+            sessions=InMemorySessionStore(),
+            transactions=InMemoryTransactionStore(),
+            replay=InMemoryReplayStore(),
+            debug=True,
+        )
+
+        auth_router(config)
+        sessions_for(config)
