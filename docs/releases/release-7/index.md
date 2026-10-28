@@ -152,7 +152,7 @@ open stories need GitHub or the owner:
 
 - S20.3.3 and S20.5.4: the owner enables secret scanning, push protection and
   private vulnerability reporting.
-- S21.1.2: the owner adds the 18 pending publishers, shortly before S21.3.2's
+- S21.1.2: the owner adds the 20 pending publishers, shortly before S21.3.2's
   TestPyPI dry run, which needs the branch pushed.
 - S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
   commit.
