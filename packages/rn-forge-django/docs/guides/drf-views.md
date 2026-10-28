@@ -9,7 +9,7 @@ from rn_forge.django.drf.views import (
 )
 ```
 
-Auth-aware equivalents that additionally enforce `AuthorizationPermission` live
+Auth-aware equivalents that additionally enforce `PermissionKeyPermission` live
 in `rn_forge.django.auth.drf.views` (`AuthorizedModelViewSet`,
 `AuthorizedAPIView`) — see [Auth](auth.md).
 

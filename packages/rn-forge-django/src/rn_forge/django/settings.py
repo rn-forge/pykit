@@ -18,8 +18,6 @@ __all__ = [
     "CasingSettingsDict",
     "DRFSettings",
     "DRFSettingsDict",
-    "DRFViewsSettings",
-    "DRFViewsSettingsDict",
     "PaginationSettings",
     "PaginationSettingsDict",
     "RnforgeDjangoSettings",
@@ -41,12 +39,6 @@ _DEFAULT_CASING_ENABLED = True
 # ---------------------------------------------------------------------------
 # Public Settings Shape
 # ---------------------------------------------------------------------------
-
-
-class DRFViewsSettingsDict(TypedDict, total=False):
-    """Typed Django settings shape for ``RN_FORGE_DJANGO["DRF"]["VIEWS"]``."""
-
-    PERMISSION_ACTION_MAP: Mapping[str, str]
 
 
 class TransferSettingsDict(TypedDict, total=False):
@@ -72,7 +64,6 @@ class CasingSettingsDict(TypedDict, total=False):
 class DRFSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["DRF"]``."""
 
-    VIEWS: DRFViewsSettingsDict
     TRANSFER: TransferSettingsDict
     PAGINATION: PaginationSettingsDict
     CASING: CasingSettingsDict
@@ -94,15 +85,6 @@ class RnforgeDjangoSettingsDict(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Runtime Settings
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class DRFViewsSettings:
-    """Runtime settings for DRF view helpers."""
-
-    permission_action_map: Mapping[str, str] = field(
-        default_factory=lambda: cast(Mapping[str, str], {})
-    )
 
 
 @dataclass(frozen=True)
@@ -140,7 +122,6 @@ class CasingSettings:
 class DRFSettings:
     """Runtime settings for DRF integration helpers."""
 
-    views: DRFViewsSettings = field(default_factory=DRFViewsSettings)
     transfer: TransferSettings = field(default_factory=TransferSettings)
     pagination: PaginationSettings = field(default_factory=PaginationSettings)
     casing: CasingSettings = field(default_factory=CasingSettings)
@@ -180,7 +161,6 @@ def _get_mapping(data: Mapping[str, Any], path: str) -> Mapping[str, Any]:
 def _build_settings() -> RnforgeDjangoSettings:
     config = _settings_dict()
     auth_config = _get_mapping(config, "AUTH")
-    views_config = _get_mapping(config, "DRF.VIEWS")
     transfer_config = _get_mapping(config, "DRF.TRANSFER")
     pagination_config = _get_mapping(config, "DRF.PAGINATION")
     casing_config = _get_mapping(config, "DRF.CASING")
@@ -190,15 +170,6 @@ def _build_settings() -> RnforgeDjangoSettings:
             problem_type_base=str(auth_config.get("PROBLEM_TYPE_BASE", "")),
         ),
         drf=DRFSettings(
-            views=DRFViewsSettings(
-                permission_action_map=cast(
-                    Mapping[str, str],
-                    views_config.get(
-                        "PERMISSION_ACTION_MAP",
-                        {},
-                    ),
-                ),
-            ),
             transfer=TransferSettings(
                 max_rows=cast(
                     int | None,

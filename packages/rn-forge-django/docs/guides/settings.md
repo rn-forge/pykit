@@ -9,9 +9,6 @@ RN_FORGE_DJANGO = {
         "PROBLEM_TYPE_BASE": "https://errors.example.com/",  # required to mount the /auth routes
     },
     "DRF": {
-        "VIEWS": {
-            "PERMISSION_ACTION_MAP": {"list": "read"},
-        },
         "TRANSFER": {
             "MAX_ROWS": 10_000,  # rows per export, import or batch request; None = no cap
         },

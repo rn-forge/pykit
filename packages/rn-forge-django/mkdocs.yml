@@ -66,7 +66,6 @@ nav:
       - Urls and Views: reference/urls-and-views.md
       - Auth:
           - reference/auth/index.md
-          - Credentials and Payload: reference/auth/credentials.md
           - DRF: reference/auth/drf.md
           - Principal (bearer and basic): reference/auth/principal.md
           - OIDC (JWKS bearer): reference/auth/oidc.md

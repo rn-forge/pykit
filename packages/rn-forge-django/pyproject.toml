@@ -43,10 +43,6 @@ openapi = [
   "djangorestframework>=3.17.1",
   "drf-spectacular>=0.30.0",
 ]
-saml = [
-  "djangorestframework>=3.17.1",
-  "python3-saml>=1.16.0",
-]
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
 security = [
@@ -66,7 +62,6 @@ all = [
   "djangorestframework>=3.17.1",
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
-  "python3-saml>=1.16.0",
   "rn-forge-auth[oidc,redis]>=0.1.0,<0.2",
   "rn-forge-data[pandas]>=0.1.1,<0.2",
   "rn-forge-web[security]>=0.2.1,<0.3",

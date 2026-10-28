@@ -6,8 +6,7 @@ contracts, login flows and OIDC adapter) to Django and DRF. It serves a browser
 single-page application through a server-side session, and API clients through
 bearer tokens, with one account and one authorization model behind both.
 
-The app is installable (label `rn_forge_django_auth`). It also carries
-[legacy](#legacy-login-and-credential-code) credential and authorization code.
+The app is installable (label `rn_forge_django_auth`).
 
 ## Setup
 
@@ -441,7 +440,10 @@ class OrderViewSet(ResourcePolicyViewMixin, ModelViewSet):
 
 `rn_forge.django.auth.drf.views` ships ready-to-mount viewsets for the standard
 Django auth models, wired through `AuthorizedModelViewSet`: `PermissionViewSet`,
-`GroupViewSet`, `UserViewSet`. Mount them, or
+`GroupViewSet`, `UserViewSet`. `AuthorizedModelViewSet` and `AuthorizedAPIView`
+set `permission_classes = [PermissionKeyPermission]`, so each viewset requires
+its `permission_key` (`rn_forge.auth.permission`, `rn_forge.auth.group`,
+`rn_forge.auth.user`) combined with the action. Mount them, or
 `rn_forge.django.auth.urls.urlpatterns`, which already registers them, under
 your API root.
 
@@ -513,52 +515,10 @@ Configured on `AuthRoutesConfig` unless noted:
 `/auth/login/development` and the development provider's listing exist only
 while `settings.DEBUG` is true.
 
-## Legacy login and credential code
+## SAML identity providers
 
-The code below predates the surface above. It is kept for existing applications
-and is removed by the next breaking change; new applications should not adopt
-it.
-
-### Credential permissions
-
-```python
-REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rn_forge.django.auth.drf.permissions.AuthorizationPermission",
-    ],
-}
-```
-
-`BaseCredentials` is the base for a `request.auth` object that wraps a user.
-
-`BaseCredentials` exposes `is_authenticated`, `is_staff_user` (staff/superuser
-bypass), `user_id`, `email`, and `has_permission(key)` /
-`has_any_permission(keys)`.
-
-`AuthorizationPermission` denies unauthenticated requests, allows
-staff/superuser through, and otherwise defers to the view's
-`validate_permissions()` — implemented by `AuthorizationViewMixin` (mix into any
-`BaseAPIView`/`BaseModelViewSet`):
-
-```python
-from rn_forge.django.auth.drf.mixins import AuthorizationViewMixin
-from rn_forge.django.drf.views import BaseModelViewSet
-
-
-class OrderViewSet(AuthorizationViewMixin, BaseModelViewSet):
-    permission_key = "app.order"
-```
-
-`permission_key` is combined with the current action (`list`, `retrieve`,
-`create`, `export`, ...) through a permission-action map to build the final key
-checked against `credentials.has_permission(...)` — e.g. `app.order.read` for
-`retrieve`. The default map lives in `rn_forge.auth.DEFAULT_PERMISSION_ACTION_MAP`; override
-per-request-app defaults via
-`RN_FORGE_DJANGO["DRF"]["VIEWS"]["PERMISSION_ACTION_MAP"]` or per-view via
-`permission_action_map`. Override `should_validate_object_permissions()` /
-`validate_object_permissions()` for row-level checks.
-
-Use `PermissionKeyViewMixin` instead when you want permission-key resolution
-without full `AuthorizationViewMixin` request-access plumbing (e.g. on plain
-`GenericAPIView`s).
-
+`rn-forge-django` speaks no SAML. A SAML identity provider federates through a
+broker (Keycloak, Entra ID, Auth0, Okta and others) that runs the SAML exchange
+and logs the user in to the application over OIDC; configure the broker as an
+ordinary `OidcProvider`. The `rn-forge-auth` login guide, "Connecting a SAML IdP
+through a broker", has the steps.

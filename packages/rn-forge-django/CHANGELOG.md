@@ -84,6 +84,15 @@ Notable changes to `rn-forge-django`, newest first, in the
   fewest seconds between two key set fetches.
 - The `oidc` and `all` extras no longer name `rn-forge-commons[auth]`, which no
   longer exists.
+- **Breaking:** `AuthorizedAPIView` and `AuthorizedModelViewSet` check
+  `PermissionKeyPermission` over `BaseAPIView` and `BaseModelViewSet`, so
+  `UserViewSet`, `GroupViewSet` and `PermissionViewSet` still require their
+  `permission_key`. A subclass that relied on the removed mixins' attributes
+  and hooks (`credentials`, `user`, `is_request_authorized`,
+  `validate_permissions`, `validate_object_permissions`) must move to a
+  `Requirement` or a `ResourcePolicy`. The principal now comes from
+  `request.user`, the staff and superuser bypass comes from the authorization
+  context, and an action map is the view's `permission_action_map`.
 
 ### Removed
 
@@ -98,6 +107,19 @@ Notable changes to `rn-forge-django`, newest first, in the
   `SAMLLoginViewMixin`, `SampleSAMLLoginAPIView`) are gone, along with the
   `RN_FORGE_DJANGO["AUTH"]["SAML"]` setting and `AuthSAMLSettings`. A SAML IdP
   federates through a broker that speaks OIDC.
+- **Breaking:** `BaseCredentials` and `LoginPayload` (`rn_forge.django.auth.credentials`
+  and `rn_forge.django.auth.payload`), `AuthorizationViewMixin` and
+  `PermissionKeyViewMixin` (`rn_forge.django.auth.drf.mixins`) and
+  `AuthorizationPermission` (`rn_forge.django.auth.drf.permissions`) are gone.
+  Check permissions with `PermissionKeyPermission` and `ResourcePolicyViewMixin`.
+- **Breaking:** `BaseLoginViewMixin`, `BaseLoginAPIView` and `LogoutAPIView`
+  (`rn_forge.django.auth.drf.authentication`) are gone. `auth_urlpatterns`
+  serves login and logout.
+- **Breaking:** the `saml` extra is gone, and with it the `python3-saml`
+  dependency.
+- **Breaking:** the `RN_FORGE_DJANGO["DRF"]["VIEWS"]` settings block
+  (`PERMISSION_ACTION_MAP`), `DRFViewsSettings` and `DRFViewsSettingsDict` are
+  gone; set `permission_action_map` on the view.
 
 ## [0.5.1] - 2026-10-25
 

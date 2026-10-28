@@ -6,7 +6,6 @@ from django.test import override_settings
 from rn_forge.django import settings as rnf_settings
 from rn_forge.django.settings import (
     CasingSettings,
-    DRFViewsSettings,
     PaginationSettings,
 )
 
@@ -21,7 +20,6 @@ class TestDefaults:
     def test_empty_setting_yields_every_default(self) -> None:
         with override_settings(RN_FORGE_DJANGO={}):
             conf = _current()
-        assert conf.drf.views == DRFViewsSettings()
         assert conf.drf.pagination == PaginationSettings()
         assert conf.drf.casing == CasingSettings()
 
