@@ -146,17 +146,17 @@ F21.1 is closed: the GitHub environments exist and the PyPI organization is
 approved. The pending publishers are added one per run during the uploads.
 
 E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
-branch after E13's features landed. F20.1, F20.2, F21.1, F21.2 and F21.4 are
-closed. The open stories need GitHub or the owner:
+branch after E13's features landed. F20.1, F20.2, F20.3, F21.1, F21.2 and F21.4
+are closed, and secret scanning, push protection and private vulnerability
+reporting are enabled. The open stories need GitHub or the owner:
 
-- S20.3.3 and S20.5.4: the owner enables secret scanning, push protection and
-  private vulnerability reporting.
-- S21.3.2: the TestPyPI dry run, which needs the branch pushed. The owner adds
-  each package's `testpypi` publisher before its rerun.
+- S21.3.2: the TestPyPI dry run, which needs the branch pushed. The
+  `rn-forge-commons` `testpypi` publisher exists; the owner adds each next
+  package's publisher before its rerun.
 - S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
   commit.
 
-At the rebase, new E13 code must pass ruff's `S` rules, the dependency audit and
+After the merge, new E13 code must pass ruff's `S` rules, the dependency audit and
 the licence check. At the cut, `rn-forge-commons`, `rn-forge-web`,
 `rn-forge-django` and `rn-forge-fastapi` carry breaking changes, so their F21.2
 patch bumps become minor bumps (0.8, 0.3, 0.6, 0.4) and the internal ranges
