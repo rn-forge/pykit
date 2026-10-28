@@ -37,7 +37,7 @@ and every package is published to PyPI
 | [F13.1](../../specs/epics/E13-auth/F13.1-auth-design.md) | E13 | Closed |
 | [F13.2](../../specs/epics/E13-auth/F13.2-auth-package.md) | E13 | Closed |
 | [F13.3](../../specs/epics/E13-auth/F13.3-core-contracts.md) | E13 | Closed |
-| [F13.4](../../specs/epics/E13-auth/F13.4-protocol-adapters.md) | E13 | Active |
+| [F13.4](../../specs/epics/E13-auth/F13.4-protocol-adapters.md) | E13 | Closed |
 | [F13.5](../../specs/epics/E13-auth/F13.5-django-binding.md) | E13 | New |
 | [F13.6](../../specs/epics/E13-auth/F13.6-fastapi-binding.md) | E13 | New |
 | [F13.7](../../specs/epics/E13-auth/F13.7-legacy-removal.md) | E13 | New |
@@ -125,7 +125,10 @@ Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
 version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
 done: the design is settled, ADR-0006 is revised, ADR-0013 and ADR-0014 are
 accepted, the library evaluation is recorded, and F13.3 to F13.7 have stories on
-this release. F13.2 can start; it no longer waits for F16.3. S21.1.2's owner
+this release. F13.2 to F13.4 are closed: the package, the core contracts and
+the login adapters (OIDC and OAuth 2.0 over Authlib's core, logout, password
+and development providers, and the optional Keycloak broker job); F13.5 and
+F13.6 can start. S21.1.2's owner
 steps are under way: the GitHub environments exist; the PyPI pending publishers
 are not yet added.
 

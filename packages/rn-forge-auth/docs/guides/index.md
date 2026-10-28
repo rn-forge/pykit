@@ -7,6 +7,9 @@
   authorization context and its cache, `Principal` and `Requirement`,
   permissions and the scope limit, resource policy, `return_to` and the session
   body.
+- [Login providers](login.md) — `LoginFlow`; the OIDC, OAuth 2.0, password and
+  development providers; back-channel logout; and connecting a SAML IdP through
+  a broker.
 - [Token profiles](tokens.md) — the access-token, ID-token and logout-token
   verifiers, their modes, the login-client rule and key-set caching.
 - [Stores](stores.md) — the transaction, session, replay and version stores, in

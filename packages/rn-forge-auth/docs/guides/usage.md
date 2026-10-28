@@ -1,8 +1,8 @@
 # Authentication and authorization
 
 The package has one core and two adapters. `rn_forge.auth` holds the contracts
-and needs no third-party package. `rn_forge.auth.oidc` verifies OIDC bearer
-tokens, and `rn_forge.auth.redis` keeps sessions and single-use records in
+and needs no third-party package. `rn_forge.auth.oidc` runs OIDC and OAuth 2.0
+logins and verifies OIDC bearer tokens (see [Login providers](login.md)), and `rn_forge.auth.redis` keeps sessions and single-use records in
 Redis; both import the core and the core never imports them. The `oidc` extra
 installs `pyjwt[crypto]` and `authlib`, the `redis` extra installs `redis`, and
 the `rn_forge.auth` facade re-exports neither adapter.

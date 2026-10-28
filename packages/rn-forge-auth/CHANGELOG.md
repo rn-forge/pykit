@@ -23,10 +23,6 @@ Notable changes to `rn-forge-auth`, newest first, in the
   `AuthorizationContextProvider` and `ResourcePolicy`.
 - `requirement_for`, `effective_permissions` and `Mechanism`, and
   `DEFAULT_PERMISSION_ACTION_MAP`, moved from `rn-forge-django`.
-- `PasswordIdentityProvider` and `DevelopmentIdentityProvider`, the local
-  password and fixture-account login providers in `rn_forge.auth.local`, with
-  `PasswordVerifier`, `DevelopmentAccount`
-  and `DevelopmentModeRequired`. Neither needs an extra.
 - `AuthorizationContextCache`, which caches an `AuthorizationContextProvider`
   by account and authorization version with a TTL, with
   `AuthorizationVersions`, `InMemoryAuthorizationVersions` and
@@ -51,35 +47,40 @@ Notable changes to `rn-forge-auth`, newest first, in the
   in-process OIDC provider with discovery, key rotation, authorization, token
   and UserInfo endpoints and logout tokens, and `Faults`, a switch for each OIDC
   failure.
-- Guides for the contracts, the token profiles, the stores and the fake
-  provider.
-- `LoginFlow` and `LoginFailed`, the framework-neutral login flow: `begin`
-  validates `return_to` and saves the transaction for 600 seconds, and
-  `complete` consumes it once, rejects a missing, expired, used or foreign
-  transaction and ends every failure in a `LoginFailed` carrying a
-  `CallbackError`. `LoginRequest` is the thin request protocol providers read.
-- `OidcProvider` in `rn_forge.auth.oidc`, the OIDC login provider over Authlib's
-  `OAuth2Session`: discovery, `state`, nonce, PKCE S256, the RFC 9207 `iss`
-  check, `max_age`, ID-token verification and UserInfo with a `sub` check, with
-  `default_claim_mapper`, a `claim_mapper` hook and a `token_hook` that alone
-  receives the upstream tokens (`UpstreamTokens`).
-- `OidcProvider.oauth2` and `OAuth2Endpoints`: the same provider for an
-  OAuth 2.0 server that issues no ID token. It keeps `state` and PKCE, sends no
-  nonce, calls the user endpoint with the access token and maps the result
-  (`subject_field` picks the subject, numbers are stringified); the `iss`
-  response check applies only with `response_issuer`. `FakeOidcProvider`
-  gains `oauth2_only` and `Faults.userinfo_error`.
-- `OidcProvider.logout_redirect` returns the discovered `end_session_endpoint`
-  with `id_token_hint`, `post_logout_redirect_uri` and `client_id` when the
-  provider is built with `rp_initiated_logout=True`, and `None` otherwise, for
-  an OAuth 2.0 provider, without an endpoint or without a session ID token.
-- `BackchannelLogout` and `LogoutRevocation`: validate a back-channel logout
-  token under the logout-token profile and return the `(issuer, sid)` to revoke,
-  or, for a token with only `sub`, the account whose session version to bump
-  (`None` when unlinked). A failure raises `TokenVerificationError`. The binding
-  applies the result.
-- `OidcConfiguration.metadata` holds the whole discovery document, and
-  `FakeOidcProvider.auth_age` sets the age of the user's authentication.
+- The login adapters:
+  - `LoginFlow` and `LoginFailed`, the framework-neutral login flow, and
+    `LoginRequest`, the thin request protocol providers read. `begin` validates
+    `return_to` and saves the transaction for 600 seconds; `complete` consumes
+    it once, rejects a missing, expired, used or foreign transaction, and ends
+    every failure in a `LoginFailed` carrying a `CallbackError`.
+  - `OidcProvider` in `rn_forge.auth.oidc`, the OIDC login provider over
+    Authlib's `OAuth2Session`: discovery with the issuer check, `state`, nonce,
+    PKCE S256, the RFC 9207 `iss` check, `max_age`, ID-token verification and
+    UserInfo with a `sub` check. `default_claim_mapper`, a `claim_mapper` hook
+    and a `token_hook` (the only receiver of the upstream tokens,
+    `UpstreamTokens`) shape the result. No token, code or verifier is logged.
+  - `OidcProvider.oauth2` and `OAuth2Endpoints`, the same provider for an
+    OAuth 2.0 server that issues no ID token: it keeps `state` and PKCE, sends
+    no nonce, calls the user endpoint with the access token and maps the result
+    (`subject_field` picks the subject, numbers are stringified). The `iss`
+    response check applies only with `response_issuer`.
+  - `OidcProvider.logout_redirect`, which returns the discovered
+    `end_session_endpoint` with `id_token_hint`, `post_logout_redirect_uri` and
+    `client_id` when the provider is built with `rp_initiated_logout=True`, and
+    `BackchannelLogout` with `LogoutRevocation`, which validate a back-channel
+    logout token and return the `(issuer, sid)` to revoke, or the account whose
+    session version to bump for a token with only `sub`.
+  - `PasswordIdentityProvider` and `DevelopmentIdentityProvider` in
+    `rn_forge.auth.local`, with `PasswordVerifier`, `DevelopmentAccount` and
+    `DevelopmentModeRequired`. Neither needs an extra.
+  - `OidcConfiguration.metadata`, the whole discovery document.
+- `FakeOidcProvider` gains `oauth2_only` and `auth_age`, and `Faults` gains
+  `userinfo_error`.
+- Optional Keycloak tests of the broker profile under `tests/broker/`, run by
+  the non-gating `broker-profile` workflow.
+- Guides for the contracts, the login providers (including connecting a SAML IdP
+  through a broker), the token profiles, the stores, and the fake provider with
+  the broker tests.
 
 ### Changed
 
