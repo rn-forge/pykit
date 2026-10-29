@@ -148,11 +148,10 @@ approved. The pending publishers are added one per run during the uploads.
 E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
 branch after E13's features landed. F20.1, F20.2, F20.3, F21.1, F21.2 and F21.4
 are closed, and secret scanning, push protection and private vulnerability
-reporting are enabled. The open stories need GitHub or the owner:
+reporting are enabled. S21.3.2 is closed: every package is on TestPyPI and the
+release branch's CI rerun skipped them as already uploaded. The open stories
+need GitHub or the owner:
 
-- S21.3.2: the TestPyPI dry run, which needs the branch pushed. The
-  `rn-forge-commons` `testpypi` publisher exists; the owner adds each next
-  package's publisher before its rerun.
 - S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
   commit.
 
