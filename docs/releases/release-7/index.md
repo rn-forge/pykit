@@ -1,13 +1,11 @@
-# Release 7 — kiln adoption and authentication
+# Release 7 — authentication and PyPI distribution
 
 |  |  |
 | -- | -- |
 | **Status** | planned |
 
-pykit cuts over onto kiln's `python-lib` archetype (F16.3, then F16.6,
-[E16](../../specs/epics/E16-kiln-adoption/index.md)), then gains standards-based
-authentication and authorization for its web applications
-([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
+pykit gains standards-based authentication and authorization for its web
+applications ([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
 (F13.1), create the `rn-forge-auth` package and move the existing auth code into
 it (F13.2), then the features the design produces — the login adapters, the
 session and HTTP surface for Django and FastAPI, authorization context and
@@ -15,7 +13,8 @@ resource policy, and the removal of the locally issued JWT flows. The package
 and the framework adapters ship together. It also sets a security baseline with
 per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)),
 and every package is published to PyPI
-([E21](../../specs/epics/E21-pypi-distribution/index.md)).
+([E21](../../specs/epics/E21-pypi-distribution/index.md)). pykit's cutover onto
+kiln is [Release 8](../release-8/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md) ·
@@ -24,8 +23,6 @@ and every package is published to PyPI
 ## Entry criteria
 
 - Release 6 is shipped.
-- kiln's release-1 tags exist, with `kiln-devops` (kiln F6.7) and a
-  `[ci.hooks] docs` anchor.
 
 ## Scope
 
@@ -42,8 +39,6 @@ and every package is published to PyPI
 | [F13.5](../../specs/epics/E13-auth/F13.5-django-binding.md) | E13 | Closed |
 | [F13.6](../../specs/epics/E13-auth/F13.6-fastapi-binding.md) | E13 | Closed |
 | [F13.7](../../specs/epics/E13-auth/F13.7-legacy-removal.md) | E13 | Closed |
-| [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
-| [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
 | [F20.1](../../specs/epics/E20-security-baseline/F20.1-baseline-decision.md) | E20 | Closed |
 | [F20.2](../../specs/epics/E20-security-baseline/F20.2-dependency-risk.md) | E20 | Closed |
 | [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | Closed |
@@ -59,15 +54,8 @@ and every package is published to PyPI
 ## Order
 
 1. **F13.1 first.** It is a decision with no code, and settles the package
-   placement F13.2 follows. It can run while the cutover waits on kiln.
-1. **F16.3** once kiln's release-1 tags exist. It cuts pykit over onto kiln,
-   with `rn-forge-devops` 0.2.0 (Release 5) and Release 6's tags already
-   published.
-1. **F13.2** after F13.1, without waiting for F16.3 (owner decision,
-   2026-10-27). Whichever of F13.2 and F16.3 lands second adds `rn-forge-auth`
-   to the kiln config.
-1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
-   not read.
+   placement F13.2 follows.
+1. **F13.2** after F13.1.
 1. **F13.1's remaining stories.** S13.1.2 (the ADRs) and S13.1.3 (the library
    evaluation) are independent; S13.1.4 writes the stories of F13.3 to F13.7
    once both close, and sets their `Iteration` to this release.
@@ -78,9 +66,8 @@ and every package is published to PyPI
 1. **F21.1 and F21.2 any time.** The pending PyPI publishers are added one
    per run during F21.3's TestPyPI dry run and first PyPI release, because PyPI
    holds one at a time and a pending publisher does not reserve a name.
-1. **F21.3 before F16.3 merges.** It is built in `main.yml`, and F16.3 requires
-   the kiln version it pins to render the same release behaviour. S21.3.3
-   closes when this release's merge publishes to PyPI.
+1. **F21.3** in `main.yml`. S21.3.3 closes when this release's merge publishes
+   to PyPI.
 1. **F21.4** in the same merge as F21.3, so the install docs are true when the
    release ships.
 
@@ -97,6 +84,9 @@ and every package is published to PyPI
 - Owner decision, 2026-10-27: F13.2 does not wait for the kiln cutover (F16.3).
 - Owner decision, 2026-10-27: pykit drops direct SAML; a SAML IdP federates
   through a broker (S13.1.5).
+- Owner decision, 2026-10-29: the kiln cutover (F16.3) and F16.6 move to
+  [Release 8](../release-8/index.md). This release publishes every package to
+  PyPI first, which kiln's release 1 needs.
 
 ## Breaking changes
 
@@ -130,7 +120,7 @@ and every package is published to PyPI
 ## Progress
 
 Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F16.3 waits for Release 6 and kiln's release-1 tags. F13.1 is
+version kiln pins. F13.1 is
 done: the design is settled, ADR-0006 is revised, ADR-0013 and ADR-0014 are
 accepted, the library evaluation is recorded, and F13.3 to F13.7 have stories on
 this release. F13.2 to F13.4 are closed: the package, the core contracts and
@@ -166,13 +156,13 @@ widen to match; the install docs already name those minors.
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F16\.[36]|S16\.[36]\.|F21\.|S21\.'
+git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F21\.|S21\.'
 ```
 
 ## Exit criteria
 
-- Every feature on this page's Scope is `Closed`, including F16.3, F16.6, F13.1
-  to F13.7, F20.1 to F20.5 and F21.1 to F21.4.
+- Every feature on this page's Scope is `Closed`, including F13.1 to F13.7,
+  F20.1 to F20.5 and F21.1 to F21.4.
 - E13's proposed decisions are recorded as S13.1.2 describes: ADR-0006 revised
   and two new ADRs accepted.
 - `docs/_update_board.sh --check` passes.
