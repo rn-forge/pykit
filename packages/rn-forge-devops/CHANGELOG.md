@@ -5,6 +5,8 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-29
+
 ### Fixed
 
 - `plan` no longer hangs on a dependency cycle. Release order and `releasable`

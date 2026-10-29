@@ -5,6 +5,8 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-29
+
 ### Added
 
 - `rn_forge.auth.conformance`: `CASES`, one `SecurityControlCase` per row of the

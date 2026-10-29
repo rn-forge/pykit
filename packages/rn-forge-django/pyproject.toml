@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-django"
-version = "0.5.2"
+version = "0.6.0"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -21,8 +21,8 @@ dependencies = [
   "django>=6.0.7",
   # Internal requirements are version ranges (ADR-0004).
   "rn-forge-auth>=0.1.0,<0.2",
-  "rn-forge-commons>=0.7.0,<0.8",
-  "rn-forge-web>=0.2.1,<0.3",
+  "rn-forge-commons>=0.8.0,<0.9",
+  "rn-forge-web>=0.3.0,<0.4",
 ]
 
 [project.optional-dependencies]
@@ -58,7 +58,7 @@ openapi = [
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
 security = [
-  "rn-forge-web[security]>=0.2.1,<0.3",
+  "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 # `rn_forge.django.cors` only. The application still owns its origins;
 # `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
@@ -76,7 +76,7 @@ all = [
   "opentelemetry-instrumentation-django>=0.65b0",
   "rn-forge-auth[oidc,redis]>=0.1.0,<0.2",
   "rn-forge-data[pandas]>=0.1.1,<0.2",
-  "rn-forge-web[security]>=0.2.1,<0.3",
+  "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 
 [project.urls]

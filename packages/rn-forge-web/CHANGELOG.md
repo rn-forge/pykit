@@ -5,6 +5,8 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-29
+
 ### Added
 
 - `csrf-failed` problem type: `CsrfFailed` (403, in `default_registry()`),

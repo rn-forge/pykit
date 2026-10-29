@@ -94,14 +94,14 @@ linked decisions state each rule in full.
 Every package is published to PyPI. A consumer requires one by version range:
 
 ```toml
-dependencies = ["rn-forge-commons>=0.7,<0.8"]
+dependencies = ["rn-forge-commons>=0.8,<0.9"]
 ```
 
 Or pin a tag by git direct URL with its subdirectory:
 
 ```toml
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.7.1#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.8.0#subdirectory=packages/rn-forge-commons",
 ]
 ```
 

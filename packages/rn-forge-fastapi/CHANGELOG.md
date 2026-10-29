@@ -5,6 +5,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-29
+
 ### Added
 
 - The `/auth` surface over `rn-forge-auth`. `auth_router(config, prefix="/auth")`,

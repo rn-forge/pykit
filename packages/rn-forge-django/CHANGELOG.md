@@ -5,6 +5,8 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-29
+
 ### Added
 
 - The `/auth` surface over `rn-forge-auth`, in `rn_forge.django.auth`.

@@ -5,6 +5,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-29
+
 ### Changed
 
 - The package declares the MIT licence and is published to PyPI.

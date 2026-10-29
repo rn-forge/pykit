@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.3.3"
+version = "0.4.0"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -25,7 +25,7 @@ dependencies = [
   "rn-forge-auth>=0.1.0,<0.2",
   # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
   # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
-  "rn-forge-web[security]>=0.2.1,<0.3",
+  "rn-forge-web[security]>=0.3.0,<0.4",
   # A hard dependency, not an extra: every module in this package is a FastAPI
   # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
   "fastapi>=0.141.1",

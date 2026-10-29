@@ -2049,7 +2049,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-commons"
-version = "0.7.1"
+version = "0.8.0"
 source = { editable = "packages/rn-forge-commons" }
 dependencies = [
     { name = "dacite" },
@@ -2272,7 +2272,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.5.2"
+version = "0.6.0"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },
@@ -2404,7 +2404,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-fastapi"
-version = "0.3.3"
+version = "0.4.0"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },
@@ -2603,7 +2603,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-web"
-version = "0.2.2"
+version = "0.3.0"
 source = { editable = "packages/rn-forge-web" }
 dependencies = [
     { name = "opentelemetry-api" },

@@ -119,12 +119,11 @@ kiln is [Release 8](../release-8/index.md).
 
 ## Progress
 
-Not started. Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the
-version kiln pins. F13.1 is
-done: the design is settled, ADR-0006 is revised, ADR-0013 and ADR-0014 are
-accepted, the library evaluation is recorded, and F13.3 to F13.7 have stories on
-this release. F13.2 to F13.4 are closed: the package, the core contracts and
-the login adapters (OIDC and OAuth 2.0 over Authlib's core, logout, password
+Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the version kiln
+pins. F13.1 is done: the design is settled, ADR-0006 is revised, ADR-0013 and
+ADR-0014 are accepted, the library evaluation is recorded, and F13.3 to F13.7
+have stories on this release. F13.2 to F13.4 are closed: the package, the core
+contracts and the login adapters (OIDC and OAuth 2.0 over Authlib's core, logout, password
 and development providers, and the optional Keycloak broker job). F13.5 is
 closed: `rn-forge-django` serves the auth surface with sessions, revocation,
 CSRF, account linking, session and bearer authentication, authorization, rate
@@ -145,11 +144,12 @@ need GitHub or the owner:
 - S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
   commit.
 
-After the merge, new E13 code must pass ruff's `S` rules, the dependency audit and
-the licence check. At the cut, `rn-forge-commons`, `rn-forge-web`,
-`rn-forge-django` and `rn-forge-fastapi` carry breaking changes, so their F21.2
-patch bumps become minor bumps (0.8, 0.3, 0.6, 0.4) and the internal ranges
-widen to match; the install docs already name those minors.
+After the merge, new E13 code must pass ruff's `S` rules, the dependency audit
+and the licence check. The version cut is done (S21.3.4): `rn-forge-commons`,
+`rn-forge-web`, `rn-forge-django` and `rn-forge-fastapi` carry breaking changes,
+so they are at 0.8.0, 0.3.0, 0.6.0 and 0.4.0, and every internal range on them
+admits exactly that minor. Each changelog's entries sit under its dated version
+heading.
 
 ## Commits
 
