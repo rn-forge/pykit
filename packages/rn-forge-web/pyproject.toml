@@ -63,7 +63,7 @@ dev = [
   "opentelemetry-sdk>=1.44",
   "pyright>=1.1.411",
   "pytest>=9.1.1",
-  "pytest-asyncio>=1.3.0",
+  "pytest-asyncio>=1.4.1",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
   # The guide examples, which the tests run, import rn-forge-auth.
