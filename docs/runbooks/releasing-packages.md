@@ -38,7 +38,7 @@ Every build, including a pull request's, runs `twine check --strict`, so a
 package with broken metadata fails CI. On a push to `main`, `release` then
 uploads the package to PyPI by trusted publishing, unless PyPI already has that
 version. Each uploaded file carries a PEP 740 attestation, which the job signs
-beforehand with `astral-sh/attest-action`; the GitHub release attaches only the
+beforehand with `pypi-attestations`; the GitHub release attaches only the
 wheel, the sdist and the SBOM. Only after the upload does `gh release create`
 attach the artifacts and publish the release, creating a missing tag at the
 pushed commit
