@@ -5,6 +5,12 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-30
+
+### Changed
+
+- Files on PyPI carry PEP 740 attestations. There is no code change.
+
 ## [0.8.0] - 2026-10-29
 
 ### Changed

@@ -15,8 +15,8 @@ The import-boundary check and a `plan` job run first.
 on one, read from the manifests' internal requirements; a change outside the
 packages and `docs/`, or a manual run, selects all of them. It emits the
 matrices for the check jobs, which run in parallel: `verify` (ruff, pyright,
-pytest) for each selected package; `postgres`, `redis` and `smoke` for packages that
-declare them in `[tool.workspace-ci]` (today `rn-forge-django`: its tests
+pytest) for each selected package; `postgres`, `redis` and `smoke` for packages
+that declare them in `[tool.workspace-ci]` (today `rn-forge-django`: its tests
 against PostgreSQL, and each extra installed alone from the built wheels); and
 each root suite, such as `scaffold`.
 
@@ -37,8 +37,11 @@ succeeds, preserving its tag.
 Every build, including a pull request's, runs `twine check --strict`, so a
 package with broken metadata fails CI. On a push to `main`, `release` then
 uploads the package to PyPI by trusted publishing, unless PyPI already has that
-version. Only after the upload does `gh release create` attach the artifacts and
-publish the release, creating a missing tag at the pushed commit
+version. Each uploaded file carries a PEP 740 attestation, which the job signs
+beforehand with `astral-sh/attest-action`; the GitHub release attaches only the
+wheel, the sdist and the SBOM. Only after the upload does `gh release create`
+attach the artifacts and publish the release, creating a missing tag at the
+pushed commit
 ([GitHub CLI release creation](https://cli.github.com/manual/gh_release_create)).
 A published release therefore implies the version is on PyPI. Its notes are the
 package's changelog section for the version, and it is never marked "Latest". A
@@ -78,10 +81,16 @@ what PyPI and GitHub already have. A manual dispatch builds only and does not
 publish releases or deploy Pages. Dispatching it with `testpypi` set uploads
 every package to TestPyPI instead, skipping versions already there, and creates
 no tags or releases; use it from the release branch to prove the uploads before
-the merge. A package's first upload to an index needs a pending trusted
-publisher, and PyPI holds only one per workflow and environment. Add the
-publisher for the next package in release order, rerun the failed `release` job
-and repeat
+the merge. The workflow's token cannot create a PyPI project, so before a
+package's first upload the owner creates the empty project from the `rn-forge`
+organization's *Projects* page and attaches the trusted publisher (owner
+`rn-forge`, repository `pykit`, workflow `main.yml`, environment `pypi`). That
+page allows the organization 10 new projects a day. Do not create a project by
+uploading with a user token: that path has a lower personal limit, and Release 7
+hit `429 Too many new projects created` after four projects, still in force 90
+minutes later. The limits cover new projects only, so uploading a version to an
+existing project is unaffected. An empty project has no JSON API page, so check
+it at `https://pypi.org/simple/<name>/`
 ([F21.3](../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md#registering-the-publishers)).
 A resumed tag at an older commit is outside that run's automatic
 external-install and docs checks. Verify its published assets and package docs,

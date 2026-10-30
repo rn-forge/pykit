@@ -5,16 +5,16 @@
 | **Status** | planned |
 
 pykit gains standards-based authentication and authorization for its web
-applications ([E13](../../specs/epics/E13-auth/index.md)): settle and record the design
-(F13.1), create the `rn-forge-auth` package and move the existing auth code into
-it (F13.2), then the features the design produces — the login adapters, the
-session and HTTP surface for Django and FastAPI, authorization context and
-resource policy, and the removal of the locally issued JWT flows. The package
-and the framework adapters ship together. It also sets a security baseline with
-per-release evidence ([E20](../../specs/epics/E20-security-baseline/index.md)),
-and every package is published to PyPI
-([E21](../../specs/epics/E21-pypi-distribution/index.md)). pykit's cutover onto
-kiln is [Release 8](../release-8/index.md).
+applications ([E13](../../specs/epics/E13-auth/index.md)): settle and record the
+design (F13.1), create the `rn-forge-auth` package and move the existing auth
+code into it (F13.2), then the features the design produces — the login
+adapters, the session and HTTP surface for Django and FastAPI, authorization
+context and resource policy, and the removal of the locally issued JWT flows.
+The package and the framework adapters ship together. It also sets a security
+baseline with per-release evidence
+([E20](../../specs/epics/E20-security-baseline/index.md)), and every package is
+published to PyPI ([E21](../../specs/epics/E21-pypi-distribution/index.md)).
+pykit's cutover onto kiln is [Release 8](../release-8/index.md).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md) ·
@@ -42,8 +42,8 @@ kiln is [Release 8](../release-8/index.md).
 | [F20.1](../../specs/epics/E20-security-baseline/F20.1-baseline-decision.md) | E20 | Closed |
 | [F20.2](../../specs/epics/E20-security-baseline/F20.2-dependency-risk.md) | E20 | Closed |
 | [F20.3](../../specs/epics/E20-security-baseline/F20.3-source-and-secret-scanning.md) | E20 | Closed |
-| [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | Active |
-| [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Active |
+| [F20.4](../../specs/epics/E20-security-baseline/F20.4-release-provenance.md) | E20 | Closed |
+| [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Closed |
 | [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Closed |
 | [F21.2](../../specs/epics/E21-pypi-distribution/F21.2-package-metadata.md) | E21 | Closed |
 | [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | Active |
@@ -63,9 +63,9 @@ kiln is [Release 8](../release-8/index.md).
    profiles, stores and the fake IdP), F13.4 (protocol adapters over Authlib's
    core), then F13.5 (Django) and F13.6 (FastAPI), which may run in parallel,
    then F13.7 (legacy removal).
-1. **F21.1 and F21.2 any time.** The pending PyPI publishers are added one
-   per run during F21.3's TestPyPI dry run and first PyPI release, because PyPI
-   holds one at a time and a pending publisher does not reserve a name.
+1. **F21.1 and F21.2 any time.** The owner creates each PyPI project and
+   attaches its trusted publisher before F21.3's first PyPI release, because the
+   workflow's token cannot create a project.
 1. **F21.3** in `main.yml`. S21.3.3 closes when this release's merge publishes
    to PyPI.
 1. **F21.4** in the same merge as F21.3, so the install docs are true when the
@@ -104,14 +104,14 @@ kiln is [Release 8](../release-8/index.md).
 - `rn-forge-django` and `rn-forge-fastapi` repoint their `oidc` extras to
   `rn-forge-auth` (F13.2). Their bearer authenticators reject a token whose
   `(issuer, subject)` has no linked account (F13.5, F13.6).
-- `rn-forge-django`'s bearer authentication classes require an
-  `AccountResolver` and an `AuthorizationContextProvider`; it gains a `redis`
-  extra on `rn-forge-auth[redis]`, and mounting the auth surface requires
+- `rn-forge-django`'s bearer authentication classes require an `AccountResolver`
+  and an `AuthorizationContextProvider`; it gains a `redis` extra on
+  `rn-forge-auth[redis]`, and mounting the auth surface requires
   `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]` (F13.5).
 - `rn-forge-fastapi`'s `bearer_auth()` requires an `AccountResolver` and an
-  `AuthorizationContextProvider`; `rn_forge.fastapi.auth` becomes a package; it
-  gains a `redis` extra on `rn-forge-auth[redis]`, and mounting the auth router
-  requires a problem `type_base` (F13.6).
+  `AuthorizationContextProvider`; `rn_forge.fastapi.auth` becomes a package;
+  it gains a `redis` extra on `rn-forge-auth[redis]`, and mounting the auth
+  router requires a problem `type_base` (F13.6).
 - `rn-forge-django` loses its `jwt` extra and simplejwt, the locally issued JWT
   flows, `BaseCredentials`, `LoginPayload`, the `auth.basic` and `auth.saml`
   views, `SampleSAMLLoginAPIView` and the authorization mixins, and its `saml`
@@ -123,26 +123,34 @@ Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the version kiln
 pins. F13.1 is done: the design is settled, ADR-0006 is revised, ADR-0013 and
 ADR-0014 are accepted, the library evaluation is recorded, and F13.3 to F13.7
 have stories on this release. F13.2 to F13.4 are closed: the package, the core
-contracts and the login adapters (OIDC and OAuth 2.0 over Authlib's core, logout, password
-and development providers, and the optional Keycloak broker job). F13.5 is
-closed: `rn-forge-django` serves the auth surface with sessions, revocation,
-CSRF, account linking, session and bearer authentication, authorization, rate
-limits and audit events. F13.6 is closed: `rn-forge-fastapi` serves the same
-surface as an `APIRouter`, with its own session middleware, session-bound CSRF
-token, rate limiting and audit events, and both bindings pass the shared
-security-control cases in `rn_forge.auth.conformance`; F13.7 can start.
-F21.1 is closed: the GitHub environments exist and the PyPI organization is
-approved. The pending publishers are added one per run during the uploads.
+contracts and the login adapters (OIDC and OAuth 2.0 over Authlib's core,
+logout, password and development providers, and the optional Keycloak broker
+job). F13.5 is closed: `rn-forge-django` serves the auth surface with sessions,
+revocation, CSRF, account linking, session and bearer authentication,
+authorization, rate limits and audit events. F13.6 is closed: `rn-forge-fastapi`
+serves the same surface as an `APIRouter`, with its own session middleware,
+session-bound CSRF token, rate limiting and audit events, and both bindings pass
+the shared security-control cases in `rn_forge.auth.conformance`; F13.7 can
+start. F21.1 is closed: the GitHub environments exist and the PyPI organization
+is approved. The owner creates each PyPI project and attaches its publisher
+before the first publish.
 
 E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
 branch after E13's features landed. F20.1, F20.2, F20.3, F21.1, F21.2 and F21.4
 are closed, and secret scanning, push protection and private vulnerability
 reporting are enabled. S21.3.2 is closed: every package is on TestPyPI and the
-release branch's CI rerun skipped them as already uploaded. The open stories
-need GitHub or the owner:
+release branch's CI rerun skipped them as already uploaded. F20.4 and F20.5 are
+closed on the evidence of the merge's first run, which published
+`rn-forge-commons` 0.8.0 and then failed on `rn-forge-devops`: the workflow's
+token cannot create a PyPI project. S21.3.5 adds PEP 740 attestations
+(`rn-forge-commons` 0.8.1 is the first version with them). The open stories need
+the owner:
 
-- S20.4.1, S20.4.2, S20.5.2 and S21.3.3: proven by this release's merge and ship
-  commit.
+- S21.3.3: every PyPI project exists with its trusted publisher, so the merge of
+  this work publishes the real versions and the ship commit follows. The owner
+  then deletes the `.dev0` placeholders of `rn-forge-devops`, `rn-forge-cli`,
+  `rn-forge-data` and `rn-forge-web`.
+- S21.3.5: proven by that publish.
 
 After the merge, new E13 code must pass ruff's `S` rules, the dependency audit
 and the licence check. The version cut is done (S21.3.4): `rn-forge-commons`,
