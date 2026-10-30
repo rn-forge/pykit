@@ -69,8 +69,9 @@ def test_wrong_password_and_unknown_account_are_identical(
         {"username": "nobody", "password": "pw"},
         {"username": "ann"},
     ):
+        request = make_request(form=form)
         with pytest.raises(LoginFailed) as caught:
-            provider.complete(make_request(form=form), transaction)
+            provider.complete(request, transaction)
         errors.append(caught.value)
     assert {(type(e), e.code, e.reason) for e in errors} == {
         (

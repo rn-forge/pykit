@@ -52,6 +52,7 @@ __all__ = [
     "requires_permission",
 ]
 
+_NO_CREDENTIALS = "No credentials were supplied"
 _BEARER = HTTPBearer(auto_error=False)
 
 type PrincipalDependency = Callable[..., Awaitable[Principal]]
@@ -90,7 +91,7 @@ class BearerAuth:
             request.headers.get("Authorization"), "Bearer"
         )
         if credentials is None or not credentials.token:
-            raise AuthenticationFailed("No credentials were supplied", error_code=401)
+            raise AuthenticationFailed(_NO_CREDENTIALS, error_code=401)
         verified = await _authenticate(self._authenticator, credentials, self._log)
         try:
             return await run_in_threadpool(self._link, verified)
@@ -204,7 +205,7 @@ def current_principal(*, bearer: BearerAuth | None = None) -> PrincipalDependenc
         if active is None:
             if bearer is None:
                 raise SessionRequired("No session")
-            raise AuthenticationFailed("No credentials were supplied", error_code=401)
+            raise AuthenticationFailed(_NO_CREDENTIALS, error_code=401)
         return _session_principal(active)
 
     if bearer is None:
@@ -262,7 +263,7 @@ def basic_auth(
     ) -> Principal:
         credentials = parse_authorization(request.headers.get("Authorization"), "Basic")
         if basic is None or credentials is None:
-            raise AuthenticationFailed("No credentials were supplied", error_code=401)
+            raise AuthenticationFailed(_NO_CREDENTIALS, error_code=401)
         return await _authenticate(authenticator, credentials, log)
 
     return dependency
@@ -286,7 +287,10 @@ def requires(
     """
     resolved = authorizer if authorizer is not None else ScopeAuthorizer()
 
-    async def dependency(principal: Principal = Depends(authenticate)) -> Principal:
+    # Async to satisfy PrincipalDependency, though it awaits nothing.
+    async def dependency(  # NOSONAR(S7503)
+        principal: Principal = Depends(authenticate),
+    ) -> Principal:
         try:
             resolved.authorize(principal, requires=requirement)
         except PermissionDenied:
@@ -322,7 +326,10 @@ def requires_permission(
 
     requirement = requirement_for(permission_key, action, action_map=action_map)
 
-    async def dependency(principal: Principal = Depends(authenticate)) -> Principal:
+    # Async to satisfy PrincipalDependency, though it awaits nothing.
+    async def dependency(  # NOSONAR(S7503)
+        principal: Principal = Depends(authenticate),
+    ) -> Principal:
         try:
             resolved.authorize(principal, requires=requirement)
         except PermissionDenied:

@@ -41,6 +41,7 @@ from rn_forge.auth.accounts import AccountResolver
 from rn_forge.auth.flow import LoginFailed
 from rn_forge.auth.identity import (
     ExternalIdentity,
+    IdentityProvider,
     LoginRequest,
     LoginStart,
     LoginTransaction,
@@ -75,7 +76,10 @@ __all__ = [
 ]
 
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
-_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout"
+# An event-type URI that names the event; it is never fetched.
+_BACKCHANNEL_LOGOUT_EVENT = (
+    "http://schemas.openid.net/event/backchannel-logout"  # NOSONAR(S5332)
+)
 _RFC9068_TYPES = frozenset({"at+jwt", "application/at+jwt"})
 _RFC9068_CLAIMS = ["iss", "exp", "aud", "sub", "client_id", "iat", "jti"]
 _RFC7519_CLAIMS = ["iss", "exp", "aud"]
@@ -174,7 +178,8 @@ def _signing_key(
     jwks: PyJWKClient, token: str, algorithms: Sequence[str]
 ) -> tuple[Mapping[str, Any], jwt.PyJWK]:
     """The unverified header and the key it names, once ``alg`` is allowed."""
-    header = jwt.get_unverified_header(token)
+    # Read unverified only to pick the signing key; the caller verifies with it.
+    header = jwt.get_unverified_header(token)  # NOSONAR(S5659)
     kid = header.get("kid")
     if not isinstance(kid, str):
         raise TokenVerificationError("Token header has no kid")
@@ -1017,7 +1022,7 @@ class OAuth2Endpoints:
     user: str
 
 
-class OidcProvider:
+class OidcProvider(IdentityProvider[LoginRequest]):
     """An OIDC :class:`~rn_forge.auth.IdentityProvider`: authorization code flow
     with PKCE (S256), over Authlib's ``OAuth2Session``.
 
@@ -1071,8 +1076,9 @@ class OidcProvider:
 
     kind: ProviderKind
 
+    # One keyword argument per provider setting.
     def __init__(
-        self,
+        self,  # NOSONAR(S107)
         *,
         id: str,
         issuer: str,
@@ -1271,16 +1277,7 @@ class OidcProvider:
         self, query: Mapping[str, str], transaction: LoginTransaction
     ) -> ExternalIdentity:
         configuration = self._configuration()[0] if self._endpoints is None else None
-        expected_state = transaction.state or ""
-        if not expected_state or not secrets.compare_digest(
-            query.get("state", "").encode(), expected_state.encode()
-        ):
-            raise LoginFailed("login_failed", "state does not match the transaction")
-        self._check_response_issuer(query, configuration)
-        error = query.get("error")
-        if error is not None:
-            code = "access_denied" if error == "access_denied" else "login_failed"
-            raise LoginFailed(code, f"provider returned error {error}")
+        self._check_callback(query, transaction, configuration)
         code = query.get("code")
         if not code or not transaction.code_verifier:
             raise LoginFailed("login_failed", "callback lacks a code")
@@ -1316,19 +1313,46 @@ class OidcProvider:
         identity = self._claim_mapper(self.id, claims)
         if self._rp_initiated_logout and raw_id_token is not None:
             identity = replace(identity, id_token=raw_id_token)
-        if self._token_hook is not None:
-            refresh = token.get("refresh_token")
-            scope = token.get("scope")
-            self._token_hook(
-                identity,
-                UpstreamTokens(
-                    access_token=access_token,
-                    id_token=raw_id_token,
-                    refresh_token=refresh if isinstance(refresh, str) else None,
-                    scope=scope if isinstance(scope, str) else None,
-                ),
-            )
+        self._run_token_hook(identity, token, access_token, raw_id_token)
         return identity
+
+    def _check_callback(
+        self,
+        query: Mapping[str, str],
+        transaction: LoginTransaction,
+        configuration: OidcConfiguration | None,
+    ) -> None:
+        expected_state = transaction.state or ""
+        if not expected_state or not secrets.compare_digest(
+            query.get("state", "").encode(), expected_state.encode()
+        ):
+            raise LoginFailed("login_failed", "state does not match the transaction")
+        self._check_response_issuer(query, configuration)
+        error = query.get("error")
+        if error is not None:
+            code = "access_denied" if error == "access_denied" else "login_failed"
+            raise LoginFailed(code, f"provider returned error {error}")
+
+    def _run_token_hook(
+        self,
+        identity: ExternalIdentity,
+        token: Mapping[str, Any],
+        access_token: str,
+        raw_id_token: str | None,
+    ) -> None:
+        if self._token_hook is None:
+            return
+        refresh = token.get("refresh_token")
+        scope = token.get("scope")
+        self._token_hook(
+            identity,
+            UpstreamTokens(
+                access_token=access_token,
+                id_token=raw_id_token,
+                refresh_token=refresh if isinstance(refresh, str) else None,
+                scope=scope if isinstance(scope, str) else None,
+            ),
+        )
 
     def _oidc_claims(
         self, session: OAuth2Session, id_token: str, access_token: str, nonce: str

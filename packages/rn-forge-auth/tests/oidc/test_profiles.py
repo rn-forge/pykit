@@ -79,8 +79,9 @@ def test_an_id_token_for_the_login_client_is_not_an_access_token_even_if_the_aud
     verifier = JwtVerifier.from_jwks_url(
         idp.jwks_url, issuer=idp.issuer, audience=CLIENT
     )
+    token = _tokens(idp)["id"]
     with pytest.raises(TokenVerificationError, match="nonce"):
-        verifier.verify(_tokens(idp)["id"])
+        verifier.verify(token)
 
 
 @pytest.mark.parametrize(

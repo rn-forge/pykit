@@ -153,8 +153,11 @@ def test_index_notes_and_releases_import_no_planner_adapter() -> None:
 
 
 def test_notes_prints_section(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
+    monkeypatch.chdir(tmp_path)
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text("## [1.0.0] - 2026-01-01\n\n- Done.\n", encoding="utf-8")
     assert cli.main(["notes", str(changelog), "1.0.0"]) == 0
@@ -162,8 +165,11 @@ def test_notes_prints_section(
 
 
 def test_notes_exits_1_on_missing_version(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
+    monkeypatch.chdir(tmp_path)
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text("## [1.0.0]\n\n- Done.\n", encoding="utf-8")
     assert cli.main(["notes", str(changelog), "2.0.0"]) == 1
@@ -185,6 +191,7 @@ def test_umbrella_writes_body_and_prints_outputs(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    monkeypatch.chdir(tmp_path)
     body = tmp_path / "body.md"
     monkeypatch.setattr("sys.stdin", io.StringIO("abc\trefs/tags/pkg-v1.0.0\n"))
     args = ["umbrella", str(_releases(tmp_path)), str(body), "--site-url", "https://x/"]
@@ -200,9 +207,59 @@ def test_umbrella_prints_nothing_when_tag_listed(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    monkeypatch.chdir(tmp_path)
     body = tmp_path / "body.md"
     monkeypatch.setattr("sys.stdin", io.StringIO("abc\trefs/tags/release-6\n"))
     args = ["umbrella", str(_releases(tmp_path)), str(body), "--site-url", "https://x/"]
     assert cli.main(args) == 0
     assert capsys.readouterr().out == ""
+    assert not body.exists()
+
+
+def test_notes_refuses_a_changelog_outside_the_working_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    work = tmp_path / "work"
+    work.mkdir()
+    (tmp_path / "CHANGELOG.md").write_text("## [1.0.0]\n\n- Done.\n", encoding="utf-8")
+    monkeypatch.chdir(work)
+    assert cli.main(["notes", "../CHANGELOG.md", "1.0.0"]) == 1
+    captured = capsys.readouterr()
+    assert "outside the working directory" in captured.err
+    assert captured.out == ""
+
+
+def test_umbrella_refuses_a_releases_dir_outside_the_working_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    work = tmp_path / "work"
+    work.mkdir()
+    releases = _releases(tmp_path)
+    body = tmp_path / "body.md"
+    monkeypatch.chdir(work)
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    args = ["umbrella", str(releases), str(body), "--site-url", "https://x/"]
+    assert cli.main(args) == 1
+    assert "outside the working directory" in capsys.readouterr().err
+    assert not body.exists()
+
+
+def test_umbrella_refuses_a_body_file_outside_the_working_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    work = tmp_path / "work"
+    work.mkdir()
+    releases = _releases(work)
+    body = tmp_path / "body.md"
+    monkeypatch.chdir(work)
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    args = ["umbrella", str(releases), str(body), "--site-url", "https://x/"]
+    assert cli.main(args) == 1
+    assert "outside the working directory" in capsys.readouterr().err
     assert not body.exists()

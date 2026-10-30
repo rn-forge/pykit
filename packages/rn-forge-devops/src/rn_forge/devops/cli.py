@@ -60,8 +60,17 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _within_cwd(raw: str) -> Path | None:
+    path = Path(raw).resolve()
+    return path if path.is_relative_to(Path.cwd().resolve()) else None
+
+
 def _notes(args: argparse.Namespace) -> int:
-    text = Path(args.changelog).read_text(encoding="utf-8")
+    changelog = _within_cwd(args.changelog)
+    if changelog is None:
+        print(f"{args.changelog} is outside the working directory", file=sys.stderr)
+        return 1
+    text = changelog.read_text(encoding="utf-8")
     try:
         print(notes.changelog_section(text, args.version))
     except ValueError as error:
@@ -71,15 +80,23 @@ def _notes(args: argparse.Namespace) -> int:
 
 
 def _umbrella(args: argparse.Namespace) -> int:
+    releases_dir = _within_cwd(args.releases_dir)
+    if releases_dir is None:
+        print(f"{args.releases_dir} is outside the working directory", file=sys.stderr)
+        return 1
+    body_file = _within_cwd(args.body_file)
+    if body_file is None:
+        print(f"{args.body_file} is outside the working directory", file=sys.stderr)
+        return 1
     # `git ls-remote --tags --refs` lines: `<sha>\trefs/tags/<name>`.
     tags = {
         line.split("refs/tags/", 1)[1].strip()
         for line in sys.stdin.read().splitlines()
         if "refs/tags/" in line
     }
-    found = notes.pending_umbrella(Path(args.releases_dir), tags, args.site_url)
+    found = notes.pending_umbrella(releases_dir, tags, args.site_url)
     if found is not None:
-        Path(args.body_file).write_text(found.body, encoding="utf-8")
+        body_file.write_text(found.body, encoding="utf-8")
         print(f"tag={found.tag}")
         print(f"title={found.title}")
     return 0

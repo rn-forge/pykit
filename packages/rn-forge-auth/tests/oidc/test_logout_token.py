@@ -67,8 +67,10 @@ def test_a_logout_type_or_none_is_accepted(idp, typ):
 
 @pytest.mark.parametrize("typ", ["JWT", "at+jwt", "id_token"])
 def test_any_other_typ_is_rejected(idp, typ):
+    verifier = _verifier(idp)
+    token = _token(idp, typ=typ)
     with pytest.raises(TokenVerificationError, match="typ"):
-        _verifier(idp).verify(_token(idp, typ=typ))
+        verifier.verify(token)
 
 
 @pytest.mark.parametrize(
@@ -107,14 +109,17 @@ def test_any_other_typ_is_rejected(idp, typ):
     ],
 )
 def test_a_bad_logout_token_is_rejected(idp, overrides):
+    verifier = _verifier(idp)
+    token = _token(idp, **overrides)
     with pytest.raises(TokenVerificationError):
-        _verifier(idp).verify(_token(idp, **overrides))
+        verifier.verify(token)
 
 
 def test_the_iat_window_is_configurable(idp):
     token = _token(idp, iat=int(time.time()) - 300, exp=int(time.time()) + 300)
+    verifier = _verifier(idp)
     with pytest.raises(TokenVerificationError, match="issued more than"):
-        _verifier(idp).verify(token)
+        verifier.verify(token)
     assert _verifier(idp, max_age_seconds=600).verify(token)
 
 
@@ -134,15 +139,17 @@ def test_the_jti_is_recorded_per_issuer_until_exp(idp):
 
 def test_a_rejected_token_does_not_consume_its_jti(idp):
     verifier = _verifier(idp)
+    token = _token(idp, jti="j", nonce="n")
     with pytest.raises(TokenVerificationError):
-        verifier.verify(_token(idp, jti="j", nonce="n"))
+        verifier.verify(token)
     assert verifier.verify(_token(idp, jti="j"))
 
 
 def test_a_forged_token_does_not_consume_its_jti(idp):
     verifier = _verifier(idp)
+    token = idp.sign(_claims(idp, jti="j"), key=idp.forged_key)
     with pytest.raises(TokenVerificationError):
-        verifier.verify(idp.sign(_claims(idp, jti="j"), key=idp.forged_key))
+        verifier.verify(token)
     assert verifier.verify(_token(idp, jti="j"))
 
 
@@ -153,5 +160,6 @@ def test_the_algorithm_allow_list_rejects_hmac(idp):
         algorithm="HS256",
         headers={"kid": "k1"},
     )
+    verifier = _verifier(idp)
     with pytest.raises(TokenVerificationError, match="not accepted"):
-        _verifier(idp).verify(token)
+        verifier.verify(token)

@@ -208,7 +208,8 @@ class _Views:
 
     # Routes -----------------------------------------------------------------
 
-    async def providers(self, request: Request) -> Response:
+    # Starlette handler: the signature is imposed, the body needs no await.
+    async def providers(self, request: Request) -> Response:  # NOSONAR(S1172,S7503)
         names = self._config.provider_names
         return JSONResponse(
             [

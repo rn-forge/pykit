@@ -223,11 +223,10 @@ def test_another_provider_error_is_login_failed(
     provider = make_provider()
     transaction = provider.begin(request_of(), return_to="/app").transaction
 
+    request = request_of({"state": transaction.state, "error": "server_error"})
+
     with pytest.raises(LoginFailed) as caught:
-        provider.complete(
-            request_of({"state": transaction.state, "error": "server_error"}),
-            transaction,
-        )
+        provider.complete(request, transaction)
 
     assert_that(caught.value.code).is_equal_to("login_failed")
 
@@ -238,10 +237,10 @@ def test_a_wrong_state_fails_before_any_back_channel_call(
     provider = make_provider()
     transaction = provider.begin(request_of(), return_to="/app").transaction
 
+    request = request_of({"state": "other", "code": "c", "iss": idp.issuer})
+
     with pytest.raises(LoginFailed):
-        provider.complete(
-            request_of({"state": "other", "code": "c", "iss": idp.issuer}), transaction
-        )
+        provider.complete(request, transaction)
 
     assert_that(idp.fetches("/token")).is_zero()
 
@@ -252,13 +251,12 @@ def test_a_failed_code_exchange_is_login_failed(
     provider = make_provider()
     transaction = provider.begin(request_of(), return_to="/app").transaction
 
+    request = request_of(
+        {"state": transaction.state, "code": "bogus", "iss": idp.issuer}
+    )
+
     with pytest.raises(LoginFailed) as caught:
-        provider.complete(
-            request_of(
-                {"state": transaction.state, "code": "bogus", "iss": idp.issuer}
-            ),
-            transaction,
-        )
+        provider.complete(request, transaction)
 
     assert_that(caught.value.code).is_equal_to("login_failed")
 
@@ -269,8 +267,9 @@ def test_discovery_with_another_issuer_fails_the_login(
     idp.faults.discovery_issuer = True
     flow = _flow(make_provider())
 
+    request = request_of()
     with pytest.raises(LoginFailed):
-        flow.begin("acme", request_of(), return_to="/app")
+        flow.begin("acme", request, return_to="/app")
 
 
 def test_a_claim_mapper_replaces_the_default(

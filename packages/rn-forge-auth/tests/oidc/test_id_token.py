@@ -102,8 +102,9 @@ def test_at_hash_must_match_the_access_token(idp):
 
 def test_a_bad_signature_is_rejected(idp):
     token = idp.sign(_claims(idp), key=idp.forged_key)
+    verifier = _verifier(idp)
     with pytest.raises(TokenVerificationError):
-        _verifier(idp).verify(token, nonce=NONCE)
+        verifier.verify(token, nonce=NONCE)
 
 
 def test_the_algorithm_allow_list_rejects_hmac_and_none(idp):
@@ -113,8 +114,9 @@ def test_the_algorithm_allow_list_rejects_hmac_and_none(idp):
     )
     unsigned = jwt.encode(_claims(idp), None, algorithm="none", headers={"kid": "k1"})
     for token in (hmac_token, unsigned):
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(idp).verify(token, nonce=NONCE)
+            verifier.verify(token, nonce=NONCE)
 
 
 class TestMaxAge:
@@ -124,8 +126,9 @@ class TestMaxAge:
 
     def test_an_old_auth_time_is_rejected(self, idp):
         verifier = _verifier(idp, max_age=300)
+        auth_time = int(time.time()) - 3600
         with pytest.raises(TokenVerificationError, match="max_age"):
-            _verify(idp, verifier, auth_time=int(time.time()) - 3600)
+            _verify(idp, verifier, auth_time=auth_time)
 
     def test_a_missing_auth_time_is_rejected(self, idp):
         verifier = _verifier(idp, max_age=300)
@@ -134,8 +137,9 @@ class TestMaxAge:
 
     def test_a_future_auth_time_is_rejected(self, idp):
         verifier = _verifier(idp, max_age=300)
+        auth_time = int(time.time()) + 3600
         with pytest.raises(TokenVerificationError, match="future"):
-            _verify(idp, verifier, auth_time=int(time.time()) + 3600)
+            _verify(idp, verifier, auth_time=auth_time)
 
     def test_auth_time_is_not_required_without_max_age(self, idp):
         assert _verify(idp)

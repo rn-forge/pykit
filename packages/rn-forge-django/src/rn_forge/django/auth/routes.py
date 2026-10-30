@@ -162,7 +162,8 @@ class _Views:
 
     # Routes -----------------------------------------------------------------
 
-    def providers(self, request: HttpRequest) -> HttpResponse:
+    # Django view: the signature is imposed even though request is unused.
+    def providers(self, request: HttpRequest) -> HttpResponse:  # NOSONAR(S1172)
         names = self._config.provider_names
         return JsonResponse(
             [
@@ -582,7 +583,9 @@ def auth_urlpatterns(
         ),
         path(
             f"{base}backchannel-logout/<str:provider_id>",
-            csrf_exempt(require_POST(views.backchannel_logout)),
+            # Server-to-server POST from the provider, authenticated by the signed
+            # logout token rather than a CSRF token.
+            csrf_exempt(require_POST(views.backchannel_logout)),  # NOSONAR(S4502)
             name="rn-forge-auth-backchannel-logout",
         ),
     ]

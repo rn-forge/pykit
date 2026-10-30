@@ -38,8 +38,9 @@ def _resolver(**policy) -> DjangoAccountResolver:
 
 def test_existing_policy_rejects_unlinked_identity_and_resolves_linked_one() -> None:
     resolver = _resolver()
+    identity = _identity()
     with pytest.raises(AccountRejected):
-        resolver.resolve(_identity())
+        resolver.resolve(identity)
     user = User.objects.create_user("ada")
     resolver.link(ISS, "s1", user)
     assert resolver.resolve(_identity()) == str(user.pk)
@@ -49,8 +50,10 @@ def test_existing_policy_rejects_unlinked_identity_and_resolves_linked_one() -> 
 
 
 def test_unknown_provider_is_rejected() -> None:
+    identity = _identity()
+    resolver = DjangoAccountResolver({})
     with pytest.raises(AccountRejected):
-        DjangoAccountResolver({}).resolve(_identity())
+        resolver.resolve(identity)
 
 
 def test_jit_provisions_once_and_stores_only_a_verified_email() -> None:
@@ -78,11 +81,13 @@ def test_jit_domain_allowlist() -> None:
 def test_email_links_only_when_verified_and_domain_is_authoritative() -> None:
     user = User.objects.create_user("ada", email="Ada@corp.com")
     resolver = _resolver(authoritative_domains=frozenset({"corp.com"}))
+    unverified = _identity(email="ada@corp.com")
     with pytest.raises(AccountRejected):
-        resolver.resolve(_identity(email="ada@corp.com"))
+        resolver.resolve(unverified)
     other = _resolver()
+    verified = _identity(email="ada@corp.com", email_verified=True)
     with pytest.raises(AccountRejected):
-        other.resolve(_identity(email="ada@corp.com", email_verified=True))
+        other.resolve(verified)
 
     assert resolver.resolve(
         _identity(email="ada@corp.com", email_verified=True)
@@ -94,8 +99,9 @@ def test_ambiguous_email_is_rejected() -> None:
     User.objects.create_user("a", email="x@corp.com")
     User.objects.create_user("b", email="X@corp.com")
     resolver = _resolver(authoritative_domains=frozenset({"corp.com"}))
+    identity = _identity(email="x@corp.com", email_verified=True)
     with pytest.raises(AccountRejected):
-        resolver.resolve(_identity(email="x@corp.com", email_verified=True))
+        resolver.resolve(identity)
 
 
 def test_sync_hook_runs_on_every_login() -> None:
@@ -118,8 +124,9 @@ def test_sync_hook_runs_on_every_login() -> None:
 def test_link_is_unique_on_issuer_and_subject() -> None:
     resolver = _resolver()
     resolver.link(ISS, "svc", User.objects.create_user("svc"), provider="service")
+    user = User.objects.create_user("svc2")
     with pytest.raises(IntegrityError), transaction.atomic():
-        resolver.link(ISS, "svc", User.objects.create_user("svc2"))
+        resolver.link(ISS, "svc", user)
 
 
 def test_state_writer_drives_session_version_and_activity_through_the_cache() -> None:

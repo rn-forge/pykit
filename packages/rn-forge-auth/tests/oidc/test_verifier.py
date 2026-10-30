@@ -58,8 +58,9 @@ class TestJwtVerifier:
             verifier.verify(token)
 
     def test_malformed_token_fails(self, idp):
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError):
-            _verifier(idp).verify("not.a.jwt")
+            verifier.verify("not.a.jwt")
 
     def test_hmac_token_is_rejected_by_the_allow_list(self, idp):
         token = jwt.encode(
@@ -68,8 +69,9 @@ class TestJwtVerifier:
             algorithm="HS256",
             headers={"kid": "k1"},
         )
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     def test_unsigned_alg_none_token_is_rejected(self, idp):
         token = jwt.encode(
@@ -83,25 +85,29 @@ class TestJwtVerifier:
             algorithm="none",
             headers={"kid": "k1"},
         )
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     def test_token_without_kid_fails(self, idp):
         token = jwt.encode({"sub": "u1"}, idp.private_keys["k1"], algorithm="RS256")
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError, match="kid"):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     def test_unknown_kid_fails(self, idp):
         token = idp.token(key=idp.forged_key, kid="nope")
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     def test_unreachable_key_set_fails(self, idp):
         verifier = JwtVerifier.from_jwks_url(
             "http://127.0.0.1:1/keys", issuer=idp.issuer, audience=AUDIENCE
         )
+        token = idp.token()
         with pytest.raises(TokenVerificationError):
-            verifier.verify(idp.token())
+            verifier.verify(token)
 
     @pytest.mark.parametrize("url", ["http://idp.example.com/keys", "ftp://idp/keys"])
     def test_a_non_https_key_set_url_is_refused(self, url):
@@ -127,8 +133,9 @@ class TestKeyCaching:
         verifier = _verifier(idp, cooldown_duration=3600.0)
         verifier.verify(idp.token())
         idp.publish("k2")
+        token = idp.token(kid="k2")
         with pytest.raises(TokenVerificationError):
-            verifier.verify(idp.token(kid="k2"))
+            verifier.verify(token)
         assert idp.fetches(KEYS) == 1
 
     def test_refetch_is_bounded_under_a_forged_kid_storm(self, idp):

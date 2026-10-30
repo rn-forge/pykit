@@ -168,7 +168,8 @@ class CsrfProtection:
     @staticmethod
     def set_cookie(response: Response, token: str) -> None:
         """Set the token cookie on *response*."""
-        response.set_cookie(
+        # Not HttpOnly: client JS reads the token to echo it in a header.
+        response.set_cookie(  # NOSONAR(S3330)
             CSRF_COOKIE,
             token,
             secure=True,

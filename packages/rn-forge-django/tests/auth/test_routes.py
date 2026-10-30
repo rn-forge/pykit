@@ -1069,7 +1069,8 @@ class _RaceScenarios:
             serialize=self.serialize,
         )
 
-        assert before and after
+        assert before
+        assert after
 
     def test_no_request_succeeds_after_a_backchannel_logout(
         self, mount: Callable[..., _World]
@@ -1086,7 +1087,8 @@ class _RaceScenarios:
 
         before, after = _race(world, revoke, serialize=self.serialize)
 
-        assert before and after
+        assert before
+        assert after
 
     def test_no_request_succeeds_after_an_account_is_disabled(
         self, mount: Callable[..., _World]
@@ -1100,7 +1102,8 @@ class _RaceScenarios:
             serialize=self.serialize,
         )
 
-        assert before and after
+        assert before
+        assert after
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1144,13 +1147,15 @@ class TestSettingsChecks:
 
     def test_mounting_without_a_problem_type_base_is_refused(self) -> None:
         with override_settings(RN_FORGE_DJANGO={}):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="PROBLEM_TYPE_BASE"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     def test_the_csrf_middleware_is_required_in_every_mode(self) -> None:
         with override_settings(DEBUG=True, MIDDLEWARE=[]):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="MIDDLEWARE"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     @pytest.mark.parametrize(
         "setting, value",
@@ -1166,8 +1171,9 @@ class TestSettingsChecks:
         self, setting: str, value: object
     ) -> None:
         with override_settings(DEBUG=True, **{setting: value}):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match=setting):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     def test_a_non_secure_csrf_cookie_is_refused_outside_debug_only(self) -> None:
         with override_settings(DEBUG=True, CSRF_COOKIE_SECURE=False):
@@ -1178,13 +1184,15 @@ class TestSettingsChecks:
             DEBUG=False,
             SESSION_ENGINE="django.contrib.sessions.backends.signed_cookies",
         ):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="signed-cookie"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     def test_the_local_memory_cache_is_refused_outside_debug(self) -> None:
         with override_settings(DEBUG=False, **SESSION_SETTINGS):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="local-memory"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     def test_a_local_memory_session_cache_is_refused_outside_debug(
         self, tmp_path: Path
@@ -1204,8 +1212,9 @@ class TestSettingsChecks:
             SESSION_CACHE_ALIAS="sessions",
             **SESSION_SETTINGS,
         ):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="'sessions'"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     @pytest.mark.parametrize(
         "setting, value",
@@ -1229,8 +1238,9 @@ class TestSettingsChecks:
         with override_settings(
             DEBUG=False, CACHES=caches, **{**SESSION_SETTINGS, setting: value}
         ):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match=setting):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     @pytest.mark.parametrize(
         "engine",
@@ -1243,8 +1253,9 @@ class TestSettingsChecks:
         with override_settings(
             DEBUG=False, **{**SESSION_SETTINGS, "SESSION_ENGINE": engine}
         ):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="not supported"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
     def test_debug_allows_the_development_settings(self) -> None:
         with override_settings(
@@ -1255,8 +1266,9 @@ class TestSettingsChecks:
 
     def test_saving_every_request_is_refused_in_every_mode(self) -> None:
         with override_settings(DEBUG=True, SESSION_SAVE_EVERY_REQUEST=True):
+            config = _bare_config()
             with pytest.raises(ImproperlyConfigured, match="SAVE_EVERY_REQUEST"):
-                auth_urlpatterns(_bare_config())
+                auth_urlpatterns(config)
 
 
 @pytest.mark.security_control("csrf-and-origin")

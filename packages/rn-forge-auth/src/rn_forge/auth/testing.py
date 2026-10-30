@@ -36,7 +36,10 @@ from jwt.algorithms import RSAAlgorithm
 
 __all__ = ["FakeOidcProvider", "Faults", "RecordedRequest"]
 
-_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout"
+# An event-type URI that names the event; it is never fetched.
+_BACKCHANNEL_LOGOUT_EVENT = (
+    "http://schemas.openid.net/event/backchannel-logout"  # NOSONAR(S5332)
+)
 _OTHER_ISSUER = "https://other-issuer.invalid"
 _OTHER_CLIENT = "other-client"
 _JSON = "application/json"
@@ -157,6 +160,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(reply.body)
 
     def log_message(self, format: str, *args: Any) -> None:
+        # Silences the default per-request stderr logging.
         pass
 
 

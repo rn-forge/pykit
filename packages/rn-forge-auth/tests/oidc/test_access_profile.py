@@ -46,16 +46,18 @@ class TestRfc9068Mode:
     @pytest.mark.parametrize("typ", [None, "JWT", "logout+jwt"])
     def test_any_other_typ_is_rejected(self, idp, typ):
         token = idp.sign(_claims(idp), typ=typ)
+        verifier = _verifier(idp, "rfc9068")
         with pytest.raises(TokenVerificationError, match="typ"):
-            _verifier(idp, "rfc9068").verify(token)
+            verifier.verify(token)
 
     @pytest.mark.parametrize(
         "claim", ["iss", "exp", "aud", "sub", "client_id", "iat", "jti"]
     )
     def test_each_required_claim_is_required(self, idp, claim):
         token = idp.sign(_claims(idp, **{claim: None}), typ="at+jwt")
+        verifier = _verifier(idp, "rfc9068")
         with pytest.raises(TokenVerificationError):
-            _verifier(idp, "rfc9068").verify(token)
+            verifier.verify(token)
 
 
 class TestRfc7519Mode:
@@ -69,20 +71,24 @@ class TestRfc7519Mode:
     @pytest.mark.parametrize("typ", ["at+jwt", "logout+jwt", "application/at+jwt"])
     def test_any_other_typ_is_rejected(self, idp, typ):
         token = idp.sign(_claims(idp), typ=typ)
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError, match="typ"):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     @pytest.mark.parametrize("claim", ["iss", "aud", "exp"])
     def test_each_required_claim_is_required(self, idp, claim):
         token = idp.sign(_claims(idp, **{claim: None}))
+        verifier = _verifier(idp)
         with pytest.raises(TokenVerificationError):
-            _verifier(idp).verify(token)
+            verifier.verify(token)
 
     def test_optional_claims_are_validated_when_present(self, idp):
         future = int(time.time()) + 3600
         for bad in ({"nbf": future}, {"iat": future}, {"sub": 7}):
+            verifier = _verifier(idp)
+            token = idp.sign(_claims(idp, **bad))
             with pytest.raises(TokenVerificationError):
-                _verifier(idp).verify(idp.sign(_claims(idp, **bad)))
+                verifier.verify(token)
 
 
 @pytest.mark.parametrize("mode", ["rfc9068", "rfc7519"])
@@ -100,17 +106,21 @@ class TestEveryMode:
         token = self._token(
             idp, mode, **{claim: {"x": {}} if claim == "events" else "n"}
         )
+        verifier = _verifier(idp, mode)
         with pytest.raises(TokenVerificationError, match=claim):
-            _verifier(idp, mode).verify(token)
+            verifier.verify(token)
 
     def test_the_issuer_must_match_exactly(self, idp, mode):
         token = self._token(idp, mode, iss=idp.issuer + "/")
+        verifier = _verifier(idp, mode)
         with pytest.raises(TokenVerificationError):
-            _verifier(idp, mode).verify(token)
+            verifier.verify(token)
 
     def test_the_audience_must_contain_ours(self, idp, mode):
+        verifier = _verifier(idp, mode)
+        token = self._token(idp, mode, aud=["other"])
         with pytest.raises(TokenVerificationError):
-            _verifier(idp, mode).verify(self._token(idp, mode, aud=["other"]))
+            verifier.verify(token)
         assert _verifier(idp, mode).verify(
             self._token(idp, mode, aud=["other", AUDIENCE])
         )
@@ -122,8 +132,9 @@ class TestEveryMode:
             algorithm="HS256",
             headers={"kid": "k1"},
         )
+        verifier = _verifier(idp, mode)
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _verifier(idp, mode).verify(token)
+            verifier.verify(token)
 
 
 class TestLoginClientId:
@@ -151,9 +162,11 @@ class TestLoginClientId:
         _verifier(idp, login_client_id=LOGIN_CLIENT)
 
     def test_the_constructor_applies_the_same_rule(self, idp):
+        jwks = jwt.PyJWKClient(idp.jwks_url)
+
         with pytest.raises(ValueError, match="login client"):
             JwtVerifier(
-                jwks=jwt.PyJWKClient(idp.jwks_url),
+                jwks=jwks,
                 issuer=idp.issuer,
                 audience=LOGIN_CLIENT,
                 login_client_id=LOGIN_CLIENT,

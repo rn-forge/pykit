@@ -23,11 +23,11 @@ jobs:
       - id: umbrella
         run: |
           set -euo pipefail
-          git ls-remote --tags --refs origin | uv run rn-forge-devops umbrella docs/releases "$RUNNER_TEMP/umbrella.md" --site-url https://rn-forge.github.io/pykit/ >> "$GITHUB_OUTPUT"
+          git ls-remote --tags --refs origin | uv run rn-forge-devops umbrella docs/releases umbrella.md --site-url https://rn-forge.github.io/pykit/ >> "$GITHUB_OUTPUT"
 
       - if: ${{ steps.umbrella.outputs.tag != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.umbrella.outputs.tag }}
           TITLE: ${{ steps.umbrella.outputs.title }}
-        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes-file "$RUNNER_TEMP/umbrella.md" --latest
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes-file umbrella.md --latest

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import ast
 from collections import defaultdict
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -134,22 +135,23 @@ def tagged_tests(root: Path) -> dict[str, list[str]]:
     for path in sorted(root.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if not isinstance(
-                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-            ):
-                continue
-            for decorator in node.decorator_list:
-                if not (
-                    isinstance(decorator, ast.Call)
-                    and isinstance(decorator.func, ast.Attribute)
-                    and decorator.func.attr == "security_control"
-                ):
-                    continue
-                for argument in decorator.args:
-                    if isinstance(argument, ast.Constant) and isinstance(
-                        argument.value, str
-                    ):
-                        found[argument.value].append(
-                            f"{path.relative_to(root)}::{node.name}"
-                        )
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                for case_id in _security_control_ids(node):
+                    found[case_id].append(f"{path.relative_to(root)}::{node.name}")
     return dict(found)
+
+
+def _security_control_ids(
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
+) -> Iterator[str]:
+    for decorator in node.decorator_list:
+        if (
+            isinstance(decorator, ast.Call)
+            and isinstance(decorator.func, ast.Attribute)
+            and decorator.func.attr == "security_control"
+        ):
+            for argument in decorator.args:
+                if isinstance(argument, ast.Constant) and isinstance(
+                    argument.value, str
+                ):
+                    yield argument.value

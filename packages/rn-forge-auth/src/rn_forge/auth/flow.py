@@ -22,6 +22,7 @@ from rn_forge.commons import AppException
 __all__ = ["CompletedLogin", "LoginFailed", "LoginFlow"]
 
 _logger = logging.getLogger(__name__)
+_LOGIN_FAILED = "Login with %s failed: %s"
 
 DEFAULT_TRANSACTION_TTL = timedelta(seconds=600)
 
@@ -110,7 +111,7 @@ class LoginFlow[RequestT]:
         try:
             start = provider.begin(request, return_to=return_to)
         except LoginFailed as exc:
-            _logger.warning("Login with %s failed: %s", provider_id, exc.reason)
+            _logger.warning(_LOGIN_FAILED, provider_id, exc.reason)
             raise
         except Exception as exc:
             raise self._unexpected(provider_id, "begin", exc) from exc
@@ -156,7 +157,7 @@ class LoginFlow[RequestT]:
         try:
             identity = provider.complete(request, transaction)
         except LoginFailed as exc:
-            _logger.warning("Login with %s failed: %s", provider_id, exc.reason)
+            _logger.warning(_LOGIN_FAILED, provider_id, exc.reason)
             raise
         except Exception as exc:
             raise self._unexpected(provider_id, "complete", exc) from exc
@@ -170,7 +171,7 @@ class LoginFlow[RequestT]:
 
     @staticmethod
     def _fail(code: CallbackError, provider_id: str, reason: str) -> LoginFailed:
-        _logger.warning("Login with %s failed: %s", provider_id, reason)
+        _logger.warning(_LOGIN_FAILED, provider_id, reason)
         return LoginFailed(code, reason)
 
     @staticmethod

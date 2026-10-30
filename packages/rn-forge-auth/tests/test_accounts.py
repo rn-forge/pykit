@@ -27,10 +27,11 @@ def test_a_concrete_resolver_satisfies_the_protocol():
 
 
 def test_account_rejected_carries_a_reason():
+    resolver = FakeResolver()
+    identity = ExternalIdentity(provider="p", issuer="i", subject="bad")
+
     with pytest.raises(AccountRejected) as info:
-        FakeResolver().resolve(
-            ExternalIdentity(provider="p", issuer="i", subject="bad")
-        )
+        resolver.resolve(identity)
     assert info.value.reason == "not provisioned"
 
 

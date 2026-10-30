@@ -1338,8 +1338,9 @@ class TestInMemoryStoresOutsideDebug:
     def test_the_middleware_sessions_refuse_an_in_memory_store(
         self, store: Callable[[], Any], name: str, label: str
     ) -> None:
+        config = self._config(**{name: store()})
         with pytest.raises(RuntimeError, match=f"The {label} store"):
-            sessions_for(self._config(**{name: store()}))
+            sessions_for(config)
 
     def test_mounting_without_a_problem_type_base_fails(self) -> None:
         with pytest.raises(ValueError, match="problem_type_base"):

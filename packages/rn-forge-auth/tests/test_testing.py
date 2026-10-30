@@ -408,8 +408,9 @@ class TestTokens:
             audience="api://orders",
             mode="rfc9068",
         )
+        token = provider.access_token(profile="rfc7519")
         with pytest.raises(TokenVerificationError):
-            strict.verify(provider.access_token(profile="rfc7519"))
+            strict.verify(token)
 
     def test_a_logout_token_passes_the_logout_profile(self, provider) -> None:
         verifier = LogoutTokenVerifier.from_jwks_url(
@@ -517,8 +518,10 @@ class TestFaults:
         setattr(provider.faults, fault, True)
         tokens = _login(provider)
 
+        verifier = _id_token_verifier(provider)
+
         with pytest.raises(TokenVerificationError, match=f"(?i){message}"):
-            _id_token_verifier(provider).verify(
+            verifier.verify(
                 tokens["id_token"], nonce=NONCE, access_token=tokens["access_token"]
             )
 

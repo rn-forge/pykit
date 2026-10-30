@@ -18,6 +18,7 @@ from urllib.parse import quote
 from rn_forge.auth.flow import LoginFailed
 from rn_forge.auth.identity import (
     ExternalIdentity,
+    IdentityProvider,
     LoginRequest,
     LoginStart,
     LoginTransaction,
@@ -60,7 +61,7 @@ def _start(provider: str, return_to: str) -> LoginStart:
     return LoginStart(transaction=transaction, redirect_url=None)
 
 
-class PasswordIdentityProvider:
+class PasswordIdentityProvider(IdentityProvider[LoginRequest]):
     """Username and password login against an application-supplied verifier.
 
     The login is a form, so :meth:`begin` returns no redirect. Rate limiting
@@ -137,7 +138,7 @@ class DevelopmentAccount:
     attributes: Mapping[str, Any] = field(default_factory=dict[str, Any])
 
 
-class DevelopmentIdentityProvider:
+class DevelopmentIdentityProvider(IdentityProvider[LoginRequest]):
     """Sign in as a fixture account; for local development only.
 
     Construction fails unless ``debug`` is true. :meth:`render_accounts`
