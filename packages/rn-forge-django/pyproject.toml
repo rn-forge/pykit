@@ -86,7 +86,7 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-djang
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
