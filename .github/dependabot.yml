@@ -14,5 +14,6 @@ updates:
       interval: weekly
     groups:
       uv:
-        patterns:
-          - "*"
+        update-types:
+          - minor
+          - patch
