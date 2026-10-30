@@ -189,7 +189,7 @@ class ResourceExportMixin(ListModelMixin, GenericAPIView):
 
     def get_export_resource(self) -> Any:
         """Return the resource instance that builds the export."""
-        assert self.export_resource_class is not None
+        assert self.export_resource_class is not None  # noqa: S101  # type narrowing, not validation
         return self.export_resource_class()
 
     def _filename(self) -> str:
@@ -294,7 +294,7 @@ class ResourceImportMixin(GenericAPIView):
 
     def get_import_resource(self) -> Any:
         """Return the resource instance that performs the import."""
-        assert self.import_resource_class is not None
+        assert self.import_resource_class is not None  # noqa: S101  # type narrowing, not validation
         return self.import_resource_class()
 
     @override

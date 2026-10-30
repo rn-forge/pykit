@@ -10,6 +10,7 @@ __all__ = [
     "REDACTED",
     "VARIABLE_MEMBERS",
     "ConformanceArea",
+    "ConformanceCapability",
     "ConformanceCase",
     "RequestSpec",
     "redact",
@@ -36,6 +37,13 @@ type ConformanceArea = Literal[
     "soft-delete",
 ]
 """Areas covered by the conformance suite."""
+
+type ConformanceCapability = Literal["session-routes", "csrf"]
+"""An optional binding feature a case needs.
+
+``session-routes`` is a route that authenticates by cookie session only.
+``csrf`` is the CSRF check on unsafe methods of a session route.
+"""
 
 REDACTED: Final = "<redacted>"
 """What :func:`redact` substitutes for a member that legitimately varies."""
@@ -74,7 +82,9 @@ class ConformanceCase:
 
     Header names are compared case-insensitively and values exactly. Bodies are
     compared after :func:`redact`. ``depends_on`` names prerequisite requests
-    in execution order.
+    in execution order. ``requires`` names the optional capabilities a binding
+    must provide for the case to apply to it (see
+    :func:`~rn_forge.web.conformance.cases_provided_by`).
     """
 
     id: str
@@ -83,6 +93,7 @@ class ConformanceCase:
     request: RequestSpec
     expect_status: int
     depends_on: tuple[str, ...] = ()
+    requires: frozenset[ConformanceCapability] = frozenset()
     expect_headers: Mapping[str, str] = field(default_factory=dict[str, str])
     expect_absent_headers: frozenset[str] = frozenset()
     expect_body: Mapping[str, Any] = field(default_factory=dict[str, Any])

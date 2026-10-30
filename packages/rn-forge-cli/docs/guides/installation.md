@@ -1,15 +1,10 @@
 # Installation
 
-These packages are not published to PyPI. A release is a **git tag**, and a
-consumer declares pykit's package index (`https://rn-forge.github.io/pykit/simple/`)
-and requires the package by version range, or pins a tag by direct URL. A
-floating branch reference would silently change what a build produced.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli",
-]
+dependencies = ["rn-forge-cli>=0.1,<0.2"]
 ```
 
 For a tool whose command line *is* the product, this belongs in `dependencies`.
@@ -23,8 +18,7 @@ optional. Jinja2 is **not** a dependency — that lives in `rn-forge-tooling`.
 
 ## Upgrading
 
-Raise the version range, or change the tag in a direct URL. A lockfile records
-the resolved version.
+Raise the version range. A lockfile records the resolved version.
 
 ## The boundary, as an executable rule
 

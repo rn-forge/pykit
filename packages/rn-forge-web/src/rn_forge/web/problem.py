@@ -15,10 +15,11 @@ from types import MappingProxyType
 from typing import Any, Final, Protocol, Self, cast, runtime_checkable
 
 from pydantic import ConfigDict, model_validator
-from rn_forge.web.auth import AUTH_FAILED_DETAIL, challenge_header
+from rn_forge.web.auth import AUTH_FAILED_DETAIL, CSRF_FAILED_DETAIL, challenge_header
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     ContentTooLarge,
+    CsrfFailed,
     DomainConflict,
     IdempotencyKeyInFlight,
     IdempotencyKeyRequired,
@@ -48,6 +49,7 @@ __all__ = [
     "BLANK_TYPE",
     "CONFLICT",
     "CONTENT_TOO_LARGE",
+    "CSRF_FAILED",
     "FORBIDDEN",
     "GENERIC_SERVER_DETAIL",
     "INTERNAL_ERROR",
@@ -173,6 +175,7 @@ PRECONDITION_REQUIRED: Final = ProblemType(
 )
 UNAUTHORIZED: Final = ProblemType("unauthorized", 401, "Unauthorized")
 FORBIDDEN: Final = ProblemType("forbidden", 403, "Forbidden")
+CSRF_FAILED: Final = ProblemType("csrf-failed", 403, "CSRF Failed")
 BAD_REQUEST: Final = ProblemType("bad-request", 400, "Bad Request")
 BAD_GATEWAY: Final = ProblemType("bad-gateway", 502, "Bad Gateway")
 CONTENT_TOO_LARGE: Final = ProblemType("content-too-large", 413, "Content Too Large")
@@ -398,7 +401,12 @@ def render_problem(
       when no span is recording);
     - a 401 carries :data:`~rn_forge.web.auth.AUTH_FAILED_DETAIL` as its
       detail, whatever *detail* says, and a ``WWW-Authenticate`` challenge
-      unless *headers* already carries one;
+      unless *headers* already carries one or *exc* is an
+      :class:`~rn_forge.web.exceptions.AuthenticationFailed` whose
+      ``challenge`` is false;
+    - a ``csrf-failed`` problem carries
+      :data:`~rn_forge.web.auth.CSRF_FAILED_DETAIL` as its detail, whatever
+      *detail* says;
     - when *exc* implements :class:`HasResponseHeaders`, its headers are
       merged beneath *headers*, so an explicit *headers* entry wins.
 
@@ -419,7 +427,7 @@ def render_problem(
     body = registry.build(
         exc,
         instance=instance,
-        detail=AUTH_FAILED_DETAIL if row.status == 401 else detail,
+        detail=_fixed_detail(row) or detail,
         problem=row,
         extensions={TRACE_ID_KEY: current_trace_id(), **(extensions or {})},
     )
@@ -427,11 +435,20 @@ def render_problem(
     if isinstance(exc, HasResponseHeaders):
         out.update(exc.response_headers())
     out.update(headers or {})
-    if row.status == 401 and not any(
-        name.lower() == "www-authenticate" for name in out
+    if (
+        row.status == 401
+        and getattr(exc, "challenge", True)
+        and not any(name.lower() == "www-authenticate" for name in out)
     ):
         out["WWW-Authenticate"] = challenge_header(realm=realm)
     return ProblemResponse(problem=body, headers=out)
+
+
+def _fixed_detail(row: ProblemType) -> str | None:
+    """Return the detail a row must render whatever the caller supplied."""
+    if row.status == 401:
+        return AUTH_FAILED_DETAIL
+    return CSRF_FAILED_DETAIL if row == CSRF_FAILED else None
 
 
 def default_registry(*, type_base: str = "") -> ProblemRegistry:
@@ -458,6 +475,7 @@ def default_registry(*, type_base: str = "") -> ProblemRegistry:
         .register(IdempotencyKeyInFlight, CONFLICT)
         .register(AuthenticationFailed, UNAUTHORIZED)
         .register(PermissionDenied, FORBIDDEN)
+        .register(CsrfFailed, CSRF_FAILED)
         .register(ItemsDenied, FORBIDDEN)
         .register(RemoteProblem, BAD_GATEWAY)
         .register(ContentTooLarge, CONTENT_TOO_LARGE)

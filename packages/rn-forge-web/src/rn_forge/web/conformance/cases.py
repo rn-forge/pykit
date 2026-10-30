@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from http import HTTPStatus
 from typing import Final
 
+from rn_forge.web.auth import CSRF_FAILED_DETAIL
 from rn_forge.web.conformance.types import (
     REDACTED,
     ConformanceArea,
+    ConformanceCapability,
     ConformanceCase,
     RequestSpec,
 )
@@ -18,6 +21,7 @@ from rn_forge.web.problem import (
     BLANK_TYPE,
     CONFLICT,
     CONTENT_TOO_LARGE,
+    CSRF_FAILED,
     FORBIDDEN,
     GENERIC_SERVER_DETAIL,
     INTERNAL_ERROR,
@@ -34,7 +38,7 @@ from rn_forge.web.problem import (
 )
 from rn_forge.web.tracing import EXPOSED_HEADERS
 
-__all__ = ["CASES", "case_by_id", "cases_for"]
+__all__ = ["CASES", "case_by_id", "cases_for", "cases_provided_by"]
 
 _JSON: Final = {"Content-Type": "application/json"}
 _PROBLEM: Final = {"Content-Type": "application/problem+json"}
@@ -43,6 +47,7 @@ _LINKSET: Final = {"Content-Type": "application/linkset+json"}
 _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 """A well-formed W3C traceparent, from the standard's own example."""
 
+_SESSION_PATH: Final = "/conformance/session"
 _ORDER_ID_DESC: Final = "id desc"
 _MERGE: Final = {"Content-Type": MERGE_PATCH_MEDIA_TYPE}
 _DOCUMENT_PATH: Final = "/conformance/documents/1"
@@ -685,6 +690,40 @@ CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_body=_problem_body(
             FORBIDDEN, "The authenticated principal lacks the required access"
         ),
+    ),
+    ConformanceCase(
+        id="auth.session-only-401-has-no-challenge",
+        area="auth",
+        description=(
+            "RFC 9110 §15.5.2 deviation. A session-only route has no registered "
+            "scheme to challenge with, so its 401 carries no WWW-Authenticate."
+        ),
+        request=RequestSpec("GET", _SESSION_PATH),
+        requires=frozenset({"session-routes"}),
+        expect_status=401,
+        expect_headers=_PROBLEM,
+        expect_absent_headers=frozenset({"WWW-Authenticate"}),
+        expect_body=_problem_body(UNAUTHORIZED, "Authentication failed."),
+    ),
+    ConformanceCase(
+        id="auth.csrf-rejection-is-403-csrf-failed",
+        area="auth",
+        description=(
+            "An unsafe request from a foreign origin is a 403 csrf-failed problem, "
+            "not a permission denial. The detail is generic and never names the "
+            "check that failed; with a type_base the type member is csrf-failed."
+        ),
+        request=RequestSpec(
+            "POST",
+            _SESSION_PATH,
+            headers={**_JSON, "Origin": "https://evil.example"},
+            body={},
+        ),
+        requires=frozenset({"session-routes", "csrf"}),
+        expect_status=403,
+        expect_headers=_PROBLEM,
+        expect_absent_headers=frozenset({"WWW-Authenticate"}),
+        expect_body=_problem_body(CSRF_FAILED, CSRF_FAILED_DETAIL),
     ),
     # --- Casing (api-conventions.md) ------------------------------------------
     ConformanceCase(
@@ -1828,3 +1867,24 @@ def case_by_id(case_id: str) -> ConformanceCase:
         if case.id == case_id:
             return case
     raise KeyError(case_id)
+
+
+def cases_provided_by(
+    provides: Collection[ConformanceCapability] = (),
+) -> tuple[ConformanceCase, ...]:
+    """Return every case whose required capabilities a binding provides.
+
+    A case with no ``requires`` is always returned. A driver parametrizes over
+    this instead of :data:`CASES`, passing the capabilities its fixture
+    application serves.
+
+    Args:
+        provides: The capabilities the binding provides.
+
+    Example::
+
+        @pytest.mark.parametrize("case", cases_provided_by({"session-routes"}))
+        def test_conforms(case): ...
+    """
+    available = frozenset(provides)
+    return tuple(case for case in CASES if case.requires <= available)

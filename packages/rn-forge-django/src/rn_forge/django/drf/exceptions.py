@@ -20,6 +20,7 @@ from rest_framework.views import (
     exception_handler,  # pyright: ignore[reportUnknownVariableType]  # DRF stubs leave its parameters untyped
     set_rollback,
 )
+from rn_forge.django import settings as facade
 from rn_forge.django.drf.utils import RequestUtils
 from rn_forge.django.exceptions import (
     json_exception_response,
@@ -30,15 +31,22 @@ from rn_forge.web import (
     VALIDATION_ERROR,
     ProblemRegistry,
     ProblemType,
+    SessionRequired,
     default_registry,
     field_error,
 )
 
 __all__ = [
+    "NO_CHALLENGE",
     "drf_exception_handler",
     "problem_details_exception_handler",
     "problem_registry",
 ]
+
+
+NO_CHALLENGE: Final = "x-rn-forge-no-challenge"
+"""An ``authenticate_header`` value that makes DRF answer ``401`` while
+:func:`problem_details_exception_handler` sends no ``WWW-Authenticate``."""
 
 
 def drf_exception_handler(
@@ -77,6 +85,11 @@ def problem_registry(*, type_base: str = "") -> ProblemRegistry:
 _REGISTRY: Final = problem_registry()
 
 
+def _default_registry() -> ProblemRegistry:
+    type_base = facade.rn_forge_django_settings.auth.problem_type_base
+    return problem_registry(type_base=type_base) if type_base else _REGISTRY
+
+
 def problem_details_exception_handler(
     exc: Exception,
     context: Mapping[str, object],
@@ -86,15 +99,16 @@ def problem_details_exception_handler(
     """Render an exception as an RFC 9457 ``application/problem+json`` response.
 
     DRF determines the status and headers first; the registry then supplies the
-    problem body. Validation field errors appear in the ``errors`` extension.
+    problem body. Validation field errors appear in the ``errors`` extension. A
+    ``WWW-Authenticate`` value of :data:`NO_CHALLENGE` is dropped.
 
     Args:
         exc: The exception DRF caught.
         context: DRF's handler context; ``context["request"]`` gives the path.
-        registry: The rows to render with. Defaults to :func:`problem_registry`,
-            built once at import.
+        registry: The rows to render with. Defaults to :func:`problem_registry`
+            with ``RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]`` when set.
     """
-    rows = registry if registry is not None else _REGISTRY
+    rows = registry if registry is not None else _default_registry()
     drf_response: Response | None = exception_handler(exc, context)
     # DRF only rolls back what it handled; a 500 rendered here must not commit.
     set_rollback()
@@ -121,6 +135,10 @@ def problem_details_exception_handler(
         if drf_response is not None
         else None
     )
+    if headers is not None and headers.get("WWW-Authenticate") == NO_CHALLENGE:
+        del headers["WWW-Authenticate"]
+        # SessionRequired is the exception that renders a 401 with no challenge.
+        exc = SessionRequired(str(exc))
     return problem_details_response(
         exc,
         instance=instance,

@@ -17,7 +17,7 @@ from rest_framework.views import APIView  # noqa: E402
 
 from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication  # noqa: E402
 from rn_forge.django.auth.drf.principal import requires  # noqa: E402
-from rn_forge.web import Principal, Requirement  # noqa: E402
+from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -29,17 +29,7 @@ PROBLEM_HANDLER = {
 }
 
 
-class _IdP:
-    def __init__(self):
-        self.calls = 0
-
-    def __call__(self, url):
-        self.calls += 1
-        jwk = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
-        return {"keys": [jwk]}
-
-
-IDP = _IdP()
+JWK = {**RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True), "kid": "k1"}
 
 
 def _token(key=KEY, kid="k1", **claims):
@@ -56,19 +46,44 @@ def _token(key=KEY, kid="k1", **claims):
     return jwt.encode(payload, key, algorithm="RS256", headers={"kid": kid})
 
 
-class _Entra(JWKSBearerAuthentication):
-    jwks_url = "https://login.example.com/tenant/discovery/v2.0/keys"
-    issuer = ISSUER
-    audience = "api://orders"
-    realm = "orders"
-    fetch = staticmethod(IDP)
+class _Accounts:
+    def lookup(self, issuer, subject):
+        return "acct-1" if subject == "u1" else None
 
 
-class _Custom(_Entra):
-    def claims_to_principal(self, claims):
-        return Principal(
-            subject=f"custom:{claims['sub']}", scopes=frozenset({"orders.read"})
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(
+            active=True,
+            session_version=0,
+            roles=frozenset({"Reader"}),
+            attributes={"tenant": "t-1"},
         )
+
+
+def _entra(jwks_url):
+    # A fresh subclass per test: authenticators are cached per class.
+    class Entra(JWKSBearerAuthentication):
+        issuer = ISSUER
+        audience = "api://orders"
+        realm = "orders"
+        accounts = _Accounts()
+        contexts = _Contexts()
+
+    Entra.jwks_url = jwks_url
+    return Entra
+
+
+def _custom(jwks_url):
+    class Custom(_entra(jwks_url)):
+        def claims_to_principal(self, claims):
+            return Principal(
+                subject=claims["sub"],
+                issuer=claims["iss"],
+                scopes=frozenset({"orders.read"}),
+            )
+
+    return Custom
 
 
 def _view(auth_class, requirement=Requirement()):
@@ -100,13 +115,18 @@ def _get(view, token=None):
     return response, json.loads(response.content)
 
 
+@pytest.fixture
+def jwks_url(serve_jwks):
+    return serve_jwks([JWK])
+
+
 class TestJWKSBearerAuthentication:
-    def test_valid_token_lands_a_principal_on_request_user(self) -> None:
-        response, body = _get(_view(_Entra), _token())
+    def test_valid_token_lands_a_principal_on_request_user(self, jwks_url) -> None:
+        response, body = _get(_view(_entra(jwks_url)), _token())
         assert response.status_code == 200
         assert body == {
             "type": "Principal",
-            "subject": "u1",
+            "subject": "acct-1",
             "scopes": ["orders.read", "orders.write"],
             "roles": ["Reader"],
             "tenant": "t-1",
@@ -123,29 +143,127 @@ class TestJWKSBearerAuthentication:
         ],
         ids=["expired", "audience", "issuer", "signature", "malformed"],
     )
-    def test_verification_failures_are_a_generic_401(self, token) -> None:
-        response, body = _get(_view(_Entra), token)
+    @pytest.mark.security_control("problem-responses")
+    def test_verification_failures_are_a_generic_401(self, jwks_url, token) -> None:
+        response, body = _get(_view(_entra(jwks_url)), token)
         assert response.status_code == 401
         assert body["detail"] == "Authentication failed."
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
 
-    def test_missing_header_is_401(self) -> None:
-        response, _ = _get(_view(_Entra))
+    def test_missing_header_is_401(self, jwks_url) -> None:
+        response, _ = _get(_view(_entra(jwks_url)))
         assert response.status_code == 401
 
-    def test_key_set_is_cached_across_requests(self) -> None:
-        before = IDP.calls
-        for _ in range(3):
-            _get(_view(_Entra), _token())
-        assert IDP.calls - before <= 1
-
-    def test_claims_to_principal_override_is_used(self) -> None:
-        response, body = _get(_view(_Custom), _token())
+    def test_claims_to_principal_override_is_used(self, jwks_url) -> None:
+        response, body = _get(_view(_custom(jwks_url)), _token())
         assert response.status_code == 200
-        assert body["subject"] == "custom:u1"
+        assert body["subject"] == "acct-1"
 
-    def test_missing_scope_is_403(self) -> None:
-        view = _view(_Entra, Requirement(all_scopes=frozenset({"orders.admin"})))
+    def test_missing_scope_is_403(self, jwks_url) -> None:
+        view = _view(
+            _entra(jwks_url), Requirement(all_scopes=frozenset({"orders.admin"}))
+        )
         response, _ = _get(view, _token())
         assert response.status_code == 403
         assert not response.has_header("WWW-Authenticate")
+
+
+class TestUnlinkedSubject:
+    def test_token_without_a_linked_account_is_401(self, jwks_url) -> None:
+        response, body = _get(_view(_entra(jwks_url)), _token(sub="stranger"))
+        assert response.status_code == 401
+        assert body["detail"] == "Authentication failed."
+
+
+@pytest.fixture
+def idp():
+    from rn_forge.auth.testing import FakeOidcProvider
+
+    with FakeOidcProvider(user={"sub": "u1"}) as fake:
+        yield fake
+
+
+def _for(idp, *, cooldown=30.0):
+    class Fake(_entra(idp.jwks_url)):
+        issuer = idp.issuer
+        cooldown_duration = cooldown
+
+    return _view(Fake)
+
+
+class TestAgainstTheFakeProvider:
+    @pytest.mark.security_control("token-profiles")
+    def test_an_access_token_is_accepted(self, idp) -> None:
+        response, _ = _get(
+            _for(idp), idp.access_token(audience="api://orders", profile="rfc7519")
+        )
+
+        assert response.status_code == 200
+
+    @pytest.mark.security_control("token-profiles")
+    def test_a_logout_token_is_not_a_bearer_token(self, idp) -> None:
+        response, _ = _get(
+            _for(idp), idp.logout_token(sub="u1", audience="api://orders")
+        )
+
+        assert response.status_code == 401
+
+    @pytest.mark.security_control("token-profiles")
+    def test_an_id_token_is_not_a_bearer_token(self, idp) -> None:
+        token = idp.access_token(audience="api://orders", nonce="n-0S6_WzA2Mj")
+
+        response, _ = _get(_for(idp), token)
+
+        assert response.status_code == 401
+
+    @pytest.mark.security_control("token-profiles")
+    def test_an_unsigned_token_is_a_401(self, idp) -> None:
+        token = idp.sign(
+            {
+                "sub": "u1",
+                "iss": idp.issuer,
+                "aud": "api://orders",
+                "exp": int(time.time()) + 300,
+            },
+            alg="none",
+        )
+
+        response, body = _get(_for(idp), token)
+
+        assert response.status_code == 401
+        assert body["detail"] == "Authentication failed."
+
+    @pytest.mark.security_control("jwks-rotation")
+    def test_a_token_under_a_rotated_key_is_accepted_after_the_cooldown(
+        self, idp
+    ) -> None:
+        view = _for(idp, cooldown=0.0)
+        mint = lambda: idp.access_token(audience="api://orders", profile="rfc7519")  # noqa: E731
+        assert _get(view, mint())[0].status_code == 200
+
+        idp.rotate_key()
+
+        assert _get(view, mint())[0].status_code == 200
+
+    @pytest.mark.security_control("jwks-rotation")
+    def test_an_unknown_kid_is_a_401_and_refetches_at_most_once_per_cooldown(
+        self, idp
+    ) -> None:
+        view = _for(idp, cooldown=3600.0)
+        _get(view, idp.access_token(audience="api://orders", profile="rfc7519"))
+        fetched = idp.fetches("/keys")
+        forged = idp.sign(
+            {
+                "sub": "u1",
+                "iss": idp.issuer,
+                "aud": "api://orders",
+                "exp": int(time.time()) + 300,
+            },
+            kid="nope",
+            key=idp.forged_key,
+        )
+
+        statuses = [_get(view, forged)[0].status_code for _ in range(3)]
+
+        assert statuses == [401, 401, 401]
+        assert idp.fetches("/keys") - fetched <= 1

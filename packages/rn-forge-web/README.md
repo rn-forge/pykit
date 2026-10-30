@@ -20,8 +20,9 @@ semantics.
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi
+commons ──► web ──► auth ──► django
+              │        └───► fastapi
+              └───► sqlalchemy
 ```
 
 `rn-forge-web` depends on **`rn-forge-commons` and nothing else in the
@@ -61,19 +62,15 @@ response.
 
 ## Installation
 
-None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag**. A consumer declares pykit's package index and requires it by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
-dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
-]
+dependencies = ["rn-forge-web>=0.3,<0.4"]
 ```
 
 Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
-local checkout; that
-override is for local development only and does not survive into a built wheel.
+local checkout; that override is for local development only and does not survive
+into a built wheel.
 
 ## Dependencies and why
 
@@ -86,23 +83,12 @@ are `WireModel` subclasses. Both framework packages use them directly: FastAPI
 as request and response models, Django for its OpenAPI components and health
 bodies. `rn-forge-django` therefore installs pydantic transitively.
 
-**`rn-forge-commons[auth]`, behind this package's own `auth` extra** — and only
-for `rn_forge.web.oidc`. `OidcAuthenticator` is the single implementation that
-joins commons' `JwtVerifier` to the `Authenticator` contract, so the two
-framework packages stop hand-writing the same verifier-to-`Principal` glue. It
-sits here rather than in commons because its signature is `Credentials` in and
-`Principal` out — both web types, and commons cannot depend on web.
-
-Behind an extra, and excluded from the curated `__init__.py`, so the rest of the
-package keeps the property below: install `rn-forge-web` without extras and
-nothing but commons comes with it. Import `rn_forge.web.oidc` directly.
-
 **`secure` (2.0.1), behind this package's own `security` extra** — and only for
 `rn_forge.web.security`. It is framework-agnostic (no dependencies of its own)
 and emits the OWASP REST Security Cheat Sheet header preset exactly, so it is
 wrapped rather than hand-rolled. Behind an extra and excluded from the curated
-`__init__.py` for the same reason as `auth`; import `rn_forge.web.security`
-directly.
+`__init__.py` so the rest of the package stays dependency-free; import
+`rn_forge.web.security` directly.
 
 **`opentelemetry-api`, a base dependency** — and only for
 `rn_forge.web.tracing`. W3C Trace Context is read through OpenTelemetry's

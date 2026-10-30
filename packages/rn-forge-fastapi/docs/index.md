@@ -16,17 +16,17 @@ It provides:
 - **`dependencies`** — `page_params`, `require_idempotency_key` and
   `require_if_match`
 - **`health`** — `health_router`, serving `/healthz` and `/readyz`
-- **`auth`** — `bearer_auth`, `basic_auth` and `requires`, producing the web
-  package's `Principal`
+- **`auth`** — `bearer_auth`, `basic_auth` and `requires`, producing
+  `rn-forge-auth`'s `Principal`
 
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi
+commons ──► web ──► auth ──► django
+                          └───► fastapi
 ```
 
-It depends on `rn-forge-web` and FastAPI, and never imports `rn_forge.django`,
+It depends on `rn-forge-web`, `rn-forge-auth` and FastAPI, and never imports `rn_forge.django`,
 `rn_forge.cli` or `rn_forge.tooling`. `uv run lint-imports` proves it.
 
 **Adapt, do not re-decide.** A status code, a header name or an encoding decided

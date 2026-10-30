@@ -6,7 +6,6 @@ from django.test import override_settings
 from rn_forge.django import settings as rnf_settings
 from rn_forge.django.settings import (
     CasingSettings,
-    DRFViewsSettings,
     PaginationSettings,
 )
 
@@ -21,10 +20,8 @@ class TestDefaults:
     def test_empty_setting_yields_every_default(self) -> None:
         with override_settings(RN_FORGE_DJANGO={}):
             conf = _current()
-        assert conf.drf.views == DRFViewsSettings()
         assert conf.drf.pagination == PaginationSettings()
         assert conf.drf.casing == CasingSettings()
-        assert conf.auth.saml.return_to is None
 
     def test_pagination_defaults(self) -> None:
         assert PaginationSettings() == PaginationSettings(
@@ -44,7 +41,6 @@ class TestOverrideAndReload:
                     "PAGINATION": {"PAGE_SIZE": 10},
                     "CASING": {"ENABLED": False},
                 },
-                "AUTH": {"SAML": {"RETURN_TO": "/home"}},
             }
         ):
             conf = _current()
@@ -52,7 +48,6 @@ class TestOverrideAndReload:
             assert conf.drf.pagination.page_size == 10
             assert conf.drf.pagination.max_page_size == 200
             assert conf.drf.casing.enabled is False
-            assert conf.auth.saml.return_to == "/home"
 
     def test_leaving_the_override_restores_the_previous_values(self) -> None:
         before = _current()
@@ -71,3 +66,11 @@ class TestOverrideAndReload:
         with pytest.raises(TypeError):
             with override_settings(RN_FORGE_DJANGO={"DRF": {"PAGINATION": 3}}):
                 pass
+
+
+class TestLazyBuild:
+    def test_the_facade_is_built_on_first_use(self) -> None:
+        lazy = rnf_settings._LazySettings()  # pyright: ignore[reportPrivateUsage]
+
+        with override_settings(RN_FORGE_DJANGO={"DRF": {"CASING": {"ENABLED": False}}}):
+            assert lazy.drf.casing.enabled is False

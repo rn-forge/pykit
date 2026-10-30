@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from rn_forge.commons.exceptions import AppException
 
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AuthenticationFailed",
     "ContentTooLarge",
+    "CsrfFailed",
     "DomainConflict",
     "IdempotencyKeyInFlight",
     "IdempotencyKeyRequired",
@@ -32,6 +33,7 @@ __all__ = [
     "ResourceNotDeleted",
     "RowsInvalid",
     "ServiceUnavailable",
+    "SessionRequired",
     "TooManyRequests",
     "UnsupportedMediaType",
     "VersionConflict",
@@ -189,6 +191,31 @@ class AuthenticationFailed(WebError):
 
     The message carries the reason for the binding to log; it must never reach
     the response body, which renders :data:`~rn_forge.web.auth.AUTH_FAILED_DETAIL`.
+    The response carries a ``WWW-Authenticate`` challenge unless
+    :attr:`challenge` is false.
+    """
+
+    challenge: ClassVar[bool] = True
+    """Whether the 401 response carries a ``WWW-Authenticate`` challenge."""
+
+
+class SessionRequired(AuthenticationFailed):
+    """A session-only route was called without a valid session (401).
+
+    The response carries no ``WWW-Authenticate`` header: a cookie session has
+    no registered authentication scheme to challenge with.
+    """
+
+    challenge: ClassVar[bool] = False
+
+
+class CsrfFailed(WebError):
+    """The CSRF token or origin check rejected the request (403).
+
+    Not a :class:`PermissionDenied`, and rendered as its own problem type. The
+    message carries the reason for the
+    binding to log; it must never reach the response body, which renders
+    :data:`~rn_forge.web.auth.CSRF_FAILED_DETAIL`.
     """
 
 

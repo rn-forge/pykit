@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from rn_forge.devops import ci, github, index, releases, requirements, uv
+from rn_forge.devops import ci, github, index, notes, releases, requirements, uv
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -45,7 +45,61 @@ def _parser() -> argparse.ArgumentParser:
     )
     index_command.add_argument("--repo", required=True, metavar="OWNER/NAME")
     index_command.add_argument("--out", required=True, metavar="DIR")
+    notes_command = commands.add_parser(
+        "notes", help="print a changelog version's section"
+    )
+    notes_command.add_argument("changelog", metavar="CHANGELOG")
+    notes_command.add_argument("version", metavar="VERSION")
+    umbrella = commands.add_parser(
+        "umbrella",
+        help="write the pending umbrella release's notes; tags are read from stdin",
+    )
+    umbrella.add_argument("releases_dir", metavar="RELEASES_DIR")
+    umbrella.add_argument("body_file", metavar="BODY_FILE")
+    umbrella.add_argument("--site-url", required=True, metavar="URL")
     return parser
+
+
+def _within_cwd(raw: str) -> Path | None:
+    path = Path(raw).resolve()
+    return path if path.is_relative_to(Path.cwd().resolve()) else None
+
+
+def _notes(args: argparse.Namespace) -> int:
+    changelog = _within_cwd(args.changelog)
+    if changelog is None:
+        print(f"{args.changelog} is outside the working directory", file=sys.stderr)
+        return 1
+    text = changelog.read_text(encoding="utf-8")
+    try:
+        print(notes.changelog_section(text, args.version))
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+    return 0
+
+
+def _umbrella(args: argparse.Namespace) -> int:
+    releases_dir = _within_cwd(args.releases_dir)
+    if releases_dir is None:
+        print(f"{args.releases_dir} is outside the working directory", file=sys.stderr)
+        return 1
+    body_file = _within_cwd(args.body_file)
+    if body_file is None:
+        print(f"{args.body_file} is outside the working directory", file=sys.stderr)
+        return 1
+    # `git ls-remote --tags --refs` lines: `<sha>\trefs/tags/<name>`.
+    tags = {
+        line.split("refs/tags/", 1)[1].strip()
+        for line in sys.stdin.read().splitlines()
+        if "refs/tags/" in line
+    }
+    found = notes.pending_umbrella(releases_dir, tags, args.site_url)
+    if found is not None:
+        body_file.write_text(found.body, encoding="utf-8")
+        print(f"tag={found.tag}")
+        print(f"title={found.title}")
+    return 0
 
 
 def _index(args: argparse.Namespace) -> int:
@@ -121,6 +175,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "index":
         return _index(args)
+    if args.command == "notes":
+        return _notes(args)
+    if args.command == "umbrella":
+        return _umbrella(args)
 
     try:
         root = uv.find_root(Path.cwd())

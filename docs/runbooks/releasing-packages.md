@@ -15,7 +15,7 @@ The import-boundary check and a `plan` job run first.
 on one, read from the manifests' internal requirements; a change outside the
 packages and `docs/`, or a manual run, selects all of them. It emits the
 matrices for the check jobs, which run in parallel: `verify` (ruff, pyright,
-pytest) for each selected package; `postgres` and `smoke` for packages that
+pytest) for each selected package; `postgres`, `redis` and `smoke` for packages that
 declare them in `[tool.workspace-ci]` (today `rn-forge-django`: its tests
 against PostgreSQL, and each extra installed alone from the built wheels); and
 each root suite, such as `scaffold`.
@@ -32,11 +32,20 @@ a tag alone, marks `<package>-v<version>` as shipped. On a push to `main`, an
 already published release is skipped; a missing tag is built from the pushed
 commit; an existing tag without a published release is rebuilt from its original
 source in a detached worktree. A leftover draft is deleted after the build
-succeeds, preserving its tag. `gh release create` uploads the artifacts and
-publishes the release, creating a missing tag at the pushed commit
+succeeds, preserving its tag.
+
+Every build, including a pull request's, runs `twine check --strict`, so a
+package with broken metadata fails CI. On a push to `main`, `release` then
+uploads the package to PyPI by trusted publishing, unless PyPI already has that
+version. Only after the upload does `gh release create` attach the artifacts and
+publish the release, creating a missing tag at the pushed commit
 ([GitHub CLI release creation](https://cli.github.com/manual/gh_release_create)).
-A pull request builds but never publishes. `ci-ok` fails if any job failed; it
-is the required status check.
+A published release therefore implies the version is on PyPI. Its notes are the
+package's changelog section for the version, and it is never marked "Latest". A
+separate reusable workflow creates the umbrella `release-<n>` release, marked
+"Latest", from the newest release page whose status is `shipped`, unless that
+tag exists. A pull request builds but never publishes. `ci-ok` fails if any job
+failed; it is the required status check.
 
 Three consequences:
 
@@ -64,11 +73,20 @@ that tree into the root site's Pages artifact
 ([S9.9.4](../specs/epics/E9-release-readiness/F9.9-package-docs.md)). A failed
 docs job leaves the tags in place; rerun the original `main` push run.
 
-A failed release is fixed by rerunning the original `main` push run. A manual
-dispatch builds only and does not publish releases or deploy Pages. A resumed
-tag at an older commit is outside that run's automatic external-install and docs
-checks. Verify its published assets and package docs, then check its install and
-import by hand, substituting the package, version and import module:
+A failed release is fixed by rerunning the original `main` push run; it skips
+what PyPI and GitHub already have. A manual dispatch builds only and does not
+publish releases or deploy Pages. Dispatching it with `testpypi` set uploads
+every package to TestPyPI instead, skipping versions already there, and creates
+no tags or releases; use it from the release branch to prove the uploads before
+the merge. A package's first upload to an index needs a pending trusted
+publisher, and PyPI holds only one per workflow and environment. Add the
+publisher for the next package in release order, rerun the failed `release` job
+and repeat
+([F21.3](../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md#registering-the-publishers)).
+A resumed tag at an older commit is outside that run's automatic
+external-install and docs checks. Verify its published assets and package docs,
+then check its install and import by hand, substituting the package, version and
+import module:
 
 ```bash
 package=rn-forge-web
@@ -76,9 +94,18 @@ version=0.1.0
 module=rn_forge.web
 tmp=$(mktemp -d)
 uv venv -q "$tmp/venv"
-VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-forge/pykit@$package-v$version#subdirectory=packages/$package"
+VIRTUAL_ENV="$tmp/venv" uv pip install "$package==$version"
 "$tmp/venv/bin/python" -c "import $module"
 ```
+
+## Yanking a bad version
+
+PyPI never accepts a version twice, even after a delete, so a bad release is
+fixed forward:
+
+1. Yank the version on pypi.org (the project's *Manage* page, then *Options*).
+   Installers stop choosing it unless a requirement pins it exactly.
+1. Fix the problem on `main` and release the next patch version of the package.
 
 ## Steps
 
@@ -116,8 +143,8 @@ VIRTUAL_ENV="$tmp/venv" uv pip install "$package @ git+https://github.com/rn-for
 1. Check each tagged package's docs at
    `https://rn-forge.github.io/pykit/packages/<package>/latest/` show the new
    version ([F9.9](../specs/epics/E9-release-readiness/F9.9-package-docs.md)).
-1. Once the `docs` job has deployed, install the released packages by name
-   from the live index, as the acceptance in
-   [F19.3](../specs/epics/E19-version-ranges/F19.3-internal-ranges.md) does.
+1. Once the `docs` job has deployed, install the released packages by name from
+   PyPI, as the `external-install` job does.
+1. Fill the release's `security.md` with each control's result and evidence.
 1. Record each package's version, tag, commit and install result on the release
    page, and set it to `shipped` with the date once its exit criteria hold.

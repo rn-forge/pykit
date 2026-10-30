@@ -66,7 +66,7 @@ class TemplateEngine:
         self._environment = jinja2.Environment(
             loader=loader,
             undefined=jinja2.StrictUndefined if strict else jinja2.Undefined,
-            autoescape=autoescape,
+            autoescape=autoescape,  # noqa: S701  # caller opts in; default is off for non-HTML output
             **environment_kwargs,
         )
 

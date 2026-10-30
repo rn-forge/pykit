@@ -1,33 +1,25 @@
 # Installation
 
-## Releases are git tags, not PyPI versions
+## Install from PyPI
 
-None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag** on this repository. A consumer declares pykit's package index
-(`https://rn-forge.github.io/pykit/simple/`) and requires the package by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-fastapi @ git+https://github.com/rn-forge/pykit@rn-forge-fastapi-v0.3.0#subdirectory=packages/rn-forge-fastapi",
-]
+dependencies = ["rn-forge-fastapi>=0.4,<0.5"]
 ```
 
-When using a direct URL, pin the tag rather than tracking a branch — an unpinned `git+…`
-reference re-resolves on every lock refresh, which is how a library upgrade
-arrives without anyone deciding it should.
-
 `rn-forge-web` and `rn-forge-commons` come in transitively, each as a version
-range. FastAPI comes in as an ordinary PyPI
-dependency, and pydantic and Starlette with it. The optional `oidc` extra adds
-JWKS bearer auth; `transfer` adds tabular export and import
-(`rn_forge.fastapi.transfer`).
+range. FastAPI comes in as an ordinary PyPI dependency, and pydantic and
+Starlette with it. The optional `oidc` extra adds JWKS bearer auth and OIDC login; `redis` adds the
+Redis stores the auth binding needs outside development
+(`rn_forge.auth.redis` and `rn_forge.fastapi.auth.redis`); `transfer` adds
+tabular export and import (`rn_forge.fastapi.transfer`).
 
 ## Inside this workspace
 
 `packages/rn-forge-fastapi` is a `uv` workspace member, so the root
-`[tool.uv.sources]` overrides the URL above with the local checkout:
+`[tool.uv.sources]` overrides the requirement above with the local checkout:
 
 ```toml
 [tool.uv.sources]
@@ -35,7 +27,7 @@ rn-forge-fastapi = { workspace = true }
 ```
 
 That override is **local development only**. It does not survive into a built
-wheel, which is why the `pyproject.toml` still carries the full URL.
+wheel, which is why the `pyproject.toml` still carries the version range.
 
 ```bash
 uv sync --all-extras

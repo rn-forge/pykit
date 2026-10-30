@@ -23,8 +23,9 @@ It provides:
 - **`health`** — readiness-check aggregation with four statuses, and the HTTP
   status derived once rather than per framework
 - **`asgi`** — the request-body size limit, pure ASGI and Starlette-free
-- **`auth`** — `Principal`, the authenticator/authorizer protocols, and the
-  401/403 + `WWW-Authenticate` contract
+- **`auth`** — `Credentials`, the `Authorization` header parser and the
+  `WWW-Authenticate` challenge; `Principal` and the authenticator/authorizer
+  protocols are `rn-forge-auth`'s
 - **`conformance`** — the scenario table both framework packages are tested
   against, shipped as framework-free data
 
@@ -43,8 +44,9 @@ docstring. Those calls are the substance; the code is small.
 ## Where it sits
 
 ```text
-commons ──► web ──► django
-              └───► fastapi
+commons ──► web ──► auth ──► django
+              │        └───► fastapi
+              └───► sqlalchemy
 ```
 
 It depends on `rn-forge-commons` and nothing else in the workspace, and it

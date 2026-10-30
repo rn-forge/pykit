@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-from rn_forge.web.conformance.cases import CASES, case_by_id, cases_for
+from rn_forge.web.conformance.cases import (
+    CASES,
+    case_by_id,
+    cases_for,
+    cases_provided_by,
+)
 from rn_forge.web.conformance.types import (
     REDACTED,
     VARIABLE_MEMBERS,
     ConformanceArea,
+    ConformanceCapability,
     ConformanceCase,
     RequestSpec,
     redact,
@@ -17,9 +23,11 @@ __all__ = [
     "REDACTED",
     "VARIABLE_MEMBERS",
     "ConformanceArea",
+    "ConformanceCapability",
     "ConformanceCase",
     "RequestSpec",
     "case_by_id",
     "cases_for",
+    "cases_provided_by",
     "redact",
 ]

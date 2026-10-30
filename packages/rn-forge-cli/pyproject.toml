@@ -1,13 +1,24 @@
 [project]
 name = "rn-forge-cli"
-version = "0.1.1"
+version = "0.1.2"
 description = "The shared command-line layer for rn-forge applications: Typer app factory, standard options, console and exit codes"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 dependencies = [
-  "rn-forge-commons>=0.7.0,<0.8",
+  "rn-forge-commons>=0.8.0,<0.9",
   "rich>=15.0.0",
   "typer>=0.26.8",
 ]

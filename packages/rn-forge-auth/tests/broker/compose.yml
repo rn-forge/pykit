@@ -1,0 +1,25 @@
+# Keycloak for the broker profile tests (test_keycloak.py). From the repository
+# root:
+#   docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.7
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./realms:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image has no curl; probe the management port with bash.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s

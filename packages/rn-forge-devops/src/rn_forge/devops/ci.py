@@ -54,9 +54,15 @@ class Package:
         name: Normalized project name.
         dir: Directory relative to the repository root, with `/` separators.
         module: Import name of the package.
-        requires: Names of the workspace members this package requires.
+        requires: Names of the workspace members this package requires, through
+            dependencies, optional dependencies or dependency groups.
+        release_requires: Names of the workspace members this package requires
+            through dependencies or optional dependencies only. Release order and
+            release gating follow these.
         postgres_env: Variable that receives a PostgreSQL DSN, or `None` when the
             package needs no database run.
+        redis_env: Variable that receives a Redis URL, or `None` when the package
+            needs no Redis run.
         smoke: The smoke-test declaration, or `None` when the package declares none.
         adapters: Names of the package's adapters, or `None` when it declares none.
     """
@@ -65,7 +71,9 @@ class Package:
     dir: str
     module: str
     requires: set[str] = field(default_factory=lambda: set[str]())
+    release_requires: set[str] = field(default_factory=lambda: set[str]())
     postgres_env: str | None = None
+    redis_env: str | None = None
     smoke: Smoke | None = None
     adapters: list[str] | None = None
 
@@ -77,6 +85,8 @@ class Package:
         checks = [{"kind": "verify", "marker": f"{self.name}.verify"}]
         if self.postgres_env is not None:
             checks.append({"kind": "postgres", "marker": f"{self.name}.postgres"})
+        if self.redis_env is not None:
+            checks.append({"kind": "redis", "marker": f"{self.name}.redis"})
         checks.append({"kind": "smoke", "extra": "", "marker": f"{self.name}.smoke"})
         if self.smoke is not None:
             checks += [
@@ -108,11 +118,21 @@ class Workspace:
 
 
 def release_order(packages: dict[str, Package], names: set[str]) -> list[str]:
-    """Return `names` with every package after its internal requirements."""
+    """Return `names` with every package after its release requirements.
+
+    Raises:
+        ValueError: When the release requirements of `names` form a cycle.
+    """
     order: list[str] = []
     pending = sorted(names)
     while pending:
-        ready = [n for n in pending if not (packages[n].requires & names) - set(order)]
+        ready = [
+            n
+            for n in pending
+            if not (packages[n].release_requires & names) - set(order)
+        ]
+        if not ready:
+            raise ValueError(f"release requirements form a cycle among {pending}")
         order += ready
         pending = [n for n in pending if n not in ready]
     return order
@@ -126,8 +146,8 @@ def changed_files(root: Path, base: str) -> list[str]:
     """
     if not re.fullmatch(REVISION, base):
         raise ValueError(f"invalid base {base!r}")
-    out = subprocess.run(
-        ["git", "diff", "--name-only", "--end-of-options", f"{base}...HEAD"],
+    out = subprocess.run(  # noqa: S603  # fixed argv, no shell
+        ["git", "diff", "--name-only", "--end-of-options", f"{base}...HEAD"],  # noqa: S607  # tool resolved from PATH
         cwd=root,
         check=True,
         capture_output=True,
@@ -146,15 +166,15 @@ def select(workspace: Workspace, base: str) -> set[str]:
     if not base:
         return set(packages)
     if not re.fullmatch(REVISION, base) or (
-        subprocess.run(
-            ["git", "cat-file", "-e", "--end-of-options", f"{base}^{{commit}}"],
+        subprocess.run(  # noqa: S603  # fixed argv, no shell
+            ["git", "cat-file", "-e", "--end-of-options", f"{base}^{{commit}}"],  # noqa: S607  # tool resolved from PATH
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode
-        or subprocess.run(
-            ["git", "merge-base", "--is-ancestor", "--end-of-options", base, "HEAD"],
+        or subprocess.run(  # noqa: S603  # fixed argv, no shell
+            ["git", "merge-base", "--is-ancestor", "--end-of-options", base, "HEAD"],  # noqa: S607  # tool resolved from PATH
             check=False,
             cwd=root,
             stdout=subprocess.DEVNULL,
@@ -189,7 +209,7 @@ def plan(workspace: Workspace, base: str) -> dict[str, object]:
     """Return every job's matrix and package list for a run against `base`.
 
     Command-line values are shell-quoted strings. The keys are `release-order`,
-    `packages`, `postgres`, `smoke`, `suites`, `pytest-args`, `cov-args`,
+    `packages`, `postgres`, `redis`, `smoke`, `suites`, `pytest-args`, `cov-args`,
     `test-paths`, `sonar-sources`, `sonar-tests`, `sonar` and `docs`.
     """
     packages, root = workspace.packages, workspace.root
@@ -203,6 +223,11 @@ def plan(workspace: Workspace, base: str) -> dict[str, object]:
             {"name": p.name, "dir": p.dir, "env": p.postgres_env}
             for p in chosen
             if p.postgres_env is not None
+        ],
+        "redis": [
+            {"name": p.name, "dir": p.dir, "env": p.redis_env}
+            for p in chosen
+            if p.redis_env is not None
         ],
         "smoke": [
             {"name": p.name, "extra": c["extra"], "marker": c["marker"]}
@@ -232,7 +257,7 @@ def releasable(
     """Return the packages of `names` that may be released, then those that may not.
 
     A package may be released when every check of it left a marker file in
-    `ok_dir` and its requirements among `names` may be released too. Both lists
+    `ok_dir` and its release requirements among `names` may be released too. Both lists
     are in release order.
     """
     selected = {normalize(n) for n in names}
@@ -241,7 +266,7 @@ def releasable(
     for name in release_order(packages, selected):
         package = packages[name]
         checks_ok = all((ok_dir / c["marker"]).exists() for c in package.checks())
-        if checks_ok and (package.requires & selected) <= passed:
+        if checks_ok and (package.release_requires & selected) <= passed:
             passed.add(name)
         else:
             blocked.append(name)
@@ -251,7 +276,7 @@ def releasable(
 def released(workspace: Workspace) -> list[tuple[str, str, str, str]]:
     """Return `(name, dir, module, version)` for each `<name>-v<version>` tag at `HEAD`."""
     tags = subprocess.run(
-        ["git", "tag", "--points-at", "HEAD"],
+        ["git", "tag", "--points-at", "HEAD"],  # noqa: S607  # tool resolved from PATH
         cwd=workspace.root,
         check=True,
         capture_output=True,

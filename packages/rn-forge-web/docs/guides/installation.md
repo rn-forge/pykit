@@ -1,30 +1,22 @@
 # Installation
 
-## Releases are git tags, not PyPI versions
+## Install from PyPI
 
-None of the `rn-forge-*` packages is published to PyPI. A release is a **git
-tag** on this repository. A consumer declares pykit's package index
-(`https://rn-forge.github.io/pykit/simple/`) and requires the package by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
-]
+dependencies = ["rn-forge-web>=0.3,<0.4"]
 ```
 
-When using a direct URL, pin the tag rather than tracking a branch — an unpinned `git+…`
-reference re-resolves on every lock refresh, which is how a library upgrade
-arrives without anyone deciding it should.
-
-`rn-forge-commons` comes in transitively, as a version range. There is nothing else to install: this package has no
-third-party dependency of its own, and no optional extras.
+`rn-forge-commons` comes in transitively, as a version range. There is nothing
+else to install: this package has no third-party dependency of its own, and no
+optional extras.
 
 ## Inside this workspace
 
 `packages/rn-forge-web` is a `uv` workspace member, so the root
-`[tool.uv.sources]` overrides the URL above with the local checkout:
+`[tool.uv.sources]` overrides the requirement above with the local checkout:
 
 ```toml
 [tool.uv.sources]
@@ -32,8 +24,8 @@ rn-forge-web = { workspace = true }
 ```
 
 That override is **local development only**. It does not survive into a built
-wheel, which is why the `pyproject.toml` still carries the full URL — that is
-what a consumer outside the workspace actually resolves.
+wheel, which is why the `pyproject.toml` still carries the version range — that
+is what a consumer outside the workspace actually resolves.
 
 ```bash
 uv sync --all-extras

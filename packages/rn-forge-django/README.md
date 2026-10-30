@@ -13,11 +13,10 @@ and
 
 ## Install
 
-Not on PyPI; a release is a git tag. Declare pykit's package index and require
-the package by version range, or pin a tag by direct URL:
+Require the package by version range:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all]>=0.6,<0.7"
 ```
 
 Application code imports `rn_forge.web` directly (wire models, pagination,
@@ -26,7 +25,7 @@ Declare `rn-forge-web` as well, so the import is not an undeclared transitive
 dependency:
 
 ```bash
-uv add "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web"
+uv add "rn-forge-web>=0.3,<0.4"
 ```
 
 Optional extras:
@@ -35,10 +34,9 @@ Optional extras:
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
 | `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
-| `jwt` | `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `drf-spectacular`, for `drf.openapi` |
-| `oidc` | `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `oidc` | `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `redis` | `rn-forge-auth[redis]`, the Redis client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for the `celery` app factory |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
@@ -52,11 +50,15 @@ Optional extras:
   `TruncateModelMixin`; the opt-in `VersionedModelMixin`/`ImmutableModelMixin`;
   and `SequenceGenerator` over an abstract counter.
 - **`auth`** — An installable Django app (`rn_forge.django.auth`, label
-  `rn_forge_django_auth`) with sub-packages per mechanism: `auth.basic`
-  (session login views), `auth.jwt` (JWT authentication, credentials, mixins,
-  views), `auth.saml` (SAML login views), and `auth.drf` (shared DRF
-  authentication classes, permissions, mixins, serializers, and the
-  `rn_forge.web` principal binding for externally issued bearer tokens).
+  `rn_forge_django_auth`) that binds `rn-forge-auth` to Django and DRF:
+  `routes` (the `/auth` URLconf and its configuration), `sessions`
+  (`django.contrib.sessions` sessions with timeouts and revocation), `csrf`
+  (CSRF middleware and settings), `stores` (login transactions and replay
+  records in Django's cache), `rate_limit`, `audit` (audit events),
+  `accounts` and `models` (the default account resolver and its link and state
+  tables), `authorization` (the default authorization context provider), and
+  `auth.drf` (session and bearer authentication, permission-key and
+  resource-policy hooks, serializers and the management viewsets).
 - **`drf`** — DRF integration outside the auth app: `drf.views` (base view
   classes, mixins, `PermissionByMethodMixin`), `drf.routers`
   (`CustomMethodRouter`, AIP-136 colon custom methods), `drf.transfer`
@@ -90,15 +92,18 @@ them.
 ## Dependencies and package behavior
 
 - **`rn-forge-web`** is a base dependency: five modules are adapters over it.
+- **`rn-forge-auth`** is a base dependency: `auth` binds its login flows,
+  stores, `Principal`, `Requirement` and authorization contracts to Django and
+  DRF.
 - **`drf-spectacular`** (`openapi` extra) supplies the OpenAPI schema
   integration.
 - **`drf.casing`** supplies the camelCase renderer and parser.
-- **`oidc` extra** — JWKS verification is `rn-forge-commons[auth]` (PyJWT);
-  `auth.drf.oidc` only binds it to DRF. It is separate from `jwt` so JWKS auth
-  does not install simplejwt.
+- **`oidc` extra** — JWKS verification is `rn-forge-auth[oidc]` (PyJWT);
+  `auth.drf.oidc` only binds it to DRF.
 - **`celery` extra** — supplies the Celery app factory.
-- **No migrations.** `SequenceGenerator`'s counter is abstract, so installing
-  this package adds no tables.
+- **Migrations.** The auth app has one, for the external-account link and
+  account-state tables. `SequenceGenerator`'s counter is abstract and adds no
+  table.
 
 ## Configuration
 
@@ -107,7 +112,7 @@ module, e.g.:
 
 ```python
 RN_FORGE_DJANGO = {
-    "AUTH": {"SAML": {"SETTINGS": {...}, "RETURN_TO": "/"}},
+    "AUTH": {"PROBLEM_TYPE_BASE": "https://errors.example.com/"},
     "DRF": {
         "TRANSFER": {"MAX_ROWS": 10_000},
         "PAGINATION": {"PAGE_SIZE": 50, "MAX_PAGE_SIZE": 200},

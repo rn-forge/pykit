@@ -41,7 +41,7 @@ __all__ = [
 DEFAULT_PAGE_SIZE_PARAM: Final = "pageSize"
 """The query parameter carrying the requested page size."""
 
-DEFAULT_PAGE_TOKEN_PARAM: Final = "pageToken"
+DEFAULT_PAGE_TOKEN_PARAM: Final = "pageToken"  # noqa: S105  # identifier name, not a secret
 """The query parameter carrying the continuation token."""
 
 ORDER_BY_PARAM: Final = "orderBy"

@@ -18,8 +18,8 @@ _SUFFIXES = (".whl", ".tar.gz")
 
 def _releases(repo: str) -> list[dict[str, Any]]:
     # `--slurp` wraps each page in one outer array.
-    result = subprocess.run(
-        ["gh", "api", f"repos/{repo}/releases", "--paginate", "--slurp"],
+    result = subprocess.run(  # noqa: S603  # fixed argv, no shell
+        ["gh", "api", f"repos/{repo}/releases", "--paginate", "--slurp"],  # noqa: S607  # tool resolved from PATH
         check=True,
         capture_output=True,
         text=True,
@@ -32,7 +32,7 @@ def _sha256(asset: dict[str, Any]) -> str:
     digest: str | None = asset.get("digest")
     if digest and digest.startswith("sha256:"):
         return digest.removeprefix("sha256:")
-    with urllib.request.urlopen(asset["browser_download_url"]) as response:
+    with urllib.request.urlopen(asset["browser_download_url"]) as response:  # noqa: S310  # asset URL comes from the GitHub API
         return hashlib.sha256(response.read()).hexdigest()
 
 

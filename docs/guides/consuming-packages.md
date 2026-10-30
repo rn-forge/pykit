@@ -1,56 +1,50 @@
 # Consuming packages
 
 This guide shows how an application depends on pykit packages by version range.
-Every package's wheel and sdist are attached to its GitHub Release, and pykit
-publishes a [PEP 503](https://peps.python.org/pep-0503/) simple index of those
-files at `https://rn-forge.github.io/pykit/simple/` after each release.
-
-## Declare the index
-
-Add the index to the consumer's `pyproject.toml` once, then require packages by
-name and range:
+Every package is published to [PyPI](https://pypi.org/), so a consumer requires
+one by name like any other dependency:
 
 ```toml
 [project]
-dependencies = ["rn-forge-commons>=0.7.0,<0.8"]
-
-[[tool.uv.index]]
-name = "rn-forge"
-url = "https://rn-forge.github.io/pykit/simple/"
+dependencies = ["rn-forge-commons>=0.8,<0.9"]
 ```
 
 Before 1.0 the ceiling is the next minor version, because a minor release may
 break. From 1.0 it is the next major.
 
-## Use uv
+## Moving off the pykit index
 
-uv's default `first-index` strategy searches a declared index before PyPI and
-stops at the first index that has the name. An `rn-forge-*` name therefore
-resolves from pykit's index, and a package of that name on PyPI is never
-considered.
+Earlier releases were served from a package index at
+`https://rn-forge.github.io/pykit/simple/`. A consumer that declared it deletes
+the table from `pyproject.toml`, then runs `uv lock`:
 
-## The pip caveat
-
-pip's `--extra-index-url` merges indexes and takes the highest version from any
-of them. Someone who publishes an `rn-forge-*` name on PyPI with a higher
-version would win. Use uv, or install by direct URL.
+```toml
+[[tool.uv.index]]
+name = "rn-forge"
+url = "https://rn-forge.github.io/pykit/simple/"
+```
 
 ## Pin one exact version
 
-Require `==0.7.0` instead of a range:
+Require `==0.8.0` instead of a range:
 
 ```toml
-dependencies = ["rn-forge-commons==0.7.0"]
+dependencies = ["rn-forge-commons==0.8.0"]
 ```
 
 ## Fall back to a direct URL
 
-Without the index, pin a tag by git direct URL with its subdirectory:
+To install a tag straight from the repository, pin it by git direct URL with its
+subdirectory:
 
 ```toml
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.7.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.8.0#subdirectory=packages/rn-forge-commons",
 ]
 ```
 
-The [release pages](../releases/index.md) record which tags exist.
+A tag exists once its release is cut. The [release pages](../releases/index.md)
+record which tags exist.
+
+[Verifying releases](verifying-releases.md) shows how to check a file's origin
+and read its SBOM.

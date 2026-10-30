@@ -1,0 +1,135 @@
+{
+  "realm": "broker",
+  "enabled": true,
+  "sslRequired": "none",
+  "users": [
+    {
+      "username": "alice",
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Local",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice-pw",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-orders-m2m",
+      "enabled": true,
+      "serviceAccountClientId": "orders-m2m"
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "rn-forge-app",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "app-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:8099/auth/callback/keycloak"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "orders-m2m",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "m2m-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "orders-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "api://orders",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "saml-idp",
+      "providerId": "saml",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "rn-forge first broker login",
+      "config": {
+        "entityId": "rn-forge-broker-sp",
+        "singleSignOnServiceUrl": "http://127.0.0.1:8080/realms/idp/protocol/saml",
+        "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+        "principalType": "SUBJECT",
+        "postBindingResponse": "true",
+        "postBindingAuthnRequest": "true",
+        "validateSignature": "false",
+        "wantAssertionsSigned": "false",
+        "syncMode": "FORCE"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "email",
+      "identityProviderAlias": "saml-idp",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "email",
+        "user.attribute": "email",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "firstName",
+      "identityProviderAlias": "saml-idp",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "firstName",
+        "user.attribute": "firstName",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "lastName",
+      "identityProviderAlias": "saml-idp",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "lastName",
+        "user.attribute": "lastName",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "rn-forge first broker login",
+      "description": "Creates the local user without a review step",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "idp-create-user-if-unique",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ]
+}

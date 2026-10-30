@@ -41,10 +41,10 @@ def extract_archive(
     dest.mkdir(parents=True, exist_ok=True)
     if tarfile.is_tarfile(archive):
         with tarfile.open(archive) as tar:
-            tar.extractall(dest, filter=filter)
+            tar.extractall(dest, filter=filter)  # noqa: S202  # tar filter passed by the caller
     else:
         with zipfile.ZipFile(archive) as zip_file:
-            zip_file.extractall(dest)
+            zip_file.extractall(dest)  # noqa: S202  # zipfile drops absolute and `..` member paths
     entries = [item for item in dest.iterdir() if item.is_dir()]
     if len(entries) != 1:
         raise AppException(

@@ -89,7 +89,6 @@ nav:
           - Subprocess: reference/runtime/subprocess.md
           - Tasks: reference/runtime/tasks.md
       - Integration:
-          - Token verification: reference/integration/auth.md
           - Messaging: reference/integration/messaging.md
           - Objects: reference/integration/objects.md
           - Resilience: reference/integration/resilience.md

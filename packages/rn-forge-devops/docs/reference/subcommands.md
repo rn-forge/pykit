@@ -7,20 +7,26 @@ directory at or above the current one whose `pyproject.toml` declares
 | Subcommand | Does |
 | -- | -- |
 | `plan [BASE]` | Selects the packages a change affects, and writes every job's matrix and package list as `$GITHUB_OUTPUT` lines. |
-| `releasable OK_DIR NAME...` | Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites are releasable. |
+| `releasable OK_DIR NAME...` | Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites (dependencies and optional dependencies) are releasable. |
 | `released` | Prints `name dir module version` for each `<name>-v<version>` tag at `HEAD`, for `external-install` and `docs`. |
 | `smoke PACKAGE [EXTRA]` | Builds the package and its internal requirements as wheels, installs one extra into a clean venv from the wheels' metadata, and imports the configured modules, or the package's own module when it has no smoke table. |
 | `adapters` | Checks each package that declares `adapters`: every name has a module or subpackage under the package's source directory and an extra of the same name, and none is repeated. Prints one line per problem to stderr and exits 1 if there are any. |
 | `requirements` | Checks every requirement from one workspace member on another, in dependencies, optional dependencies and dependency groups: it must not be a URL, must admit the member's current version, and must have a `<` or `<=` ceiling. Prints one line per problem to stderr and exits 1 if there are any. |
 | `sonar-target` | Prints the `branch-arg=` line for the Sonar scan, from the `EVENT_NAME`, `REF_TYPE` and `REF_NAME` environment variables. |
 | `index --repo OWNER/NAME --out DIR` | Writes a PEP 503 simple index of the repository's published `rn-forge-<name>-vX.Y.Z` release wheels and sdists under `DIR`, and prints the project and file counts. Needs `gh` and `GH_TOKEN`; it does not need a workspace. |
+| `notes CHANGELOG VERSION` | Prints the body under `## [VERSION]` in a Keep a Changelog file, up to the next `## [` heading. Exits 1 with the reason on stderr when the heading is missing or its body is empty. It does not need a workspace. |
+| `umbrella RELEASES_DIR BODY_FILE --site-url URL` | Reads `git ls-remote --tags --refs origin` output from stdin. When the newest `release-<n>` page whose status starts with `shipped` has no `release-<n>` tag, writes its `## Shipped` section and a link to the page under `URL` to `BODY_FILE`, and prints `tag=` and `title=` lines. Otherwise prints nothing. Exits 1 if `RELEASES_DIR` or `BODY_FILE` is outside the working directory. It does not need a workspace. |
 
 ## What it discovers
 
 - **Packages:** the members of the root `[tool.uv.workspace]`, including
   `exclude`. No name prefix is assumed.
 - **Internal requirements:** workspace members named in a package's
-  dependencies, optional dependencies and dependency groups.
+  dependencies, optional dependencies and dependency groups. Selection follows
+  all three. Release order and release gating follow dependencies and optional
+  dependencies only, so a cycle through a dependency group does not block a
+  release; a cycle through the other two fails `plan` with an error naming the
+  packages.
 - **Import name:** `[tool.uv.build-backend].module-name`, used for `--cov`, the
   external-install import and the smoke imports.
 - **Optional jobs:** `sonar` runs only if `sonar-project.properties` exists;
@@ -37,6 +43,7 @@ package.
 | `[tool.workspace-ci]` | root | `pytest-args` for package test runs. |
 | `[tool.workspace-ci.suites]` | root | A named workspace-wide pytest run per key, each its own job. |
 | `[tool.workspace-ci.postgres]` | package | `env`: the variable that receives a PostgreSQL DSN; the package's tests run again against a service container. |
+| `[tool.workspace-ci.redis]` | package | `env`: the variable that receives a Redis URL; the package's tests run again against a service container. |
 | `[tool.workspace-ci.smoke]` | package | Optional: a package without it is still smoke-tested with no extra, importing its own module. `modules` imported for every smoke run, an optional `setup` script run first, and `extras`: one smoke job per extra with its own modules. |
 | `[tool.workspace-ci]` | package | `adapters`: the names of the package's adapter modules. Each must be a module or subpackage of the package and have an extra of the same name; `adapters` checks it. |
 
@@ -58,6 +65,7 @@ every workspace member, whatever the change.
 | `release-order` | List of package names. | Selected |
 | `packages` | List of rows `{name, dir}`. | Selected |
 | `postgres` | List of rows `{name, dir, env}`, one per package that declares a PostgreSQL run. `env` is the variable that receives the DSN. | Selected |
+| `redis` | List of rows `{name, dir, env}`, one per package that declares a Redis run. `env` is the variable that receives the URL. | Selected |
 | `smoke` | List of rows `{name, extra, marker}`, one per smoke check. `extra` is empty for the run with no extra. `marker` is the file name a passing check leaves for `releasable`. | Selected |
 | `suites` | List of rows `{name, args}`, one per `[tool.workspace-ci.suites]` key. `args` is a shell-quoted string. | Every suite |
 | `pytest-args` | Shell-quoted string of the root `pytest-args`; empty if none. | Workspace |

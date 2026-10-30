@@ -8,9 +8,9 @@
 A reference to the industry-standard authentication, session and token, and
 authorization patterns, written so the owner can review [the design](design.md)
 against the field. It describes the patterns and their trade-offs, then marks
-each one's status in this design. Nothing here is decided: the layer model is an
-[open question](F13.1-auth-design.md#open-questions), and a status of
-"supported" means the design proposes it.
+each one's status in this design. A status records the design's position; the
+design's [proposed decisions](design.md#proposed-decisions) become ADRs through
+[F13.1](F13.1-auth-design.md).
 
 [Back to E13](index.md)
 
@@ -22,7 +22,6 @@ Status vocabulary used in the tables:
 | Via broker | The app speaks OIDC to a broker, and the broker handles it. |
 | Custom | Possible through a custom authenticator or provider; pykit ships nothing. |
 | Out of scope | Not in this design. |
-| Open | A question for the owner. |
 
 ## The three layers
 
@@ -134,9 +133,8 @@ sequenceDiagram
 - **Pitfalls:** XML signature wrapping (use a maintained library, require signed
   assertions, strict mode); trusting `RelayState` as a URL; linking on email
   instead of a persistent NameID; certificate rollover.
-- **Status:** Adapter, SP-initiated by default; IdP-initiated is opt-in per
-  provider. See
-  [SAML login](design.md#saml-login-sp-initiated-http-post-binding).
+- **Status:** Via broker. pykit speaks no SAML; see
+  [SAML identity providers](design.md#saml-identity-providers).
 
 ### The broker pattern
 
@@ -179,7 +177,7 @@ sequenceDiagram
 - **Pitfalls:** enrollment, recovery and device-loss flows are the hard part,
   not verification; relying-party ID must match the origin.
 - **Status:** Via broker (the IdP offers passkeys, the app sees a normal OIDC
-  login). A local adapter is Open.
+  login). No local adapter.
 
 ### Magic links and email one-time codes
 
@@ -189,7 +187,7 @@ sequenceDiagram
 - **Pitfalls:** security equals the mailbox's; link scanners consume single-use
   links; codes need attempt limits; the link must be bound to the browser that
   asked for it.
-- **Status:** Out of scope for the first version; Open.
+- **Status:** Out of scope for the first version.
 
 ### Multi-factor and step-up authentication
 
@@ -205,7 +203,7 @@ sequenceDiagram
   checking MFA only at login and never at the sensitive action.
 - **Status:** The IdP runs MFA. The design records `auth_time` and `amr` and
   defers the `Requirement` clause
-  ([F13.1 open questions](F13.1-auth-design.md#open-questions)).
+  ([Authorization model](design.md#authorization-model)).
 
 ### Machine authentication
 
@@ -213,7 +211,7 @@ sequenceDiagram
 | -- | -- | -- | -- |
 | Client credentials ([RFC 6749 §4.4](https://www.rfc-editor.org/rfc/rfc6749#section-4.4)) | The client authenticates to the token endpoint with a secret and gets an access token | Simplest standard option; the secret must be stored and rotated | Via broker |
 | `private_key_jwt` ([RFC 7523](https://www.rfc-editor.org/rfc/rfc7523), OIDC Core §9) | The client signs a JWT assertion with its private key | No shared secret to leak | Via broker |
-| Mutual TLS ([RFC 8705](https://www.rfc-editor.org/rfc/rfc8705)) | Client authenticates with a certificate; tokens can be bound to it | Needs PKI and TLS termination that passes the certificate | Via broker; verifying binding Open |
+| Mutual TLS ([RFC 8705](https://www.rfc-editor.org/rfc/rfc8705)) | Client authenticates with a certificate; tokens can be bound to it | Needs PKI and TLS termination that passes the certificate | Via broker; verifying the binding is out of scope |
 | API keys | A long random string the server looks up | Not a standard protocol; no expiry, scope or audience unless built in; store only a hash | Custom |
 
 ### Authentication comparison
@@ -222,7 +220,7 @@ sequenceDiagram
 | -- | -- | -- | -- | -- |
 | OIDC code + PKCE | OIDC Core, RFC 6749, RFC 7636 | Signed identity, mature libraries | Needs an OIDC provider | Adapter |
 | OAuth 2.0 social login | RFC 6749 | Reaches providers without OIDC | Unsigned identity, email caveats | Adapter or broker |
-| SAML 2.0 | OASIS SAML 2.0 | Universal in enterprise | XML signature risks, no native mobile story | Adapter or broker |
+| SAML 2.0 | OASIS SAML 2.0 | Universal in enterprise | XML signature risks, no native mobile story | Via broker |
 | Broker | OIDC upstream, any downstream | One protocol in the app | A service to run | Recommended profile |
 | Local password | NIST 800-63B | No external dependency | Credential liability | Adapter, optional |
 | Passkey | WebAuthn | Phishing-resistant | Enrollment and recovery | Via broker |
@@ -267,7 +265,7 @@ a service) more than on how it logged in.
 | Content visible to holder | Yes, unless encrypted | No |
 | Cost | Key rotation and JWKS caching; short lifetimes | A network call and a dependency on the authorization server |
 | Pitfalls | Algorithm confusion, missing `aud` check ([RFC 8725](https://www.rfc-editor.org/rfc/rfc8725)); stale claims | Introspection latency and availability |
-| Status | Adapter (`OidcAuthenticator`) | Open (optional authenticator) |
+| Status | Adapter (`OidcAuthenticator`) | Out of scope until a broker issues opaque tokens |
 
 Bearer tokens ([RFC 6750](https://www.rfc-editor.org/rfc/rfc6750)) work for
 whoever holds them, so keep lifetimes short and never put them in URLs.
@@ -299,7 +297,7 @@ whoever holds them, so keep lifetimes short and never put them in URLs.
   client, a mobile app) or the data is high value.
 - **Pitfalls:** support is needed at the authorization server and in every API;
   key storage in a browser is itself exposed to script.
-- **Status:** Out of scope; Open.
+- **Status:** Out of scope for the first version.
 
 ### Browser options
 
@@ -320,8 +318,7 @@ and [the browser-client alternative](design.md#the-browser-client-alternative)
 apply this.
 
 Status: BFF is the design's choice; the other two are
-[Considered and rejected](design.md#considered-and-rejected) or a secondary
-profile ([open questions](F13.1-auth-design.md#open-questions)).
+[Considered and rejected](design.md#considered-and-rejected).
 
 ### Token exchange for downstream calls
 
@@ -332,7 +329,8 @@ profile ([open questions](F13.1-auth-design.md#open-questions)).
 - **Alternatives:** call downstream with the service's own client-credentials
   token (no user identity), or forward the user's token (breaks audience
   restriction, so avoid).
-- **Status:** Via broker; Open in the design
+- **Status:** Via broker; the application uses its own client-credentials token
+  until it needs user delegation
   ([Machine clients](design.md#machine-clients-and-downstream-services)).
 
 ### Revocation and logout
@@ -342,7 +340,7 @@ profile ([open questions](F13.1-auth-design.md#open-questions)).
 | Delete the server session | Ends local access at once | Does not end the IdP session | Adapter |
 | OIDC RP-initiated logout | The app redirects to the provider's end-session endpoint | The user may be signed out of other apps too | Adapter, optional per provider |
 | OIDC back-channel logout | The provider posts a signed `logout_token` carrying `sub` or `sid` | Needs the session store to be searchable by `sid` | Adapter |
-| SAML Single Logout | Logout request and response between SP and IdP | Unreliable across IdPs; local timeouts do the real work | Adapter, optional |
+| SAML Single Logout | Logout request and response between SP and IdP | Unreliable across IdPs; local timeouts do the real work | Via broker |
 | Token revocation ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)) | The client asks the authorization server to revoke a token | JWTs still verify locally until expiry | Via broker |
 
 ### Session and token comparison
@@ -351,7 +349,7 @@ profile ([open questions](F13.1-auth-design.md#open-questions)).
 | -- | -- | -- | -- | -- | -- |
 | Server session cookie | Browser | Yes | Session store | Yes | Adapter |
 | JWT access token | Service, native app | No, until expiry | None | No | Adapter |
-| Opaque token + introspection | Service, native app | Yes | Authorization server | No | Open |
+| Opaque token + introspection | Service, native app | Yes | Authorization server | No | Out of scope until a broker issues them |
 | Refresh token | Native app, service | At the authorization server | Authorization server | No | Out of scope |
 | Sender-constrained token | High-value API | As above | Key at the client | No | Out of scope |
 
@@ -384,7 +382,7 @@ profile ([open questions](F13.1-auth-design.md#open-questions)).
 | ACL | A list on each resource of who may do what | Direct and easy to explain | Does not scale across many resources; hard to audit globally | Custom in `ResourcePolicy` |
 | RBAC ([NIST RBAC](https://csrc.nist.gov/projects/role-based-access-control), ANSI INCITS 359) | The caller's roles, mapped to permissions | Simple, auditable | Role explosion; no per-record rules | Adapter (permissions and roles) |
 | ABAC ([NIST SP 800-162](https://csrc.nist.gov/pubs/sp/800/162/upd2/final)) | Attributes of caller, resource, action and environment | Expresses tenant, ownership, time | Rules scatter through code unless centralized | Adapter through `ResourcePolicy` and context attributes |
-| ReBAC | Relationships in a graph: "editor of a folder that contains this document" | Natural for sharing and hierarchies; Google's Zanzibar model, OpenFGA | Needs a relationship store kept in sync | Out of scope; Open |
+| ReBAC | Relationships in a graph: "editor of a folder that contains this document" | Natural for sharing and hierarchies; Google's Zanzibar model, OpenFGA | Needs a relationship store kept in sync | Out of scope |
 | OAuth scopes | What the resource owner delegated to a client | A ceiling on a token | Not a user's permission | Limit on bearer principals |
 
 Scopes are a ceiling: a delegated call is allowed only when the user's
@@ -439,7 +437,7 @@ request. A stale UI fails safely with 403, and the client refetches. Status:
 
 | Landscape | Authentication | Session and token | Authorization |
 | -- | -- | -- | -- |
-| Internal tool behind corporate SSO | OIDC (or SAML) direct to the corporate IdP | Server session cookie | RBAC from IdP groups mapped to roles, plus a few resource rules |
+| Internal tool behind corporate SSO | OIDC direct to the corporate IdP, or SAML through a broker | Server session cookie | RBAC from IdP groups mapped to roles, plus a few resource rules |
 | B2C app with social login | OIDC and OAuth 2.0 social, optional passkeys through a broker; no local passwords if avoidable | Server session cookie | RBAC for staff; ownership rules through `ResourcePolicy` for user data |
 | B2B multi-tenant SaaS, per-customer SAML or OIDC | Broker that holds each customer's connection; link on (issuer, subject) | Server session for the web UI; bearer tokens for the customers' API clients | Tenant as an attribute, enforced in `ResourcePolicy.scope`; RBAC within a tenant |
 | API-only service for machine clients | Client credentials or `private_key_jwt` at a broker | JWT access tokens (RFC 9068), short-lived; opaque with introspection when immediate revocation matters | Scopes as the ceiling; service-account roles |
@@ -474,12 +472,12 @@ configuration.
 
 | Catalog entry | Position in design.md |
 | -- | -- |
-| OIDC, SAML, OAuth 2.0 social, local, development providers | Adapters behind `IdentityProvider` ([Contracts](design.md#contracts)) |
+| OIDC, OAuth 2.0 social, local, development providers | Adapters behind `IdentityProvider` ([Contracts](design.md#contracts)); SAML through a broker ([SAML identity providers](design.md#saml-identity-providers)) |
 | Broker | Recommended profile, with direct federation as first-class ([Deployment profiles](design.md#deployment-profiles)) |
 | Account linking | On (issuer, subject); email only when verified and authoritative ([Account linking](design.md#account-linking)) |
 | Browser carriage | BFF with a server session ([Sessions and cookies](design.md#sessions-and-cookies)) |
 | Machine carriage | Bearer JWTs from an authorization server, verified by `OidcAuthenticator`; pykit never mints tokens ([Machine clients](design.md#machine-clients-and-downstream-services)) |
-| Logout | RP-initiated, back-channel and optional SAML SLO ([Logout](design.md#logout)) |
+| Logout | RP-initiated and back-channel ([Logout](design.md#logout)) |
 | Authorization | Permissions as the unit, RBAC with ABAC through `ResourcePolicy`, computed per request ([Authorization model](design.md#authorization-model)) |
-| Passkeys, magic links, API keys, opaque tokens, refresh tokens, DPoP, ReBAC, policy engines | Positions proposed in [Goals and non-goals](design.md#goals-and-non-goals), [Machine clients](design.md#machine-clients-and-downstream-services) and [Authorization model](design.md#authorization-model) |
-| The three-layer split | [Layers](design.md#layers); the choice is an [open question](F13.1-auth-design.md#open-questions) |
+| Passkeys, magic links, API keys, opaque tokens, refresh tokens, DPoP, ReBAC, policy engines | Positions in [Goals and non-goals](design.md#goals-and-non-goals), [Machine clients](design.md#machine-clients-and-downstream-services) and [Authorization model](design.md#authorization-model) |
+| The three-layer split | [Layers](design.md#layers) |

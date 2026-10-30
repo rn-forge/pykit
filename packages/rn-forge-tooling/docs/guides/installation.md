@@ -1,15 +1,10 @@
 # Installation
 
-These packages are not published to PyPI. A release is a **git tag**, and a
-consumer declares pykit's package index (`https://rn-forge.github.io/pykit/simple/`)
-and requires the package by version range, or pins a tag by direct URL. A
-floating branch reference would silently change what a build produced.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-tooling @ git+https://github.com/rn-forge/pykit@rn-forge-tooling-v0.2.0#subdirectory=packages/rn-forge-tooling",
-]
+dependencies = ["rn-forge-tooling>=0.3,<0.4"]
 ```
 
 It is a **development** dependency. Add it to a `dev` group, or to a CLI's own
@@ -19,8 +14,7 @@ It is a **development** dependency. Add it to a `dev` group, or to a CLI's own
 
 ## Upgrading
 
-Raise the version range, or change the tag in a direct URL. A lockfile records
-the resolved version.
+Raise the version range. A lockfile records the resolved version.
 
 ## What lives where
 
@@ -41,8 +35,8 @@ would satisfy a caller and reverse the dependency.
 The workspace's `.importlinter` contracts state it, and `uv run lint-imports`
 proves it:
 
-- `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling`
-  and never imports Typer. Jinja and the Markdown parsers enter only through
+- `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling` and
+  never imports Typer. Jinja and the Markdown parsers enter only through
   `rn_forge.commons.text`, and `rn_forge.commons.generation` and `text` are
   imported directly, never by commons' core or facade.
 - `rn_forge.cli` never imports `rn_forge.tooling` or Jinja.

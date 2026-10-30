@@ -1,15 +1,28 @@
 [project]
 name = "rn-forge-django"
-version = "0.5.1"
+version = "0.6.0"
 description = "Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Framework :: Django",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
 requires-python = ">=3.14"
 dependencies = [
   "django>=6.0.7",
   # Internal requirements are version ranges (ADR-0004).
-  "rn-forge-commons>=0.7.0,<0.8",
-  "rn-forge-web>=0.2.1,<0.3",
+  "rn-forge-auth>=0.1.0,<0.2",
+  "rn-forge-commons>=0.8.0,<0.9",
+  "rn-forge-web>=0.3.0,<0.4",
 ]
 
 [project.optional-dependencies]
@@ -25,18 +38,15 @@ transfer = [
 fixtures = [
   "rn-forge-data[pandas]>=0.1.1,<0.2",
 ]
-jwt = [
-  "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
-]
-# JWKS bearer auth for externally issued tokens. Separate from `jwt`, which is
-# simplejwt against a local User. The authenticator itself is web's `auth`
-# extra (`rn_forge.web.oidc`), which brings commons' `auth` extra with it.
+# JWKS bearer auth for externally issued tokens. The authenticator itself is
+# `rn_forge.auth.oidc`.
 oidc = [
   "djangorestframework>=3.17.1",
-  "rn-forge-commons[auth]>=0.7.0,<0.8",
-  "rn-forge-web[auth]>=0.2.1,<0.3",
+  "rn-forge-auth[oidc]>=0.1.0,<0.2",
 ]
+# The Redis client for Django's Redis cache backend, which holds login
+# transactions, replay records and revoked session IDs in production.
+redis = ["rn-forge-auth[redis]>=0.1.0,<0.2"]
 celery = ["celery>=5.6.3"]
 # drf-spectacular only. djangorestframework-camel-case was evaluated and not
 # taken: its last release is 1.4.2 (2023-02), with classifiers stopping at
@@ -45,15 +55,10 @@ openapi = [
   "djangorestframework>=3.17.1",
   "drf-spectacular>=0.30.0",
 ]
-saml = [
-  "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
-  "python3-saml>=1.16.0",
-]
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
 security = [
-  "rn-forge-web[security]>=0.2.1,<0.3",
+  "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 # `rn_forge.django.cors` only. The application still owns its origins;
 # `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
@@ -67,13 +72,11 @@ all = [
   "django-cors-headers>=4.9.0",
   "django-import-export>=4.4.1",
   "djangorestframework>=3.17.1",
-  "djangorestframework-simplejwt>=5.5.1",
   "drf-spectacular>=0.30.0",
   "opentelemetry-instrumentation-django>=0.65b0",
-  "python3-saml>=1.16.0",
-  "rn-forge-commons[auth]>=0.7.0,<0.8",
+  "rn-forge-auth[oidc,redis]>=0.1.0,<0.2",
   "rn-forge-data[pandas]>=0.1.1,<0.2",
-  "rn-forge-web[security]>=0.2.1,<0.3",
+  "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 
 [project.urls]
@@ -90,6 +93,7 @@ build-backend = "uv_build"
 module-name = "rn_forge.django"
 
 [tool.uv.sources]
+rn-forge-auth = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-data = { workspace = true }
 rn-forge-django = { workspace = true }
@@ -107,11 +111,9 @@ modules = ["rn_forge.django", "rn_forge.django.models"]
 drf = ["rn_forge.django.drf", "rn_forge.django.drf.views", "rn_forge.django.auth.drf"]
 fixtures = ["rn_forge.django.fixtures"]
 transfer = ["rn_forge.django.drf.transfer"]
-jwt = ["rn_forge.django.auth.jwt"]
 oidc = ["rn_forge.django.auth.drf.oidc"]
 celery = ["rn_forge.django.celery"]
 openapi = ["rn_forge.django.drf.openapi"]
-saml = ["rn_forge.django.auth.saml"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib -m 'not scaffold'"
@@ -119,6 +121,7 @@ markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
   "scaffold: installs built wheels into a scaffolded application (slow)",
+  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [dependency-groups]

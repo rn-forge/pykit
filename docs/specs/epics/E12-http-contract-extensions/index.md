@@ -27,8 +27,7 @@ occurs.
 | [F12.15 — FastAPI resource operations](F12.15-fastapi-resource-operations.md) | FastAPI route factories for `:import`, `:importTemplate`, `:batchCreate`, `:batchDelete` and capped export, over application stores; the shared transfer details moved into `rn-forge-web` | Fired 2026-09-28: a browser client's resource screen needs a FastAPI backend serving every row of the resource standards. | — | Closed |
 | [F12.16 — Expose `Content-Disposition` to browsers](F12.16-expose-content-disposition.md) | `Content-Disposition` in `EXPOSED_HEADERS`, so a cross-origin browser can read export file names | Fired 2026-09-28: a cross-origin browser client could not read an export's file name. | — | Closed |
 
-F12.4 and F12.11 were retired on 2026-09-29, now
-[E13's open questions](../E13-auth/F13.1-auth-design.md#open-questions) on
-tenancy and Django OIDC settings. F12.5, F12.6, F12.7, F12.8, F12.10 and F12.13
-were retired the same day, parked in the [ideas list](../../ideas.md) because
-they are not HTTP contract work.
+F12.4 and F12.11 were retired on 2026-09-29; tenancy and Django OIDC settings
+are now covered by [E13's design](../E13-auth/design.md). F12.5, F12.6, F12.7,
+F12.8, F12.10 and F12.13 were retired the same day, parked in the
+[ideas list](../../ideas.md) because they are not HTTP contract work.

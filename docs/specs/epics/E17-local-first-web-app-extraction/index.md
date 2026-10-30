@@ -4,13 +4,13 @@
 | -- | -- |
 | **State** | New |
 
-Apollo, a local-first FastAPI music-library application, wrote
-several pieces of generic plumbing that any single-user FastAPI tool would write
-again: problem rows built from a domain exception hierarchy, a single-owner
-thread for a library that is not thread-safe, a per-item failure capturing
-parallel map, SQLite engine and migration setup, safe filesystem mutation
-helpers, and a durable in-process job queue. This epic moves them into the
-packages that already own their neighbours. Each feature ships alone.
+Apollo, a local-first FastAPI music-library application, wrote several pieces of
+generic plumbing that any single-user FastAPI tool would write again: problem
+rows built from a domain exception hierarchy, a single-owner thread for a
+library that is not thread-safe, a per-item failure capturing parallel map,
+SQLite engine and migration setup, safe filesystem mutation helpers, and a
+durable in-process job queue. This epic moves them into the packages that
+already own their neighbours. Each feature ships alone.
 
 Apollo's rebuild proceeds on the pins it has today and does not wait for any of
 this. It adopts each piece after the feature is released and the application's
@@ -51,8 +51,8 @@ E6 would either make them wait on E6's criterion or force E6 to lose its tag.
   their boundaries ([ADR-0001](../../../adr/ADR-0001.md)).
 - **Typed application state** is not agreed work yet; it is parked in the
   [ideas list](../../ideas.md#typed-application-state).
-- **Single-consumer conveniences:** a worker-count helper, a
-  `default_registry` keyword for lookup errors, and tool-version probing. Each
-  is a line or two in the application, or a heuristic only Apollo needs; see
+- **Single-consumer conveniences:** a worker-count helper, a `default_registry`
+  keyword for lookup errors, and tool-version probing. Each is a line or two
+  in the application, or a heuristic only Apollo needs; see
   [F17.1](F17.1-problem-rows-from-exceptions.md),
   [F17.3](F17.3-taskpool-map.md) and [F17.5](F17.5-safe-fs-and-tool-probe.md).

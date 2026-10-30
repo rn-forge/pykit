@@ -18,8 +18,8 @@ a library an application depends on.
 - `rn_forge.devops.ci` — the core: the member graph, change selection, check
   matrices and release gating. It knows neither the CI platform nor the stack.
 - `rn_forge.devops.requirements` — the `requirements` check: every requirement
-  between workspace members is a version range that admits the member's current
-  version and has a ceiling.
+  between workspace members is a version range that admits the member's
+  current version and has a ceiling.
 - `rn_forge.devops.uv` — the uv workspace adapter: it reads
   `[tool.uv.workspace]` members, their internal requirements and their
   `[tool.workspace-ci]` tables, and runs `smoke`.
@@ -28,6 +28,9 @@ a library an application depends on.
 - `rn_forge.devops.index` and `rn_forge.devops.releases` — the `index`
   subcommand: a PEP 503 simple index rendered from a repository's GitHub
   Release files, and the adapter that reads them with `gh`.
+- `rn_forge.devops.notes` — the `notes` and `umbrella` subcommands: a changelog
+  version's section, and the umbrella release for the newest shipped release
+  page.
 - `rn_forge.devops.cli` — the `rn-forge-devops` console script.
 
 The package facade re-exports the planner core only. The core never imports an
@@ -41,8 +44,7 @@ at or above the current one whose `pyproject.toml` declares
 `[tool.uv.workspace]`.
 
 ```bash
-uvx --from "rn-forge-devops @ git+https://github.com/rn-forge/pykit@rn-forge-devops-v0.1.0#subdirectory=packages/rn-forge-devops" \
-  rn-forge-devops plan
+uvx --from "rn-forge-devops>=0.3,<0.4" rn-forge-devops plan
 ```
 
 The subcommands and the `[tool.workspace-ci]` tables are described in the

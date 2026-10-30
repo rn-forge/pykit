@@ -10,6 +10,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch: # manual trigger
+    inputs:
+      testpypi:
+        type: boolean
+        default: false
+        description: Upload every package to TestPyPI; no tags or releases
 
 permissions:
   contents: read
@@ -36,6 +41,79 @@ jobs:
       - name: adapters
         run: uv run --no-sync rn-forge-devops adapters
 
+  # Audits every locked package, extra and group. Workspace members are not on
+  # PyPI, so the export omits them; --no-deps because the lock is already resolved.
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          sync: "false"
+
+      - name: pip-audit
+        run: |
+          uv export --frozen --all-packages --all-extras --all-groups \
+            --no-emit-workspace --no-hashes --no-annotate --no-header -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --no-deps --disable-pip --strict
+
+  # Workspace members carry no licence metadata, so they are left out of the
+  # environment. --fail-on is partial-match for names ("GNU General Public
+  # License" does not match the Lesser variant) and exact for SPDX ids, because
+  # a partial "GPL-3.0" would also match "LGPL-3.0-only".
+  licenses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          sync: "false"
+
+      - name: pip-licenses
+        run: |
+          uv sync --frozen --all-packages --all-extras --all-groups --no-install-workspace
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --format=json --output-file "$RUNNER_TEMP/licenses.json"
+          # text-unidecode (via python-slugify) is "Artistic License or GPL"; pykit uses it under Artistic.
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --partial-match --ignore-packages text-unidecode \
+            --fail-on "GNU General Public License;GNU Affero;Server Side Public License;AGPL;SSPL"
+          uvx pip-licenses==5.5.5 --python .venv/bin/python --fail-on "UNKNOWN;GPL;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: licenses
+          path: ${{ runner.temp }}/licenses.json
+          if-no-files-found: ignore
+
+  # The release binary, not gitleaks-action, which needs a paid licence for
+  # organisations. Scans every commit reachable from the checkout.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "$GITLEAKS_SHA256  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git --redact --exit-code 1 .
+
   internal-ranges:
     permissions:
       contents: read
@@ -53,6 +131,7 @@ jobs:
       release-order: ${{ steps.plan.outputs.release-order }}
       packages: ${{ steps.plan.outputs.packages }}
       postgres: ${{ steps.plan.outputs.postgres }}
+      redis: ${{ steps.plan.outputs.redis }}
       smoke: ${{ steps.plan.outputs.smoke }}
       suites: ${{ steps.plan.outputs.suites }}
       pytest-args: ${{ steps.plan.outputs.pytest-args }}
@@ -159,6 +238,46 @@ jobs:
           path: ok/
           retention-days: 1
 
+  # For a package with `[tool.workspace-ci.redis]`: its tests again, with the
+  # URL in the environment variable it names.
+  redis:
+    name: redis (${{ matrix.name }})
+    needs: [import-boundaries, plan]
+    if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.redis != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.redis) }}
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      - name: pytest (Redis)
+        run: |
+          export ${{ matrix.env }}=redis://localhost:6379/0
+          uv run --directory ${{ matrix.dir }} --package ${{ matrix.name }} --no-sync pytest ${{ needs.plan.outputs.pytest-args }}
+
+      - run: mkdir ok && touch "ok/${{ matrix.name }}.redis"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ok-${{ matrix.name }}.redis
+          path: ok/
+          retention-days: 1
+
   # Every other job syncs --all-extras, which hides an extra that forgets a
   # dependency another extra brings. Each extra is installed alone, from the
   # built wheel's metadata, into a clean venv and imported.
@@ -213,12 +332,16 @@ jobs:
   # here, prerequisites first. A failed check blocks its package and every
   # selected package that depends on it; the rest still release.
   release:
-    needs: [import-boundaries, plan, verify, postgres, smoke]
+    needs: [import-boundaries, plan, verify, postgres, redis, smoke]
     if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.release-order != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: write
+      id-token: write # PyPI trusted publishing and artifact attestations
+      attestations: write
+    # An empty name means no environment, so pull requests build without approval.
+    environment: ${{ (github.event_name == 'push' && github.ref_name == 'main') && 'pypi' || (github.event_name == 'workflow_dispatch' && inputs.testpypi) && 'testpypi' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -232,13 +355,23 @@ jobs:
           merge-multiple: true
           path: ok/
 
-      - name: Build and publish releases
+      - name: Build
+        id: build
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISH: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          TESTPYPI: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
           SELECTED: ${{ needs.plan.outputs.release-order }}
         run: |
           set -euo pipefail
+          on_index() { curl -fsS -o /dev/null "https://$1/pypi/$2/$3/json"; }
+          # The SBOM lists the package's locked third-party dependencies, kept out of
+          # dist/ so neither twine nor uv publish sees it.
+          sbom() {
+            mkdir -p "$GITHUB_WORKSPACE/sbom"
+            uv export --directory "$1" --frozen --package "$2" --no-dev --all-extras --no-emit-workspace --no-hashes --no-header --no-annotate -o "$RUNNER_TEMP/$2.txt"
+            uvx --from cyclonedx-bom==7.5.0 cyclonedx-py requirements "$RUNNER_TEMP/$2.txt" --of JSON -o "$GITHUB_WORKSPACE/sbom/$2-$3.cdx.json"
+          }
           mapfile -t names < <(jq -r '.[]' <<<"$SELECTED")
           releasable="$(uv run rn-forge-devops releasable ok "${names[@]}")"
           for name in $releasable; do
@@ -246,6 +379,14 @@ jobs:
             tag="$name-v$version"
             if [ "$PUBLISH" != true ]; then
               uv build --package "$name" --out-dir "dist/$name"
+              uvx twine@7.0.0 check --strict dist/"$name"/*
+              if [ "$TESTPYPI" = true ]; then
+                if on_index test.pypi.org "$name" "$version"; then
+                  echo "$name $version is already on TestPyPI, skipping."
+                else
+                  uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ dist/"$name"/*
+                fi
+              fi
               continue
             fi
             draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || true)
@@ -259,22 +400,57 @@ jobs:
               worktree=$(mktemp -d)
               git worktree add --detach "$worktree" FETCH_HEAD
               uv build --directory "$worktree" --package "$name" --out-dir "$GITHUB_WORKSPACE/dist/$name"
+              sbom "$worktree" "$name" "$version"
               git worktree remove "$worktree"
             else
               uv build --package "$name" --out-dir "dist/$name"
+              sbom . "$name" "$version"
             fi
+            uvx twine@7.0.0 check --strict dist/"$name"/*
+            echo "$name $version ${draft:-none} ${remote_tag:+existing}" >> "$RUNNER_TEMP/built.txt"
+          done
+          if [ -s "$RUNNER_TEMP/built.txt" ]; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A failed attestation stops the job before anything is uploaded or released.
+      - name: Attest build provenance
+        if: ${{ steps.build.outputs.built == 'true' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*/*
+            sbom/*
+
+      - name: Upload and release
+        if: ${{ steps.build.outputs.built == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          on_index() { curl -fsS -o /dev/null "https://$1/pypi/$2/$3/json"; }
+          while read -r -u 3 name version draft existing; do
+            tag="$name-v$version"
+            # Upload before the GitHub release, so a published release implies the version is on PyPI.
+            if on_index pypi.org "$name" "$version"; then
+              echo "$name $version is already on PyPI, skipping upload."
+            else
+              uv publish --trusted-publishing always dist/"$name"/*
+            fi
+            notes=$(mktemp)
+            uv run rn-forge-devops notes "packages/$name/CHANGELOG.md" "$version" > "$notes"
             if [ "$draft" = true ]; then
               gh release delete "$tag" --yes
             fi
-            if [ -n "$remote_tag" ]; then
-              gh release create "$tag" dist/"$name"/* --verify-tag --title "$name v$version" --generate-notes
+            if [ -n "$existing" ]; then
+              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
             else
-              gh release create "$tag" dist/"$name"/* --target "$GITHUB_SHA" --title "$name v$version" --generate-notes
+              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
             fi
-          done
+          done 3< "$RUNNER_TEMP/built.txt"
 
   sonar:
-    needs: [plan, verify, postgres, smoke]
+    needs: [plan, verify, postgres, redis, smoke]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.plan.outputs.sonar == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -311,7 +487,7 @@ jobs:
             ${{ steps.target.outputs.branch-arg }}
 
   # Package checks resolve internal dependencies from the workspace, which
-  # never proves a tag installs on its own.
+  # never proves the PyPI upload installs on its own.
   external-install:
     needs: [release]
     if: ${{ !cancelled() && needs.release.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
@@ -330,12 +506,19 @@ jobs:
         run: |
           set -euo pipefail
           tmp=$(mktemp -d)
-          uv run rn-forge-devops released | while read -r name dir module version; do
+          uv run rn-forge-devops released | while read -r name _ module version; do
             tag="$name-v$version"
             git fetch --no-tags origin "refs/tags/$tag"
             uv venv -q "$tmp/$name"
-            VIRTUAL_ENV="$tmp/$name" uv pip install -q \
-              "$name @ git+${{ github.server_url }}/${{ github.repository }}@$tag#subdirectory=$dir"
+            installed=false
+            for _ in $(seq 10); do
+              if VIRTUAL_ENV="$tmp/$name" uv pip install -q --refresh "$name==$version"; then
+                installed=true
+                break
+              fi
+              sleep 30 # PyPI's CDN lags the upload
+            done
+            [ "$installed" = true ]
             "$tmp/$name/bin/python" -c "import $module"
           done
 
@@ -405,10 +588,17 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
+  umbrella-release:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    needs: [import-boundaries]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/umbrella-release.yml
+
   # The one required status check: matrix job names change with the packages.
   ci-ok:
     if: ${{ always() }}
-    needs: [import-boundaries, internal-ranges, plan, verify, postgres, smoke, suites, release, sonar, external-install, docs]
+    needs: [import-boundaries, dependency-audit, licenses, secret-scan, internal-ranges, plan, verify, postgres, redis, smoke, suites, release, sonar, external-install, umbrella-release, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

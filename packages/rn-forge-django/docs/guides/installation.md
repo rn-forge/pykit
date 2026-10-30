@@ -1,49 +1,39 @@
 # Installation
 
-`rn-forge-django` is not on PyPI. A release is a git tag
-(`rn-forge-django-v<version>`), and a consumer declares pykit's package index
-(`https://rn-forge.github.io/pykit/simple/`) and requires the package by version
-range, or pins a tag by direct URL:
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django",
-]
+dependencies = ["rn-forge-django>=0.6,<0.7"]
 ```
 
-Extras use the same form, with the extra before the `@`:
+Extras go in brackets after the name:
 
 ```toml
-dependencies = [
-  "rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django",
-]
+dependencies = ["rn-forge-django[drf]>=0.6,<0.7"]
 ```
 
 or, from the command line:
 
 ```bash
-uv add "rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django"
+uv add "rn-forge-django[all]>=0.6,<0.7"
 ```
 
-Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each required
-by version range.
+Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each
+required by version range.
 
 | Extra | Adds |
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
 | `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
-| `jwt` | `djangorestframework` + `djangorestframework-simplejwt`-backed JWT auth |
-| `saml` | `djangorestframework` + `djangorestframework-simplejwt` + `python3-saml` SAML auth support |
 | `openapi` | `djangorestframework` + `drf-spectacular`, for `rn_forge.django.drf.openapi` |
-| `oidc` | `djangorestframework` + `rn-forge-commons[auth]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
+| `oidc` | `djangorestframework` + `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `rn_forge.django.auth.drf.oidc` |
+| `redis` | `rn-forge-auth[redis]`, the client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for `rn_forge.django.celery` |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
-`oidc` is its own extra rather than part of `jwt`: verifying externally issued
-tokens against a JWKS endpoint has nothing to do with simplejwt, and should not
-install it. There is deliberately no `messaging` extra —
+There is deliberately no `messaging` extra —
 `rn_forge.django.messaging` is Django ORM plus stdlib.
 
 To use the bundled auth app, add `"rn_forge.django.auth"` to `INSTALLED_APPS`.

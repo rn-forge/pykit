@@ -81,6 +81,7 @@ def load_workspace(root: Path) -> Workspace:
         requirements: list[str] = list(project.get("dependencies", []))
         for extra in project.get("optional-dependencies", {}).values():
             requirements += extra
+        release_requirements = list(requirements)
         for group in member.get("dependency-groups", {}).values():
             requirements += [item for item in group if isinstance(item, str)]
         name = normalize(project["name"])
@@ -93,7 +94,12 @@ def load_workspace(root: Path) -> Workspace:
             or name.replace("-", "_"),
             requires={r for r in map(requirement_name, requirements) if r in names}
             - {name},
+            release_requires={
+                r for r in map(requirement_name, release_requirements) if r in names
+            }
+            - {name},
             postgres_env=ci["postgres"]["env"] if "postgres" in ci else None,
+            redis_env=ci["redis"]["env"] if "redis" in ci else None,
             smoke=(
                 Smoke(
                     modules=smoke.get("modules", []),
@@ -238,8 +244,8 @@ def smoke(workspace: Workspace, package_name: str, extra: str) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         dist = Path(tmp) / "dist"
         for name in sorted(_closure(packages, package.name, {package.name})):
-            subprocess.run(
-                [
+            subprocess.run(  # noqa: S603  # fixed argv, no shell
+                [  # noqa: S607  # tool resolved from PATH
                     "uv",
                     "build",
                     "-q",
@@ -259,16 +265,16 @@ def smoke(workspace: Workspace, package_name: str, extra: str) -> int:
 
         venv = Path(tmp) / "venv"
         python = venv / "bin" / "python"
-        subprocess.run(["uv", "venv", "-q", str(venv)], cwd=root, check=True)
+        subprocess.run(["uv", "venv", "-q", str(venv)], cwd=root, check=True)  # noqa: S603, S607  # fixed argv, no shell; tool resolved from PATH
         install = ["uv", "pip", "install", "-q", "--python", str(python)]
         # Local wheels go in without deps, so their git-pinned siblings are never
         # fetched; everything else they declare is in `external`.
         if external:
-            subprocess.run([*install, *sorted(external)], check=True)
-        subprocess.run(
+            subprocess.run([*install, *sorted(external)], check=True)  # noqa: S603  # fixed argv, no shell
+        subprocess.run(  # noqa: S603  # fixed argv, no shell
             [*install, "--no-deps", *(str(wheels[n]) for n in local)], check=True
         )
         setup = str(root / package.dir / config.setup) if config.setup else ""
-        return subprocess.run(
+        return subprocess.run(  # noqa: S603  # fixed argv, no shell
             [str(python), "-c", IMPORT_SNIPPET, setup, *modules], check=False
         ).returncode

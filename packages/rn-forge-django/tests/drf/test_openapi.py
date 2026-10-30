@@ -18,7 +18,8 @@ from rn_forge.django.auth.drf.principal import (  # noqa: E402
 )
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, WireAutoSchema  # noqa: E402
 from rn_forge.django.drf.pagination import CursorPagination  # noqa: E402
-from rn_forge.web import HealthReport, Requirement  # noqa: E402
+from rn_forge.auth import Requirement  # noqa: E402
+from rn_forge.web import HealthReport  # noqa: E402
 
 pytestmark = pytest.mark.unit
 

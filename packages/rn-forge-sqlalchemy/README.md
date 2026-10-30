@@ -35,14 +35,12 @@ framework itself: the FastAPI guide shows the import and list endpoints.
 
 ## Installation
 
-None of the `rn-forge-*` packages is on PyPI. A release is a git tag. Declare
-pykit's package index and require packages by version range, or pin a tag by
-direct URL:
+Require the packages by version range:
 
 ```toml
 dependencies = [
-  "rn-forge-sqlalchemy @ git+https://github.com/rn-forge/pykit@rn-forge-sqlalchemy-v0.2.0#subdirectory=packages/rn-forge-sqlalchemy",
-  "rn-forge-web @ git+https://github.com/rn-forge/pykit@rn-forge-web-v0.2.0#subdirectory=packages/rn-forge-web",
+  "rn-forge-sqlalchemy>=0.2,<0.3",
+  "rn-forge-web>=0.3,<0.4",
 ]
 ```
 

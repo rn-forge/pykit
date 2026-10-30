@@ -51,4 +51,5 @@ nav:
       - GitHub Actions adapter: reference/github.md
       - Package index: reference/index-core.md
       - Releases adapter: reference/releases.md
+      - Release notes: reference/notes.md
   - Changelog: changelog.md

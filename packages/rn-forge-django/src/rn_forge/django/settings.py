@@ -12,16 +12,12 @@ from rn_forge.commons.lang.collections import DictUtils
 from rn_forge.commons.logging import AppLogger
 
 __all__ = [
-    "AuthSAMLSettings",
-    "AuthSAMLSettingsDict",
     "AuthSettings",
     "AuthSettingsDict",
     "CasingSettings",
     "CasingSettingsDict",
     "DRFSettings",
     "DRFSettingsDict",
-    "DRFViewsSettings",
-    "DRFViewsSettingsDict",
     "PaginationSettings",
     "PaginationSettingsDict",
     "RnforgeDjangoSettings",
@@ -43,12 +39,6 @@ _DEFAULT_CASING_ENABLED = True
 # ---------------------------------------------------------------------------
 # Public Settings Shape
 # ---------------------------------------------------------------------------
-
-
-class DRFViewsSettingsDict(TypedDict, total=False):
-    """Typed Django settings shape for ``RN_FORGE_DJANGO["DRF"]["VIEWS"]``."""
-
-    PERMISSION_ACTION_MAP: Mapping[str, str]
 
 
 class TransferSettingsDict(TypedDict, total=False):
@@ -74,7 +64,6 @@ class CasingSettingsDict(TypedDict, total=False):
 class DRFSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["DRF"]``."""
 
-    VIEWS: DRFViewsSettingsDict
     TRANSFER: TransferSettingsDict
     PAGINATION: PaginationSettingsDict
     CASING: CasingSettingsDict
@@ -83,14 +72,7 @@ class DRFSettingsDict(TypedDict, total=False):
 class AuthSettingsDict(TypedDict, total=False):
     """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]``."""
 
-    SAML: AuthSAMLSettingsDict
-
-
-class AuthSAMLSettingsDict(TypedDict, total=False):
-    """Typed Django settings shape for ``RN_FORGE_DJANGO["AUTH"]["SAML"]``."""
-
-    SETTINGS: Mapping[str, Any]
-    RETURN_TO: str | None
+    PROBLEM_TYPE_BASE: str
 
 
 class RnforgeDjangoSettingsDict(TypedDict, total=False):
@@ -103,15 +85,6 @@ class RnforgeDjangoSettingsDict(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Runtime Settings
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class DRFViewsSettings:
-    """Runtime settings for DRF view helpers."""
-
-    permission_action_map: Mapping[str, str] = field(
-        default_factory=lambda: cast(Mapping[str, str], {})
-    )
 
 
 @dataclass(frozen=True)
@@ -149,7 +122,6 @@ class CasingSettings:
 class DRFSettings:
     """Runtime settings for DRF integration helpers."""
 
-    views: DRFViewsSettings = field(default_factory=DRFViewsSettings)
     transfer: TransferSettings = field(default_factory=TransferSettings)
     pagination: PaginationSettings = field(default_factory=PaginationSettings)
     casing: CasingSettings = field(default_factory=CasingSettings)
@@ -159,17 +131,7 @@ class DRFSettings:
 class AuthSettings:
     """Runtime settings for auth helpers."""
 
-    saml: AuthSAMLSettings = field(default_factory=lambda: AuthSAMLSettings())
-
-
-@dataclass(frozen=True)
-class AuthSAMLSettings:
-    """Runtime settings for SAML auth helpers."""
-
-    settings: Mapping[str, Any] = field(
-        default_factory=lambda: cast(Mapping[str, Any], {})
-    )
-    return_to: str | None = None
+    problem_type_base: str = ""
 
 
 @dataclass(frozen=True)
@@ -199,34 +161,15 @@ def _get_mapping(data: Mapping[str, Any], path: str) -> Mapping[str, Any]:
 def _build_settings() -> RnforgeDjangoSettings:
     config = _settings_dict()
     auth_config = _get_mapping(config, "AUTH")
-    views_config = _get_mapping(config, "DRF.VIEWS")
     transfer_config = _get_mapping(config, "DRF.TRANSFER")
     pagination_config = _get_mapping(config, "DRF.PAGINATION")
     casing_config = _get_mapping(config, "DRF.CASING")
 
     return RnforgeDjangoSettings(
         auth=AuthSettings(
-            saml=AuthSAMLSettings(
-                settings=cast(
-                    Mapping[str, Any],
-                    _get_mapping(auth_config, "SAML").get("SETTINGS", {}),
-                ),
-                return_to=cast(
-                    str | None,
-                    _get_mapping(auth_config, "SAML").get("RETURN_TO"),
-                ),
-            ),
+            problem_type_base=str(auth_config.get("PROBLEM_TYPE_BASE", "")),
         ),
         drf=DRFSettings(
-            views=DRFViewsSettings(
-                permission_action_map=cast(
-                    Mapping[str, str],
-                    views_config.get(
-                        "PERMISSION_ACTION_MAP",
-                        {},
-                    ),
-                ),
-            ),
             transfer=TransferSettings(
                 max_rows=cast(
                     int | None,
@@ -253,7 +196,25 @@ def _build_settings() -> RnforgeDjangoSettings:
     )
 
 
-rn_forge_django_settings = _build_settings()
+# Built on first use: a settings module may import this package before it
+# defines RN_FORGE_DJANGO.
+class _LazySettings:
+    """The settings facade, built on first attribute access."""
+
+    def __init__(self) -> None:
+        self._built: RnforgeDjangoSettings | None = None
+
+    def rebuild(self) -> None:
+        self._built = _build_settings()
+
+    def __getattr__(self, name: str) -> Any:
+        if self._built is None:
+            self._built = _build_settings()
+        return getattr(self._built, name)
+
+
+_LAZY = _LazySettings()
+rn_forge_django_settings = cast(RnforgeDjangoSettings, _LAZY)
 
 
 def _reload_settings(*, setting: str, **kwargs: Any) -> None:
@@ -262,8 +223,7 @@ def _reload_settings(*, setting: str, **kwargs: Any) -> None:
     if setting != _SETTINGS_NAME:
         return
 
-    global rn_forge_django_settings
-    rn_forge_django_settings = _build_settings()
+    _LAZY.rebuild()
     _LOGGER.debug("{} reloaded", _SETTINGS_NAME)  # noqa: PLE1205  # brace-style log format
 
 

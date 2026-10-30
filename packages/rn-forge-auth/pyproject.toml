@@ -1,0 +1,95 @@
+[project]
+name = "rn-forge-auth"
+version = "0.1.0"
+description = "Authentication primitives for Python programming"
+readme = "README.md"
+authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
+requires-python = ">=3.14"
+# Internal requirements are version ranges (ADR-0004).
+dependencies = [
+  "rn-forge-commons>=0.8.0,<0.9",
+  "rn-forge-web>=0.3.0,<0.4",
+]
+
+[project.optional-dependencies]
+# Bearer and logout tokens are verified with PyJWT, keys from its `PyJWKClient`;
+# ID tokens with Authlib's core over joserfc. Authlib's OAuth2Session needs
+# requests, which Authlib does not declare.
+oidc = [
+  "authlib>=1.9.1",
+  "joserfc>=1.7.7",
+  "pyjwt[crypto]>=2.15.0",
+  "requests>=2.34.2",
+]
+# GETDEL, SET NX and INCR need Redis 6.2 or later.
+redis = [
+  "redis>=8.1.0",
+]
+
+[project.urls]
+Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/"
+Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-auth"
+Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-auth/CHANGELOG.md"
+Issues = "https://github.com/rn-forge/pykit/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "rn_forge.auth"
+
+[tool.uv.sources]
+rn-forge-auth = { workspace = true }
+rn-forge-commons = { workspace = true }
+rn-forge-web = { workspace = true }
+
+[tool.workspace-ci]
+adapters = ["oidc", "redis"]
+
+[tool.workspace-ci.redis]
+# The Redis tests read this URL and skip without it.
+env = "RN_FORGE_AUTH_REDIS_URL"
+
+[tool.workspace-ci.smoke]
+modules = ["rn_forge.auth"]
+
+[tool.workspace-ci.smoke.extras]
+oidc = ["rn_forge.auth.oidc", "rn_forge.auth.testing"]
+redis = ["rn_forge.auth.redis"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --import-mode=importlib"
+markers = [
+  "unit: fast isolated tests",
+  "broker: needs Keycloak at RN_FORGE_AUTH_KEYCLOAK_URL",
+]
+
+[dependency-groups]
+dev = [
+  "assertpy>=1.1",
+  "pyright>=1.1.411",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
+  "pytest-randomly>=4.1.0",
+  "rn-forge-auth[oidc,redis]",
+  "ruff>=0.15.21",
+  "types-authlib>=1.8.0",
+]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "mkdocstrings[python]>=1.0.6",
+  "rn-forge-auth[oidc,redis]",
+]

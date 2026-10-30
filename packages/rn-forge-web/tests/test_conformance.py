@@ -4,6 +4,8 @@ Trivial assertions, and still worth having: they are what makes deleting a
 section of coverage fail rather than pass quietly.
 """
 
+from typing import get_args
+
 import pytest
 from assertpy import assert_that
 
@@ -11,7 +13,10 @@ from rn_forge.web.conformance import (
     CASES,
     REDACTED,
     VARIABLE_MEMBERS,
+    ConformanceCapability,
+    case_by_id,
     cases_for,
+    cases_provided_by,
     redact,
 )
 
@@ -179,3 +184,34 @@ def test_response_body_keys_are_camel_case():
 
     for case in CASES:
         walk(dict(case.expect_body), case.id)
+
+
+def test_a_case_with_no_requirements_is_provided_to_every_binding():
+    plain = [case for case in CASES if not case.requires]
+    assert_that(plain).is_not_empty()
+    assert_that(cases_provided_by()).contains(*plain)
+
+
+def test_capability_cases_apply_only_when_every_capability_is_provided():
+    csrf = case_by_id("auth.csrf-rejection-is-403-csrf-failed")
+    session = case_by_id("auth.session-only-401-has-no-challenge")
+    assert_that(cases_provided_by()).does_not_contain(csrf, session)
+    assert_that(cases_provided_by({"session-routes"})).contains(session)
+    assert_that(cases_provided_by({"session-routes"})).does_not_contain(csrf)
+    assert_that(cases_provided_by({"session-routes", "csrf"})).contains(csrf, session)
+
+
+def test_every_capability_a_case_requires_is_a_declared_one():
+    declared = set(get_args(ConformanceCapability.__value__))
+    for case in CASES:
+        assert_that(set(case.requires)).described_as(case.id).is_subset_of(declared)
+
+
+def test_the_session_cases_expect_no_challenge():
+    for case_id in (
+        "auth.session-only-401-has-no-challenge",
+        "auth.csrf-rejection-is-403-csrf-failed",
+    ):
+        assert_that(case_by_id(case_id).expect_absent_headers).contains(
+            "WWW-Authenticate"
+        )

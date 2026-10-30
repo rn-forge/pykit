@@ -1,14 +1,7 @@
-from rn_forge.django.auth.credentials import BaseCredentials
-from rn_forge.django.auth.drf.authentication import (
-    BaseLoginAPIView,
-    BaseLoginViewMixin,
-    LogoutAPIView,
+from rn_forge.django.auth.drf.authorization import (
+    PermissionKeyPermission,
+    ResourcePolicyViewMixin,
 )
-from rn_forge.django.auth.drf.mixins import (
-    AuthorizationViewMixin,
-    PermissionKeyViewMixin,
-)
-from rn_forge.django.auth.drf.permissions import AuthorizationPermission
 from rn_forge.django.auth.drf.principal import (
     PrincipalBasicAuthentication,
     PrincipalBearerAuthentication,
@@ -19,6 +12,10 @@ from rn_forge.django.auth.drf.serializers import (
     PermissionSerializer,
     UserSerializer,
 )
+from rn_forge.django.auth.drf.session import (
+    PrincipalSessionAuthentication,
+    sessions_for,
+)
 from rn_forge.django.auth.drf.views import (
     AuthorizedAPIView,
     AuthorizedModelViewSet,
@@ -28,22 +25,19 @@ from rn_forge.django.auth.drf.views import (
 )
 
 __all__ = [
-    "AuthorizationPermission",
-    "AuthorizationViewMixin",
     "AuthorizedAPIView",
     "AuthorizedModelViewSet",
-    "BaseCredentials",
-    "BaseLoginAPIView",
-    "BaseLoginViewMixin",
     "GroupSerializer",
     "GroupViewSet",
-    "LogoutAPIView",
-    "PermissionKeyViewMixin",
+    "PermissionKeyPermission",
     "PermissionSerializer",
     "PermissionViewSet",
     "PrincipalBasicAuthentication",
     "PrincipalBearerAuthentication",
+    "PrincipalSessionAuthentication",
+    "ResourcePolicyViewMixin",
     "UserSerializer",
     "UserViewSet",
     "requires",
+    "sessions_for",
 ]

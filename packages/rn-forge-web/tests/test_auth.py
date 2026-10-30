@@ -5,50 +5,20 @@ from assertpy import assert_that
 
 from rn_forge.web.auth import (
     AUTH_FAILED_DETAIL,
-    Authorizer,
     Credentials,
-    Principal,
-    Requirement,
-    ScopeAuthorizer,
     challenge_header,
     parse_authorization,
 )
-from rn_forge.web.exceptions import AuthenticationFailed, PermissionDenied
-from rn_forge.web.problem import default_registry
+from rn_forge.web.auth import CSRF_FAILED_DETAIL
+from rn_forge.web.exceptions import (
+    AuthenticationFailed,
+    CsrfFailed,
+    PermissionDenied,
+    SessionRequired,
+)
+from rn_forge.web.problem import default_registry, render_problem
 
 pytestmark = pytest.mark.unit
-
-
-# --- Principal ------------------------------------------------------------
-
-
-def test_subject_is_the_only_required_field():
-    principal = Principal(subject="u1")
-    assert_that(principal.issuer).is_none()
-    assert_that(principal.scopes).is_empty()
-    assert_that(principal.mechanism).is_equal_to("bearer")
-
-
-def test_principal_round_trips_through_the_dataclass_mixin():
-    principal = Principal(
-        subject="u1",
-        issuer="https://idp.example",
-        scopes=frozenset({"read"}),
-        roles=frozenset({"admin"}),
-        tenant="t1",
-        claims={"email": "u@example.com"},
-        mechanism="bearer",
-    )
-    restored = Principal.from_dict(principal.as_dict())
-    assert_that(restored).is_equal_to(principal)
-
-
-def test_scopes_and_roles_are_separate():
-    principal = Principal(
-        subject="u1", scopes=frozenset({"read"}), roles=frozenset({"admin"})
-    )
-    assert_that(principal.scopes).does_not_contain("admin")
-    assert_that(principal.roles).does_not_contain("read")
 
 
 def test_credentials_carry_the_scheme_verbatim():
@@ -57,86 +27,8 @@ def test_credentials_carry_the_scheme_verbatim():
     assert_that(creds.extras).is_empty()
 
 
-# --- Requirement ----------------------------------------------------------
-
-
-READER = Principal(
-    subject="u1", scopes=frozenset({"read", "list"}), roles=frozenset({"staff"})
-)
-
-
-def test_an_empty_requirement_means_authenticated_not_denied():
-    assert_that(Requirement().is_satisfied_by(Principal(subject="u1"))).is_true()
-
-
-@pytest.mark.parametrize(
-    ("requirement", "expected"),
-    [
-        (Requirement(any_scope=frozenset({"read"})), True),
-        (Requirement(any_scope=frozenset({"read", "write"})), True),
-        (Requirement(any_scope=frozenset({"write"})), False),
-        (Requirement(all_scopes=frozenset({"read", "list"})), True),
-        (Requirement(all_scopes=frozenset({"read", "write"})), False),
-        (Requirement(any_role=frozenset({"staff"})), True),
-        (Requirement(any_role=frozenset({"admin"})), False),
-        (Requirement(all_roles=frozenset({"staff"})), True),
-        (Requirement(all_roles=frozenset({"staff", "admin"})), False),
-    ],
-)
-def test_each_of_the_four_set_forms(requirement, expected):
-    assert_that(requirement.is_satisfied_by(READER)).is_equal_to(expected)
-
-
-def test_the_clauses_are_anded_together():
-    both = Requirement(all_scopes=frozenset({"read"}), all_roles=frozenset({"admin"}))
-    assert_that(both.is_satisfied_by(READER)).is_false()
-
-
-# --- the authorizer -------------------------------------------------------
-
-
-def test_the_default_authorizer_satisfies_the_protocol():
-    assert_that(isinstance(ScopeAuthorizer(), Authorizer)).is_true()
-
-
-def test_authorize_permits_a_satisfied_requirement():
-    ScopeAuthorizer().authorize(
-        READER, requires=Requirement(all_scopes=frozenset({"read"}))
-    )
-
-
-def test_a_scope_miss_raises_permission_denied_not_authentication_failed():
-    """The 401/403 boundary: the caller IS authenticated."""
-    authorizer = ScopeAuthorizer()
-    requirement = Requirement(all_scopes=frozenset({"write"}))
-    assert_that(authorizer.authorize).raises(PermissionDenied).when_called_with(
-        READER, requires=requirement
-    )
-    with pytest.raises(PermissionDenied):
-        authorizer.authorize(READER, requires=requirement)
-
-
 def test_permission_denied_is_not_an_authentication_failure():
     assert_that(issubclass(PermissionDenied, AuthenticationFailed)).is_false()
-
-
-def test_the_authorizer_is_silent_when_no_log_is_injected():
-    """A library that logs where the consumer did not ask is worse than one that does not."""
-    authorizer = ScopeAuthorizer()
-    requirement = Requirement(all_roles=frozenset({"admin"}))
-    with pytest.raises(PermissionDenied):
-        authorizer.authorize(READER, requires=requirement)
-
-
-def test_the_injected_log_receives_the_refusal():
-    seen: list[tuple[str, dict]] = []
-    authorizer = ScopeAuthorizer(log=lambda msg, ctx: seen.append((msg, dict(ctx))))
-    requirement = Requirement(all_roles=frozenset({"admin"}))
-    with pytest.raises(PermissionDenied):
-        authorizer.authorize(READER, requires=requirement)
-    assert_that(seen).is_length(1)
-    assert_that(seen[0][0]).is_equal_to("authorization.denied")
-    assert_that(seen[0][1]["subject"]).is_equal_to("u1")
 
 
 # --- the failure wire contract --------------------------------------------
@@ -227,3 +119,65 @@ def test_parse_authorization_matches_the_scheme_case_insensitively():
 @pytest.mark.parametrize("header", [None, "", "Basic dXNlcjpwdw=="])
 def test_parse_authorization_is_none_when_absent_or_another_scheme(header):
     assert_that(parse_authorization(header, "Bearer")).is_none()
+
+
+# --- session-only 401 and csrf-failed -------------------------------------
+
+
+def test_a_session_required_failure_is_a_401_unauthorized():
+    row = default_registry().problem_for(SessionRequired("no cookie"))
+    assert_that((row.status, row.slug)).is_equal_to((401, "unauthorized"))
+
+
+def test_a_session_required_401_carries_no_challenge_and_the_generic_detail():
+    rendered = render_problem(
+        default_registry(), SessionRequired("cookie expired"), instance="/auth/session"
+    )
+    assert_that(rendered.status).is_equal_to(401)
+    assert_that(rendered.headers).does_not_contain_key("WWW-Authenticate")
+    assert_that(rendered.body["detail"]).is_equal_to(AUTH_FAILED_DETAIL)
+
+
+def test_a_bearer_401_still_carries_its_challenge():
+    rendered = render_problem(
+        default_registry(), AuthenticationFailed("x"), instance="/x", realm="api"
+    )
+    assert_that(rendered.headers["WWW-Authenticate"]).is_equal_to('Bearer realm="api"')
+
+
+def test_a_caller_supplied_challenge_still_wins_on_a_session_required_401():
+    rendered = render_problem(
+        default_registry(),
+        SessionRequired("x"),
+        instance="/x",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    assert_that(rendered.headers).is_equal_to({"WWW-Authenticate": "Bearer"})
+
+
+def test_csrf_failed_is_a_403_with_its_own_slug_and_is_not_a_permission_denial():
+    row = default_registry().problem_for(CsrfFailed("origin mismatch"))
+    assert_that((row.status, row.slug)).is_equal_to((403, "csrf-failed"))
+    assert_that(issubclass(CsrfFailed, PermissionDenied)).is_false()
+
+
+def test_the_csrf_failed_type_is_distinguishable_with_a_type_base():
+    rendered = render_problem(
+        default_registry(type_base="https://errors.example/"),
+        CsrfFailed("origin mismatch"),
+        instance="/auth/logout",
+    )
+    assert_that(rendered.body["type"]).is_equal_to("https://errors.example/csrf-failed")
+    assert_that(rendered.body["title"]).is_equal_to("CSRF Failed")
+
+
+def test_the_csrf_failed_body_never_names_the_check_that_failed():
+    rendered = render_problem(
+        default_registry(),
+        CsrfFailed("Origin https://evil.example not trusted"),
+        instance="/auth/logout",
+        detail="token mismatch",
+    )
+    assert_that(rendered.body["detail"]).is_equal_to(CSRF_FAILED_DETAIL)
+    assert_that(str(rendered.body)).does_not_contain("evil").does_not_contain("token")
+    assert_that(rendered.headers).does_not_contain_key("WWW-Authenticate")

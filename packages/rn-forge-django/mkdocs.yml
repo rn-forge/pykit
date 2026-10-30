@@ -66,13 +66,11 @@ nav:
       - Urls and Views: reference/urls-and-views.md
       - Auth:
           - reference/auth/index.md
-          - Credentials and Payload: reference/auth/credentials.md
-          - Basic: reference/auth/basic.md
-          - JWT: reference/auth/jwt.md
-          - SAML: reference/auth/saml.md
           - DRF: reference/auth/drf.md
           - Principal (bearer and basic): reference/auth/principal.md
           - OIDC (JWKS bearer): reference/auth/oidc.md
+          - Routes and sessions: reference/auth/routes.md
+          - Accounts and authorization: reference/auth/accounts.md
       - DRF:
           - reference/drf/index.md
           - Views: reference/drf/views.md

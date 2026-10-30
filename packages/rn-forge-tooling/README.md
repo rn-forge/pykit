@@ -7,9 +7,9 @@
 [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling)
 · [All pykit packages](https://rn-forge.github.io/pykit/)
 
-The lifecycle and install layer of the developer-tooling stack: for
-command-line tools that install themselves and manage their own versions.
-File generation, local state and templates live in `rn-forge-commons`.
+The lifecycle and install layer of the developer-tooling stack: for command-line
+tools that install themselves and manage their own versions. File generation,
+local state and templates live in `rn-forge-commons`.
 
 Where
 [`rn-forge-commons`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons)
@@ -35,15 +35,11 @@ Tooling may import cli and commons; neither may import tooling, and
 
 ## Install
 
-Not published to PyPI: a release is a git tag. A consumer declares pykit's
-package index and requires the package by version range, or pins a tag by direct
-URL.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-tooling @ git+https://github.com/rn-forge/pykit@rn-forge-tooling-v0.2.0#subdirectory=packages/rn-forge-tooling",
-]
+dependencies = ["rn-forge-tooling>=0.3,<0.4"]
 ```
 
 `rn-forge-cli` and `rn-forge-commons` come with it, as version ranges.

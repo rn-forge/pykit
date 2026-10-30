@@ -14,6 +14,11 @@ setup.
    entry, and the `mkdocs.yml` `site_url`, `repo_url`, `pymdownx.snippets`,
    `mike` plugin (`canonical_version: latest`) and
    `extra.version.provider: mike` settings.
+1. Copy `LICENSE` from the repository root into `packages/<name>/`, and the
+   `license`, `license-files` and `classifiers` block from an existing
+   member's `pyproject.toml` (adding the package's `Framework ::` classifier,
+   if it has one). The release build fails `twine check --strict` without
+   them.
 1. Add the member to root `[tool.uv.workspace].members` and the root development
    dependency group. Add local `[tool.uv.sources]` overrides for its internal
    dependencies while keeping the declared dependencies pinned to intended git

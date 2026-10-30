@@ -16,11 +16,10 @@ from rn_forge.django.auth.drf.principal import (  # noqa: E402
     PrincipalBearerAuthentication,
     requires,
 )
+from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
 from rn_forge.web import (  # noqa: E402
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
-    Principal,
-    Requirement,
 )
 
 pytestmark = pytest.mark.unit
@@ -39,17 +38,33 @@ class _Tokens:
     def authenticate(self, *, credentials):
         self.seen.append(credentials)
         if credentials.token == "good-read":
-            return Principal(subject="u1", scopes=frozenset({"read"}))
+            return Principal(subject="u1", issuer="iss", scopes=frozenset({"read"}))
+        if credentials.token == "stranger":
+            return Principal(subject="u2", issuer="iss")
         if credentials.token in ("good", "dTE6cHc="):
-            return Principal(subject="u1", mechanism=credentials.scheme.lower())
+            return Principal(
+                subject="u1", issuer="iss", mechanism=credentials.scheme.lower()
+            )
         raise AuthenticationFailed("signature mismatch for kid k-7")
 
 
 TOKENS = _Tokens()
 
 
+class _Accounts:
+    def lookup(self, issuer, subject):
+        return "acct-1" if subject == "u1" else None
+
+
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
+
+
 class _Bearer(PrincipalBearerAuthentication):
     authenticator = TOKENS
+    accounts = _Accounts()
+    contexts = _Contexts()
     realm = "orders"
 
 
@@ -85,14 +100,19 @@ class TestBearer:
     def test_valid_token_puts_the_principal_on_request_user(self) -> None:
         response = _get(Authorization="Bearer good-read")
         assert response.status_code == 200
-        assert json.loads(response.content) == {"subject": "u1", "type": "Principal"}
+        assert json.loads(response.content) == {
+            "subject": "acct-1",
+            "type": "Principal",
+        }
 
+    @pytest.mark.security_control("problem-responses")
     def test_missing_credentials_is_401_problem_with_rfc6750_challenge(self) -> None:
         response = _get()
         assert response.status_code == 401
         assert response["Content-Type"] == PROBLEM_MEDIA_TYPE
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
 
+    @pytest.mark.security_control("problem-responses")
     def test_invalid_token_is_401_without_the_reason(self) -> None:
         response = _get(Authorization="Bearer forged")
         body = json.loads(response.content)
@@ -101,12 +121,16 @@ class TestBearer:
         assert "kid" not in response.content.decode()
         assert response["WWW-Authenticate"] == 'Bearer realm="orders"'
 
+    def test_unlinked_subject_is_401(self) -> None:
+        assert _get(Authorization="Bearer stranger").status_code == 401
+
     def test_empty_token_is_401(self) -> None:
         assert _get(Authorization="Bearer ").status_code == 401
 
     def test_other_scheme_is_treated_as_no_credentials(self) -> None:
         assert _get(Authorization="Token good-read").status_code == 401
 
+    @pytest.mark.security_control("problem-responses")
     def test_valid_token_without_scope_is_403_without_a_challenge(self) -> None:
         response = _get(Authorization="Bearer good")
         body = json.loads(response.content)
@@ -136,3 +160,39 @@ class TestBasic:
         response = _get(_BasicView)
         assert response.status_code == 401
         assert response["WWW-Authenticate"] == "Basic"
+
+
+class _WideContexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(
+            active=True,
+            session_version=0,
+            permissions=frozenset({"orders.read", "orders.delete"}),
+        )
+
+
+class _Ceiling(_Bearer):
+    contexts = _WideContexts()
+    scope_map = {"read": frozenset({"orders.read"})}
+
+
+class _CeilingView(APIView):
+    authentication_classes = [_Ceiling]
+    permission_classes = [requires(Requirement())]
+
+    def get(self, request):
+        return Response({"permissions": sorted(request.user.permissions)})
+
+
+class TestScopeCeiling:
+    @pytest.mark.security_control("bearer-scope-ceiling")
+    def test_the_token_scopes_limit_the_accounts_permissions(self) -> None:
+        response = _get(_CeilingView, Authorization="Bearer good-read")
+
+        assert json.loads(response.content) == {"permissions": ["orders.read"]}
+
+    @pytest.mark.security_control("bearer-scope-ceiling")
+    def test_a_token_without_scopes_allows_nothing(self) -> None:
+        response = _get(_CeilingView, Authorization="Bearer good")
+
+        assert json.loads(response.content) == {"permissions": []}

@@ -17,7 +17,18 @@ from rn_forge.devops.requirements import check_requirements
 def _packages() -> dict[str, Package]:
     return {
         "base": Package("base", "packages/base", "base"),
-        "app": Package("app", "packages/app", "app", requires={"base"}),
+        "app": Package(
+            "app", "packages/app", "app", requires={"base"}, release_requires={"base"}
+        ),
+    }
+
+
+def _group_cycle() -> dict[str, Package]:
+    return {
+        "auth": Package(
+            "auth", "auth", "auth", requires={"web"}, release_requires={"web"}
+        ),
+        "web": Package("web", "web", "web", requires={"auth"}),
     }
 
 
@@ -27,6 +38,36 @@ def test_normalize_collapses_separators() -> None:
 
 def test_release_order_puts_requirements_first() -> None:
     assert release_order(_packages(), {"app", "base"}) == ["base", "app"]
+
+
+def test_release_order_ignores_a_cycle_through_a_dependency_group() -> None:
+    assert release_order(_group_cycle(), {"auth", "web"}) == ["web", "auth"]
+
+
+def test_release_order_raises_on_a_runtime_cycle() -> None:
+    packages = {
+        "a": Package("a", "a", "a", release_requires={"b"}),
+        "b": Package("b", "b", "b", release_requires={"a"}),
+    }
+    with pytest.raises(ValueError, match=r"cycle among \['a', 'b'\]"):
+        release_order(packages, {"a", "b"})
+
+
+def test_plan_orders_a_group_only_cycle(tmp_path: Path) -> None:
+    workspace = Workspace(root=tmp_path, packages=_group_cycle())
+    assert plan(workspace, "")["release-order"] == ["web", "auth"]
+
+
+def test_releasable_gates_on_release_requires_only(tmp_path: Path) -> None:
+    packages = _group_cycle()
+    for check in packages["auth"].checks():
+        (tmp_path / check["marker"]).touch()
+    assert releasable(packages, tmp_path, ["auth", "web"]) == ([], ["web", "auth"])
+    for check in packages["web"].checks():
+        (tmp_path / check["marker"]).touch()
+    assert releasable(packages, tmp_path, ["auth", "web"]) == (["web", "auth"], [])
+    (tmp_path / packages["auth"].checks()[0]["marker"]).unlink()
+    assert releasable(packages, tmp_path, ["auth", "web"]) == (["web"], ["auth"])
 
 
 def test_missing_marker_blocks_package_and_dependents(tmp_path: Path) -> None:
@@ -71,6 +112,33 @@ def test_plan_lists_one_empty_extra_smoke_entry_without_a_declaration(
 def test_plan_omits_smoke_entries_of_unselected_packages(tmp_path: Path) -> None:
     outputs = plan(_git_workspace(tmp_path), "v1")
     assert outputs["smoke"] == [{"name": "a", "extra": "", "marker": "a.smoke"}]
+
+
+def test_plan_lists_redis_runs_of_selected_packages(tmp_path: Path) -> None:
+    packages = _packages()
+    packages["app"].redis_env = "REDIS_URL"
+    outputs = plan(Workspace(root=tmp_path, packages=packages), "")
+    assert outputs["redis"] == [
+        {"name": "app", "dir": "packages/app", "env": "REDIS_URL"}
+    ]
+    assert outputs["postgres"] == []
+
+
+def test_checks_include_the_redis_marker_only_when_declared() -> None:
+    package = Package("app", "packages/app", "app")
+    assert {"kind": "redis", "marker": "app.redis"} not in package.checks()
+    package.redis_env = "REDIS_URL"
+    assert {"kind": "redis", "marker": "app.redis"} in package.checks()
+
+
+def test_missing_redis_marker_blocks_a_package(tmp_path: Path) -> None:
+    packages = _packages()
+    packages["base"].redis_env = "REDIS_URL"
+    for package in packages.values():
+        for check in package.checks():
+            if check["marker"] != "base.redis":
+                (tmp_path / check["marker"]).touch()
+    assert releasable(packages, tmp_path, ["base", "app"]) == ([], ["base", "app"])
 
 
 def test_checks_always_include_the_smoke_marker() -> None:

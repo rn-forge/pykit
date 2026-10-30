@@ -11,22 +11,17 @@ Shared, framework-agnostic utilities for Python programming.
 
 ## Install
 
-Not published to PyPI: a release is a git tag. A consumer declares pykit's
-package index and requires the package by version range, or pins a tag by direct
-URL.
+Require the package by version range:
 
 ```toml
 [project]
-dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.6.0#subdirectory=packages/rn-forge-commons",
-]
+dependencies = ["rn-forge-commons>=0.8,<0.9"]
 ```
 
 Optional extras:
 
 | Extra | Adds |
 | -- | -- |
-| `auth` | JWT/JWKS token verification and OIDC discovery (`pyjwt[crypto]`) |
 | `json` | JSON-formatted log output (`python-json-logger`) |
 | `pydantic` | Strict pydantic models for configuration documents, with every failure named by dotted path |
 | `otel` | OpenTelemetry logging instrumentation |
@@ -147,9 +142,6 @@ directly (never through the facade).
   `SecretStore` and their in-memory implementations.
 - **`resilience`** (`resilience` extra) — async circuit breakers and a retrying
   HTTP client.
-- **`auth`** (`auth` extra) — `JwtVerifier`, `JwksCache` and `discover_oidc`:
-  bearer-token verification returning verified claims. The `Principal` and the
-  401 wire shape are `rn-forge-web`'s.
 
 Import from the top-level package for the curated public API:
 

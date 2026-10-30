@@ -859,7 +859,7 @@ def batch_update_router[T: BaseModel](
         parsed = parse_batch_update(
             await request.json(), cap=max_rows, instance=request.url.path
         )
-        assert not isinstance(parsed, ProblemResponse)  # _checked_list ruled both out
+        assert not isinstance(parsed, ProblemResponse)  # _checked_list ruled both out  # noqa: S101  # type narrowing, not validation
         return parsed
 
     async def batch_update(

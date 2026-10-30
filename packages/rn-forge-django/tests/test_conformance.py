@@ -9,7 +9,8 @@ If a case needs more than a line or two over them, the adapter is missing.
 Assertions are against the table, never against FastAPI's output — two stacks
 agreeing on the wrong thing is not conformance.
 
-No case is skipped in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case that
+requires a capability absent from `PROVIDES` is not collected at all. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision Django cannot honour and belongs in the web plan.
 """
@@ -39,6 +40,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rn_forge.django.auth import CSRF_MIDDLEWARE, CSRF_SETTINGS
+from rn_forge.django.exceptions import problem_details_response
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication, requires
 from rn_forge.django.cors import cors_settings
 from rn_forge.django.deprecation import deprecated
@@ -66,19 +69,26 @@ from rn_forge.django.models import (
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.web import (
     Operation,
     ProblemDetail,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
-    Principal,
-    Requirement,
     ServiceUnavailable,
+    SessionRequired,
+    default_registry,
     TooManyRequests,
     run_idempotent,
 )
-from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
+from rn_forge.web.conformance import (
+    VARIABLE_MEMBERS,
+    ConformanceCapability,
+    case_by_id,
+    cases_provided_by,
+    redact,
+)
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -88,6 +98,13 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
+PROVIDES: frozenset[ConformanceCapability] = frozenset({"session-routes", "csrf"})
+"""The optional capabilities this stack's fixture serves. Add one when the
+binding that provides it lands; a case needing a capability not listed here is
+not run, and every other case still is."""
+
+SERVED_CASES = cases_provided_by(PROVIDES)
+
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
 CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 URLCONF = __name__
@@ -364,17 +381,36 @@ class _AnyToken:
     """Verifies every token as a principal with no scopes."""
 
     def authenticate(self, *, credentials):
-        return Principal(subject="u1")
+        return Principal(subject="u1", issuer="iss")
+
+
+class _LinkedAccounts:
+    def lookup(self, issuer, subject):
+        return "acct-1"
+
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
 
 
 class _Bearer(PrincipalBearerAuthentication):
     authenticator = _AnyToken()
+    accounts = _LinkedAccounts()
+    contexts = _LinkedAccounts()
     realm = "conformance"
 
 
 class _Open(APIView):
     authentication_classes: list = []
     permission_classes: list = []
+
+
+def _session(request):
+    """A session-only route: anonymous is 401 with no challenge, and `AuthCsrfMiddleware` guards the unsafe methods."""
+    return problem_details_response(
+        SessionRequired("no session"),
+        instance=request.path,
+        registry=default_registry(),
+    )
 
 
 class _Boom(_Open):
@@ -566,6 +602,7 @@ class _OperationFailed(_Open):
 
 
 urlpatterns = [
+    path("conformance/session", _session),
     path("conformance/boom", _Boom.as_view()),
     path("conformance/conflict", _Conflict.as_view()),
     path("conformance/validate", _Validate.as_view()),
@@ -618,11 +655,13 @@ WIRING = {
         "corsheaders.middleware.CorsMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
         "rn_forge.django.security.SecurityHeadersMiddleware",
+        CSRF_MIDDLEWARE,
     ],
     "USE_TZ": True,
     "TIME_ZONE": "UTC",
     "DATA_UPLOAD_MAX_MEMORY_SIZE": 200,
     **SECURITY_SETTINGS,
+    **CSRF_SETTINGS,
     **cors_settings(["https://example.com"]),
     "REST_FRAMEWORK": {
         "EXCEPTION_HANDLER": "rn_forge.django.drf.exceptions.problem_details_exception_handler",
@@ -702,7 +741,7 @@ def client():
     )
     with override_settings(**WIRING):
         _seed_notes(_ConformanceNote)
-        yield Client(raise_request_exception=False)
+        yield Client(raise_request_exception=False, enforce_csrf_checks=True)
 
 
 def issue(client, case):
@@ -743,7 +782,7 @@ def casing_violations(node, found=None):
     return found
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", SERVED_CASES, ids=lambda c: c.id)
 def test_django_conforms(client, case):
     for prerequisite in case.depends_on:
         issue(client, case_by_id(prerequisite))
@@ -774,7 +813,7 @@ def test_django_conforms(client, case):
 def test_the_fixture_serves_every_path_the_table_uses():
     """A case added for an endpoint this driver does not serve must fail here."""
     unserved = set()
-    for case in CASES:
+    for case in SERVED_CASES:
         if case.request.path == "/conformance/missing":
             continue
         try:

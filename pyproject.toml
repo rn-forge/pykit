@@ -41,7 +41,9 @@ markers = [
   "unit: fast isolated tests",
   "integration: tests that exercise database-backed behavior",
   "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+  "broker: needs Keycloak at RN_FORGE_AUTH_KEYCLOAK_URL (rn-forge-auth)",
   "scaffold: installs built wheels into a scaffolded application (slow)",
+  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [tool.workspace-ci.suites]
@@ -53,8 +55,15 @@ scaffold = ["-q", "-m", "scaffold"]
 # Markdown code blocks are owned by the docs formatting, not ruff.
 exclude = ["*.md"]
 
+[tool.ruff.lint]
+# Bandit's checks, including the Django ones (S308, S703).
+extend-select = ["S"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["ALL"]
+# Repository tooling outside packages/, which is what the source scan covers.
+"conftest.py" = ["S"]
+".github/scripts/*" = ["S"]
 
 [tool.ruff.lint.isort]
 # ruff otherwise sorts these frameworks as first-party, after the rn_forge subpackages that share their names.
@@ -64,6 +73,7 @@ known-third-party = ["django", "fastapi", "sqlalchemy"]
 extend-immutable-calls = ["fastapi.Body", "fastapi.Depends", "fastapi.Query", "fastapi.Security"]
 
 [tool.uv.sources]
+rn-forge-auth = { workspace = true }
 rn-forge-cli = { workspace = true }
 rn-forge-commons = { workspace = true }
 rn-forge-data = { workspace = true }
@@ -76,6 +86,7 @@ rn-forge-web = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+  "packages/rn-forge-auth",
   "packages/rn-forge-cli",
   "packages/rn-forge-commons",
   "packages/rn-forge-data",
@@ -89,6 +100,7 @@ members = [
 
 [dependency-groups]
 workspace = [
+  "rn-forge-auth[oidc]",
   "rn-forge-cli",
   "rn-forge-commons[all]",
   "rn-forge-devops",
@@ -131,4 +143,5 @@ dev = [
   "pytest-randomly>=4.1.0",
   "rn-forge-data[pandas]",
   "ruff>=0.17.1",
+  "types-authlib>=1.8.0",
 ]

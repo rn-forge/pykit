@@ -1,0 +1,33 @@
+name: Umbrella release
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  umbrella-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          sync: "false"
+
+      - id: umbrella
+        run: |
+          set -euo pipefail
+          git ls-remote --tags --refs origin | uv run rn-forge-devops umbrella docs/releases umbrella.md --site-url https://rn-forge.github.io/pykit/ >> "$GITHUB_OUTPUT"
+
+      - if: ${{ steps.umbrella.outputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.umbrella.outputs.tag }}
+          TITLE: ${{ steps.umbrella.outputs.title }}
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes-file umbrella.md --latest

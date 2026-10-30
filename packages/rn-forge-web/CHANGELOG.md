@@ -5,6 +5,35 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-29
+
+### Added
+
+- `csrf-failed` problem type: `CsrfFailed` (403, in `default_registry()`),
+  the `CSRF_FAILED` row and `CSRF_FAILED_DETAIL`. It is not a
+  `PermissionDenied`, and its detail never says which check failed.
+- Session-only 401: `SessionRequired`, an `AuthenticationFailed` whose new
+  `challenge` class attribute is false, so `render_problem` sends no
+  `WWW-Authenticate`. The API conventions record the deviation from RFC 9110
+  §15.5.2.
+- Conformance cases `auth.session-only-401-has-no-challenge` and
+  `auth.csrf-rejection-is-403-csrf-failed`, with `ConformanceCase.requires`,
+  `ConformanceCapability` and `cases_provided_by` so a binding runs only the
+  cases for the capabilities it provides.
+
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
+### Removed
+
+- Breaking: `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`,
+  `Authorizer`, `ScopeAuthorizer` and `principal_from_claims` moved to
+  `rn_forge.auth` in `rn-forge-auth`, and `OidcAuthenticator` moved from
+  `rn_forge.web.oidc` to `rn_forge.auth.oidc`. `rn_forge.web.oidc` and the
+  `auth` extra are gone. `rn_forge.web.auth` keeps `Credentials`,
+  `parse_authorization`, `challenge_header` and `AUTH_FAILED_DETAIL`.
+
 ## [0.2.1] - 2026-10-25
 
 ### Changed

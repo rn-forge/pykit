@@ -171,7 +171,7 @@ class Process(DataclassMixin):
         try:
             completed = cast(
                 subprocess.CompletedProcess[Any],
-                subprocess.run(args, capture_output=capture_output, **kwargs),  # noqa: PLW1510  # caller controls check
+                subprocess.run(args, capture_output=capture_output, **kwargs),  # noqa: PLW1510, S603  # caller controls check; argv is caller-supplied, no shell
             )
             return_code = completed.returncode
             if capture_output:

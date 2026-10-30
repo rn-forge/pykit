@@ -38,13 +38,10 @@ drives it: `--quiet`/`--json` set its mode.
 
 ## Installation
 
-These packages are not published to PyPI; a release is a tag. Declare pykit's package
-index and require this one by version range, or pin a tag by direct URL:
+Require the package by version range:
 
 ```toml
-dependencies = [
-  "rn-forge-cli @ git+https://github.com/rn-forge/pykit@rn-forge-cli-v0.1.0#subdirectory=packages/rn-forge-cli",
-]
+dependencies = ["rn-forge-cli>=0.1,<0.2"]
 ```
 
 ## Usage

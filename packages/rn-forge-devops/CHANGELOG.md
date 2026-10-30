@@ -5,6 +5,31 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-29
+
+### Fixed
+
+- `plan` no longer hangs on a dependency cycle. Release order and `releasable`
+  follow dependencies and optional dependencies only, not dependency groups;
+  selection still follows all three. A cycle among the former raises a
+  `ValueError` naming the packages.
+
+### Added
+
+- `[tool.workspace-ci.redis]`: a package's tests run again against a Redis
+  service, with the URL in the variable `env` names. The `plan` output gains
+  `redis`, and the check marker is `<package>.redis`.
+- The `notes` subcommand: `rn-forge-devops notes CHANGELOG VERSION` prints a
+  changelog version's section.
+- The `umbrella` subcommand:
+  `rn-forge-devops umbrella RELEASES_DIR BODY_FILE --site-url URL` writes the
+  release notes for the newest shipped release page whose tag is not among the
+  tags read from stdin, and prints its `tag=` and `title=` lines.
+
+### Changed
+
+- The package declares the MIT licence and is published to PyPI.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

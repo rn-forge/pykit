@@ -5,7 +5,8 @@ hand-written: if a case needs more than a line or two over them, the adapter is
 missing. Assertions are against the table, never against Django's output — two
 stacks agreeing on the wrong thing is not conformance.
 
-No case is skipped in this file, and there must never be one. A case
+No case is skipped in this file, and there must never be one. A case that
+requires a capability absent from `PROVIDES` is not collected at all. A case
 this stack cannot satisfy is a finding: either an adapter is missing here, or
 the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 """
@@ -13,7 +14,7 @@ the case encodes a decision FastAPI cannot honour and belongs in the web plan.
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -26,7 +27,11 @@ from pydantic import ConfigDict, Field, field_validator
 from rn_forge.fastapi import (
     AppConfig,
     CorsPolicy,
+    CsrfProtection,
     FastApiApp,
+    InMemoryCsrfStore,
+    SessionMiddleware,
+    Sessions,
     bearer_auth,
     conditional_get,
     deprecated,
@@ -55,10 +60,18 @@ from rn_forge.fastapi.transfer import (
     tabular_export,
     tabular_format,
 )
+from rn_forge.auth import (
+    AuthorizationContext,
+    InMemoryReplayStore,
+    InMemorySessionStore,
+    Principal,
+    Requirement,
+)
 from rn_forge.web import (
     Operation,
     ProblemDetail,
     API_CATALOG_PATH,
+    PROBLEM_MEDIA_TYPE,
     check_cursor_order,
     format_order_by,
     TabularFormat,
@@ -71,16 +84,23 @@ from rn_forge.web import (
     DomainConflict,
     EntityVersionETagCodec,
     InMemoryAsyncIdempotencyStore,
-    Principal,
-    Requirement,
     ServiceUnavailable,
+    SessionRequired,
     TooManyRequests,
     check_precondition,
+    default_registry,
     encode_cursor,
+    render_problem,
     require_live,
     run_idempotent_async,
 )
-from rn_forge.web.conformance import CASES, VARIABLE_MEMBERS, case_by_id, redact
+from rn_forge.web.conformance import (
+    VARIABLE_MEMBERS,
+    ConformanceCapability,
+    case_by_id,
+    cases_provided_by,
+    redact,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -90,6 +110,13 @@ CLOCK = datetime(2026, 1, 2, tzinfo=UTC)
 DEPRECATED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 SUNSET = datetime(2026, 7, 1, tzinfo=UTC)
 DEPRECATION_LINK = "https://example.com/deprecated"
+PROVIDES: frozenset[ConformanceCapability] = frozenset({"session-routes", "csrf"})
+"""The optional capabilities this stack's fixture serves. Add one when the
+binding that provides it lands; a case needing a capability not listed here is
+not run, and every other case still is."""
+
+SERVED_CASES = cases_provided_by(PROVIDES)
+
 CAMEL_CASE = re.compile(r"^[a-z][a-zA-Z0-9]*$")
 CASING_EXEMPT = {"service-desc", "service-doc"} | set(VARIABLE_MEMBERS)
 
@@ -98,7 +125,20 @@ class AnyToken:
     """Verifies every token as a principal with no scopes."""
 
     def authenticate(self, *, credentials):
-        return Principal(subject="u1")
+        return Principal(subject="u1", issuer="idp")
+
+
+class LinkedAccounts:
+    def resolve(self, identity):
+        raise AssertionError("a bearer request must never provision")
+
+    def lookup(self, issuer, subject):
+        return "acct-1"
+
+
+class ActiveContexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=1)
 
 
 PEOPLE = [
@@ -356,6 +396,24 @@ class NoteBatchStore:
 EXPORT_CAP = 1
 
 
+class _Contexts:
+    def resolve(self, account_id):
+        return AuthorizationContext(active=True, session_version=0)
+
+
+def session_sessions() -> Sessions:
+    """The session middleware's stores; the fixture has no login, so they stay empty."""
+    return Sessions(
+        store=InMemorySessionStore(),
+        contexts=_Contexts(),
+        replay=InMemoryReplayStore(),
+        csrf=CsrfProtection(store=InMemoryCsrfStore(), problem_type_base=""),
+        idle_timeout=timedelta(minutes=30),
+        absolute_timeout=timedelta(hours=12),
+        debug=True,
+    )
+
+
 def build_app(*, failing: str | None) -> FastAPI:
     """A fresh application: the idempotency store must not carry over between cases."""
 
@@ -377,7 +435,11 @@ def build_app(*, failing: str | None) -> FastAPI:
     )
     store = InMemoryAsyncIdempotencyStore()
     private = requires(
-        bearer_auth(authenticator=AnyToken()),
+        bearer_auth(
+            authenticator=AnyToken(),
+            accounts=LinkedAccounts(),
+            contexts=ActiveContexts(),
+        ),
         Requirement(all_scopes=frozenset({"read"})),
     )
     app.include_router(
@@ -755,6 +817,27 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
     )
 
+    # The fixture has no login route; its session-only path stands in for the
+    # login path, which the middleware checks even with no cookie.
+    app.add_middleware(
+        SessionMiddleware,
+        sessions=session_sessions(),
+        login_path="/conformance/session",
+    )
+
+    @app.api_route("/conformance/session", methods=["GET", "POST"])
+    async def session_only(request: Request):
+        """A session-only route: anonymous is 401 with no challenge, and the session middleware guards the unsafe methods."""
+        rendered = render_problem(
+            default_registry(), SessionRequired("no session"), instance=request.url.path
+        )
+        return JSONResponse(
+            rendered.body,
+            status_code=rendered.status,
+            media_type=PROBLEM_MEDIA_TYPE,
+            headers=dict(rendered.headers),
+        )
+
     return app
 
 
@@ -803,7 +886,7 @@ def casing_violations(node, found=None):
     return found
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", SERVED_CASES, ids=lambda c: c.id)
 def test_fastapi_conforms(case):
     client = TestClient(
         build_app(failing=case.request.query.get("fail")),
@@ -851,7 +934,7 @@ def test_the_fixture_serves_every_path_the_table_uses():
     templates = [
         re.compile(re.sub(r"\{[^}/:]+\}", "[^/:]+", p)) for p in paths if "{" in p
     ]
-    used = {case.request.path for case in CASES}
+    used = {case.request.path for case in SERVED_CASES}
     unserved = {
         path
         for path in used - served - {"/conformance/missing"}

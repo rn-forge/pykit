@@ -11,15 +11,14 @@ Each `rn-forge-*` package pins every other one it needs by one git tag URL
 refuses two URLs for one distribution. As a result:
 
 - every additive commons release forces a patch release of each package that
-  depends on commons, only to move a pin
-  (E18's commons 0.7.0 alone would re-tag seven packages for that reason, which
-  is why [F18.5](../E18-kiln-extraction/F18.5-coherent-pins.md) folded into
-  F19.3);
+  depends on commons, only to move a pin (E18's commons 0.7.0 alone would
+  re-tag seven packages for that reason, which is why
+  [F18.5](../E18-kiln-extraction/F18.5-coherent-pins.md) folded into F19.3);
 - a consumer that takes two packages at different times cannot install them
   together until both are re-tagged on the same commons.
 
-This epic lets packages depend on each other by version range. pykit publishes
-a standard package index of its existing release files, and each internal
+This epic lets packages depend on each other by version range. pykit publishes a
+standard package index of its existing release files, and each internal
 requirement becomes a range that admits every compatible release. The
 coordinated release that switches every package to ranges is the last one that
 has to re-tag dependents for a pin.
@@ -34,14 +33,14 @@ has to re-tag dependents for a pin.
 
 ## Context
 
-**What ranges fix, and what they don't.** With ranges, an additive release
-(a patch before 1.0, a minor after) needs no release of its dependents. A
-consumer simply locks the newest version every range admits. A breaking
-release still needs each dependent to widen its upper bound, after checking
-that it works on the new version. That is real work and should stay a release.
+**What ranges fix, and what they don't.** With ranges, an additive release (a
+patch before 1.0, a minor after) needs no release of its dependents. A consumer
+simply locks the newest version every range admits. A breaking release still
+needs each dependent to widen its upper bound, after checking that it works on
+the new version. That is real work and should stay a release.
 
-**What survives the kiln cutover.** The range check and the index publish
-live in files pykit owns: a reusable workflow, a composite action, and two
+**What survives the kiln cutover.** The range check and the index publish live
+in files pykit owns: a reusable workflow, a composite action, and two
 `rn-forge-devops` modules apart from the planner. `main.yml` references them
 today. After the cutover, kiln's generated CI references the same files through
 `[[ci.jobs]]` and a `[ci.hooks] docs` anchor (kiln F4.11's extension by
