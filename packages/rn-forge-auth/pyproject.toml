@@ -29,7 +29,7 @@ dependencies = [
 oidc = [
   "authlib>=1.9.1",
   "joserfc>=1.7.7",
-  "pyjwt[crypto]>=2.15.0",
+  "pyjwt[crypto]>=2.15.1",
   "requests>=2.34.2",
 ]
 # GETDEL, SET NX and INCR need Redis 6.2 or later.
