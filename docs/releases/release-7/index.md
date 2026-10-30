@@ -63,9 +63,9 @@ pykit's cutover onto kiln is [Release 8](../release-8/index.md).
    profiles, stores and the fake IdP), F13.4 (protocol adapters over Authlib's
    core), then F13.5 (Django) and F13.6 (FastAPI), which may run in parallel,
    then F13.7 (legacy removal).
-1. **F21.1 and F21.2 any time.** The owner creates each PyPI project from a
-   `.dev0` placeholder and attaches its trusted publisher before F21.3's first
-   PyPI release, because the workflow's token cannot create a project.
+1. **F21.1 and F21.2 any time.** The owner creates each PyPI project and
+   attaches its trusted publisher before F21.3's first PyPI release, because the
+   workflow's token cannot create a project.
 1. **F21.3** in `main.yml`. S21.3.3 closes when this release's merge publishes
    to PyPI.
 1. **F21.4** in the same merge as F21.3, so the install docs are true when the
@@ -132,8 +132,8 @@ serves the same surface as an `APIRouter`, with its own session middleware,
 session-bound CSRF token, rate limiting and audit events, and both bindings pass
 the shared security-control cases in `rn_forge.auth.conformance`; F13.7 can
 start. F21.1 is closed: the GitHub environments exist and the PyPI organization
-is approved. The owner creates each PyPI project from a placeholder and attaches
-its publisher before the first publish.
+is approved. The owner creates each PyPI project and attaches its publisher
+before the first publish.
 
 E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
 branch after E13's features landed. F20.1, F20.2, F20.3, F21.1, F21.2 and F21.4
@@ -146,9 +146,10 @@ token cannot create a PyPI project. S21.3.5 adds PEP 740 attestations
 (`rn-forge-commons` 0.8.1 is the first version with them). The open stories need
 the owner:
 
-- S21.3.3: the owner creates the PyPI projects from placeholders and attaches
-  their trusted publishers, then the merge of this work publishes the real
-  versions and the ship commit follows.
+- S21.3.3: every PyPI project exists with its trusted publisher, so the merge of
+  this work publishes the real versions and the ship commit follows. The owner
+  then deletes the `.dev0` placeholders of `rn-forge-devops`, `rn-forge-cli`,
+  `rn-forge-data` and `rn-forge-web`.
 - S21.3.5: proven by that publish.
 
 After the merge, new E13 code must pass ruff's `S` rules, the dependency audit

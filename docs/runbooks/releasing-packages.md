@@ -82,11 +82,15 @@ publish releases or deploy Pages. Dispatching it with `testpypi` set uploads
 every package to TestPyPI instead, skipping versions already there, and creates
 no tags or releases; use it from the release branch to prove the uploads before
 the merge. The workflow's token cannot create a PyPI project, so before a
-package's first upload the owner uploads a `.dev0` placeholder build of it with
-a user token and attaches the trusted publisher (owner `rn-forge`, repository
-`pykit`, workflow `main.yml`, environment `pypi`). PyPI limits how fast new
-projects are created; on `429 Too many new projects created`, wait and resume.
-Delete the placeholders after the real versions are published
+package's first upload the owner creates the empty project from the `rn-forge`
+organization's *Projects* page and attaches the trusted publisher (owner
+`rn-forge`, repository `pykit`, workflow `main.yml`, environment `pypi`). That
+page allows the organization 10 new projects a day. Do not create a project by
+uploading with a user token: that path has a lower personal limit, and Release 7
+hit `429 Too many new projects created` after four projects, still in force 90
+minutes later. The limits cover new projects only, so uploading a version to an
+existing project is unaffected. An empty project has no JSON API page, so check
+it at `https://pypi.org/simple/<name>/`
 ([F21.3](../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md#registering-the-publishers)).
 A resumed tag at an older commit is outside that run's automatic
 external-install and docs checks. Verify its published assets and package docs,
