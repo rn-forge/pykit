@@ -99,7 +99,7 @@ dev = [
   "pyright>=1.1.411",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
+  "pytest-randomly>=5.0.0",
   "rn-forge-fastapi[oidc,redis,transfer]",
   "ruff>=0.15.21",
   # Test-only: the ResourcePolicy tests scope real `select()` queries.

@@ -65,7 +65,7 @@ dev = [
   "pytest>=9.1.1",
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
+  "pytest-randomly>=5.0.0",
   # The guide examples, which the tests run, import rn-forge-auth.
   "rn-forge-auth>=0.1.0,<0.2",
   "rn-forge-web[security]",

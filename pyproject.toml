@@ -140,7 +140,7 @@ dev = [
   "aiosqlite>=0.21",
   "asyncpg>=0.30",
   "pytest-django>=4.12.0",
-  "pytest-randomly>=4.1.0",
+  "pytest-randomly>=5.0.0",
   "rn-forge-data[pandas]",
   "ruff>=0.17.1",
   "types-authlib>=1.8.0",
