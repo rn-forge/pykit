@@ -74,7 +74,7 @@ dev = [
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
+  "mkdocstrings[python]>=1.0.8",
   "opentelemetry-instrumentation-asgi>=0.65b0",
   "rn-forge-auth>=0.1.0,<0.2",
   "rn-forge-web[security]",
