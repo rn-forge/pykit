@@ -2205,7 +2205,7 @@ requires-dist = [
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", marker = "extra == 'pandas'", specifier = ">=3.0.3" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
-    { name = "tablib", extras = ["xlsx"], specifier = ">=3.8" },
+    { name = "tablib", extras = ["xlsx"], specifier = ">=3.10.0" },
 ]
 provides-extras = ["pandas"]
 
