@@ -1094,7 +1094,7 @@ wheels = [
 
 [[package]]
 name = "mkdocstrings"
-version = "1.0.6"
+version = "1.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
@@ -1104,9 +1104,9 @@ dependencies = [
     { name = "mkdocs-autorefs" },
     { name = "pymdown-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/71/f85bdf13355073ae15a7375f09879375a830553552e58c1c4b7e0bbc5c8b/mkdocstrings-1.0.6.tar.gz", hash = "sha256:a0b8c2bdd29a6416c80d717aa369bbf7831946bd9f23c2a66db1b1dbe7693dbd", size = 100649, upload-time = "2026-07-11T19:38:05.732Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/cc/e3ed8b16851f5d664dffcf8f55fc60d0d3f736a3edca21d1508105d1255a/mkdocstrings-1.0.8.tar.gz", hash = "sha256:b50fc326230906425c82ee9ec59b80e5db00892b2b593d4d0b841a0d4acf537b", size = 107444, upload-time = "2026-10-19T15:43:02.157Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/5b/4c1902e8bdd5c4db63284e9d101dece4038d4025d6d88850ffe0a1578980/mkdocstrings-1.0.6-py3-none-any.whl", hash = "sha256:2703708697487d1b6d6d7b412e176fa436edf120c1bf81dc9e126b12d00893c7", size = 35787, upload-time = "2026-07-11T19:38:04.417Z" },
+    { url = "https://files.pythonhosted.org/packages/19/5e/4df7a2290e97c60a3ba410084966e5ab84aa89d15c8c98c195acbaefa8f4/mkdocstrings-1.0.8-py3-none-any.whl", hash = "sha256:4b03ed2b863009f1153f0d04aacb22a85b92afc28a0636d85717c92eecca638c", size = 42209, upload-time = "2026-10-19T15:43:00.65Z" },
 ]
 
 [package.optional-dependencies]
@@ -1641,7 +1641,7 @@ dev = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocs-monorepo-plugin", specifier = ">=1.1.2" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.65b0" },
     { name = "opentelemetry-sdk", specifier = ">=1.44" },
     { name = "pandas-stubs", specifier = ">=3.0.5" },
@@ -1674,7 +1674,7 @@ docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocs-monorepo-plugin", specifier = ">=1.1.2" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
 ]
 workspace = [
     { name = "rn-forge-auth", extras = ["oidc"], editable = "packages/rn-forge-auth" },
@@ -1983,7 +1983,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-auth", extras = ["oidc", "redis"], editable = "packages/rn-forge-auth" },
 ]
 
@@ -2043,7 +2043,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
 ]
 
@@ -2163,7 +2163,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
 ]
 
@@ -2223,7 +2223,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-data", extras = ["pandas"], editable = "packages/rn-forge-data" },
 ]
 
@@ -2266,7 +2266,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
 ]
 
@@ -2398,7 +2398,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
 ]
 
@@ -2482,7 +2482,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
 ]
 
@@ -2539,7 +2539,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-sqlalchemy", editable = "packages/rn-forge-sqlalchemy" },
 ]
 
@@ -2597,7 +2597,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
 ]
 
@@ -2669,7 +2669,7 @@ dev = [
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.8" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.65b0" },
     { name = "rn-forge-auth", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
