@@ -2049,7 +2049,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-commons"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/rn-forge-commons" }
 dependencies = [
     { name = "dacite" },

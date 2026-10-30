@@ -422,6 +422,13 @@ jobs:
             dist/*/*
             sbom/*
 
+      # uv publish uploads the *.publish.attestation files beside each dist.
+      - name: Attest PyPI publish
+        if: ${{ steps.build.outputs.built == 'true' }}
+        uses: astral-sh/attest-action@39b6ce43875c196a579e31635b11aa2a2036384a # v0.0.7
+        with:
+          paths: dist/*/*
+
       - name: Upload and release
         if: ${{ steps.build.outputs.built == 'true' }}
         env:
@@ -443,9 +450,9 @@ jobs:
               gh release delete "$tag" --yes
             fi
             if [ -n "$existing" ]; then
-              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
+              gh release create "$tag" dist/"$name"/*.whl dist/"$name"/*.tar.gz "sbom/$name-$version.cdx.json" --verify-tag --title "$name v$version" --latest=false --notes-file "$notes"
             else
-              gh release create "$tag" dist/"$name"/* "sbom/$name-$version.cdx.json" --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
+              gh release create "$tag" dist/"$name"/*.whl dist/"$name"/*.tar.gz "sbom/$name-$version.cdx.json" --target "$GITHUB_SHA" --title "$name v$version" --latest=false --notes-file "$notes"
             fi
           done 3< "$RUNNER_TEMP/built.txt"
 

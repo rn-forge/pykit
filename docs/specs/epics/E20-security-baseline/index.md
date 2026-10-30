@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-27 |
+| **Closed Date** | 2026-10-30 |
 
 A green Sonar quality gate covers first-party static analysis, security
 hotspots, coverage and duplication, and nothing else. It does not cover
@@ -27,8 +28,8 @@ in [E13](../E13-auth/index.md), which owns them.
 | [F20.1 — Baseline decision](F20.1-baseline-decision.md) | The decision: which controls are required, which fail the build and which only report; recorded as an ADR. | Closed |
 | [F20.2 — Dependency risk](F20.2-dependency-risk.md) | Vulnerability audit of `uv.lock` in CI, a `uv` Dependabot ecosystem, and a dependency licence inventory. | Closed |
 | [F20.3 — Source and secret scanning](F20.3-source-and-secret-scanning.md) | A security linter with Django rules in CI, gitleaks over full history, and GitHub push protection. | Closed |
-| [F20.4 — Release provenance](F20.4-release-provenance.md) | A CycloneDX SBOM per package tag, and artifact attestations on release tags so a consumer can verify a tag's origin. | Active |
-| [F20.5 — Disclosure and posture](F20.5-disclosure-and-posture.md) | `SECURITY.md`, OpenSSF Scorecard, and a per-release evidence page. | Active |
+| [F20.4 — Release provenance](F20.4-release-provenance.md) | A CycloneDX SBOM per package tag, and artifact attestations on release tags so a consumer can verify a tag's origin. | Closed |
+| [F20.5 — Disclosure and posture](F20.5-disclosure-and-posture.md) | `SECURITY.md`, OpenSSF Scorecard, and a per-release evidence page. | Closed |
 
 [F20.1](F20.1-baseline-decision.md) comes first: every other feature depends on
 the controls and thresholds it settles.
