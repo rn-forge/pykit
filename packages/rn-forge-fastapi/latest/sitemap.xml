@@ -2,78 +2,110 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/index.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/changelog.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/index.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/auth.html</loc>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/installation.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/quickstart.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/soft-delete.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/transfer.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/wiring.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/index.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/app.html</loc>
-         <lastmod>2026-10-25</lastmod>
-    </url>
-    <url>
-         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/dependencies.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/health.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/merge_patch.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/openapi.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/problem.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/read_mask.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/soft_delete.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/transfer.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/index.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/authorization.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/csrf.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/dependencies.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/rate_limit.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/redis.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/routes.html</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/reference/auth/sessions.html</loc>
+         <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>

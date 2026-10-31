@@ -1,0 +1,2069 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="FastAPI adapters over rn-forge-web">
+      
+      
+      
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/auth.html">
+      
+      
+        <link rel="prev" href="soft-delete.html">
+      
+      
+        <link rel="next" href="../reference/index.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Auth - rn-forge-fastapi</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#auth" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="rn-forge-fastapi" class="md-header__button md-logo" aria-label="rn-forge-fastapi" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            rn-forge-fastapi
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Auth
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="rn-forge-fastapi" class="md-nav__button md-logo" aria-label="rn-forge-fastapi" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    rn-forge-fastapi
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="wiring.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiring an application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tabular export and import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="soft-delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="auth.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes and responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessions-and-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions and revocation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csrf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-application-implements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the application implements
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/app.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/problem.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Problem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/openapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/dependencies.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/merge_patch.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Merge patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/read_mask.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/soft_delete.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft delete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/health.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Auth
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/sessions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/csrf.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSRF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/dependencies.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/authorization.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/rate_limit.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate limits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/redis.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes and responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessions-and-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions and revocation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csrf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-application-implements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the application implements
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h1>
+<p><code>rn_forge.fastapi.auth</code> binds the login, session, CSRF and authorization design
+of <code>rn-forge-auth</code> (a separate package, which holds the framework-neutral
+contracts, login flows, session and replay stores and the OIDC adapter) to
+FastAPI. It serves a browser single-page application through a server-side
+session, and API clients through bearer tokens, with one account and one
+authorization model behind both. <code>rn-forge-auth</code> documents the providers and
+stores; this page documents the FastAPI side. The Django binding in
+<code>rn-forge-django</code> serves the same routes, responses and audit events.</p>
+<p>The session, CSRF and rate-limit state is shared by every worker, so outside
+development it lives in Redis. Install <code>rn-forge-fastapi</code> with the <code>redis</code>
+extra, and with <code>oidc</code> for OIDC login or JWKS bearer tokens.</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<p>An end-to-end configuration with one OIDC provider, local password login and,
+in development, a fixture-account provider:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/auth_config.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">Redis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthorizationContextCache</span><span class="p">,</span>
+    <span class="n">DevelopmentAccount</span><span class="p">,</span>
+    <span class="n">DevelopmentIdentityProvider</span><span class="p">,</span>
+    <span class="n">PasswordIdentityProvider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">OidcProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth.redis</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RedisAuthorizationVersions</span><span class="p">,</span>
+    <span class="n">RedisReplayStore</span><span class="p">,</span>
+    <span class="n">RedisSessionStore</span><span class="p">,</span>
+    <span class="n">RedisTransactionStore</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthRoutesConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth.redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisCsrfStore</span><span class="p">,</span> <span class="n">RedisRateLimiter</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.accounts</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyAccountResolver</span><span class="p">,</span> <span class="n">MyAccountState</span><span class="p">,</span> <span class="n">MyContexts</span><span class="p">,</span> <span class="n">check_password</span>
+
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">redis</span> <span class="o">=</span> <span class="n">Redis</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="s2">&quot;redis://localhost:6379/0&quot;</span><span class="p">)</span>
+
+<span class="n">contexts</span> <span class="o">=</span> <span class="n">AuthorizationContextCache</span><span class="p">(</span>
+    <span class="n">MyContexts</span><span class="p">(),</span>
+    <span class="n">versions</span><span class="o">=</span><span class="n">RedisAuthorizationVersions</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">writer</span><span class="o">=</span><span class="n">MyAccountState</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">providers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">OidcProvider</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span>
+        <span class="n">issuer</span><span class="o">=</span><span class="s2">&quot;https://login.example.com/tenant/v2.0&quot;</span><span class="p">,</span>
+        <span class="n">client_id</span><span class="o">=</span><span class="s2">&quot;orders-web&quot;</span><span class="p">,</span>
+        <span class="n">client_secret</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+        <span class="n">redirect_uri</span><span class="o">=</span><span class="s2">&quot;https://app.example.com/auth/callback/acme&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">PasswordIdentityProvider</span><span class="p">(</span><span class="n">check_password</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+    <span class="n">providers</span><span class="p">[</span><span class="s2">&quot;development&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DevelopmentIdentityProvider</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">DevelopmentAccount</span><span class="p">(</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alice&quot;</span><span class="p">)],</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">AuthRoutesConfig</span><span class="p">(</span>
+    <span class="n">providers</span><span class="o">=</span><span class="n">providers</span><span class="p">,</span>
+    <span class="n">accounts</span><span class="o">=</span><span class="n">MyAccountResolver</span><span class="p">(),</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>
+    <span class="n">account_state</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>  <span class="c1"># writes through to MyAccountState</span>
+    <span class="n">problem_type_base</span><span class="o">=</span><span class="s2">&quot;https://errors.example.com/&quot;</span><span class="p">,</span>
+    <span class="n">return_to_prefixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/app&quot;</span><span class="p">],</span>
+    <span class="n">default_return_to</span><span class="o">=</span><span class="s2">&quot;/app&quot;</span><span class="p">,</span>
+    <span class="n">provider_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme SSO&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;Password&quot;</span><span class="p">},</span>
+    <span class="n">sessions</span><span class="o">=</span><span class="n">RedisSessionStore</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">transactions</span><span class="o">=</span><span class="n">RedisTransactionStore</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">replay</span><span class="o">=</span><span class="n">RedisReplayStore</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">csrf</span><span class="o">=</span><span class="n">RedisCsrfStore</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">limiter</span><span class="o">=</span><span class="n">RedisRateLimiter</span><span class="p">(</span><span class="n">redis</span><span class="p">),</span>
+    <span class="n">trusted_origins</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;https://app.example.com&quot;</span><span class="p">],</span>
+    <span class="n">debug</span><span class="o">=</span><span class="n">DEBUG</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>Mount the router and the middleware:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/main.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastApiApp</span><span class="p">,</span> <span class="n">SessionMiddleware</span><span class="p">,</span> <span class="n">auth_router</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessions_for</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">FastApiApp</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span><span class="n">SessionMiddleware</span><span class="p">,</span> <span class="n">sessions</span><span class="o">=</span><span class="n">sessions_for</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
+<span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">auth_router</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
+</code></pre></div>
+
+<p><code>sessions_for(config)</code> builds the <code>Sessions</code> from the same stores and timeouts
+as the routes, so the middleware and the routes agree. <code>SessionMiddleware</code>
+resolves the session once per request and runs the CSRF check; a router
+mounted without it is unprotected, and <code>current_principal</code> raises
+<code>RuntimeError</code> for a session request. <code>add_middleware</code> wraps the application,
+so the middleware added last is outermost. Add <code>SessionMiddleware</code> before the
+middleware that should also decorate its responses (security headers, CORS), so
+a <code>csrf-failed</code> rejection, which the middleware answers itself, carries them.</p>
+<p>When the router is mounted under a prefix other than <code>/auth</code>, tell the
+middleware the paths it has special rules for:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
+    <span class="n">SessionMiddleware</span><span class="p">,</span>
+    <span class="n">sessions</span><span class="o">=</span><span class="n">sessions_for</span><span class="p">(</span><span class="n">config</span><span class="p">),</span>
+    <span class="n">untouched_paths</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/api/auth/session&quot;</span><span class="p">],</span>
+    <span class="n">login_path</span><span class="o">=</span><span class="s2">&quot;/api/auth/login/password&quot;</span><span class="p">,</span>
+    <span class="n">csrf_exempt_prefixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/api/auth/backchannel-logout/&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">auth_router</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;/api/auth&quot;</span><span class="p">))</span>
+</code></pre></div>
+
+<p>The session cookie is <code>Secure</code>, so serve development over <code>localhost</code> or HTTPS.</p>
+<h2 id="routes-and-responses">Routes and responses<a class="headerlink" href="#routes-and-responses" title="Permanent link">&para;</a></h2>
+<p><code>auth_router(config, prefix="/auth")</code> serves these routes under the prefix. It
+is left out of the OpenAPI document. A <code>401</code> from any of them is a
+<code>problem+json</code> response with no <code>WWW-Authenticate</code> header.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>providers</code></td>
+<td><code>200</code>, a list of <code>{id, name, kind}</code>. <code>kind</code> is <code>oidc</code>, <code>oauth2</code>, <code>password</code> or <code>development</code>; the development provider is listed only with <code>debug=True</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/{provider}?return_to=</code></td>
+<td><code>302</code> to the identity provider, with the <code>__Host-login-tx</code> cookie. A <code>return_to</code> outside <code>return_to_prefixes</code> is replaced by <code>default_return_to</code>. An unknown provider is <code>404</code>; <code>login/password</code> is <code>405</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/development?account=</code></td>
+<td>With <code>debug=True</code> only (otherwise <code>404</code>): without <code>account</code>, an HTML list of the fixture accounts; with it, signs in and redirects to <code>return_to</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>callback/{provider}</code></td>
+<td><code>302</code> to <code>return_to</code>, or to the error route; <code>429</code> when rate limited</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>session</code></td>
+<td><code>200</code> with the session body, or <code>401</code>. Always sets the CSRF cookie</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout</code></td>
+<td><code>200 {"redirect": url or null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout/all</code></td>
+<td><code>200 {"redirect": null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>backchannel-logout/{provider}</code></td>
+<td><code>200</code>; <code>400</code> for an invalid logout token; <code>404</code> for a provider with no handler</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>login/password</code></td>
+<td><code>200</code> with the session body, <code>401</code> for any failure, or <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>A callback error redirects to <code>error_route</code> (<code>/auth/error</code>) with <code>?error=</code> set
+to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.
+Details go to the log, never into the URL. A password login failure is one <code>401</code>
+whatever its cause, so the response does not reveal which accounts exist. The
+login body is JSON or form-encoded <code>{username, password}</code>.</p>
+<p>The session body is camelCase: <code>subject</code> (the account ID), <code>provider</code>, <code>roles</code>,
+<code>permissions</code>, <code>attributes</code>, <code>authTime</code>, <code>amr</code> and <code>expiresAt</code> (the absolute
+timeout). Session responses carry <code>Cache-Control: no-store</code>.</p>
+<p>The login transaction lives in its store for 10 minutes behind the
+<code>__Host-login-tx</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
+<code>Domain</code>). A callback that carries more than one transaction cookie is
+rejected, and a transaction is consumed atomically, so a callback works once.
+The stores' synchronous calls and the Authlib providers run in the thread pool.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<p><code>AuthRoutesConfig</code> is a frozen dataclass. <code>providers</code>, <code>accounts</code>, <code>contexts</code>
+and <code>account_state</code> are required, and so is <code>problem_type_base</code> (a
+<code>ValueError</code> otherwise): it is the prefix of the <code>type</code> URI of the problem
+responses, which is what tells <code>csrf-failed</code> from <code>forbidden</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL prefix (<code>auth_router(prefix=)</code>)</td>
+<td><code>/auth</code></td>
+</tr>
+<tr>
+<td><code>return_to_prefixes</code> / <code>default_return_to</code></td>
+<td><code>("/",)</code> / <code>/</code></td>
+</tr>
+<tr>
+<td><code>error_route</code></td>
+<td><code>/auth/error</code></td>
+</tr>
+<tr>
+<td><code>post_logout_redirect</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>idle_timeout</code> / <code>absolute_timeout</code></td>
+<td>30 minutes / 12 hours</td>
+</tr>
+<tr>
+<td><code>trusted_origins</code> / <code>trusted_proxies</code></td>
+<td>none / none</td>
+</tr>
+<tr>
+<td><code>password_client_limit</code></td>
+<td>30 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>password_account_limit</code></td>
+<td>10 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>callback_client_limit</code></td>
+<td>60 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>sessions</code>, <code>transactions</code>, <code>replay</code>, <code>csrf</code>, <code>limiter</code></td>
+<td>in-memory stores, refused unless <code>debug=True</code></td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td>Session cookie</td>
+<td><code>__Host-session</code>, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no <code>Domain</code></td>
+</tr>
+<tr>
+<td>Login transaction cookie</td>
+<td><code>__Host-login-tx</code>, same flags, <code>Max-Age=600</code></td>
+</tr>
+<tr>
+<td>CSRF cookie / header</td>
+<td><code>XSRF-TOKEN</code> (not <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>) / <code>X-XSRF-TOKEN</code></td>
+</tr>
+<tr>
+<td>Anonymous session lifetime</td>
+<td>10 minutes</td>
+</tr>
+</tbody>
+</table>
+<p><code>backchannel</code> maps provider IDs to the back-channel logout handlers
+(<code>rn_forge.auth.oidc.BackchannelLogout</code>, which needs the <code>oidc</code> extra);
+<code>provider_names</code> maps IDs to display names; <code>clock</code> replaces the time source in
+tests.</p>
+<p><code>trusted_proxies</code> lists the peer addresses or CIDR networks, such as
+<code>10.0.0.0/8</code>, whose <code>X-Forwarded-Proto</code>, <code>X-Forwarded-Host</code> and
+<code>X-Forwarded-For</code> headers are believed. From any other peer those headers are
+ignored, so a client cannot forge its own origin or address.</p>
+<h2 id="production-storage">Production storage<a class="headerlink" href="#production-storage" title="Permanent link">&para;</a></h2>
+<p>In-memory stores are held per process, so a second worker would not see a
+revocation, a transaction or a CSRF token. Outside <code>debug</code>, <code>auth_router</code> and
+<code>Sessions</code> refuse them with a <code>RuntimeError</code> naming the store: sessions,
+transactions, replay, CSRF and the rate limiter. Install the <code>redis</code> extra and
+use:</p>
+<table>
+<thead>
+<tr>
+<th>Store</th>
+<th>Class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Login sessions</td>
+<td><code>rn_forge.auth.redis.RedisSessionStore</code></td>
+</tr>
+<tr>
+<td>Login transactions</td>
+<td><code>rn_forge.auth.redis.RedisTransactionStore</code></td>
+</tr>
+<tr>
+<td>Replayed token IDs and revoked <code>sid</code> values</td>
+<td><code>rn_forge.auth.redis.RedisReplayStore</code></td>
+</tr>
+<tr>
+<td>Authorization context versions</td>
+<td><code>rn_forge.auth.redis.RedisAuthorizationVersions</code></td>
+</tr>
+<tr>
+<td>CSRF tokens</td>
+<td><code>rn_forge.fastapi.auth.redis.RedisCsrfStore</code></td>
+</tr>
+<tr>
+<td>Rate limits</td>
+<td><code>rn_forge.fastapi.auth.redis.RedisRateLimiter</code></td>
+</tr>
+</tbody>
+</table>
+<p>They take a <code>redis.Redis</code> client and need Redis 6.2 or later. The Redis modules
+of this package are not imported by <code>rn_forge.fastapi</code>, so a deployment without
+the extra can import the rest. <code>RedisAuthorizationVersions</code> goes to the
+<code>AuthorizationContextCache</code>, so that a change made in one process invalidates
+the cached context in every process; without it a change applies after the
+cache's <code>ttl</code> (60 seconds by default).</p>
+<h2 id="sessions-and-revocation">Sessions and revocation<a class="headerlink" href="#sessions-and-revocation" title="Permanent link">&para;</a></h2>
+<p>The login session is a <code>rn-forge-auth</code> <code>SessionStore</code> entry behind the
+<code>__Host-session</code> cookie. It holds the account ID, the account's session version
+at login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code>
+and the ID token (only with <code>rp_initiated_logout</code>), and never permissions:
+those are computed on each request.</p>
+<ul>
+<li><strong>Timeouts.</strong> A 30-minute sliding idle timeout (<code>idle_timeout</code>) and a 12-hour
+  absolute timeout (<code>absolute_timeout</code>). <code>SessionMiddleware</code> extends the idle
+  expiry and refreshes the cookie on every request except <code>GET /auth/session</code>,
+  so a client that polls the session does not keep it alive.</li>
+<li><strong>One read path.</strong> <code>Sessions.read</code> deletes the session, and the request is
+  unauthenticated, when the absolute timeout has passed, the recorded session
+  version differs from the account's, the account is inactive, or the
+  <code>session_ref</code> is revoked. A cookie that names no valid session is cleared.</li>
+<li><strong>New IDs.</strong> Login replaces the session ID, and the CSRF token with it. Call
+  <code>await rotate_session(request)</code> after a change to the account's privileges,
+  so an ID seen before the change is useless afterwards; the middleware sets
+  the new cookie.</li>
+<li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session and starts a new
+  anonymous one. <code>/auth/logout/all</code> and a back-channel logout that names only
+  <code>sub</code> bump the account's session version through <code>account_state</code>, which ends
+  every session of the account on its next request. A back-channel logout with
+  a <code>sid</code> revokes that session only, until the absolute timeout. With
+  <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code> returns the identity
+  provider's end-session URL.</li>
+<li><strong>Disabling.</strong> <code>contexts.set_active(account_id, False)</code> (or any change that
+  makes the account inactive) ends the account's sessions at their next
+  request.</li>
+</ul>
+<p><code>active_session(request)</code> returns the <code>ActiveSession</code> (the <code>SessionInfo</code> and the
+account's current authorization context) the middleware resolved, or <code>None</code>.</p>
+<h2 id="csrf">CSRF<a class="headerlink" href="#csrf" title="Permanent link">&para;</a></h2>
+<p>Unsafe methods on session-authenticated routes are protected by a synchronizer
+token, which <code>SessionMiddleware</code> checks for the <code>/auth</code> routes and for the
+application's own routes alike. The token is random and kept in the <code>CsrfStore</code>
+under the session ID; the readable <code>XSRF-TOKEN</code> cookie hands it to the browser,
+and the request repeats it in <code>X-XSRF-TOKEN</code>, which are Angular's defaults. The
+comparison is constant-time.</p>
+<ul>
+<li><code>GET /auth/session</code> always sets the cookie, including when it answers <code>401</code>.
+  With no session it starts an anonymous session, a 10-minute entry behind
+  <code>__Host-session</code> that holds only a token, so <code>POST /auth/login/password</code> is
+  protected before sign-in.</li>
+<li>Login replaces the session ID and the token; logout starts a new anonymous
+  session with a new token; <code>rotate_session</code> carries the token to the new ID.</li>
+<li><strong>Checked:</strong> an unsafe request that carries the <code>__Host-session</code> cookie,
+  whether it names a live session, an anonymous one or nothing known, and a
+  request to the password login path (<code>login_path</code>), which a browser can reach
+  with no cookie.</li>
+<li><strong>Exempt:</strong> <code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code> and <code>TRACE</code>; a request with a <code>Bearer</code>
+  <code>Authorization</code> header; the paths under <code>csrf_exempt_prefixes</code> (back-channel
+  logout, which carries a signed token); and a request with no session cookie to
+  an application route, which has no session to ride. A <code>Basic</code> header is not
+  exempt: browsers replay cached Basic credentials on their own.</li>
+<li><strong>Origin.</strong> The <code>Origin</code> header (the <code>Referer</code> over HTTPS when there is no
+  <code>Origin</code>) must be the request's own origin or one of <code>trusted_origins</code>, and
+  <code>Sec-Fetch-Site: cross-site</code> is rejected even from a trusted origin. The
+  request's own scheme and host come from <code>X-Forwarded-Proto</code> and
+  <code>X-Forwarded-Host</code> only when the peer is in <code>trusted_proxies</code>.</li>
+<li>A rejection is the <code>403</code> <code>csrf-failed</code> problem; its reason is logged, never
+  sent.</li>
+</ul>
+<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
+<p><code>current_principal(bearer=None)</code> returns a dependency that yields a <code>Principal</code>
+from the login session (<code>mechanism="session"</code>, the account's roles and
+permissions from its authorization context, and the session's <code>auth_time</code> and
+<code>amr</code>), or from a bearer token when <code>bearer</code> is given.</p>
+<p><code>bearer_auth</code> verifies an externally issued token, then resolves its
+<code>(issuer, subject)</code> through <code>AccountResolver.lookup</code>. It never provisions: a
+token with no linked account, or whose account is inactive, is <code>401</code>. The
+principal's <code>subject</code> is the account ID, its roles, tenant and attributes come
+from the authorization context, and its permissions are the account's, limited
+to what the token's scopes allow through <code>scope_map</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">OidcAuthenticator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearer_auth</span><span class="p">,</span> <span class="n">current_principal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">contexts</span>
+
+<span class="n">bearer</span> <span class="o">=</span> <span class="n">bearer_auth</span><span class="p">(</span>
+    <span class="n">authenticator</span><span class="o">=</span><span class="n">OidcAuthenticator</span><span class="o">.</span><span class="n">from_issuer</span><span class="p">(</span>
+        <span class="s2">&quot;https://login.example.com/tenant/v2.0&quot;</span><span class="p">,</span> <span class="n">audience</span><span class="o">=</span><span class="s2">&quot;api://orders&quot;</span>
+    <span class="p">),</span>
+    <span class="n">accounts</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">accounts</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>
+    <span class="n">scope_map</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;orders:read&quot;</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.list&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.read&quot;</span><span class="p">})},</span>
+<span class="p">)</span>
+<span class="n">caller</span> <span class="o">=</span> <span class="n">current_principal</span><span class="p">(</span><span class="n">bearer</span><span class="o">=</span><span class="n">bearer</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Build the authenticator once at startup: it holds the JWKS cache.</p>
+<p><strong>One credential per request.</strong> A request with an <code>Authorization</code> header is
+authenticated by <code>bearer</code> alone: an invalid token is <code>401</code> even with a valid
+session cookie, and without <code>bearer</code> the header makes the request
+unauthenticated. Any other request is authenticated by the session. An
+unauthenticated request is <code>401</code> with the <code>Bearer</code> challenge when <code>bearer</code> is
+given, and without a challenge otherwise, and the failure reason goes to the
+<code>log</code> callback, never the response.</p>
+<p><code>basic_auth(authenticator=...)</code> is the RFC 7617 twin for an authenticator you
+supply and does not link accounts. It is for local development and simple
+internal deployments only.</p>
+<h2 id="authorization">Authorization<a class="headerlink" href="#authorization" title="Permanent link">&para;</a></h2>
+<p><code>requires(caller, Requirement(...))</code> authenticates, then enforces the
+requirement with <code>rn_forge.auth.ScopeAuthorizer</code> (or the <code>authorizer</code> you pass).
+Insufficient access is a <code>403</code> with no challenge.
+<code>requires_permission(caller, permission_key, action)</code> enforces the key that
+<code>rn_forge.auth.requirement_for</code> builds from the base key and an explicit
+action, <code>list</code>, <code>retrieve</code> or <code>partial_update</code> for example; <code>action_map</code>
+overrides the default action-to-verb map:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Principal</span><span class="p">,</span> <span class="n">Requirement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires</span><span class="p">,</span> <span class="n">requires_permission</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">()</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/orders&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_orders</span><span class="p">(</span>
+    <span class="n">principal</span><span class="p">:</span> <span class="n">Principal</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">requires_permission</span><span class="p">(</span><span class="n">caller</span><span class="p">,</span> <span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="s2">&quot;list&quot;</span><span class="p">)),</span>
+<span class="p">):</span> <span class="o">...</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/reports&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_report</span><span class="p">(</span>
+    <span class="n">principal</span><span class="p">:</span> <span class="n">Principal</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+        <span class="n">requires</span><span class="p">(</span><span class="n">caller</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;reports:run&quot;</span><span class="p">})))</span>
+    <span class="p">),</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+
+<p><code>PolicyGuard(policy, hides_existence=False)</code> applies a <code>ResourcePolicy</code>.
+<code>guard.scope(principal, action, query)</code> narrows a query of any type, such as a
+SQLAlchemy <code>select</code>, so rows, counts and pages cover only permitted rows;
+<code>guard.check(principal, action, obj)</code> returns the object or raises <code>403</code>, or
+<code>404</code> when <code>hides_existence</code> is true:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolicyGuard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">select</span>
+
+<span class="n">guard</span> <span class="o">=</span> <span class="n">PolicyGuard</span><span class="p">(</span><span class="n">OrderPolicy</span><span class="p">(),</span> <span class="n">hides_existence</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/orders/</span><span class="si">{order_id}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_order</span><span class="p">(</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">principal</span><span class="p">:</span> <span class="n">Principal</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">caller</span><span class="p">),</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">db_session</span><span class="p">),</span>
+<span class="p">):</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span>
+        <span class="n">guard</span><span class="o">.</span><span class="n">scope</span><span class="p">(</span><span class="n">principal</span><span class="p">,</span> <span class="s2">&quot;retrieve&quot;</span><span class="p">,</span> <span class="n">select</span><span class="p">(</span><span class="n">Order</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Order</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">order_id</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="s2">&quot;Not found&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">guard</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">principal</span><span class="p">,</span> <span class="s2">&quot;retrieve&quot;</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+</code></pre></div>
+
+<h2 id="rate-limits-and-audit-events">Rate limits and audit events<a class="headerlink" href="#rate-limits-and-audit-events" title="Permanent link">&para;</a></h2>
+<p><code>POST /auth/login/password</code> and <code>GET /auth/callback/{provider}</code> are rate limited
+with a fixed-window counter in <code>limiter</code>. The client is the connection's peer,
+or the nearest address in <code>X-Forwarded-For</code> that is not a trusted proxy when the
+peer is in <code>trusted_proxies</code>. Password login is limited per client and per
+submitted username (hashed in the key); callbacks per client only, because no
+account is known before the response is verified. Each limit is a
+<code>RateLimit(limit, window)</code>, or <code>None</code> for none. A limited request is the <code>429</code>
+<code>too-many-requests</code> problem with <code>Retry-After</code>. Windows are aligned to the
+clock, so a client can use a limit twice around a window boundary.</p>
+<p>Security-relevant events are <code>INFO</code> records on the <code>rn_forge.audit.auth</code>
+channel, in the form <code>audit event=&lt;name&gt; key='value' ...</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Emitted when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login.success</code></td>
+<td>A login starts a session</td>
+</tr>
+<tr>
+<td><code>login.failure</code></td>
+<td>A login fails (provider, code, reason)</td>
+</tr>
+<tr>
+<td><code>logout</code>, <code>logout.all</code>, <code>logout.backchannel</code></td>
+<td>A session or sessions end</td>
+</tr>
+<tr>
+<td><code>account.provisioned</code></td>
+<td>A provisioning resolver creates an account</td>
+</tr>
+<tr>
+<td><code>account.rejected</code></td>
+<td>The resolver refuses an identity</td>
+</tr>
+<tr>
+<td><code>account.disabled</code></td>
+<td>An inactive account logs in</td>
+</tr>
+<tr>
+<td><code>authorization.denied</code></td>
+<td><code>requires</code>, <code>requires_permission</code> or <code>PolicyGuard</code> denies a request</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>A request is answered <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>Events carry account IDs, provider IDs, codes and short reasons, and never a
+token, code, assertion, password, session ID or email address.</p>
+<h2 id="what-the-application-implements">What the application implements<a class="headerlink" href="#what-the-application-implements" title="Permanent link">&para;</a></h2>
+<p>The binding takes these <code>rn_forge.auth</code> protocols; every method is synchronous
+and runs in the thread pool.</p>
+<ul>
+<li>
+<p><strong><code>AccountResolver</code>.</strong> <code>resolve(identity)</code> links, provisions or rejects an
+  external identity at login and returns the account ID, raising
+  <code>AccountRejected</code> to refuse it; <code>lookup(issuer, subject)</code> is the read-only
+  form <code>bearer_auth</code> uses. A resolver that creates accounts records
+  <code>account.provisioned</code> once the account is committed:</p>
+<p>```python
+from rn_forge.auth import audit</p>
+<p>audit("account.provisioned", account_id=account.id, provider=identity.provider)
+```</p>
+</li>
+<li>
+<p><strong><code>AuthorizationContextProvider</code>.</strong> <code>resolve(account_id)</code> returns the
+  <code>AuthorizationContext</code>: <code>active</code>, <code>session_version</code>, <code>permissions</code>, <code>roles</code>
+  and <code>attributes</code>. Wrap it in an <code>AuthorizationContextCache</code> and call
+  <code>contexts.invalidate(account_id)</code> when a role or permission changes.</p>
+</li>
+<li><strong><code>AccountStateWriter</code>.</strong> <code>set_active(account_id, active)</code> and
+  <code>bump_session_version(account_id)</code> persist the state the context carries.
+  <code>/auth/logout/all</code> and a back-channel logout call them; the cache above
+  writes through to it.</li>
+<li><strong><code>ResourcePolicy</code>.</strong> <code>allows(principal, action, resource)</code> and
+  <code>scope(principal, action, query)</code>, for <code>PolicyGuard</code>.</li>
+<li><strong><code>PasswordVerifier</code>.</strong> For <code>PasswordIdentityProvider</code>: a callable
+  <code>(username, password) -&gt; subject | None</code>. Hash comparison and the user lookup
+  are yours.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
