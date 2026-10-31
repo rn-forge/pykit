@@ -77,7 +77,13 @@ from rn_forge.commons.runtime.console import AppConsole, OutputMode, console
 from rn_forge.commons.runtime.environment import Environment
 from rn_forge.commons.runtime.plugins import EntryPointLoader, PluginError
 from rn_forge.commons.runtime.subprocess import Process
-from rn_forge.commons.runtime.tasks import Task, TaskPool
+from rn_forge.commons.runtime.tasks import (
+    Failed,
+    Settled,
+    Succeeded,
+    Task,
+    TaskPool,
+)
 
 __all__ = [
     "AppConsole",
@@ -99,6 +105,7 @@ __all__ = [
     "EntryPointLoader",
     "EnvSecretStore",
     "Environment",
+    "Failed",
     "Finding",
     "HandlerRegistry",
     "InMemoryMessageBus",
@@ -120,9 +127,11 @@ __all__ = [
     "ReflectUtils",
     "SecretNotFound",
     "SecretStore",
+    "Settled",
     "Severity",
     "StateStore",
     "StrictDataclassMixin",
+    "Succeeded",
     "Task",
     "TaskPool",
     "ThreadActor",

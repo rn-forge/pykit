@@ -10,6 +10,9 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `ThreadActor` in `rn_forge.commons.runtime.actor`: builds a resource on a
   dedicated owner thread and runs every call against it there, through
   `submit` (a `Future`) or `run` (awaitable).
+- `TaskPool.map_settled` runs a function over items on the pool and returns a
+  `Succeeded` or `Failed` per item in input order; `Succeeded`, `Failed` and
+  `Settled` are exported from `rn_forge.commons`.
 
 ## [0.8.1] - 2026-10-30
 
