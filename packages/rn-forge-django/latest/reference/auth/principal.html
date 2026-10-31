@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -969,118 +969,6 @@
   
   
     <li class="md-nav__item">
-      <a href="credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="drf.html" class="md-nav__link">
         
   
@@ -1203,6 +1091,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.auth.drf.principal.PrincipalBasicAuthentication.link_principal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;link_principal
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1276,6 +1175,62 @@
     
   
     OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
   
 
     
@@ -1783,6 +1738,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.auth.drf.principal.PrincipalBasicAuthentication.link_principal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;link_principal
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1867,7 +1833,7 @@
 
     <div class="doc doc-contents first">
 
-        <p>Bind <code>rn_forge.web</code> principal authentication to DRF requests.</p>
+        <p>Bind <code>rn_forge.auth</code> principal authentication to DRF requests.</p>
 
 
 
@@ -1905,7 +1871,7 @@
 
 
 
-        <p>Authenticate HTTP Basic (RFC 7617) into a :class:<code>rn_forge.web.Principal</code>.</p>
+        <p>Authenticate HTTP Basic (RFC 7617) into a :class:<code>rn_forge.auth.Principal</code>.</p>
 <p>Intended for local development and simple internal deployments. The
 authenticator receives the base64 credential exactly as sent.</p>
 
@@ -1949,6 +1915,24 @@ authenticator receives the base64 credential exactly as sent.</p>
 
 </div>
 
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.django.auth.drf.principal.PrincipalBasicAuthentication.link_principal" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">link_principal</span><span class="p">(</span><span class="n">principal</span><span class="p">)</span></code>
+
+<a href="#rn_forge.django.auth.drf.principal.PrincipalBasicAuthentication.link_principal" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return <em>principal</em> as the caller to act as.</p>
+
+
+    </div>
+
+</div>
+
 
 
   </div>
@@ -1974,8 +1958,16 @@ authenticator receives the base64 credential exactly as sent.</p>
 
 
 
-        <p>Authenticate <code>Authorization: Bearer &lt;token&gt;</code> into a :class:<code>rn_forge.web.Principal</code>.</p>
-<p>Subclass and set <code>authenticator</code> and, optionally, <code>realm</code>.</p>
+        <p>Authenticate <code>Authorization: Bearer &lt;token&gt;</code> into a :class:<code>rn_forge.auth.Principal</code>.</p>
+<p>Subclass and set <code>authenticator</code>, <code>accounts</code>, <code>contexts</code> and,
+optionally, <code>realm</code> and <code>scope_map</code>.</p>
+<p>The verified token's <code>(issuer, subject)</code> is looked up with
+<code>accounts.lookup</code>, which never provisions. A token with no linked
+account, or whose account is inactive, is a <code>401</code>. The principal's
+<code>subject</code> is then the account ID (<code>external_subject</code> keeps the token's),
+its roles, tenant and attributes come from the account's authorization
+context, and its permissions are the context's limited by the token's
+scopes through <code>scope_map</code> (a scope the map does not name allows nothing).</p>
 
 
 
@@ -2056,7 +2048,7 @@ authenticator receives the base64 credential exactly as sent.</p>
                 <code>requirement</code>
             </td>
             <td>
-                  <code><span title="rn_forge.web.Requirement">Requirement</span></code>
+                  <code><span title="rn_forge.auth.Requirement">Requirement</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2072,11 +2064,11 @@ authenticator receives the base64 credential exactly as sent.</p>
                 <code>authorizer</code>
             </td>
             <td>
-                  <code><span title="rn_forge.web.Authorizer">Authorizer</span> | None</code>
+                  <code><span title="rn_forge.auth.Authorizer">Authorizer</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Defaults to :class:<code>rn_forge.web.ScopeAuthorizer</code>.</p>
+                <p>Defaults to :class:<code>rn_forge.auth.ScopeAuthorizer</code>.</p>
               </div>
             </td>
             <td>
@@ -2147,10 +2139,10 @@ authenticator receives the base64 credential exactly as sent.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

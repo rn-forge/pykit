@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -1025,118 +1025,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/auth/credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/auth/drf.html" class="md-nav__link">
         
   
@@ -1201,6 +1089,62 @@
     
   
     OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
   
 
     
@@ -1709,15 +1653,9 @@
 settings module:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;SAML&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;SETTINGS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span>  <span class="c1"># python3-saml settings dict</span>
-            <span class="s2">&quot;RETURN_TO&quot;</span><span class="p">:</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span>
-        <span class="p">},</span>
+        <span class="s2">&quot;PROBLEM_TYPE_BASE&quot;</span><span class="p">:</span> <span class="s2">&quot;https://errors.example.com/&quot;</span><span class="p">,</span>  <span class="c1"># required to mount the /auth routes</span>
     <span class="p">},</span>
     <span class="s2">&quot;DRF&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;VIEWS&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;PERMISSION_ACTION_MAP&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;list&quot;</span><span class="p">:</span> <span class="s2">&quot;read&quot;</span><span class="p">},</span>
-        <span class="p">},</span>
         <span class="s2">&quot;TRANSFER&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;MAX_ROWS&quot;</span><span class="p">:</span> <span class="mi">10_000</span><span class="p">,</span>  <span class="c1"># rows per export, import or batch request; None = no cap</span>
         <span class="p">},</span>
@@ -1741,7 +1679,7 @@ and <code>CamelCaseJSONParser</code> — see <a href="openapi.html">OpenAPI and 
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">rn_forge_django_settings</span>
 
 <span class="n">max_rows</span> <span class="o">=</span> <span class="n">rn_forge_django_settings</span><span class="o">.</span><span class="n">drf</span><span class="o">.</span><span class="n">transfer</span><span class="o">.</span><span class="n">max_rows</span>
-<span class="n">saml_settings</span> <span class="o">=</span> <span class="n">rn_forge_django_settings</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">saml</span><span class="o">.</span><span class="n">settings</span>
+<span class="n">problem_type_base</span> <span class="o">=</span> <span class="n">rn_forge_django_settings</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">problem_type_base</span>
 </code></pre></div>
 
 <p><code>rn_forge_django_settings</code> is a frozen dataclass tree rebuilt automatically
@@ -1815,10 +1753,10 @@ catches unless it asserts the non-default value.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

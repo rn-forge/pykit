@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -506,10 +506,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#login-flows" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Login flows
+        Setup
       
     </span>
   </a>
@@ -517,10 +517,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#drf-authentication-and-permissions" class="md-nav__link">
+  <a href="#routes-and-responses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DRF authentication and permissions
+        Routes and responses
       
     </span>
   </a>
@@ -528,10 +528,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#externally-issued-tokens-principalbearerauthentication" class="md-nav__link">
+  <a href="#sessions-and-revocation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Externally issued tokens: PrincipalBearerAuthentication
+        Sessions and revocation
       
     </span>
   </a>
@@ -539,10 +539,110 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#built-in-auth-management-viewsets" class="md-nav__link">
+  <a href="#csrf" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Built-in auth management viewsets
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accounts-and-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accounts and linking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearer-tokens-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bearer tokens in detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#management-viewsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management viewsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-and-startup-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults and startup checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saml-identity-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAML identity providers
       
     </span>
   </a>
@@ -1058,118 +1158,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/auth/credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/auth/drf.html" class="md-nav__link">
         
   
@@ -1234,6 +1222,62 @@
     
   
     OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
   
 
     
@@ -1707,10 +1751,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#login-flows" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Login flows
+        Setup
       
     </span>
   </a>
@@ -1718,10 +1762,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#drf-authentication-and-permissions" class="md-nav__link">
+  <a href="#routes-and-responses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DRF authentication and permissions
+        Routes and responses
       
     </span>
   </a>
@@ -1729,10 +1773,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#externally-issued-tokens-principalbearerauthentication" class="md-nav__link">
+  <a href="#sessions-and-revocation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Externally issued tokens: PrincipalBearerAuthentication
+        Sessions and revocation
       
     </span>
   </a>
@@ -1740,10 +1784,110 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#built-in-auth-management-viewsets" class="md-nav__link">
+  <a href="#csrf" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Built-in auth management viewsets
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accounts-and-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accounts and linking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearer-tokens-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bearer tokens in detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#management-viewsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management viewsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-and-startup-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults and startup checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saml-identity-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAML identity providers
       
     </span>
   </a>
@@ -1771,142 +1915,385 @@
 
 
 <h1 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h1>
-<p><code>rn_forge.django.auth</code> is an installable Django app (label
-<code>rn_forge_django_auth</code>) providing login flows and DRF
-authentication/authorization building blocks. Add it to <code>INSTALLED_APPS</code> to use
-the bundled <code>User</code>/<code>Group</code>/<code>Permission</code> viewsets and migrations.</p>
-<h2 id="login-flows">Login flows<a class="headerlink" href="#login-flows" title="Permanent link">&para;</a></h2>
-<p>All login flows produce a normalized <code>LoginPayload(user=..., claims=...)</code> and
-share a common <code>complete_login()</code> hook that decides what happens next (start a
-Django session, mint an exchange token, or mint a final JWT pair).</p>
-<p><strong>Basic (username/password) → session:</strong></p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.basic.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasicLoginAPIView</span>
+<p><code>rn_forge.django.auth</code> binds the login, session, CSRF and authorization design
+of <code>rn-forge-auth</code> (a separate package, which holds the framework-neutral
+contracts, login flows and OIDC adapter) to Django and DRF. It serves a browser
+single-page application through a server-side session, and API clients through
+bearer tokens, with one account and one authorization model behind both.</p>
+<p>The app is installable (label <code>rn_forge_django_auth</code>).</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<p>An end-to-end configuration with one OIDC provider, local password login and,
+in development, a fixture-account provider. Install <code>rn-forge-django</code> with the
+<code>drf</code>, <code>oidc</code> and <code>redis</code> extras.</p>
+<p>Settings:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># settings.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSRF_MIDDLEWARE</span><span class="p">,</span> <span class="n">CSRF_SETTINGS</span><span class="p">,</span> <span class="n">SESSION_SETTINGS</span>
 
+<span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;django.contrib.auth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.contenttypes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.sessions&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rest_framework&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rn_forge.django.auth&quot;</span><span class="p">,</span>  <span class="c1"># run `manage.py migrate` for the link and state tables</span>
+    <span class="s2">&quot;myapp&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">LoginView</span><span class="p">(</span><span class="n">BasicLoginAPIView</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;POST {username, password} -&gt; Django session + build_login_response() payload.&quot;&quot;&quot;</span>
-</code></pre></div>
+<span class="n">MIDDLEWARE</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;django.middleware.security.SecurityMiddleware&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.sessions.middleware.SessionMiddleware&quot;</span><span class="p">,</span>
+    <span class="c1"># ... your other middleware ...</span>
+    <span class="n">CSRF_MIDDLEWARE</span><span class="p">,</span>
+<span class="p">]</span>
 
-<p><strong>Basic/SAML → short-lived exchange token → JWT:</strong> login views that mix in
-<code>LoginExchangeViewMixin</code> (via <code>BasicLoginAPIView</code>/<code>SAMLLoginAPIView</code>) return an
-<code>exchange_token</code> instead of creating a session. The client then calls
-<code>UserTokenView</code> to trade that token for a SimpleJWT access/refresh pair:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.jwt.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserTokenView</span>
-</code></pre></div>
+<span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">SESSION_SETTINGS</span><span class="p">)</span>  <span class="c1"># db-backed sessions, the __Host-session cookie</span>
+<span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CSRF_SETTINGS</span><span class="p">)</span>  <span class="c1"># Angular&#39;s XSRF-TOKEN cookie and X-XSRF-TOKEN header</span>
 
-<p><strong>SAML:</strong> subclass <code>SAMLLoginViewMixin</code>/<code>SAMLLoginAPIView</code> and implement
-<code>build_saml_request_data()</code>, <code>get_saml_user_lookup()</code>, and <code>get_user()</code> (plus
-<code>create_user_for_login()</code> if <code>auto_create_user = True</code>).
-<code>RN_FORGE_DJANGO["AUTH"]["SAML"]</code> supplies the <code>python3-saml</code> settings dict and
-default <code>RETURN_TO</code> — see <a href="settings.html">Settings</a>.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SAML&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SETTINGS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">&quot;RETURN_TO&quot;</span><span class="p">:</span> <span class="s2">&quot;/app&quot;</span><span class="p">}}}</span>
-</code></pre></div>
+<span class="n">CACHES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;BACKEND&quot;</span><span class="p">:</span> <span class="s2">&quot;django.core.cache.backends.redis.RedisCache&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;LOCATION&quot;</span><span class="p">:</span> <span class="s2">&quot;redis://localhost:6379/1&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 
-<p>Reusable router + <code>user-token/</code> endpoint:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlpatterns</span>
-</code></pre></div>
+<span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;PROBLEM_TYPE_BASE&quot;</span><span class="p">:</span> <span class="s2">&quot;https://errors.example.com/&quot;</span><span class="p">}}</span>
 
-<h2 id="drf-authentication-and-permissions">DRF authentication and permissions<a class="headerlink" href="#drf-authentication-and-permissions" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;DEFAULT_AUTHENTICATION_CLASSES&quot;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="s2">&quot;rn_forge.django.auth.jwt.authentication.JWTAuthentication&quot;</span><span class="p">,</span>
-    <span class="p">],</span>
-    <span class="s2">&quot;DEFAULT_PERMISSION_CLASSES&quot;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="s2">&quot;rn_forge.django.auth.drf.permissions.AuthorizationPermission&quot;</span><span class="p">,</span>
-    <span class="p">],</span>
+<span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;EXCEPTION_HANDLER&quot;</span><span class="p">:</span> <span class="s2">&quot;rn_forge.django.drf.exceptions.problem_details_exception_handler&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
 
-<p><code>JWTAuthentication</code> wraps SimpleJWT's authenticator so <code>request.auth</code> is a
-<code>JWTCredentials</code> (subclass of <code>BaseCredentials</code>) rather than a raw validated
-token.</p>
-<p><code>BaseCredentials</code> exposes <code>is_authenticated</code>, <code>is_staff_user</code> (staff/superuser
-bypass), <code>user_id</code>, <code>email</code>, and <code>has_permission(key)</code> /
-<code>has_any_permission(keys)</code>.</p>
-<p><code>AuthorizationPermission</code> denies unauthenticated requests, allows
-staff/superuser through, and otherwise defers to the view's
-<code>validate_permissions()</code> — implemented by <code>AuthorizationViewMixin</code> (mix into any
-<code>BaseAPIView</code>/<code>BaseModelViewSet</code>):</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthorizationViewMixin</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.drf.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelViewSet</span>
+<p><code>LogoutTokenVerifier.from_issuer</code> reads the provider's discovery document when
+it is called, so the provider must be reachable at startup.</p>
+<p>The Redis cache backend holds login transactions, replay records and revoked
+session IDs, which every worker must share; the <code>redis</code> extra installs its
+client. The session cookie is <code>Secure</code>, so serve development over <code>localhost</code>
+or HTTPS.</p>
+<p>The auth objects, built once:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/auth_config.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">authenticate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthorizationContextCache</span><span class="p">,</span>
+    <span class="n">DevelopmentAccount</span><span class="p">,</span>
+    <span class="n">DevelopmentIdentityProvider</span><span class="p">,</span>
+    <span class="n">PasswordIdentityProvider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackchannelLogout</span><span class="p">,</span> <span class="n">LogoutTokenVerifier</span><span class="p">,</span> <span class="n">OidcProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthRoutesConfig</span><span class="p">,</span> <span class="n">CacheReplayStore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.accounts</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DjangoAccountResolver</span><span class="p">,</span>
+    <span class="n">DjangoAccountStateWriter</span><span class="p">,</span>
+    <span class="n">ProviderPolicy</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.authorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">DjangoAuthorizationContextProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrincipalSessionAuthentication</span><span class="p">,</span> <span class="n">sessions_for</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">JWKSBearerAuthentication</span>
+
+<span class="n">ISSUER</span> <span class="o">=</span> <span class="s2">&quot;https://login.example.com/tenant/v2.0&quot;</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">OrderViewSet</span><span class="p">(</span><span class="n">AuthorizationViewMixin</span><span class="p">,</span> <span class="n">BaseModelViewSet</span><span class="p">):</span>
-    <span class="n">permission_key</span> <span class="o">=</span> <span class="s2">&quot;app.order&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_password</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span> <span class="k">if</span> <span class="n">user</span> <span class="k">else</span> <span class="kc">None</span>
+
+
+<span class="n">replay</span> <span class="o">=</span> <span class="n">CacheReplayStore</span><span class="p">()</span>
+<span class="n">resolver</span> <span class="o">=</span> <span class="n">DjangoAccountResolver</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(</span>
+            <span class="n">provisioning</span><span class="o">=</span><span class="s2">&quot;jit&quot;</span><span class="p">,</span>
+            <span class="n">email_domains</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;example.com&quot;</span><span class="p">}),</span>
+            <span class="n">authoritative_domains</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;example.com&quot;</span><span class="p">}),</span>
+        <span class="p">),</span>
+        <span class="c1"># A local user is linked once: resolver.link(&quot;local&quot;, str(user.pk), user)</span>
+        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(),</span>
+        <span class="s2">&quot;development&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(</span><span class="n">provisioning</span><span class="o">=</span><span class="s2">&quot;jit&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">contexts</span> <span class="o">=</span> <span class="n">AuthorizationContextCache</span><span class="p">(</span>
+    <span class="n">DjangoAuthorizationContextProvider</span><span class="p">(),</span> <span class="n">writer</span><span class="o">=</span><span class="n">DjangoAccountStateWriter</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">providers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">OidcProvider</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span>
+        <span class="n">issuer</span><span class="o">=</span><span class="n">ISSUER</span><span class="p">,</span>
+        <span class="n">client_id</span><span class="o">=</span><span class="s2">&quot;orders-web&quot;</span><span class="p">,</span>
+        <span class="n">client_secret</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+        <span class="n">redirect_uri</span><span class="o">=</span><span class="s2">&quot;https://app.example.com/auth/callback/acme&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">PasswordIdentityProvider</span><span class="p">(</span><span class="n">verify_password</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+    <span class="n">providers</span><span class="p">[</span><span class="s2">&quot;development&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DevelopmentIdentityProvider</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">DevelopmentAccount</span><span class="p">(</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alice&quot;</span><span class="p">)],</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">AuthRoutesConfig</span><span class="p">(</span>
+    <span class="n">providers</span><span class="o">=</span><span class="n">providers</span><span class="p">,</span>
+    <span class="n">accounts</span><span class="o">=</span><span class="n">resolver</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>
+    <span class="n">account_state</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>  <span class="c1"># writes through to DjangoAccountStateWriter</span>
+    <span class="n">return_to_prefixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/app&quot;</span><span class="p">],</span>
+    <span class="n">default_return_to</span><span class="o">=</span><span class="s2">&quot;/app&quot;</span><span class="p">,</span>
+    <span class="n">provider_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme SSO&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;Password&quot;</span><span class="p">},</span>
+    <span class="n">replay</span><span class="o">=</span><span class="n">replay</span><span class="p">,</span>
+    <span class="n">backchannel</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">BackchannelLogout</span><span class="p">(</span>
+            <span class="n">LogoutTokenVerifier</span><span class="o">.</span><span class="n">from_issuer</span><span class="p">(</span>
+                <span class="n">ISSUER</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="s2">&quot;orders-web&quot;</span><span class="p">,</span> <span class="n">replay_store</span><span class="o">=</span><span class="n">replay</span>
+            <span class="p">),</span>
+            <span class="n">resolver</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Session</span><span class="p">(</span><span class="n">PrincipalSessionAuthentication</span><span class="p">):</span>
+    <span class="n">sessions</span> <span class="o">=</span> <span class="n">sessions_for</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Bearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
+    <span class="n">jwks_url</span> <span class="o">=</span> <span class="s2">&quot;https://login.example.com/tenant/discovery/v2.0/keys&quot;</span>
+    <span class="n">issuer</span> <span class="o">=</span> <span class="n">ISSUER</span>
+    <span class="n">audience</span> <span class="o">=</span> <span class="s2">&quot;api://orders&quot;</span>
+    <span class="n">accounts</span> <span class="o">=</span> <span class="n">resolver</span>
+    <span class="n">contexts</span> <span class="o">=</span> <span class="n">contexts</span>
 </code></pre></div>
 
-<p><code>permission_key</code> is combined with the current action (<code>list</code>, <code>retrieve</code>,
-<code>create</code>, <code>export</code>, ...) through a permission-action map to build the final key
-checked against <code>credentials.has_permission(...)</code> — e.g. <code>app.order.read</code> for
-<code>retrieve</code>. The default map lives in <code>DEFAULT_PERMISSION_ACTION_MAP</code>; override
-per-request-app defaults via
-<code>RN_FORGE_DJANGO["DRF"]["VIEWS"]["PERMISSION_ACTION_MAP"]</code> or per-view via
-<code>permission_action_map</code>. Override <code>should_validate_object_permissions()</code> /
-<code>validate_object_permissions()</code> for row-level checks.</p>
-<p>Use <code>PermissionKeyViewMixin</code> instead when you want permission-key resolution
-without full <code>AuthorizationViewMixin</code> request-access plumbing (e.g. on plain
-<code>GenericAPIView</code>s).</p>
-<h2 id="externally-issued-tokens-principalbearerauthentication">Externally issued tokens: <code>PrincipalBearerAuthentication</code><a class="headerlink" href="#externally-issued-tokens-principalbearerauthentication" title="Permanent link">&para;</a></h2>
-<p>For an API whose callers hold tokens issued by an identity provider — Entra ID,
-Auth0, Okta, Keycloak — rather than a local <code>User</code>, bind DRF to the
-<code>rn_forge.web</code> auth contract. The token is verified by an
-<code>rn_forge.web.Authenticator</code> you supply, and <code>request.user</code> is the resulting
-<code>rn_forge.web.Principal</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrincipalBearerAuthentication</span><span class="p">,</span> <span class="n">requires</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">OidcAuthenticator</span>
+<p>A view lists the classes it accepts:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/api/views.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
 
-
-<span class="k">class</span><span class="w"> </span><span class="nc">ApiBearer</span><span class="p">(</span><span class="n">PrincipalBearerAuthentication</span><span class="p">):</span>
-    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">OidcAuthenticator</span><span class="o">.</span><span class="n">from_issuer</span><span class="p">(</span>
-        <span class="s2">&quot;https://login.example.com/tenant/v2.0&quot;</span><span class="p">,</span> <span class="n">audience</span><span class="o">=</span><span class="s2">&quot;api://orders&quot;</span>
-    <span class="p">)</span>
-    <span class="n">realm</span> <span class="o">=</span> <span class="s2">&quot;orders&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bearer</span><span class="p">,</span> <span class="n">Session</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OrderView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
-    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ApiBearer</span><span class="p">]</span>
-    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">requires</span><span class="p">(</span><span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">})))]</span>
+    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">Session</span><span class="p">,</span> <span class="n">Bearer</span><span class="p">]</span>
 </code></pre></div>
 
-<p>With <code>problem_details_exception_handler</code> installed: no or invalid credentials
-are a <strong>401</strong> <code>problem+json</code> with an RFC 6750
-<code>WWW-Authenticate: Bearer realm="orders"</code> challenge and a detail that never says
-why verification failed; valid credentials lacking the scope are a <strong>403</strong> with
-no challenge. The same <code>Requirement</code> evaluates identically on
-<code>rn-forge-fastapi</code>.</p>
-<p>Verifying the JWT is the authenticator's job, and you do not have to write one:
-<code>rn_forge.web.oidc.OidcAuthenticator</code> (web's <code>auth</code> extra, which Django's <code>oidc</code>
-extra brings) is the shared implementation, so this stack accepts exactly the
-tokens a FastAPI service accepts. <code>JWKSBearerAuthentication</code> below builds one
-for you from class attributes.</p>
-<p>For the bundled JWKS binding, install <code>rn-forge-django[oidc]</code> and define one
-subclass with the provider's key-set URL, issuer and audience:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">JWKSBearerAuthentication</span>
+<p>The URLconf and the authorization signals:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/urls.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">auth_urlpatterns</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ApiBearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
-    <span class="n">jwks_url</span> <span class="o">=</span> <span class="s2">&quot;https://idp.example.com/.well-known/jwks.json&quot;</span>
-    <span class="n">issuer</span> <span class="o">=</span> <span class="s2">&quot;https://idp.example.com/&quot;</span>
-    <span class="n">audience</span> <span class="o">=</span> <span class="s2">&quot;api://orders&quot;</span>
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">*</span><span class="n">auth_urlpatterns</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;auth&quot;</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s2">&quot;api/&quot;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s2">&quot;myapp.api.urls&quot;</span><span class="p">)),</span>
+<span class="p">]</span>
 </code></pre></div>
 
-<p>Use that class in the view's <code>authentication_classes</code>, and install
-<code>problem_details_exception_handler</code> in <code>REST_FRAMEWORK["EXCEPTION_HANDLER"]</code> for
-the shared problem response. The binding caches its authenticator and key set
-per subclass and process. Override <code>claims_to_principal()</code> when the provider
-uses nonstandard role or scope claims.</p>
-<p>Build the authenticator <strong>once, at import or startup</strong> — it holds the JWKS
-cache, so a per-request instance refetches the key set on every call. For an IdP
-whose roles or scopes sit somewhere non-standard (Keycloak's nested
-<code>realm_access.roles</code>, an Okta group claim), pass a <code>claims_to_principal</code>
-override.</p>
-<p>The JWKS endpoint an authenticator fetches is IdP configuration:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/apps.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppConfig</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyAppConfig</span><span class="p">(</span><span class="n">AppConfig</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;myapp&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.authorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">connect_authorization_signals</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">contexts</span>
+
+        <span class="n">connect_authorization_signals</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>auth_urlpatterns</code> checks the session, CSRF and cache settings when it builds
+the URLconf and raises <code>ImproperlyConfigured</code> for a configuration it refuses
+(<a href="#defaults-and-startup-checks">Defaults and startup checks</a>).</p>
+<h2 id="routes-and-responses">Routes and responses<a class="headerlink" href="#routes-and-responses" title="Permanent link">&para;</a></h2>
+<p><code>auth_urlpatterns(config, prefix="auth")</code> serves these routes under the prefix.
+The URL names are <code>rn-forge-auth-&lt;route&gt;</code>. A <code>401</code> from any of them is a
+<code>problem+json</code> response with no <code>WWW-Authenticate</code> header.</p>
 <table>
 <thead>
 <tr>
-<th>IdP</th>
+<th>Method</th>
+<th>Path</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>providers</code></td>
+<td><code>200</code>, a list of <code>{id, name, kind}</code>. <code>kind</code> is <code>oidc</code>, <code>oauth2</code>, <code>password</code> or <code>development</code>; the development provider is listed only in <code>DEBUG</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/{provider}?return_to=</code></td>
+<td><code>302</code> to the identity provider, with the <code>__Host-login-tx</code> cookie. A <code>return_to</code> outside <code>return_to_prefixes</code> redirects to the error route. An unknown provider is <code>404</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/development?account=</code></td>
+<td>In <code>DEBUG</code> only (otherwise <code>404</code>): without <code>account</code>, an HTML list of the fixture accounts; with it, signs in and redirects to <code>return_to</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>callback/{provider}</code></td>
+<td><code>302</code> to <code>return_to</code>, or to the error route; <code>429</code> when rate limited</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>session</code></td>
+<td><code>200</code> with the session body, or <code>401</code>. Always sets the CSRF cookie</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout</code></td>
+<td><code>200 {"redirect": url or null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout/all</code></td>
+<td><code>200 {"redirect": null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>backchannel-logout/{provider}</code></td>
+<td><code>200</code>; <code>400</code> for an invalid logout token; <code>404</code> for a provider with no handler</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>login/password</code></td>
+<td><code>200</code> with the session body, <code>401</code> for any failure, or <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>A callback error redirects to <code>error_route</code> (<code>/auth/error</code>) with <code>?error=</code> set
+to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.
+Details go to the log, never into the URL. A password login failure is one <code>401</code>
+whatever its cause, so the response does not reveal which accounts exist. The
+login body is JSON or form-encoded <code>{username, password}</code>.</p>
+<p>The session body is camelCase: <code>subject</code> (the account ID), <code>provider</code>, <code>roles</code>,
+<code>permissions</code>, <code>attributes</code>, <code>authTime</code>, <code>amr</code> and <code>expiresAt</code> (the absolute
+timeout). It omits <code>name</code>, <code>email</code> and <code>picture</code>: the default resolver stores
+none. <code>Cache-Control: no-store</code> is set on session responses.</p>
+<p>The login transaction lives in the cache for 10 minutes behind the
+<code>__Host-login-tx</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
+<code>Domain</code>). A callback that carries more than one transaction cookie is
+rejected, and a transaction is consumed atomically, so a callback works once.</p>
+<h2 id="sessions-and-revocation">Sessions and revocation<a class="headerlink" href="#sessions-and-revocation" title="Permanent link">&para;</a></h2>
+<p>Sessions are <code>django.contrib.sessions</code> with the <code>db</code> or <code>cached_db</code> engine, in
+the <code>__Host-session</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
+<code>Domain</code>). The session holds the account ID, the account's session version at
+login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code>
+and the ID token (only with <code>rp_initiated_logout</code>), and never permissions: those
+are computed on each request.</p>
+<ul>
+<li><strong>Timeouts.</strong> A 30-minute sliding idle timeout (<code>idle_timeout</code>) and a 12-hour
+  absolute timeout (<code>absolute_timeout</code>). A normal read moves the idle expiry
+  forward; <code>GET /auth/session</code> reads with <code>touch=False</code> and does not.</li>
+<li><strong>One read path.</strong> <code>Sessions.read</code> deletes the session, and the caller
+  answers <code>401</code>, when the absolute timeout has passed, the recorded session
+  version differs from the account's, the account is inactive, or the
+  <code>session_ref</code> is revoked.</li>
+<li><strong>New IDs.</strong> Login gives the session a new ID. Call
+  <code>rotate_session(request)</code> after a change to the account's privileges.</li>
+<li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session. <code>/auth/logout/all</code> and a
+  back-channel logout that names only <code>sub</code> bump the account's session version,
+  which ends every session of the account on its next request. A back-channel
+  logout with a <code>sid</code> revokes that session only, until the absolute timeout.
+  With <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code> returns the
+  identity provider's end-session URL.</li>
+<li><strong>Disabling.</strong> <code>contexts.set_active(account_id, False)</code> (or any change that
+  makes the account inactive) fails the account's next request with <code>401</code>.</li>
+</ul>
+<p>The authorization context cache is local to each process: a change made in
+another process applies after the cache's <code>ttl</code> (60 seconds by default), or at
+once through the cache that made it. Lower <code>ttl</code> where that delay matters.</p>
+<h2 id="csrf">CSRF<a class="headerlink" href="#csrf" title="Permanent link">&para;</a></h2>
+<p>Every unsafe method on a session-authenticated route is protected by
+<code>AuthCsrfMiddleware</code>, a <code>CsrfViewMiddleware</code> subclass. The cookie is
+<code>XSRF-TOKEN</code> and the header <code>X-XSRF-TOKEN</code>, Angular's defaults; the cookie is
+not <code>HttpOnly</code> so that Angular can copy it into the header.</p>
+<ul>
+<li><code>GET /auth/session</code> always sets the cookie, including when it answers <code>401</code>,
+  so <code>POST /auth/login/password</code> is protected before sign-in. The token rotates
+  at login and at logout.</li>
+<li>A rejection is the <code>403</code> <code>csrf-failed</code> problem (<code>CSRF_FAILURE_VIEW</code>); its
+  reason is logged, never sent. <code>PROBLEM_TYPE_BASE</code> makes it differ in <code>type</code>
+  from a permission denial.</li>
+<li>Beyond Django's token and origin check, <code>AuthCsrfMiddleware</code> rejects
+  <code>Sec-Fetch-Site: cross-site</code> on an unsafe method, even from a trusted origin.</li>
+<li>Requests with a <code>Bearer</code> <code>Authorization</code> header skip the check, as does the
+  back-channel logout route, which carries a signed token. A <code>Basic</code> header does
+  not: browsers replay cached Basic credentials on their own.</li>
+<li><code>CSRF_TRUSTED_ORIGINS</code> lists the other origins that may post. Behind a proxy,
+  Django takes the request's scheme and host from forwarded headers only when
+  <code>SECURE_PROXY_SSL_HEADER</code> and <code>USE_X_FORWARDED_HOST</code> are set, and the
+  forwarded host must be in <code>ALLOWED_HOSTS</code>. Without them a forged
+  <code>X-Forwarded-*</code> header does not make a foreign <code>Origin</code> acceptable.</li>
+<li>DRF wraps its views in <code>csrf_exempt</code>, so the middleware does not guard them.
+  <code>PrincipalSessionAuthentication</code> calls <code>enforce_csrf(request)</code> for the
+  sessions it authenticates; a custom session class does the same.</li>
+</ul>
+<h2 id="accounts-and-linking">Accounts and linking<a class="headerlink" href="#accounts-and-linking" title="Permanent link">&para;</a></h2>
+<p><code>DjangoAccountResolver</code> links external identities to Django users through the
+<code>ExternalAccount</code> model, unique on <code>(issuer, subject)</code>; run the auth app's
+migration. A <code>ProviderPolicy</code> per provider ID decides what an unlinked identity
+gets; a provider with no policy is rejected.</p>
+<ul>
+<li><code>provisioning="existing"</code> rejects an identity with no account;
+  <code>provisioning="jit"</code> creates one on first login, limited to <code>email_domains</code>
+  when set (which also requires a verified email).</li>
+<li><code>authoritative_domains</code> lists the email domains for which the provider is
+  authoritative: only there does a verified email link to an existing user.
+  Unverified emails never link and are not stored on provisioned users.</li>
+<li><code>sync(user, identity)</code>, passed to the resolver, runs at every login to copy
+  attributes onto the user.</li>
+<li><code>resolver.link(issuer, subject, user)</code> links a service account or a local
+  password user explicitly.</li>
+</ul>
+<p>A rejected login redirects with <code>?error=account_not_provisioned</code>, and a login by
+an inactive account with <code>?error=access_denied</code>. The session version behind
+<code>/auth/logout/all</code> is stored by <code>DjangoAccountStateWriter</code> and read by
+<code>DjangoAuthorizationContextProvider</code>.</p>
+<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
+<p><code>PrincipalSessionAuthentication</code> yields a <code>Principal</code> with
+<code>mechanism="session"</code> from <code>Sessions.read</code>; <code>request.auth</code> is the
+<code>SessionInfo</code>. Subclass it and set <code>sessions = sessions_for(config)</code>.</p>
+<p><code>PrincipalBearerAuthentication</code> and <code>JWKSBearerAuthentication</code> verify an
+externally issued token, then resolve its <code>(issuer, subject)</code> through
+<code>AccountResolver.lookup</code>. They never provision: an unlinked subject, or an
+inactive account, is <code>401</code>. The principal's <code>subject</code> is the account ID; its
+roles and attributes come from the authorization context, and its permissions
+are the account's, limited to what the token's scopes allow through
+<code>scope_map</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Bearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="n">scope_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orders:read&quot;</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.list&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.read&quot;</span><span class="p">})}</span>
+</code></pre></div>
+
+<p>List the classes on each view or on a shared base view, not in
+<code>DEFAULT_AUTHENTICATION_CLASSES</code>: that setting is imported while DRF imports its
+views, and the module that defines these classes imports DRF's views too.</p>
+<p><strong>One credential per request.</strong> A request with an <code>Authorization</code> header is
+authenticated by the bearer class alone: an invalid token is <code>401</code> even with a
+valid session cookie, and the session class ignores the request. List the
+classes a view accepts. A view whose first class is the session class answers
+an unauthenticated request with <code>401</code> and no <code>WWW-Authenticate</code> header; with a
+bearer class first, it answers with the <code>Bearer</code> challenge. Both need the
+problem-details exception handler.</p>
+<h3 id="bearer-tokens-in-detail">Bearer tokens in detail<a class="headerlink" href="#bearer-tokens-in-detail" title="Permanent link">&para;</a></h3>
+<p>For an API whose callers hold tokens issued by an identity provider (Entra ID,
+Auth0, Okta, Keycloak), <code>JWKSBearerAuthentication</code> (the <code>oidc</code> extra) verifies
+the token against the provider's key set. Set <code>jwks_url</code>, <code>issuer</code>, <code>audience</code>,
+<code>accounts</code> and <code>contexts</code> on a subclass, as in <a href="#setup">Setup</a>.
+<code>cache_timeout</code> (300 seconds) is how long a fetched key set is kept,
+<code>cooldown_duration</code> (30 seconds) the fewest seconds between two fetches, which
+bounds how often an unknown <code>kid</code> can reach the provider, and <code>algorithms</code> and
+<code>leeway</code> set the accepted algorithms and the clock skew. Override
+<code>claims_to_principal()</code> where the provider keeps roles or scopes somewhere
+non-standard, such as Keycloak's nested <code>realm_access.roles</code>. The authenticator
+and key set are cached per subclass and process, so define the class once.</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
 <th><code>jwks_url</code></th>
 </tr>
 </thead>
@@ -1925,15 +2312,256 @@ override.</p>
 </tr>
 </tbody>
 </table>
-<p><code>PrincipalBasicAuthentication</code> is the RFC 7617 twin, producing the same
-<code>Principal</code> and the same 401. <strong>It is for local development and simple internal
-deployments only.</strong></p>
-<h2 id="built-in-auth-management-viewsets">Built-in auth management viewsets<a class="headerlink" href="#built-in-auth-management-viewsets" title="Permanent link">&para;</a></h2>
+<p>To verify tokens some other way, subclass <code>PrincipalBearerAuthentication</code> and
+set <code>authenticator</code> to any <code>rn_forge.auth.Authenticator</code>, with <code>accounts</code>,
+<code>contexts</code> and optionally <code>realm</code>. Protect a view with
+<code>requires(Requirement(all_scopes=...))</code>, a permission class over the principal's
+scopes and roles, which evaluates identically on <code>rn-forge-fastapi</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">Bearer</span><span class="p">]</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">requires</span><span class="p">(</span><span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">})))]</span>
+</code></pre></div>
+
+<p>With <code>problem_details_exception_handler</code> installed, missing or invalid
+credentials are a <code>401</code> <code>problem+json</code> with an RFC 6750
+<code>WWW-Authenticate: Bearer</code> challenge and a detail that never says why
+verification failed; valid credentials lacking the scope are a <code>403</code> with no
+challenge.</p>
+<p><code>PrincipalBasicAuthentication</code> is the RFC 7617 twin: it produces a <code>Principal</code>
+from an authenticator you supply and does not link accounts. <strong>It is for local
+development and simple internal deployments only.</strong></p>
+<h2 id="authorization">Authorization<a class="headerlink" href="#authorization" title="Permanent link">&para;</a></h2>
+<p><code>DjangoAuthorizationContextProvider</code> builds an <code>AuthorizationContext</code> from a
+user's groups and permissions. Roles are group names. Django
+<code>app_label.codename</code> permissions become dotted keys: <code>add</code>, <code>change</code>, <code>delete</code>
+and <code>view</code> of a model map to <code>&lt;app_label&gt;.&lt;model&gt;.create</code>, <code>update</code>, <code>delete</code>
+and <code>read</code> (<code>view</code> also grants <code>list</code>), so <code>inventory.change_stock</code> is
+<code>inventory.stock.update</code>. A custom permission keeps <code>&lt;app_label&gt;.&lt;codename&gt;</code>. A
+staff or superuser account gets the <code>staff</code> or <code>superuser</code> role and every
+permission key, so the bypass shows in <code>/auth/session</code>; pass <code>catalog=</code> for keys
+that exist outside Django's permission table. An unknown or inactive user
+resolves to an inactive context.</p>
+<p>Wrap the provider in an <code>AuthorizationContextCache</code> and call
+<code>connect_authorization_signals(cache)</code> once at startup (<a href="#setup">Setup</a>):
+changes to users, groups, permissions and their relations, including those made
+through the <code>User</code>, <code>Group</code> and <code>Permission</code> viewsets, then invalidate the
+affected accounts.</p>
+<p>On a view, <code>PermissionKeyPermission</code> requires the key built by
+<code>rn_forge.auth.requirement_for</code> from <code>permission_key</code> and the action, checked
+against the request's principal; a view without a <code>permission_key</code> requires only
+an authenticated principal. <code>ResourcePolicyViewMixin</code> applies a
+<code>ResourcePolicy</code>: <code>scope</code> narrows the queryset, so counts and pages cover only
+permitted rows, and <code>allows</code> guards each object, answering <code>404</code> instead of
+<code>403</code> when <code>policy_hides_existence</code> is true. Both are in
+<code>rn_forge.django.auth.drf</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PermissionKeyPermission</span><span class="p">,</span> <span class="n">ResourcePolicyViewMixin</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderViewSet</span><span class="p">(</span><span class="n">ResourcePolicyViewMixin</span><span class="p">,</span> <span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">PermissionKeyPermission</span><span class="p">]</span>
+    <span class="n">permission_key</span> <span class="o">=</span> <span class="s2">&quot;orders&quot;</span>
+    <span class="n">resource_policy</span> <span class="o">=</span> <span class="n">OrderPolicy</span><span class="p">()</span>
+</code></pre></div>
+
+<h3 id="management-viewsets">Management viewsets<a class="headerlink" href="#management-viewsets" title="Permanent link">&para;</a></h3>
 <p><code>rn_forge.django.auth.drf.views</code> ships ready-to-mount viewsets for the standard
 Django auth models, wired through <code>AuthorizedModelViewSet</code>: <code>PermissionViewSet</code>,
-<code>GroupViewSet</code>, <code>UserViewSet</code>. Mount them (or
-<code>rn_forge.django.auth.urls.urlpatterns</code>, which already registers them) under
+<code>GroupViewSet</code>, <code>UserViewSet</code>. <code>AuthorizedModelViewSet</code> and <code>AuthorizedAPIView</code>
+set <code>permission_classes = [PermissionKeyPermission]</code>, so each viewset requires
+its <code>permission_key</code> (<code>rn_forge.auth.permission</code>, <code>rn_forge.auth.group</code>,
+<code>rn_forge.auth.user</code>) combined with the action. Mount them, or
+<code>rn_forge.django.auth.urls.urlpatterns</code>, which already registers them, under
 your API root.</p>
+<h2 id="rate-limits-and-audit-events">Rate limits and audit events<a class="headerlink" href="#rate-limits-and-audit-events" title="Permanent link">&para;</a></h2>
+<p><code>POST /auth/login/password</code> and <code>GET /auth/callback/{provider}</code> are rate limited
+with a fixed-window counter over Django's cache (<code>cache.add</code> and <code>cache.incr</code>),
+in the cache alias of <code>AuthRoutesConfig.limiter</code> (<code>FixedWindowLimiter</code>). The
+client is <code>REMOTE_ADDR</code>: Django resolves proxies through its own settings, and
+<code>X-Forwarded-For</code> is never read here. Password login is limited per client and
+per submitted username (hashed in the key); callbacks per client only, because
+no account is known before the response is verified. Each limit is a
+<code>RateLimit(limit, window)</code>, or <code>None</code> for none. A limited request is the <code>429</code>
+<code>too-many-requests</code> problem with <code>Retry-After</code>. Windows are aligned to the
+clock, so a client can use a limit twice around a window boundary.</p>
+<p>Security-relevant events are <code>INFO</code> records on the <code>rn_forge.audit.auth</code>
+<code>AppLogger</code> channel, in the form <code>audit event=&lt;name&gt; key='value' ...</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Emitted when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login.success</code></td>
+<td>A login starts a session</td>
+</tr>
+<tr>
+<td><code>login.failure</code></td>
+<td>A login fails (provider, code, reason)</td>
+</tr>
+<tr>
+<td><code>logout</code>, <code>logout.all</code>, <code>logout.backchannel</code></td>
+<td>A session or sessions end</td>
+</tr>
+<tr>
+<td><code>account.provisioned</code></td>
+<td>The resolver creates an account (after commit)</td>
+</tr>
+<tr>
+<td><code>account.rejected</code></td>
+<td>The resolver refuses an identity</td>
+</tr>
+<tr>
+<td><code>account.disabled</code></td>
+<td>An inactive account logs in, or <code>DjangoAccountStateWriter.set_active(False)</code> runs</td>
+</tr>
+<tr>
+<td><code>authorization.denied</code></td>
+<td><code>PermissionKeyPermission</code> or <code>ResourcePolicyViewMixin</code> denies a request</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>A request is answered <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>Events carry account IDs, provider IDs, codes and short reasons, and never a
+token, code, assertion, password, session ID or email address.</p>
+<h2 id="defaults-and-startup-checks">Defaults and startup checks<a class="headerlink" href="#defaults-and-startup-checks" title="Permanent link">&para;</a></h2>
+<p>Configured on <code>AuthRoutesConfig</code> unless noted:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL prefix (<code>auth_urlpatterns(prefix=)</code>)</td>
+<td><code>auth</code></td>
+</tr>
+<tr>
+<td><code>return_to_prefixes</code> / <code>default_return_to</code></td>
+<td><code>("/",)</code> / <code>/</code></td>
+</tr>
+<tr>
+<td><code>error_route</code></td>
+<td><code>/auth/error</code></td>
+</tr>
+<tr>
+<td><code>post_logout_redirect</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>idle_timeout</code> / <code>absolute_timeout</code></td>
+<td>30 minutes / 12 hours</td>
+</tr>
+<tr>
+<td>Login transaction lifetime</td>
+<td>10 minutes</td>
+</tr>
+<tr>
+<td><code>password_client_limit</code></td>
+<td>30 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>password_account_limit</code></td>
+<td>10 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>callback_client_limit</code></td>
+<td>60 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>transactions</code>, <code>replay</code>, <code>limiter</code></td>
+<td>Django's <code>default</code> cache</td>
+</tr>
+<tr>
+<td>Session cookie</td>
+<td><code>__Host-session</code>, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no <code>Domain</code></td>
+</tr>
+<tr>
+<td>Login transaction cookie</td>
+<td><code>__Host-login-tx</code>, same flags, <code>Max-Age=600</code></td>
+</tr>
+<tr>
+<td>CSRF cookie / header</td>
+<td><code>XSRF-TOKEN</code> (not <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>) / <code>X-XSRF-TOKEN</code></td>
+</tr>
+<tr>
+<td>Authorization cache <code>ttl</code></td>
+<td>60 seconds</td>
+</tr>
+</tbody>
+</table>
+<p><code>auth_urlpatterns</code> raises <code>ImproperlyConfigured</code> when it builds the URLconf:</p>
+<table>
+<thead>
+<tr>
+<th>Refused</th>
+<th>Always</th>
+<th>Outside <code>DEBUG</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SESSION_SAVE_EVERY_REQUEST</code> true</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>AuthCsrfMiddleware</code> missing from <code>MIDDLEWARE</code></td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>CSRF cookie and header names, <code>HttpOnly</code>, <code>CSRF_USE_SESSIONS</code>, <code>CSRF_FAILURE_VIEW</code> differing from <code>CSRF_SETTINGS</code></td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]</code> unset</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Session cookie settings differing from <code>SESSION_SETTINGS</code></td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Other CSRF cookie settings differing from <code>CSRF_SETTINGS</code></td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>A session engine other than <code>db</code> or <code>cached_db</code> (the signed-cookie engine cannot revoke sessions)</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Django's local-memory cache as the session cache, or for the transaction, replay or limiter store</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p><code>/auth/login/development</code> and the development provider's listing exist only
+while <code>settings.DEBUG</code> is true.</p>
+<h2 id="saml-identity-providers">SAML identity providers<a class="headerlink" href="#saml-identity-providers" title="Permanent link">&para;</a></h2>
+<p><code>rn-forge-django</code> speaks no SAML. A SAML identity provider federates through a
+broker (Keycloak, Entra ID, Auth0, Okta and others) that runs the SAML exchange
+and logs the user in to the application over OIDC; configure the broker as an
+ordinary <code>OidcProvider</code>. The <code>rn-forge-auth</code> login guide, "Connecting a SAML IdP
+through a broker", has the steps.</p>
 
 
 
@@ -1983,10 +2611,10 @@ your API root.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

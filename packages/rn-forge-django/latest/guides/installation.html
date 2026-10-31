@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -977,118 +977,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/auth/credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/auth/saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/auth/drf.html" class="md-nav__link">
         
   
@@ -1153,6 +1041,62 @@
     
   
     OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
   
 
     
@@ -1638,28 +1582,21 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p><code>rn-forge-django</code> is not on PyPI. A release is a git tag
-(<code>rn-forge-django-v&lt;version&gt;</code>), and a consumer declares pykit's package index
-(<code>https://rn-forge.github.io/pykit/simple/</code>) and requires the package by version
-range, or pins a tag by direct URL:</p>
+<p>Require the package by version range:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
-<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;rn-forge-django @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-django&gt;=0.6,&lt;0.7&quot;</span><span class="p">]</span>
 </code></pre></div>
 
-<p>Extras use the same form, with the extra before the <code>@</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;rn-forge-django[drf] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<p>Extras go in brackets after the name:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-django[drf]&gt;=0.6,&lt;0.7&quot;</span><span class="p">]</span>
 </code></pre></div>
 
 <p>or, from the command line:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-django[all] @ git+https://github.com/rn-forge/pykit@rn-forge-django-v0.5.0#subdirectory=packages/rn-forge-django&quot;</span>
+<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-django[all]&gt;=0.6,&lt;0.7&quot;</span>
 </code></pre></div>
 
-<p>Base dependencies are Django, <code>rn-forge-commons</code> and <code>rn-forge-web</code>, each required
-by version range.</p>
+<p>Base dependencies are Django, <code>rn-forge-commons</code> and <code>rn-forge-web</code>, each
+required by version range.</p>
 <table>
 <thead>
 <tr>
@@ -1677,20 +1614,16 @@ by version range.</p>
 <td><code>django-import-export</code> + <code>rn-forge-data</code> (<code>tablib</code>, <code>openpyxl</code>), for <code>rn_forge.django.drf.transfer</code>: tabular export and import, batch create and delete</td>
 </tr>
 <tr>
-<td><code>jwt</code></td>
-<td><code>djangorestframework</code> + <code>djangorestframework-simplejwt</code>-backed JWT auth</td>
-</tr>
-<tr>
-<td><code>saml</code></td>
-<td><code>djangorestframework</code> + <code>djangorestframework-simplejwt</code> + <code>python3-saml</code> SAML auth support</td>
-</tr>
-<tr>
 <td><code>openapi</code></td>
 <td><code>djangorestframework</code> + <code>drf-spectacular</code>, for <code>rn_forge.django.drf.openapi</code></td>
 </tr>
 <tr>
 <td><code>oidc</code></td>
-<td><code>djangorestframework</code> + <code>rn-forge-commons[auth]</code> (<code>pyjwt[crypto]</code>), for <code>rn_forge.django.auth.drf.oidc</code></td>
+<td><code>djangorestframework</code> + <code>rn-forge-auth[oidc]</code> (<code>pyjwt[crypto]</code>), for <code>rn_forge.django.auth.drf.oidc</code></td>
+</tr>
+<tr>
+<td><code>redis</code></td>
+<td><code>rn-forge-auth[redis]</code>, the client for Django's Redis cache backend that holds login transactions and revoked session IDs</td>
 </tr>
 <tr>
 <td><code>celery</code></td>
@@ -1706,9 +1639,7 @@ by version range.</p>
 </tr>
 </tbody>
 </table>
-<p><code>oidc</code> is its own extra rather than part of <code>jwt</code>: verifying externally issued
-tokens against a JWKS endpoint has nothing to do with simplejwt, and should not
-install it. There is deliberately no <code>messaging</code> extra —
+<p>There is deliberately no <code>messaging</code> extra —
 <code>rn_forge.django.messaging</code> is Django ORM plus stdlib.</p>
 <p>To use the bundled auth app, add <code>"rn_forge.django.auth"</code> to <code>INSTALLED_APPS</code>.
 For the OpenAPI integration, add <code>"drf_spectacular"</code>.</p>
@@ -1765,10 +1696,10 @@ uv<span class="w"> </span>run<span class="w"> </span>--directory<span class="w">
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

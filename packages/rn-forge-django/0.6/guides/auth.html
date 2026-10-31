@@ -1,0 +1,2621 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Opinionated Django/DRF integration layer built on rn-forge-commons and rn-forge-web">
+      
+      
+      
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-django/latest/guides/auth.html">
+      
+      
+        <link rel="prev" href="models.html">
+      
+      
+        <link rel="next" href="drf-views.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Auth - rn-forge-django</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#auth" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="rn-forge-django" class="md-header__button md-logo" aria-label="rn-forge-django" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            rn-forge-django
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Auth
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="rn-forge-django" class="md-nav__button md-logo" aria-label="rn-forge-django" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    rn-forge-django
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="settings.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="models.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="auth.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes and responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessions-and-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions and revocation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csrf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accounts-and-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accounts and linking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearer-tokens-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bearer tokens in detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#management-viewsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management viewsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-and-startup-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults and startup checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saml-identity-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAML identity providers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="drf-views.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DRF Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="openapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenAPI and camelCase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="messaging.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="fixtures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fixtures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/settings.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/models.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/exceptions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/messaging.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/celery.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Celery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/fixtures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fixtures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/urls-and-views.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Urls and Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Auth
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auth
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/drf.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DRF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/principal.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Principal (bearer and basic)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/oidc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/auth/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DRF
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DRF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DRF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/views.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/transfer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transfer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/routers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/serializers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serializers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/exceptions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/pagination.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pagination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/idempotency.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/concurrency.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/casing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Casing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/openapi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/drf/utils.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes-and-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes and responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessions-and-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions and revocation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csrf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSRF
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accounts-and-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accounts and linking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearer-tokens-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bearer tokens in detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#management-viewsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Management viewsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limits-and-audit-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits and audit events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-and-startup-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults and startup checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saml-identity-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAML identity providers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h1>
+<p><code>rn_forge.django.auth</code> binds the login, session, CSRF and authorization design
+of <code>rn-forge-auth</code> (a separate package, which holds the framework-neutral
+contracts, login flows and OIDC adapter) to Django and DRF. It serves a browser
+single-page application through a server-side session, and API clients through
+bearer tokens, with one account and one authorization model behind both.</p>
+<p>The app is installable (label <code>rn_forge_django_auth</code>).</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<p>An end-to-end configuration with one OIDC provider, local password login and,
+in development, a fixture-account provider. Install <code>rn-forge-django</code> with the
+<code>drf</code>, <code>oidc</code> and <code>redis</code> extras.</p>
+<p>Settings:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># settings.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSRF_MIDDLEWARE</span><span class="p">,</span> <span class="n">CSRF_SETTINGS</span><span class="p">,</span> <span class="n">SESSION_SETTINGS</span>
+
+<span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;django.contrib.auth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.contenttypes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.sessions&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rest_framework&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rn_forge.django.auth&quot;</span><span class="p">,</span>  <span class="c1"># run `manage.py migrate` for the link and state tables</span>
+    <span class="s2">&quot;myapp&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">MIDDLEWARE</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;django.middleware.security.SecurityMiddleware&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;django.contrib.sessions.middleware.SessionMiddleware&quot;</span><span class="p">,</span>
+    <span class="c1"># ... your other middleware ...</span>
+    <span class="n">CSRF_MIDDLEWARE</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">SESSION_SETTINGS</span><span class="p">)</span>  <span class="c1"># db-backed sessions, the __Host-session cookie</span>
+<span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CSRF_SETTINGS</span><span class="p">)</span>  <span class="c1"># Angular&#39;s XSRF-TOKEN cookie and X-XSRF-TOKEN header</span>
+
+<span class="n">CACHES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;BACKEND&quot;</span><span class="p">:</span> <span class="s2">&quot;django.core.cache.backends.redis.RedisCache&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;LOCATION&quot;</span><span class="p">:</span> <span class="s2">&quot;redis://localhost:6379/1&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">RN_FORGE_DJANGO</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;AUTH&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;PROBLEM_TYPE_BASE&quot;</span><span class="p">:</span> <span class="s2">&quot;https://errors.example.com/&quot;</span><span class="p">}}</span>
+
+<span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;EXCEPTION_HANDLER&quot;</span><span class="p">:</span> <span class="s2">&quot;rn_forge.django.drf.exceptions.problem_details_exception_handler&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><code>LogoutTokenVerifier.from_issuer</code> reads the provider's discovery document when
+it is called, so the provider must be reachable at startup.</p>
+<p>The Redis cache backend holds login transactions, replay records and revoked
+session IDs, which every worker must share; the <code>redis</code> extra installs its
+client. The session cookie is <code>Secure</code>, so serve development over <code>localhost</code>
+or HTTPS.</p>
+<p>The auth objects, built once:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/auth_config.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">authenticate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AuthorizationContextCache</span><span class="p">,</span>
+    <span class="n">DevelopmentAccount</span><span class="p">,</span>
+    <span class="n">DevelopmentIdentityProvider</span><span class="p">,</span>
+    <span class="n">PasswordIdentityProvider</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackchannelLogout</span><span class="p">,</span> <span class="n">LogoutTokenVerifier</span><span class="p">,</span> <span class="n">OidcProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthRoutesConfig</span><span class="p">,</span> <span class="n">CacheReplayStore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.accounts</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DjangoAccountResolver</span><span class="p">,</span>
+    <span class="n">DjangoAccountStateWriter</span><span class="p">,</span>
+    <span class="n">ProviderPolicy</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.authorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">DjangoAuthorizationContextProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrincipalSessionAuthentication</span><span class="p">,</span> <span class="n">sessions_for</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">JWKSBearerAuthentication</span>
+
+<span class="n">ISSUER</span> <span class="o">=</span> <span class="s2">&quot;https://login.example.com/tenant/v2.0&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_password</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span> <span class="k">if</span> <span class="n">user</span> <span class="k">else</span> <span class="kc">None</span>
+
+
+<span class="n">replay</span> <span class="o">=</span> <span class="n">CacheReplayStore</span><span class="p">()</span>
+<span class="n">resolver</span> <span class="o">=</span> <span class="n">DjangoAccountResolver</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(</span>
+            <span class="n">provisioning</span><span class="o">=</span><span class="s2">&quot;jit&quot;</span><span class="p">,</span>
+            <span class="n">email_domains</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;example.com&quot;</span><span class="p">}),</span>
+            <span class="n">authoritative_domains</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;example.com&quot;</span><span class="p">}),</span>
+        <span class="p">),</span>
+        <span class="c1"># A local user is linked once: resolver.link(&quot;local&quot;, str(user.pk), user)</span>
+        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(),</span>
+        <span class="s2">&quot;development&quot;</span><span class="p">:</span> <span class="n">ProviderPolicy</span><span class="p">(</span><span class="n">provisioning</span><span class="o">=</span><span class="s2">&quot;jit&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">contexts</span> <span class="o">=</span> <span class="n">AuthorizationContextCache</span><span class="p">(</span>
+    <span class="n">DjangoAuthorizationContextProvider</span><span class="p">(),</span> <span class="n">writer</span><span class="o">=</span><span class="n">DjangoAccountStateWriter</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">providers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">OidcProvider</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span>
+        <span class="n">issuer</span><span class="o">=</span><span class="n">ISSUER</span><span class="p">,</span>
+        <span class="n">client_id</span><span class="o">=</span><span class="s2">&quot;orders-web&quot;</span><span class="p">,</span>
+        <span class="n">client_secret</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+        <span class="n">redirect_uri</span><span class="o">=</span><span class="s2">&quot;https://app.example.com/auth/callback/acme&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">PasswordIdentityProvider</span><span class="p">(</span><span class="n">verify_password</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+    <span class="n">providers</span><span class="p">[</span><span class="s2">&quot;development&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DevelopmentIdentityProvider</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">DevelopmentAccount</span><span class="p">(</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alice&quot;</span><span class="p">)],</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">AuthRoutesConfig</span><span class="p">(</span>
+    <span class="n">providers</span><span class="o">=</span><span class="n">providers</span><span class="p">,</span>
+    <span class="n">accounts</span><span class="o">=</span><span class="n">resolver</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>
+    <span class="n">account_state</span><span class="o">=</span><span class="n">contexts</span><span class="p">,</span>  <span class="c1"># writes through to DjangoAccountStateWriter</span>
+    <span class="n">return_to_prefixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/app&quot;</span><span class="p">],</span>
+    <span class="n">default_return_to</span><span class="o">=</span><span class="s2">&quot;/app&quot;</span><span class="p">,</span>
+    <span class="n">provider_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme SSO&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;Password&quot;</span><span class="p">},</span>
+    <span class="n">replay</span><span class="o">=</span><span class="n">replay</span><span class="p">,</span>
+    <span class="n">backchannel</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;acme&quot;</span><span class="p">:</span> <span class="n">BackchannelLogout</span><span class="p">(</span>
+            <span class="n">LogoutTokenVerifier</span><span class="o">.</span><span class="n">from_issuer</span><span class="p">(</span>
+                <span class="n">ISSUER</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="s2">&quot;orders-web&quot;</span><span class="p">,</span> <span class="n">replay_store</span><span class="o">=</span><span class="n">replay</span>
+            <span class="p">),</span>
+            <span class="n">resolver</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Session</span><span class="p">(</span><span class="n">PrincipalSessionAuthentication</span><span class="p">):</span>
+    <span class="n">sessions</span> <span class="o">=</span> <span class="n">sessions_for</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Bearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
+    <span class="n">jwks_url</span> <span class="o">=</span> <span class="s2">&quot;https://login.example.com/tenant/discovery/v2.0/keys&quot;</span>
+    <span class="n">issuer</span> <span class="o">=</span> <span class="n">ISSUER</span>
+    <span class="n">audience</span> <span class="o">=</span> <span class="s2">&quot;api://orders&quot;</span>
+    <span class="n">accounts</span> <span class="o">=</span> <span class="n">resolver</span>
+    <span class="n">contexts</span> <span class="o">=</span> <span class="n">contexts</span>
+</code></pre></div>
+
+<p>A view lists the classes it accepts:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/api/views.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bearer</span><span class="p">,</span> <span class="n">Session</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">Session</span><span class="p">,</span> <span class="n">Bearer</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The URLconf and the authorization signals:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/urls.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">auth_urlpatterns</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">*</span><span class="n">auth_urlpatterns</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;auth&quot;</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s2">&quot;api/&quot;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s2">&quot;myapp.api.urls&quot;</span><span class="p">)),</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1"># myapp/apps.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppConfig</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyAppConfig</span><span class="p">(</span><span class="n">AppConfig</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;myapp&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.authorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">connect_authorization_signals</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">myapp.auth_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">contexts</span>
+
+        <span class="n">connect_authorization_signals</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>auth_urlpatterns</code> checks the session, CSRF and cache settings when it builds
+the URLconf and raises <code>ImproperlyConfigured</code> for a configuration it refuses
+(<a href="#defaults-and-startup-checks">Defaults and startup checks</a>).</p>
+<h2 id="routes-and-responses">Routes and responses<a class="headerlink" href="#routes-and-responses" title="Permanent link">&para;</a></h2>
+<p><code>auth_urlpatterns(config, prefix="auth")</code> serves these routes under the prefix.
+The URL names are <code>rn-forge-auth-&lt;route&gt;</code>. A <code>401</code> from any of them is a
+<code>problem+json</code> response with no <code>WWW-Authenticate</code> header.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>providers</code></td>
+<td><code>200</code>, a list of <code>{id, name, kind}</code>. <code>kind</code> is <code>oidc</code>, <code>oauth2</code>, <code>password</code> or <code>development</code>; the development provider is listed only in <code>DEBUG</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/{provider}?return_to=</code></td>
+<td><code>302</code> to the identity provider, with the <code>__Host-login-tx</code> cookie. A <code>return_to</code> outside <code>return_to_prefixes</code> redirects to the error route. An unknown provider is <code>404</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>login/development?account=</code></td>
+<td>In <code>DEBUG</code> only (otherwise <code>404</code>): without <code>account</code>, an HTML list of the fixture accounts; with it, signs in and redirects to <code>return_to</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>callback/{provider}</code></td>
+<td><code>302</code> to <code>return_to</code>, or to the error route; <code>429</code> when rate limited</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>session</code></td>
+<td><code>200</code> with the session body, or <code>401</code>. Always sets the CSRF cookie</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout</code></td>
+<td><code>200 {"redirect": url or null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>logout/all</code></td>
+<td><code>200 {"redirect": null}</code>; <code>401</code> without a session</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>backchannel-logout/{provider}</code></td>
+<td><code>200</code>; <code>400</code> for an invalid logout token; <code>404</code> for a provider with no handler</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>login/password</code></td>
+<td><code>200</code> with the session body, <code>401</code> for any failure, or <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>A callback error redirects to <code>error_route</code> (<code>/auth/error</code>) with <code>?error=</code> set
+to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.
+Details go to the log, never into the URL. A password login failure is one <code>401</code>
+whatever its cause, so the response does not reveal which accounts exist. The
+login body is JSON or form-encoded <code>{username, password}</code>.</p>
+<p>The session body is camelCase: <code>subject</code> (the account ID), <code>provider</code>, <code>roles</code>,
+<code>permissions</code>, <code>attributes</code>, <code>authTime</code>, <code>amr</code> and <code>expiresAt</code> (the absolute
+timeout). It omits <code>name</code>, <code>email</code> and <code>picture</code>: the default resolver stores
+none. <code>Cache-Control: no-store</code> is set on session responses.</p>
+<p>The login transaction lives in the cache for 10 minutes behind the
+<code>__Host-login-tx</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
+<code>Domain</code>). A callback that carries more than one transaction cookie is
+rejected, and a transaction is consumed atomically, so a callback works once.</p>
+<h2 id="sessions-and-revocation">Sessions and revocation<a class="headerlink" href="#sessions-and-revocation" title="Permanent link">&para;</a></h2>
+<p>Sessions are <code>django.contrib.sessions</code> with the <code>db</code> or <code>cached_db</code> engine, in
+the <code>__Host-session</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
+<code>Domain</code>). The session holds the account ID, the account's session version at
+login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code>
+and the ID token (only with <code>rp_initiated_logout</code>), and never permissions: those
+are computed on each request.</p>
+<ul>
+<li><strong>Timeouts.</strong> A 30-minute sliding idle timeout (<code>idle_timeout</code>) and a 12-hour
+  absolute timeout (<code>absolute_timeout</code>). A normal read moves the idle expiry
+  forward; <code>GET /auth/session</code> reads with <code>touch=False</code> and does not.</li>
+<li><strong>One read path.</strong> <code>Sessions.read</code> deletes the session, and the caller
+  answers <code>401</code>, when the absolute timeout has passed, the recorded session
+  version differs from the account's, the account is inactive, or the
+  <code>session_ref</code> is revoked.</li>
+<li><strong>New IDs.</strong> Login gives the session a new ID. Call
+  <code>rotate_session(request)</code> after a change to the account's privileges.</li>
+<li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session. <code>/auth/logout/all</code> and a
+  back-channel logout that names only <code>sub</code> bump the account's session version,
+  which ends every session of the account on its next request. A back-channel
+  logout with a <code>sid</code> revokes that session only, until the absolute timeout.
+  With <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code> returns the
+  identity provider's end-session URL.</li>
+<li><strong>Disabling.</strong> <code>contexts.set_active(account_id, False)</code> (or any change that
+  makes the account inactive) fails the account's next request with <code>401</code>.</li>
+</ul>
+<p>The authorization context cache is local to each process: a change made in
+another process applies after the cache's <code>ttl</code> (60 seconds by default), or at
+once through the cache that made it. Lower <code>ttl</code> where that delay matters.</p>
+<h2 id="csrf">CSRF<a class="headerlink" href="#csrf" title="Permanent link">&para;</a></h2>
+<p>Every unsafe method on a session-authenticated route is protected by
+<code>AuthCsrfMiddleware</code>, a <code>CsrfViewMiddleware</code> subclass. The cookie is
+<code>XSRF-TOKEN</code> and the header <code>X-XSRF-TOKEN</code>, Angular's defaults; the cookie is
+not <code>HttpOnly</code> so that Angular can copy it into the header.</p>
+<ul>
+<li><code>GET /auth/session</code> always sets the cookie, including when it answers <code>401</code>,
+  so <code>POST /auth/login/password</code> is protected before sign-in. The token rotates
+  at login and at logout.</li>
+<li>A rejection is the <code>403</code> <code>csrf-failed</code> problem (<code>CSRF_FAILURE_VIEW</code>); its
+  reason is logged, never sent. <code>PROBLEM_TYPE_BASE</code> makes it differ in <code>type</code>
+  from a permission denial.</li>
+<li>Beyond Django's token and origin check, <code>AuthCsrfMiddleware</code> rejects
+  <code>Sec-Fetch-Site: cross-site</code> on an unsafe method, even from a trusted origin.</li>
+<li>Requests with a <code>Bearer</code> <code>Authorization</code> header skip the check, as does the
+  back-channel logout route, which carries a signed token. A <code>Basic</code> header does
+  not: browsers replay cached Basic credentials on their own.</li>
+<li><code>CSRF_TRUSTED_ORIGINS</code> lists the other origins that may post. Behind a proxy,
+  Django takes the request's scheme and host from forwarded headers only when
+  <code>SECURE_PROXY_SSL_HEADER</code> and <code>USE_X_FORWARDED_HOST</code> are set, and the
+  forwarded host must be in <code>ALLOWED_HOSTS</code>. Without them a forged
+  <code>X-Forwarded-*</code> header does not make a foreign <code>Origin</code> acceptable.</li>
+<li>DRF wraps its views in <code>csrf_exempt</code>, so the middleware does not guard them.
+  <code>PrincipalSessionAuthentication</code> calls <code>enforce_csrf(request)</code> for the
+  sessions it authenticates; a custom session class does the same.</li>
+</ul>
+<h2 id="accounts-and-linking">Accounts and linking<a class="headerlink" href="#accounts-and-linking" title="Permanent link">&para;</a></h2>
+<p><code>DjangoAccountResolver</code> links external identities to Django users through the
+<code>ExternalAccount</code> model, unique on <code>(issuer, subject)</code>; run the auth app's
+migration. A <code>ProviderPolicy</code> per provider ID decides what an unlinked identity
+gets; a provider with no policy is rejected.</p>
+<ul>
+<li><code>provisioning="existing"</code> rejects an identity with no account;
+  <code>provisioning="jit"</code> creates one on first login, limited to <code>email_domains</code>
+  when set (which also requires a verified email).</li>
+<li><code>authoritative_domains</code> lists the email domains for which the provider is
+  authoritative: only there does a verified email link to an existing user.
+  Unverified emails never link and are not stored on provisioned users.</li>
+<li><code>sync(user, identity)</code>, passed to the resolver, runs at every login to copy
+  attributes onto the user.</li>
+<li><code>resolver.link(issuer, subject, user)</code> links a service account or a local
+  password user explicitly.</li>
+</ul>
+<p>A rejected login redirects with <code>?error=account_not_provisioned</code>, and a login by
+an inactive account with <code>?error=access_denied</code>. The session version behind
+<code>/auth/logout/all</code> is stored by <code>DjangoAccountStateWriter</code> and read by
+<code>DjangoAuthorizationContextProvider</code>.</p>
+<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
+<p><code>PrincipalSessionAuthentication</code> yields a <code>Principal</code> with
+<code>mechanism="session"</code> from <code>Sessions.read</code>; <code>request.auth</code> is the
+<code>SessionInfo</code>. Subclass it and set <code>sessions = sessions_for(config)</code>.</p>
+<p><code>PrincipalBearerAuthentication</code> and <code>JWKSBearerAuthentication</code> verify an
+externally issued token, then resolve its <code>(issuer, subject)</code> through
+<code>AccountResolver.lookup</code>. They never provision: an unlinked subject, or an
+inactive account, is <code>401</code>. The principal's <code>subject</code> is the account ID; its
+roles and attributes come from the authorization context, and its permissions
+are the account's, limited to what the token's scopes allow through
+<code>scope_map</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Bearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="n">scope_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orders:read&quot;</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.list&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.read&quot;</span><span class="p">})}</span>
+</code></pre></div>
+
+<p>List the classes on each view or on a shared base view, not in
+<code>DEFAULT_AUTHENTICATION_CLASSES</code>: that setting is imported while DRF imports its
+views, and the module that defines these classes imports DRF's views too.</p>
+<p><strong>One credential per request.</strong> A request with an <code>Authorization</code> header is
+authenticated by the bearer class alone: an invalid token is <code>401</code> even with a
+valid session cookie, and the session class ignores the request. List the
+classes a view accepts. A view whose first class is the session class answers
+an unauthenticated request with <code>401</code> and no <code>WWW-Authenticate</code> header; with a
+bearer class first, it answers with the <code>Bearer</code> challenge. Both need the
+problem-details exception handler.</p>
+<h3 id="bearer-tokens-in-detail">Bearer tokens in detail<a class="headerlink" href="#bearer-tokens-in-detail" title="Permanent link">&para;</a></h3>
+<p>For an API whose callers hold tokens issued by an identity provider (Entra ID,
+Auth0, Okta, Keycloak), <code>JWKSBearerAuthentication</code> (the <code>oidc</code> extra) verifies
+the token against the provider's key set. Set <code>jwks_url</code>, <code>issuer</code>, <code>audience</code>,
+<code>accounts</code> and <code>contexts</code> on a subclass, as in <a href="#setup">Setup</a>.
+<code>cache_timeout</code> (300 seconds) is how long a fetched key set is kept,
+<code>cooldown_duration</code> (30 seconds) the fewest seconds between two fetches, which
+bounds how often an unknown <code>kid</code> can reach the provider, and <code>algorithms</code> and
+<code>leeway</code> set the accepted algorithms and the clock skew. Override
+<code>claims_to_principal()</code> where the provider keeps roles or scopes somewhere
+non-standard, such as Keycloak's nested <code>realm_access.roles</code>. The authenticator
+and key set are cached per subclass and process, so define the class once.</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th><code>jwks_url</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entra ID</td>
+<td><code>https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys</code></td>
+</tr>
+<tr>
+<td>Auth0</td>
+<td><code>https://{domain}/.well-known/jwks.json</code></td>
+</tr>
+<tr>
+<td>Okta</td>
+<td><code>https://{domain}/oauth2/{authorization-server-id}/v1/keys</code></td>
+</tr>
+</tbody>
+</table>
+<p>To verify tokens some other way, subclass <code>PrincipalBearerAuthentication</code> and
+set <code>authenticator</code> to any <code>rn_forge.auth.Authenticator</code>, with <code>accounts</code>,
+<code>contexts</code> and optionally <code>realm</code>. Protect a view with
+<code>requires(Requirement(all_scopes=...))</code>, a permission class over the principal's
+scopes and roles, which evaluates identically on <code>rn-forge-fastapi</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.views</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIView</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderView</span><span class="p">(</span><span class="n">APIView</span><span class="p">):</span>
+    <span class="n">authentication_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">Bearer</span><span class="p">]</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">requires</span><span class="p">(</span><span class="n">Requirement</span><span class="p">(</span><span class="n">all_scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">})))]</span>
+</code></pre></div>
+
+<p>With <code>problem_details_exception_handler</code> installed, missing or invalid
+credentials are a <code>401</code> <code>problem+json</code> with an RFC 6750
+<code>WWW-Authenticate: Bearer</code> challenge and a detail that never says why
+verification failed; valid credentials lacking the scope are a <code>403</code> with no
+challenge.</p>
+<p><code>PrincipalBasicAuthentication</code> is the RFC 7617 twin: it produces a <code>Principal</code>
+from an authenticator you supply and does not link accounts. <strong>It is for local
+development and simple internal deployments only.</strong></p>
+<h2 id="authorization">Authorization<a class="headerlink" href="#authorization" title="Permanent link">&para;</a></h2>
+<p><code>DjangoAuthorizationContextProvider</code> builds an <code>AuthorizationContext</code> from a
+user's groups and permissions. Roles are group names. Django
+<code>app_label.codename</code> permissions become dotted keys: <code>add</code>, <code>change</code>, <code>delete</code>
+and <code>view</code> of a model map to <code>&lt;app_label&gt;.&lt;model&gt;.create</code>, <code>update</code>, <code>delete</code>
+and <code>read</code> (<code>view</code> also grants <code>list</code>), so <code>inventory.change_stock</code> is
+<code>inventory.stock.update</code>. A custom permission keeps <code>&lt;app_label&gt;.&lt;codename&gt;</code>. A
+staff or superuser account gets the <code>staff</code> or <code>superuser</code> role and every
+permission key, so the bypass shows in <code>/auth/session</code>; pass <code>catalog=</code> for keys
+that exist outside Django's permission table. An unknown or inactive user
+resolves to an inactive context.</p>
+<p>Wrap the provider in an <code>AuthorizationContextCache</code> and call
+<code>connect_authorization_signals(cache)</code> once at startup (<a href="#setup">Setup</a>):
+changes to users, groups, permissions and their relations, including those made
+through the <code>User</code>, <code>Group</code> and <code>Permission</code> viewsets, then invalidate the
+affected accounts.</p>
+<p>On a view, <code>PermissionKeyPermission</code> requires the key built by
+<code>rn_forge.auth.requirement_for</code> from <code>permission_key</code> and the action, checked
+against the request's principal; a view without a <code>permission_key</code> requires only
+an authenticated principal. <code>ResourcePolicyViewMixin</code> applies a
+<code>ResourcePolicy</code>: <code>scope</code> narrows the queryset, so counts and pages cover only
+permitted rows, and <code>allows</code> guards each object, answering <code>404</code> instead of
+<code>403</code> when <code>policy_hides_existence</code> is true. Both are in
+<code>rn_forge.django.auth.drf</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.django.auth.drf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PermissionKeyPermission</span><span class="p">,</span> <span class="n">ResourcePolicyViewMixin</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderViewSet</span><span class="p">(</span><span class="n">ResourcePolicyViewMixin</span><span class="p">,</span> <span class="n">ModelViewSet</span><span class="p">):</span>
+    <span class="n">permission_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">PermissionKeyPermission</span><span class="p">]</span>
+    <span class="n">permission_key</span> <span class="o">=</span> <span class="s2">&quot;orders&quot;</span>
+    <span class="n">resource_policy</span> <span class="o">=</span> <span class="n">OrderPolicy</span><span class="p">()</span>
+</code></pre></div>
+
+<h3 id="management-viewsets">Management viewsets<a class="headerlink" href="#management-viewsets" title="Permanent link">&para;</a></h3>
+<p><code>rn_forge.django.auth.drf.views</code> ships ready-to-mount viewsets for the standard
+Django auth models, wired through <code>AuthorizedModelViewSet</code>: <code>PermissionViewSet</code>,
+<code>GroupViewSet</code>, <code>UserViewSet</code>. <code>AuthorizedModelViewSet</code> and <code>AuthorizedAPIView</code>
+set <code>permission_classes = [PermissionKeyPermission]</code>, so each viewset requires
+its <code>permission_key</code> (<code>rn_forge.auth.permission</code>, <code>rn_forge.auth.group</code>,
+<code>rn_forge.auth.user</code>) combined with the action. Mount them, or
+<code>rn_forge.django.auth.urls.urlpatterns</code>, which already registers them, under
+your API root.</p>
+<h2 id="rate-limits-and-audit-events">Rate limits and audit events<a class="headerlink" href="#rate-limits-and-audit-events" title="Permanent link">&para;</a></h2>
+<p><code>POST /auth/login/password</code> and <code>GET /auth/callback/{provider}</code> are rate limited
+with a fixed-window counter over Django's cache (<code>cache.add</code> and <code>cache.incr</code>),
+in the cache alias of <code>AuthRoutesConfig.limiter</code> (<code>FixedWindowLimiter</code>). The
+client is <code>REMOTE_ADDR</code>: Django resolves proxies through its own settings, and
+<code>X-Forwarded-For</code> is never read here. Password login is limited per client and
+per submitted username (hashed in the key); callbacks per client only, because
+no account is known before the response is verified. Each limit is a
+<code>RateLimit(limit, window)</code>, or <code>None</code> for none. A limited request is the <code>429</code>
+<code>too-many-requests</code> problem with <code>Retry-After</code>. Windows are aligned to the
+clock, so a client can use a limit twice around a window boundary.</p>
+<p>Security-relevant events are <code>INFO</code> records on the <code>rn_forge.audit.auth</code>
+<code>AppLogger</code> channel, in the form <code>audit event=&lt;name&gt; key='value' ...</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Emitted when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login.success</code></td>
+<td>A login starts a session</td>
+</tr>
+<tr>
+<td><code>login.failure</code></td>
+<td>A login fails (provider, code, reason)</td>
+</tr>
+<tr>
+<td><code>logout</code>, <code>logout.all</code>, <code>logout.backchannel</code></td>
+<td>A session or sessions end</td>
+</tr>
+<tr>
+<td><code>account.provisioned</code></td>
+<td>The resolver creates an account (after commit)</td>
+</tr>
+<tr>
+<td><code>account.rejected</code></td>
+<td>The resolver refuses an identity</td>
+</tr>
+<tr>
+<td><code>account.disabled</code></td>
+<td>An inactive account logs in, or <code>DjangoAccountStateWriter.set_active(False)</code> runs</td>
+</tr>
+<tr>
+<td><code>authorization.denied</code></td>
+<td><code>PermissionKeyPermission</code> or <code>ResourcePolicyViewMixin</code> denies a request</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>A request is answered <code>429</code></td>
+</tr>
+</tbody>
+</table>
+<p>Events carry account IDs, provider IDs, codes and short reasons, and never a
+token, code, assertion, password, session ID or email address.</p>
+<h2 id="defaults-and-startup-checks">Defaults and startup checks<a class="headerlink" href="#defaults-and-startup-checks" title="Permanent link">&para;</a></h2>
+<p>Configured on <code>AuthRoutesConfig</code> unless noted:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL prefix (<code>auth_urlpatterns(prefix=)</code>)</td>
+<td><code>auth</code></td>
+</tr>
+<tr>
+<td><code>return_to_prefixes</code> / <code>default_return_to</code></td>
+<td><code>("/",)</code> / <code>/</code></td>
+</tr>
+<tr>
+<td><code>error_route</code></td>
+<td><code>/auth/error</code></td>
+</tr>
+<tr>
+<td><code>post_logout_redirect</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>idle_timeout</code> / <code>absolute_timeout</code></td>
+<td>30 minutes / 12 hours</td>
+</tr>
+<tr>
+<td>Login transaction lifetime</td>
+<td>10 minutes</td>
+</tr>
+<tr>
+<td><code>password_client_limit</code></td>
+<td>30 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>password_account_limit</code></td>
+<td>10 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>callback_client_limit</code></td>
+<td>60 per 5 minutes</td>
+</tr>
+<tr>
+<td><code>transactions</code>, <code>replay</code>, <code>limiter</code></td>
+<td>Django's <code>default</code> cache</td>
+</tr>
+<tr>
+<td>Session cookie</td>
+<td><code>__Host-session</code>, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no <code>Domain</code></td>
+</tr>
+<tr>
+<td>Login transaction cookie</td>
+<td><code>__Host-login-tx</code>, same flags, <code>Max-Age=600</code></td>
+</tr>
+<tr>
+<td>CSRF cookie / header</td>
+<td><code>XSRF-TOKEN</code> (not <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>) / <code>X-XSRF-TOKEN</code></td>
+</tr>
+<tr>
+<td>Authorization cache <code>ttl</code></td>
+<td>60 seconds</td>
+</tr>
+</tbody>
+</table>
+<p><code>auth_urlpatterns</code> raises <code>ImproperlyConfigured</code> when it builds the URLconf:</p>
+<table>
+<thead>
+<tr>
+<th>Refused</th>
+<th>Always</th>
+<th>Outside <code>DEBUG</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SESSION_SAVE_EVERY_REQUEST</code> true</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>AuthCsrfMiddleware</code> missing from <code>MIDDLEWARE</code></td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>CSRF cookie and header names, <code>HttpOnly</code>, <code>CSRF_USE_SESSIONS</code>, <code>CSRF_FAILURE_VIEW</code> differing from <code>CSRF_SETTINGS</code></td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]</code> unset</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Session cookie settings differing from <code>SESSION_SETTINGS</code></td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Other CSRF cookie settings differing from <code>CSRF_SETTINGS</code></td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>A session engine other than <code>db</code> or <code>cached_db</code> (the signed-cookie engine cannot revoke sessions)</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Django's local-memory cache as the session cache, or for the transaction, replay or limiter store</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p><code>/auth/login/development</code> and the development provider's listing exist only
+while <code>settings.DEBUG</code> is true.</p>
+<h2 id="saml-identity-providers">SAML identity providers<a class="headerlink" href="#saml-identity-providers" title="Permanent link">&para;</a></h2>
+<p><code>rn-forge-django</code> speaks no SAML. A SAML identity provider federates through a
+broker (Keycloak, Entra ID, Auth0, Okta and others) that runs the SAML exchange
+and logs the user in to the application over OIDC; configure the broker as an
+ordinary <code>OidcProvider</code>. The <code>rn-forge-auth</code> login guide, "Connecting a SAML IdP
+through a broker", has the steps.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

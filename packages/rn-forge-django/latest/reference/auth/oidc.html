@@ -16,14 +16,14 @@
         <link rel="prev" href="principal.html">
       
       
-        <link rel="next" href="../drf/index.html">
+        <link rel="next" href="routes.html">
       
       
         
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -969,118 +969,6 @@
   
   
     <li class="md-nav__item">
-      <a href="credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="drf.html" class="md-nav__link">
         
   
@@ -1221,10 +1109,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.fetch" class="md-nav__link">
+  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cache_timeout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;fetch
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;cache_timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cooldown_duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;cooldown_duration
       
     </span>
   </a>
@@ -1256,6 +1155,62 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1745,10 +1700,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.fetch" class="md-nav__link">
+  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cache_timeout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;fetch
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;cache_timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cooldown_duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;cooldown_duration
       
     </span>
   </a>
@@ -1854,8 +1820,10 @@
 <p>Set <code>jwks_url</code>, <code>issuer</code> and <code>audience</code> on a subclass. Authenticators
 and key sets are cached per subclass and process.</p>
 <p>Verification and the claims-to-principal mapping are
-:class:<code>rn_forge.web.oidc.OidcAuthenticator</code>'s, so this stack accepts the
-same tokens as a FastAPI service wired to the same IdP.</p>
+:class:<code>rn_forge.auth.oidc.OidcAuthenticator</code>'s, so this stack accepts the
+same tokens as a FastAPI service wired to the same IdP. Accounts are linked
+as in :class:<code>PrincipalBearerAuthentication</code>, so set <code>accounts</code> and
+<code>contexts</code> too.</p>
 
 
 
@@ -1879,19 +1847,41 @@ same tokens as a FastAPI service wired to the same IdP.</p>
 
 
 
-<h4 id="rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.fetch" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">fetch</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">fetch_json</span><span class="p">)</span></code>
+<h4 id="rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cache_timeout" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">cache_timeout</span> <span class="o">=</span> <span class="mf">300.0</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
-<a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.fetch" class="headerlink" title="Permanent link">&para;</a></h4>
+<a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cache_timeout" class="headerlink" title="Permanent link">&para;</a></h4>
 
 
     <div class="doc doc-contents ">
 
-        <p>The key-set transport. Replace it for a proxy, or in tests.</p>
+        <p>Seconds a fetched key set stays cached.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cooldown_duration" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">cooldown_duration</span> <span class="o">=</span> <span class="mf">30.0</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#rn_forge.django.auth.drf.oidc.JWKSBearerAuthentication.cooldown_duration" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The fewest seconds between two key set fetches.</p>
 
     </div>
 
@@ -1983,10 +1973,10 @@ same tokens as a FastAPI service wired to the same IdP.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

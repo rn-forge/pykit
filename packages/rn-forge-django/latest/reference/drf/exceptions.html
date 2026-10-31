@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -967,118 +967,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../auth/credentials.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Credentials and Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../auth/basic.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Basic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../auth/jwt.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JWT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../auth/saml.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SAML
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../auth/drf.html" class="md-nav__link">
         
   
@@ -1143,6 +1031,62 @@
     
   
     OIDC (JWKS bearer)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/routes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routes and sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts and authorization
   
 
     
@@ -1441,6 +1385,17 @@
   
     <nav class="md-nav" aria-label=" exceptions">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.exceptions.NO_CHALLENGE" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;NO_CHALLENGE
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#rn_forge.django.drf.exceptions.drf_exception_handler" class="md-nav__link">
@@ -1749,6 +1704,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#rn_forge.django.drf.exceptions.NO_CHALLENGE" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;NO_CHALLENGE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.django.drf.exceptions.drf_exception_handler" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1859,6 +1825,29 @@ mode, so its <code>application/json</code> body lacks <code>title</code>, <code>
 
 
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="rn_forge.django.drf.exceptions.NO_CHALLENGE" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">NO_CHALLENGE</span> <span class="o">=</span> <span class="s1">&#39;x-rn-forge-no-challenge&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#rn_forge.django.drf.exceptions.NO_CHALLENGE" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>An <code>authenticate_header</code> value that makes DRF answer <code>401</code> while
+:func:<code>problem_details_exception_handler</code> sends no <code>WWW-Authenticate</code>.</p>
+
+    </div>
+
+</div>
+
 
 
 
@@ -1893,7 +1882,8 @@ mode, so its <code>application/json</code> body lacks <code>title</code>, <code>
 
         <p>Render an exception as an RFC 9457 <code>application/problem+json</code> response.</p>
 <p>DRF determines the status and headers first; the registry then supplies the
-problem body. Validation field errors appear in the <code>errors</code> extension.</p>
+problem body. Validation field errors appear in the <code>errors</code> extension. A
+<code>WWW-Authenticate</code> value of :data:<code>NO_CHALLENGE</code> is dropped.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1948,8 +1938,8 @@ problem body. Validation field errors appear in the <code>errors</code> extensio
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The rows to render with. Defaults to :func:<code>problem_registry</code>,
-built once at import.</p>
+                <p>The rows to render with. Defaults to :func:<code>problem_registry</code>
+with <code>RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]</code> when set.</p>
               </div>
             </td>
             <td>
@@ -2071,10 +2061,10 @@ built once at import.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
