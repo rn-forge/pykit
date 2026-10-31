@@ -17,8 +17,10 @@ from rn_forge.web.problem import (
     CONFLICT,
     GENERIC_SERVER_DETAIL,
     INTERNAL_ERROR,
+    NOT_FOUND,
     PRECONDITION_FAILED,
     PRECONDITION_REQUIRED,
+    VALIDATION_ERROR,
     ProblemDetail,
     ProblemRegistry,
     ProblemType,
@@ -554,3 +556,19 @@ def test_register_hierarchy_code_reaches_the_type_with_a_type_base():
 
     assert_that(body["type"]).is_equal_to("/problems/missing-file")
     assert_that(body["status"]).is_equal_to(404)
+
+
+# --- keeping programming errors at 500 ------------------------------------
+
+
+def test_lookup_error_recipe_keeps_key_and_index_errors_at_500():
+    registry = (
+        default_registry()
+        .register(KeyError, INTERNAL_ERROR)
+        .register(IndexError, INTERNAL_ERROR)
+    )
+
+    assert_that(registry.problem_for(KeyError("k"))).is_equal_to(INTERNAL_ERROR)
+    assert_that(registry.problem_for(IndexError("i"))).is_equal_to(INTERNAL_ERROR)
+    assert_that(registry.problem_for(LookupError("l"))).is_equal_to(NOT_FOUND)
+    assert_that(registry.problem_for(ValueError("v"))).is_equal_to(VALIDATION_ERROR)

@@ -130,6 +130,25 @@ matches on `type`. A relative base such as `/problems/` is enough.
 Only classes already imported are seen. Register after every module that
 declares part of the hierarchy has been imported.
 
+### Keeping programming errors at 500
+
+`default_registry()` maps `LookupError` to `not-found` (404) and `ValueError` to
+`validation-error` (422), so a `KeyError` or `IndexError` raised by a bug
+becomes a 404. Register the two classes against `INTERNAL_ERROR` to keep them at
+500:
+
+```python
+registry = (
+    default_registry(type_base="/problems/")
+    .register(KeyError, INTERNAL_ERROR)
+    .register(IndexError, INTERNAL_ERROR)
+)
+```
+
+The MRO walk finds `KeyError` and `IndexError` before `LookupError`, so a plain
+`LookupError` still resolves to 404. The recipe leaves the `ValueError` default
+alone: a `ValueError` still resolves to 422.
+
 ### Proving the exception table is total
 
 An unregistered domain exception silently resolves to `internal-error`/500,
