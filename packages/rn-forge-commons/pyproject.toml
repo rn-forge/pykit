@@ -32,7 +32,7 @@ otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
 pydantic = ["pydantic>=2.12"]
 markdown = ["markdown>=3.7", "markdown-it-py>=3.0"]
 templates = ["jinja2>=3.1.6"]
-testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+testing = ["assertpy>=1.1", "pytest>=9.2.0"]
 all = [
   "httpx>=0.28",
   "jinja2>=3.1.6",
@@ -69,7 +69,7 @@ addopts = "-ra --import-mode=importlib"
 dev = [
   "assertpy>=1.1",
   "pyright>=1.1.411",
-  "pytest>=9.1.1",
+  "pytest>=9.2.0",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-commons[all]",
