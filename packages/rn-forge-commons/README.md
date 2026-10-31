@@ -132,7 +132,8 @@ directly (never through the facade).
 - **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and
   captures return code, stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread
-  pool.
+  pool; `TaskPool.map_settled` maps a function over items and returns a
+  `Succeeded` or `Failed` for each.
 - **`actor`** — `ThreadActor`: owns one resource on a dedicated thread and
   runs every call against it there, as a `Future` or an awaitable.
 - **`plugins`** — `EntryPointLoader`: failure-isolated entry-point plugin

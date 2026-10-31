@@ -36,6 +36,40 @@ failed = (
 
 Use `fail_on_error=True` when task failures should raise `AppException`.
 
+## Mapping over items
+
+`TaskPool.map_settled(fn, items)` runs `fn(item)` for every item on the pool and
+waits for all of them. No `Task` subclass or name is needed, and `TaskPool.tasks`
+is unchanged. It returns one result per item, in input order: `Succeeded` with
+the value, or `Failed` with the exception. An item failure raises nothing and is
+logged with the item's index. A `None` return is a valid `Succeeded(None)`.
+
+```python
+from rn_forge.commons import Failed, Succeeded, TaskPool
+
+with TaskPool(max_workers=8) as pool:
+    results = pool.map_settled(read_size, paths)
+
+for path, result in zip(paths, results):
+    match result:
+        case Succeeded(value=size):
+            print(path, size)
+        case Failed(error=error):
+            print(path, "failed:", error)
+```
+
+`isinstance(result, Failed)` narrows the same way. An exception that is not an
+`Exception`, such as `KeyboardInterrupt`, is not captured and propagates from
+the call.
+
+The caller sizes the pool. Choose `max_workers` by what the work waits on, such
+as the number of subprocesses or I/O requests you want in flight, not by CPU
+count: a thread waiting on I/O does not use a core.
+
+This is how to fan out off a [thread actor](#keep-the-actor-short): read what
+you need on the actor, then map the plain data across the pool so the actor is
+free for other callers. To process items in groups, use `itertools.batched`.
+
 ## Thread actor
 
 `ThreadActor` owns one resource on a dedicated thread. Some libraries, such as
@@ -83,4 +117,4 @@ When one job touches many files, split it into three phases:
 
 1. Work on the actor.
 1. A cheap projection to plain data, also on the actor.
-1. Fan out off the actor, for example with `TaskPool`.
+1. Fan out off the actor, with `TaskPool.map_settled`.
