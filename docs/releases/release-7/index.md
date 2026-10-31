@@ -2,7 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | planned |
+| **Status** | shipped |
+| **Start Date** | 2026-10-25 |
+| **Finish Date** | 2026-10-30 |
 
 pykit gains standards-based authentication and authorization for its web
 applications ([E13](../../specs/epics/E13-auth/index.md)): settle and record the
@@ -46,7 +48,7 @@ pykit's cutover onto kiln is [Release 8](../release-8/index.md).
 | [F20.5](../../specs/epics/E20-security-baseline/F20.5-disclosure-and-posture.md) | E20 | Closed |
 | [F21.1](../../specs/epics/E21-pypi-distribution/F21.1-pypi-decision.md) | E21 | Closed |
 | [F21.2](../../specs/epics/E21-pypi-distribution/F21.2-package-metadata.md) | E21 | Closed |
-| [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | Active |
+| [F21.3](../../specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md) | E21 | Closed |
 | [F21.4](../../specs/epics/E21-pypi-distribution/F21.4-consumer-docs.md) | E21 | Closed |
 
 <!-- scope:end -->
@@ -119,45 +121,31 @@ pykit's cutover onto kiln is [Release 8](../release-8/index.md).
 
 ## Progress
 
-Release 5 shipped 2026-10-18 with `rn-forge-devops` 0.2.0, the version kiln
-pins. F13.1 is done: the design is settled, ADR-0006 is revised, ADR-0013 and
-ADR-0014 are accepted, the library evaluation is recorded, and F13.3 to F13.7
-have stories on this release. F13.2 to F13.4 are closed: the package, the core
-contracts and the login adapters (OIDC and OAuth 2.0 over Authlib's core,
-logout, password and development providers, and the optional Keycloak broker
-job). F13.5 is closed: `rn-forge-django` serves the auth surface with sessions,
-revocation, CSRF, account linking, session and bearer authentication,
-authorization, rate limits and audit events. F13.6 is closed: `rn-forge-fastapi`
-serves the same surface as an `APIRouter`, with its own session middleware,
-session-bound CSRF token, rate limiting and audit events, and both bindings pass
-the shared security-control cases in `rn_forge.auth.conformance`; F13.7 can
-start. F21.1 is closed: the GitHub environments exist and the PyPI organization
-is approved. The owner creates each PyPI project and attaches its publisher
-before the first publish.
+Shipped 2026-10-30. Every feature in scope is closed.
 
-E20 and E21 were built on `feature/release-7-e20-e21` and rebased onto this
-branch after E13's features landed. F20.1, F20.2, F20.3, F21.1, F21.2 and F21.4
-are closed, and secret scanning, push protection and private vulnerability
-reporting are enabled. S21.3.2 is closed: every package is on TestPyPI and the
-release branch's CI rerun skipped them as already uploaded. F20.4 and F20.5 are
-closed on the evidence of the merge's first run, which published
-`rn-forge-commons` 0.8.0 and then failed on `rn-forge-devops`: the workflow's
-token cannot create a PyPI project. S21.3.5 adds PEP 740 attestations
-(`rn-forge-commons` 0.8.1 is the first version with them). The open stories need
-the owner:
+- E13: the design is settled, and ADR-0006 is revised with ADR-0013 and
+  ADR-0014 accepted. `rn-forge-auth` holds the core contracts and the login
+  adapters. `rn-forge-django` and `rn-forge-fastapi` serve the auth surface and
+  pass the shared security-control cases in `rn_forge.auth.conformance`. The
+  locally issued JWT flows are removed.
+- E20: the dependency audit, licence inventory, source and secret scans, push
+  protection, SBOMs, attestations and `SECURITY.md` are in place, and
+  [the evidence](security.md) records each control's result.
+- E21: every package is on PyPI, published from `main.yml` by trusted
+  publishing. Every project is in the `rn-forge` PyPI organization.
 
-- S21.3.3: every PyPI project exists with its trusted publisher, so the merge of
-  this work publishes the real versions and the ship commit follows. The owner
-  then deletes the `.dev0` placeholders of `rn-forge-devops`, `rn-forge-cli`,
-  `rn-forge-data` and `rn-forge-web`.
-- S21.3.5: proven by that publish.
+The first run on the merge published `rn-forge-commons` 0.8.0 and then failed on
+`rn-forge-devops`, because the workflow's token cannot create a PyPI project.
+The owner created the projects, and S21.3.5 added PEP 740 attestations, signed
+one file at a time with retries. The
+[push to `main`](https://github.com/rn-forge/pykit/actions/runs/41151600463) at
+`a038a0d` passed all 48 jobs, including `release`, `external-install`, `docs`,
+Sonar, `umbrella-release` and `ci-ok`, and published the ten versions below.
 
-After the merge, new E13 code must pass ruff's `S` rules, the dependency audit
-and the licence check. The version cut is done (S21.3.4): `rn-forge-commons`,
-`rn-forge-web`, `rn-forge-django` and `rn-forge-fastapi` carry breaking changes,
-so they are at 0.8.0, 0.3.0, 0.6.0 and 0.4.0, and every internal range on them
-admits exactly that minor. Each changelog's entries sit under its dated version
-heading.
+The version cut (S21.3.4) took `rn-forge-commons`, `rn-forge-web`,
+`rn-forge-django` and `rn-forge-fastapi`, which carry breaking changes, to
+0.8.0, 0.3.0, 0.6.0 and 0.4.0, and every internal range on them admits exactly
+that minor. S21.3.5 then bumped `rn-forge-commons` to 0.8.1.
 
 ## Commits
 
@@ -178,4 +166,32 @@ git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F21
 
 ## Shipped
 
-Filled at the cut.
+The ten packages below were tagged and published to PyPI by
+[run 41151600463](https://github.com/rn-forge/pykit/actions/runs/41151600463),
+with a GitHub release for each. Each release has its changelog section as notes, is not "Latest", and carries only
+the wheel, the sdist and the `.cdx.json` SBOM. Each package's docs site serves
+the new major.minor as `latest`, and each project belongs to the `rn-forge` PyPI
+organization.
+
+All ten were installed together by name from PyPI into a clean virtual
+environment, and `rn_forge.commons`, `rn_forge.devops`, `rn_forge.cli`,
+`rn_forge.data`, `rn_forge.web`, `rn_forge.auth`, `rn_forge.sqlalchemy`,
+`rn_forge.tooling`, `rn_forge.django` and `rn_forge.fastapi` each imported.
+PyPI's integrity API returns provenance for all ten wheels. For
+`rn-forge-commons` 0.8.1 it names the GitHub repository `rn-forge/pykit`,
+workflow `main.yml` and environment `pypi`, and `gh attestation verify -R
+rn-forge/pykit` passes on its wheel. The [security evidence](security.md) holds
+the rest.
+
+| Deliverable | Version | Tag | Commit | Verification |
+| -- | -- | -- | -- | -- |
+| `rn-forge-commons` | `0.8.1` | `rn-forge-commons-v0.8.1` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-devops` | `0.3.1` | `rn-forge-devops-v0.3.1` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-cli` | `0.1.2` | `rn-forge-cli-v0.1.2` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-data` | `0.1.2` | `rn-forge-data-v0.1.2` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-web` | `0.3.0` | `rn-forge-web-v0.3.0` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-auth` | `0.1.0` | `rn-forge-auth-v0.1.0` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-sqlalchemy` | `0.2.2` | `rn-forge-sqlalchemy-v0.2.2` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-tooling` | `0.3.1` | `rn-forge-tooling-v0.3.1` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-django` | `0.6.0` | `rn-forge-django-v0.6.0` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |
+| `rn-forge-fastapi` | `0.4.0` | `rn-forge-fastapi-v0.4.0` | `a038a0d` | published to PyPI; GitHub release; `external-install` and `docs` passed; wheel provenance |

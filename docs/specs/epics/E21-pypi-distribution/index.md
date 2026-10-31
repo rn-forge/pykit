@@ -26,7 +26,7 @@ the self-hosted index retires once consumers have moved.
 | -- | -- | -- |
 | [F21.1 — PyPI as the index](F21.1-pypi-decision.md) | The decision, with ADR-0004 revised; the PyPI organization and GitHub environments set up by the owner. | Closed |
 | [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | The MIT licence, classifiers and a patch release of every package, so each one passes `twine check --strict`. | Closed |
-| [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | `main.yml` uploads each package to PyPI via OIDC, with a TestPyPI dry run, registering trusted publishers one upload at a time; per-package GitHub releases take their changelog section as notes and are never "Latest"; an umbrella `release-<n>` release per shipped release page; external install checked from PyPI. | Active |
+| [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | `main.yml` uploads each package to PyPI via OIDC, with a TestPyPI dry run, registering trusted publishers one upload at a time; per-package GitHub releases take their changelog section as notes and are never "Latest"; an umbrella `release-<n>` release per shipped release page; external install checked from PyPI. | Closed |
 | [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | The README, consuming guide, per-package install guides and release runbook describe PyPI with no index declaration. | Closed |
 | [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | `rn-forge-devops index`, its adapter, the `package-index` action and `simple/` on Pages are removed. | New |
 
@@ -61,7 +61,7 @@ still names it keeps resolving in the meantime.
 
 **Ordering with the kiln cutover.**
 
-- F21.3 is built in `main.yml` now, in Release 7.
+- F21.3 was built in `main.yml`, in Release 7.
 - [F16.3](../E16-kiln-adoption/F16.3-cutover.md) deletes `main.yml`, so it
   requires the kiln version it pins to render the same release behaviour. The
   umbrella release is a reusable workflow that pykit owns, which the cutover
