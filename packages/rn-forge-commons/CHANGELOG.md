@@ -12,6 +12,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
   built on it.
 - `PathUtils.move_no_clobber`: moves a file without ever overwriting the
   destination, including across filesystems.
+- `PathUtils.prune_empty_parents`: removes a directory and its empty ancestors
+  up to, but never including, a stop directory.
 - `ThreadActor` in `rn_forge.commons.runtime.actor`: builds a resource on a
   dedicated owner thread and runs every call against it there, through
   `submit` (a `Future`) or `run` (awaitable).

@@ -235,6 +235,39 @@ class PathUtils:
         return dst
 
     @staticmethod
+    def prune_empty_parents(start: str | Path, stop: str | Path) -> None:
+        """Remove *start* and its empty ancestors, up to but excluding *stop*.
+
+        Both paths are resolved first. Starting at *start*, each directory is
+        removed with :meth:`~pathlib.Path.rmdir` and the walk moves to its
+        parent, ending at the first directory that is not empty. Only
+        directories strictly inside *stop* are touched: nothing happens when
+        the resolved *start* is *stop* or lies outside it. A directory that
+        no longer exists is skipped.
+
+        Args:
+            start: The directory to remove first.
+            stop: The directory that bounds the walk; it is never removed.
+
+        Raises:
+            NotADirectoryError: *start* is a file.
+            OSError: ``rmdir`` failed for a reason other than the directory
+                being non-empty or missing, e.g. :exc:`PermissionError`.
+        """
+        stop_resolved = Path(stop).resolve()
+        current = Path(start).resolve()
+        while current != stop_resolved and current.is_relative_to(stop_resolved):
+            try:
+                current.rmdir()
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                if exc.errno in (errno.ENOTEMPTY, errno.EEXIST):
+                    return
+                raise
+            current = current.parent
+
+    @staticmethod
     def find_root(
         start: str | Path | None = None,
         *,

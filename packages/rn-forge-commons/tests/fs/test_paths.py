@@ -297,6 +297,87 @@ class TestMoveNoClobber:
         assert src.read_text() == "data"
 
 
+class TestPruneEmptyParents:
+    def test_removes_chain_up_to_stop(self, tmp_path):
+        leaf = tmp_path / "lib" / "a" / "b"
+        leaf.mkdir(parents=True)
+        PathUtils.prune_empty_parents(leaf, tmp_path / "lib")
+        assert (tmp_path / "lib").is_dir()
+        assert list((tmp_path / "lib").iterdir()) == []
+
+    def test_stops_at_non_empty_directory(self, tmp_path):
+        leaf = tmp_path / "lib" / "a" / "b" / "c"
+        leaf.mkdir(parents=True)
+        keep = tmp_path / "lib" / "a" / "keep.txt"
+        keep.write_text("x")
+        PathUtils.prune_empty_parents(leaf, tmp_path / "lib")
+        assert keep.read_text() == "x"
+        assert not (tmp_path / "lib" / "a" / "b").exists()
+
+    def test_never_removes_stop(self, tmp_path):
+        stop = tmp_path / "lib"
+        stop.mkdir()
+        PathUtils.prune_empty_parents(stop, stop)
+        assert stop.is_dir()
+
+    def test_start_outside_stop_does_nothing(self, tmp_path):
+        stop = tmp_path / "lib"
+        stop.mkdir()
+        outside = tmp_path / "other" / "x"
+        outside.mkdir(parents=True)
+        PathUtils.prune_empty_parents(outside, stop)
+        assert outside.is_dir()
+
+    def test_sibling_with_shared_prefix_is_outside(self, tmp_path):
+        stop = tmp_path / "lib"
+        stop.mkdir()
+        sibling = tmp_path / "lib2" / "x"
+        sibling.mkdir(parents=True)
+        PathUtils.prune_empty_parents(sibling, stop)
+        assert sibling.is_dir()
+
+    def test_symlink_resolving_outside_stop_does_nothing(self, tmp_path):
+        stop = tmp_path / "lib"
+        stop.mkdir()
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        link = stop / "link"
+        link.symlink_to(outside, target_is_directory=True)
+        PathUtils.prune_empty_parents(link, stop)
+        assert outside.is_dir()
+        assert link.is_symlink()
+
+    def test_missing_start_continues_to_parent(self, tmp_path):
+        stop = tmp_path / "lib"
+        (stop / "a").mkdir(parents=True)
+        PathUtils.prune_empty_parents(stop / "a" / "gone", stop)
+        assert not (stop / "a").exists()
+        assert stop.is_dir()
+
+    def test_file_start_raises_and_is_kept(self, tmp_path):
+        stop = tmp_path / "lib"
+        stop.mkdir()
+        f = stop / "f.txt"
+        f.write_text("x")
+        with pytest.raises(NotADirectoryError):
+            PathUtils.prune_empty_parents(f, stop)
+        assert f.read_text() == "x"
+
+    @pytest.mark.skipif(
+        not hasattr(os, "geteuid") or os.geteuid() == 0,
+        reason="permission checks do not apply to root",
+    )
+    def test_permission_error_propagates(self, tmp_path):
+        stop = tmp_path / "lib"
+        (stop / "a").mkdir(parents=True)
+        os.chmod(stop, 0o500)
+        try:
+            with pytest.raises(PermissionError):
+                PathUtils.prune_empty_parents(stop / "a", stop)
+        finally:
+            os.chmod(stop, 0o700)
+
+
 class TestFindRoot:
     def test_marker_precedence_order(self, tmp_path):
         # .git several levels up beats pyproject.toml one level up

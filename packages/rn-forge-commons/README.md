@@ -84,9 +84,9 @@ holds it.
 
 **`fs/`** — everything that reads or writes a real file.
 
-- **`paths`** — `PathUtils`: atomic writes and replacements, no-clobber moves, backups,
-  temp dirs, repository-root discovery and the `assert_within` path-escape
-  guard.
+- **`paths`** — `PathUtils`: atomic writes and replacements, no-clobber
+  moves, empty-directory pruning, backups, temp dirs, repository-root
+  discovery and the `assert_within` path-escape guard.
 - **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
 - **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization
   and atomic publication.
