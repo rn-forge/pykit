@@ -10,10 +10,10 @@
       
       
       
-        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/reference/oidc.html">
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/reference/auth.html">
       
       
-        <link rel="prev" href="auth.html">
+        <link rel="prev" href="asgi.html">
       
       
         <link rel="next" href="conformance.html">
@@ -23,15 +23,15 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
-        <title>OIDC - rn-forge-web</title>
+        <title>Auth - rn-forge-web</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#oidc" class="md-skip">
+        <a href="#auth" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              OIDC
+              Auth
             
           </span>
         </div>
@@ -1057,34 +1057,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="auth.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Auth
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1104,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    OIDC
+    Auth
   
 
     
@@ -1115,14 +1087,14 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="oidc.html" class="md-nav__link md-nav__link--active">
+      <a href="auth.html" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    OIDC
+    Auth
   
 
     
@@ -1148,34 +1120,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc" class="md-nav__link">
+  <a href="#rn_forge.web.auth" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;oidc
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;auth
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" oidc">
+    <nav class="md-nav" aria-label=" auth">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator" class="md-nav__link">
+  <a href="#rn_forge.web.auth.AUTH_FAILED_DETAIL" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;OidcAuthenticator
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" OidcAuthenticator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.authenticate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;authenticate
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;AUTH_FAILED_DETAIL
       
     </span>
   </a>
@@ -1183,10 +1143,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.from_issuer" class="md-nav__link">
+  <a href="#rn_forge.web.auth.CSRF_FAILED_DETAIL" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;from_issuer
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;CSRF_FAILED_DETAIL
       
     </span>
   </a>
@@ -1194,18 +1154,46 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.from_jwks_url" class="md-nav__link">
+  <a href="#rn_forge.web.auth.BearerErrorCode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;from_jwks_url
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;BearerErrorCode
       
     </span>
   </a>
   
 </li>
         
-      </ul>
-    </nav>
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.Credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.challenge_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;challenge_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.parse_authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;parse_authorization
+      
+    </span>
+  </a>
   
 </li>
         
@@ -1312,34 +1300,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc" class="md-nav__link">
+  <a href="#rn_forge.web.auth" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;oidc
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;auth
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" oidc">
+    <nav class="md-nav" aria-label=" auth">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator" class="md-nav__link">
+  <a href="#rn_forge.web.auth.AUTH_FAILED_DETAIL" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;OidcAuthenticator
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" OidcAuthenticator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.authenticate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;authenticate
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;AUTH_FAILED_DETAIL
       
     </span>
   </a>
@@ -1347,10 +1323,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.from_issuer" class="md-nav__link">
+  <a href="#rn_forge.web.auth.CSRF_FAILED_DETAIL" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;from_issuer
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;CSRF_FAILED_DETAIL
       
     </span>
   </a>
@@ -1358,18 +1334,46 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#rn_forge.web.oidc.OidcAuthenticator.from_jwks_url" class="md-nav__link">
+  <a href="#rn_forge.web.auth.BearerErrorCode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;from_jwks_url
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;BearerErrorCode
       
     </span>
   </a>
   
 </li>
         
-      </ul>
-    </nav>
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.Credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.challenge_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;challenge_header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.auth.parse_authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;parse_authorization
+      
+    </span>
+  </a>
   
 </li>
         
@@ -1398,38 +1402,24 @@
   
 
 
-<h1 id="oidc">OIDC<a class="headerlink" href="#oidc" title="Permanent link">&para;</a></h1>
-<p>Requires the <code>auth</code> extra:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-web[auth]&quot;</span>
-</code></pre></div>
-
-<p><code>rn_forge.web.oidc</code> is not re-exported from <code>rn_forge.web</code> — import it directly:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web.oidc</span><span class="w"> </span><span class="kn">import</span> <span class="n">OidcAuthenticator</span>
-</code></pre></div>
-
+<h1 id="auth">Auth<a class="headerlink" href="#auth" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="rn_forge.web.oidc" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>rn_forge.web.oidc</code>
+<h2 id="rn_forge.web.auth" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>rn_forge.web.auth</code>
 
 
-<a href="#rn_forge.web.oidc" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#rn_forge.web.auth" class="headerlink" title="Permanent link">&para;</a></h2>
 
     <div class="doc doc-contents first">
 
-        <p>The OIDC bearer authenticator both framework bindings share.</p>
-<p>Joins the two halves of the auth story: <code>rn-forge-commons</code> verifies a token
-and returns claims, :mod:<code>rn_forge.web.auth</code> says what a caller is and what a
-refusal looks like. This module is the one implementation that connects them,
-so a Django service and a FastAPI service accept the same tokens and produce
-the same :class:<code>~rn_forge.web.auth.Principal</code>.</p>
-<p>Requires the <code>auth</code> extra (<code>rn-forge-commons[auth]</code>, which brings PyJWT).
-Not imported by <code>rn_forge.web</code>'s curated <code>__init__.py</code>; import this module
-directly.</p>
+        <p>Framework-independent authentication wire contract.</p>
+<p>Raw credentials, the <code>Authorization</code> header and the <code>WWW-Authenticate</code>
+challenge. Verification details must not be exposed in a 401 response.</p>
 
 
 
@@ -1448,78 +1438,91 @@ directly.</p>
 
 
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="rn_forge.web.auth.AUTH_FAILED_DETAIL" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">AUTH_FAILED_DETAIL</span> <span class="o">=</span> <span class="s1">&#39;Authentication failed.&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#rn_forge.web.auth.AUTH_FAILED_DETAIL" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The non-sensitive detail returned for authentication failures.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="rn_forge.web.auth.CSRF_FAILED_DETAIL" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">CSRF_FAILED_DETAIL</span> <span class="o">=</span> <span class="s1">&#39;CSRF verification failed.&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#rn_forge.web.auth.CSRF_FAILED_DETAIL" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The detail returned for a CSRF rejection; it never names the check that failed.</p>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-type_alias">
+
+
+
+<h3 id="rn_forge.web.auth.BearerErrorCode" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">BearerErrorCode</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;invalid_request&#39;</span><span class="p">,</span> <span class="s1">&#39;invalid_token&#39;</span><span class="p">,</span> <span class="s1">&#39;insufficient_scope&#39;</span><span class="p">]</span></code>
+
+<a href="#rn_forge.web.auth.BearerErrorCode" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The <code>error</code> codes RFC 6750 §3 defines for a Bearer challenge.</p>
+    </div>
+
+</div>
 
 
 <div class="doc doc-object doc-class">
 
 
 
-<h3 id="rn_forge.web.oidc.OidcAuthenticator" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">OidcAuthenticator</span><span class="p">(</span><span class="n">verifier</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">claims_to_principal</span><span class="o">=</span><span class="n">principal_from_claims</span><span class="p">)</span></code>
+<h3 id="rn_forge.web.auth.Credentials" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Credentials</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">extras</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]())</span></code>
 
-<a href="#rn_forge.web.oidc.OidcAuthenticator" class="headerlink" title="Permanent link">&para;</a></h3>
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#rn_forge.web.auth.Credentials" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
 
 
-        <p>An :class:<code>~rn_forge.web.auth.Authenticator</code> backed by a :class:<code>JwtVerifier</code>.</p>
-<p>Build one at startup and reuse it: the verifier holds the JWKS cache, so a
-per-request instance refetches the key set on every call.</p>
-<p>The reason a token was rejected is carried on the raised
-:class:<code>~rn_forge.web.exceptions.AuthenticationFailed</code> for the binding to
-log. It never reaches the response body — both framework packages render a
-401 with :data:<code>~rn_forge.web.auth.AUTH_FAILED_DETAIL</code>.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>verifier</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.JwtVerifier">JwtVerifier</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Verifies the bearer token and returns its claims.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>claims_to_principal</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.web.oidc.ClaimsToPrincipal">ClaimsToPrincipal</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Verified claims → principal. Defaults to
-:func:<code>~rn_forge.web.auth.principal_from_claims</code>; override it for
-an IdP whose roles or scopes sit somewhere non-standard.</p>
-              </div>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            principal_from_claims(claims, *, mechanism='bearer') (rn_forge.web.auth.principal_from_claims)" href="auth.html#rn_forge.web.auth.principal_from_claims">principal_from_claims</a></code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Raw credentials lifted off the request, before verification.</p>
+<p><code>scheme</code> is the HTTP auth scheme as sent (<code>Bearer</code>, <code>Basic</code>, ...) and
+<code>token</code> its parameter, verbatim. This is what a framework binding hands
+an authenticator; nothing here interprets it.</p>
 
 
 
@@ -1541,389 +1544,6 @@ an IdP whose roles or scopes sit somewhere non-standard.</p>
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="rn_forge.web.oidc.OidcAuthenticator.authenticate" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">authenticate</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">credentials</span><span class="p">)</span></code>
-
-<a href="#rn_forge.web.oidc.OidcAuthenticator.authenticate" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>See :meth:<code>rn_forge.web.auth.Authenticator.authenticate</code>.</p>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="              AuthenticationFailed(message, *message_args, error_code=-1, **error_data) (rn_forge.web.exceptions.AuthenticationFailed)" href="exceptions.html#rn_forge.web.exceptions.AuthenticationFailed">AuthenticationFailed</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The token failed verification, or <em>credentials</em>
-carry a scheme other than <code>Bearer</code>.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="rn_forge.web.oidc.OidcAuthenticator.from_issuer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">from_issuer</span><span class="p">(</span><span class="n">issuer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">audience</span><span class="p">,</span> <span class="n">claims_to_principal</span><span class="o">=</span><span class="n">principal_from_claims</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch_json</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;RS256&#39;</span><span class="p">,),</span> <span class="n">leeway</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_age</span><span class="o">=</span><span class="mf">86400.0</span><span class="p">)</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#rn_forge.web.oidc.OidcAuthenticator.from_issuer" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Build an authenticator by OIDC discovery on <em>issuer</em>.</p>
-<p>Discovery runs once, here — so call this at startup, not per request.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>issuer</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The IdP's issuer URL. Its
-<code>/.well-known/openid-configuration</code> supplies the <code>jwks_uri</code>.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>audience</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span> | <span title="collections.abc.Sequence">Sequence</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The <code>aud</code> accepted — one value, or any of several.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>claims_to_principal</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.web.oidc.ClaimsToPrincipal">ClaimsToPrincipal</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>See the class docstring.</p>
-              </div>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            principal_from_claims(claims, *, mechanism='bearer') (rn_forge.web.auth.principal_from_claims)" href="auth.html#rn_forge.web.auth.principal_from_claims">principal_from_claims</a></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>fetch</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.FetchJson">FetchJson</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The JSON transport, for a proxy or a test double.</p>
-              </div>
-            </td>
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.fetch_json">fetch_json</span></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>algorithms</code>
-            </td>
-            <td>
-                  <code><span title="collections.abc.Sequence">Sequence</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The signature algorithms accepted.</p>
-              </div>
-            </td>
-            <td>
-                  <code>(&#39;RS256&#39;,)</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>leeway</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Seconds of clock skew tolerated.</p>
-              </div>
-            </td>
-            <td>
-                  <code>0.0</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>max_age</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Seconds a fetched key set stays cached.</p>
-              </div>
-            </td>
-            <td>
-                  <code>86400.0</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.TokenVerificationError">TokenVerificationError</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Discovery failed or returned no <code>jwks_uri</code>.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="rn_forge.web.oidc.OidcAuthenticator.from_jwks_url" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">from_jwks_url</span><span class="p">(</span><span class="n">jwks_url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">issuer</span><span class="p">,</span> <span class="n">audience</span><span class="p">,</span> <span class="n">claims_to_principal</span><span class="o">=</span><span class="n">principal_from_claims</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch_json</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;RS256&#39;</span><span class="p">,),</span> <span class="n">leeway</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_age</span><span class="o">=</span><span class="mf">86400.0</span><span class="p">)</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#rn_forge.web.oidc.OidcAuthenticator.from_jwks_url" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Build an authenticator from a known JWKS URL, skipping discovery.</p>
-<p>For an IdP that publishes no discovery document, or a deployment that
-pins the key-set URL.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>jwks_url</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Where the key set is served.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>issuer</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The exact <code>iss</code> accepted.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>audience</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span> | <span title="collections.abc.Sequence">Sequence</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The <code>aud</code> accepted — one value, or any of several.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>claims_to_principal</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.web.oidc.ClaimsToPrincipal">ClaimsToPrincipal</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>See the class docstring.</p>
-              </div>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            principal_from_claims(claims, *, mechanism='bearer') (rn_forge.web.auth.principal_from_claims)" href="auth.html#rn_forge.web.auth.principal_from_claims">principal_from_claims</a></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>fetch</code>
-            </td>
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.FetchJson">FetchJson</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The JSON transport, for a proxy or a test double.</p>
-              </div>
-            </td>
-            <td>
-                  <code><span title="rn_forge.commons.integration.auth.fetch_json">fetch_json</span></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>algorithms</code>
-            </td>
-            <td>
-                  <code><span title="collections.abc.Sequence">Sequence</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The signature algorithms accepted.</p>
-              </div>
-            </td>
-            <td>
-                  <code>(&#39;RS256&#39;,)</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>leeway</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Seconds of clock skew tolerated.</p>
-              </div>
-            </td>
-            <td>
-                  <code>0.0</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>max_age</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Seconds a fetched key set stays cached.</p>
-              </div>
-            </td>
-            <td>
-                  <code>86400.0</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
 
 
 
@@ -1933,6 +1553,258 @@ pins the key-set URL.</p>
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.web.auth.challenge_header" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">challenge_header</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;Bearer&#39;</span><span class="p">,</span> <span class="n">realm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.web.auth.challenge_header" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build a <code>WWW-Authenticate</code> challenge.</p>
+<p>Parameters follow RFC 6750 for Bearer and RFC 7617 for Basic. <code>None</code>
+values are omitted.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>scheme</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>Bearer</code> or <code>Basic</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;Bearer&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>realm</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The protection space.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>error</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            BearerErrorCode = Literal['invalid_request', 'invalid_token', 'insufficient_scope'] (rn_forge.web.auth.BearerErrorCode)" href="#rn_forge.web.auth.BearerErrorCode">BearerErrorCode</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One of RFC 6750's three codes. Bearer only.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>error_description</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Non-sensitive human-readable text.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scope</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The scope required, for <code>insufficient_scope</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A complete challenge header value.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code>challenge_header(realm=&quot;example&quot;)
+<span class="gh">#</span> &#39;Bearer realm=&quot;example&quot;&#39;
+challenge_header(realm=&quot;example&quot;, error=&quot;insufficient_scope&quot;, scope=&quot;read&quot;)
+<span class="gh">#</span> &#39;Bearer realm=&quot;example&quot;, error=&quot;insufficient_scope&quot;, scope=&quot;read&quot;&#39;
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.web.auth.parse_authorization" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">parse_authorization</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">scheme</span><span class="p">)</span></code>
+
+<a href="#rn_forge.web.auth.parse_authorization" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the <em>scheme</em> credentials in an <code>Authorization</code> header value.</p>
+<p>The scheme is matched case-insensitively (RFC 9110 §11.1) and the token
+is returned verbatim apart from surrounding whitespace — it may be empty.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>header</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The <code>Authorization</code> header value, or <code>None</code> when absent.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scheme</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The expected scheme, e.g. <code>"Bearer"</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              Credentials(scheme, token, extras=dict[str, Any]())
+
+  
+      dataclass
+   (rn_forge.web.auth.Credentials)" href="#rn_forge.web.auth.Credentials">Credentials</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>Credentials(scheme, token)</code>, or <code>None</code> when <em>header</em> is absent or</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              Credentials(scheme, token, extras=dict[str, Any]())
+
+  
+      dataclass
+   (rn_forge.web.auth.Credentials)" href="#rn_forge.web.auth.Credentials">Credentials</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>names another scheme.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
 
 
 
@@ -1990,10 +1862,10 @@ pins the key-set URL.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

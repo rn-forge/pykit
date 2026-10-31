@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -1223,34 +1223,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/oidc.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    OIDC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/conformance.html" class="md-nav__link">
         
   
@@ -1591,7 +1563,7 @@ to filter on that pair. Use it rather than writing another.</p>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
 <p>Once the above is wired, the driver is short:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web.conformance</span><span class="w"> </span><span class="kn">import</span> <span class="n">CASES</span><span class="p">,</span> <span class="n">case_by_id</span><span class="p">,</span> <span class="n">redact</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.web.conformance</span><span class="w"> </span><span class="kn">import</span> <span class="n">case_by_id</span><span class="p">,</span> <span class="n">cases_provided_by</span><span class="p">,</span> <span class="n">redact</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">issue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">case</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">generic</span><span class="p">(</span>
@@ -1599,7 +1571,7 @@ to filter on that pair. Use it rather than writing another.</p>
         <span class="n">data</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="o">**</span><span class="n">case</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">query</span><span class="p">,</span>
     <span class="p">)</span>
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;case&quot;</span><span class="p">,</span> <span class="n">CASES</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;case&quot;</span><span class="p">,</span> <span class="n">cases_provided_by</span><span class="p">(),</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_conformance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">case</span><span class="p">):</span>          <span class="c1"># `client` must be a FRESH app per case</span>
     <span class="k">for</span> <span class="n">prerequisite</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">depends_on</span><span class="p">:</span>     <span class="c1"># a replay only replays something</span>
         <span class="n">issue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">case_by_id</span><span class="p">(</span><span class="n">prerequisite</span><span class="p">))</span>
@@ -1613,6 +1585,8 @@ to filter on that pair. Use it rather than writing another.</p>
     <span class="k">assert</span> <span class="n">redact</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">expect_body</span><span class="p">)</span>
 </code></pre></div>
 
+<p><code>cases_provided_by()</code> omits the cases that need an optional capability
+(<code>session-routes</code>, <code>csrf</code>); pass the set the application serves to include them.</p>
 <p>Two things this driver must get right: a <strong>fresh application per case</strong> (the
 idempotency store must not carry over), and <code>depends_on</code> issued first.</p>
 <p>Assert against the table, never against what FastAPI produced.</p>
@@ -1665,10 +1639,10 @@ idempotency store must not carry over), and <code>depends_on</code> issued first
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

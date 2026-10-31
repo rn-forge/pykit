@@ -30,6 +30,7 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+from rn_forge.auth import Principal, Requirement, ScopeAuthorizer
 from rn_forge.web import (
     EXPOSED_HEADERS,
     MERGE_PATCH_MEDIA_TYPE,
@@ -43,6 +44,7 @@ from rn_forge.web import (
     AuthenticationFailed,
     BodySizeLimitMiddleware,
     CheckResult,
+    CsrfFailed,
     DomainConflict,
     EntityVersionETagCodec,
     FieldTree,
@@ -51,18 +53,16 @@ from rn_forge.web import (
     Message,
     Operation,
     Page,
-    Principal,
     ProblemDetail,
     ProblemResponse,
     ProblemType,
     Receive,
-    Requirement,
     ResourceNotDeleted,
     RowError,
     Scope,
-    ScopeAuthorizer,
     Send,
     ServiceUnavailable,
+    SessionRequired,
     TooManyRequests,
     UnsupportedMediaType,
     WireModel,
@@ -384,6 +384,16 @@ def throttled(request: Request) -> Response:
 def unavailable(request: Request) -> Response:
     """RFC 9110 §15.6.4: 503 with `Retry-After`."""
     raise ServiceUnavailable("Service unavailable", retry_after=5)
+
+
+def session_read(request: Request) -> Response:
+    """A session-only route with no session: 401 without a challenge."""
+    raise SessionRequired("No session cookie")
+
+
+def session_write(request: Request) -> Response:
+    """An unsafe session request that fails the origin check: 403 `csrf-failed`."""
+    raise CsrfFailed("Origin not trusted")
 
 
 def private(request: Request) -> Response:
@@ -877,6 +887,8 @@ ROUTES: dict[tuple[str, str], Callable[..., Any]] = {
     ("GET", "/conformance/throttled"): throttled,
     ("GET", "/conformance/unavailable"): unavailable,
     ("GET", "/conformance/private"): private,
+    ("GET", "/conformance/session"): session_read,
+    ("POST", "/conformance/session"): session_write,
     ("GET", "/conformance/echo"): echo,
     ("GET", "/conformance/legacy"): legacy,
     ("GET", "/.well-known/api-catalog"): api_catalog,

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -1461,34 +1461,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/oidc.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    OIDC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/conformance.html" class="md-nav__link">
         
   
@@ -1997,6 +1969,11 @@ application code runs — is an RFC 9457 problem.</p>
 <td>valid credentials lacking the required scope or role</td>
 </tr>
 <tr>
+<td><code>csrf-failed</code></td>
+<td>403</td>
+<td><code>CsrfFailed</code>: the CSRF token or origin check rejected an unsafe request on a session route</td>
+</tr>
+<tr>
 <td><code>not-found</code></td>
 <td>404</td>
 <td>a missing resource</td>
@@ -2272,9 +2249,22 @@ readiness.</p>
 <li><strong>The 401 body never says why verification failed.</strong> Expired, bad signature
   and unknown <code>kid</code> are indistinguishable on the wire; the reason goes to the
   log.</li>
-<li>The verified caller is a <code>Principal</code>: <code>subject</code> (required), plus optional
+<li>The verified caller is a <code>Principal</code> (<code>rn-forge-auth</code>): <code>subject</code> (required), plus optional
   <code>issuer</code>, <code>scopes</code>, <code>roles</code>, <code>tenant</code>, raw <code>claims</code> and <code>mechanism</code>. Scopes
   and roles are separate sets and neither is encoded as the other.</li>
+<li><strong>A session-only route's 401 carries no <code>WWW-Authenticate</code>.</strong> This deviates
+  from RFC 9110 §15.5.2, which requires a challenge on every 401: a cookie
+  session has no registered authentication scheme to name, and a <code>Bearer</code>
+  challenge would misdescribe the route. A route that accepts bearer tokens
+  keeps the challenge above. The application raises <code>SessionRequired</code>;
+  <code>render_problem</code> omits the header for it. The body is the same generic 401. —
+  <code>auth.session-only-401-has-no-challenge</code></li>
+<li><strong>A CSRF rejection → 403 with the <code>csrf-failed</code> problem type</strong>, not
+  <code>forbidden</code>, so a client can tell it from a permission denial and refresh its
+  token. The application raises <code>CsrfFailed</code>. The detail is always
+  <code>CSRF verification failed.</code> and never says which check failed; the <code>type</code>
+  member tells the two 403s apart once a <code>type_base</code> is configured. —
+  <code>auth.csrf-rejection-is-403-csrf-failed</code></li>
 <li>Basic auth, where offered, is documented as local-development and
   simple-internal-deployment only, and emits the identical challenge.</li>
 </ul>
@@ -2916,6 +2906,11 @@ framework package ships a ~15-line driver that builds a small application over
 these primitives, runs every case through its own stack, and asserts against the
 table — never against the other stack's output, because two stacks agreeing on
 the wrong thing is not conformance.</p>
+<p>A case may declare <code>requires</code>, the optional capabilities (<code>session-routes</code>,
+<code>csrf</code>) a binding must provide for it to apply. A driver parametrizes over
+<code>cases_provided_by(PROVIDES)</code>, where <code>PROVIDES</code> is the set its fixture serves;
+a binding adds a capability to <code>PROVIDES</code> when it ships the feature, and from
+then its cases run like any other. A case without <code>requires</code> is never skipped.</p>
 <p>A rule stated here with no case in that table is treated as unfinished.</p>
 
 
@@ -2966,10 +2961,10 @@ the wrong thing is not conformance.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

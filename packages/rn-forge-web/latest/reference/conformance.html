@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/reference/conformance.html">
       
       
-        <link rel="prev" href="oidc.html">
+        <link rel="prev" href="auth.html">
       
       
         <link rel="next" href="../changelog.html">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -1085,34 +1085,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="oidc.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    OIDC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1221,6 +1193,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.ConformanceCapability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceCapability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.conformance.ConformanceCase" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1293,6 +1276,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.cases_provided_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_provided_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.conformance.redact" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1347,6 +1341,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceArea
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.types.ConformanceCapability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceCapability
       
     </span>
   </a>
@@ -1458,6 +1463,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.cases.cases_provided_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_provided_by
       
     </span>
   </a>
@@ -1584,6 +1600,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.ConformanceCapability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceCapability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.conformance.ConformanceCase" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1656,6 +1683,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.cases_provided_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_provided_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.conformance.redact" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1710,6 +1748,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceArea
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.types.ConformanceCapability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;ConformanceCapability
       
     </span>
   </a>
@@ -1821,6 +1870,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.conformance.cases.cases_provided_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;cases_provided_by
       
     </span>
   </a>
@@ -1952,13 +2012,32 @@ a response body is part of the contract and is compared exactly.</p>
 
 </div>
 
+<div class="doc doc-object doc-type_alias">
+
+
+
+<h3 id="rn_forge.web.conformance.ConformanceCapability" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceCapability</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;session-routes&#39;</span><span class="p">,</span> <span class="s1">&#39;csrf&#39;</span><span class="p">]</span></code>
+
+<a href="#rn_forge.web.conformance.ConformanceCapability" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>An optional binding feature a case needs.</p>
+<p><code>session-routes</code> is a route that authenticates by cookie session only.
+<code>csrf</code> is the CSRF check on unsafe methods of a session route.</p>
+    </div>
+
+</div>
+
 
 <div class="doc doc-object doc-class">
 
 
 
 <h3 id="rn_forge.web.conformance.ConformanceCase" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ConformanceCase</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">expect_status</span><span class="p">,</span> <span class="n">depends_on</span><span class="o">=</span><span class="p">(),</span> <span class="n">expect_headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_absent_headers</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_body</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">](),</span> <span class="n">expect_header_patterns</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_text</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ConformanceCase</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">expect_status</span><span class="p">,</span> <span class="n">depends_on</span><span class="o">=</span><span class="p">(),</span> <span class="n">requires</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_absent_headers</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_body</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">](),</span> <span class="n">expect_header_patterns</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_text</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -1974,7 +2053,9 @@ a response body is part of the contract and is compared exactly.</p>
         <p>One wire decision, expressed as a request and the response it must get.</p>
 <p>Header names are compared case-insensitively and values exactly. Bodies are
 compared after :func:<code>redact</code>. <code>depends_on</code> names prerequisite requests
-in execution order.</p>
+in execution order. <code>requires</code> names the optional capabilities a binding
+must provide for the case to apply to it (see
+:func:<code>~rn_forge.web.conformance.cases_provided_by</code>).</p>
 
 
 
@@ -2170,6 +2251,62 @@ repeated parameter, one occurrence per item.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="rn_forge.web.conformance.cases_provided_by" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">cases_provided_by</span><span class="p">(</span><span class="n">provides</span><span class="o">=</span><span class="p">())</span></code>
+
+<a href="#rn_forge.web.conformance.cases_provided_by" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return every case whose required capabilities a binding provides.</p>
+<p>A case with no <code>requires</code> is always returned. A driver parametrizes over
+this instead of :data:<code>CASES</code>, passing the capabilities its fixture
+application serves.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>provides</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Collection">Collection</span>[<a class="autorefs autorefs-internal" title="            ConformanceCapability = Literal['session-routes', 'csrf'] (rn_forge.web.conformance.types.ConformanceCapability)" href="#rn_forge.web.conformance.types.ConformanceCapability">ConformanceCapability</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The capabilities the binding provides.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">@pytest</span><span class="p">.</span><span class="n">mark</span><span class="p">.</span><span class="n">parametrize</span><span class="p">(</span><span class="ss">&quot;case&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cases_provided_by</span><span class="p">(</span><span class="err">{</span><span class="ss">&quot;session-routes&quot;</span><span class="err">}</span><span class="p">))</span>
+<span class="n">def</span><span class="w"> </span><span class="n">test_conforms</span><span class="p">(</span><span class="k">case</span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="p">...</span>
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="rn_forge.web.conformance.redact" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">redact</span><span class="p">(</span><span class="n">body</span><span class="p">)</span></code>
 
@@ -2294,13 +2431,32 @@ a response body is part of the contract and is compared exactly.</p>
 
 </div>
 
+<div class="doc doc-object doc-type_alias">
+
+
+
+<h3 id="rn_forge.web.conformance.types.ConformanceCapability" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">ConformanceCapability</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;session-routes&#39;</span><span class="p">,</span> <span class="s1">&#39;csrf&#39;</span><span class="p">]</span></code>
+
+<a href="#rn_forge.web.conformance.types.ConformanceCapability" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>An optional binding feature a case needs.</p>
+<p><code>session-routes</code> is a route that authenticates by cookie session only.
+<code>csrf</code> is the CSRF check on unsafe methods of a session route.</p>
+    </div>
+
+</div>
+
 
 <div class="doc doc-object doc-class">
 
 
 
 <h3 id="rn_forge.web.conformance.types.ConformanceCase" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ConformanceCase</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">expect_status</span><span class="p">,</span> <span class="n">depends_on</span><span class="o">=</span><span class="p">(),</span> <span class="n">expect_headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_absent_headers</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_body</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">](),</span> <span class="n">expect_header_patterns</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_text</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ConformanceCase</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">expect_status</span><span class="p">,</span> <span class="n">depends_on</span><span class="o">=</span><span class="p">(),</span> <span class="n">requires</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_headers</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_absent_headers</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">expect_body</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">](),</span> <span class="n">expect_header_patterns</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">](),</span> <span class="n">expect_text</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -2316,7 +2472,9 @@ a response body is part of the contract and is compared exactly.</p>
         <p>One wire decision, expressed as a request and the response it must get.</p>
 <p>Header names are compared case-insensitively and values exactly. Bodies are
 compared after :func:<code>redact</code>. <code>depends_on</code> names prerequisite requests
-in execution order.</p>
+in execution order. <code>requires</code> names the optional capabilities a binding
+must provide for the case to apply to it (see
+:func:<code>~rn_forge.web.conformance.cases_provided_by</code>).</p>
 
 
 
@@ -2599,6 +2757,62 @@ way no client-visible field would show.</p>
 
 </div>
 
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.web.conformance.cases.cases_provided_by" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">cases_provided_by</span><span class="p">(</span><span class="n">provides</span><span class="o">=</span><span class="p">())</span></code>
+
+<a href="#rn_forge.web.conformance.cases.cases_provided_by" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return every case whose required capabilities a binding provides.</p>
+<p>A case with no <code>requires</code> is always returned. A driver parametrizes over
+this instead of :data:<code>CASES</code>, passing the capabilities its fixture
+application serves.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>provides</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Collection">Collection</span>[<a class="autorefs autorefs-internal" title="            ConformanceCapability = Literal['session-routes', 'csrf'] (rn_forge.web.conformance.types.ConformanceCapability)" href="#rn_forge.web.conformance.types.ConformanceCapability">ConformanceCapability</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The capabilities the binding provides.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">@pytest</span><span class="p">.</span><span class="n">mark</span><span class="p">.</span><span class="n">parametrize</span><span class="p">(</span><span class="ss">&quot;case&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cases_provided_by</span><span class="p">(</span><span class="err">{</span><span class="ss">&quot;session-routes&quot;</span><span class="err">}</span><span class="p">))</span>
+<span class="n">def</span><span class="w"> </span><span class="n">test_conforms</span><span class="p">(</span><span class="k">case</span><span class="p">)</span><span class="err">:</span><span class="w"> </span><span class="p">...</span>
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
 
 
   </div>
@@ -2655,10 +2869,10 @@ way no client-visible field would show.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

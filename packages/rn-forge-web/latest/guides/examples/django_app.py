@@ -19,6 +19,7 @@ from django.http import HttpRequest, JsonResponse
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rn_forge.auth import Principal, Requirement, ScopeAuthorizer
 from rn_forge.web import (
     IDEMPOTENCY_KEY_HEADER,
     PROBLEM_MEDIA_TYPE,
@@ -28,9 +29,6 @@ from rn_forge.web import (
     EntityVersionETagCodec,
     IdempotencyKeyReuse,
     Page,
-    Principal,
-    Requirement,
-    ScopeAuthorizer,
     StoredResponse,
     check_cursor_order,
     check_idempotency_key,
