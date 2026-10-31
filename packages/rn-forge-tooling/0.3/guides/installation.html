@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -715,22 +715,16 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p>These packages are not published to PyPI. A release is a <strong>git tag</strong>, and a
-consumer declares pykit's package index (<code>https://rn-forge.github.io/pykit/simple/</code>)
-and requires the package by version range, or pins a tag by direct URL. A
-floating branch reference would silently change what a build produced.</p>
+<p>Require the package by version range:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">[project]</span>
-<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;rn-forge-tooling @ git+https://github.com/rn-forge/pykit@rn-forge-tooling-v0.2.0#subdirectory=packages/rn-forge-tooling&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-tooling&gt;=0.3,&lt;0.4&quot;</span><span class="p">]</span>
 </code></pre></div>
 
 <p>It is a <strong>development</strong> dependency. Add it to a <code>dev</code> group, or to a CLI's own
 <code>dependencies</code> when the CLI <em>is</em> the developer tool.</p>
 <p><code>rn-forge-cli</code> and <code>rn-forge-commons</code> come with it, as version ranges.</p>
 <h2 id="upgrading">Upgrading<a class="headerlink" href="#upgrading" title="Permanent link">&para;</a></h2>
-<p>Raise the version range, or change the tag in a direct URL. A lockfile records
-the resolved version.</p>
+<p>Raise the version range. A lockfile records the resolved version.</p>
 <h2 id="what-lives-where">What lives where<a class="headerlink" href="#what-lives-where" title="Permanent link">&para;</a></h2>
 <p>The three libraries split by what an API's signature <em>contains</em>, not by who
 calls it today:</p>
@@ -762,8 +756,8 @@ would satisfy a caller and reverse the dependency.</p>
 <p>The workspace's <code>.importlinter</code> contracts state it, and <code>uv run lint-imports</code>
 proves it:</p>
 <ul>
-<li><code>rn_forge.commons</code> never reaches into <code>rn_forge.cli</code> or <code>rn_forge.tooling</code>
-  and never imports Typer. Jinja and the Markdown parsers enter only through
+<li><code>rn_forge.commons</code> never reaches into <code>rn_forge.cli</code> or <code>rn_forge.tooling</code> and
+  never imports Typer. Jinja and the Markdown parsers enter only through
   <code>rn_forge.commons.text</code>, and <code>rn_forge.commons.generation</code> and <code>text</code> are
   imported directly, never by commons' core or facade.</li>
 <li><code>rn_forge.cli</code> never imports <code>rn_forge.tooling</code> or Jinja.</li>
@@ -820,10 +814,10 @@ proves it:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
