@@ -25,7 +25,7 @@ pinned `rn-forge-*` tags are bumped; until then it keeps its own copy.
 | [F17.2 — Single-owner thread actor](F17.2-thread-actor.md) | `ThreadActor[R]` in `rn-forge-commons`: one owner thread builds and uses a resource that is not thread-safe. | Closed |
 | [F17.3 — `TaskPool.map_settled`](F17.3-taskpool-map.md) | Per-item failure capture, in input order, on the pool's executor, without `Task` subclasses. | Closed |
 | [F17.4 — SQLite engine and embedded migrations](F17.4-sqlite-engine-migrations.md) | An async `create_sqlite_engine` and `run_migrations` in `rn-forge-sqlalchemy`. | New |
-| [F17.5 — Safe filesystem mutation](F17.5-safe-fs-and-tool-probe.md) | `atomic_replace`, `move_no_clobber` and `prune_empty_parents` in `rn-forge-commons`. | New |
+| [F17.5 — Safe filesystem mutation](F17.5-safe-fs-and-tool-probe.md) | `atomic_replace`, `move_no_clobber` and `prune_empty_parents` in `rn-forge-commons`. | Active |
 | [F17.6 — Durable in-process job queue](F17.6-durable-job-queue.md) | An async SQLite-backed job worker, context, models and SSE delta helper. Design sketch only. | New |
 
 [F17.6](F17.6-durable-job-queue.md) is tagged `deferred`; its entry criterion is

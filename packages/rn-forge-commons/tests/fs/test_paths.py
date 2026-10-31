@@ -82,6 +82,99 @@ class TestAtomicWrite:
         assert result.read_text() == "hi"
 
 
+class TestAtomicReplace:
+    def test_publishes_edited_content(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        with PathUtils.atomic_replace(target) as tmp:
+            assert tmp.parent == tmp_path
+            assert tmp.name.startswith(".f.txt.")
+            assert tmp.name.endswith(".tmp")
+            assert tmp.read_text() == "old"
+            tmp.write_text("new")
+        assert target.read_text() == "new"
+        assert list(tmp_path.iterdir()) == [target]
+
+    def test_publishes_content_swapped_in_by_rename(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        with PathUtils.atomic_replace(target) as tmp:
+            other = tmp_path / "other"
+            other.write_text("swapped")
+            os.replace(other, tmp)
+        assert target.read_text() == "swapped"
+        assert list(tmp_path.iterdir()) == [target]
+
+    def test_exception_leaves_original_and_no_temporary(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        with pytest.raises(RuntimeError):
+            with PathUtils.atomic_replace(target) as tmp:
+                tmp.write_text("partial")
+                raise RuntimeError("boom")
+        assert target.read_text() == "old"
+        assert list(tmp_path.iterdir()) == [target]
+
+    def test_keyboard_interrupt_leaves_original(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        with pytest.raises(KeyboardInterrupt):
+            with PathUtils.atomic_replace(target):
+                raise KeyboardInterrupt
+        assert target.read_text() == "old"
+        assert list(tmp_path.iterdir()) == [target]
+
+    def test_cleanup_tolerates_temporary_moved_away(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        with pytest.raises(RuntimeError):
+            with PathUtils.atomic_replace(target) as tmp:
+                tmp.unlink()
+                raise RuntimeError("boom")
+        assert list(tmp_path.iterdir()) == [target]
+
+    def test_keeps_original_mode(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        os.chmod(target, 0o640)
+        with PathUtils.atomic_replace(target, copy=False) as tmp:
+            tmp.write_text("new")
+        assert (target.stat().st_mode & 0o777) == 0o640
+
+    def test_replaces_a_read_only_file(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        os.chmod(target, 0o440)
+        with PathUtils.atomic_replace(target) as tmp:
+            other = tmp_path / "other"
+            other.write_text("new")
+            os.chmod(other, 0o440)
+            os.replace(other, tmp)
+        assert target.read_text() == "new"
+        assert (target.stat().st_mode & 0o777) == 0o440
+
+    def test_explicit_mode_wins(self, tmp_path):
+        target = tmp_path / "f.txt"
+        target.write_text("old")
+        os.chmod(target, 0o600)
+        with PathUtils.atomic_replace(target, mode=0o644) as tmp:
+            tmp.write_text("new")
+        assert (target.stat().st_mode & 0o777) == 0o644
+
+    def test_copy_of_missing_path_raises_and_leaves_no_temporary(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            with PathUtils.atomic_replace(tmp_path / "missing.txt"):
+                pytest.fail("body must not run")
+        assert list(tmp_path.iterdir()) == []
+
+    def test_no_copy_creates_missing_path(self, tmp_path):
+        target = tmp_path / "new.txt"
+        with PathUtils.atomic_replace(target, copy=False) as tmp:
+            assert tmp.read_text() == ""
+            tmp.write_text("fresh")
+        assert target.read_text() == "fresh"
+
+
 class TestFindRoot:
     def test_marker_precedence_order(self, tmp_path):
         # .git several levels up beats pyproject.toml one level up
