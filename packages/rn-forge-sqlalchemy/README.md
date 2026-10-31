@@ -17,6 +17,7 @@ opaque page token.
 | `concurrency` | `update_versioned` — optimistic concurrency, raising `rn_forge.web.VersionConflict` (412) |
 | `upsert` | `upsert` — create or update rows by natural key, counting created, updated and skipped |
 | `sqlite` | `create_sqlite_engine` — an async SQLite engine with WAL, foreign keys, busy timeout and `synchronous` set on every connection |
+| `migrate` | `run_migrations` — Alembic `upgrade` from inside the process; needs the `migrations` extra and is imported directly, not from the facade |
 | `pagination` | `keyset`, `next_page_token` — AIP-132 `orderBy` and AIP-158 tokens over a `Select` |
 
 Everything works on **PostgreSQL and SQLite**, through `AsyncSession` only.
@@ -50,6 +51,9 @@ Application code catches `rn_forge.web.VersionConflict` and passes
 
 No database driver is declared. Add `asyncpg` for PostgreSQL or `aiosqlite` for
 SQLite.
+
+`run_migrations` needs the `migrations` extra:
+`rn-forge-sqlalchemy[migrations]>=0.2,<0.3`.
 
 ## Testing
 

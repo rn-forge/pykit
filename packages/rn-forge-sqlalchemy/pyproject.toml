@@ -25,6 +25,9 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0",
 ]
 
+[project.optional-dependencies]
+migrations = ["alembic>=1.20.1"]
+
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/"
 Source = "https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-sqlalchemy"
@@ -58,6 +61,7 @@ env = "RN_FORGE_TEST_POSTGRES_DSN"
 [dependency-groups]
 dev = [
   "aiosqlite>=0.21",
+  "alembic>=1.20.1",
   "assertpy>=1.1",
   "asyncpg>=0.30",
   "httpx>=0.28.1",
