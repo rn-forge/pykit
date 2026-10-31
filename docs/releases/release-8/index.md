@@ -1,4 +1,4 @@
-# Release 8 — kiln adoption
+# Release 8 — kiln adoption and local-first extraction
 
 |  |  |
 | -- | -- |
@@ -6,7 +6,9 @@
 
 pykit cuts over onto kiln's `python-lib` archetype (F16.3, then F16.6,
 [E16](../../specs/epics/E16-kiln-adoption/index.md)), with every package already
-published to PyPI by [Release 7](../release-7/index.md).
+published to PyPI by [Release 7](../release-7/index.md). It also moves Apollo's
+generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
+[E17](../../specs/epics/E17-local-first-web-app-extraction/index.md)).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -14,8 +16,8 @@ published to PyPI by [Release 7](../release-7/index.md).
 ## Entry criteria
 
 - Release 7 is shipped.
-- kiln's release-1 tags exist, with `kiln-devops` (kiln F6.7) and a
-  `[ci.hooks] docs` anchor.
+- For F16.3 and F16.6 only: kiln's release-1 tags exist, with `kiln-devops`
+  (kiln F6.7) and a `[ci.hooks] docs` anchor.
 
 ## Scope
 
@@ -27,6 +29,11 @@ published to PyPI by [Release 7](../release-7/index.md).
 | -- | -- | -- |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
+| [F17.1](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | New |
+| [F17.2](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | New |
+| [F17.3](../../specs/epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md) | E17 | New |
+| [F17.4](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | New |
+| [F17.5](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | New |
 
 <!-- scope:end -->
 
@@ -37,19 +44,25 @@ published to PyPI by [Release 7](../release-7/index.md).
    behaviour F21.3 built in `main.yml`.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
+1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes before
+   F17.3, whose guide names the actor rule.
 
 ## Decisions
 
 - Owner decision, 2026-10-29: the kiln cutover (F16.3) and F16.6 move here from
   Release 7, which publishes every package to PyPI so kiln can ship its
   release 1.
+- Owner decision, 2026-10-31: F17.1 to F17.5 join this release and F16.3 and
+  F16.6 stay, so the release cannot ship until kiln's release-1 tags exist.
+- Owner decision, 2026-10-31: `alembic` is approved as the only dependency of
+  `rn-forge-sqlalchemy[migrations]` (S17.4.1).
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.|F17\.[1-5]|S17\.[1-5]\.'
 ```
 
 ## Exit criteria

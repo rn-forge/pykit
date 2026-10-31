@@ -11,7 +11,7 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 8 — kiln adoption](../releases/release-8/index.md) | planned | 1 Active · 1 New |
+| [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | planned | 1 Active · 6 New |
 | [Release 7 — authentication and PyPI distribution](../releases/release-7/index.md) | shipped (2026-10-30) | 16 Closed |
 | [Release 6 — kit upgrades for kiln](../releases/release-6/index.md) | shipped (2026-10-25) | 7 Closed |
 | [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | shipped (2026-10-18) | 2 Closed |
@@ -23,12 +23,6 @@ and feature pages, and must not be edited by hand.
 ## Backlog
 
 Features with no Iteration, by State and epic.
-
-### New
-
-| Epic | Features |
-| -- | -- |
-| [E17 — Local-first web-app extraction](epics/E17-local-first-web-app-extraction/index.md) | [F17.1](epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md), [F17.2](epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md), [F17.3](epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md), [F17.4](epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md), [F17.5](epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) |
 
 ### Deferred
 
