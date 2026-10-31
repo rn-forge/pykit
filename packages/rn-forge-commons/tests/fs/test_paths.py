@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 from pathlib import Path
 
@@ -173,6 +174,127 @@ class TestAtomicReplace:
             assert tmp.read_text() == ""
             tmp.write_text("fresh")
         assert target.read_text() == "fresh"
+
+
+class TestMoveNoClobber:
+    def test_moves_file(self, tmp_path):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+        dst = tmp_path / "d.txt"
+        assert PathUtils.move_no_clobber(src, dst) == dst
+        assert dst.read_text() == "data"
+        assert not src.exists()
+
+    def test_existing_destination_refused_and_both_kept(self, tmp_path):
+        src = tmp_path / "s.txt"
+        src.write_text("src")
+        dst = tmp_path / "d.txt"
+        dst.write_text("dst")
+        with pytest.raises(FileExistsError):
+            PathUtils.move_no_clobber(src, dst)
+        assert src.read_text() == "src"
+        assert dst.read_text() == "dst"
+
+    def test_destination_created_after_call_starts_is_kept(self, tmp_path, monkeypatch):
+        src = tmp_path / "s.txt"
+        src.write_text("src")
+        dst = tmp_path / "d.txt"
+        real_link = os.link
+
+        def racing_link(a, b, *args, **kwargs):
+            Path(b).write_text("raced")
+            return real_link(a, b, *args, **kwargs)
+
+        monkeypatch.setattr(os, "link", racing_link)
+        with pytest.raises(FileExistsError):
+            PathUtils.move_no_clobber(src, dst)
+        assert dst.read_text() == "raced"
+        assert src.read_text() == "src"
+
+    def test_same_path_keeps_file(self, tmp_path):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+        with pytest.raises(FileExistsError):
+            PathUtils.move_no_clobber(src, src)
+        assert src.read_text() == "data"
+
+    def test_creates_missing_parents(self, tmp_path):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+        dst = tmp_path / "a" / "b" / "d.txt"
+        PathUtils.move_no_clobber(src, dst)
+        assert dst.read_text() == "data"
+
+    def test_missing_source_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            PathUtils.move_no_clobber(tmp_path / "nope", tmp_path / "d.txt")
+
+    @pytest.mark.skipif(
+        not hasattr(os, "geteuid") or os.geteuid() == 0,
+        reason="permission checks do not apply to root",
+    )
+    def test_read_only_parent_raises(self, tmp_path):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+        locked = tmp_path / "locked"
+        locked.mkdir()
+        os.chmod(locked, 0o500)
+        try:
+            with pytest.raises(PermissionError):
+                PathUtils.move_no_clobber(src, locked / "d.txt")
+        finally:
+            os.chmod(locked, 0o700)
+        assert src.read_text() == "data"
+
+    def _exdev_once(self, monkeypatch):
+        real_link = os.link
+        calls: list[int] = []
+
+        def link(a, b, *args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise OSError(errno.EXDEV, "cross-device")
+            return real_link(a, b, *args, **kwargs)
+
+        monkeypatch.setattr(os, "link", link)
+
+    def test_moves_across_devices(self, tmp_path, monkeypatch):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+        os.chmod(src, 0o400)
+        dst = tmp_path / "out" / "d.txt"
+        self._exdev_once(monkeypatch)
+        PathUtils.move_no_clobber(src, dst)
+        assert dst.read_text() == "data"
+        assert not src.exists()
+        assert [p.name for p in dst.parent.iterdir()] == ["d.txt"]
+
+    def test_cross_device_existing_destination_leaves_everything(
+        self, tmp_path, monkeypatch
+    ):
+        src = tmp_path / "s.txt"
+        src.write_text("src")
+        dst = tmp_path / "d.txt"
+        dst.write_text("dst")
+        self._exdev_once(monkeypatch)
+        with pytest.raises(FileExistsError):
+            PathUtils.move_no_clobber(src, dst)
+        assert src.read_text() == "src"
+        assert dst.read_text() == "dst"
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["d.txt", "s.txt"]
+
+    def test_other_oserror_propagates(self, tmp_path, monkeypatch):
+        src = tmp_path / "s.txt"
+        src.write_text("data")
+
+        def link(*args, **kwargs):
+            raise OSError(errno.EPERM, "no hard links")
+
+        monkeypatch.setattr(os, "link", link)
+        with pytest.raises(OSError) as info:
+            PathUtils.move_no_clobber(src, tmp_path / "d.txt")
+        assert info.value.errno == errno.EPERM
+        assert src.read_text() == "data"
 
 
 class TestFindRoot:

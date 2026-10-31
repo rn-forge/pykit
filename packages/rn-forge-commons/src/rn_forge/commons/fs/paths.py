@@ -6,6 +6,7 @@ Includes atomic publish-by-rename, repository-root discovery, and
 
 from __future__ import annotations
 
+import errno
 import os
 import shutil
 import tempfile
@@ -20,6 +21,17 @@ from rn_forge.commons.logging import AppLogger
 _LOGGER = AppLogger.get_logger(__name__)
 
 __all__ = ["PathUtils"]
+
+
+def _fsync_path(path: Path) -> None:
+    """``fsync`` the file at *path*, opened by name."""
+    # Windows' fsync needs a writable descriptor; on POSIX a copy of a
+    # read-only file cannot be opened for writing.
+    fd = os.open(path, os.O_RDWR if os.name == "nt" else os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 class PathUtils:
@@ -152,13 +164,7 @@ class PathUtils:
 
             # Reopen by name: the caller's tool may have swapped the file by
             # rename, so the mkstemp descriptor could point at the old inode.
-            # Windows' fsync needs a writable descriptor; on POSIX a copy of a
-            # read-only file cannot be opened for writing.
-            sync_fd = os.open(tmp, os.O_RDWR if os.name == "nt" else os.O_RDONLY)
-            try:
-                os.fsync(sync_fd)
-            finally:
-                os.close(sync_fd)
+            _fsync_path(tmp)
 
             if mode is not None:
                 os.chmod(tmp, mode)
@@ -180,6 +186,53 @@ class PathUtils:
             pass
         finally:
             os.close(dir_fd)
+
+    @staticmethod
+    def move_no_clobber(source: str | Path, destination: str | Path) -> Path:
+        """Move *source* to *destination*, never overwriting an existing file.
+
+        Creates *destination*'s parent directories, then publishes with
+        :func:`os.link` and unlinks *source*. The link fails atomically when
+        *destination* exists, so a file that appears there during the call is
+        never replaced. Across filesystems, *source* is copied with
+        :func:`shutil.copy2` to a temporary beside *destination*, ``fsync``'d,
+        linked to *destination* and removed, then *source* is removed.
+
+        Args:
+            source: The file to move.
+            destination: The path to move it to.
+
+        Returns:
+            *destination*, as a :class:`~pathlib.Path`.
+
+        Raises:
+            FileExistsError: *destination* exists. Both files are left as
+                they were.
+            FileNotFoundError: *source* does not exist.
+            OSError: Any other failure, including a filesystem without hard
+                links. Parent directories already created are kept.
+        """
+        src = Path(source)
+        dst = Path(destination)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(src, dst)
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise
+            fd, tmp_name = tempfile.mkstemp(
+                dir=dst.parent, prefix=f".{dst.name}.", suffix=".tmp"
+            )
+            os.close(fd)
+            tmp = Path(tmp_name)
+            try:
+                shutil.copy2(src, tmp)
+                _fsync_path(tmp)
+                os.link(tmp, dst)
+            finally:
+                tmp.unlink(missing_ok=True)
+        src.unlink()
+        return dst
 
     @staticmethod
     def find_root(

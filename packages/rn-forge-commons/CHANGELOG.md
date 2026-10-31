@@ -10,6 +10,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `PathUtils.atomic_replace`: a context manager that yields a temporary sibling
   of a file, then publishes it over the file atomically; `atomic_write` is now
   built on it.
+- `PathUtils.move_no_clobber`: moves a file without ever overwriting the
+  destination, including across filesystems.
 - `ThreadActor` in `rn_forge.commons.runtime.actor`: builds a resource on a
   dedicated owner thread and runs every call against it there, through
   `submit` (a `Future`) or `run` (awaitable).
