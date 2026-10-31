@@ -106,6 +106,30 @@ arbitrary context on `AppException.error_data`: that dict routinely carries
 credentials and internal identifiers and is never published automatically: the
 application chooses what to expose by implementing the protocol.
 
+### Registering an exception hierarchy
+
+An application that raises its own exception hierarchy, each class carrying a
+stable machine `code` and an HTTP `status_code`, registers every class with one
+call:
+
+```python
+registry = default_registry(type_base="/problems/").register_hierarchy(AppError)
+```
+
+`register_hierarchy(base)` registers `base` and every subclass, base first.
+Each class's `code` is its slug and its `status_code` its status; the title is
+the status's reason phrase. A subclass inherits or overrides either attribute.
+Use hyphenated codes, like every row in the table above. A class with no `code`
+or no `status_code` raises `TypeError` at registration. `code_attr` and
+`status_attr` name different attributes.
+
+Set a `type_base`. Without one the `type` is `about:blank` and the code never
+reaches the wire; with one, `type` is `type_base` plus the code, so a client
+matches on `type`. A relative base such as `/problems/` is enough.
+
+Only classes already imported are seen. Register after every module that
+declares part of the hierarchy has been imported.
+
 ### Proving the exception table is total
 
 An unregistered domain exception silently resolves to `internal-error`/500,

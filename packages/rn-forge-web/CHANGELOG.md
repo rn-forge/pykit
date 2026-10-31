@@ -5,6 +5,11 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `ProblemRegistry.register_hierarchy`: registers a row for an exception class and
+  every subclass from its `code` and `status_code` attributes.
+
 ## [0.3.0] - 2026-10-29
 
 ### Added

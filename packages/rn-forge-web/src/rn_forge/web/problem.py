@@ -220,6 +220,57 @@ class ProblemRegistry:
         self._rows[exc_type] = problem
         return self
 
+    def register_hierarchy(
+        self,
+        base: type[Exception],
+        *,
+        code_attr: str = "code",
+        status_attr: str = "status_code",
+    ) -> Self:
+        """Register a row for *base* and every subclass, returning ``self``.
+
+        Each class gets ``ProblemType(code, status, phrase)``: its *code_attr*
+        is the slug, its *status_attr* the HTTP status, and the title is that
+        status's IANA reason phrase. The attributes are read with ``getattr``,
+        so a subclass inherits them or overrides them. Classes are walked depth
+        first, base first, in ``__subclasses__()`` order, each once; only
+        classes already imported are seen.
+
+        Args:
+            base: The root of the exception hierarchy.
+            code_attr: The class attribute holding the slug.
+            status_attr: The class attribute holding the HTTP status.
+
+        Raises:
+            TypeError: A class in the hierarchy has no *code_attr* or no
+                *status_attr*; the message names the class and the attribute.
+            ValueError: A class's status has no IANA reason phrase.
+
+        Example::
+
+            class AppError(Exception):
+                code = "app-error"
+                status_code = 500
+
+            class OrderLocked(AppError):
+                code = "order-locked"
+                status_code = 409
+
+            registry.register_hierarchy(AppError)
+        """
+        pending: list[type[Exception]] = [base]
+        seen: set[type[Exception]] = set()
+        while pending:
+            cls = pending.pop()
+            if cls in seen:
+                continue
+            seen.add(cls)
+            slug = _required_attr(cls, code_attr)
+            status = _required_attr(cls, status_attr)
+            self.register(cls, ProblemType(slug, status, HTTPStatus(status).phrase))
+            pending.extend(reversed(cls.__subclasses__()))
+        return self
+
     @property
     def fallback(self) -> ProblemType:
         """The row an unregistered exception resolves to."""
@@ -333,6 +384,14 @@ class ProblemRegistry:
                 "extensions": merged,
             }
         )
+
+
+def _required_attr(cls: type[Exception], name: str) -> Any:
+    """Return ``cls.<name>``, raising :class:`TypeError` when it is missing."""
+    try:
+        return getattr(cls, name)
+    except AttributeError:
+        raise TypeError(f"{cls.__qualname__} has no {name!r} attribute") from None
 
 
 def _status_phrase(status: int) -> str:
