@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+testing = ["assertpy>=1.1", "pytest>=9.2.0"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/"
@@ -51,7 +51,7 @@ markers = ["scaffold: installs built wheels into a scaffolded application (slow)
 dev = [
   "assertpy>=1.1",
   "pyright>=1.1.411",
-  "pytest>=9.1.1",
+  "pytest>=9.2.0",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-tooling",
