@@ -16,6 +16,7 @@ opaque page token.
 | `models` | `Base` (Alembic naming convention), `UTCDateTime`, `AuditMixin` (`create_time`, `update_time`, `created_by`, `updated_by`), `VersionMixin` |
 | `concurrency` | `update_versioned` — optimistic concurrency, raising `rn_forge.web.VersionConflict` (412) |
 | `upsert` | `upsert` — create or update rows by natural key, counting created, updated and skipped |
+| `sqlite` | `create_sqlite_engine` — an async SQLite engine with WAL, foreign keys, busy timeout and `synchronous` set on every connection |
 | `pagination` | `keyset`, `next_page_token` — AIP-132 `orderBy` and AIP-158 tokens over a `Select` |
 
 Everything works on **PostgreSQL and SQLite**, through `AsyncSession` only.
