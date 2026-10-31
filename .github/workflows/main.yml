@@ -335,7 +335,7 @@ jobs:
     needs: [import-boundaries, plan, verify, postgres, redis, smoke]
     if: ${{ !cancelled() && needs.import-boundaries.result == 'success' && needs.plan.outputs.release-order != '[]' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
       id-token: write # PyPI trusted publishing and artifact attestations
@@ -422,12 +422,23 @@ jobs:
             dist/*/*
             sbom/*
 
-      # uv publish uploads the *.publish.attestation files beside each dist.
+      # uv publish uploads the *.publish.attestation files beside each dist. One file
+      # at a time, because a Rekor write can stall into a 502 and signing never retries.
       - name: Attest PyPI publish
         if: ${{ steps.build.outputs.built == 'true' }}
-        uses: astral-sh/attest-action@39b6ce43875c196a579e31635b11aa2a2036384a # v0.0.7
-        with:
-          paths: dist/*/*
+        run: |
+          set -euo pipefail
+          sign() {
+            for attempt in 1 2 3 4 5; do
+              uvx pypi-attestations==0.0.30 sign "$1" && return
+              echo "::warning::Signing $1 failed on attempt $attempt."
+              [ "$attempt" = 5 ] || sleep 20
+            done
+            return 1
+          }
+          for file in dist/*/*; do
+            sign "$file"
+          done
 
       - name: Upload and release
         if: ${{ steps.build.outputs.built == 'true' }}
