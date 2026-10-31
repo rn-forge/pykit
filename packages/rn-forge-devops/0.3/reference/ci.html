@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -697,6 +697,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -976,7 +1004,7 @@ for its platform.</p>
 
 
 <h3 id="rn_forge.devops.ci.Package" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Package</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]())(),</span> <span class="n">postgres_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smoke</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">adapters</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Package</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]())(),</span> <span class="n">release_requires</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]())(),</span> <span class="n">postgres_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">redis_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smoke</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">adapters</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -1042,7 +1070,21 @@ for its platform.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Names of the workspace members this package requires.</p>
+                <p>Names of the workspace members this package requires, through
+dependencies, optional dependencies or dependency groups.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.devops.ci.Package.release_requires">release_requires</span></code></td>
+            <td>
+                  <code><span title="set">set</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Names of the workspace members this package requires
+through dependencies or optional dependencies only. Release order and
+release gating follow these.</p>
               </div>
             </td>
           </tr>
@@ -1055,6 +1097,18 @@ for its platform.</p>
               <div class="doc-md-description">
                 <p>Variable that receives a PostgreSQL DSN, or <code>None</code> when the
 package needs no database run.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.devops.ci.Package.redis_env">redis_env</span></code></td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Variable that receives a Redis URL, or <code>None</code> when the package
+needs no Redis run.</p>
               </div>
             </td>
           </tr>
@@ -1276,7 +1330,7 @@ package needs no database run.</p>
           <tr class="doc-section-item">
             <td><code><span title="rn_forge.devops.ci.Workspace.packages">packages</span></code></td>
             <td>
-                  <code><span title="dict">dict</span>[<span title="str">str</span>, <a class="autorefs autorefs-internal" title="              Package(name, dir, module, requires=(lambda: set[str]())(), postgres_env=None, smoke=None, adapters=None)
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <a class="autorefs autorefs-internal" title="              Package(name, dir, module, requires=(lambda: set[str]())(), release_requires=(lambda: set[str]())(), postgres_env=None, redis_env=None, smoke=None, adapters=None)
 
   
       dataclass
@@ -1415,7 +1469,7 @@ package needs no database run.</p>
 
         <p>Return every job's matrix and package list for a run against <code>base</code>.</p>
 <p>Command-line values are shell-quoted strings. The keys are <code>release-order</code>,
-<code>packages</code>, <code>postgres</code>, <code>smoke</code>, <code>suites</code>, <code>pytest-args</code>, <code>cov-args</code>,
+<code>packages</code>, <code>postgres</code>, <code>redis</code>, <code>smoke</code>, <code>suites</code>, <code>pytest-args</code>, <code>cov-args</code>,
 <code>test-paths</code>, <code>sonar-sources</code>, <code>sonar-tests</code>, <code>sonar</code> and <code>docs</code>.</p>
 
 
@@ -1436,7 +1490,7 @@ package needs no database run.</p>
 
         <p>Return the packages of <code>names</code> that may be released, then those that may not.</p>
 <p>A package may be released when every check of it left a marker file in
-<code>ok_dir</code> and its requirements among <code>names</code> may be released too. Both lists
+<code>ok_dir</code> and its release requirements among <code>names</code> may be released too. Both lists
 are in release order.</p>
 
 
@@ -1455,7 +1509,30 @@ are in release order.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Return <code>names</code> with every package after its internal requirements.</p>
+        <p>Return <code>names</code> with every package after its release requirements.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>When the release requirements of <code>names</code> form a cycle.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1574,10 +1651,10 @@ are in release order.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -575,6 +575,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -706,7 +734,7 @@ directory at or above the current one whose <code>pyproject.toml</code> declares
 </tr>
 <tr>
 <td><code>releasable OK_DIR NAME...</code></td>
-<td>Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites are releasable.</td>
+<td>Prints, in dependency order, the selected packages whose checks all passed and whose selected prerequisites (dependencies and optional dependencies) are releasable.</td>
 </tr>
 <tr>
 <td><code>released</code></td>
@@ -732,6 +760,14 @@ directory at or above the current one whose <code>pyproject.toml</code> declares
 <td><code>index --repo OWNER/NAME --out DIR</code></td>
 <td>Writes a PEP 503 simple index of the repository's published <code>rn-forge-&lt;name&gt;-vX.Y.Z</code> release wheels and sdists under <code>DIR</code>, and prints the project and file counts. Needs <code>gh</code> and <code>GH_TOKEN</code>; it does not need a workspace.</td>
 </tr>
+<tr>
+<td><code>notes CHANGELOG VERSION</code></td>
+<td>Prints the body under <code>## [VERSION]</code> in a Keep a Changelog file, up to the next <code>## [</code> heading. Exits 1 with the reason on stderr when the heading is missing or its body is empty. It does not need a workspace.</td>
+</tr>
+<tr>
+<td><code>umbrella RELEASES_DIR BODY_FILE --site-url URL</code></td>
+<td>Reads <code>git ls-remote --tags --refs origin</code> output from stdin. When the newest <code>release-&lt;n&gt;</code> page whose status starts with <code>shipped</code> has no <code>release-&lt;n&gt;</code> tag, writes its <code>## Shipped</code> section and a link to the page under <code>URL</code> to <code>BODY_FILE</code>, and prints <code>tag=</code> and <code>title=</code> lines. Otherwise prints nothing. Exits 1 if <code>RELEASES_DIR</code> or <code>BODY_FILE</code> is outside the working directory. It does not need a workspace.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="what-it-discovers">What it discovers<a class="headerlink" href="#what-it-discovers" title="Permanent link">&para;</a></h2>
@@ -739,7 +775,11 @@ directory at or above the current one whose <code>pyproject.toml</code> declares
 <li><strong>Packages:</strong> the members of the root <code>[tool.uv.workspace]</code>, including
   <code>exclude</code>. No name prefix is assumed.</li>
 <li><strong>Internal requirements:</strong> workspace members named in a package's
-  dependencies, optional dependencies and dependency groups.</li>
+  dependencies, optional dependencies and dependency groups. Selection follows
+  all three. Release order and release gating follow dependencies and optional
+  dependencies only, so a cycle through a dependency group does not block a
+  release; a cycle through the other two fails <code>plan</code> with an error naming the
+  packages.</li>
 <li><strong>Import name:</strong> <code>[tool.uv.build-backend].module-name</code>, used for <code>--cov</code>, the
   external-install import and the smoke imports.</li>
 <li><strong>Optional jobs:</strong> <code>sonar</code> runs only if <code>sonar-project.properties</code> exists;
@@ -772,6 +812,11 @@ package.</p>
 <td><code>[tool.workspace-ci.postgres]</code></td>
 <td>package</td>
 <td><code>env</code>: the variable that receives a PostgreSQL DSN; the package's tests run again against a service container.</td>
+</tr>
+<tr>
+<td><code>[tool.workspace-ci.redis]</code></td>
+<td>package</td>
+<td><code>env</code>: the variable that receives a Redis URL; the package's tests run again against a service container.</td>
 </tr>
 <tr>
 <td><code>[tool.workspace-ci.smoke]</code></td>
@@ -817,6 +862,11 @@ every workspace member, whatever the change.</p>
 <tr>
 <td><code>postgres</code></td>
 <td>List of rows <code>{name, dir, env}</code>, one per package that declares a PostgreSQL run. <code>env</code> is the variable that receives the DSN.</td>
+<td>Selected</td>
+</tr>
+<tr>
+<td><code>redis</code></td>
+<td>List of rows <code>{name, dir, env}</code>, one per package that declares a Redis run. <code>env</code> is the variable that receives the URL.</td>
 <td>Selected</td>
 </tr>
 <tr>
@@ -922,10 +972,10 @@ change.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

@@ -2,38 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/index.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/changelog.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/index.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/ci.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/github.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/index-core.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/notes.html</loc>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/releases.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/subcommands.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
     <url>
          <loc>https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/uv.html</loc>
-         <lastmod>2026-10-25</lastmod>
+         <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>
