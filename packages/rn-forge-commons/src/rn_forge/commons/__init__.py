@@ -72,6 +72,7 @@ from rn_forge.commons.logging import (
     AppLogger,
     LoggingConfig,
 )
+from rn_forge.commons.runtime.actor import ThreadActor
 from rn_forge.commons.runtime.console import AppConsole, OutputMode, console
 from rn_forge.commons.runtime.environment import Environment
 from rn_forge.commons.runtime.plugins import EntryPointLoader, PluginError
@@ -124,6 +125,7 @@ __all__ = [
     "StrictDataclassMixin",
     "Task",
     "TaskPool",
+    "ThreadActor",
     "YamlUtils",
     "atomic_symlink",
     "console",

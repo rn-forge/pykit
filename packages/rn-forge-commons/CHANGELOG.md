@@ -5,6 +5,12 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `ThreadActor` in `rn_forge.commons.runtime.actor`: builds a resource on a
+  dedicated owner thread and runs every call against it there, through
+  `submit` (a `Future`) or `run` (awaitable).
+
 ## [0.8.1] - 2026-10-30
 
 ### Changed
