@@ -53,7 +53,7 @@ No database driver is declared. Add `asyncpg` for PostgreSQL or `aiosqlite` for
 SQLite.
 
 `run_migrations` needs the `migrations` extra:
-`rn-forge-sqlalchemy[migrations]>=0.2,<0.3`.
+`rn-forge-sqlalchemy[migrations]>=0.2.3,<0.3`.
 
 ## Testing
 
