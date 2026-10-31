@@ -21,7 +21,7 @@ pinned `rn-forge-*` tags are bumped; until then it keeps its own copy.
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F17.1 — Problem rows from an exception hierarchy](F17.1-problem-rows-from-exceptions.md) | `ProblemRegistry.register_hierarchy`, a guide recipe that keeps lookup errors from bugs at 500, and a default 5xx log sink for `AppConfig.log`. | Active |
+| [F17.1 — Problem rows from an exception hierarchy](F17.1-problem-rows-from-exceptions.md) | `ProblemRegistry.register_hierarchy`, a guide recipe that keeps lookup errors from bugs at 500, and a default 5xx log sink for `AppConfig.log`. | Closed |
 | [F17.2 — Single-owner thread actor](F17.2-thread-actor.md) | `ThreadActor[R]` in `rn-forge-commons`: one owner thread builds and uses a resource that is not thread-safe. | New |
 | [F17.3 — `TaskPool.map_settled`](F17.3-taskpool-map.md) | Per-item failure capture, in input order, on the pool's executor, without `Task` subclasses. | New |
 | [F17.4 — SQLite engine and embedded migrations](F17.4-sqlite-engine-migrations.md) | An async `create_sqlite_engine` and `run_migrations` in `rn-forge-sqlalchemy`. | New |

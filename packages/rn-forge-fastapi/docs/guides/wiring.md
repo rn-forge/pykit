@@ -70,6 +70,22 @@ resource.
    (`/orders/{order_id}/cancel`) is indistinguishable from a sub-collection
    and needs an explicit `operation_id=`.
 
+## Logging server errors
+
+A 5xx problem body carries no detail, so the cause goes to the log.
+`AppConfig.log` is `None` by default and logs nothing; pass
+`log=log_server_errors()` to log each 5xx at `ERROR` with the original
+traceback, status, request path and trace id:
+
+```python
+from rn_forge.fastapi import AppConfig, log_server_errors
+
+AppConfig(registry=registry, log=log_server_errors())
+```
+
+It logs through `AppLogger.get_logger("rn_forge.fastapi.problem")`; pass an
+`AppLogger` to use another. A 4xx logs nothing.
+
 ## Routes
 
 ```python

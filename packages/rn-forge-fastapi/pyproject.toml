@@ -19,8 +19,7 @@ classifiers = [
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 #
-# `rn-forge-commons` is not declared: nothing here imports it directly, and it
-# arrives through `rn-forge-web`.
+# `rn-forge-commons` is not declared: it arrives through `rn-forge-web`.
 dependencies = [
   "rn-forge-auth>=0.1.0,<0.2",
   # `[security]` is a hard requirement, not an extra: `FastApiApp` installs

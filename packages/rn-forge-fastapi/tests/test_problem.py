@@ -1,12 +1,16 @@
 """Tests for rn_forge.fastapi.problem."""
 
+import logging
+import traceback
+
 import pytest
 from assertpy import assert_that
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from rn_forge.fastapi import register_problem_handlers
+from rn_forge.commons.logging import AppLogger
+from rn_forge.fastapi import AppConfig, log_server_errors, register_problem_handlers
 from rn_forge.web import WireModel
 from rn_forge.fastapi.problem import _validation_errors
 from rn_forge.web import (
@@ -207,3 +211,51 @@ def test_validation_errors_handle_an_empty_loc():
     assert_that(_validation_errors([{"loc": (), "msg": "bad"}])).is_equal_to(
         [{"pointer": "", "detail": "bad"}]
     )
+
+
+class _Capture(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+@pytest.fixture
+def captured():
+    logger = AppLogger.get_logger("tests.fastapi.log_server_errors")
+    handler = _Capture()
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+    yield logger, handler
+    logger.removeHandler(handler)
+
+
+def test_log_server_errors_logs_a_5xx_with_the_original_traceback(captured):
+    logger, handler = captured
+    response = build(log=log_server_errors(logger)).get("/boom")
+
+    assert_problem(response, 500)
+    assert_that(response.text).does_not_contain("Traceback")
+    assert_that(response.text).does_not_contain("division")
+    [record] = handler.records
+    assert_that(record.levelno).is_equal_to(logging.ERROR)
+    assert_that(record.getMessage()).contains("status=500", "instance=/boom")
+    assert record.exc_info is not None
+    frames = traceback.format_exception(*record.exc_info)
+    assert_that("".join(frames)).contains("in boom", "ZeroDivisionError")
+
+
+def test_log_server_errors_records_nothing_for_a_4xx(captured):
+    logger, handler = captured
+    client = build(log=log_server_errors(logger))
+
+    assert_that(client.get("/conflict").status_code).is_equal_to(409)
+    assert_that(client.get("/gone").status_code).is_equal_to(404)
+    assert_that(handler.records).is_empty()
+
+
+def test_app_config_log_defaults_to_none():
+    assert_that(AppConfig().log).is_none()

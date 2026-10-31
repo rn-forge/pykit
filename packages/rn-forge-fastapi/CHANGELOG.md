@@ -5,6 +5,11 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `log_server_errors`: an `AppConfig.log` sink that logs each 5xx problem at
+  `ERROR` with the original traceback.
+
 ## [0.4.0] - 2026-10-29
 
 ### Added
