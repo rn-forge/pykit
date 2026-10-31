@@ -1,0 +1,1752 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Authentication primitives">
+      
+      
+      
+        <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/guides/contracts.html">
+      
+      
+        <link rel="prev" href="usage.html">
+      
+      
+        <link rel="next" href="login.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Contracts - rn-forge-auth</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#contracts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="rn-forge-auth" class="md-header__button md-logo" aria-label="rn-forge-auth" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            rn-forge-auth
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Contracts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="rn-forge-auth" class="md-nav__button md-logo" aria-label="rn-forge-auth" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    rn-forge-auth
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rn-forge/pykit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication and authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="contracts.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#identity-providers-and-external-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity providers and external identities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#account-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Account resolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-context-and-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization context and cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization context and cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#caching-contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching contexts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#principal-and-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principal and Requirement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Principal and Requirement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permissions-and-the-scope-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions and the scope limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authenticators-and-authorizers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authenticators and authorizers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-claims-to-a-principal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping claims to a principal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#return-targets-the-session-body-and-callback-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Return targets, the session body and callback errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="login.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tokens.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Token profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="stores.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="testing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/principal.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Principal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/permissions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/authorization.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/identity.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/accounts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accounts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/context.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/context_cache.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization context cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/policy.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/stores.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Session, transaction and replay stores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/redirects.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Return target
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/session_body.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Session body
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/audit.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/conformance.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security-control conformance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/local.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/oidc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OIDC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/redis.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/testing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#identity-providers-and-external-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity providers and external identities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#account-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Account resolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-context-and-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization context and cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization context and cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#caching-contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching contexts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#principal-and-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Principal and Requirement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Principal and Requirement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permissions-and-the-scope-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions and the scope limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authenticators-and-authorizers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authenticators and authorizers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-claims-to-a-principal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping claims to a principal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#return-targets-the-session-body-and-callback-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Return targets, the session body and callback errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="contracts">Contracts<a class="headerlink" href="#contracts" title="Permanent link">&para;</a></h1>
+<p>The core, <code>rn_forge.auth</code>, is a set of contracts and the values they exchange.
+This guide walks them in the order a request meets them; the
+<a href="usage.html">overview</a> shows how they connect. For tokens, see
+<a href="tokens.html">Token profiles</a>; for server-side state, see <a href="stores.html">Stores</a>.</p>
+<h2 id="identity-providers-and-external-identities">Identity providers and external identities<a class="headerlink" href="#identity-providers-and-external-identities" title="Permanent link">&para;</a></h2>
+<p>An <code>IdentityProvider[RequestT]</code> is one login method, generic over the framework's
+native request type. It has an <code>id</code> and a <code>kind</code> (<code>ProviderKind</code>: <code>"oidc"</code>,
+<code>"oauth2"</code>, <code>"password"</code> or <code>"development"</code>) and three methods:</p>
+<ul>
+<li><code>begin(request, *, return_to)</code> returns a <code>LoginStart</code>: the <code>LoginTransaction</code>
+  to persist and the <code>redirect_url</code> to send the browser to, or <code>None</code> when the
+  provider takes a form instead, as password login does.</li>
+<li><code>complete(request, transaction)</code> validates the provider's response against the
+  transaction and returns an <code>ExternalIdentity</code>.</li>
+<li><code>logout_redirect(session, *, post_logout_redirect)</code> returns the provider's
+  logout URL, or <code>None</code> for a local logout only.</li>
+</ul>
+<p><code>ExternalIdentity</code> is a verified identity asserted by a provider: <code>provider</code>,
+<code>issuer</code>, <code>subject</code>, and optionally <code>email</code>, <code>email_verified</code>, <code>name</code>, <code>picture</code>,
+<code>groups</code>, <code>attributes</code>, <code>auth_time</code>, <code>amr</code> and <code>session_ref</code> (the OIDC <code>sid</code>).
+Everything after this value is framework-neutral. <code>LoginTransaction</code> is the
+state of one login in flight (<code>state</code>, <code>nonce</code>, <code>code_verifier</code>, <code>return_to</code>),
+saved in a <code>TransactionStore</code> between <code>begin</code> and <code>complete</code>.</p>
+<p><code>SessionInfo</code> is what a login session stores: the internal <code>account_id</code>, the
+<code>session_version</code> at login, how the user authenticated, and <code>expires_at</code>. It
+holds no permissions; they are looked up per request (see
+<a href="#authorization-context-and-cache">Authorization context</a>).</p>
+<h2 id="account-resolution">Account resolution<a class="headerlink" href="#account-resolution" title="Permanent link">&para;</a></h2>
+<p>An <code>AccountResolver</code> maps an <code>ExternalIdentity</code> to an internal account ID.
+<code>resolve(identity)</code> links, provisions or rejects a login and returns the account
+ID; it raises <code>AccountRejected</code> when the login may not proceed. <code>lookup(issuer,
+subject)</code> returns the linked account ID, or <code>None</code>, and never provisions.</p>
+<p><code>AccountRejected</code> carries a <code>reason</code> for logs. The user is never shown it: the
+callback sends one of the <code>CallbackError</code> codes instead (see
+<a href="#return-targets-the-session-body-and-callback-errors">Return targets, the session body and callback errors</a>).</p>
+<h2 id="authorization-context-and-cache">Authorization context and cache<a class="headerlink" href="#authorization-context-and-cache" title="Permanent link">&para;</a></h2>
+<p>An <code>AuthorizationContext</code> is an account's current authorization data: <code>active</code>
+(whether it may authenticate), <code>session_version</code>, <code>permissions</code>, <code>roles</code> (a
+display hint and an input to your provider) and <code>attributes</code> (inputs to
+attribute-based rules such as tenant or location). An
+<code>AuthorizationContextProvider</code> returns it from an account ID with
+<code>resolve(account_id)</code>.</p>
+<p>A session holds only the account ID and its <code>session_version</code>. On each request
+the binding fetches the current context, checks <code>active</code> and that the session's
+version still matches, and builds the <code>Principal</code> from the context. Revoking a
+permission, deactivating an account or bumping the session version therefore
+takes effect on the next request, with no session to edit.</p>
+<h3 id="caching-contexts">Caching contexts<a class="headerlink" href="#caching-contexts" title="Permanent link">&para;</a></h3>
+<p><code>AuthorizationContextCache</code> wraps an <code>AuthorizationContextProvider</code> so a request
+does not recompute the account's permissions every time. It keeps one entry per
+account in process memory and serves it while the account's authorization
+version and the global version are unchanged and the entry is younger than the
+TTL (60 seconds by default).</p>
+<div class="codehilite"><pre><span></span><code><span class="n">cache</span> <span class="o">=</span> <span class="n">AuthorizationContextCache</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span> <span class="n">writer</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
+
+<span class="n">cache</span><span class="o">.</span><span class="n">invalidate</span><span class="p">(</span><span class="s2">&quot;acct-1&quot;</span><span class="p">)</span>   <span class="c1"># one account&#39;s permissions changed</span>
+<span class="n">cache</span><span class="o">.</span><span class="n">invalidate_all</span><span class="p">()</span>       <span class="c1"># a role definition or an import changed many</span>
+<span class="n">cache</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="s2">&quot;acct-1&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>          <span class="c1"># writer, then invalidate</span>
+<span class="n">new_version</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">bump_session_version</span><span class="p">(</span><span class="s2">&quot;acct-1&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Use <code>set_active</code> and <code>bump_session_version</code> for the two values that revoke
+access, so no cached context outlives the change; they need an
+<code>AccountStateWriter</code> that the application implements. A change made behind the
+cache's back, such as a direct database edit, applies once the TTL passes.</p>
+<p>The default <code>InMemoryAuthorizationVersions</code> is not shared across processes, so
+with several workers a bump reaches only the worker that made it and the others
+rely on the TTL. A shared <code>AuthorizationVersions</code> implementation fixes that.</p>
+<h2 id="principal-and-requirement">Principal and Requirement<a class="headerlink" href="#principal-and-requirement" title="Permanent link">&para;</a></h2>
+<p><code>Principal</code> is the verified caller, a frozen dataclass. <code>subject</code> is the only
+required field. <code>permissions</code> holds the effective permissions, <code>scopes</code> the
+token's delegated scopes (empty for a session), and <code>roles</code>, <code>tenant</code> and
+<code>attributes</code> the application's authorization data. <code>mechanism</code> is <code>"session"</code>,
+<code>"bearer"</code> or <code>"basic"</code> and defaults to <code>"bearer"</code>; <code>claims</code> keeps every
+verified claim; <code>external_subject</code>, <code>auth_time</code> and <code>amr</code> record how the caller
+authenticated.</p>
+<p><code>Requirement</code> is a declarative access check with four frozen sets. The sets are
+ANDed together; the members of an <code>any_*</code> set are ORed:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Satisfied when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>any_scope</code></td>
+<td>empty, or the principal holds at least one of them</td>
+</tr>
+<tr>
+<td><code>all_scopes</code></td>
+<td>the principal holds every one of them</td>
+</tr>
+<tr>
+<td><code>any_permission</code></td>
+<td>empty, or the principal's permissions include at least one of them</td>
+</tr>
+<tr>
+<td><code>all_permissions</code></td>
+<td>the principal's permissions include every one of them</td>
+</tr>
+</tbody>
+</table>
+<p>An empty <code>Requirement()</code> is satisfied by any principal: it means
+"authenticated", not "denied". Routes require permissions, never roles; the
+scope clauses can only narrow access further.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Principal</span><span class="p">,</span> <span class="n">Requirement</span>
+
+<span class="n">requirement</span> <span class="o">=</span> <span class="n">Requirement</span><span class="p">(</span><span class="n">any_scope</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">,</span> <span class="s2">&quot;orders:admin&quot;</span><span class="p">}))</span>
+<span class="n">caller</span> <span class="o">=</span> <span class="n">Principal</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="s2">&quot;u-1&quot;</span><span class="p">,</span> <span class="n">scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">}))</span>
+<span class="n">requirement</span><span class="o">.</span><span class="n">is_satisfied_by</span><span class="p">(</span><span class="n">caller</span><span class="p">)</span>  <span class="c1"># True</span>
+</code></pre></div>
+
+<h3 id="permissions-and-the-scope-limit">Permissions and the scope limit<a class="headerlink" href="#permissions-and-the-scope-limit" title="Permanent link">&para;</a></h3>
+<p><code>requirement_for</code> builds the requirement for a resource key and an action:
+<code>requirement_for("orders", "partial_update")</code> requires <code>orders.update</code>.
+<code>DEFAULT_PERMISSION_ACTION_MAP</code> maps the action names; an <code>action_map</code> argument
+overrides entries of it, and an action named by neither map is used as is.</p>
+<p>A token's scopes limit, and never grant, permissions. <code>effective_permissions</code>
+returns a session or basic caller's account permissions unchanged, and for a
+bearer caller keeps only the permissions that its scopes allow through your
+scope map. A scope the map does not name allows nothing.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">effective_permissions</span><span class="p">,</span> <span class="n">requirement_for</span>
+
+<span class="n">permissions</span> <span class="o">=</span> <span class="n">effective_permissions</span><span class="p">(</span>
+    <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.read&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.update&quot;</span><span class="p">}),</span>
+    <span class="n">mechanism</span><span class="o">=</span><span class="s2">&quot;bearer&quot;</span><span class="p">,</span>
+    <span class="n">scopes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders:read&quot;</span><span class="p">}),</span>
+    <span class="n">scope_map</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;orders:read&quot;</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.list&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.read&quot;</span><span class="p">})},</span>
+<span class="p">)</span>  <span class="c1"># frozenset({&quot;orders.read&quot;})</span>
+<span class="n">requirement_for</span><span class="p">(</span><span class="s2">&quot;orders&quot;</span><span class="p">,</span> <span class="s2">&quot;partial_update&quot;</span><span class="p">)</span>  <span class="c1"># needs orders.update: denied</span>
+</code></pre></div>
+
+<h2 id="authenticators-and-authorizers">Authenticators and authorizers<a class="headerlink" href="#authenticators-and-authorizers" title="Permanent link">&para;</a></h2>
+<p>The contracts are runtime-checkable protocols.</p>
+<ul>
+<li><code>Authenticator.authenticate(*, credentials)</code> turns a <code>Credentials</code> into a
+  <code>Principal</code>. <code>AsyncAuthenticator</code> is the awaitable counterpart. A failure
+  raises <code>rn_forge.web.AuthenticationFailed</code>; its message must not say which
+  part of the credentials was wrong.</li>
+<li><code>Authorizer.authorize(principal, *, requires)</code> returns when the request may
+  proceed and raises <code>rn_forge.web.PermissionDenied</code> when it may not. It never
+  raises <code>AuthenticationFailed</code>: the caller is already authenticated, which is
+  the line between 401 and 403.</li>
+</ul>
+<p><code>ScopeAuthorizer</code> is the shipped <code>Authorizer</code>. It evaluates the <code>Requirement</code>
+and raises <code>PermissionDenied</code> with a fixed message. Pass <code>log</code> to be told about
+each refusal; it is called as <code>log("authorization.denied", context)</code>, where
+<code>context</code> holds <code>subject</code>, <code>mechanism</code> and <code>required</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScopeAuthorizer</span>
+
+<span class="n">authorizer</span> <span class="o">=</span> <span class="n">ScopeAuthorizer</span><span class="p">(</span><span class="n">log</span><span class="o">=</span><span class="k">lambda</span> <span class="n">message</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
+<span class="n">authorizer</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="n">caller</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="n">requirement</span><span class="p">)</span>
+</code></pre></div>
+
+<h2 id="mapping-claims-to-a-principal">Mapping claims to a principal<a class="headerlink" href="#mapping-claims-to-a-principal" title="Permanent link">&para;</a></h2>
+<p><code>principal_from_claims(claims, *, mechanism="bearer")</code> is the default mapping
+from already-verified claims:</p>
+<table>
+<thead>
+<tr>
+<th>Principal</th>
+<th>Claim</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subject</code></td>
+<td><code>sub</code>, required</td>
+</tr>
+<tr>
+<td><code>issuer</code></td>
+<td><code>iss</code></td>
+</tr>
+<tr>
+<td><code>scopes</code></td>
+<td><code>scope</code> (space-delimited string) and <code>scp</code> (string or list), combined</td>
+</tr>
+<tr>
+<td><code>roles</code></td>
+<td><code>roles</code> (a list)</td>
+</tr>
+<tr>
+<td><code>tenant</code></td>
+<td><code>tid</code></td>
+</tr>
+</tbody>
+</table>
+<p>It raises <code>AuthenticationFailed</code> when <code>sub</code> is missing or empty. A claim of the
+wrong type for <code>issuer</code> or <code>tenant</code> is ignored, not an error.</p>
+<p>An identity provider that keeps roles elsewhere, such as Keycloak's
+<code>realm_access.roles</code>, needs its own mapping. Any callable from verified claims
+to a <code>Principal</code> works; <code>Principal.claims</code> still holds the whole token:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Principal</span><span class="p">,</span> <span class="n">principal_from_claims</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">keycloak_principal</span><span class="p">(</span><span class="n">claims</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Principal</span><span class="p">:</span>
+    <span class="n">principal</span> <span class="o">=</span> <span class="n">principal_from_claims</span><span class="p">(</span><span class="n">claims</span><span class="p">)</span>
+    <span class="n">realm</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;realm_access&quot;</span><span class="p">)</span>
+    <span class="n">roles</span> <span class="o">=</span> <span class="n">realm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;roles&quot;</span><span class="p">,</span> <span class="p">())</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">realm</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">()</span>
+    <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">principal</span><span class="p">,</span> <span class="n">roles</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="p">)</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">roles</span><span class="p">))</span>
+</code></pre></div>
+
+<p>Hand it to <code>OidcAuthenticator</code> as <code>claims_to_principal</code>.</p>
+<h2 id="resource-policy">Resource policy<a class="headerlink" href="#resource-policy" title="Permanent link">&para;</a></h2>
+<p>A <code>Requirement</code> decides whether a caller may reach a route. A <code>ResourcePolicy</code>
+decides what the caller may do with a particular object or set of objects:</p>
+<ul>
+<li><code>allows(principal, action, resource)</code> returns whether the principal may
+  perform the action on one resource.</li>
+<li><code>scope(principal, action, query)</code> returns the query narrowed to what the
+  principal may perform the action on, such as a queryset filtered by tenant.</li>
+</ul>
+<p>It is generic over the resource and query types, so the application chooses
+both. The core supplies the protocol only.</p>
+<h2 id="return-targets-the-session-body-and-callback-errors">Return targets, the session body and callback errors<a class="headerlink" href="#return-targets-the-session-body-and-callback-errors" title="Permanent link">&para;</a></h2>
+<p><code>validate_return_to</code> accepts a <code>return_to</code> only when it is a relative path under
+one of the configured prefixes, matched on whole segments:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidReturnTo</span><span class="p">,</span> <span class="n">validate_return_to</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">validate_return_to</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/app&quot;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">InvalidReturnTo</span><span class="p">:</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="s2">&quot;/app&quot;</span>
+</code></pre></div>
+
+<p>It rejects absolute and scheme-relative URLs, backslashes, control characters,
+percent-encoded slashes, backslashes and dots in the path, <code>..</code> segments and
+paths outside the prefixes. A query string and fragment may follow the path.
+The caller falls back to a default on <code>InvalidReturnTo</code>.</p>
+<p><code>SessionBody.build(session, context, name=..., email=..., picture=...)</code> makes
+the <code>/auth/session</code> body; <code>subject</code> is the internal account ID. <code>to_json()</code>
+returns camelCase keys, RFC 3339 UTC timestamps, sorted <code>roles</code>, <code>permissions</code>
+and <code>amr</code>, and leaves out absent optional fields. The keys of <code>attributes</code> are
+converted from snake_case to camelCase at every depth.</p>
+<p><code>CallbackError</code> is the closed list of codes a failed callback sends to the error
+route: <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
