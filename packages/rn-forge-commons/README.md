@@ -133,6 +133,8 @@ directly (never through the facade).
   captures return code, stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread
   pool.
+- **`actor`** — `ThreadActor`: owns one resource on a dedicated thread and
+  runs every call against it there, as a `Future` or an awaitable.
 - **`plugins`** — `EntryPointLoader`: failure-isolated entry-point plugin
   discovery.
 

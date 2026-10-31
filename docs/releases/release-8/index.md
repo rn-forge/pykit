@@ -30,7 +30,7 @@ generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
 | [F17.1](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | Closed |
-| [F17.2](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Active |
+| [F17.2](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Closed |
 | [F17.3](../../specs/epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md) | E17 | New |
 | [F17.4](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | New |
 | [F17.5](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | New |
