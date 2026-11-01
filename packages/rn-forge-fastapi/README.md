@@ -22,6 +22,7 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 | `dependencies` | `page_params`, `require_idempotency_key`, `require_if_match` |
 | `health` | `health_router(checks=...)` — `/healthz` and `/readyz` |
 | `auth` | `auth_router` and `SessionMiddleware` — the `/auth` routes, login sessions and CSRF protection over `rn-forge-auth`; `bearer_auth`, `basic_auth`, `current_principal`, `requires`, `requires_permission`, `PolicyGuard` — `Security` dependencies; rate limiting; `auth.redis` — the Redis CSRF store and rate limiter (`redis` extra) |
+| `sse` | `sse_response(events)` — an `EventSourceResponse` that rejects forged frame fields, sends a `retry` frame first and ends a failed stream with one problem frame (`sse` extra) |
 | `app` | `FastApiApp(config)` — a `FastAPI` subclass with the standard adapters installed |
 
 ## Where it sits

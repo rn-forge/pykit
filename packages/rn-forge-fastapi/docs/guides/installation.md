@@ -11,10 +11,11 @@ dependencies = ["rn-forge-fastapi>=0.4,<0.5"]
 
 `rn-forge-web` and `rn-forge-commons` come in transitively, each as a version
 range. FastAPI comes in as an ordinary PyPI dependency, and pydantic and
-Starlette with it. The optional `oidc` extra adds JWKS bearer auth and OIDC login; `redis` adds the
-Redis stores the auth binding needs outside development
+Starlette with it. The optional `oidc` extra adds JWKS bearer auth and OIDC
+login; `redis` adds the Redis stores the auth binding needs outside development
 (`rn_forge.auth.redis` and `rn_forge.fastapi.auth.redis`); `transfer` adds
-tabular export and import (`rn_forge.fastapi.transfer`).
+tabular export and import (`rn_forge.fastapi.transfer`); `sse` adds server-sent
+events (`rn_forge.fastapi.sse`).
 
 ## Inside this workspace
 
