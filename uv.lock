@@ -1621,7 +1621,7 @@ dev = [
     { name = "rn-forge-data", extra = ["pandas"] },
     { name = "rn-forge-devops" },
     { name = "rn-forge-django", extra = ["all"] },
-    { name = "rn-forge-fastapi", extra = ["transfer"] },
+    { name = "rn-forge-fastapi", extra = ["sse", "transfer"] },
     { name = "rn-forge-sqlalchemy" },
     { name = "rn-forge-tooling" },
     { name = "rn-forge-web", extra = ["security"] },
@@ -1645,7 +1645,7 @@ workspace = [
     { name = "rn-forge-commons", extra = ["all"] },
     { name = "rn-forge-devops" },
     { name = "rn-forge-django", extra = ["all"] },
-    { name = "rn-forge-fastapi", extra = ["transfer"] },
+    { name = "rn-forge-fastapi", extra = ["sse", "transfer"] },
     { name = "rn-forge-sqlalchemy" },
     { name = "rn-forge-tooling" },
     { name = "rn-forge-web", extra = ["security"] },
@@ -1686,7 +1686,7 @@ dev = [
     { name = "rn-forge-data", extras = ["pandas"], editable = "packages/rn-forge-data" },
     { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
-    { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["sse", "transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-sqlalchemy", editable = "packages/rn-forge-sqlalchemy" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
@@ -1710,7 +1710,7 @@ workspace = [
     { name = "rn-forge-commons", extras = ["all"], editable = "packages/rn-forge-commons" },
     { name = "rn-forge-devops", editable = "packages/rn-forge-devops" },
     { name = "rn-forge-django", extras = ["all"], editable = "packages/rn-forge-django" },
-    { name = "rn-forge-fastapi", extras = ["transfer"], editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["sse", "transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "rn-forge-sqlalchemy", editable = "packages/rn-forge-sqlalchemy" },
     { name = "rn-forge-tooling", editable = "packages/rn-forge-tooling" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
@@ -2448,6 +2448,9 @@ oidc = [
 redis = [
     { name = "rn-forge-auth", extra = ["redis"] },
 ]
+sse = [
+    { name = "sse-starlette" },
+]
 testing = [
     { name = "assertpy" },
     { name = "httpx" },
@@ -2467,7 +2470,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
-    { name = "rn-forge-fastapi", extra = ["oidc", "redis", "transfer"] },
+    { name = "rn-forge-fastapi", extra = ["oidc", "redis", "sse", "transfer"] },
     { name = "ruff" },
     { name = "sqlalchemy" },
 ]
@@ -2475,7 +2478,7 @@ docs = [
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
-    { name = "rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extra = ["sse"] },
 ]
 
 [package.metadata]
@@ -2491,8 +2494,9 @@ requires-dist = [
     { name = "rn-forge-auth", extras = ["redis"], marker = "extra == 'redis'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
+    { name = "sse-starlette", marker = "extra == 'sse'", specifier = ">=3.4.11" },
 ]
-provides-extras = ["testing", "oidc", "redis", "transfer"]
+provides-extras = ["testing", "oidc", "redis", "transfer", "sse"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2503,7 +2507,7 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-randomly", specifier = ">=4.1.0" },
-    { name = "rn-forge-fastapi", extras = ["oidc", "redis", "transfer"], editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["oidc", "redis", "sse", "transfer"], editable = "packages/rn-forge-fastapi" },
     { name = "ruff", specifier = ">=0.15.21" },
     { name = "sqlalchemy", specifier = ">=2.0" },
 ]
@@ -2511,7 +2515,7 @@ docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.7.6" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
-    { name = "rn-forge-fastapi", editable = "packages/rn-forge-fastapi" },
+    { name = "rn-forge-fastapi", extras = ["sse"], editable = "packages/rn-forge-fastapi" },
 ]
 
 [[package]]
@@ -2901,6 +2905,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5f/d3/3f06a1006f2261d1342aefb3c71eed02f5d4ca5bdbecd86ebc12ad38306e/sqlparse-0.6.0.tar.gz", hash = "sha256:113c35c75365ab9cc9c7231d68c6428fb11c085fc8e9eb1ad659b7ddbf6cd2b9", size = 178477, upload-time = "2026-08-13T19:16:06.396Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/50/f00935da0ec7cbf325f8dc4f772ae46fbc7b672dd62876e73f0a94adda57/sqlparse-0.6.0-py3-none-any.whl", hash = "sha256:b861c0288ce2fa56209a9a6412d2e066ac664b3873b89c26c9d8415e8e32996f", size = 50070, upload-time = "2026-08-13T19:16:04.062Z" },
+]
+
+[[package]]
+name = "sse-starlette"
+version = "3.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "starlette" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/7f/3b8ec4f27833f7b8c270a3ef960b6d435e1065439847bc0fcd1e58ae898b/sse_starlette-3.6.0.tar.gz", hash = "sha256:623151d6c20dc0eebf1b3379c27faae91fff883bac7ab6665f16f46440a88b3a", size = 41174, upload-time = "2026-10-25T20:31:59.372Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cf/49/35053078cdfcf639237e8bee6dc6f34f1b3a3cc8d01800a1e213e1660ff6/sse_starlette-3.6.0-py3-none-any.whl", hash = "sha256:e4dfa4d237d2712cb2b4d4918eda9b457cd6b44bbecdc838af75de836565bafd", size = 17985, upload-time = "2026-10-25T20:31:58.134Z" },
 ]
 
 [[package]]

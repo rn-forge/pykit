@@ -105,7 +105,7 @@ workspace = [
   "rn-forge-commons[all]",
   "rn-forge-devops",
   "rn-forge-django[all]",
-  "rn-forge-fastapi[transfer]",
+  "rn-forge-fastapi[sse,transfer]",
   "rn-forge-sqlalchemy",
   "rn-forge-tooling",
   "rn-forge-web[security]",

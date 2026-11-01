@@ -7,6 +7,11 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ### Added
 
+- `rn_forge.fastapi.sse.sse_response`, behind the new `sse` extra
+  (`sse-starlette`): streams an async iterable of `ServerSentEvent` as an
+  `EventSourceResponse` with a leading `retry` frame and a heartbeat. An `id` or
+  `event` containing a line break or NUL is rejected, and one terminal `error`
+  frame carries the problem when the iterable raises; `log=` receives each 5xx.
 - `log_server_errors`: an `AppConfig.log` sink that logs each 5xx problem at
   `ERROR` with the original traceback.
 

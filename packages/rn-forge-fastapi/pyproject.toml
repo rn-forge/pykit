@@ -53,6 +53,8 @@ transfer = [
   "rn-forge-data>=0.1.1,<0.2",
   "python-multipart>=0.0.20",
 ]
+# Server-sent events: `rn_forge.fastapi.sse`. Not imported by the package facade.
+sse = ["sse-starlette>=3.4.11"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/"
@@ -80,6 +82,7 @@ modules = ["rn_forge.fastapi"]
 [tool.workspace-ci.smoke.extras]
 oidc = ["rn_forge.auth.oidc"]
 redis = ["rn_forge.auth.redis", "rn_forge.fastapi.auth.redis"]
+sse = ["rn_forge.fastapi.sse"]
 transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]
@@ -99,7 +102,7 @@ dev = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[oidc,redis,transfer]",
+  "rn-forge-fastapi[oidc,redis,sse,transfer]",
   "ruff>=0.15.21",
   # Test-only: the ResourcePolicy tests scope real `select()` queries.
   "sqlalchemy>=2.0",
@@ -108,5 +111,5 @@ docs = [
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.6",
   "mkdocstrings[python]>=1.0.6",
-  "rn-forge-fastapi",
+  "rn-forge-fastapi[sse]",
 ]
