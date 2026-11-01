@@ -8,7 +8,9 @@ pykit cuts over onto kiln's `python-lib` archetype (F16.3, then F16.6,
 [E16](../../specs/epics/E16-kiln-adoption/index.md)), with every package already
 published to PyPI by [Release 7](../release-7/index.md). It also moves Apollo's
 generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
-[E17](../../specs/epics/E17-local-first-web-app-extraction/index.md)).
+[E17](../../specs/epics/E17-local-first-web-app-extraction/index.md)), and adds
+log redaction and server-sent events (F6.1 and F6.2,
+[E6](../../specs/epics/E6-consumer-reuse/index.md)).
 
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
@@ -34,6 +36,7 @@ generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
 | [F17.3](../../specs/epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md) | E17 | Closed |
 | [F17.4](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | Closed |
 | [F17.5](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | Closed |
+| [F6.2](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Active |
 
 <!-- scope:end -->
 
@@ -46,6 +49,7 @@ generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
    not read.
 1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes before
    F17.3, whose guide names the actor rule.
+1. **F6.1 and F6.2** do not wait for kiln, or for each other.
 
 ## Decisions
 
@@ -56,13 +60,15 @@ generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
   F16.6 stay, so the release cannot ship until kiln's release-1 tags exist.
 - Owner decision, 2026-10-31: `alembic` is approved as the only dependency of
   `rn-forge-sqlalchemy[migrations]` (S17.4.1).
+- Owner decision, 2026-10-31: F6.1 and F6.2 join this release, and F16.3 and
+  F16.6 stay in it.
 
 ## Commits
 
 Commits whose subject names a scope ID, newest first:
 
 ```bash
-git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.|F17\.[1-5]|S17\.[1-5]\.'
+git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.|F17\.[1-5]|S17\.[1-5]\.|F6\.[12]|S6\.[12]\.'
 ```
 
 ## Exit criteria

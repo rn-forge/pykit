@@ -11,7 +11,7 @@ and feature pages, and must not be edited by hand.
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | planned | 1 Active · 1 New · 5 Closed |
+| [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | planned | 2 Active · 1 New · 5 Closed |
 | [Release 7 — authentication and PyPI distribution](../releases/release-7/index.md) | shipped (2026-10-30) | 16 Closed |
 | [Release 6 — kit upgrades for kiln](../releases/release-6/index.md) | shipped (2026-10-25) | 7 Closed |
 | [Release 5 — rn-forge-devops meets kiln's CI contract](../releases/release-5/index.md) | shipped (2026-10-18) | 2 Closed |
@@ -28,7 +28,7 @@ Features with no Iteration, by State and epic.
 
 | Epic | Features | Entry criteria |
 | -- | -- | -- |
-| [E6 — Consumer reuse](epics/E6-consumer-reuse/index.md) | [F6.1](epics/E6-consumer-reuse/F6.1-log-redaction.md), [F6.2](epics/E6-consumer-reuse/F6.2-sse.md) | the owner schedules either feature for a release |
+| [E6 — Consumer reuse](epics/E6-consumer-reuse/index.md) | [F6.1](epics/E6-consumer-reuse/F6.1-log-redaction.md) | Per feature; see the epic. |
 | [E7 — Azure adapters](epics/E7-azure-adapters/index.md) | F7.1, F7.2, F7.3, F7.4, F7.5, F7.6, F7.7, F7.8 | the owner schedules the package and settles its namespace |
 | [E11 — Framework codegen](epics/E11-framework-codegen/index.md) | — | the owner schedules it with a concrete framework template to generate |
 | [E15 — Package boundaries](epics/E15-package-boundaries/index.md) | [F15.4](epics/E15-package-boundaries/F15.4-domain-errors.md), [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md), [F15.6](epics/E15-package-boundaries/F15.6-neutral-fixtures.md), [F15.7](epics/E15-package-boundaries/F15.7-neutral-celery.md) | Per feature; see the epic. |
