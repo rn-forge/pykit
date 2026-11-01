@@ -78,6 +78,7 @@ nav:
           - State: reference/fs/state.md
       - Logging:
           - Logger: reference/logging/logger.md
+          - Redaction: reference/logging/redaction.md
           - StructLogger: reference/logging/structlog.md
       - Text:
           - Markdown: reference/text/markdown.md

@@ -7,6 +7,16 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ### Added
 
+- Log redaction in `rn_forge.commons.logging.redaction`: `redact`,
+  `RedactionPolicy` and `REDACTED`, exported from `rn_forge.commons`. A value
+  under a key whose final segment is `authorization`, `cookie`, `password`,
+  `secret` or `token` is replaced, and `Bearer`/`Basic` credentials and
+  `scheme://user:password@host` passwords are scrubbed from any string.
+- `RedactFilter` (exported from `rn_forge.commons`) applies redaction to a
+  record's message, `args` and `extra` fields on every `AppLogger` handler.
+  `LoggingConfig.redact` and `AppLogger.initialize(redact=...)` control it.
+- `redact_processor` in `rn_forge.commons.logging.structlog` redacts structlog
+  events before they are rendered.
 - `PathUtils.atomic_replace`: a context manager that yields a temporary sibling
   of a file, then publishes it over the file atomically; `atomic_write` is now
   built on it.
@@ -20,6 +30,13 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `TaskPool.map_settled` runs a function over items on the pool and returns a
   `Succeeded` or `Failed` per item in input order; `Succeeded`, `Failed` and
   `Settled` are exported from `rn_forge.commons`.
+
+### Changed
+
+- Log redaction is **on by default**, so secrets logged in messages, arguments
+  or `extra` fields now appear as `[redacted]`. Pass `redact=False` to
+  `AppLogger.initialize` to keep the old output. Exception tracebacks are not
+  redacted.
 
 ## [0.8.1] - 2026-10-30
 

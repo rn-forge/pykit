@@ -12,7 +12,7 @@ secret redaction in structured logs, and server-sent events.
 
 | Feature | Scope | State |
 | -- | -- | -- |
-| [F6.1 — Structured-log redaction](F6.1-log-redaction.md) | Secret redaction in commons logging. | New |
+| [F6.1 — Structured-log redaction](F6.1-log-redaction.md) | Secret redaction in commons logging. | Closed |
 | [F6.2 — Server-sent events](F6.2-sse.md) | SSE responses over `sse-starlette` in FastAPI. The dependency is approved. | Active |
 
 Both were left out of release-1 on 2026-09-26
