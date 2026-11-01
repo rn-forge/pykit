@@ -37,7 +37,7 @@ log redaction and server-sent events (F6.1 and F6.2,
 | [F17.4](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | Closed |
 | [F17.5](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | Closed |
 | [F6.1](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) | E6 | Closed |
-| [F6.2](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Active |
+| [F6.2](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Closed |
 
 <!-- scope:end -->
 

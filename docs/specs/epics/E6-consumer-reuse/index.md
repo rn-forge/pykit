@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-31 |
+| **Closed Date** | 2026-11-01 |
 
 Two pieces of plumbing that several applications each wrote for themselves:
 secret redaction in structured logs, and server-sent events.
@@ -13,7 +14,7 @@ secret redaction in structured logs, and server-sent events.
 | Feature | Scope | State |
 | -- | -- | -- |
 | [F6.1 — Structured-log redaction](F6.1-log-redaction.md) | Secret redaction in commons logging. | Closed |
-| [F6.2 — Server-sent events](F6.2-sse.md) | SSE responses over `sse-starlette` in FastAPI. The dependency is approved. | Active |
+| [F6.2 — Server-sent events](F6.2-sse.md) | SSE responses over `sse-starlette` in FastAPI. The dependency is approved. | Closed |
 
 Both were left out of release-1 on 2026-09-26
 ([S9.4.2](../E9-release-readiness/F9.4-batch-scope.md#s942-decide-the-consumer-reuse-features))
