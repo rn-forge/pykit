@@ -43,6 +43,8 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Guides:
+      - guides/index.md
   - Reference:
       - reference/index.md
       - Subcommands: reference/subcommands.md
