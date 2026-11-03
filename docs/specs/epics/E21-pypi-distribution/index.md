@@ -28,7 +28,7 @@ the self-hosted index retires once consumers have moved.
 | [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | The MIT licence, classifiers and a patch release of every package, so each one passes `twine check --strict`. | Closed |
 | [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | `main.yml` uploads each package to PyPI via OIDC, with a TestPyPI dry run, registering trusted publishers one upload at a time; per-package GitHub releases take their changelog section as notes and are never "Latest"; an umbrella `release-<n>` release per shipped release page; external install checked from PyPI. | Closed |
 | [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | The README, consuming guide, per-package install guides and release runbook describe PyPI with no index declaration. | Closed |
-| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | `rn-forge-devops index`, its adapter, the `package-index` action and `simple/` on Pages are removed. | New |
+| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | `rn-forge-devops index`, its adapter, the `package-index` action and `simple/` on Pages are removed, ahead of the kiln cutover in Release 8. | New |
 
 ## Context
 
@@ -57,7 +57,9 @@ every internal requirement a range (`rn-forge-commons>=0.7.0,<0.8`).
 `rn-forge-commons>=0.7.0,<0.8`. Its `uv.lock` changes each `rn-forge-*` source
 to pypi.org on the next `uv lock`. Direct git-URL pins keep working, since tags
 are still created. The self-hosted index stays up until F21.5, so a lock that
-still names it keeps resolving in the meantime.
+still names it keeps resolving in the meantime. Owner decision, 2026-11-03:
+F21.5 is scheduled in Release 8 and lands before the kiln cutover, since no
+consumer lock names the index.
 
 **Ordering with the kiln cutover.**
 
@@ -66,6 +68,8 @@ still names it keeps resolving in the meantime.
   requires the kiln version it pins to render the same release behaviour. The
   umbrella release is a reusable workflow that pykit owns, which the cutover
   declares as a `[[ci.jobs]]` entry, so that part survives unchanged.
+- [F21.5](F21.5-retire-index.md) lands before the cutover, so the cutover has no
+  index to carry and declares no `[ci.hooks] docs` anchor.
 - PyPI's trusted publishers name the workflow file, so the cutover also adds a
   publisher for `ci.yml`.
 
