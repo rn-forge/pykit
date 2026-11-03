@@ -39,7 +39,7 @@ E8 — Django scope and auth was retired on 2026-09-28. Its auth review is
 [E13](epics/E13-auth/index.md); its package-boundary question is part of
 [E15](epics/E15-package-boundaries/index.md).
 
-Ideas not yet agreed as work are parked in the [ideas list](ideas.md).
+Ideas not yet agreed as work are parked in the [ideas list](ideas/index.md).
 
 ## Conventions
 
@@ -49,8 +49,7 @@ rules; this is the short form.
 - **Taxonomy.** Epic `E<n>` → feature `F<n>.<m>` → story `S<n>.<m>.<k>` (an ADO
   User Story). IDs are permanent once a commit names them or work starts; a
   `New`, uncommitted item that moves takes its new parent's next ID. This maps
-  1:1 to Azure DevOps's Agile process; see `specs/_structure.md`'s
-  [Tracker mapping](_structure.md#tracker-mapping).
+  1:1 to Azure DevOps's Agile process; see `specs/_structure.md`, Tracker mapping.
 - **State.** `New`, `Active`, `Closed`, or `Removed` (retired in place, with a
   reason). A feature tagged `deferred` is not scheduled and carries entry
   criteria; stories carry their own state. A feature's `Iteration` field is
@@ -62,7 +61,7 @@ rules; this is the short form.
   question becomes an ADR or a rejected option.
 - **Acceptance is checked inside pykit** ([ADR-0008](../adr/ADR-0008.md));
   another repository's work never gates a feature or release.
-- **Ideas start in the [ideas list](ideas.md)**, without an ID. Promoting one
+- **Ideas start in the [ideas list](ideas/index.md)**, without an ID. Promoting one
   creates a `New` epic or feature and deletes the entry.
 - **Do not start or elaborate a `deferred`-tagged epic or an idea unless the
   owner asks.**

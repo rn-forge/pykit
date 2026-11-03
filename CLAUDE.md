@@ -18,7 +18,7 @@ documentation and [the reader index](docs/index.md) to find published content.
 Do not start or elaborate an epic or feature tagged `deferred`, such as the
 Azure package (E7), unless the owner asks. Entry criteria describe when the
 owner may schedule it, not permission to begin. The same holds for ideas parked
-in [the ideas list](docs/specs/ideas.md).
+in [the ideas list](docs/specs/ideas/index.md).
 
 ## Orientation
 

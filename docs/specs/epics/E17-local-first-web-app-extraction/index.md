@@ -51,7 +51,7 @@ E6 would either make them wait on E6's criterion or force E6 to lose its tag.
   the engine in `rn-forge-sqlalchemy`. A package of leftovers would duplicate
   their boundaries ([ADR-0001](../../../adr/ADR-0001.md)).
 - **Typed application state** is not agreed work yet; it is parked in the
-  [ideas list](../../ideas.md#typed-application-state).
+  [ideas list](../../ideas/index.md#typed-application-state).
 - **Single-consumer conveniences:** a worker-count helper, a `default_registry`
   keyword for lookup errors, and tool-version probing. Each is a line or two
   in the application, or a heuristic only Apollo needs; see

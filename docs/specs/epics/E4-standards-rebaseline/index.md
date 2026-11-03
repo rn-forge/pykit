@@ -27,7 +27,7 @@ in
 [E15's design](../E15-package-boundaries/design.md#framework-neutral-areas-still-in-rn-forge-django)
 and the auth review is [E13](../E13-auth/index.md). The remaining API-convention
 items are deferred in [E12](../E12-http-contract-extensions/index.md), and the
-SQLAlchemy items are parked in the [ideas list](../../ideas.md).
+SQLAlchemy items are parked in the [ideas list](../../ideas/index.md).
 
 [ADR-0001](../../../adr/ADR-0001.md) states the order of authority.
 [ADR-0005](../../../adr/ADR-0005.md) states the shared HTTP contract. F4.2 emits

@@ -5,7 +5,7 @@ and it does not authorize starting work. When the owner takes one up, it becomes
 a `New` epic or feature, its section moves into that file, and the entry is
 deleted. A dropped idea is deleted too.
 
-[Back to the work index](index.md)
+[Back to the work index](../index.md)
 
 | Idea | Summary | Source |
 | -- | -- | -- |
@@ -13,9 +13,9 @@ deleted. A dropped idea is deleted too.
 | sqlalchemy-helpers | A SQLAlchemy `AsyncIdempotencyStore`, session and unit-of-work helpers, and readiness checks. Waits for a SQLAlchemy application to ask for them. | F12.5, retired from E12 2026-09-29 |
 | cloudevents-envelope | A CloudEvents envelope builder. Waits for the outbox/inbox subsystem to need one. | F12.6, retired from E12 2026-09-29 |
 | claim-check | The claim-check pattern for large messages. Waits for a second storage backend. | F12.7, retired from E12 2026-09-29 |
-| django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on messaging staying in `rn-forge-django` until [F15.5](epics/E15-package-boundaries/F15.5-neutral-messaging.md) splits it ([E15 design](epics/E15-package-boundaries/design.md#messaging)). | F12.10, retired from E12 2026-09-29 |
+| django-cloud-messaging-adapters | Django cloud messaging adapters. Waits for a second cloud backend; depends on messaging staying in `rn-forge-django` until [F15.5](../epics/E15-package-boundaries/F15.5-neutral-messaging.md) splits it ([E15 design](../epics/E15-package-boundaries/design.md#messaging)). | F12.10, retired from E12 2026-09-29 |
 | product-installer-contract | A shared `ProductInstaller` contract. Shared installer mechanics stay in `rn-forge-tooling`: do not create `rn-forge-selfkit`. Waits for a second product that needs the same contract. | F12.8, retired from E12 2026-09-29 |
-| devops-adapters | More `rn-forge-devops` adapters ([ADR-0012](../adr/ADR-0012.md)): Azure DevOps Pipelines as a CI platform, and pnpm or nx and Maven or Gradle workspaces that read the graph from the stack's own tool. Waits for kiln to schedule an Azure DevOps pipeline or a multi-package Node or Java archetype. | E16 review, 2026-10-15 |
+| devops-adapters | More `rn-forge-devops` adapters ([ADR-0012](../../adr/ADR-0012.md)): Azure DevOps Pipelines as a CI platform, and pnpm or nx and Maven or Gradle workspaces that read the graph from the stack's own tool. Waits for kiln to schedule an Azure DevOps pipeline or a multi-package Node or Java archetype. | E16 review, 2026-10-15 |
 | [typed-application-state](#typed-application-state) | A typed application-state dependency in `rn-forge-fastapi`, replacing untyped `request.app.state.*` reads. Waits for the owner to take it up. | Owner request, 2026-10-21 |
 | [tool-version-probe](#tool-version-probe) | Ask an external executable for its version in `rn-forge-commons`. Waits for a second application that probes tools. | F17.5 review, 2026-10-23 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
@@ -24,7 +24,7 @@ deleted. A dropped idea is deleted too.
 
 ## model-vocabulary
 
-The [model conventions guide](../rn-forge-web/guides/model-conventions.md)
+The [model conventions guide](../../rn-forge-web/guides/model-conventions.md)
 describes what both ORM packages supply today and keeps the rest advisory, as
 the owner decided on 2026-09-25. These are the rules this entry would make
 normative for both packages; applications could still treat them as advice. The
@@ -96,8 +96,8 @@ thing has a primary key and an `int` `version`, exactly the two values
 ### Soft delete
 
 Soft delete is a nullable `delete_time` column, not a status, in AIP-164's
-shape, as [ADR-0010](../adr/ADR-0010.md) records.
-[F12.2](epics/E12-http-contract-extensions/F12.2-soft-delete.md) builds it.
+shape, as [ADR-0010](../../adr/ADR-0010.md) records.
+[F12.2](../epics/E12-http-contract-extensions/F12.2-soft-delete.md) builds it.
 
 ## typed-application-state
 

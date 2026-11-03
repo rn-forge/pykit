@@ -46,7 +46,7 @@ Declared in `_areas.yml`, in nav order. These are the areas kiln seeds:
 - A choice between real alternatives → a new ADR under `adr/`; a change to one →
   that ADR, revised in place.
 - Work to do, or a record of work done → an epic under `specs/epics/`.
-- An idea not yet agreed as work → a row in `specs/ideas.md`.
+- An idea not yet agreed as work → a row in `specs/ideas/index.md`.
 - What ships when → `releases/`.
 - An operational procedure → `runbooks/`.
 - An open question → the epic or feature it blocks, until it becomes an ADR or a

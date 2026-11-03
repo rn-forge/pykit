@@ -35,7 +35,7 @@ Belongs / does not belong:
   it. A retired feature keeps its row on its own epic's page with State
   `Removed` instead ([IDs and state vocabulary](#ids-and-state-vocabulary)).
 - Ideas not yet agreed as work are linked from here, not listed here; they live
-  in `ideas.md`.
+  in `ideas/index.md`.
 
 Template:
 
@@ -50,7 +50,7 @@ Template:
 
 <!-- optional: a retired epic, in prose, and what replaced it -->
 
-Ideas not yet agreed as work are parked in the [ideas list](ideas.md).
+Ideas not yet agreed as work are parked in the [ideas list](ideas/index.md).
 
 ## Conventions
 
@@ -145,9 +145,7 @@ Template:
 
 ## Design                      <!-- optional: design for what this feature builds -->
 
-## Stories
-
-### S<n>.<m>.<k> — <Title>
+## S<n>.<m>.<k> — <Title>
 
 **State:** New
 
@@ -160,11 +158,11 @@ Template:
 ## Open questions              <!-- optional -->
 ```
 
-### Story — inline `### S<n>.<m>.<k>` heading, or its own file
+### Story — inline `## S<n>.<m>.<k>` heading, or its own file
 
 Purpose: one acceptance-checked unit of work inside a feature.
 
-Path and naming: a `### S<n>.<m>.<k> — <Title>` heading inside its feature file.
+Path and naming: a `## S<n>.<m>.<k> — <Title>` heading inside its feature file.
 Give a story its own file only when its acceptance runs past about a screen.
 
 Belongs / does not belong: a story keeps its single `**State:**` line and
@@ -174,7 +172,7 @@ release. A story maps to an ADO User Story; call it "story" in prose.
 Template:
 
 ```markdown
-### S<n>.<m>.<k> — <Title>
+## S<n>.<m>.<k> — <Title>
 
 **State:** New \| Active \| Closed (<date>) \| Removed
 
@@ -218,11 +216,11 @@ an ADR or a feature>
 ## Open questions              <!-- optional, or kept on the settling feature instead -->
 ```
 
-### Ideas — `ideas.md`
+### Ideas — `ideas/index.md`
 
 Purpose: ideas not yet agreed as this repository's work.
 
-Path and naming: `specs/ideas.md`, one per repository.
+Path and naming: `specs/ideas/index.md`, one per repository.
 
 Belongs / does not belong:
 
@@ -319,7 +317,7 @@ process) backlog. A migration maps directly, field by field:
 | `Predecessors` | Predecessor links |
 | `Acceptance` | Acceptance Criteria |
 | `design.md`, ADRs, `architecture/`, `guides/`, `runbooks/`, release pages | Stay in the repo; published to the ADO wiki as a code wiki |
-| `ideas.md` | Stays in the repo; not agreed work, so never a work item |
+| `ideas/index.md` | Stays in the repo; not agreed work, so never a work item |
 | Commit subjects naming an ID | `AB#<id>` commit links |
 
 ## Writing acceptance
@@ -347,14 +345,15 @@ may name removed behaviour to say it is gone.
 
 ## Lifecycle
 
-**Parking an idea:** add a row to `ideas.md`, and a section linked from the row
-if it needs more than a line. Do not elaborate an idea unless the owner asks. A
+**Parking an idea:** add a row to `ideas/index.md`, and a section linked from
+the row if it needs more than a line. Do not elaborate an idea unless the owner asks. A
 dropped idea is deleted.
 
 **Adding an epic or a feature:**
 
 1. Take the next free ID. Never renumber a sibling. An idea promoted from
-   `ideas.md` carries its section into the new file, and its entry is deleted.
+   `ideas/index.md` carries its section into the new file, and its entry is
+   deleted.
 1. Create `epics/E<n>-<slug>/index.md` with its state: `New` while it has no
    stories or is not yet scheduled, tagged `deferred` with entry criteria when
    it is not scheduled and should not be started.

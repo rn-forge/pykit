@@ -68,6 +68,9 @@ log redaction and server-sent events (F6.1 and F6.2,
 - Owner decision, 2026-10-31: F6.1 and F6.2 join this release, and F16.3 and
   F16.6 stay in it.
 - Owner decision, 2026-11-03: F21.5 joins this release and lands before F16.3.
+- Owner decision, 2026-11-03: S16.3.3 converts the docs to kiln's format
+  on `feature/release-8` ahead of `kiln init`, replacing branch
+  `feature/kiln-docs-model`.
 
 ## Commits
 
