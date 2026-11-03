@@ -76,6 +76,9 @@ that tree into the root site's Pages artifact
 ([S9.9.4](../specs/epics/E9-release-readiness/F9.9-package-docs.md)). A failed
 docs job leaves the tags in place; rerun the original `main` push run.
 
+Packages are served from PyPI only; the Pages site carries documentation and no
+package index.
+
 A failed release is fixed by rerunning the original `main` push run; it skips
 what PyPI and GitHub already have. A manual dispatch builds only and does not
 publish releases or deploy Pages. Dispatching it with `testpypi` set uploads

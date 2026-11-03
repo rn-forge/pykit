@@ -25,9 +25,6 @@ a library an application depends on.
   `[tool.workspace-ci]` tables, and runs `smoke`.
 - `rn_forge.devops.github` — the GitHub Actions adapter: `$GITHUB_OUTPUT` lines
   and the event context.
-- `rn_forge.devops.index` and `rn_forge.devops.releases` — the `index`
-  subcommand: a PEP 503 simple index rendered from a repository's GitHub
-  Release files, and the adapter that reads them with `gh`.
 - `rn_forge.devops.notes` — the `notes` and `umbrella` subcommands: a changelog
   version's section, and the umbrella release for the newest shipped release
   page.

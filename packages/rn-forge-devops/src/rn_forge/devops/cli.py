@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from rn_forge.devops import ci, github, index, notes, releases, requirements, uv
+from rn_forge.devops import ci, github, notes, requirements, uv
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -40,11 +40,6 @@ def _parser() -> argparse.ArgumentParser:
         "sonar-target",
         help="print the `$GITHUB_OUTPUT` line with the Sonar branch argument",
     )
-    index_command = commands.add_parser(
-        "index", help="write a PEP 503 simple index of a repository's release files"
-    )
-    index_command.add_argument("--repo", required=True, metavar="OWNER/NAME")
-    index_command.add_argument("--out", required=True, metavar="DIR")
     notes_command = commands.add_parser(
         "notes", help="print a changelog version's section"
     )
@@ -99,22 +94,6 @@ def _umbrella(args: argparse.Namespace) -> int:
         body_file.write_text(found.body, encoding="utf-8")
         print(f"tag={found.tag}")
         print(f"title={found.title}")
-    return 0
-
-
-def _index(args: argparse.Namespace) -> int:
-    files = releases.release_files(args.repo)
-    pages = index.render_index(files)
-    out = Path(args.out).resolve()
-    for relative, content in pages.items():
-        path = (out / relative).resolve()
-        if not path.is_relative_to(out):
-            print(f"page {relative!r} escapes {args.out}", file=sys.stderr)
-            return 1
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-    projects = len(pages) - 1
-    print(f"wrote {projects} projects and {len(files)} files to {args.out}")
     return 0
 
 
@@ -173,8 +152,6 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as error:
             sys.exit(str(error))
         return 0
-    if args.command == "index":
-        return _index(args)
     if args.command == "notes":
         return _notes(args)
     if args.command == "umbrella":

@@ -5,6 +5,14 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+### Removed
+
+- Breaking: the `index` subcommand and the `rn_forge.devops.index` and
+  `rn_forge.devops.releases` modules. The package index at
+  `https://rn-forge.github.io/pykit/simple/` is retired; packages resolve from
+  PyPI. A consumer that still declares the index deletes its
+  `[[tool.uv.index]]` table and runs `uv lock`.
+
 ## [0.3.1] - 2026-10-29
 
 ### Fixed
