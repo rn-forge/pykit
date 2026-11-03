@@ -7,6 +7,7 @@ from datetime import date
 from operator import attrgetter
 from typing import Any, cast, override
 
+from django.core.management.color import no_style
 from django.db import connection, models
 from django.db.models.base import ModelBase
 from rn_forge.commons.logging import AppLogger
@@ -72,13 +73,12 @@ class TruncateModelMixin:
         SQLite falls back to ``DELETE FROM`` because it lacks ``TRUNCATE``.
         """
         _LOGGER.warning("TruncateModelMixin.truncate: {}", cls.__name__)  # noqa: PLE1205  # brace-style log format
-        table = connection.ops.quote_name(get_model_meta(cls).db_table)
-        if connection.vendor == "sqlite":
-            sql = f"DELETE FROM {table}"  # noqa: S608  # identifier is quoted by the database backend
-        else:
-            sql = f"TRUNCATE TABLE {table}"
+        statements = connection.ops.sql_flush(
+            no_style(), [get_model_meta(cls).db_table]
+        )
         with connection.cursor() as cursor:
-            cursor.execute(sql)
+            for statement in statements:
+                cursor.execute(statement)
 
 
 class FixtureModelMixin:

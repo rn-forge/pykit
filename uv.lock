@@ -99,9 +99,12 @@ wheels = [
 
 [[package]]
 name = "assertpy"
-version = "1.1"
+version = "2.35.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4f/39/720b5d4463612a40a166d00999cbb715fce3edaf08a9a7588ba5985699ec/assertpy-1.1.tar.gz", hash = "sha256:acc64329934ad71a3221de185517a43af33e373bb44dc05b5a9b174394ef4833", size = 25421, upload-time = "2020-07-19T14:39:02.462Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/21/a8b803f89e9ae991a19d8ad54b794851d0c4aa71103a94deaa92d36cb903/assertpy-2.35.0.tar.gz", hash = "sha256:84c6be9d69c053808ea8580c65f25ebb839a6a205668ec9de2d07683ce98c656", size = 1616231, upload-time = "2026-11-01T17:31:40.773Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/be/f3/1323c29d6a2b38c7a54c0683a5a16625de15bc65cb26c2b5d5e9b62be8b9/assertpy-2.35.0-py3-none-any.whl", hash = "sha256:634392bec962955a675c4cb1e04f5fe8d50548637eca4d0c7ef563a0559b0057", size = 473864, upload-time = "2026-11-01T17:31:38.699Z" },
+]
 
 [[package]]
 name = "asyncpg"
@@ -1657,7 +1660,7 @@ workspace = [
 dev = [
     { name = "aiosqlite", specifier = ">=0.21" },
     { name = "alembic", specifier = ">=1.20.1" },
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "asyncpg", specifier = ">=0.30" },
     { name = "django-stubs", specifier = ">=6.1.2" },
     { name = "import-linter", specifier = ">=2.3" },
@@ -1999,7 +2002,7 @@ provides-extras = ["oidc", "redis"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
@@ -2050,7 +2053,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
+    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=2.35" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
@@ -2060,7 +2063,7 @@ provides-extras = ["testing"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
@@ -2148,7 +2151,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
+    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=2.35" },
     { name = "dacite", specifier = ">=1.9.2" },
     { name = "httpx", marker = "extra == 'all'", specifier = ">=0.28" },
     { name = "httpx", marker = "extra == 'resilience'", specifier = ">=0.28" },
@@ -2180,7 +2183,7 @@ provides-extras = ["json", "structlog", "resilience", "otel", "pydantic", "markd
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
@@ -2239,7 +2242,7 @@ provides-extras = ["pandas"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "pandas-stubs", specifier = ">=3.0.5" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
@@ -2411,7 +2414,7 @@ provides-extras = ["drf", "transfer", "fixtures", "oidc", "redis", "celery", "op
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "django-stubs", specifier = ">=6.0.7" },
     { name = "opentelemetry-sdk", specifier = ">=1.44" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.5" },
@@ -2483,7 +2486,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
+    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=2.35" },
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "httpx", marker = "extra == 'testing'", specifier = ">=0.28.1" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.65b0" },
@@ -2500,7 +2503,7 @@ provides-extras = ["testing", "oidc", "redis", "transfer", "sse"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "opentelemetry-sdk", specifier = ">=1.44" },
     { name = "pyright", specifier = ">=1.1.411" },
@@ -2566,7 +2569,7 @@ provides-extras = ["migrations"]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21" },
     { name = "alembic", specifier = ">=1.20.1" },
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "asyncpg", specifier = ">=0.30" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pyright", specifier = ">=1.1.411" },
@@ -2618,7 +2621,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
+    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=2.35" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-cli", editable = "packages/rn-forge-cli" },
     { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
@@ -2627,7 +2630,7 @@ provides-extras = ["testing"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
@@ -2685,7 +2688,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=1.1" },
+    { name = "assertpy", marker = "extra == 'testing'", specifier = ">=2.35" },
     { name = "opentelemetry-api", specifier = ">=1.44" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
     { name = "rn-forge-commons", extras = ["pydantic"], editable = "packages/rn-forge-commons" },
@@ -2695,7 +2698,7 @@ provides-extras = ["testing", "security"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "assertpy", specifier = ">=1.1" },
+    { name = "assertpy", specifier = ">=2.35" },
     { name = "opentelemetry-instrumentation-asgi", specifier = ">=0.65b0" },
     { name = "opentelemetry-sdk", specifier = ">=1.44" },
     { name = "pyright", specifier = ">=1.1.411" },

@@ -35,7 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # httpx is what FastAPI's TestClient drives requests through.
-testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
+testing = ["assertpy>=2.35", "httpx>=0.28.1", "pytest>=9.1.1"]
 # JWKS bearer auth: `rn_forge.auth.oidc.OidcAuthenticator` passed to
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into auth's extras.
@@ -95,7 +95,7 @@ markers = [
 
 [dependency-groups]
 dev = [
-  "assertpy>=1.1",
+  "assertpy>=2.35",
   "httpx>=0.28.1",
   "opentelemetry-sdk>=1.44",
   "pyright>=1.1.411",
