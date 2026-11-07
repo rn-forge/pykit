@@ -43,7 +43,7 @@ addopts = "-ra --import-mode=importlib"
 [dependency-groups]
 dev = [
   "pyright>=1.1.411",
-  "pytest>=9.1.1",
+  "pytest>=9.2.0",
   "pytest-cov>=7.1.0",
   "pytest-randomly>=4.1.0",
   "rn-forge-devops",
