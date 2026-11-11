@@ -112,9 +112,10 @@ them when reviewing a diff.
   shared by several test modules is a fixture in `conftest.py`, or, if it is
   generic, belongs in `rn_forge.commons.testing`. A test-only Django model is
   declared in the test module that uses it.
-- A root-level `uv run pytest` reads only the root `[tool.pytest.ini_options]`.
-  Mark async tests with an explicit `@pytest.mark.asyncio` rather than relying
-  on a package's `asyncio_mode`, and register any new marker at the root as
-  well as in the package that uses it.
+- A pytest run from the repository root reads only the root
+  `[tool.pytest.ini_options]`. Mark async tests with an explicit
+  `@pytest.mark.asyncio` rather than relying on a package's `asyncio_mode`,
+  and register any new marker at the root as well as in the package that uses
+  it.
 - `pytest-randomly` randomizes order in every package — do not rely on
   cross-test ordering.

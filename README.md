@@ -25,8 +25,8 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 The boundaries between these packages are executable, not conventional.
 [`.importlinter`](.importlinter) states fifteen contracts, summarised by the
-rules below, and `uv run lint-imports` proves them; CI gates every other job on
-it.
+rules below, and the import-boundary check proves them; CI gates every other job
+on it.
 
 1. `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling`
    and never imports Typer. Jinja and the Markdown parsers enter only through
