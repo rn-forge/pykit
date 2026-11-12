@@ -50,13 +50,15 @@ log redaction and server-sent events (F6.1 and F6.2,
 
 1. **F21.5** first, on `feature/release-8`. It retires the self-hosted index
    before the cutover, so the cutover carries no index.
-1. **F16.3** as kiln's S7.2.4 rehearsal, merged once kiln tags `v0.1.0`. It
-   cuts pykit over onto kiln and adds `rn-forge-auth` to the kiln config. kiln
-   must render the release behaviour F21.3 built in `main.yml`.
+1. **F16.3** as kiln's S7.2.4 rehearsal, merged once kiln tags `v0.1.0`
+   (*revised 2026-11-08:* it runs on `feature/kiln-cutover`, which may merge
+   into this branch before the tag; only this branch's merge to `main` waits).
+   It cuts pykit over onto kiln and adds `rn-forge-auth` to the kiln config.
+   kiln must render the release behaviour F21.3 built in `main.yml`.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
-1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes before
-   F17.3, whose guide names the actor rule.
+1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes
+   before F17.3, whose guide names the actor rule.
 1. **F6.1 and F6.2** do not wait for kiln, or for each other.
 
 ## Decisions
@@ -71,8 +73,8 @@ log redaction and server-sent events (F6.1 and F6.2,
 - Owner decision, 2026-10-31: F6.1 and F6.2 join this release, and F16.3 and
   F16.6 stay in it.
 - Owner decision, 2026-11-03: F21.5 joins this release and lands before F16.3.
-- Owner decision, 2026-11-03: S16.3.3 converts the docs to kiln's format
-  on `feature/release-8` ahead of `kiln init`, replacing branch
+- Owner decision, 2026-11-03: S16.3.3 converts the docs to kiln's format on
+  `feature/release-8` ahead of `kiln init`, replacing branch
   `feature/kiln-docs-model`.
 
 ## Commits
