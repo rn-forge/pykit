@@ -24,6 +24,7 @@ yet, and then the cutover. Acceptance is checked inside pykit
 | [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Member test runs leave the scaffold suite to the root; `FastApiApp` turns FastAPI's native tracing off unless asked. Precedes F16.3. | Closed |
 | [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | A no-extras smoke entry for every selected package, the `plan` outputs as a documented contract, and `rn-forge-devops` 0.2.0. Precedes F16.3. | Closed |
 | [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | Settle whether `plan` keeps the outputs and the `sonar-target` subcommand that kiln's generated workflow does not read. Follows F16.3. | New |
+| [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | `README.md` becomes the single prose home, `CLAUDE.md` the pointer plus kiln's block, `AGENTS.md` the reference's pointer. Follows F16.3. | New |
 
 [ADR-0012](../../../adr/ADR-0012.md) records that CI and release logic ships as
 `rn-forge-devops`, never as workflow logic or copied scripts. kiln's matching

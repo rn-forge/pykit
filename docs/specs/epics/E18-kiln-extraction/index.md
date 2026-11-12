@@ -2,9 +2,8 @@
 
 |  |  |
 | -- | -- |
-| **State** | Closed |
+| **State** | Active |
 | **Start Date** | 2026-10-25 |
-| **Closed Date** | 2026-10-25 |
 
 kiln, the rn-forge repository generator, grew plumbing that any application
 reading configuration, rendering text or checking Markdown would write again. It
@@ -30,8 +29,13 @@ keeps its own code.
 | [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | libyaml loading; `tomllib` for plain TOML; package-resource reads; TOML header and array style; value-level typed reads; brace-safe error messages. | Closed |
 | [F18.4 — Markdown structure](F18.4-markdown-structure.md) | `MarkdownUtils` in `rn_forge.commons.text.markdown` behind a `markdown` extra: headings and anchors, links, title, pipe tables. | Closed |
 | [F18.5 — One pin set on the new tags](F18.5-coherent-pins.md) | Removed: F19.3 re-tags every dependent on ranges in the same cut. | Removed |
+| [F18.6 — Cache Markdown structure by text](F18.6-markdown-parse-cache.md) | One bounded immutable parse result shared by every `MarkdownUtils` parsing helper; public return types unchanged. | New |
 
 ## Context
+
+Reopened on 2026-11-10 for F18.6 and F18.7. The original extraction shipped in
+Release 6; Markdown parse caching and the managed block's end indent are planned
+for Release 8.
 
 Placed as its own epic, as [E17](../E17-local-first-web-app-extraction/index.md)
 was for Apollo: the features come from one consumer's review, span several

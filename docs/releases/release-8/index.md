@@ -32,11 +32,14 @@ log redaction and server-sent events (F6.1 and F6.2,
 | -- | -- | -- |
 | [F16.3](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
+| [F16.7](../../specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md) | E16 | New |
 | [F17.1](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | Closed |
 | [F17.2](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Closed |
 | [F17.3](../../specs/epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md) | E17 | Closed |
 | [F17.4](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | Closed |
 | [F17.5](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | Closed |
+| [F18.6](../../specs/epics/E18-kiln-extraction/F18.6-markdown-parse-cache.md) | E18 | New |
+| [F18.7](../../specs/epics/E18-kiln-extraction/F18.7-managed-block-end-indent.md) | E18 | New |
 | [F21.5](../../specs/epics/E21-pypi-distribution/F21.5-retire-index.md) | E21 | Active |
 | [F6.1](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) | E6 | Closed |
 | [F6.2](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Closed |
