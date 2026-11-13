@@ -178,6 +178,7 @@ nav:
               - F16.5 — rn-forge-devops meets kiln's CI contract: specs/epics/E16-kiln-adoption/F16.5-devops-meets-kiln-ci.md
               - F16.6 — Retire the plan outputs generated CI does not read: specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md
               - F16.7 — Instruction files follow kiln's standard: specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md
+              - F16.8 — Retire the local Sonar script for kiln's verb: specs/epics/E16-kiln-adoption/F16.8-retire-local-sonar-script.md
           - E17 — Local-first web-app extraction:
               - specs/epics/E17-local-first-web-app-extraction/index.md
               - F17.1 — Problem rows from an exception hierarchy: specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md
