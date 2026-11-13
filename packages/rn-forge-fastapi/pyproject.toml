@@ -39,20 +39,13 @@ testing = ["assertpy>=2.35", "httpx>=0.28.1", "pytest>=9.1.1"]
 # JWKS bearer auth: `rn_forge.auth.oidc.OidcAuthenticator` passed to
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into auth's extras.
-oidc = [
-    "rn-forge-auth[oidc]>=0.1.0,<0.2",
-]
+oidc = ["rn-forge-auth[oidc]>=0.1.0,<0.2"]
 # Redis-backed login sessions and transactions for `rn_forge.fastapi.auth`:
 # `rn_forge.auth.redis`, and the CSRF token store `rn_forge.fastapi.auth.redis`.
-redis = [
-    "rn-forge-auth[redis]>=0.1.0,<0.2",
-]
+redis = ["rn-forge-auth[redis]>=0.1.0,<0.2"]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
-transfer = [
-    "rn-forge-data>=0.1.1,<0.2",
-    "python-multipart>=0.0.20",
-]
+transfer = ["rn-forge-data>=0.1.1,<0.2", "python-multipart>=0.0.20"]
 # Server-sent events: `rn_forge.fastapi.sse`. Not imported by the package facade.
 sse = ["sse-starlette>=3.4.11"]
 
@@ -63,11 +56,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fasta
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.fastapi"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-auth = { workspace = true }

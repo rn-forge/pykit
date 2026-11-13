@@ -17,10 +17,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-dependencies = [
-    "rn-forge-commons>=0.8.0,<0.9",
-    "rn-forge-web>=0.3.0,<0.4",
-]
+dependencies = ["rn-forge-commons>=0.8.0,<0.9", "rn-forge-web>=0.3.0,<0.4"]
 
 [project.optional-dependencies]
 # Bearer and logout tokens are verified with PyJWT, keys from its `PyJWKClient`;
@@ -33,9 +30,7 @@ oidc = [
     "requests>=2.34.2",
 ]
 # GETDEL, SET NX and INCR need Redis 6.2 or later.
-redis = [
-    "redis>=8.1.0",
-]
+redis = ["redis>=8.1.0"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/"
@@ -44,11 +39,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-auth/
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.auth"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-auth = { workspace = true }
@@ -58,9 +61,14 @@ rn-forge-web = { workspace = true }
 [tool.workspace-ci]
 adapters = ["oidc", "redis"]
 
-[tool.workspace-ci.redis]
+[tool.workspace-ci.integration.redis]
+image = "redis:7"
+ports = ["6379:6379"]
+health-cmd = "redis-cli ping"
+
+[tool.workspace-ci.integration.redis.expose]
 # The Redis tests read this URL and skip without it.
-env = "RN_FORGE_AUTH_REDIS_URL"
+RN_FORGE_AUTH_REDIS_URL = "redis://localhost:6379/0"
 
 [tool.workspace-ci.smoke]
 modules = ["rn_forge.auth"]
@@ -93,3 +101,19 @@ docs = [
     "mkdocstrings[python]>=1.0.6",
     "rn-forge-auth[oidc,redis]",
 ]
+
+[tool.workspace-ci.integration.keycloak]
+image = "quay.io/keycloak/keycloak:26.4.7"
+command = ["start-dev", "--import-realm"]
+ports = ["127.0.0.1:8080:8080"]
+volumes = ["tests/broker/realms:/opt/keycloak/data/import:ro"]
+health-cmd = "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"
+# The broker tests skip unless RN_FORGE_AUTH_KEYCLOAK_URL is set.
+pytest-args = ["-p", "no:randomly"]
+health-wait = 300
+
+[tool.workspace-ci.integration.keycloak.env]
+KC_HEALTH_ENABLED = "true"
+
+[tool.workspace-ci.integration.keycloak.expose]
+RN_FORGE_AUTH_KEYCLOAK_URL = "http://127.0.0.1:8080"

@@ -7,16 +7,54 @@ authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = []
 
-[project.scripts]
-pykit = "pykit:main"
+[tool.uv]
+package = false
 
-[build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
-build-backend = "uv_build"
+[tool.uv.workspace]
+members = [
+    "packages/rn-forge-commons",
+    "packages/rn-forge-cli",
+    "packages/rn-forge-django",
+    "packages/rn-forge-fastapi",
+    "packages/rn-forge-sqlalchemy",
+    "packages/rn-forge-tooling",
+    "packages/rn-forge-web",
+    "packages/rn-forge-devops",
+    "packages/rn-forge-data",
+    "packages/rn-forge-auth",
+]
+
+[tool.uv.sources.rn-forge-commons]
+workspace = true
+
+[tool.uv.sources.rn-forge-cli]
+workspace = true
+
+[tool.uv.sources.rn-forge-django]
+workspace = true
+
+[tool.uv.sources.rn-forge-fastapi]
+workspace = true
+
+[tool.uv.sources.rn-forge-sqlalchemy]
+workspace = true
+
+[tool.uv.sources.rn-forge-tooling]
+workspace = true
+
+[tool.uv.sources.rn-forge-web]
+workspace = true
+
+[tool.uv.sources.rn-forge-devops]
+workspace = true
+
+[tool.uv.sources.rn-forge-data]
+workspace = true
+
+[tool.uv.sources.rn-forge-auth]
+workspace = true
 
 [tool.pyright]
-typeCheckingMode = "strict"
-include = ["packages"]
 ignore = [
     "tests",
     "**/tests",
@@ -27,16 +65,16 @@ ignore = [
     "packages/rn-forge-web/docs/guides/examples/django_app.py",
     "packages/rn-forge-web/docs/guides/examples/fastapi_app.py",
 ]
+include = ["packages"]
 reportMissingTypeStubs = false
 reportUnnecessaryTypeIgnoreComment = "error"
-venvPath = "."
+typeCheckingMode = "strict"
 venv = ".venv"
+venvPath = "."
 
 [tool.pytest.ini_options]
-# A root-level run reads only this table, not the packages' own. importlib mode
-# lets every package keep a plain `tests/` with no __init__.py, and same-named
-# test modules in different packages do not collide.
 addopts = "-ra --import-mode=importlib"
+testpaths = ["packages"]
 markers = [
     "unit: fast isolated tests",
     "integration: tests that exercise database-backed behavior",
@@ -51,19 +89,9 @@ markers = [
 # scaffold tests through each member's own pytest addopts.
 scaffold = ["-q", "-m", "scaffold"]
 
-[tool.ruff.format]
-# Markdown code blocks are owned by the docs formatting, not ruff.
-exclude = ["*.md"]
-
 [tool.ruff.lint]
 # Bandit's checks, including the Django ones (S308, S703).
 extend-select = ["S"]
-
-[tool.ruff.lint.per-file-ignores]
-"**/tests/*" = ["ALL"]
-# Repository tooling outside packages/, which is what the source scan covers.
-"conftest.py" = ["S"]
-".github/scripts/*" = ["S"]
 
 [tool.ruff.lint.isort]
 # ruff otherwise sorts these frameworks as first-party, after the rn_forge subpackages that share their names.
@@ -77,33 +105,55 @@ extend-immutable-calls = [
     "fastapi.Security",
 ]
 
-[tool.uv.sources]
-rn-forge-auth = { workspace = true }
-rn-forge-cli = { workspace = true }
-rn-forge-commons = { workspace = true }
-rn-forge-data = { workspace = true }
-rn-forge-devops = { workspace = true }
-rn-forge-django = { workspace = true }
-rn-forge-fastapi = { workspace = true }
-rn-forge-sqlalchemy = { workspace = true }
-rn-forge-tooling = { workspace = true }
-rn-forge-web = { workspace = true }
-
-[tool.uv.workspace]
-members = [
-    "packages/rn-forge-auth",
-    "packages/rn-forge-cli",
-    "packages/rn-forge-commons",
-    "packages/rn-forge-data",
-    "packages/rn-forge-devops",
-    "packages/rn-forge-django",
-    "packages/rn-forge-fastapi",
-    "packages/rn-forge-sqlalchemy",
-    "packages/rn-forge-tooling",
-    "packages/rn-forge-web",
-]
+[tool.ruff.lint.per-file-ignores]
+# Debt, not policy: S16.3.9 replaces ALL with kiln's four ignores and the
+# justified Bandit test rules.
+"**/tests/*" = ["ALL"]
+# Repository tooling outside packages/, which is what the source scan covers.
+"conftest.py" = ["S"]
+".github/scripts/*" = ["S"]
 
 [dependency-groups]
+dev = [
+    { include-group = "workspace" },
+    "actionlint-py>=1.7",
+    "aiosqlite>=0.21",
+    "alembic>=1.20.1",
+    "assertpy>=2.35",
+    "asyncpg>=0.30",
+    "coverage[toml]>=7.6",
+    "django-stubs>=6.1.2",
+    "google-yamlfmt>=0.21.0",
+    "import-linter>=2.15",
+    "opentelemetry-instrumentation-asgi>=0.65b0",
+    "opentelemetry-sdk>=1.44",
+    "pandas-stubs>=3.0.5",
+    "pip-audit>=2.10",
+    "pip-licenses>=5",
+    "psycopg[binary]>=3.3.5",
+    "pyright>=1.1",
+    "pytest>=9.1",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1",
+    "pytest-django>=4.12.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-data[pandas]",
+    "ruff>=0.17.1",
+    "taplo>=0.9",
+    "types-authlib>=1.8.0",
+    "zizmor>=1.31",
+]
+docs = [
+    "mdformat>=1.0.0",
+    "mdformat-front-matters>=2.0.0",
+    "mdformat-gfm>=0.4",
+    "mdformat-mkdocs>=5.3.0",
+    "mike>=2.1.3",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6",
+    "mkdocs-monorepo-plugin>=1.1",
+    "mkdocstrings[python]>=0.30",
+]
 workspace = [
     "rn-forge-auth[oidc]",
     "rn-forge-cli",
@@ -114,40 +164,4 @@ workspace = [
     "rn-forge-sqlalchemy",
     "rn-forge-tooling",
     "rn-forge-web[security]",
-]
-
-docs = [
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.6",
-    "mkdocs-monorepo-plugin>=1.1.2",
-    "mike>=2.1.3",
-    "mkdocstrings[python]>=1.0.6",
-    "mdformat>=1.0.0",
-    "mdformat-gfm>=0.4",
-    "mdformat-front-matters>=2.0.0",
-    "mdformat-mkdocs>=5.3.0",
-]
-
-dev = [
-    { include-group = "workspace" },
-    { include-group = "docs" },
-    "assertpy>=2.35",
-    "django-stubs>=6.1.2",
-    "import-linter>=2.3",
-    "opentelemetry-instrumentation-asgi>=0.65b0",
-    "opentelemetry-sdk>=1.44",
-    "pandas-stubs>=3.0.5",
-    "psycopg[binary]>=3.3.5",
-    "pyright>=1.1.414",
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.1.0",
-    "aiosqlite>=0.21",
-    "alembic>=1.20.1",
-    "asyncpg>=0.30",
-    "pytest-django>=4.12.0",
-    "pytest-randomly>=4.1.0",
-    "rn-forge-data[pandas]",
-    "ruff>=0.17.1",
-    "types-authlib>=1.8.0",
 ]
