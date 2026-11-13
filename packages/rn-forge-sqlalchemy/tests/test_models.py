@@ -3,10 +3,9 @@ from datetime import UTC, datetime, timedelta, timezone
 import pytest
 from assertpy import assert_that
 from pydantic import TypeAdapter
+from rn_forge.sqlalchemy import NAMING_CONVENTION, AuditMixin, Base
 from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column
-
-from rn_forge.sqlalchemy import NAMING_CONVENTION, AuditMixin, Base, UTCDateTime
 
 pytestmark = pytest.mark.unit
 

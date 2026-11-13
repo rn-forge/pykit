@@ -4,9 +4,8 @@ import pytest
 
 celery = pytest.importorskip("celery")
 
-from django.test import override_settings  # noqa: E402
-
-from rn_forge.django.celery import RETRYABLE_TASK_KWARGS, make_app  # noqa: E402
+from django.test import override_settings
+from rn_forge.django.celery import RETRYABLE_TASK_KWARGS, make_app
 
 pytestmark = pytest.mark.unit
 

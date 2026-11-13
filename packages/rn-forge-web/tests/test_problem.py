@@ -2,7 +2,8 @@
 
 import pytest
 from assertpy import assert_that
-
+from opentelemetry import trace
+from rn_forge.web.auth import AUTH_FAILED_DETAIL
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     DomainConflict,
@@ -19,7 +20,6 @@ from rn_forge.web.problem import (
     INTERNAL_ERROR,
     NOT_FOUND,
     PRECONDITION_FAILED,
-    PRECONDITION_REQUIRED,
     VALIDATION_ERROR,
     ProblemDetail,
     ProblemRegistry,
@@ -30,9 +30,6 @@ from rn_forge.web.problem import (
     render_problem,
     unmapped_exceptions,
 )
-from opentelemetry import trace
-
-from rn_forge.web.auth import AUTH_FAILED_DETAIL
 from rn_forge.web.tracing import current_trace_id
 
 _TRACER = trace.get_tracer(__name__)

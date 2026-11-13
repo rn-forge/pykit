@@ -7,13 +7,12 @@ import pytest
 django = pytest.importorskip("django")
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.http import HttpRequest  # noqa: E402
-from django.urls.exceptions import Resolver404  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.exceptions import drf_exception_handler  # noqa: E402
-from rn_forge.django.exceptions import (  # noqa: E402
+from django.http import HttpRequest
+from django.urls.exceptions import Resolver404
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.exceptions import drf_exception_handler
+from rn_forge.django.exceptions import (
     django_exception_handler,
     json_exception_response,
 )

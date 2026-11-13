@@ -2,7 +2,6 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.conformance import case_by_id
 from rn_forge.web.exceptions import InvalidBatchGet, ItemsDenied, RowsInvalid
 from rn_forge.web.problem import ProblemResponse, default_registry, render_problem

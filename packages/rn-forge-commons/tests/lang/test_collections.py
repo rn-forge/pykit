@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
-
 from rn_forge.commons.lang.collections import DictUtils, ListUtils
-
 
 # -- DictUtils.get ---------------------------------------------------------
 
@@ -427,7 +427,7 @@ class TestListUtils:
 
 
 class TestDictTypedReads:
-    DOC = {
+    DOC: ClassVar = {
         "repository": {"name": "kiln", "private": True, "tags": ["a", 1, "b"]},
         "docs": "mkdocs",
         "tasks": {"build": {"cmds": "echo hi"}, "a.b": {"cmds": None}},

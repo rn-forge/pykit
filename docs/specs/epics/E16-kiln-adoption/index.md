@@ -11,7 +11,7 @@
 | -- | -- | -- | -- |
 | [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | Closed | release-4 | 3 Closed |
 | [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Closed | release-4 | 3 Closed |
-| [F16.3 — Cut over onto kiln](F16.3-cutover.md) | Active | release-8 | 1 Active · 3 New · 6 Closed · 2 Removed |
+| [F16.3 — Cut over onto kiln](F16.3-cutover.md) | Active | release-8 | 1 Active · 2 New · 7 Closed · 2 Removed |
 | [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Closed | release-5 | 3 Closed |
 | [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | Closed | release-5 | 3 Closed |
 | [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | New | release-8 | 1 New |

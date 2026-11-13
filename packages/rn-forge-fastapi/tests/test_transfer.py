@@ -6,8 +6,6 @@ from assertpy import assert_that
 from fastapi import Depends, FastAPI, UploadFile
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-from starlette.datastructures import Headers
-
 from rn_forge.fastapi import AppConfig, FastApiApp
 from rn_forge.fastapi.transfer import (
     batch_create_router,
@@ -29,6 +27,7 @@ from rn_forge.web import (
     RowsInvalid,
 )
 from rn_forge.web.transfer import TABULAR_FORMATS
+from starlette.datastructures import Headers
 
 pytestmark = pytest.mark.unit
 
@@ -58,8 +57,10 @@ def upload(name: str, content: bytes, content_type: str | None = None) -> Upload
 def client(allowed=("csv", "xlsx")) -> TestClient:
     app = FastAPI()
 
+    fmt_dep = __import__("fastapi").Depends(tabular_format(allowed))
+
     @app.get("/x")
-    def route(fmt=__import__("fastapi").Depends(tabular_format(allowed))):
+    def route(fmt=fmt_dep):
         return {"fmt": fmt.extension if fmt else None}
 
     return TestClient(app)
@@ -729,7 +730,7 @@ def book_update(client, *requests):
 
 
 def test_batch_get_returns_rows_in_request_order_repeating_duplicates():
-    client, store, _ = books()
+    client, _store, _ = books()
     response = client.get(
         "/books:batchGet", params=[("ids", "3"), ("ids", "1"), ("ids", "3")]
     )
@@ -765,7 +766,7 @@ def test_batch_get_requires_an_id(params):
 
 
 def test_batch_get_over_the_cap_is_a_400():
-    client, store, _ = books(cap=1)
+    client, _store, _ = books(cap=1)
     response = client.get("/books:batchGet", params=[("ids", "1"), ("ids", "2")])
     assert_that(response.status_code).is_equal_to(400)
     assert_that(response.json()["detail"]).is_equal_to(
@@ -856,7 +857,7 @@ def test_batch_update_require_if_match_is_a_428_with_the_pointer():
 
 
 def test_batch_update_a_stale_precondition_is_a_412_with_the_pointer():
-    client, store, _ = books()
+    client, _store, _ = books()
     response = book_update(
         client, {"id": "1", "patch": {}}, {"id": "2", "patch": {}, "ifMatch": 'W/"9"'}
     )
@@ -865,7 +866,7 @@ def test_batch_update_a_stale_precondition_is_a_412_with_the_pointer():
 
 
 def test_batch_update_an_unknown_id_is_a_404():
-    client, store, _ = books()
+    client, _store, _ = books()
     response = book_update(client, {"id": "1", "patch": {}}, {"id": "99", "patch": {}})
     assert_that(response.status_code).is_equal_to(404)
     assert_that(response.json()["detail"]).is_equal_to("Book 99 not found")

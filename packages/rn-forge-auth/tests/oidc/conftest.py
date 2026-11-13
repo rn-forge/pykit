@@ -19,8 +19,8 @@ import pytest
 pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from rn_forge.auth.oidc import OAuth2Endpoints, OidcProvider  # noqa: E402
-from rn_forge.auth.testing import FakeOidcProvider  # noqa: E402
+from rn_forge.auth.oidc import OAuth2Endpoints, OidcProvider
+from rn_forge.auth.testing import FakeOidcProvider
 
 AUDIENCE = "api://orders"
 

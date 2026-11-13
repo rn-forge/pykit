@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import json
 from types import SimpleNamespace
 
 import pytest
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from rest_framework.parsers import JSONParser  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.concurrency import enforce_version, etag_for  # noqa: E402
-from rn_forge.django.drf.exceptions import problem_details_exception_handler  # noqa: E402
-from rn_forge.web import (  # noqa: E402
+from rest_framework.parsers import JSONParser
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.concurrency import enforce_version, etag_for
+from rn_forge.django.drf.exceptions import problem_details_exception_handler
+from rn_forge.web import (
     EntityVersionETagCodec,
     MalformedPrecondition,
     PreconditionRequired,

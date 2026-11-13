@@ -8,16 +8,14 @@ from operator import attrgetter
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import connection, models
-
 from rn_forge.django.models import (
     BaseModel,
     DateRangeModel,
     FixtureModelMixin,
     ModelLookupCache,
     NaturalKeyLookupManager,
+    Status,
 )
-from rn_forge.django.models import Status
-
 
 # ---------------------------------------------------------------------------
 # Concrete models used throughout the tests
@@ -281,7 +279,7 @@ TestModelLookupCacheWithoutDb = pytest.mark.unit(TestModelLookupCacheWithoutDb)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(create_tables):  # noqa: PT004
+def _django_tables(create_tables):
     """Create Widget and Campaign tables for this module."""
     create_tables(Widget, Campaign, StrictWidget)
 

@@ -7,12 +7,11 @@ from pathlib import Path
 
 import pytest
 from assertpy import assert_that
+from rn_forge.sqlalchemy import create_sqlite_engine
+from rn_forge.sqlalchemy.migrate import run_migrations
 from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from rn_forge.sqlalchemy import create_sqlite_engine
-from rn_forge.sqlalchemy.migrate import run_migrations
 
 pytestmark = pytest.mark.unit
 

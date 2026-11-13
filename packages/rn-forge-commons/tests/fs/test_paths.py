@@ -7,10 +7,8 @@ import os
 from pathlib import Path
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.paths import PathUtils
-
 
 # ---------------------------------------------------------------------------
 # PathUtils
@@ -109,29 +107,26 @@ class TestAtomicReplace:
     def test_exception_leaves_original_and_no_temporary(self, tmp_path):
         target = tmp_path / "f.txt"
         target.write_text("old")
-        with pytest.raises(RuntimeError):
-            with PathUtils.atomic_replace(target) as tmp:
-                tmp.write_text("partial")
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError), PathUtils.atomic_replace(target) as tmp:
+            tmp.write_text("partial")
+            raise RuntimeError("boom")
         assert target.read_text() == "old"
         assert list(tmp_path.iterdir()) == [target]
 
     def test_keyboard_interrupt_leaves_original(self, tmp_path):
         target = tmp_path / "f.txt"
         target.write_text("old")
-        with pytest.raises(KeyboardInterrupt):
-            with PathUtils.atomic_replace(target):
-                raise KeyboardInterrupt
+        with pytest.raises(KeyboardInterrupt), PathUtils.atomic_replace(target):
+            raise KeyboardInterrupt
         assert target.read_text() == "old"
         assert list(tmp_path.iterdir()) == [target]
 
     def test_cleanup_tolerates_temporary_moved_away(self, tmp_path):
         target = tmp_path / "f.txt"
         target.write_text("old")
-        with pytest.raises(RuntimeError):
-            with PathUtils.atomic_replace(target) as tmp:
-                tmp.unlink()
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError), PathUtils.atomic_replace(target) as tmp:
+            tmp.unlink()
+            raise RuntimeError("boom")
         assert list(tmp_path.iterdir()) == [target]
 
     def test_keeps_original_mode(self, tmp_path):
@@ -163,9 +158,11 @@ class TestAtomicReplace:
         assert (target.stat().st_mode & 0o777) == 0o644
 
     def test_copy_of_missing_path_raises_and_leaves_no_temporary(self, tmp_path):
-        with pytest.raises(FileNotFoundError):
-            with PathUtils.atomic_replace(tmp_path / "missing.txt"):
-                pytest.fail("body must not run")
+        with (
+            pytest.raises(FileNotFoundError),
+            PathUtils.atomic_replace(tmp_path / "missing.txt"),
+        ):
+            pytest.fail("body must not run")
         assert list(tmp_path.iterdir()) == []
 
     def test_no_copy_creates_missing_path(self, tmp_path):

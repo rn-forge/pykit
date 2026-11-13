@@ -1,11 +1,10 @@
 """Tests for rn_forge.auth.session_body."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import get_args
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.auth import (
     CALLBACK_ERRORS,
     AuthorizationContext,
@@ -15,8 +14,6 @@ from rn_forge.auth import (
 )
 
 pytestmark = pytest.mark.unit
-
-UTC = timezone.utc
 
 
 def _session(**overrides: object) -> SessionInfo:

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import threading
+from typing import Self
 
 import pytest
 from django.db import connection, connections
 from psycopg.sql import Composable
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.django.models import (
     AbstractSequenceCounter,
@@ -44,7 +44,7 @@ class _RecordingCursor:
     def __init__(self, executed: list[str]) -> None:
         self._executed = executed
 
-    def __enter__(self) -> _RecordingCursor:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc_info: object) -> None:

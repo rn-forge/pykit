@@ -11,12 +11,11 @@ import pytest
 
 pd = pytest.importorskip("pandas")
 
-import rn_forge.data.pandas as pandas_module
-from rn_forge.data.pandas import ExcelAdapter, PandasUtils
-from rn_forge.data.excel import ExcelUtils
 from openpyxl import Workbook
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.testing import raise_
+from rn_forge.data.excel import ExcelUtils
+from rn_forge.data.pandas import ExcelAdapter, PandasUtils
 
 
 def _row(**kwargs) -> pd.Series:
@@ -115,7 +114,7 @@ class TestGetDecimalField:
     def test_zero_precision(self):
         row = _row(amount="12.9")
         result = PandasUtils.get_decimal_field(row, "amount", precision=0)
-        assert result == Decimal("13")
+        assert result == Decimal(13)
 
     def test_float_value(self):
         row = _row(amount=1.5)

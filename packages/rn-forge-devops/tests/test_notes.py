@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from rn_forge.devops.notes import Umbrella, changelog_section, pending_umbrella
 
 CHANGELOG = """# Changelog

@@ -9,9 +9,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import StaticPool, create_engine, func, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
-
 from rn_forge.auth import (
     AuthorizationContext,
     PasswordIdentityProvider,
@@ -31,6 +28,8 @@ from rn_forge.fastapi import (
     sessions_for,
 )
 from rn_forge.web import AUTH_FAILED_DETAIL, AuthenticationFailed
+from sqlalchemy import StaticPool, create_engine, func, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 pytestmark = pytest.mark.unit
 
@@ -163,35 +162,37 @@ class World:
                 "auth_time": principal.auth_time is not None,
             }
 
+        principal_dep = Depends(requires_permission(who, "orders", "retrieve"))
+
         @app.get("/read")
         async def read(
-            principal: Principal = Depends(
-                requires_permission(who, "orders", "retrieve")
-            ),
+            principal: Principal = principal_dep,
         ) -> dict[str, str]:
             return {"ok": principal.subject}
+
+        principal_dep = Depends(requires_permission(who, "orders", "partial_update"))
 
         @app.post("/update")
         async def update(
-            principal: Principal = Depends(
-                requires_permission(who, "orders", "partial_update")
-            ),
+            principal: Principal = principal_dep,
         ) -> dict[str, str]:
             return {"ok": principal.subject}
+
+        principal_dep = Depends(requires_permission(who, "orders", "destroy"))
 
         @app.delete("/delete")
         async def delete(
-            principal: Principal = Depends(
-                requires_permission(who, "orders", "destroy")
-            ),
+            principal: Principal = principal_dep,
         ) -> dict[str, str]:
             return {"ok": principal.subject}
 
+        principal_dep = Depends(
+            requires(who, Requirement(all_permissions=frozenset({"orders.admin"})))
+        )
+
         @app.get("/requirement")
         async def requirement(
-            principal: Principal = Depends(
-                requires(who, Requirement(all_permissions=frozenset({"orders.admin"})))
-            ),
+            principal: Principal = principal_dep,
         ) -> dict[str, str]:
             return {"ok": principal.subject}
 
@@ -436,8 +437,10 @@ def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> Non
     world.client.delete("/delete", headers={"Origin": ORIGIN, **_csrf(world)})
 
     assert _events(caplog) == [
-        "audit event=authorization.denied account_id='acct-ada' "
-        "permission_key='orders' action='destroy'"
+        (
+            "audit event=authorization.denied account_id='acct-ada' "
+            "permission_key='orders' action='destroy'"
+        )
     ]
 
 
@@ -467,8 +470,10 @@ def test_a_denied_object_is_audited(
 
     assert_that(response.status_code).is_equal_to(status)
     assert _events(caplog) == [
-        "audit event=authorization.denied account_id='acct-ada' action='read' "
-        f"resource='Order' hidden={hides}"
+        (
+            "audit event=authorization.denied account_id='acct-ada' action='read' "
+            f"resource='Order' hidden={hides}"
+        )
     ]
 
 

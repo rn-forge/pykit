@@ -2,14 +2,13 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.auth import (
     AUTH_FAILED_DETAIL,
+    CSRF_FAILED_DETAIL,
     Credentials,
     challenge_header,
     parse_authorization,
 )
-from rn_forge.web.auth import CSRF_FAILED_DETAIL
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     CsrfFailed,

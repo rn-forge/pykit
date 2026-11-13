@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import ClassVar
 
 import pytest
 from django.db import models
@@ -11,17 +12,16 @@ from rest_framework.routers import SimpleRouter
 
 pytest.importorskip("drf_spectacular")
 
-from drf_spectacular.generators import SchemaGenerator  # noqa: E402
-from drf_spectacular.settings import patched_settings  # noqa: E402
-
-from rn_forge.django.drf import MergePatchMixin, MergePatchParser  # noqa: E402
-from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS  # noqa: E402
-from rn_forge.django.drf.views.base import BaseModelViewSet  # noqa: E402
-from rn_forge.django.models import BaseModel, VersionedModelMixin  # noqa: E402
-from rn_forge.web import (  # noqa: E402
+from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.settings import patched_settings
+from rn_forge.django.drf import MergePatchMixin, MergePatchParser
+from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.models import BaseModel, VersionedModelMixin
+from rn_forge.web import (
     MERGE_PATCH_MEDIA_TYPE,
-    EntityVersionETagCodec,
     NULL_FIELD_DETAIL,
+    EntityVersionETagCodec,
 )
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
@@ -49,20 +49,28 @@ class _Plain(BaseModel):
 class _DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = _Document
-        fields = ["id", "name", "note", "tags", "settings", "version", "updated_by"]
-        read_only_fields = ["id", "version", "updated_by"]
+        fields: ClassVar = [
+            "id",
+            "name",
+            "note",
+            "tags",
+            "settings",
+            "version",
+            "updated_by",
+        ]
+        read_only_fields: ClassVar = ["id", "version", "updated_by"]
 
 
 class _PlainSerializer(serializers.ModelSerializer):
     class Meta:
         model = _Plain
-        fields = ["id", "name"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class _Documents(BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _Document.objects.all()
     serializer_class = _DocumentSerializer
 
@@ -73,8 +81,8 @@ class _StrictDocuments(_Documents):
 
 
 class _Plains(BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _Plain.objects.all()
     serializer_class = _PlainSerializer
 
@@ -326,11 +334,13 @@ class TestAuditFields:
 
 
 def test_openapi_lists_only_the_merge_patch_media_type() -> None:
-    with patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}):
-        with override_settings(**WIRING):
-            schema = SchemaGenerator(patterns=urlpatterns).get_schema(
-                request=None, public=True
-            )
+    with (
+        patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}),
+        override_settings(**WIRING),
+    ):
+        schema = SchemaGenerator(patterns=urlpatterns).get_schema(
+            request=None, public=True
+        )
     operations = schema["paths"]["/documents/{id}/"]
     assert set(operations["patch"]["requestBody"]["content"]) == {
         MERGE_PATCH_MEDIA_TYPE

@@ -25,8 +25,8 @@ REDIS_URL = "RN_FORGE_AUTH_REDIS_URL"
 if not os.environ.get(REDIS_URL):
     pytest.skip(f"{REDIS_URL} is not set", allow_module_level=True)
 
-from redis import Redis  # noqa: E402
-from rn_forge.auth.redis import (  # noqa: E402
+from redis import Redis
+from rn_forge.auth.redis import (
     RedisAuthorizationVersions,
     RedisReplayStore,
     RedisSessionStore,

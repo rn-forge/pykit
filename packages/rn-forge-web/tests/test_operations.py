@@ -3,7 +3,6 @@
 import pytest
 from assertpy import assert_that
 from pydantic import ValidationError
-
 from rn_forge.web.operations import Operation
 from rn_forge.web.problem import ProblemDetail
 

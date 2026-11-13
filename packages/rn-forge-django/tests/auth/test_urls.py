@@ -5,7 +5,7 @@ import pytest
 django = pytest.importorskip("django")
 rest_framework = pytest.importorskip("rest_framework")
 
-from rn_forge.django.auth.urls import router, urlpatterns  # noqa: E402
+from rn_forge.django.auth.urls import router, urlpatterns
 
 pytestmark = pytest.mark.unit
 

@@ -2,7 +2,6 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web import (
     READ_MASK_PARAM,
     InvalidReadMask,

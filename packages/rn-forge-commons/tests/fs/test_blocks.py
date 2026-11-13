@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import pytest
-
-from rn_forge.commons.fs.blocks import ManagedBlock
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.fs.blocks import ManagedBlock
 
 
 class TestMarkers:

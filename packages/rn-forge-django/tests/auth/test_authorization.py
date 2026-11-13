@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 import json
+from typing import ClassVar
 
 import pytest
 
 pytest.importorskip("rest_framework")
 
-from django.contrib.auth import get_user_model  # noqa: E402
-from django.contrib.auth.models import Group, Permission  # noqa: E402
-from django.contrib.contenttypes.models import ContentType  # noqa: E402
-from rest_framework.pagination import PageNumberPagination  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.serializers import ModelSerializer  # noqa: E402
-from rest_framework.test import APIRequestFactory, force_authenticate  # noqa: E402
-from rest_framework.viewsets import ModelViewSet  # noqa: E402
-
-from rn_forge.auth import AuthorizationContextCache, Principal  # noqa: E402
-from rn_forge.django.auth.authorization import (  # noqa: E402
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
+from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.viewsets import ModelViewSet
+from rn_forge.auth import AuthorizationContextCache, Principal
+from rn_forge.django.auth.authorization import (
     DjangoAuthorizationContextProvider,
     connect_authorization_signals,
     permission_keys,
 )
-from rn_forge.django.auth.drf import (  # noqa: E402
+from rn_forge.django.auth.drf import (
     GroupViewSet,
     PermissionKeyPermission,
     ResourcePolicyViewMixin,
@@ -163,7 +163,7 @@ def test_viewset_changes_bump_authorization(cache: AuthorizationContextCache) ->
 
 class _View:
     permission_key = "orders"
-    permission_action_map = {"archive": "delete"}
+    permission_action_map: ClassVar = {"archive": "delete"}
 
     def __init__(self, action: str | None = None) -> None:
         self.action = action
@@ -190,14 +190,14 @@ class _Policy:
     def allows(self, principal: Principal, action: str, resource: Group) -> bool:
         return resource.name.startswith(str(principal.attributes["prefix"]))
 
-    def scope(self, principal: Principal, action: str, query):  # noqa: ANN001, ANN201
+    def scope(self, principal: Principal, action: str, query):
         return query.filter(name__startswith=principal.attributes["prefix"])
 
 
 class _GroupSerializer(ModelSerializer):
     class Meta:
         model = Group
-        fields = ["id", "name"]
+        fields: ClassVar = ["id", "name"]
 
 
 class _Page(PageNumberPagination):
@@ -214,12 +214,12 @@ class _GroupView(ResourcePolicyViewMixin, ModelViewSet):
 class _HiddenGroupView(_GroupView):
     policy_hides_existence = True
 
-    def get_queryset(self):  # noqa: ANN201
+    def get_queryset(self):
         # Bypass scoping so the object-level check is the one exercised.
         return Group.objects.all()
 
 
-def _call(view, method: str, path: str, **kwargs) -> Response:  # noqa: ANN001
+def _call(view, method: str, path: str, **kwargs) -> Response:
     request = getattr(APIRequestFactory(), method)(path)
     force_authenticate(
         request, user=Principal(subject="1", attributes={"prefix": "a-"})
@@ -265,7 +265,7 @@ def test_out_of_scope_detail_is_404_and_denied_object_follows_setting() -> None:
     )
 
     class Visible(_GroupView):
-        def get_queryset(self):  # noqa: ANN201
+        def get_queryset(self):
             return Group.objects.all()
 
     assert (
@@ -293,8 +293,10 @@ def test_a_denied_permission_is_audited(caplog: pytest.LogCaptureFixture) -> Non
     )
 
     assert _events(caplog) == [
-        "audit event=authorization.denied account_id='7' "
-        "permission_key='orders' action='partial_update'"
+        (
+            "audit event=authorization.denied account_id='7' "
+            "permission_key='orders' action='partial_update'"
+        )
     ]
 
 
@@ -304,12 +306,14 @@ def test_a_denied_object_is_audited(caplog: pytest.LogCaptureFixture) -> None:
     other = Group.objects.create(name="b-1")
 
     class Visible(_GroupView):
-        def get_queryset(self):  # noqa: ANN201
+        def get_queryset(self):
             return Group.objects.all()
 
     _call(Visible.as_view({"get": "retrieve"}), "get", "/", pk=other.pk)
 
     assert _events(caplog) == [
-        "audit event=authorization.denied account_id='1' action='retrieve' "
-        "resource='Group' hidden=False"
+        (
+            "audit event=authorization.denied account_id='1' action='retrieve' "
+            "resource='Group' hidden=False"
+        )
     ]

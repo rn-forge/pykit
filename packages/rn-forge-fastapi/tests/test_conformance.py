@@ -23,7 +23,13 @@ from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from pydantic import ConfigDict, Field, field_validator
-
+from rn_forge.auth import (
+    AuthorizationContext,
+    InMemoryReplayStore,
+    InMemorySessionStore,
+    Principal,
+    Requirement,
+)
 from rn_forge.fastapi import (
     AppConfig,
     CorsPolicy,
@@ -32,15 +38,16 @@ from rn_forge.fastapi import (
     InMemoryCsrfStore,
     SessionMiddleware,
     Sessions,
+    SoftDeleteState,
     bearer_auth,
     conditional_get,
     deprecated,
     health_router,
+    masked,
     merge_into,
     merge_patch_body,
     merge_patch_openapi,
     order_by_param,
-    masked,
     page_params,
     read_mask_param,
     require_if_match,
@@ -48,7 +55,6 @@ from rn_forge.fastapi import (
     show_deleted_param,
     soft_delete_router,
 )
-from rn_forge.fastapi import SoftDeleteState
 from rn_forge.fastapi.transfer import (
     batch_create_router,
     batch_delete_router,
@@ -56,40 +62,32 @@ from rn_forge.fastapi.transfer import (
     batch_update_router,
     import_router,
     import_template_router,
-    problem_response,
     tabular_export,
     tabular_format,
 )
-from rn_forge.auth import (
-    AuthorizationContext,
-    InMemoryReplayStore,
-    InMemorySessionStore,
-    Principal,
-    Requirement,
-)
 from rn_forge.web import (
-    Operation,
-    ProblemDetail,
     API_CATALOG_PATH,
     PROBLEM_MEDIA_TYPE,
-    check_cursor_order,
-    format_order_by,
-    TabularFormat,
-    ImportCounts,
-    ItemsDenied,
-    Page,
-    ReadMask,
-    WireModel,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
+    ImportCounts,
     InMemoryAsyncIdempotencyStore,
+    ItemsDenied,
+    Operation,
+    Page,
+    ProblemDetail,
+    ReadMask,
     ServiceUnavailable,
     SessionRequired,
+    TabularFormat,
     TooManyRequests,
+    WireModel,
+    check_cursor_order,
     check_precondition,
     default_registry,
     encode_cursor,
+    format_order_by,
     render_problem,
     require_live,
     run_idempotent_async,
@@ -166,8 +164,8 @@ class Stamped(WireModel):
 class Document(WireModel):
     name: str
     note: str | None = None
-    tags: list[str] = []
-    settings: dict[str, Any] = {}
+    tags: list[str] = Field(default_factory=list)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
 
 class Address(WireModel):
@@ -184,8 +182,8 @@ class Profile(WireModel):
     id: str
     display_name: str
     address: Address
-    phones: list[Phone] = []
-    settings: dict[str, Any] = {}
+    phones: list[Phone] = Field(default_factory=list)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
 
 PROFILES = [
@@ -511,9 +509,11 @@ def build_app(*, failing: str | None) -> FastAPI:
         document_version[0] += 1
         return document_response()
 
+    mask_dep = Depends(read_mask_param(Profile))
+
     @app.get("/conformance/profiles/1", response_model=Profile)
     async def get_profile(
-        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+        mask: ReadMask | None = mask_dep,
     ):
         body = PROFILES[0].model_dump()
         return JSONResponse(
@@ -521,18 +521,23 @@ def build_app(*, failing: str | None) -> FastAPI:
             headers={"ETag": codec.format(entity_id="1", version=1)},
         )
 
+    mask_dep = Depends(read_mask_param(Profile))
+
     @app.get("/conformance/profiles", response_model=Page[Profile])
     async def list_profiles(
-        mask: ReadMask | None = Depends(read_mask_param(Profile)),
+        mask: ReadMask | None = mask_dep,
     ):
         return JSONResponse(
             masked(Page[Profile](items=PROFILES, next_page_token=None), mask)
         )
 
+    params_dep = Depends(page_params(cap=2, default=2))
+    order_dep = Depends(order_by_param(allowed=["id"]))
+
     @app.get("/conformance/items")
     async def list_items(
-        params=Depends(page_params(cap=2, default=2)),
-        order=Depends(order_by_param(allowed=["id"])),
+        params=params_dep,
+        order=order_dep,
     ) -> Page[dict[str, str]]:
         size, cursor = params
         if cursor:
@@ -556,10 +561,13 @@ def build_app(*, failing: str | None) -> FastAPI:
         )
         return Page[dict[str, str]](items=window, next_page_token=token)
 
+    params_dep = Depends(page_params(cap=5, default=5))
+    order_dep = Depends(order_by_param(allowed=["id", "team", "score"]))
+
     @app.get("/conformance/people")
     async def list_people(
-        params=Depends(page_params(cap=5, default=5)),
-        order=Depends(order_by_param(allowed=["id", "team", "score"])),
+        params=params_dep,
+        order=order_dep,
     ) -> Page[dict[str, Any]]:
         size, cursor = params
         if cursor:

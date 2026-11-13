@@ -74,7 +74,9 @@ def golden_app(scaffold_venv, tmp_path: Path) -> Path:
 
 
 def _run(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([str(script), *args], capture_output=True, text=True)
+    return subprocess.run(
+        [str(script), *args], check=False, capture_output=True, text=True
+    )
 
 
 @pytest.mark.scaffold

@@ -1,5 +1,4 @@
 import pytest
-
 from rn_forge.django.models import BaseEnum, Status
 
 pytestmark = pytest.mark.unit

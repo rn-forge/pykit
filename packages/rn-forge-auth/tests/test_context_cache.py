@@ -3,7 +3,6 @@
 from datetime import timedelta
 
 import pytest
-
 from rn_forge.auth import (
     AuthorizationContext,
     AuthorizationContextCache,

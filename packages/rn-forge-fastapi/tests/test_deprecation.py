@@ -6,7 +6,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi import deprecated
 
 pytestmark = pytest.mark.unit

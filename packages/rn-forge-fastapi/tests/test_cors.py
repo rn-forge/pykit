@@ -4,7 +4,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi.cors import CorsPolicy, apply_cors
 from rn_forge.web import EXPOSED_HEADERS, WebError
 

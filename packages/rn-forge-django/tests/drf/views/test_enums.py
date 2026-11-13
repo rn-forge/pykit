@@ -7,10 +7,9 @@ import pytest
 django = pytest.importorskip("django")
 rest_framework = pytest.importorskip("rest_framework")
 
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.views.enums import EnumChoicesAPIView  # noqa: E402
-from rn_forge.django.models import BaseEnum  # noqa: E402
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.views.enums import EnumChoicesAPIView
+from rn_forge.django.models import BaseEnum
 
 pytestmark = pytest.mark.unit
 

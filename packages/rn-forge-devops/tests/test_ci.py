@@ -8,8 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
-from rn_forge.devops import Package, Smoke, normalize, plan, release_order, releasable
+from rn_forge.devops import Package, Smoke, normalize, plan, releasable, release_order
 from rn_forge.devops.ci import Workspace, changed_files, select
 from rn_forge.devops.requirements import check_requirements
 

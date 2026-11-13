@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.deprecation import deprecation_headers
 
 pytestmark = pytest.mark.unit

@@ -6,19 +6,17 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum
-from typing import Literal, Optional
+from typing import Literal
 
 import pytest
-
 import rn_forge.commons.lang.dataclasses as dataclasses_module
 from rn_forge.commons.exceptions import AppException
+from rn_forge.commons.findings import Finding, Severity
 from rn_forge.commons.lang.dataclasses import (
     DataclassMixin,
     LenientDataclassMixin,
     StrictDataclassMixin,
 )
-from rn_forge.commons.findings import Finding, Severity
-
 
 # ---------------------------------------------------------------------------
 # Test dataclasses
@@ -48,7 +46,7 @@ class Nested(DataclassMixin):
 class DeepNested(DataclassMixin):
     primary: Nested
     aliases: list[Simple] = field(default_factory=list)
-    maybe_inner: Optional[Simple] = None
+    maybe_inner: Simple | None = None
 
 
 @dataclass(frozen=True)

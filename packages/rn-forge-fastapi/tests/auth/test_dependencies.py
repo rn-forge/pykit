@@ -7,14 +7,13 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.fastapi import (
     basic_auth,
     bearer_auth,
     register_problem_handlers,
     requires,
 )
-from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.web import (
     AUTH_FAILED_DETAIL,
     PROBLEM_MEDIA_TYPE,

@@ -1,22 +1,22 @@
 from __future__ import annotations
 
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.http import StreamingHttpResponse  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-from rest_framework.views import APIView  # noqa: E402
-
-from rn_forge.commons.exceptions import AppException  # noqa: E402
-from rn_forge.django.drf.idempotency import (  # noqa: E402
+from django.http import StreamingHttpResponse
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
+from rn_forge.commons.exceptions import AppException
+from rn_forge.django.drf.idempotency import (
     CacheIdempotencyStore,
     idempotent,
 )
-from rn_forge.web import (  # noqa: E402
+from rn_forge.web import (
     IdempotencyKeyInFlight,
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
@@ -97,8 +97,8 @@ class TestCacheIdempotencyStore:
 
 
 class _ChargeView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     calls = 0
     streaming = False
 

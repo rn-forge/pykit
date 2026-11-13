@@ -1,7 +1,6 @@
 """Tests for rn_forge.auth.accounts."""
 
 import pytest
-
 from rn_forge.auth import AccountRejected, AccountResolver, ExternalIdentity
 
 pytestmark = pytest.mark.unit

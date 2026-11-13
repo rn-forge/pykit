@@ -2,33 +2,33 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from typing import ClassVar
 
 import pytest
 from django.test import override_settings
 
 pytest.importorskip("rest_framework")
 
-from django.contrib.auth import get_user_model  # noqa: E402
-from django.contrib.sessions.backends.cache import SessionStore  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-from rest_framework.views import APIView  # noqa: E402
-
-from rn_forge.auth import (  # noqa: E402
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.backends.cache import SessionStore
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
+from rn_forge.auth import (
     InMemoryReplayStore,
     Principal,
     SessionInfo,
 )
-from rn_forge.django.auth.authorization import (  # noqa: E402
+from rn_forge.django.auth.authorization import (
     DjangoAuthorizationContextProvider,
 )
-from rn_forge.django.auth.drf import (  # noqa: E402
+from rn_forge.django.auth.drf import (
     PermissionKeyPermission,
     PrincipalBearerAuthentication,
     PrincipalSessionAuthentication,
 )
-from rn_forge.django.auth.sessions import Sessions  # noqa: E402
-from rn_forge.web import AuthenticationFailed  # noqa: E402
+from rn_forge.django.auth.sessions import Sessions
+from rn_forge.web import AuthenticationFailed
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -65,8 +65,8 @@ class _Session(PrincipalSessionAuthentication):
 
 
 class _View(APIView):
-    authentication_classes = [_Bearer, _Session]
-    permission_classes = [PermissionKeyPermission]
+    authentication_classes: ClassVar = [_Bearer, _Session]
+    permission_classes: ClassVar = [PermissionKeyPermission]
 
     def get(self, request):
         return Response(
@@ -132,7 +132,7 @@ def test_revoked_session_version_is_unauthenticated() -> None:
 
 def _unauthenticated(*classes):
     class View(_View):
-        authentication_classes = list(classes)
+        authentication_classes: ClassVar = list(classes)
 
     request = APIRequestFactory().get("/")
     request.session = SessionStore()
@@ -162,8 +162,8 @@ TOKEN = "a" * 32
 
 
 class _Writable(APIView):
-    authentication_classes = [_Session]
-    permission_classes: list = []
+    authentication_classes: ClassVar = [_Session]
+    permission_classes: ClassVar[list] = []
 
     def post(self, request):
         return Response({"mechanism": request.user.mechanism})

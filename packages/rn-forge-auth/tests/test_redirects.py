@@ -2,7 +2,6 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.auth import InvalidReturnTo, validate_return_to
 
 pytestmark = pytest.mark.unit

@@ -111,6 +111,7 @@ def test_a_served_service_passes_every_conformance_case(scaffold_venv, tmp_path:
     result = subprocess.run(
         [str(bin_dir / "python"), "driver.py"],
         cwd=service,
+        check=False,
         capture_output=True,
         text=True,
     )
@@ -190,6 +191,7 @@ def test_a_served_sse_endpoint_streams_frames_a_heartbeat_and_a_problem(
     result = subprocess.run(
         [str(bin_dir / "python"), "sse_driver.py"],
         cwd=tmp_path,
+        check=False,
         capture_output=True,
         text=True,
     )

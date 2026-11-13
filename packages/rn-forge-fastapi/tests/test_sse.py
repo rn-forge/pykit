@@ -8,15 +8,15 @@ import pytest
 
 pytest.importorskip("sse_starlette")
 
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from rn_forge.fastapi.sse import (  # noqa: E402
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from rn_forge.fastapi.sse import (
     DEFAULT_RETRY_MS,
     sse_response,
 )
-from rn_forge.web import InvalidCursor, ProblemDetail, ServiceUnavailable  # noqa: E402
-from sse_starlette import ServerSentEvent  # noqa: E402
-from sse_starlette.sse import AppStatus  # noqa: E402
+from rn_forge.web import InvalidCursor, ProblemDetail, ServiceUnavailable
+from sse_starlette import ServerSentEvent
+from sse_starlette.sse import AppStatus
 
 
 @pytest.fixture(autouse=True)

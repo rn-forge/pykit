@@ -21,12 +21,13 @@ import json
 import re
 from datetime import UTC, datetime
 from types import SimpleNamespace
+from typing import ClassVar
 from urllib.parse import urlencode
 
 import pytest
 from assertpy import assert_that
-from django.db import models
 from django.core.files.base import ContentFile
+from django.db import models
 from django.test import Client, override_settings
 from django.test.client import encode_multipart
 from django.urls import Resolver404, path, resolve
@@ -35,13 +36,12 @@ from import_export import resources as ie_resources
 from import_export import widgets as ie_widgets
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView
-from rest_framework.routers import SimpleRouter
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from rest_framework.routers import SimpleRouter
 from rest_framework.views import APIView
-
+from rest_framework.viewsets import ModelViewSet
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.django.auth import CSRF_MIDDLEWARE, CSRF_SETTINGS
-from rn_forge.django.exceptions import problem_details_response
 from rn_forge.django.auth.drf.principal import PrincipalBearerAuthentication, requires
 from rn_forge.django.cors import cors_settings
 from rn_forge.django.deprecation import deprecated
@@ -51,8 +51,6 @@ from rn_forge.django.drf.idempotency import CacheIdempotencyStore
 from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, openapi_urlpatterns
 from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
 from rn_forge.django.drf.routers import CustomMethodRouter
-from rn_forge.django.drf.views.base import BaseModelViewSet
-from rn_forge.django.drf.views.mixins import SoftDeleteMixin
 from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
@@ -61,6 +59,9 @@ from rn_forge.django.drf.transfer import (
     ResourceExportMixin,
     ResourceImportMixin,
 )
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.drf.views.mixins import SoftDeleteMixin
+from rn_forge.django.exceptions import problem_details_response
 from rn_forge.django.models import (
     BaseModel,
     SoftDeleteModelMixin,
@@ -69,17 +70,16 @@ from rn_forge.django.models import (
 from rn_forge.django.security import SECURITY_SETTINGS
 from rn_forge.django.tracing import instrument
 from rn_forge.django.views import liveness_view, readiness_view
-from rn_forge.auth import AuthorizationContext, Principal, Requirement
 from rn_forge.web import (
-    Operation,
-    ProblemDetail,
     CheckResult,
     DomainConflict,
     EntityVersionETagCodec,
+    Operation,
+    ProblemDetail,
     ServiceUnavailable,
     SessionRequired,
-    default_registry,
     TooManyRequests,
+    default_registry,
     run_idempotent,
 )
 from rn_forge.web.conformance import (
@@ -142,13 +142,13 @@ class _ConformanceDocument(VersionedModelMixin, BaseModel):
 class _DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformanceDocument
-        fields = ["id", "name", "note", "tags", "settings"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name", "note", "tags", "settings"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class _Documents(BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformanceDocument.objects.all()
     serializer_class = _DocumentSerializer
     etag_codec = EntityVersionETagCodec()
@@ -181,20 +181,20 @@ class _ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = _ConformanceProfile
-        fields = ["id", "display_name", "address", "phones", "settings"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "display_name", "address", "phones", "settings"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class _Profiles(BaseModelViewSet):
     # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
-    renderer_classes = [CamelCaseJSONRenderer]
-    authentication_classes: list = []
-    permission_classes: list = []
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformanceProfile.objects.all()
     serializer_class = _ProfileSerializer
     pagination_class = CursorPagination
-    filter_backends = [OrderByFilter]
-    ordering_fields = ["id"]
+    filter_backends: ClassVar = [OrderByFilter]
+    ordering_fields: ClassVar = ["id"]
     etag_codec = EntityVersionETagCodec()
 
 
@@ -214,19 +214,19 @@ class _ConformanceNote(SoftDeleteModelMixin, VersionedModelMixin, BaseModel):
 class _NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformanceNote
-        fields = ["id", "text", "delete_time"]
-        read_only_fields = ["id", "delete_time"]
+        fields: ClassVar = ["id", "text", "delete_time"]
+        read_only_fields: ClassVar = ["id", "delete_time"]
 
 
 class _Notes(SoftDeleteMixin, BatchDeleteMixin, BaseModelViewSet):
-    renderer_classes = [CamelCaseJSONRenderer]
-    authentication_classes: list = []
-    permission_classes: list = []
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformanceNote.objects.all()
     serializer_class = _NoteSerializer
     pagination_class = CursorPagination
-    filter_backends = [OrderByFilter]
-    ordering_fields = ["id"]
+    filter_backends: ClassVar = [OrderByFilter]
+    ordering_fields: ClassVar = ["id"]
     etag_codec = EntityVersionETagCodec()
 
 
@@ -243,13 +243,13 @@ class _ConformanceBook(VersionedModelMixin, BaseModel):
 class _BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformanceBook
-        fields = ["id", "name"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class _Books(BatchGetMixin, BatchUpdateMixin, BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformanceBook.objects.order_by("id")
     serializer_class = _BookSerializer
     etag_codec = EntityVersionETagCodec()
@@ -295,8 +295,8 @@ class _Order(models.Model):
 class _OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = _Order
-        fields = ["id", "name"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class _OrderExport(ie_resources.ModelResource):
@@ -331,8 +331,8 @@ class _Orders(
     BatchDeleteMixin,
     ModelViewSet,
 ):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _Order.objects.order_by("id")
     serializer_class = _OrderSerializer
     export_resource_class = _OrderExport
@@ -365,8 +365,8 @@ def _over_cap(request):
 
 
 class _OrderCount(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
 
     def get(self, request):
         return Response({"count": _Order.objects.count()})
@@ -400,8 +400,8 @@ class _Bearer(PrincipalBearerAuthentication):
 
 
 class _Open(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
 
 
 def _session(request):
@@ -457,13 +457,13 @@ class _Item(_Open):
 class _ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformanceItem
-        fields = ["id"]
+        fields: ClassVar = ["id"]
 
 
 class _PersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = _ConformancePerson
-        fields = ["id", "team", "score"]
+        fields: ClassVar = ["id", "team", "score"]
 
 
 class _FivePerPage(CursorPagination):
@@ -472,13 +472,13 @@ class _FivePerPage(CursorPagination):
 
 
 class _People(ListAPIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformancePerson.objects.all()
     serializer_class = _PersonSerializer
     pagination_class = _FivePerPage
-    filter_backends = [OrderByFilter]
-    ordering_fields = ["id", "team", "score"]
+    filter_backends: ClassVar = [OrderByFilter]
+    ordering_fields: ClassVar = ["id", "team", "score"]
 
 
 class _TwoPerPage(CursorPagination):
@@ -487,13 +487,13 @@ class _TwoPerPage(CursorPagination):
 
 
 class _Items(ListAPIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _ConformanceItem.objects.all()
     serializer_class = _ItemSerializer
     pagination_class = _TwoPerPage
-    filter_backends = [OrderByFilter]
-    ordering_fields = ["id"]
+    filter_backends: ClassVar = [OrderByFilter]
+    ordering_fields: ClassVar = ["id"]
 
 
 _STORE = CacheIdempotencyStore()
@@ -518,8 +518,10 @@ class _Charges(_Open):
 
 
 class _Private(APIView):
-    authentication_classes = [_Bearer]
-    permission_classes = [requires(Requirement(all_scopes=frozenset({"read"})))]
+    authentication_classes: ClassVar = [_Bearer]
+    permission_classes: ClassVar = [
+        requires(Requirement(all_scopes=frozenset({"read"})))
+    ]
 
     def get(self, request):
         return Response({"subject": request.user.subject})
@@ -567,7 +569,7 @@ class _Stamp(serializers.Serializer):
 
 class _Stamped(_Open):
     # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
-    renderer_classes = [CamelCaseJSONRenderer]
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
 
     def get(self, request):
         stamp = {"id": "1", "create_time": datetime(2026, 9, 23, 14, 5, tzinfo=UTC)}

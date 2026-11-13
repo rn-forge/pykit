@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 import io
+from typing import ClassVar
 
 import pytest
 
 django = pytest.importorskip("django")
 pytest.importorskip("import_export")
 
-import tablib  # noqa: E402
-from django.core.files.uploadedfile import SimpleUploadedFile  # noqa: E402
-from django.db import models  # noqa: E402
-from import_export import fields, resources, widgets  # noqa: E402
-from rest_framework import serializers  # noqa: E402
-from rest_framework.test import APIRequestFactory, force_authenticate  # noqa: E402
-from rest_framework.viewsets import ModelViewSet  # noqa: E402
-
-from rn_forge.django.drf.routers import CustomMethodRouter  # noqa: E402
-from rn_forge.django.drf.transfer import (  # noqa: E402
+import tablib
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
+from django.test import override_settings
+from import_export import fields, resources, widgets
+from rest_framework import serializers
+from rest_framework.viewsets import ModelViewSet
+from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.transfer import (
     BatchCreateMixin,
     BatchDeleteMixin,
     BatchGetMixin,
@@ -25,10 +25,9 @@ from rn_forge.django.drf.transfer import (  # noqa: E402
     ResourceImportMixin,
     _indexed_errors,
 )
-from rn_forge.django.drf.views.base import BaseModelViewSet  # noqa: E402
-from rn_forge.django.models import BaseModel, VersionedModelMixin  # noqa: E402
-from rn_forge.web import EntityVersionETagCodec  # noqa: E402
-from django.test import override_settings  # noqa: E402
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.models import BaseModel, VersionedModelMixin
+from rn_forge.web import EntityVersionETagCodec
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -74,7 +73,7 @@ def _tables(create_tables):
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
-        fields = ["id", "name", "email"]
+        fields: ClassVar = ["id", "name", "email"]
 
 
 class MemberExport(resources.ModelResource):
@@ -121,13 +120,13 @@ class Members(
     BatchDeleteMixin,
     ModelViewSet,
 ):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = Member.objects.order_by("id")
     serializer_class = MemberSerializer
     export_resource_class = MemberExport
     import_resource_class = MemberImport
-    export_column_formats = {"Joined": "yyyy-mm-dd"}
+    export_column_formats: ClassVar = {"Joined": "yyyy-mm-dd"}
 
     def validate_batch_create_item(self, item):
         return "blocked" if item["name"] == "blocked" else None
@@ -143,13 +142,13 @@ class Lenient(Members):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ["id", "name"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class Books(BatchGetMixin, BatchUpdateMixin, BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = Book.objects.order_by("id")
     serializer_class = BookSerializer
     etag_codec = EntityVersionETagCodec()
@@ -170,13 +169,13 @@ class ScopedBooks(Books):
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = ["id", "name"]
-        read_only_fields = ["id"]
+        fields: ClassVar = ["id", "name"]
+        read_only_fields: ClassVar = ["id"]
 
 
 class Notes(BatchUpdateMixin, ModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = Note.objects.order_by("id")
     serializer_class = NoteSerializer
 
@@ -689,7 +688,6 @@ def test_the_schema_names_the_batch_operations() -> None:
     pytest.importorskip("drf_spectacular")
     from drf_spectacular.generators import SchemaGenerator
     from drf_spectacular.settings import patched_settings
-
     from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS
 
     with (

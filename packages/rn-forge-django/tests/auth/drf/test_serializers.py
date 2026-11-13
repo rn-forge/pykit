@@ -4,7 +4,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-
 from rn_forge.django.auth.drf.serializers import UserSerializer
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]

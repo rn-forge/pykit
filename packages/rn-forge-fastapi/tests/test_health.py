@@ -6,7 +6,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi import health_router
 from rn_forge.web import CheckResult
 

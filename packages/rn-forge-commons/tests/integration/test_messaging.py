@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from rn_forge.commons.integration.messaging import (
     AsyncMessageBus,
     HandlerRegistry,
@@ -43,7 +42,7 @@ class TestInMemoryMessageBus:
 class TestHandlerRegistry:
     def test_round_trip(self) -> None:
         registry = HandlerRegistry()
-        handler = lambda event: None  # noqa: E731
+        handler = lambda event: None
         registry.register("order.created", handler)
         assert registry.handler_for("order.created") is handler
 

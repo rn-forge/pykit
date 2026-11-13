@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 from django.db import models
 from django.test import Client, override_settings
@@ -7,18 +9,17 @@ from rest_framework import serializers
 
 pytest.importorskip("drf_spectacular")
 
-from drf_spectacular.generators import SchemaGenerator  # noqa: E402
-from drf_spectacular.settings import patched_settings  # noqa: E402
-
-from rn_forge.django.drf import ReadMaskMixin  # noqa: E402
-from rn_forge.django.drf.casing import CamelCaseJSONParser, CamelCaseJSONRenderer  # noqa: E402
-from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS  # noqa: E402
-from rn_forge.django.drf.routers import CustomMethodRouter  # noqa: E402
-from rn_forge.django.drf.transfer import BatchGetMixin  # noqa: E402
-from rn_forge.django.drf.views.base import BaseModelViewSet  # noqa: E402
-from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter  # noqa: E402
-from rn_forge.django.models import BaseModel, VersionedModelMixin  # noqa: E402
-from rn_forge.web import EntityVersionETagCodec  # noqa: E402
+from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.settings import patched_settings
+from rn_forge.django.drf import ReadMaskMixin
+from rn_forge.django.drf.casing import CamelCaseJSONParser, CamelCaseJSONRenderer
+from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS
+from rn_forge.django.drf.pagination import CursorPagination, OrderByFilter
+from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.transfer import BatchGetMixin
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.models import BaseModel, VersionedModelMixin
+from rn_forge.web import EntityVersionETagCodec
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -50,8 +51,14 @@ class _ContactSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = _Contact
-        fields = ["id", "display_name", "home_address", "phone_numbers", "secret"]
-        read_only_fields = ["id"]
+        fields: ClassVar = [
+            "id",
+            "display_name",
+            "home_address",
+            "phone_numbers",
+            "secret",
+        ]
+        read_only_fields: ClassVar = ["id"]
 
     def create(self, validated_data):
         validated_data.pop("secret", None)
@@ -59,20 +66,20 @@ class _ContactSerializer(serializers.ModelSerializer):
 
 
 class _People(BatchGetMixin, BaseModelViewSet):
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _Contact.objects.order_by("id")
     serializer_class = _ContactSerializer
     # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
-    renderer_classes = [CamelCaseJSONRenderer]
-    parser_classes = [CamelCaseJSONParser]
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
+    parser_classes: ClassVar = [CamelCaseJSONParser]
     etag_codec = EntityVersionETagCodec()
 
 
 class _PagedPeople(_People):
     pagination_class = CursorPagination
-    filter_backends = [OrderByFilter]
-    ordering_fields = ["id"]
+    filter_backends: ClassVar = [OrderByFilter]
+    ordering_fields: ClassVar = ["id"]
 
 
 _router = CustomMethodRouter(trailing_slash=False)
@@ -234,11 +241,13 @@ def test_a_write_action_is_not_rejected_for_an_unknown_path(client, person) -> N
 @pytest.fixture(scope="module")
 def schema():
     # drf-spectacular caches its settings; override_settings does not reach them.
-    with patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}):
-        with override_settings(**WIRING):
-            return SchemaGenerator(patterns=urlpatterns).get_schema(
-                request=None, public=True
-            )
+    with (
+        patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}),
+        override_settings(**WIRING),
+    ):
+        return SchemaGenerator(patterns=urlpatterns).get_schema(
+            request=None, public=True
+        )
 
 
 def _documents_read_mask(operation) -> bool:

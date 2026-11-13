@@ -9,8 +9,8 @@ import pytest
 
 pytest.importorskip("structlog")
 
-from rn_forge.commons.logging import TRACE, AppLogger  # noqa: E402
-from rn_forge.commons.logging.structlog import StructLogger, otel_processor  # noqa: E402
+from rn_forge.commons.logging import TRACE, AppLogger
+from rn_forge.commons.logging.structlog import StructLogger, otel_processor
 
 
 class _ListHandler(logging.Handler):
@@ -131,7 +131,6 @@ class TestSameSink:
             logging.getLogger().removeHandler(handler)
 
     def test_json_mode_output_contains_structured_fields(self, tmp_path, monkeypatch):
-        import json
 
         monkeypatch.setattr(AppLogger, "_configured", False)
         AppLogger.initialize(

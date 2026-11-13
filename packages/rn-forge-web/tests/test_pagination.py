@@ -5,7 +5,6 @@ import json
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.exceptions import InvalidCursor
 from rn_forge.web.pagination import (
     Cursor,

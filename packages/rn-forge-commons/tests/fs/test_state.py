@@ -7,10 +7,9 @@ import threading
 from dataclasses import dataclass
 
 import pytest
-
-from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.state import StateStore
+from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 
 @dataclass
@@ -163,7 +162,7 @@ class TestMetadata:
         path = tmp_path / "state.json"
         path.write_text('{"schema_version": "1", "entries": {}, "metadata": []}')
         with pytest.raises(AppException):
-            StateStore(path, entry_type=ArtifactState).metadata
+            _ = StateStore(path, entry_type=ArtifactState).metadata
 
 
 class TestReplaceAll:

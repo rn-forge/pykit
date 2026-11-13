@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import pytest
 from django.http import HttpResponse
 from django.test import RequestFactory
-import pytest
-
 from rn_forge.django.security import SECURITY_SETTINGS, SecurityHeadersMiddleware
 
 pytestmark = pytest.mark.unit

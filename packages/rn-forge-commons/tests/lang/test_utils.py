@@ -6,10 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-
-from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.utils import AppUtils, Base64
-
 
 # ---------------------------------------------------------------------------
 # Base64

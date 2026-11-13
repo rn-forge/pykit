@@ -2,9 +2,6 @@ from datetime import UTC, datetime
 
 import pytest
 from assertpy import assert_that
-from sqlalchemy import select
-from sqlalchemy.orm import Mapped, mapped_column
-
 from rn_forge.sqlalchemy import (
     AuditMixin,
     Base,
@@ -14,6 +11,8 @@ from rn_forge.sqlalchemy import (
     soft_delete,
     undelete,
 )
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped, mapped_column
 
 pytestmark = pytest.mark.unit
 
