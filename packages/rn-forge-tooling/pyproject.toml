@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-tooling"
-version = "0.3.1"
+version = "0.3.2"
 description = "Developer-tool lifecycle verbs and install mechanics for the rn-forge-* CLIs"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]

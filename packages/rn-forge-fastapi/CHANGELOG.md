@@ -5,6 +5,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-13
+
 ### Added
 
 - `rn_forge.fastapi.sse.sse_response`, behind the new `sse` extra
@@ -15,6 +17,11 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
   each 5xx.
 - `log_server_errors`: an `AppConfig.log` sink that logs each 5xx problem at
   `ERROR` with the original traceback.
+
+### Fixed
+
+- Declares `rn-forge-commons` as a dependency, since it imports
+  `rn_forge.commons.logging`.
 
 ## [0.4.0] - 2026-10-29
 

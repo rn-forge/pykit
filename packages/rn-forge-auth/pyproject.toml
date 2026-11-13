@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-auth"
-version = "0.1.0"
+version = "0.1.1"
 description = "Authentication primitives for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]

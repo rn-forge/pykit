@@ -5,6 +5,12 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-13
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.9 (`>=0.8.0,<0.10`).
+
 ## [0.1.2] - 2026-10-29
 
 ### Changed

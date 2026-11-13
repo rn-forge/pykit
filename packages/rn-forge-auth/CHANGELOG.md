@@ -5,6 +5,12 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-13
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.9 (`>=0.8.0,<0.10`).
+
 ## [0.1.0] - 2026-10-29
 
 ### Added

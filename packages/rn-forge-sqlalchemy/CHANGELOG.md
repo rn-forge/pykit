@@ -5,6 +5,8 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-13
+
 ### Added
 
 - `create_sqlite_engine` — an async SQLite engine that sets WAL, foreign keys,

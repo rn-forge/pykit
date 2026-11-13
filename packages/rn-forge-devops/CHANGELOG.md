@@ -5,6 +5,8 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-13
+
 ### Removed
 
 - Breaking: the planner moved to kiln as `kiln-devops`. The `plan`,

@@ -5,6 +5,15 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-13
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.9 (`>=0.8.0,<0.10`).
+- `TruncateModelMixin.truncate` runs the backend's `sql_flush` statements, and
+  `SequenceGenerator` quotes PostgreSQL identifiers with psycopg's `sql`
+  module; the SQL issued is equivalent.
+
 ## [0.6.0] - 2026-10-29
 
 ### Added

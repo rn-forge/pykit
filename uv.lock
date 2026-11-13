@@ -2198,7 +2198,7 @@ wheels = [
 
 [[package]]
 name = "rn-forge-auth"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/rn-forge-auth" }
 dependencies = [
     { name = "rn-forge-commons" },
@@ -2266,7 +2266,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-cli"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "packages/rn-forge-cli" }
 dependencies = [
     { name = "rich" },
@@ -2446,7 +2446,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-data"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "packages/rn-forge-data" }
 dependencies = [
     { name = "openpyxl" },
@@ -2549,7 +2549,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-django"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "packages/rn-forge-django" }
 dependencies = [
     { name = "django" },
@@ -2681,12 +2681,13 @@ docs = [
 
 [[package]]
 name = "rn-forge-fastapi"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/rn-forge-fastapi" }
 dependencies = [
     { name = "fastapi" },
     { name = "opentelemetry-instrumentation-fastapi" },
     { name = "rn-forge-auth" },
+    { name = "rn-forge-commons" },
     { name = "rn-forge-web", extra = ["security"] },
 ]
 
@@ -2741,6 +2742,7 @@ requires-dist = [
     { name = "rn-forge-auth", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-auth", extras = ["oidc"], marker = "extra == 'oidc'", editable = "packages/rn-forge-auth" },
     { name = "rn-forge-auth", extras = ["redis"], marker = "extra == 'redis'", editable = "packages/rn-forge-auth" },
+    { name = "rn-forge-commons", editable = "packages/rn-forge-commons" },
     { name = "rn-forge-data", marker = "extra == 'transfer'", editable = "packages/rn-forge-data" },
     { name = "rn-forge-web", extras = ["security"], editable = "packages/rn-forge-web" },
     { name = "sse-starlette", marker = "extra == 'sse'", specifier = ">=3.4.11" },
@@ -2769,7 +2771,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-sqlalchemy"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "packages/rn-forge-sqlalchemy" }
 dependencies = [
     { name = "rn-forge-web" },
@@ -2835,7 +2837,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-tooling"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "packages/rn-forge-tooling" }
 dependencies = [
     { name = "rn-forge-cli" },
@@ -2893,7 +2895,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-web"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "packages/rn-forge-web" }
 dependencies = [
     { name = "opentelemetry-api" },

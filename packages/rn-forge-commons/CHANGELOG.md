@@ -5,6 +5,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-13
+
 ### Added
 
 - Log redaction in `rn_forge.commons.logging.redaction`: `redact`,

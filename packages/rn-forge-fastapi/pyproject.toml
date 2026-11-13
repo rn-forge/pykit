@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.4.0"
+version = "0.4.1"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -18,10 +18,9 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-#
-# `rn-forge-commons` is not declared: it arrives through `rn-forge-web`.
 dependencies = [
     "rn-forge-auth>=0.1.0,<0.2",
+    "rn-forge-commons>=0.8.0,<0.10",
     # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
     # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
     "rn-forge-web[security]>=0.3.0,<0.4",
