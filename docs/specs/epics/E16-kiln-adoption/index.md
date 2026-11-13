@@ -15,7 +15,7 @@
 | [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Closed | release-5 | 3 Closed |
 | [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | Closed | release-5 | 3 Closed |
 | [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | New | release-8 | 1 New |
-| [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | New | release-8 | 1 New |
+| [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | Closed | release-8 | 1 Closed |
 
 <!-- END derived features -->
 

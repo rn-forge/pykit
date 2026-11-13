@@ -33,7 +33,7 @@ log redaction and server-sent events (F6.1 and F6.2,
 | [F6.2 — Server-sent events](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Closed |
 | [F16.3 — Cut over onto kiln](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
 | [F16.6 — Retire the plan outputs generated CI does not read](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
-| [F16.7 — Instruction files follow kiln's standard](../../specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md) | E16 | New |
+| [F16.7 — Instruction files follow kiln's standard](../../specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md) | E16 | Closed |
 | [F17.1 — Problem rows from an exception hierarchy](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | Closed |
 | [F17.2 — Single-owner thread actor](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Closed |
 | [F17.3 — `TaskPool.map_settled`](../../specs/epics/E17-local-first-web-app-extraction/F17.3-taskpool-map.md) | E17 | Closed |

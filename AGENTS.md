@@ -1,14 +1,37 @@
 # AGENTS.md
 
-This repository keeps a single set of agent instructions, in
-[CLAUDE.md](CLAUDE.md).
+What this repository is, how to set it up and the conventions everyone follows
+are in [README.md](README.md). This file holds what an agent needs beyond that.
 
-**Read `CLAUDE.md` now and follow it as if its contents appeared here.** It maps
-the repo, states the conventions and invariants you must respect when changing
-code.
+## Start here
 
-Do not add guidance to this file — it would drift out of sync, and one of the
-two copies would then be wrong with nothing to detect it. Put it in `CLAUDE.md`.
+**Picking this up in a new session?** Read [the spec board](docs/specs/index.md)
+for status before starting work. Use [root routing](docs/_structure.md) to place
+documentation and [the reader index](docs/index.md) to find published content.
+
+## Rules
+
+- Run everything through `task`; the block below says which verbs.
+- The design principles govern new work ([ADR-0001](docs/adr/ADR-0001.md)): a
+  conflicting plan or change loses unless the deviation is written down with
+  its reason.
+- No compatibility re-exports ([ADR-0002](docs/adr/ADR-0002.md)): when a symbol
+  crosses a package boundary, move it; do not alias it.
+- Apply the docstring and comment rules in the README's Conventions to every
+  docstring and comment you add or change, and check for them when reviewing a
+  diff.
+
+## Guardrails
+
+- Do not start or elaborate an epic or feature tagged `deferred`, such as the
+  Azure package (E7), unless the owner asks. Entry criteria describe when the
+  owner may schedule it, not permission to begin. The same holds for ideas
+  parked in [the ideas list](docs/specs/ideas/index.md).
+
+## Do and don't
+
+- Do not restate package architecture here or in the README; each package's
+  `README.md` and `docs/` win and are built in strict mode.
 
 <!-- BEGIN rn-forge kiln -->
 
