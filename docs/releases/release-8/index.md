@@ -49,11 +49,13 @@ log redaction and server-sent events (F6.1 and F6.2,
 
 1. **F21.5** first, on `feature/release-8`. It retires the self-hosted index
    before the cutover, so the cutover carries no index.
-1. **F16.3** as kiln's S7.2.4 rehearsal, on `feature/kiln-cutover`, merged to
-   `main` by pull request #30 once `task kiln:apply` re-renders with no change
-   (*revised 2026-11-12:* no longer waits for kiln's `v0.1.0` tag). It cuts
-   pykit over onto kiln and adds `rn-forge-auth` to the kiln config. kiln must
-   render the release behaviour F21.3 built in `main.yml`.
+1. **F16.3** as kiln's S7.2.4 rehearsal, on `feature/kiln-cutover`, merged into
+   `feature/release-8` once `task kiln:apply` re-renders with no change
+   (*revised 2026-11-12:* no longer waits for kiln's `v0.1.0` tag; *revised
+   2026-11-13:* merged locally, not by pull request #30). It cuts pykit over
+   onto kiln and adds `rn-forge-auth` to the kiln config. kiln must render the
+   release behaviour F21.3 built in `main.yml`. S16.3.2 closes on the
+   release's run on `main`.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
 1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes
@@ -78,6 +80,10 @@ log redaction and server-sent events (F6.1 and F6.2,
 - Owner decision, 2026-11-03: S16.3.3 converts the docs to kiln's format on
   `feature/release-8` ahead of `kiln init`, replacing branch
   `feature/kiln-docs-model`.
+- Owner decision, 2026-11-13: F16.3's stories close on `feature/kiln-cutover`,
+  which merges locally into `feature/release-8` with a merge commit; pull
+  request #30 is closed unmerged, and the `feature/release-8` → `main` pull
+  request ships the release.
 
 ## Commits
 
@@ -90,7 +96,7 @@ git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.|F21\.
 ## Exit criteria
 
 - Every feature on this page's Scope is `Closed`.
-- `docs/_update_board.sh --check` passes.
+- `task docs:generate` leaves the working tree unchanged.
 - The main CI, including the Sonar gate, passes on the release's version bumps.
 
 ## Shipped
