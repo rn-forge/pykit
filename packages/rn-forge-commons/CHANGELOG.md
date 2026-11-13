@@ -30,6 +30,10 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `TaskPool.map_settled` runs a function over items on the pool and returns a
   `Succeeded` or `Failed` per item in input order; `Succeeded`, `Failed` and
   `Settled` are exported from `rn_forge.commons`.
+- `ManagedBlock.end_indent`: leading whitespace of the end marker alone, for a
+  block whose body is indented but whose end marker sits at a different
+  indent. `None` (the default) uses `indent`, so existing blocks render the
+  same bytes.
 
 ### Changed
 
