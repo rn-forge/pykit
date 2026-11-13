@@ -147,7 +147,6 @@ packages/rn-forge-tooling/mkdocs.yml
 packages/rn-forge-tooling/pyproject.toml
 packages/rn-forge-web/mkdocs.yml
 packages/rn-forge-web/pyproject.toml
-pykit.code-workspace
 pyproject.toml
 sonar-project.properties
 src/pykit/__init__.py
