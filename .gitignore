@@ -36,6 +36,3 @@ coverage.xml
 # Docs build output ([docs] site_dir)
 .docs-site/
 # END rn-forge kiln
-
-# rn_forge.commons.testing output root
-.out/

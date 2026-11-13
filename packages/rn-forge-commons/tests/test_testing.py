@@ -25,7 +25,8 @@ class TestOutputPath:
         assert output_path.is_dir()
 
     def test_path_is_under_standardized_output_root(self, output_path: Path):
-        assert ".out" in output_path.parts
+        assert ".tmp" in output_path.parts
+        assert ".out" not in output_path.parts
         assert "rn-forge-commons" in output_path.parts
         assert "tests" in output_path.parts
         assert "output" in output_path.parts
@@ -55,7 +56,7 @@ class TestOutputPath:
             node=types.SimpleNamespace(nodeid="tests/test_something.py::test_case"),
         )
         result = testing_module.output_path.__wrapped__(fake_request)
-        assert ".out" in result.parts
+        assert ".tmp" in result.parts
         assert "workspace" in result.parts
 
 

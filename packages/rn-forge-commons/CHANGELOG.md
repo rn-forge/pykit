@@ -33,6 +33,9 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ### Changed
 
+- `output_path` now writes under `.tmp/<scope>/tests/output/` instead of
+  `.out/`. **Breaking:** consumers that read or ignore `.out/` must use
+  `.tmp/`.
 - Log redaction is **on by default**, so secrets logged in messages, arguments
   or `extra` fields now appear as `[redacted]`. Pass `redact=False` to
   `AppLogger.initialize` to keep the old output. Exception tracebacks are not
