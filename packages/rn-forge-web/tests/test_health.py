@@ -5,7 +5,6 @@ import threading
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.exceptions import WebError
 from rn_forge.web.health import CheckResult, run_checks, run_checks_sync
 
@@ -297,7 +296,6 @@ def test_as_body_matches_the_conformance_table():
 
 
 def test_as_body_keys_are_all_camel_case():
-    import re
 
     report = run_checks_sync({"db": ok})
     for key in report.as_body()["checks"]["db"]:

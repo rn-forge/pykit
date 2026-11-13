@@ -70,6 +70,22 @@ resource.
    (`/orders/{order_id}/cancel`) is indistinguishable from a sub-collection
    and needs an explicit `operation_id=`.
 
+## Logging server errors
+
+A 5xx problem body carries no detail, so the cause goes to the log.
+`AppConfig.log` is `None` by default and logs nothing; pass
+`log=log_server_errors()` to log each 5xx at `ERROR` with the original
+traceback, status, request path and trace id:
+
+```python
+from rn_forge.fastapi import AppConfig, log_server_errors
+
+AppConfig(registry=registry, log=log_server_errors())
+```
+
+It logs through `AppLogger.get_logger("rn_forge.fastapi.problem")`; pass an
+`AppLogger` to use another. A 4xx logs nothing.
+
 ## Routes
 
 ```python
@@ -311,6 +327,52 @@ class MyApp(FastApiApp):
   a `rn_forge.web.CheckResult`. Pass `health_router(timeout=...)` so a hung
   dependency is reported as `fail` rather than hanging `/readyz`; the default,
   `None`, waits indefinitely.
+
+## Server-sent events
+
+The `sse` extra adds `sse-starlette`. `sse_response` wraps an async iterable of
+`ServerSentEvent` in an `EventSourceResponse`:
+
+```python
+from collections.abc import AsyncIterator
+
+from fastapi import Header
+from rn_forge.fastapi.sse import sse_response
+from sse_starlette import ServerSentEvent
+
+@router.get("/jobs/{job_id}/events")
+async def job_events(job_id: str, last_event_id: str | None = Header(None)):
+    async def events() -> AsyncIterator[ServerSentEvent]:
+        async for update in job_updates(job_id, after=last_event_id):
+            yield ServerSentEvent(update.json(), id=update.id, event="update")
+
+    return sse_response(events(), instance=f"/jobs/{job_id}/events")
+```
+
+- **Frames.** The stream opens with a `retry: 5000` frame, so a browser
+  `EventSource` waits that long before it reconnects; pass `retry=None` to
+  omit it. A heartbeat comment is sent every 15 seconds while the stream is
+  idle; `ping=None` turns it off.
+- **Resuming.** A reconnecting browser sends the last `id` it received as
+  `Last-Event-ID`. The route reads it and decides what to replay;
+  `sse_response` does not.
+- **Rejected fields.** An `id` or `event` containing `\r`, `\n` or `\x00` raises
+  `WebError`, where `sse-starlette` alone would strip the line break and send
+  a different field. Raised while streaming, the status line is already sent,
+  so the rejection reaches the client as the terminal frame below.
+- **Errors.** The status line is sent before the first frame, so an exception
+  raised by the iterable cannot become an HTTP error. The stream ends with one
+  frame whose `event` is `error` and whose `data` is the problem as JSON,
+  built by the registry (`default_registry()` unless `registry=` is given)
+  with `instance` and the current `traceId`. A 5xx problem carries the generic
+  detail, so pass `log=log_server_errors()` to keep the cause: the
+  application's `AppConfig.log` never sees it. A client disconnect or
+  cancellation sends nothing.
+- **Headers.** `headers=` is applied last and replaces the defaults, including
+  `cache-control` and `x-accel-buffering`.
+- **Shutdown.** Importing the module makes `sse-starlette` patch
+  `uvicorn.Server.handle_exit` so open streams end when the server is asked to
+  exit.
 
 ## Conformance
 

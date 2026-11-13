@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import threading
+from typing import Self
 
 import pytest
 from django.db import connection, connections
-
+from psycopg.sql import Composable
 from rn_forge.commons.exceptions import AppException
 from rn_forge.django.models import (
     AbstractSequenceCounter,
@@ -43,14 +44,16 @@ class _RecordingCursor:
     def __init__(self, executed: list[str]) -> None:
         self._executed = executed
 
-    def __enter__(self) -> _RecordingCursor:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc_info: object) -> None:
         return None
 
-    def execute(self, sql: str, *_: object) -> None:
-        self._executed.append(sql)
+    def execute(self, query: str | Composable, *_: object) -> None:
+        self._executed.append(
+            query.as_string() if isinstance(query, Composable) else query
+        )
 
     def fetchone(self) -> tuple[int, bool]:
         return (1, True)
@@ -61,7 +64,6 @@ def executed_sql(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     executed: list[str] = []
     default = connections["default"]
     monkeypatch.setattr(default, "vendor", "postgresql")
-    monkeypatch.setattr(default.ops, "quote_name", lambda name: f"<{name}>")
     monkeypatch.setattr(default, "cursor", lambda: _RecordingCursor(executed))
     return executed
 
@@ -86,15 +88,15 @@ class TestPostgresIdentifierBoundary:
         self, executed_sql: list[str]
     ) -> None:
         SequenceGenerator("orders", counter_model=_Counter).next_value()
-        assert executed_sql[0] == "CREATE SEQUENCE IF NOT EXISTS <orders>"
+        assert executed_sql[0] == 'CREATE SEQUENCE IF NOT EXISTS "orders"'
 
     def test_ensure_at_least_uses_the_quoted_identifier(
         self, executed_sql: list[str]
     ) -> None:
         SequenceGenerator("orders", counter_model=_Counter).ensure_at_least(5)
         assert executed_sql[:2] == [
-            "CREATE SEQUENCE IF NOT EXISTS <orders>",
-            "SELECT last_value, is_called FROM <orders>",
+            'CREATE SEQUENCE IF NOT EXISTS "orders"',
+            'SELECT last_value, is_called FROM "orders"',
         ]
 
     def test_reassigned_valid_name_is_the_one_used(
@@ -103,7 +105,7 @@ class TestPostgresIdentifierBoundary:
         generator = SequenceGenerator("orders", counter_model=_Counter)
         generator.name = "invoices"
         generator.next_value()
-        assert executed_sql[0] == "CREATE SEQUENCE IF NOT EXISTS <invoices>"
+        assert executed_sql[0] == 'CREATE SEQUENCE IF NOT EXISTS "invoices"'
 
 
 @pytest.mark.integration

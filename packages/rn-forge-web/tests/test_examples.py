@@ -24,9 +24,8 @@ import sys
 from urllib.parse import urlencode
 
 import pytest
-from assertpy import assert_that
-
 import rn_forge.web
+from assertpy import assert_that
 from rn_forge.web.conformance import CASES, case_by_id, redact
 
 BOUNDARY = "conformance-boundary"

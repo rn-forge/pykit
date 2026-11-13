@@ -2,7 +2,8 @@
 
 import pytest
 from assertpy import assert_that
-
+from opentelemetry import trace
+from rn_forge.web.auth import AUTH_FAILED_DETAIL
 from rn_forge.web.exceptions import (
     AuthenticationFailed,
     DomainConflict,
@@ -17,8 +18,9 @@ from rn_forge.web.problem import (
     CONFLICT,
     GENERIC_SERVER_DETAIL,
     INTERNAL_ERROR,
+    NOT_FOUND,
     PRECONDITION_FAILED,
-    PRECONDITION_REQUIRED,
+    VALIDATION_ERROR,
     ProblemDetail,
     ProblemRegistry,
     ProblemType,
@@ -28,9 +30,6 @@ from rn_forge.web.problem import (
     render_problem,
     unmapped_exceptions,
 )
-from opentelemetry import trace
-
-from rn_forge.web.auth import AUTH_FAILED_DETAIL
 from rn_forge.web.tracing import current_trace_id
 
 _TRACER = trace.get_tracer(__name__)
@@ -435,3 +434,138 @@ def test_invalid_merge_patch_is_422():
     assert_that(default_registry().problem_for(InvalidMergePatch()).status).is_equal_to(
         422
     )
+
+
+# --- register_hierarchy ---------------------------------------------------
+
+
+class _AppError(Exception):
+    code = "app-error"
+    status_code = 500
+
+
+class _MissingThing(_AppError):
+    code = "missing-thing"
+    status_code = 404
+
+
+class _MissingFile(_MissingThing):
+    code = "missing-file"
+
+
+class _Locked(_AppError):
+    code = "locked"
+    status_code = 409
+
+
+class _Both(_MissingThing, _Locked):
+    code = "both"
+    status_code = 404
+
+
+def test_register_hierarchy_resolves_each_class_to_its_own_row():
+    registry = ProblemRegistry().register_hierarchy(_AppError)
+
+    assert_that(registry.problem_for(_AppError())).is_equal_to(
+        ProblemType("app-error", 500, "Internal Server Error")
+    )
+    assert_that(registry.problem_for(_MissingThing())).is_equal_to(
+        ProblemType("missing-thing", 404, "Not Found")
+    )
+    assert_that(registry.problem_for(_MissingFile())).is_equal_to(
+        ProblemType("missing-file", 404, "Not Found")
+    )
+
+
+def test_register_hierarchy_honours_a_subclass_status_override():
+    class _Gone(_MissingThing):
+        code = "gone"
+        status_code = 410
+
+    registry = ProblemRegistry().register_hierarchy(_AppError)
+
+    assert_that(registry.problem_for(_Gone())).is_equal_to(
+        ProblemType("gone", 410, "Gone")
+    )
+
+
+def test_register_hierarchy_reaches_a_diamond_class_once():
+    registry = ProblemRegistry().register_hierarchy(_AppError)
+
+    both = [cls for cls in registry.rows() if cls is _Both]
+    assert_that(both).is_length(1)
+    assert_that(registry.problem_for(_Both()).slug).is_equal_to("both")
+
+
+def test_register_hierarchy_walks_base_first():
+    registry = ProblemRegistry().register_hierarchy(_AppError)
+
+    assert_that(next(iter(registry.rows()))).is_equal_to(_AppError)
+
+
+def test_register_hierarchy_keeps_the_base_row_for_a_bare_status():
+    class _Root(Exception):
+        code = "root"
+        status_code = 404
+
+    class _Child(_Root):
+        code = "child"
+
+    registry = ProblemRegistry().register_hierarchy(_Root)
+
+    assert_that(registry.problem_for_status(404).slug).is_equal_to("root")
+
+
+def test_register_hierarchy_reads_custom_attribute_names():
+    class _Custom(Exception):
+        slug = "custom"
+        http = 418
+
+    registry = ProblemRegistry().register_hierarchy(
+        _Custom, code_attr="slug", status_attr="http"
+    )
+
+    assert_that(registry.problem_for(_Custom())).is_equal_to(
+        ProblemType("custom", 418, "I'm a Teapot")
+    )
+
+
+def test_register_hierarchy_without_a_code_raises_type_error():
+    class _NoCode(Exception):
+        status_code = 400
+
+    with pytest.raises(TypeError, match=r"_NoCode.*'code'"):
+        ProblemRegistry().register_hierarchy(_NoCode)
+
+
+def test_register_hierarchy_without_a_status_raises_type_error():
+    class _NoStatus(Exception):
+        code = "no-status"
+
+    with pytest.raises(TypeError, match=r"_NoStatus.*'status_code'"):
+        ProblemRegistry().register_hierarchy(_NoStatus)
+
+
+def test_register_hierarchy_code_reaches_the_type_with_a_type_base():
+    registry = ProblemRegistry(type_base="/problems/").register_hierarchy(_AppError)
+
+    body = registry.build(_MissingFile("x"), instance="/files/1").as_body()
+
+    assert_that(body["type"]).is_equal_to("/problems/missing-file")
+    assert_that(body["status"]).is_equal_to(404)
+
+
+# --- keeping programming errors at 500 ------------------------------------
+
+
+def test_lookup_error_recipe_keeps_key_and_index_errors_at_500():
+    registry = (
+        default_registry()
+        .register(KeyError, INTERNAL_ERROR)
+        .register(IndexError, INTERNAL_ERROR)
+    )
+
+    assert_that(registry.problem_for(KeyError("k"))).is_equal_to(INTERNAL_ERROR)
+    assert_that(registry.problem_for(IndexError("i"))).is_equal_to(INTERNAL_ERROR)
+    assert_that(registry.problem_for(LookupError("l"))).is_equal_to(NOT_FOUND)
+    assert_that(registry.problem_for(ValueError("v"))).is_equal_to(VALIDATION_ERROR)

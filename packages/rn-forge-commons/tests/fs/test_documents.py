@@ -10,10 +10,8 @@ from io import StringIO
 from pathlib import Path
 
 import pytest
-import tomlkit
-from ruamel.yaml import YAML, YAMLError
-
 import rn_forge.commons.fs.documents as documents_module
+import tomlkit
 from rn_forge.commons.fs.documents import (
     ConfigFormat,
     DocumentError,
@@ -21,8 +19,8 @@ from rn_forge.commons.fs.documents import (
     JsonUtils,
     YamlUtils,
 )
-
 from rn_forge.commons.testing import raise_
+from ruamel.yaml import YAML, YAMLError
 
 
 class TestConfigFormat:
@@ -465,7 +463,7 @@ class TestLibyaml:
         platform.python_implementation() != "CPython", reason="libyaml is CPython-only"
     )
     def test_safe_loader_uses_libyaml(self) -> None:
-        assert documents_module._safe_yaml().Parser.__name__ == "CParser"  # noqa: SLF001
+        assert documents_module._safe_yaml().Parser.__name__ == "CParser"
 
     def test_serialize_unfolded_width(self) -> None:
         out = YamlUtils.serialize({"k": "x " * 200}, width=sys.maxsize)

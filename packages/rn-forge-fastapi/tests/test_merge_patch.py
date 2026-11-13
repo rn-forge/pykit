@@ -1,13 +1,13 @@
 """Tests for rn_forge.fastapi.merge_patch."""
 
 import json
+from typing import ClassVar
 
 import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, Field
-
 from rn_forge.fastapi import (
     merge_into,
     merge_patch_body,
@@ -152,8 +152,8 @@ class TestMergeInto:
             name = "widget"
             note = None
             display_name = "W"
-            tags: list[str] = []
-            settings: dict[str, str] = {}
+            tags: ClassVar[list[str]] = []
+            settings: ClassVar[dict[str, str]] = {}
 
         class Loose(Doc):
             model_config = {"from_attributes": True, "populate_by_name": True}

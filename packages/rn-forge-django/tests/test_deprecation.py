@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
 from django.http import HttpResponse
 from django.test import RequestFactory
-import pytest
-
 from rn_forge.django.deprecation import deprecated
 
 pytestmark = pytest.mark.unit

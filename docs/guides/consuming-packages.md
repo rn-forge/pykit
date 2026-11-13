@@ -12,18 +12,6 @@ dependencies = ["rn-forge-commons>=0.8,<0.9"]
 Before 1.0 the ceiling is the next minor version, because a minor release may
 break. From 1.0 it is the next major.
 
-## Moving off the pykit index
-
-Earlier releases were served from a package index at
-`https://rn-forge.github.io/pykit/simple/`. A consumer that declared it deletes
-the table from `pyproject.toml`, then runs `uv lock`:
-
-```toml
-[[tool.uv.index]]
-name = "rn-forge"
-url = "https://rn-forge.github.io/pykit/simple/"
-```
-
 ## Pin one exact version
 
 Require `==0.8.0` instead of a range:

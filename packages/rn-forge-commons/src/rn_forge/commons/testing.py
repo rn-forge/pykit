@@ -47,12 +47,12 @@ def raise_(exc: BaseException) -> NoReturn:
 
 @pytest.fixture
 def output_path(request: pytest.FixtureRequest) -> Path:
-    """Provide a persistent, per-test output directory under ``.out/<scope>/tests/output/``.
+    """Provide a persistent, per-test output directory under ``.tmp/<scope>/tests/output/``.
 
     Unlike ``tmp_path``, the directory is **not** cleaned up after the test
     run — useful for inspecting generated files when debugging failures.
 
-    Path format: ``<rootdir>/.out/<scope>/tests/output/<sanitised-node-id>/``
+    Path format: ``<rootdir>/.tmp/<scope>/tests/output/<sanitised-node-id>/``
 
     Import this fixture into ``conftest.py`` to make it available project-wide::
 
@@ -65,7 +65,7 @@ def output_path(request: pytest.FixtureRequest) -> Path:
         scope = node_path.parts[1]
     else:
         scope = "workspace"
-    base = root / ".out" / scope / "tests" / "output"
+    base = root / ".tmp" / scope / "tests" / "output"
     safe = (
         cast(str, request.node.nodeid)  # pyright: ignore[reportUnknownMemberType]  # pytest stubs gap
         .replace("/", "_")
@@ -103,7 +103,9 @@ def assert_that(val: Any, description: str = "") -> Any:
     _check_assertpy_available()
     from assertpy import assert_that as _assert_that
 
-    return _assert_that(val, description=description)
+    # With an `Any` argument assertpy 2's overloads resolve to Unknown.
+    builder = cast(Any, _assert_that(val))
+    return builder.described_as(description)
 
 
 def soft_assertions() -> Any:

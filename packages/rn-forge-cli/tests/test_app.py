@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import pytest
 import typer
-from typer._click.exceptions import UsageError
-
 from rn_forge.cli import CliApp, ExitCode, run
 from rn_forge.commons.exceptions import AppException
+from typer._click.exceptions import UsageError
 
 
 class TestExitCodeForError:

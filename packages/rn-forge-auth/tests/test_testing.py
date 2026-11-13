@@ -17,16 +17,16 @@ pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 pytest.importorskip("authlib")
 
-from assertpy import assert_that  # noqa: E402
-from rn_forge.auth import InMemoryReplayStore  # noqa: E402
-from rn_forge.auth.oidc import (  # noqa: E402
+from assertpy import assert_that
+from rn_forge.auth import InMemoryReplayStore
+from rn_forge.auth.oidc import (
     IdTokenVerifier,
     JwtVerifier,
     LogoutTokenVerifier,
     TokenVerificationError,
     discover_oidc,
 )
-from rn_forge.auth.testing import FakeOidcProvider, Faults  # noqa: E402
+from rn_forge.auth.testing import FakeOidcProvider, Faults
 
 pytestmark = pytest.mark.unit
 

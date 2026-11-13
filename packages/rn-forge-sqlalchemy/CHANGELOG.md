@@ -5,6 +5,15 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-13
+
+### Added
+
+- `create_sqlite_engine` — an async SQLite engine that sets WAL, foreign keys,
+  busy timeout and `synchronous` on every connection.
+- `rn_forge.sqlalchemy.migrate.run_migrations` — runs Alembic migrations from
+  the application process; needs the new `migrations` extra.
+
 ## [0.2.2] - 2026-10-29
 
 ### Changed

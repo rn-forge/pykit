@@ -2,7 +2,6 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.auth import Authorizer, Principal, Requirement, ScopeAuthorizer
 from rn_forge.web import PermissionDenied
 

@@ -1,7 +1,8 @@
+from typing import ClassVar
+
 import pytest
 from django.db import models
 from rest_framework import serializers
-
 from rn_forge.django.drf.serializers.base import BaseModelSerializer, OmitEmptyMixin
 from rn_forge.django.drf.serializers.fields import EnumChoiceField
 from rn_forge.django.models import (
@@ -10,7 +11,6 @@ from rn_forge.django.models import (
     NaturalKeyLookupManager,
     Status,
 )
-
 
 pytestmark = pytest.mark.unit
 
@@ -32,7 +32,7 @@ class _Widget(BaseModel):
 class _WidgetSerializer(BaseModelSerializer):
     class Meta:
         model = _Widget
-        fields = [
+        fields: ClassVar = [
             "name",
             "code",
             *BaseModelSerializer.BASE_MODEL_FIELDS,
@@ -81,7 +81,7 @@ class _OmitEmpty(OmitEmptyMixin):
 class _OmitEmptyWidgetSerializer(OmitEmptyMixin, BaseModelSerializer):
     class Meta:
         model = _Widget
-        fields = ["name", "code", *BaseModelSerializer.BASE_MODEL_FIELDS]
+        fields: ClassVar = ["name", "code", *BaseModelSerializer.BASE_MODEL_FIELDS]
 
 
 def _omit(**values):
@@ -119,9 +119,8 @@ def test_omit_empty_composes_with_base_model_serializer() -> None:
 def test_timestamps_render_as_rfc3339_utc_with_z() -> None:
     from datetime import UTC, datetime
 
-    from rest_framework import serializers
-
     from django.test import override_settings
+    from rest_framework import serializers
 
     with override_settings(USE_TZ=True, TIME_ZONE="UTC"):
         field = serializers.DateTimeField()

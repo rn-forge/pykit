@@ -8,16 +8,14 @@ from operator import attrgetter
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import connection, models
-
 from rn_forge.django.models import (
     BaseModel,
     DateRangeModel,
     FixtureModelMixin,
     ModelLookupCache,
     NaturalKeyLookupManager,
+    Status,
 )
-from rn_forge.django.models import Status
-
 
 # ---------------------------------------------------------------------------
 # Concrete models used throughout the tests
@@ -281,7 +279,7 @@ TestModelLookupCacheWithoutDb = pytest.mark.unit(TestModelLookupCacheWithoutDb)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(create_tables):  # noqa: PT004
+def _django_tables(create_tables):
     """Create Widget and Campaign tables for this module."""
     create_tables(Widget, Campaign, StrictWidget)
 
@@ -322,16 +320,11 @@ class TestTruncateModelMixin:
         Widget.truncate()
         assert Widget.objects.count() == 0
 
-    @pytest.mark.parametrize(
-        ("vendor", "statement"),
-        [("sqlite", "DELETE FROM"), ("postgresql", "TRUNCATE TABLE")],
-    )
-    def test_truncate_uses_quoted_table_name(
-        self, monkeypatch: pytest.MonkeyPatch, vendor: str, statement: str
+    def test_truncate_runs_the_backend_flush_statements(
+        self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # The vendor is pinned rather than read from the test database, so both
-        # branches are asserted whichever database the suite runs on.
         calls: list[str] = []
+        flushed: list[list[str]] = []
 
         class FakeCursor:
             def __enter__(self):
@@ -343,13 +336,17 @@ class TestTruncateModelMixin:
             def execute(self, sql: str) -> None:
                 calls.append(sql)
 
-        monkeypatch.setattr(connection.ops, "quote_name", lambda name: f'"{name}"')
+        def fake_flush(style: object, tables: list[str]) -> list[str]:
+            flushed.append(tables)
+            return ["FLUSH ONE", "FLUSH TWO"]
+
+        monkeypatch.setattr(connection.ops, "sql_flush", fake_flush)
         monkeypatch.setattr(connection, "cursor", lambda: FakeCursor())
-        monkeypatch.setattr(connection, "vendor", vendor)
 
         Widget.truncate()
 
-        assert calls == [f'{statement} "rn_forge_django_widget"']
+        assert flushed == [["rn_forge_django_widget"]]
+        assert calls == ["FLUSH ONE", "FLUSH TWO"]
 
 
 @pytest.mark.django_db

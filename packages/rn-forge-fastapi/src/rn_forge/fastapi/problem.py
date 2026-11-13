@@ -13,6 +13,7 @@ from typing import Any, cast
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from rn_forge.commons.logging import AppLogger
 from rn_forge.web import (
     NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
@@ -27,10 +28,43 @@ from rn_forge.web import (
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-__all__ = ["Log", "register_problem_handlers"]
+__all__ = ["Log", "log_server_errors", "register_problem_handlers"]
 
 type Log = Callable[[str, Mapping[str, Any]], None]
 """The injected logging sink, called as ``log(event, context)``."""
+
+
+def log_server_errors(logger: AppLogger | None = None) -> Log:
+    """Return a :data:`Log` that logs each 5xx problem at ``ERROR``, with its traceback.
+
+    The record carries the event, status, instance and trace id in its message
+    and the exception's traceback as ``exc_info``. Events other than
+    ``problem.server_error`` are ignored.
+
+    Args:
+        logger: Where to log. Defaults to
+            ``AppLogger.get_logger("rn_forge.fastapi.problem")``.
+
+    Example::
+
+        AppConfig(log=log_server_errors())
+    """
+    sink = logger or AppLogger.get_logger("rn_forge.fastapi.problem")
+
+    def log(event: str, context: Mapping[str, Any]) -> None:
+        if event != "problem.server_error":
+            return
+        exc = cast("BaseException", context["exc"])
+        sink.error(
+            "{} | status={} | instance={} | trace_id={}",
+            event,
+            context["status"],
+            context["instance"],
+            context["trace_id"],
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
+
+    return log
 
 
 def register_problem_handlers(

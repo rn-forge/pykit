@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from rn_forge.commons.integration.messaging import HandlerRegistry
 from rn_forge.django.messaging.consumer import UnknownMessageType, process_event
 from rn_forge.django.messaging.models import AbstractInboxMessage

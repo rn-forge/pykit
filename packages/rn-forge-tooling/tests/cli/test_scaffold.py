@@ -110,7 +110,7 @@ def golden_tool(scaffold_venv, tmp_path: Path):
 
     def run(*args: str) -> subprocess.CompletedProcess[str]:
         result = subprocess.run(
-            [str(script), *args], capture_output=True, text=True, env=env
+            [str(script), *args], check=False, capture_output=True, text=True, env=env
         )
         assert result.returncode == 0, result.stdout + result.stderr
         return result

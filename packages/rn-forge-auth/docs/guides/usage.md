@@ -2,10 +2,11 @@
 
 The package has one core and two adapters. `rn_forge.auth` holds the contracts
 and needs no third-party package. `rn_forge.auth.oidc` runs OIDC and OAuth 2.0
-logins and verifies OIDC bearer tokens (see [Login providers](login.md)), and `rn_forge.auth.redis` keeps sessions and single-use records in
-Redis; both import the core and the core never imports them. The `oidc` extra
-installs `pyjwt[crypto]` and `authlib`, the `redis` extra installs `redis`, and
-the `rn_forge.auth` facade re-exports neither adapter.
+logins and verifies OIDC bearer tokens (see [Login providers](login.md)), and
+`rn_forge.auth.redis` keeps sessions and single-use records in Redis; both
+import the core and the core never imports them. The `oidc` extra installs
+`pyjwt[crypto]` and `authlib`, the `redis` extra installs `redis`, and the
+`rn_forge.auth` facade re-exports neither adapter.
 
 ## How the pieces fit
 
@@ -21,14 +22,14 @@ provider -> ExternalIdentity -> AccountResolver -> account ID
 1. An `IdentityProvider` authenticates the user and returns an
    `ExternalIdentity`. The login is held in a `TransactionStore` while the
    browser is away.
-2. An `AccountResolver` maps the identity to an internal account ID, or rejects
+1. An `AccountResolver` maps the identity to an internal account ID, or rejects
    the login. A `SessionStore` then holds a `SessionInfo` under a random ID.
-3. On each request, a session or a verified bearer token identifies the account.
+1. On each request, a session or a verified bearer token identifies the account.
    An `AuthorizationContextProvider`, usually behind an
    `AuthorizationContextCache`, returns the account's current permissions, and
    the binding builds a `Principal`. For a bearer caller the token's scopes
    limit those permissions and never add to them.
-4. An `Authorizer` checks the route's `Requirement` against the `Principal`. A
+1. An `Authorizer` checks the route's `Requirement` against the `Principal`. A
    `ResourcePolicy` then checks the object, or narrows the query.
 
 | Guide | Covers |
@@ -50,9 +51,8 @@ The base install, `rn-forge-auth`, is enough to write your own authenticator.
 Importing `rn_forge.auth.oidc` without the extra fails with
 `ModuleNotFoundError` for `jwt`. `rn-forge-django[oidc]` and
 `rn-forge-fastapi[oidc]` already name `rn-forge-auth[oidc]`. Importing
-`rn_forge.auth.redis` without the `redis` extra fails with
-`ModuleNotFoundError` for `redis`.
-
+`rn_forge.auth.redis` without the `redis` extra fails with `ModuleNotFoundError`
+for `redis`.
 
 ## With rn-forge-web and the framework packages
 

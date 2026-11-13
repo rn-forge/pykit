@@ -25,10 +25,10 @@ requests = pytest.importorskip("requests")
 pytest.importorskip("authlib")
 pytest.importorskip("jwt")
 
-from assertpy import assert_that  # noqa: E402
-from rn_forge.auth import InMemoryTransactionStore, LoginFlow  # noqa: E402
-from rn_forge.auth.oidc import OidcAuthenticator, OidcProvider  # noqa: E402
-from rn_forge.web import AuthenticationFailed, Credentials  # noqa: E402
+from assertpy import assert_that
+from rn_forge.auth import InMemoryTransactionStore, LoginFlow
+from rn_forge.auth.oidc import OidcAuthenticator, OidcProvider
+from rn_forge.web import AuthenticationFailed, Credentials
 
 ISSUER = f"{BASE_URL}/realms/broker"
 REDIRECT_URI = "http://127.0.0.1:8099/auth/callback/keycloak"

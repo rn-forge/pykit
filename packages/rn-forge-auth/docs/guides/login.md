@@ -13,15 +13,15 @@ and development logins the same way.
 | `DevelopmentIdentityProvider` | `rn_forge.auth.local` | none |
 
 `rn_forge.auth.oidc` needs the `oidc` extra and is imported directly. The
-`rn_forge.auth` facade re-exports `LoginFlow`, `LoginFailed`, `LoginRequest`
-and the `rn_forge.auth.local` providers.
+`rn_forge.auth` facade re-exports `LoginFlow`, `LoginFailed`, `LoginRequest` and
+the `rn_forge.auth.local` providers.
 
 ## The request and the flow
 
-A provider reads two mappings from the request: `query`, the URL parameters
-(the IdP's callback arrives there), and `form`, the decoded `POST` fields (a
-password login arrives there). A binding passes its native request when it has
-both, or a small wrapper:
+A provider reads two mappings from the request: `query`, the URL parameters (the
+IdP's callback arrives there), and `form`, the decoded `POST` fields (a password
+login arrives there). A binding passes its native request when it has both, or a
+small wrapper:
 
 ```python
 from dataclasses import dataclass, field
@@ -71,9 +71,8 @@ began) before the provider sees the response. The transaction cookie is
 `__Host-login-tx` with `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/` and
 `Max-Age=600`: `Lax` sends it on the IdP's top-level redirect back, and the
 `__Host-` prefix stops a sibling subdomain from planting one. Reject a callback
-that carries more than one. Because the transaction binds the
-callback to the browser that started it, a callback replayed in another browser
-fails.
+that carries more than one. Because the transaction binds the callback to the
+browser that started it, a callback replayed in another browser fails.
 
 Every failure is one exception, `LoginFailed`, with a `code` from
 `CallbackError`: `login_failed`, or `access_denied` when the IdP returned
@@ -96,10 +95,10 @@ acme_provider = OidcProvider(
 )
 ```
 
-The provider reads the discovery document on first use and checks that it
-names the configured issuer. It sends `state`, a nonce and a PKCE S256
-challenge, and records all three, with the verifier, on the transaction. On the
-callback it requires the same `state`, then checks the `iss` parameter
+The provider reads the discovery document on first use and checks that it names
+the configured issuer. It sends `state`, a nonce and a PKCE S256 challenge, and
+records all three, with the verifier, on the transaction. On the callback it
+requires the same `state`, then checks the `iss` parameter
 ([RFC 9207](https://www.rfc-editor.org/rfc/rfc9207)): a different `iss` fails,
 and a missing one fails when discovery advertises
 `authorization_response_iss_parameter_supported`. It then exchanges the code and
@@ -139,9 +138,9 @@ def acme_mapper(provider: str, claims):
 
 ### Upstream tokens
 
-pykit stores no upstream token. The access and refresh tokens are dropped
-after the exchange unless the application passes a `token_hook`, which is called
-once the login has succeeded:
+pykit stores no upstream token. The access and refresh tokens are dropped after
+the exchange unless the application passes a `token_hook`, which is called once
+the login has succeeded:
 
 ```python
 def keep_tokens(identity, tokens):  # tokens is an UpstreamTokens
@@ -152,16 +151,16 @@ The tokens have no `repr`, so a logged `UpstreamTokens` does not leak them.
 
 ### Logout
 
-With `rp_initiated_logout=True`, `logout_redirect(session, post_logout_redirect=...)`
-returns the discovered `end_session_endpoint` with `id_token_hint`,
-`post_logout_redirect_uri` and `client_id`. It returns `None`, and the binding
-logs out locally only, when the flag is off, the provider advertises no
-endpoint, or the session kept no ID token. A session keeps its ID token
-(`SessionInfo.id_token`) only when the application enables RP-initiated logout:
-with the flag on, the provider sets `ExternalIdentity.id_token` and the binding
-copies it into the session; with it off the field stays `None`.
-Signing out of the app does not normally need to sign the user out of their
-whole IdP session, so the flag is off by default.
+With `rp_initiated_logout=True`,
+`logout_redirect(session, post_logout_redirect=...)` returns the discovered
+`end_session_endpoint` with `id_token_hint`, `post_logout_redirect_uri` and
+`client_id`. It returns `None`, and the binding logs out locally only, when the
+flag is off, the provider advertises no endpoint, or the session kept no ID
+token. A session keeps its ID token (`SessionInfo.id_token`) only when the
+application enables RP-initiated logout: with the flag on, the provider sets
+`ExternalIdentity.id_token` and the binding copies it into the session; with it
+off the field stays `None`. Signing out of the app does not normally need to
+sign the user out of their whole IdP session, so the flag is off by default.
 
 ## OAuth 2.0 providers
 
@@ -205,8 +204,8 @@ github = OidcProvider.oauth2(
 The user endpoint's JSON object becomes the claim set, with `iss` set to
 `issuer` and `sub` set to the `subject_field` member as a string, so GitHub's
 numeric `id` works. A user without that member fails the login. The default
-mapper reads the standard names; a provider with other names (`avatar_url`
-here) needs a mapper. The `iss` response check applies only when you pass
+mapper reads the standard names; a provider with other names (`avatar_url` here)
+needs a mapper. The `iss` response check applies only when you pass
 `response_issuer`, because most OAuth 2.0 servers send none. Such a provider has
 no ID token to keep, so `logout_redirect` returns `None`, and `token_hook`
 receives `UpstreamTokens` with `id_token=None`. A failed user call, an HTTP
@@ -330,14 +329,15 @@ With Keycloak:
 1. Create a realm for the application and an OpenID Connect client in it (a
    confidential client with the standard flow, your callback URL as a valid
    redirect URI, and a secret).
-2. Under identity providers, add a SAML v2.0 provider with an alias such as
+1. Under identity providers, add a SAML v2.0 provider with an alias such as
    `saml-idp`. Give it the SAML IdP's entity ID and single sign-on URL, and
    require signed assertions. Import the IdP's metadata when it publishes it.
-3. Add attribute mappers from the SAML attributes to user attributes (`email`,
+1. Add attribute mappers from the SAML attributes to user attributes (`email`,
    `firstName`, `lastName`), so that they reach the ID token as claims.
-4. Configure `OidcProvider` with the realm's issuer, `https://<host>/realms/<realm>`,
-   and the client's ID and secret. To send users straight to the SAML IdP, add
-   Keycloak's `kc_idp_hint=saml-idp` parameter to the redirect URL.
+1. Configure `OidcProvider` with the realm's issuer,
+   `https://<host>/realms/<realm>`, and the client's ID and secret. To send
+   users straight to the SAML IdP, add Keycloak's `kc_idp_hint=saml-idp`
+   parameter to the redirect URL.
 
 ```python
 broker = OidcProvider(
@@ -355,5 +355,5 @@ signed in through. The SAML assertion is the broker's to validate; the
 application sees only the broker's signed ID token. `tests/broker/` holds a
 working configuration: `realms/idp-realm.json` is a SAML IdP, and
 `realms/broker-realm.json` is a broker realm with the client, the SAML identity
-provider and the attribute mappers above. [Testing](testing.md) describes how
-to run them.
+provider and the attribute mappers above. [Testing](testing.md) describes how to
+run them.

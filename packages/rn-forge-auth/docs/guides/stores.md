@@ -39,8 +39,8 @@ processes; use them in tests and single-process development only. The Redis
 stores need Redis 6.2 or later (for `GETDEL`).
 
 Every Redis store takes a client and a key `prefix` (`"rn-forge-auth:"` by
-default). Expiries are whole seconds, rounded up, and at least one. A session
-is stored as JSON, and a missing, expired or rotated-away key reads as absent.
+default). Expiries are whole seconds, rounded up, and at least one. A session is
+stored as JSON, and a missing, expired or rotated-away key reads as absent.
 
 ## Authorization versions
 

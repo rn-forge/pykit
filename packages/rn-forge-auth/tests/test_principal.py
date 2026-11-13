@@ -1,10 +1,9 @@
 """Tests for rn_forge.auth.principal."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.auth import Principal, Requirement, principal_from_claims
 from rn_forge.web import AuthenticationFailed
 
@@ -33,7 +32,7 @@ def test_principal_round_trips_through_the_dataclass_mixin():
         external_subject="ext-1",
         permissions=frozenset({"orders.read"}),
         attributes={"org": "o1"},
-        auth_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        auth_time=datetime(2026, 1, 1, tzinfo=UTC),
         amr=frozenset({"pwd"}),
     )
     restored = Principal.from_dict(principal.as_dict())

@@ -4,7 +4,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi import (
     conditional_get,
     order_by_param,
@@ -22,16 +21,20 @@ def build_app():
     app = FastAPI()
     register_problem_handlers(app)
 
+    params_dep = Depends(page_params(cap=50, default=20))
+
     @app.get("/items")
-    async def items(params=Depends(page_params(cap=50, default=20))):
+    async def items(params=params_dep):
         size, cursor = params
         return {
             "size": size,
             "cursor": cursor and [*cursor.sort_keys, cursor.entity_id],
         }
 
+    order_dep = Depends(order_by_param(allowed=["team", "score"]))
+
     @app.get("/people")
-    async def people(order=Depends(order_by_param(allowed=["team", "score"]))):
+    async def people(order=order_dep):
         return [[t.field, t.descending] for t in order]
 
     @app.post("/charges")

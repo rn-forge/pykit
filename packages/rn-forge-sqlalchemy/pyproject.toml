@@ -1,29 +1,29 @@
 [project]
 name = "rn-forge-sqlalchemy"
-version = "0.2.2"
+version = "0.2.3"
 description = "Async SQLAlchemy models, upsert and keyset pagination over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 #
 # No database driver is declared: the application picks one (`asyncpg`,
 # `aiosqlite`). `rn-forge-commons` arrives through `rn-forge-web`.
-dependencies = [
-  "rn-forge-web>=0.3.0,<0.4",
-  "sqlalchemy[asyncio]>=2.0",
-]
+dependencies = ["rn-forge-web>=0.3.0,<0.4", "sqlalchemy[asyncio]>=2.0"]
+
+[project.optional-dependencies]
+migrations = ["alembic>=1.20.1"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/"
@@ -32,11 +32,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-sqlal
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.sqlalchemy"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
@@ -47,31 +55,42 @@ rn-forge-sqlalchemy = { workspace = true }
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
 markers = [
-  "unit: fast isolated tests",
-  "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+    "unit: fast isolated tests",
+    "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
-[tool.workspace-ci.postgres]
+[tool.workspace-ci.integration.postgres]
+image = "postgres:17"
+ports = ["5432:5432"]
+health-cmd = "pg_isready -U ci"
+
+[tool.workspace-ci.integration.postgres.env]
+POSTGRES_USER = "ci"
+POSTGRES_PASSWORD = "ci"
+POSTGRES_DB = "ci"
+
+[tool.workspace-ci.integration.postgres.expose]
 # The `postgres`-marked tests read this DSN and skip without it.
-env = "RN_FORGE_TEST_POSTGRES_DSN"
+RN_FORGE_TEST_POSTGRES_DSN = "postgresql://ci:ci@localhost:5432/ci"
 
 [dependency-groups]
 dev = [
-  "aiosqlite>=0.21",
-  "assertpy>=1.1",
-  "asyncpg>=0.30",
-  "httpx>=0.28.1",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-asyncio>=1.3.0",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[transfer]>=0.4.0,<0.5",
-  "ruff>=0.15.21",
+    "aiosqlite>=0.21",
+    "alembic>=1.20.1",
+    "assertpy>=2.35",
+    "asyncpg>=0.30",
+    "httpx>=0.28.1",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-fastapi[transfer]>=0.4.0,<0.5",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-sqlalchemy",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-sqlalchemy",
 ]

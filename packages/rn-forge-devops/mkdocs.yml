@@ -1,6 +1,5 @@
 site_name: rn-forge-devops
-site_description: CI and release automation for rn-forge repositories
-site_dir: .out/site
+site_description: Release commands for the pykit workspace
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-devops/
 repo_url: https://github.com/rn-forge/pykit
@@ -43,13 +42,10 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Guides:
+      - guides/index.md
   - Reference:
       - reference/index.md
       - Subcommands: reference/subcommands.md
-      - Core: reference/ci.md
-      - uv adapter: reference/uv.md
-      - GitHub Actions adapter: reference/github.md
-      - Package index: reference/index-core.md
-      - Releases adapter: reference/releases.md
       - Release notes: reference/notes.md
   - Changelog: changelog.md

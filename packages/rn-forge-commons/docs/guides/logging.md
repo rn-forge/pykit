@@ -70,6 +70,64 @@ class Client:
         return {}
 ```
 
+## Secret redaction
+
+Redaction is **on by default**: `AppLogger.initialize()` registers a
+`RedactFilter` on the console and file handlers, so JSON, Rich and plain output
+all apply it. Pass `redact=False` (or `LoggingConfig.build(redact=False)`) to
+turn it off. Enabling it changes log output, so a deployment that parses logs
+for a value now sees `[redacted]` in its place.
+
+The filter redacts three things on each record, assigning new objects and never
+mutating what the caller passed:
+
+- the message, when it is a string;
+- `args`, keeping its tuple or mapping shape and any non-string values, so
+  `%d`-style formatting still works;
+- every `extra` field.
+
+It decides what to redact in two ways:
+
+- **By key.** A value stored under a key whose *final segment* is
+  `authorization`, `cookie`, `password`, `secret` or `token` (plural allowed,
+  any case) is replaced wholesale with `[redacted]`, whatever its type.
+  Segments split on `_`, `-`, `.` and camelCase boundaries, so `access_token`,
+  `accessToken`, `client_secret`, `set-cookie` and `x-csrf-token` are redacted
+  while `token_count`, `password_hint` and `cookie_jar` are not. `None` and
+  `""` are kept.
+- **By value.** In any string, under any key, the credential in `Bearer <token>`
+  or `Basic <credential>` and the password in `scheme://user:password@host`
+  are replaced, and so is the password in `scheme://:password@host`. The
+  scheme word and the rest of the text stay. A credential must contain a
+  digit, a symbol or an inner capital, so prose such as "bearer token expired"
+  is kept, and so is a short all-lowercase token: log it under a matching key
+  instead.
+
+Nested dicts, lists and tuples are redacted at any depth. Use `redact()` to
+apply the same rules to your own data, and a `RedactionPolicy` to change them:
+
+```python
+import re
+from rn_forge.commons import RedactFilter, RedactionPolicy, redact
+
+policy = RedactionPolicy(re.compile(r"^ssn$"), scrub_credentials=True, scrub_url_passwords=True)
+redact({"ssn": "123-45-6789", "user": "ann"}, policy=policy)
+# {'ssn': '[redacted]', 'user': 'ann'}
+```
+
+`AppLogger.initialize()` always uses the default policy. To use another, build
+your own handlers and attach `RedactFilter(policy)` to them.
+
+**Exception tracebacks are not redacted.** Formatted tracebacks and exception
+messages can carry secrets and pass through unchanged; keep credentials out of
+exception text.
+
+With the `structlog` extra,
+`rn_forge.commons.logging.structlog.redact_processor` redacts each event
+dictionary before it is rendered. `StructLogger` installs it automatically, and
+`redact=False` does not remove it; add it yourself to any other structlog chain,
+ahead of the renderer.
+
 ## StructLogger vs. AppLogger.get_logger
 
 `AppLogger.get_logger(__name__)` is for one-off, unstructured log calls. Reach

@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.test import override_settings
-
 from rn_forge.django.models import BaseModel, ModelUtils, NaturalKeyLookupManager
 from rn_forge.django.utils import require_environment, require_settings
-
 
 # ---------------------------------------------------------------------------
 # Concrete model for ModelUtils tests
@@ -34,7 +32,7 @@ class Article(BaseModel):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _django_tables(create_tables):  # noqa: PT004
+def _django_tables(create_tables):
     create_tables(Article)
 
 
@@ -64,7 +62,7 @@ class TestAsJsonValue:
         assert ModelUtils.as_json_value(d) == "2024-06-15"
 
     def test_datetime_to_isoformat(self) -> None:
-        dt = datetime(2024, 6, 15, 12, 30, 0, tzinfo=timezone.utc)
+        dt = datetime(2024, 6, 15, 12, 30, 0, tzinfo=UTC)
         assert ModelUtils.as_json_value(dt) == "2024-06-15T12:30:00+00:00"
 
     def test_time_to_isoformat(self) -> None:
@@ -193,9 +191,11 @@ class TestRequireSettings:
             require_settings("RNF_ONE", "RNF_TWO")
 
     def test_names_every_missing_or_blank_setting_at_once(self) -> None:
-        with override_settings(RNF_BLANK="  "):
-            with pytest.raises(ImproperlyConfigured) as caught:
-                require_settings("RNF_BLANK", "RNF_ABSENT", "DATABASES")
+        with (
+            override_settings(RNF_BLANK="  "),
+            pytest.raises(ImproperlyConfigured) as caught,
+        ):
+            require_settings("RNF_BLANK", "RNF_ABSENT", "DATABASES")
         message = str(caught.value)
         assert "RNF_ABSENT" in message
         assert "RNF_BLANK" in message

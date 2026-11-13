@@ -1,9 +1,8 @@
 """Tests for standard FastAPI application construction."""
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Any
-
-import asyncio
 
 import pytest
 from assertpy import assert_that
@@ -13,7 +12,6 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import SpanKind
-
 from rn_forge.fastapi import AppConfig, CorsPolicy, FastApiApp
 from rn_forge.web import (
     API_CATALOG_PATH,
@@ -21,7 +19,6 @@ from rn_forge.web import (
     LINKSET_MEDIA_TYPE,
     OPENAPI_PATH,
     CheckResult,
-    DomainConflict,
     ProblemType,
     default_registry,
 )

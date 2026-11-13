@@ -1,10 +1,9 @@
 import pytest
 from assertpy import assert_that
-from sqlalchemy import update
-from sqlalchemy.orm import Mapped, mapped_column
-
 from rn_forge.sqlalchemy import Base, VersionMixin, update_versioned
 from rn_forge.web import VersionConflict
+from sqlalchemy import update
+from sqlalchemy.orm import Mapped, mapped_column
 
 pytestmark = pytest.mark.unit
 

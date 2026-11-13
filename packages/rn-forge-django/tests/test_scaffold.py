@@ -202,6 +202,7 @@ def test_a_served_project_passes_every_conformance_case(scaffold_venv, tmp_path:
     result = subprocess.run(
         [str(bin_dir / "python"), "driver.py"],
         cwd=project,
+        check=False,
         capture_output=True,
         text=True,
     )

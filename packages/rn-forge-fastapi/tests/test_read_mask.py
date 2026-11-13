@@ -1,6 +1,6 @@
 """Tests for rn_forge.fastapi.read_mask."""
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from assertpy import assert_that
@@ -8,7 +8,6 @@ from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-
 from rn_forge.fastapi import masked, read_mask_param, register_problem_handlers
 from rn_forge.web import Page, ReadMask, WireModel
 
@@ -29,12 +28,12 @@ class Account(WireModel):
     id: str
     # An explicit alias that is not the camelCase of the attribute name.
     full_name: str = Field(alias="name")
-    home: Optional[Address] = None
+    home: Address | None = None
     work: Address | None = None
-    phones: list[Phone] = []
-    backup_phones: Optional[list[Phone]] = None
-    tags: list[str] = []
-    settings: dict[str, Any] = {}
+    phones: list[Phone] = Field(default_factory=list)
+    backup_phones: list[Phone] | None = None
+    tags: list[str] = Field(default_factory=list)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
     @computed_field
     @property
@@ -56,13 +55,17 @@ def app() -> FastAPI:
     app = FastAPI()
     register_problem_handlers(app)
 
+    mask_dep = Depends(read_mask_param(Account))
+
     @app.get("/account")
-    async def account(mask: ReadMask | None = Depends(read_mask_param(Account))):
+    async def account(mask: ReadMask | None = mask_dep):
         body = ACCOUNT.model_dump()
         return JSONResponse(body if mask is None else mask.apply(body))
 
+    mask_dep = Depends(read_mask_param(Account))
+
     @app.get("/accounts")
-    async def accounts(mask: ReadMask | None = Depends(read_mask_param(Account))):
+    async def accounts(mask: ReadMask | None = mask_dep):
         return JSONResponse(
             masked(Page[Account](items=[ACCOUNT], next_page_token=None), mask)
         )
@@ -170,14 +173,16 @@ def test_a_model_that_contains_itself_stops_at_a_leaf():
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
         name: str
-        child: "Node | None" = None
+        child: Node | None = None
 
     Node.model_rebuild()
     api = FastAPI()
     register_problem_handlers(api)
 
+    mask_dep = Depends(read_mask_param(Node))
+
     @api.get("/node")
-    async def node(mask: ReadMask | None = Depends(read_mask_param(Node))):
+    async def node(mask: ReadMask | None = mask_dep):
         body = {"name": "a", "child": {"name": "b", "child": None}}
         return JSONResponse(body if mask is None else mask.apply(body))
 

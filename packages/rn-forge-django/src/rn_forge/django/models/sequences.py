@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final, LiteralString
 
 from django.db import connections, models, router, transaction
 from rn_forge.commons.exceptions import AppException
+
+if TYPE_CHECKING:
+    from psycopg import sql
 
 __all__ = ["AbstractSequenceCounter", "SequenceGenerator", "default_code_formatter"]
 
@@ -37,8 +40,8 @@ class SequenceGenerator:
     Args:
         name: The sequence name. Must match ``[a-z][a-z0-9_]*`` (at most 63
             characters). The attribute may be reassigned; the current value is
-            validated again, and quoted with the connection's identifier
-            quoting, before each PostgreSQL statement.
+            validated again, and quoted as an identifier, before each
+            PostgreSQL statement.
         counter_model: The consumer's concrete :class:`AbstractSequenceCounter`.
         prefix: Passed to *formatter*.
         formatter: ``(prefix, value) -> code``. Defaults to
@@ -75,9 +78,8 @@ class SequenceGenerator:
         """Allocate and return the next raw value."""
         alias = self._alias()
         if connections[alias].vendor == "postgresql":
-            identifier = self._identifier(alias)
             with connections[alias].cursor() as cursor:
-                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {identifier}")
+                cursor.execute(self._sql("CREATE SEQUENCE IF NOT EXISTS {}"))
                 cursor.execute("SELECT nextval(%s)", [self.name])
                 row: tuple[Any, ...] = cursor.fetchone()
                 return int(row[0])
@@ -95,10 +97,9 @@ class SequenceGenerator:
         """
         alias = self._alias()
         if connections[alias].vendor == "postgresql":
-            identifier = self._identifier(alias)
             with connections[alias].cursor() as cursor:
-                cursor.execute(f"CREATE SEQUENCE IF NOT EXISTS {identifier}")
-                cursor.execute(f"SELECT last_value, is_called FROM {identifier}")  # noqa: S608  # identifier is quoted by the database backend
+                cursor.execute(self._sql("CREATE SEQUENCE IF NOT EXISTS {}"))
+                cursor.execute(self._sql("SELECT last_value, is_called FROM {}"))
                 last_value, is_called = cursor.fetchone()
                 current = int(last_value) if is_called else int(last_value) - 1
                 if value > current:
@@ -116,9 +117,12 @@ class SequenceGenerator:
             _NAME.fullmatch(name), "Invalid sequence name: {!r}", name, error_code=400
         )
 
-    def _identifier(self, alias: str) -> str:
+    def _sql(self, template: LiteralString) -> sql.Composed:
+        # psycopg is needed only on PostgreSQL, so it is not imported at module level.
+        from psycopg import sql
+
         self._check_name(self.name)
-        return connections[alias].ops.quote_name(self.name)
+        return sql.SQL(template).format(sql.Identifier(self.name))
 
     def _alias(self) -> str:
         return self._using or router.db_for_write(self._model)

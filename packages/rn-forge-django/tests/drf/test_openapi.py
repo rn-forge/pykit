@@ -1,25 +1,26 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 pytest.importorskip("drf_spectacular")
 
-from django.urls import path, re_path  # noqa: E402
-from drf_spectacular.generators import SchemaGenerator  # noqa: E402
-from drf_spectacular.settings import patched_settings  # noqa: E402
-from drf_spectacular.utils import extend_schema  # noqa: E402
-from rest_framework import serializers  # noqa: E402
-from rest_framework.generics import GenericAPIView, ListAPIView  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-
-from rn_forge.django.auth.drf.principal import (  # noqa: E402
+from django.urls import path, re_path
+from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.settings import patched_settings
+from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
+from rest_framework.generics import GenericAPIView, ListAPIView
+from rest_framework.response import Response
+from rn_forge.auth import Requirement
+from rn_forge.django.auth.drf.principal import (
     PrincipalBearerAuthentication,
     requires,
 )
-from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, WireAutoSchema  # noqa: E402
-from rn_forge.django.drf.pagination import CursorPagination  # noqa: E402
-from rn_forge.auth import Requirement  # noqa: E402
-from rn_forge.web import HealthReport  # noqa: E402
+from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS, WireAutoSchema
+from rn_forge.django.drf.pagination import CursorPagination
+from rn_forge.web import HealthReport
 
 pytestmark = pytest.mark.unit
 
@@ -35,14 +36,14 @@ class _Bearer(PrincipalBearerAuthentication):
 
 class _Base(GenericAPIView):
     schema = WireAutoSchema()
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     serializer_class = _WorkItemSerializer
 
 
 class _CollectionView(_Base):
-    authentication_classes = [_Bearer]
-    permission_classes = [requires(Requirement())]
+    authentication_classes: ClassVar = [_Bearer]
+    permission_classes: ClassVar = [requires(Requirement())]
 
     def get(self, request):
         return Response([])
@@ -70,8 +71,8 @@ class _OrdersView(ListAPIView):
     """A paginated collection, for the page component's name."""
 
     schema = WireAutoSchema()
-    authentication_classes: list = []
-    permission_classes: list = []
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     serializer_class = OrderSerializer
     pagination_class = CursorPagination
 

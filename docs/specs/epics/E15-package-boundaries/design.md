@@ -322,7 +322,7 @@ selects, which already call `PandasUtils`. That half belongs in `rn-forge-data`.
 The Django half is the `loaddata` JSON output (`"app.model"`, `pk`, `fields`,
 foreign keys as natural keys) and `load_data` (`django.setup` plus `loaddata`).
 A SQLAlchemy loader needs natural-key rules that both ORMs share, which is the
-[model-vocabulary](../../ideas.md#model-vocabulary) idea. Feature:
+[model-vocabulary](../../ideas/index.md#model-vocabulary) idea. Feature:
 [F15.6](F15.6-neutral-fixtures.md).
 
 ### Decision

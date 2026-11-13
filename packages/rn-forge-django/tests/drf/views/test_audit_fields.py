@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("rest_framework")
 
-from rn_forge.django.drf.views import AuditFieldsViewMixin  # noqa: E402
+from rn_forge.django.drf.views import AuditFieldsViewMixin
 
 pytestmark = pytest.mark.unit
 

@@ -111,6 +111,87 @@ def test_a_served_service_passes_every_conformance_case(scaffold_venv, tmp_path:
     result = subprocess.run(
         [str(bin_dir / "python"), "driver.py"],
         cwd=service,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+SSE_DRIVER = """\
+import asyncio
+import socket
+import threading
+import time
+from collections.abc import AsyncIterator
+
+import httpx
+import uvicorn
+from fastapi import FastAPI
+from sse_starlette import ServerSentEvent
+
+from rn_forge.fastapi.sse import sse_response
+from rn_forge.web import ProblemDetail
+
+app = FastAPI()
+
+
+@app.get("/events")
+async def events():
+    async def source() -> AsyncIterator[ServerSentEvent]:
+        yield ServerSentEvent("one", id="1")
+        yield ServerSentEvent("two", id="2")
+        await asyncio.sleep(0.5)
+        raise RuntimeError("secret")
+
+    return sse_response(source(), ping=0.1, instance="/events")
+
+
+with socket.socket() as probe:
+    probe.bind(("127.0.0.1", 0))
+    port = probe.getsockname()[1]
+server = uvicorn.Server(uvicorn.Config(app, port=port, log_level="error"))
+threading.Thread(target=server.run, daemon=True).start()
+while not server.started:
+    time.sleep(0.01)
+
+try:
+    with httpx.stream("GET", f"http://127.0.0.1:{port}/events", timeout=5) as response:
+        assert response.headers["content-type"].startswith("text/event-stream")
+        body = "".join(response.iter_text())
+finally:
+    server.should_exit = True
+
+frames = [frame.splitlines() for frame in body.split("\\r\\n\\r\\n") if frame]
+assert frames[0] == ["retry: 5000"], frames
+assert frames[1:3] == [["id: 1", "data: one"], ["id: 2", "data: two"]], frames
+assert any(frame[0].startswith(": ping") for frame in frames[3:-1]), frames
+event, data = frames[-1]
+assert event == "event: error", frames
+problem = ProblemDetail.model_validate_json(data.removeprefix("data: "))
+assert problem.status == 500 and problem.instance == "/events", problem
+assert "secret" not in body
+print("sse ok")
+"""
+
+
+@pytest.mark.scaffold
+def test_a_served_sse_endpoint_streams_frames_a_heartbeat_and_a_problem(
+    scaffold_venv, tmp_path: Path
+):
+    (tmp_path / "sse_driver.py").write_text(SSE_DRIVER)
+    bin_dir = scaffold_venv(
+        "rn-forge-web[security]",
+        "rn-forge-fastapi[sse]",
+        "httpx",
+        "uvicorn",
+    )
+
+    result = subprocess.run(
+        [str(bin_dir / "python"), "sse_driver.py"],
+        cwd=tmp_path,
+        check=False,
         capture_output=True,
         text=True,
     )

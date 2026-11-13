@@ -84,11 +84,14 @@ class ManagedBlock:
             block sits inside an indented structure (``mkdocs.yml``'s ``nav:``
             uses two spaces). Applied to the markers only; the body is
             inserted as given.
+        end_indent: Leading whitespace of the end marker alone. ``None`` (the default)
+            uses *indent*; ``""`` puts the end marker at the left margin.
     """
 
     name: str
     comment: str = HASH_COMMENT
     indent: str = ""
+    end_indent: str | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -110,9 +113,14 @@ class ManagedBlock:
         return self._marker("END")
 
     def _marker(self, keyword: str) -> str:
+        indent = (
+            self.end_indent
+            if keyword == "END" and self.end_indent is not None
+            else self.indent
+        )
         if self.comment == HTML_COMMENT:
-            return f"{self.indent}<!-- {keyword} {self.name} -->"
-        return f"{self.indent}# {keyword} {self.name}"
+            return f"{indent}<!-- {keyword} {self.name} -->"
+        return f"{indent}# {keyword} {self.name}"
 
     def _locate(self, text: str) -> _Span | None:
         """Return the block's :class:`_Span` in *text*, or ``None`` when absent.

@@ -5,7 +5,6 @@ from opentelemetry.instrumentation.propagators import (
     get_global_response_propagator,
     set_global_response_propagator,
 )
-
 from rn_forge.django.tracing import instrument
 
 pytestmark = pytest.mark.unit

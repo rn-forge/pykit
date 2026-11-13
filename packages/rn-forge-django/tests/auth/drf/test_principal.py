@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 import json
+from typing import ClassVar
 
 import pytest
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.test import override_settings  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-from rest_framework.views import APIView  # noqa: E402
-
-from rn_forge.django.auth.drf.principal import (  # noqa: E402
+from django.test import override_settings
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
+from rn_forge.django.auth.drf.principal import (
     PrincipalBasicAuthentication,
     PrincipalBearerAuthentication,
     requires,
 )
-from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
-from rn_forge.web import (  # noqa: E402
+from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     AuthenticationFailed,
 )
@@ -73,8 +73,10 @@ class _Basic(PrincipalBasicAuthentication):
 
 
 class _PrivateView(APIView):
-    authentication_classes = [_Bearer]
-    permission_classes = [requires(Requirement(all_scopes=frozenset({"read"})))]
+    authentication_classes: ClassVar = [_Bearer]
+    permission_classes: ClassVar = [
+        requires(Requirement(all_scopes=frozenset({"read"})))
+    ]
 
     def get(self, request):
         return Response(
@@ -83,8 +85,8 @@ class _PrivateView(APIView):
 
 
 class _BasicView(_PrivateView):
-    authentication_classes = [_Basic]
-    permission_classes = [requires(Requirement())]
+    authentication_classes: ClassVar = [_Basic]
+    permission_classes: ClassVar = [requires(Requirement())]
 
 
 def _get(view=_PrivateView, **headers):
@@ -173,12 +175,12 @@ class _WideContexts:
 
 class _Ceiling(_Bearer):
     contexts = _WideContexts()
-    scope_map = {"read": frozenset({"orders.read"})}
+    scope_map: ClassVar = {"read": frozenset({"orders.read"})}
 
 
 class _CeilingView(APIView):
-    authentication_classes = [_Ceiling]
-    permission_classes = [requires(Requirement())]
+    authentication_classes: ClassVar = [_Ceiling]
+    permission_classes: ClassVar = [requires(Requirement())]
 
     def get(self, request):
         return Response({"permissions": sorted(request.user.permissions)})

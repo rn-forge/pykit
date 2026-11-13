@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-
 from rn_forge.django.models import (
     BaseModel,
     ImmutableModelMixin,

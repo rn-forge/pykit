@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from rn_forge.django.cors import cors_settings
 from rn_forge.web import EXPOSED_HEADERS
 

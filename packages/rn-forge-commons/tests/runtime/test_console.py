@@ -7,7 +7,6 @@ from io import StringIO
 
 import pytest
 from rich.console import Console
-
 from rn_forge.commons.runtime.console import AppConsole, OutputMode
 
 

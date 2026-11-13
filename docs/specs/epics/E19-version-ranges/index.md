@@ -6,6 +6,16 @@
 | **Start Date** | 2026-10-25 |
 | **Closed Date** | 2026-10-25 |
 
+<!-- BEGIN derived features -->
+
+| Feature | State | Iteration | Stories |
+| -- | -- | -- | -- |
+| [F19.1 — How packages find each other by version](F19.1-distribution-decision.md) | Closed | release-6 | 1 Closed |
+| [F19.2 — The package index](F19.2-package-index.md) | Closed | release-6 | 2 Closed |
+| [F19.3 — Internal requirements become ranges](F19.3-internal-ranges.md) | Closed | release-6 | 2 Closed |
+
+<!-- END derived features -->
+
 Each `rn-forge-*` package pins every other one it needs by one git tag URL
 ([ADR-0004](../../../adr/ADR-0004.md)). A URL admits exactly one version, and uv
 refuses two URLs for one distribution. As a result:
@@ -24,12 +34,6 @@ coordinated release that switches every package to ranges is the last one that
 has to re-tag dependents for a pin.
 
 [Back to the work index](../../index.md)
-
-| Feature | Scope | State |
-| -- | -- | -- |
-| [F19.1 — How packages find each other by version](F19.1-distribution-decision.md) | The decision: a static PEP 503 index on GitHub Pages of the wheels already on GitHub Releases, ranges between packages, and the compatibility rule; ADR-0004 revised. | Closed |
-| [F19.2 — The package index](F19.2-package-index.md) | `rn-forge-devops index` writes the index from GitHub Releases; the docs job publishes it at `/pykit/simple/`; a consumer guide. | Closed |
-| [F19.3 — Internal requirements become ranges](F19.3-internal-ranges.md) | Every internal requirement becomes `name>=floor,<next-breaking`; `rn-forge-devops requirements` checks them in CI; the runbook's re-pin step goes away. | Closed |
 
 ## Context
 

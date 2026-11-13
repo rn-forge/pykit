@@ -139,14 +139,14 @@ def serve_jwks() -> Iterator[Callable[[list[dict[str, Any]]], str]]:
         payload = json.dumps({"keys": keys}).encode()
 
         class Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:  # noqa: N802  # http.server hook name
+            def do_GET(self) -> None:  # http.server hook name
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
                 self.wfile.write(payload)
 
-            def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            def log_message(self, format: str, *args: Any) -> None:
                 pass
 
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)

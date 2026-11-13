@@ -33,8 +33,8 @@ required by version range.
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
 | `all` | Everything above |
 
-There is deliberately no `messaging` extra —
-`rn_forge.django.messaging` is Django ORM plus stdlib.
+There is deliberately no `messaging` extra — `rn_forge.django.messaging` is
+Django ORM plus stdlib.
 
 To use the bundled auth app, add `"rn_forge.django.auth"` to `INSTALLED_APPS`.
 For the OpenAPI integration, add `"drf_spectacular"`.

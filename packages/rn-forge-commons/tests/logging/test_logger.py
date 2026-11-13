@@ -11,23 +11,20 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import pytest
+import rn_forge.commons.logging.logger as logging_module
 from rich.logging import RichHandler
-
 from rn_forge.commons import (
     AppLogger,
     LoggingConfig,
 )
+from rn_forge.commons.lang.reflection import ReflectUtils
 from rn_forge.commons.logging.logger import (
     TRACE,
     BraceLogRecord,
     EnrichFilter,
     _enable_otel_log_correlation,
 )
-from rn_forge.commons.lang.reflection import ReflectUtils
-import rn_forge.commons.logging.logger as logging_module
-
 from rn_forge.commons.testing import raise_
-
 
 # -- configuration helpers -------------------------------------------------
 
@@ -284,7 +281,7 @@ class _ListHandler(logging.Handler):
         super().__init__()
         self.records: list[logging.LogRecord] = []
 
-    def emit(self, record: logging.LogRecord) -> None:  # noqa: D401
+    def emit(self, record: logging.LogRecord) -> None:
         self.records.append(record)
 
 
@@ -292,6 +289,7 @@ def test_debug_and_trace_variables() -> None:
     _configure(level=logging.DEBUG)
     logger = _logger("test.vars")
     value = 42  # NOSONAR: read via frame introspection by debug_variables/trace_variables, not statically
+    _ = value
     handler = _ListHandler()
     logger.addHandler(handler)
     try:
@@ -419,6 +417,7 @@ assert record.otelSpanID == "0000000000000456"
 assert record.otelTraceSampled is True
 """,
         ],
+        check=False,
         capture_output=True,
         text=True,
     )

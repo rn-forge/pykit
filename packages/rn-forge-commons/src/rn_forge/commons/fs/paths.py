@@ -6,10 +6,12 @@ Includes atomic publish-by-rename, repository-root discovery, and
 
 from __future__ import annotations
 
+import errno
 import os
 import shutil
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 
@@ -19,6 +21,31 @@ from rn_forge.commons.logging import AppLogger
 _LOGGER = AppLogger.get_logger(__name__)
 
 __all__ = ["PathUtils"]
+
+
+def _fsync_path(path: Path) -> None:
+    """``fsync`` the file at *path*, opened by name."""
+    # Windows' fsync needs a writable descriptor; on POSIX a copy of a
+    # read-only file cannot be opened for writing.
+    fd = os.open(path, os.O_RDWR if os.name == "nt" else os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _fsync_dir(path: Path) -> None:
+    """Best-effort ``fsync`` of the directory at *path*; ``OSError`` is ignored."""
+    try:
+        dir_fd = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(dir_fd)
+    except OSError:
+        pass
+    finally:
+        os.close(dir_fd)
 
 
 class PathUtils:
@@ -96,44 +123,153 @@ class PathUtils:
         """
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
+        with PathUtils.atomic_replace(p, copy=False, mode=mode) as tmp:
+            if isinstance(content, bytes):
+                tmp.write_bytes(content)
+            else:
+                tmp.write_text(content, encoding=encoding)
+        return p
+
+    @staticmethod
+    @contextmanager
+    def atomic_replace(
+        path: str | Path, *, copy: bool = True, mode: int | None = None
+    ) -> Generator[Path]:
+        """Edit a temporary sibling of *path* and publish it over *path* atomically.
+
+        Yields a ``.<name>.<random>.tmp`` path in *path*'s directory. When
+        *copy* is true it starts as a :func:`shutil.copy2` copy of *path*; the
+        caller edits it with any tool, including one that replaces it by
+        rename. On a clean exit the temporary is ``fsync``'d, given its
+        permissions, published over *path* with :func:`os.replace`, and the
+        parent directory is best-effort ``fsync``'d.
+
+        Permissions: an explicit *mode* wins; otherwise an existing *path*'s
+        mode is kept; otherwise the temporary's default (restrictive)
+        permissions are left as-is.
+
+        On any :class:`BaseException`, including :exc:`KeyboardInterrupt`,
+        the temporary is removed and *path* is left untouched.
+
+        Args:
+            path: The file to replace. Its directory must exist.
+            copy: Pre-fill the temporary with a copy of *path*. When false the
+                temporary starts empty and *path* may not exist yet.
+            mode: Optional explicit permission bits for the published file.
+
+        Yields:
+            The temporary path to edit.
+
+        Raises:
+            FileNotFoundError: *copy* is true and *path* does not exist.
+        """
+        p = Path(path)
         existing_mode = p.stat().st_mode if p.exists() else None
 
         fd, tmp_name = tempfile.mkstemp(
             dir=p.parent, prefix=f".{p.name}.", suffix=".tmp"
         )
+        os.close(fd)
+        tmp = Path(tmp_name)
         try:
-            if isinstance(content, bytes):
-                with os.fdopen(fd, "wb") as binary_stream:
-                    binary_stream.write(content)
-                    binary_stream.flush()
-                    os.fsync(binary_stream.fileno())
-            else:
-                with os.fdopen(fd, "w", encoding=encoding) as text_stream:
-                    text_stream.write(content)
-                    text_stream.flush()
-                    os.fsync(text_stream.fileno())
+            if copy:
+                shutil.copy2(p, tmp)
+            yield tmp
+
+            # Reopen by name: the caller's tool may have swapped the file by
+            # rename, so the mkstemp descriptor could point at the old inode.
+            _fsync_path(tmp)
 
             if mode is not None:
-                os.chmod(tmp_name, mode)
+                os.chmod(tmp, mode)
             elif existing_mode is not None:
-                os.chmod(tmp_name, existing_mode)
+                os.chmod(tmp, existing_mode)
 
-            os.replace(tmp_name, p)
+            os.replace(tmp, p)
+            _fsync_dir(p.parent)
         except BaseException:
-            Path(tmp_name).unlink(missing_ok=True)
+            tmp.unlink(missing_ok=True)
             raise
 
+    @staticmethod
+    def move_no_clobber(source: str | Path, destination: str | Path) -> Path:
+        """Move *source* to *destination*, never overwriting an existing file.
+
+        Creates *destination*'s parent directories, then publishes with
+        :func:`os.link` and unlinks *source*. The link fails atomically when
+        *destination* exists, so a file that appears there during the call is
+        never replaced. Across filesystems, *source* is copied with
+        :func:`shutil.copy2` to a temporary beside *destination*, ``fsync``'d,
+        linked to *destination* and removed, then *source* is removed.
+
+        Args:
+            source: The file to move.
+            destination: The path to move it to.
+
+        Returns:
+            *destination*, as a :class:`~pathlib.Path`.
+
+        Raises:
+            FileExistsError: *destination* exists. Both files are left as
+                they were.
+            FileNotFoundError: *source* does not exist.
+            OSError: Any other failure, including a filesystem without hard
+                links. Parent directories already created are kept.
+        """
+        src = Path(source)
+        dst = Path(destination)
+        dst.parent.mkdir(parents=True, exist_ok=True)
         try:
-            dir_fd = os.open(p.parent, os.O_RDONLY)
-        except OSError:
-            return p
-        try:
-            os.fsync(dir_fd)
-        except OSError:
-            pass
-        finally:
-            os.close(dir_fd)
-        return p
+            os.link(src, dst)
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise
+            fd, tmp_name = tempfile.mkstemp(
+                dir=dst.parent, prefix=f".{dst.name}.", suffix=".tmp"
+            )
+            os.close(fd)
+            tmp = Path(tmp_name)
+            try:
+                shutil.copy2(src, tmp)
+                _fsync_path(tmp)
+                os.link(tmp, dst)
+            finally:
+                tmp.unlink(missing_ok=True)
+        src.unlink()
+        return dst
+
+    @staticmethod
+    def prune_empty_parents(start: str | Path, stop: str | Path) -> None:
+        """Remove *start* and its empty ancestors, up to but excluding *stop*.
+
+        Both paths are resolved first. Starting at *start*, each directory is
+        removed with :meth:`~pathlib.Path.rmdir` and the walk moves to its
+        parent, ending at the first directory that is not empty. Only
+        directories strictly inside *stop* are touched: nothing happens when
+        the resolved *start* is *stop* or lies outside it. A directory that
+        no longer exists is skipped.
+
+        Args:
+            start: The directory to remove first.
+            stop: The directory that bounds the walk; it is never removed.
+
+        Raises:
+            NotADirectoryError: *start* is a file.
+            OSError: ``rmdir`` failed for a reason other than the directory
+                being non-empty or missing, e.g. :exc:`PermissionError`.
+        """
+        stop_resolved = Path(stop).resolve()
+        current = Path(start).resolve()
+        while current != stop_resolved and current.is_relative_to(stop_resolved):
+            try:
+                current.rmdir()
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                if exc.errno in (errno.ENOTEMPTY, errno.EEXIST):
+                    return
+                raise
+            current = current.parent
 
     @staticmethod
     def find_root(

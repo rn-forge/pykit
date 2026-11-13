@@ -1,30 +1,30 @@
 [project]
 name = "rn-forge-cli"
-version = "0.1.2"
+version = "0.1.3"
 description = "The shared command-line layer for rn-forge applications: Typer app factory, standard options, console and exit codes"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 dependencies = [
-  "rn-forge-commons>=0.8.0,<0.9",
-  "rich>=15.0.0",
-  "typer>=0.26.8",
+    "rn-forge-commons>=0.8.0,<0.10",
+    "rich>=15.0.0",
+    "typer>=0.26.8",
 ]
 
 [project.optional-dependencies]
-testing = ["assertpy>=1.1", "pytest>=9.1.1"]
+testing = ["assertpy>=2.35", "pytest>=9.1.1"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-cli/latest/"
@@ -33,11 +33,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-cli/C
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.cli"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
@@ -45,21 +53,23 @@ rn-forge-cli = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib -m 'not scaffold'"
-markers = ["scaffold: installs built wheels into a scaffolded application (slow)"]
+markers = [
+    "scaffold: installs built wheels into a scaffolded application (slow)",
+]
 
 [dependency-groups]
 dev = [
-  "assertpy>=1.1",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-cli",
-  "ruff>=0.15.21",
+    "assertpy>=2.35",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-cli",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-cli",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-cli",
 ]

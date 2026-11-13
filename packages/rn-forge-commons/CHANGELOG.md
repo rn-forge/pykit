@@ -5,6 +5,52 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-13
+
+### Added
+
+- Log redaction in `rn_forge.commons.logging.redaction`: `redact`,
+  `RedactionPolicy` and `REDACTED`, exported from `rn_forge.commons`. A value
+  under a key whose final segment is `authorization`, `cookie`, `password`,
+  `secret` or `token` is replaced, and `Bearer`/`Basic` credentials and
+  `scheme://user:password@host` passwords are scrubbed from any string.
+- `RedactFilter` (exported from `rn_forge.commons`) applies redaction to a
+  record's message, `args` and `extra` fields on every `AppLogger` handler.
+  `LoggingConfig.redact` and `AppLogger.initialize(redact=...)` control it.
+- `redact_processor` in `rn_forge.commons.logging.structlog` redacts structlog
+  events before they are rendered.
+- `PathUtils.atomic_replace`: a context manager that yields a temporary sibling
+  of a file, then publishes it over the file atomically; `atomic_write` is now
+  built on it.
+- `PathUtils.move_no_clobber`: moves a file without ever overwriting the
+  destination, including across filesystems.
+- `PathUtils.prune_empty_parents`: removes a directory and its empty ancestors
+  up to, but never including, a stop directory.
+- `ThreadActor` in `rn_forge.commons.runtime.actor`: builds a resource on a
+  dedicated owner thread and runs every call against it there, through
+  `submit` (a `Future`) or `run` (awaitable).
+- `TaskPool.map_settled` runs a function over items on the pool and returns a
+  `Succeeded` or `Failed` per item in input order; `Succeeded`, `Failed` and
+  `Settled` are exported from `rn_forge.commons`.
+- `ManagedBlock.end_indent`: leading whitespace of the end marker alone, for a
+  block whose body is indented but whose end marker sits at a different
+  indent. `None` (the default) uses `indent`, so existing blocks render the
+  same bytes.
+
+### Changed
+
+- `output_path` now writes under `.tmp/<scope>/tests/output/` instead of
+  `.out/`. **Breaking:** consumers that read or ignore `.out/` must use
+  `.tmp/`.
+- Log redaction is **on by default**, so secrets logged in messages, arguments
+  or `extra` fields now appear as `[redacted]`. Pass `redact=False` to
+  `AppLogger.initialize` to keep the old output. Exception tracebacks are not
+  redacted.
+- `MarkdownUtils` parses a document once and shares the result across
+  `headings`, `anchors`, `title`, `links`, `tables` and `strip_fenced_code`,
+  through a process-local cache of at most 2048 documents keyed by text. The
+  API and its results are unchanged.
+
 ## [0.8.1] - 2026-10-30
 
 ### Changed

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import urllib.parse
 from dataclasses import dataclass
+from functools import lru_cache
 
 from markdown.extensions.toc import slugify as _toc_slugify
 from markdown.extensions.toc import unique as _toc_unique
@@ -55,6 +56,16 @@ class MarkdownTable:
     end: int
 
 
+@dataclass(frozen=True, slots=True)
+class _Structure:
+    """The extracted structure of one document; holds no parser tokens."""
+
+    headings: tuple[MarkdownHeading, ...]
+    links: tuple[str, ...]
+    tables: tuple[MarkdownTable, ...]
+    fences: tuple[tuple[int, int], ...]
+
+
 class MarkdownUtils:
     """Read the structure of Markdown text."""
 
@@ -75,33 +86,17 @@ class MarkdownUtils:
         A heading inside code is not listed. A repeated anchor gets ``_1``,
         ``_2`` and so on.
         """
-        tokens = _PARSER.parse(text)
-        used: set[str] = set()
-        found: list[MarkdownHeading] = []
-        for index, token in enumerate(tokens):
-            if token.type != "heading_open" or token.map is None:
-                continue
-            plain = _plain_text(tokens[index + 1])
-            anchor = str(_toc_unique(MarkdownUtils.slugify(plain), used))
-            found.append(
-                MarkdownHeading(
-                    level=int(token.tag[1:]),
-                    text=plain,
-                    anchor=anchor,
-                    line=token.map[0],
-                )
-            )
-        return found
+        return list(_structure(text).headings)
 
     @staticmethod
     def anchors(text: str) -> set[str]:
         """Return the anchors of the headings of *text*."""
-        return {heading.anchor for heading in MarkdownUtils.headings(text)}
+        return {heading.anchor for heading in _structure(text).headings}
 
     @staticmethod
     def title(text: str) -> str | None:
         """Return the text of the first level-1 heading, or ``None``."""
-        for heading in MarkdownUtils.headings(text):
+        for heading in _structure(text).headings:
             if heading.level == 1:
                 return heading.text
         return None
@@ -118,18 +113,7 @@ class MarkdownUtils:
 
             MarkdownUtils.links("[a](b%20c.md) ![i](p.png)")  # ["b c.md", "p.png"]
         """
-        targets: list[str] = []
-        for token in _PARSER.parse(text):
-            for child in token.children or []:
-                if child.type == "link_open":
-                    target = child.attrGet("href")
-                elif child.type == "image":
-                    target = child.attrGet("src")
-                else:
-                    continue
-                if isinstance(target, str):
-                    targets.append(urllib.parse.unquote(target))
-        return targets
+        return list(_structure(text).links)
 
     @staticmethod
     def is_external(link: str) -> bool:
@@ -143,33 +127,15 @@ class MarkdownUtils:
         A table inside code is not listed. Cells are stripped; a short row is
         padded with empty cells to the header's width.
         """
-        found: list[MarkdownTable] = []
-        rows: list[list[str]] = []
-        start = end = 0
-        for token in _PARSER.parse(text):
-            if token.type == "table_open" and token.map is not None:
-                rows = []
-                start, end = token.map
-            elif token.type == "tr_open":
-                rows.append([])
-            elif token.type == "inline" and rows:
-                rows[-1].append(token.content.strip())
-            elif token.type == "table_close":
-                width = len(rows[0])
-                body = tuple(tuple((row + [""] * width)[:width]) for row in rows[1:])
-                found.append(MarkdownTable(tuple(rows[0]), body, start, end))
-                rows = []
-        return found
+        return list(_structure(text).tables)
 
     @staticmethod
     def strip_fenced_code(text: str) -> str:
         """Return *text* with every line of every fenced code block removed."""
         lines = text.splitlines(keepends=True)
-        for token in _PARSER.parse(text):
-            if token.type == "fence" and token.map is not None:
-                first, last = token.map
-                for number in range(first, last):
-                    lines[number] = ""
+        for first, last in _structure(text).fences:
+            for number in range(first, last):
+                lines[number] = ""
         return "".join(lines)
 
 
@@ -180,3 +146,73 @@ def _plain_text(inline: Token) -> str:
         for child in inline.children or []
         if child.type in ("text", "code_inline")
     )
+
+
+@lru_cache(maxsize=2048)
+def _structure(text: str) -> _Structure:
+    """Parse *text* once and extract every structure the helpers return."""
+    tokens = _PARSER.parse(text)
+    return _Structure(
+        headings=_extract_headings(tokens),
+        links=_extract_links(tokens),
+        tables=_extract_tables(tokens),
+        fences=tuple(
+            (token.map[0], token.map[1])
+            for token in tokens
+            if token.type == "fence" and token.map is not None
+        ),
+    )
+
+
+def _extract_headings(tokens: list[Token]) -> tuple[MarkdownHeading, ...]:
+    used: set[str] = set()
+    found: list[MarkdownHeading] = []
+    for index, token in enumerate(tokens):
+        if token.type != "heading_open" or token.map is None:
+            continue
+        plain = _plain_text(tokens[index + 1])
+        anchor = str(_toc_unique(MarkdownUtils.slugify(plain), used))
+        found.append(
+            MarkdownHeading(
+                level=int(token.tag[1:]),
+                text=plain,
+                anchor=anchor,
+                line=token.map[0],
+            )
+        )
+    return tuple(found)
+
+
+def _extract_links(tokens: list[Token]) -> tuple[str, ...]:
+    targets: list[str] = []
+    for token in tokens:
+        for child in token.children or []:
+            if child.type == "link_open":
+                target = child.attrGet("href")
+            elif child.type == "image":
+                target = child.attrGet("src")
+            else:
+                continue
+            if isinstance(target, str):
+                targets.append(urllib.parse.unquote(target))
+    return tuple(targets)
+
+
+def _extract_tables(tokens: list[Token]) -> tuple[MarkdownTable, ...]:
+    found: list[MarkdownTable] = []
+    rows: list[list[str]] = []
+    start = end = 0
+    for token in tokens:
+        if token.type == "table_open" and token.map is not None:
+            rows = []
+            start, end = token.map
+        elif token.type == "tr_open":
+            rows.append([])
+        elif token.type == "inline" and rows:
+            rows[-1].append(token.content.strip())
+        elif token.type == "table_close":
+            width = len(rows[0])
+            body = tuple(tuple((row + [""] * width)[:width]) for row in rows[1:])
+            found.append(MarkdownTable(tuple(rows[0]), body, start, end))
+            rows = []
+    return tuple(found)

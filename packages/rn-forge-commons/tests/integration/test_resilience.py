@@ -10,7 +10,7 @@ httpx = pytest.importorskip("httpx")
 pytest.importorskip("purgatory")
 pytest.importorskip("stamina")
 
-from rn_forge.commons.integration.resilience import (  # noqa: E402
+from rn_forge.commons.integration.resilience import (
     CircuitOpenError,
     RateLimiter,
     ResilientAsyncHttpClient,

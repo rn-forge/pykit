@@ -5,28 +5,26 @@ import sys
 import threading
 import urllib.error
 import urllib.request
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
-from contextlib import AbstractContextManager, nullcontext
-from itertools import count
-from typing import ClassVar
 from collections.abc import Callable, Iterator
-from contextlib import ExitStack
+from contextlib import AbstractContextManager, ExitStack, nullcontext
+from datetime import UTC, datetime, timedelta
+from itertools import count
+from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, ClassVar
 from urllib.parse import parse_qsl, urlsplit
 
 import pytest
-from django.http import HttpRequest, HttpResponse
-from django.urls import path
-from rest_framework.authentication import BaseAuthentication
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection, connections
+from django.http import HttpRequest, HttpResponse
 from django.test import Client, override_settings
+from django.urls import path
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rn_forge.auth import (
     AccountRejected,
     AuthorizationContext,
@@ -42,16 +40,16 @@ from rn_forge.django.auth import (
     CSRF_SETTINGS,
     SESSION_COOKIE,
     SESSION_SETTINGS,
-    Sessions,
-    rotate_session,
     TRANSACTION_COOKIE,
     AuthRoutesConfig,
     CacheReplayStore,
     CacheTransactionStore,
     FixedWindowLimiter,
     RateLimit,
+    Sessions,
     auth_urlpatterns,
     enforce_csrf,
+    rotate_session,
 )
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
@@ -141,8 +139,8 @@ class _CsrfAuthentication(BaseAuthentication):
 
 
 class _GuardedView(APIView):
-    authentication_classes = [_CsrfAuthentication]
-    permission_classes: list[Any] = []
+    authentication_classes: ClassVar = [_CsrfAuthentication]
+    permission_classes: ClassVar[list[Any]] = []
 
     def get(self, request: Any) -> Response:
         return Response({})
@@ -356,7 +354,7 @@ class TestOidcLogin:
 
     def test_an_unknown_provider_is_404(self, mount: Callable[..., _World]) -> None:
         assert mount().client.get("/auth/login/nope").status_code == 404
-        assert mount().client.get(f"/auth/callback/nope").status_code == 404
+        assert mount().client.get("/auth/callback/nope").status_code == 404
 
     def test_a_denied_authorization_is_access_denied(
         self, mount: Callable[..., _World]
@@ -1680,8 +1678,10 @@ class TestAudit:
 
         events = self._events(caplog)
         assert events == [
-            "audit event=login.failure provider='password' code='login_failed' "
-            "reason='invalid credentials'"
+            (
+                "audit event=login.failure provider='password' code='login_failed' "
+                "reason='invalid credentials'"
+            )
         ]
         assert "hunter2" not in caplog.text
         assert "ada@example.com" not in caplog.text
@@ -1717,8 +1717,10 @@ class TestAudit:
 
         assert self._events(caplog) == [
             "audit event=logout.backchannel provider='acme' scope='session'",
-            "audit event=logout.backchannel provider='acme' scope='account' "
-            "account_id='acct-u1'",
+            (
+                "audit event=logout.backchannel provider='acme' scope='account' "
+                "account_id='acct-u1'"
+            ),
         ]
         assert "sid-secret" not in caplog.text
 
@@ -1733,8 +1735,10 @@ class TestAudit:
 
         assert self._events(caplog) == [
             "audit event=account.rejected provider='acme' reason='not provisioned'",
-            "audit event=login.failure provider='acme' "
-            "code='account_not_provisioned' reason='not provisioned'",
+            (
+                "audit event=login.failure provider='acme' "
+                "code='account_not_provisioned' reason='not provisioned'"
+            ),
         ]
         assert "x@example.com" not in caplog.text
 

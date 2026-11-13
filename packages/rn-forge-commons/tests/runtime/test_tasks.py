@@ -5,10 +5,8 @@ import time
 from types import MappingProxyType
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
-from rn_forge.commons.runtime.tasks import Task, TaskPool
-
+from rn_forge.commons.runtime.tasks import Failed, Succeeded, Task, TaskPool
 
 # ---------------------------------------------------------------------------
 # Concrete Task implementations for testing
@@ -250,10 +248,9 @@ class TestTaskPoolContextManager:
         # verifies that an exception raised inside the context manager's body
         # propagates out through TaskPool.__exit__, not just that the final
         # `raise` throws.
-        with pytest.raises(ValueError, match="outer"):  # NOSONAR
-            with TaskPool() as pool:
-                pool.submit(SimpleTask("t"))
-                raise ValueError("outer")
+        with pytest.raises(ValueError, match="outer"), TaskPool() as pool:  # NOSONAR
+            pool.submit(SimpleTask("t"))
+            raise ValueError("outer")
 
 
 class TestTaskPoolConcurrency:
@@ -314,3 +311,133 @@ class TestTaskPoolAdvancedShutdown:
         pool = TaskPool()
         pool._tasks["orphan"] = SimpleTask("orphan")
         assert pool.shutdown(fail_on_error=False) == []
+
+
+class TestTaskPoolMapSettled:
+    def test_results_in_input_order_when_later_items_finish_first(self):
+        gates = [threading.Event() for _ in range(3)]
+
+        def fn(i: int) -> int:
+            # Item 0 finishes last, item 2 first.
+            if i < 2:
+                gates[i + 1].wait(timeout=1)
+            gates[i].set()
+            return i * 10
+
+        with TaskPool(max_workers=3) as pool:
+            results = pool.map_settled(fn, [0, 1, 2])
+
+        assert results == [Succeeded(0), Succeeded(10), Succeeded(20)]
+
+    def test_failed_item_is_captured_and_others_run(self):
+        def fn(i: int) -> int:
+            if i == 1:
+                raise ValueError("bad")
+            return i
+
+        with TaskPool(max_workers=2) as pool:
+            results = pool.map_settled(fn, [0, 1, 2])
+
+        assert results[0] == Succeeded(0)
+        assert results[2] == Succeeded(2)
+        failed = results[1]
+        assert isinstance(failed, Failed)
+        assert isinstance(failed.error, ValueError)
+        assert str(failed.error) == "bad"
+
+    def test_isinstance_narrows_results(self):
+        with TaskPool(max_workers=1) as pool:
+            results = pool.map_settled(lambda i: str(i), [7])
+        result = results[0]
+        assert isinstance(result, Succeeded)
+        assert result.value.upper() == "7"
+
+    def test_empty_input_returns_empty_list(self):
+        with TaskPool() as pool:
+            assert pool.map_settled(lambda i: i, []) == []
+
+    def test_none_return_is_a_success(self):
+        with TaskPool() as pool:
+            assert pool.map_settled(lambda i: None, [1]) == [Succeeded(None)]
+
+    def test_never_exceeds_max_workers(self):
+        lock = threading.Lock()
+        state = {"active": 0, "peak": 0}
+        both_running = threading.Barrier(2, timeout=1)
+
+        def fn(i: int) -> int:
+            with lock:
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+            try:
+                if i < 2:
+                    both_running.wait()
+            finally:
+                with lock:
+                    state["active"] -= 1
+            return i
+
+        with TaskPool(max_workers=2) as pool:
+            results = pool.map_settled(fn, range(6))
+
+        assert all(isinstance(r, Succeeded) for r in results)
+        assert state["peak"] == 2
+
+    def test_two_calls_on_one_pool(self):
+        with TaskPool(max_workers=2) as pool:
+            first = pool.map_settled(lambda i: i + 1, [1, 2])
+            second = pool.map_settled(lambda i: i * 2, [3])
+            assert pool.tasks == {}
+        assert first == [Succeeded(2), Succeeded(3)]
+        assert second == [Succeeded(6)]
+
+    def test_call_after_shutdown_raises(self):
+        pool = TaskPool()
+        pool.shutdown()
+        with pytest.raises(AppException, match="shut down"):
+            pool.map_settled(lambda i: i, [1])
+
+    def test_iterable_that_raises_submits_nothing(self):
+        ran: list[int] = []
+
+        def items():
+            yield 1
+            raise RuntimeError("bad iterable")
+
+        with TaskPool() as pool, pytest.raises(RuntimeError, match="bad iterable"):
+            pool.map_settled(ran.append, items())
+        assert ran == []
+
+    def test_base_exception_propagates(self):
+        def fn(i: int) -> int:
+            raise KeyboardInterrupt
+
+        with TaskPool() as pool, pytest.raises(KeyboardInterrupt):
+            pool.map_settled(fn, [1])
+
+    def test_cancelled_item_becomes_failed(self):
+        release = threading.Event()
+        started = threading.Event()
+        pool = TaskPool(max_workers=1)
+        outcome: list[list] = []
+
+        def fn(i: int) -> int:
+            started.set()
+            release.wait(timeout=1)
+            return i
+
+        thread = threading.Thread(
+            target=lambda: outcome.append(pool.map_settled(fn, [0, 1]))
+        )
+        thread.start()
+        assert started.wait(timeout=1)
+        # Item 0 can start before item 1 is queued; shutdown would then refuse it.
+        deadline = time.monotonic() + 1
+        while pool.executor._work_queue.empty() and time.monotonic() < deadline:
+            time.sleep(0.001)
+        pool.shutdown(wait=False, cancel_futures=True, fail_on_error=False)
+        release.set()
+        thread.join(timeout=1)
+
+        assert outcome[0][0] == Succeeded(0)
+        assert isinstance(outcome[0][1], Failed)

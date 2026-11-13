@@ -17,7 +17,7 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | [`rn-forge-auth`](packages/rn-forge-auth) | `rn_forge.auth` | Authentication and authorization primitives over `rn-forge-web`: the identity, account and authorization-context contracts, `Principal`, `Requirement`, `ScopeAuthorizer`, session, transaction and replay stores, `principal_from_claims`, `LoginFlow` and the local password and development login providers; the `oidc` extra adds the OIDC and OAuth 2.0 login provider (`OidcProvider`), back-channel logout, the OIDC token profiles (`OidcAuthenticator`, `JwtVerifier`, `IdTokenVerifier`, `LogoutTokenVerifier`) and a fake provider for tests, and the `redis` extra adds Redis stores. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (sessions, OIDC bearer, permission hooks), DRF views/serializers/exceptions, a typed settings facade. |
 | [`rn-forge-fastapi`](packages/rn-forge-fastapi) | `rn_forge.fastapi` | FastAPI adapters over `rn-forge-web`: problem handlers, the OpenAPI error-type repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health router and the auth binding. Makes no wire decision of its own. |
-| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | CI and release automation for rn-forge repositories in any language, run with uv: the `rn-forge-devops` command plans each CI job's matrix from the workspace manifests and gates releases on their checks. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
+| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | Release commands for the pykit workspace: the `rn-forge-devops` command checks internal requirements and writes the umbrella release's notes. The CI planner is kiln's `kiln-devops`. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
 | [`rn-forge-data`](packages/rn-forge-data) | `rn_forge.data` | Excel and tabular data helpers over `rn-forge-commons`. Base dependencies are `openpyxl` and `tablib[xlsx]`; the `pandas` extra adds the pandas adapter. |
 | [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | `rn_forge.sqlalchemy` | Async SQLAlchemy models, upsert and keyset pagination over `rn-forge-web`: `Base`, `UTCDateTime`, audit and version mixins, `update_versioned`, `upsert`, `keyset`. PostgreSQL and SQLite. |
 
@@ -25,8 +25,8 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 The boundaries between these packages are executable, not conventional.
 [`.importlinter`](.importlinter) states fifteen contracts, summarised by the
-rules below, and `uv run lint-imports` proves them; CI gates every other job on
-it.
+rules below, and the import-boundary check proves them; CI gates every other job
+on it.
 
 1. `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling`
    and never imports Typer. Jinja and the Markdown parsers enter only through
@@ -52,10 +52,8 @@ it.
    `rn_forge.fastapi.codegen` may.
 1. `rn_forge.sqlalchemy` imports neither framework package nor `fastapi`,
    `starlette`, `django` or `rest_framework`.
-1. `rn_forge.devops` imports no other `rn_forge` package: CI tooling for any
-   language's repository carries no rn-forge dependency (ADR-0012).
-1. `rn_forge.devops.ci`, the core, imports neither the uv nor the GitHub Actions
-   adapter.
+1. `rn_forge.devops` imports no other `rn_forge` package: release tooling
+   carries no rn-forge dependency (ADR-0012).
 1. `rn_forge.data`, the core, never imports the `rn_forge.data.pandas` adapter
    (the contract names the core module, not the package that contains the
    adapter), and the framework packages layer over it as siblings of
@@ -118,7 +116,7 @@ instead.
 ## Setup
 
 ```bash
-uv sync --all-extras
+task setup
 ```
 
 ## Development
@@ -126,6 +124,101 @@ uv sync --all-extras
 The [development guide](docs/guides/development.md) lists the setup, test, lint,
 type-check, import-boundary and documentation commands. All packages build with
 `uv_build`, with `module-name` mapped to their `rn_forge.*` namespace package.
+
+## Working here
+
+Everything runs through `task`; the
+[development guide](docs/guides/development.md) lists the verbs and
+`task validate` is the gate. A file whose first line says it was generated is
+owned by kiln: edit `.rn-forge/kiln/config.toml` and run `task kiln:apply`,
+never the file. The standard is
+[.rn-forge/kiln/standard.md](.rn-forge/kiln/standard.md).
+
+This README does not describe the packages. Each package's `README.md` and
+`docs/` say what it holds and how it works; they are built in strict mode and
+their docstrings are checked, so when the two disagree the package's own docs
+win.
+
+## Conventions
+
+### Source
+
+- Pyright runs in strict mode over `packages/`; its exclusions are the `ignore`
+  list in the root `pyproject.toml`. New library source must satisfy strict
+  mode (explicit types, no untyped `Any` leakage across public APIs).
+- Re-export new public symbols from the package's curated
+  `src/rn_forge/<pkg>/__init__.py` facade. Modules gated behind an optional
+  extra stay out of it and are imported directly
+  ([ADR-0003](docs/adr/ADR-0003.md)). Public class names do not encode their
+  module grouping, so moving a module never moves a class name.
+
+### Docs
+
+Per-package MkDocs builds are strict, so a cross-package link fails the build —
+reference the other package by name instead of linking into it. Build both the
+package site and the combined site (see the
+[development guide](docs/guides/development.md)). Docstrings are the doc source,
+not just IDE hints; keep them accurate.
+
+**Docstrings describe the contract, nothing else.** What a symbol does, its
+arguments, return value, raised exceptions, and a short example where it helps.
+Keep out of them:
+
+- design justification and motivation ("so that…", "rather than…", "for a
+  document whose author should…"), history, plan or ADR references, and
+  self-assessment of the code;
+- examples tied to a specific consumer (go-task, kiln) when a generic one reads
+  the same.
+
+Where that material belongs:
+
+- **Why a user would choose it, and how subsystems fit together** → the
+  package's `docs/guides/`.
+- **Why a non-obvious piece of code is written the way it is** → a `#` comment
+  beside that code, for maintainers. Straightforward logic needs no comment at
+  all.
+- **How the workspace got its shape** → the commit message.
+
+**Code comments explain the non-obvious *why*, and stay smaller than the code
+they explain.**
+
+- Comment a constraint the code cannot show: an ordering that matters, a library
+  quirk, a deliberately rejected alternative that looks simpler. Do not
+  narrate what the next line does.
+- One or two lines is the norm. A comment longer than the block it sits on means
+  the reasoning belongs in `docs/` (link or name the guide) or the code should
+  be clearer — rename, extract a well-named helper — rather than explained.
+- No history ("previously…", "after the review…"), plan references or TODO
+  essays; those go in the commit message or an issue.
+- When code changes, fix or delete its comment in the same edit. A stale comment
+  is worse than none.
+
+Apply both rules to every docstring and comment you add or change, and check for
+them when reviewing a diff.
+
+### Testing
+
+- Tests live in each package's `tests/`, mirroring the `src/rn_forge/<pkg>/`
+  layout (e.g. `tests/fs/test_paths.py` tests
+  `src/rn_forge/commons/fs/paths.py`). When a module moves, its test module
+  moves with it.
+- A test module that has to be imported *by name* (a `--policy` reference, say)
+  needs an unambiguous alias rather than `tests.<...>` — see
+  `rn-forge-tooling/tests/cli/test_lifecycle_commands.py`.
+- Do **not** add an `__init__.py` under `tests/`. Tests run in `importlib` mode;
+  an `__init__.py` makes that package's tests importable as `tests`, colliding
+  with any other package that does the same.
+- A test module cannot import another test module or `conftest.py`. A helper
+  shared by several test modules is a fixture in `conftest.py`, or, if it is
+  generic, belongs in `rn_forge.commons.testing`. A test-only Django model is
+  declared in the test module that uses it.
+- A pytest run from the repository root reads only the root
+  `[tool.pytest.ini_options]`. Mark async tests with an explicit
+  `@pytest.mark.asyncio` rather than relying on a package's `asyncio_mode`,
+  and register any new marker at the root as well as in the package that uses
+  it.
+- `pytest-randomly` randomizes order in every package — do not rely on
+  cross-test ordering.
 
 ## Documentation
 
@@ -155,5 +248,5 @@ packages: the [spec board](docs/specs/index.md) of current and planned work
 [architecture](docs/architecture/index.md), [guides](docs/guides/index.md),
 [runbooks](docs/runbooks/index.md) and [releases](docs/releases/index.md).
 [`docs/_structure.md`](docs/_structure.md) says where a new page belongs.
-[CLAUDE.md](CLAUDE.md) is the agent-instruction file; it points here rather than
-restating any of it.
+[AGENTS.md](AGENTS.md) holds what an agent needs beyond this file; `CLAUDE.md`
+imports it.

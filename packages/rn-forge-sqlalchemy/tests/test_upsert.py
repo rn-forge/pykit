@@ -1,11 +1,10 @@
-from datetime import UTC, datetime
+from datetime import UTC
 
 import pytest
 from assertpy import assert_that
+from rn_forge.sqlalchemy import AuditMixin, Base, UpsertCounts, upsert
 from sqlalchemy import UniqueConstraint, select
 from sqlalchemy.orm import Mapped, mapped_column
-
-from rn_forge.sqlalchemy import AuditMixin, Base, UpsertCounts, upsert
 
 pytestmark = pytest.mark.unit
 
@@ -125,7 +124,7 @@ class Line(AuditMixin, Base):
 @pytest.mark.asyncio
 async def test_a_composite_key(session):
     rows = [{"order_no": "o", "line_no": i, "sku": "x"} for i in (1, 2)]
-    line_key = dict(key=["order_no", "line_no"], fields=["sku"], actor="ann")
+    line_key = {"key": ["order_no", "line_no"], "fields": ["sku"], "actor": "ann"}
     await upsert(session, Line, rows, **line_key)
     counts = await upsert(
         session, Line, [*rows[:1], {**rows[1], "sku": "y"}], **line_key

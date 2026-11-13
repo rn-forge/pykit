@@ -84,8 +84,9 @@ holds it.
 
 **`fs/`** — everything that reads or writes a real file.
 
-- **`paths`** — `PathUtils`: atomic writes, backups, temp dirs, repository-root
-  discovery and the `assert_within` path-escape guard.
+- **`paths`** — `PathUtils`: atomic writes and replacements, no-clobber moves,
+  empty-directory pruning, backups, temp dirs, repository-root discovery and
+  the `assert_within` path-escape guard.
 - **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
 - **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization
   and atomic publication.
@@ -117,8 +118,10 @@ directly (never through the facade).
 - **`logging`** — `AppLogger`, `LoggingConfig`: idempotent logging setup via
   `dictConfig`, built on `verboselogs` with a custom `TRACE` level. Console
   records go to **stderr**, so a command's stdout carries only its result.
-- **`structlog`** (`structlog` extra) — `StructLogger`: structured logging over
-  the same handlers.
+- **`redaction`** — `redact`, `RedactionPolicy`, `RedactFilter`: secret
+  redaction by key and by value, applied to every handler by default.
+- **`structlog`** (`structlog` extra) — `StructLogger`, `redact_processor`:
+  structured logging over the same handlers.
 
 **`runtime/`** — the process and its surroundings.
 
@@ -132,7 +135,10 @@ directly (never through the facade).
 - **`subprocess`** — `Process`: immutable dataclass that runs a subprocess and
   captures return code, stdout, and stderr.
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread
-  pool.
+  pool; `TaskPool.map_settled` maps a function over items and returns a
+  `Succeeded` or `Failed` for each.
+- **`actor`** — `ThreadActor`: owns one resource on a dedicated thread and runs
+  every call against it there, as a `Future` or an awaitable.
 - **`plugins`** — `EntryPointLoader`: failure-isolated entry-point plugin
   discovery.
 

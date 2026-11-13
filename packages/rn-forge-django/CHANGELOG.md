@@ -5,6 +5,15 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-13
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.9 (`>=0.8.0,<0.10`).
+- `TruncateModelMixin.truncate` runs the backend's `sql_flush` statements, and
+  `SequenceGenerator` quotes PostgreSQL identifiers with psycopg's `sql`
+  module; the SQL issued is equivalent.
+
 ## [0.6.0] - 2026-10-29
 
 ### Added
@@ -37,8 +46,8 @@ Notable changes to `rn-forge-django`, newest first, in the
   cookie, and login and logout rotate the token. `enforce_csrf` runs the same
   check for DRF views, which are `csrf_exempt`.
 - `RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]`. `auth_urlpatterns` raises
-  `ImproperlyConfigured` without it, so `csrf-failed` and `forbidden` differ in
-  `type`, and refuses unsafe session, CSRF and cache settings at startup.
+  `ImproperlyConfigured` without it, so `csrf-failed` and `forbidden` differ
+  in `type`, and refuses unsafe session, CSRF and cache settings at startup.
 - Rate limiting: `FixedWindowLimiter` and `RateLimit`, a fixed-window counter
   over Django's cache. `/auth/login/password` is limited per client and per
   username, callbacks per client, with limits on `AuthRoutesConfig`. A limited
@@ -51,8 +60,8 @@ Notable changes to `rn-forge-django`, newest first, in the
   `(issuer, subject)`, with the auth app's first migration, which also adds
   `AccountState` for the session version. A per-provider `ProviderPolicy` sets
   `existing` or `jit` provisioning, an email-domain allowlist and the domains
-  for which a verified email links to an existing user; an optional `sync` hook
-  copies attributes at each login, and `link` records service accounts.
+  for which a verified email links to an existing user; an optional `sync`
+  hook copies attributes at each login, and `link` records service accounts.
   `DjangoAccountStateWriter` persists session versions and the `active` flag.
 - Authorization from Django groups and permissions:
   `DjangoAuthorizationContextProvider` (staff and superuser bypass as roles),
@@ -69,12 +78,13 @@ Notable changes to `rn-forge-django`, newest first, in the
   import this package before it defines `RN_FORGE_DJANGO`.
 - `problem_details_exception_handler` renders with `PROBLEM_TYPE_BASE` when it
   is set.
-- Breaking: `PrincipalBearerAuthentication` and `JWKSBearerAuthentication`
-  need `accounts` and `contexts` class attributes. They resolve the token's
-  `(issuer, subject)` through `AccountResolver.lookup` (never provisioning) and
-  answer `401` for an unlinked or inactive account. The principal's `subject` is
-  the account ID, its roles, tenant and attributes come from the authorization
-  context, and its permissions are the context's limited by `scope_map`.
+- Breaking: `PrincipalBearerAuthentication` and `JWKSBearerAuthentication` need
+  `accounts` and `contexts` class attributes. They resolve the token's
+  `(issuer, subject)` through `AccountResolver.lookup` (never provisioning)
+  and answer `401` for an unlinked or inactive account. The principal's
+  `subject` is the account ID, its roles, tenant and attributes come from the
+  authorization context, and its permissions are the context's limited by
+  `scope_map`.
 - Breaking: `DEFAULT_PERMISSION_ACTION_MAP` moved from
   `rn_forge.django.auth.drf.mixins` to `rn_forge.auth`.
 - Breaking: depends on `rn-forge-auth` and imports `Principal`, `Requirement`
@@ -101,20 +111,21 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 - **Breaking:** the locally issued JWT flows are gone, with the `jwt` extra and
   `djangorestframework-simplejwt`: `rn_forge.django.auth.jwt`
-  (`JWTAuthentication`, `JWTCredentials`, `JWTUtils`, `LoginExchangeViewMixin`,
-  `JWTAuthenticationViewMixin`, `UserTokenView`) and the `user-token/` route of
-  `rn_forge.django.auth.urls`. Authenticate API clients with the OIDC bearer
-  classes in `rn_forge.django.auth.drf`.
+  (`JWTAuthentication`, `JWTCredentials`, `JWTUtils`,
+  `LoginExchangeViewMixin`, `JWTAuthenticationViewMixin`, `UserTokenView`) and
+  the `user-token/` route of `rn_forge.django.auth.urls`. Authenticate API
+  clients with the OIDC bearer classes in `rn_forge.django.auth.drf`.
 - **Breaking:** the `rn_forge.django.auth.basic` and `rn_forge.django.auth.saml`
   views (`BasicLoginAPIView`, `BasicLoginViewMixin`, `SAMLLoginAPIView`,
   `SAMLLoginViewMixin`, `SampleSAMLLoginAPIView`) are gone, along with the
   `RN_FORGE_DJANGO["AUTH"]["SAML"]` setting and `AuthSAMLSettings`. A SAML IdP
   federates through a broker that speaks OIDC.
-- **Breaking:** `BaseCredentials` and `LoginPayload` (`rn_forge.django.auth.credentials`
-  and `rn_forge.django.auth.payload`), `AuthorizationViewMixin` and
-  `PermissionKeyViewMixin` (`rn_forge.django.auth.drf.mixins`) and
-  `AuthorizationPermission` (`rn_forge.django.auth.drf.permissions`) are gone.
-  Check permissions with `PermissionKeyPermission` and `ResourcePolicyViewMixin`.
+- **Breaking:** `BaseCredentials` and `LoginPayload`
+  (`rn_forge.django.auth.credentials` and `rn_forge.django.auth.payload`),
+  `AuthorizationViewMixin` and `PermissionKeyViewMixin`
+  (`rn_forge.django.auth.drf.mixins`) and `AuthorizationPermission`
+  (`rn_forge.django.auth.drf.permissions`) are gone. Check permissions with
+  `PermissionKeyPermission` and `ResourcePolicyViewMixin`.
 - **Breaking:** `BaseLoginViewMixin`, `BaseLoginAPIView` and `LogoutAPIView`
   (`rn_forge.django.auth.drf.authentication`) are gone. `auth_urlpatterns`
   serves login and logout.

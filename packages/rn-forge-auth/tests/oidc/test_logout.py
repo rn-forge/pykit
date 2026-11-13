@@ -12,19 +12,19 @@ import pytest
 
 pytest.importorskip("authlib")
 
-from rn_forge.auth import (  # noqa: E402
+from rn_forge.auth import (
     ExternalIdentity,
     InMemoryReplayStore,
     SessionInfo,
 )
-from rn_forge.auth.oidc import (  # noqa: E402
+from rn_forge.auth.oidc import (
     BackchannelLogout,
     LogoutRevocation,
     LogoutTokenVerifier,
     OidcProvider,
     TokenVerificationError,
 )
-from rn_forge.auth.testing import FakeOidcProvider  # noqa: E402
+from rn_forge.auth.testing import FakeOidcProvider
 
 pytestmark = pytest.mark.unit
 

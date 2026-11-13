@@ -1,6 +1,5 @@
 site_name: rn-forge-commons
 site_description: Shared utilities for the rn-forge-* Python package family
-site_dir: .out/site
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-commons/
 repo_url: https://github.com/rn-forge/pykit
@@ -78,6 +77,7 @@ nav:
           - State: reference/fs/state.md
       - Logging:
           - Logger: reference/logging/logger.md
+          - Redaction: reference/logging/redaction.md
           - StructLogger: reference/logging/structlog.md
       - Text:
           - Markdown: reference/text/markdown.md

@@ -1,59 +1,52 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.4.0"
+version = "0.4.1"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Framework :: FastAPI",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Framework :: FastAPI",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-#
-# `rn-forge-commons` is not declared: nothing here imports it directly, and it
-# arrives through `rn-forge-web`.
 dependencies = [
-  "rn-forge-auth>=0.1.0,<0.2",
-  # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
-  # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
-  "rn-forge-web[security]>=0.3.0,<0.4",
-  # A hard dependency, not an extra: every module in this package is a FastAPI
-  # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
-  "fastapi>=0.141.1",
-  # `FastApiApp` instruments itself by default (`AppConfig.tracing`). Brings
-  # `opentelemetry-instrumentation`, which holds `TraceResponsePropagator`.
-  "opentelemetry-instrumentation-fastapi>=0.65b0",
+    "rn-forge-auth>=0.1.0,<0.2",
+    "rn-forge-commons>=0.8.0,<0.10",
+    # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
+    # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
+    "rn-forge-web[security]>=0.3.0,<0.4",
+    # A hard dependency, not an extra: every module in this package is a FastAPI
+    # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
+    "fastapi>=0.141.1",
+    # `FastApiApp` instruments itself by default (`AppConfig.tracing`). Brings
+    # `opentelemetry-instrumentation`, which holds `TraceResponsePropagator`.
+    "opentelemetry-instrumentation-fastapi>=0.65b0",
 ]
 
 [project.optional-dependencies]
 # httpx is what FastAPI's TestClient drives requests through.
-testing = ["assertpy>=1.1", "httpx>=0.28.1", "pytest>=9.1.1"]
+testing = ["assertpy>=2.35", "httpx>=0.28.1", "pytest>=9.1.1"]
 # JWKS bearer auth: `rn_forge.auth.oidc.OidcAuthenticator` passed to
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into auth's extras.
-oidc = [
-  "rn-forge-auth[oidc]>=0.1.0,<0.2",
-]
+oidc = ["rn-forge-auth[oidc]>=0.1.0,<0.2"]
 # Redis-backed login sessions and transactions for `rn_forge.fastapi.auth`:
 # `rn_forge.auth.redis`, and the CSRF token store `rn_forge.fastapi.auth.redis`.
-redis = [
-  "rn-forge-auth[redis]>=0.1.0,<0.2",
-]
+redis = ["rn-forge-auth[redis]>=0.1.0,<0.2"]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
-transfer = [
-  "rn-forge-data>=0.1.1,<0.2",
-  "python-multipart>=0.0.20",
-]
+transfer = ["rn-forge-data>=0.1.1,<0.2", "python-multipart>=0.0.20"]
+# Server-sent events: `rn_forge.fastapi.sse`. Not imported by the package facade.
+sse = ["sse-starlette>=3.4.11"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/"
@@ -62,11 +55,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-fasta
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.fastapi"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-auth = { workspace = true }
@@ -81,33 +82,34 @@ modules = ["rn_forge.fastapi"]
 [tool.workspace-ci.smoke.extras]
 oidc = ["rn_forge.auth.oidc"]
 redis = ["rn_forge.auth.redis", "rn_forge.fastapi.auth.redis"]
+sse = ["rn_forge.fastapi.sse"]
 transfer = ["rn_forge.fastapi.transfer"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib -m 'not scaffold'"
 markers = [
-  "unit: fast isolated tests",
-  "scaffold: installs built wheels into a scaffolded application (slow)",
-  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
+    "unit: fast isolated tests",
+    "scaffold: installs built wheels into a scaffolded application (slow)",
+    "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [dependency-groups]
 dev = [
-  "assertpy>=1.1",
-  "httpx>=0.28.1",
-  "opentelemetry-sdk>=1.44",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[oidc,redis,transfer]",
-  "ruff>=0.15.21",
-  # Test-only: the ResourcePolicy tests scope real `select()` queries.
-  "sqlalchemy>=2.0",
+    "assertpy>=2.35",
+    "httpx>=0.28.1",
+    "opentelemetry-sdk>=1.44",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-fastapi[oidc,redis,sse,transfer]",
+    "ruff>=0.15.21",
+    # Test-only: the ResourcePolicy tests scope real `select()` queries.
+    "sqlalchemy>=2.0",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-fastapi",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-fastapi[sse]",
 ]

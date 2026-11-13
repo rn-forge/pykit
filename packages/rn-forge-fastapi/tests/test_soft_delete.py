@@ -5,7 +5,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, Header
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi import (
     AppConfig,
     FastApiApp,

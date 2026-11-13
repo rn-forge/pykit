@@ -4,7 +4,9 @@ Provides:
     Task: Abstract base class for units of concurrent work.  Subclass and
         implement :meth:`Task.run`.
     TaskPool: Thread pool that submits :class:`Task` instances, tracks their
-        futures, and reports failures on shutdown.
+        futures, and reports failures on shutdown.  Its
+        :meth:`TaskPool.map_settled` fans a function over items.
+    Succeeded, Failed, Settled: Per-item outcome of :meth:`TaskPool.map_settled`.
 
 Typical usage::
 
@@ -29,16 +31,44 @@ import concurrent.futures
 import threading
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable
 from concurrent.futures import CancelledError
+from dataclasses import dataclass
 from types import MappingProxyType, TracebackType
 from typing import Any, Self
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.logging import AppLogger
 
-__all__ = ["Task", "TaskPool"]
+__all__ = ["Failed", "Settled", "Succeeded", "Task", "TaskPool"]
 
 _LOGGER = AppLogger.get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class Succeeded[T]:
+    """Outcome of an item whose function returned.
+
+    Attributes:
+        value: The value the function returned; ``None`` is a valid value.
+    """
+
+    value: T
+
+
+@dataclass(frozen=True)
+class Failed:
+    """Outcome of an item whose function raised an :class:`Exception`.
+
+    Attributes:
+        error: The exception the function raised.
+    """
+
+    error: Exception
+
+
+type Settled[T] = Succeeded[T] | Failed
+"""Outcome of one item: :class:`Succeeded` or :class:`Failed`."""
 
 
 class Task(ABC):
@@ -251,6 +281,49 @@ class TaskPool[TaskType: Task]:
             self._tasks[task.name] = task
             _LOGGER.debug("Submitted task | name={}", task.name)  # noqa: PLE1205  # brace-style log format
         return self
+
+    def map_settled[I, T](
+        self,
+        fn: Callable[[I], T],
+        items: Iterable[I],
+    ) -> list[Settled[T]]:
+        """Run ``fn(item)`` for every item on the pool and wait for all of them.
+
+        No :class:`Task` is created and :attr:`tasks` is unchanged.  An item
+        whose function raises an :class:`Exception` is logged and returned as
+        :class:`Failed`; the other items still run.  An item cancelled by
+        ``shutdown(cancel_futures=True)`` is returned as :class:`Failed`.  A
+        ``BaseException`` from *fn* is not captured: it propagates from this
+        call, and items not yet collected are left running.
+
+        Args:
+            fn: Called with each item on a pool thread.
+            items: Inputs.  Consumed fully before any item is submitted.
+
+        Returns:
+            One :class:`Succeeded` or :class:`Failed` per item, in input order.
+
+        Raises:
+            AppException: If the pool has already been shut down.
+
+        Example::
+
+            for item, result in zip(paths, pool.map_settled(read, paths)):
+                if isinstance(result, Failed):
+                    print(item, result.error)
+        """
+        if self._shutdown:
+            raise AppException("Cannot map items: TaskPool has already been shut down")
+        inputs = list(items)
+        futures = [self._executor.submit(fn, item) for item in inputs]
+        results: list[Settled[T]] = []
+        for index, future in enumerate(futures):
+            try:
+                results.append(Succeeded(future.result()))
+            except Exception as exc:
+                _LOGGER.exception("TaskPool.map_settled.error | index={}", index)  # noqa: PLE1205  # brace-style log format
+                results.append(Failed(exc))
+        return results
 
     def shutdown(
         self,

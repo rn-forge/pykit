@@ -4,13 +4,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import pytest
-
-import rn_forge.auth as auth
-from rn_forge.auth import LoginFailed
+from rn_forge import auth
 from rn_forge.auth import (
     DevelopmentAccount,
     DevelopmentIdentityProvider,
     DevelopmentModeRequired,
+    LoginFailed,
     LoginTransaction,
     PasswordIdentityProvider,
 )

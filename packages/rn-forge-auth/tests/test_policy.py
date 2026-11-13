@@ -1,7 +1,6 @@
 """Tests for rn_forge.auth.policy."""
 
 import pytest
-
 from rn_forge.auth import Principal, ResourcePolicy
 
 pytestmark = pytest.mark.unit

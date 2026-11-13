@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import io
 import json
+from typing import ClassVar
 
 import pytest
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.test import override_settings  # noqa: E402
-from rest_framework import serializers  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-from rest_framework.views import APIView  # noqa: E402
-
-from rn_forge.django.drf.casing import (  # noqa: E402
+from django.test import override_settings
+from rest_framework import serializers
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
+from rn_forge.django.drf.casing import (
     CamelCaseJSONParser,
     CamelCaseJSONRenderer,
     RawDict,
@@ -22,7 +22,7 @@ from rn_forge.django.drf.casing import (  # noqa: E402
     underscore_key,
     underscoreize,
 )
-from rn_forge.django.drf.serializers import RawPassthroughField  # noqa: E402
+from rn_forge.django.drf.serializers import RawPassthroughField
 
 pytestmark = pytest.mark.unit
 
@@ -93,10 +93,10 @@ class _OrderSerializer(serializers.Serializer):
 
 
 class _OrderView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
-    parser_classes = [CamelCaseJSONParser]
-    renderer_classes = [CamelCaseJSONRenderer]
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
+    parser_classes: ClassVar = [CamelCaseJSONParser]
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
     serializer_class = _OrderSerializer
 
     def get_serializer_class(self):

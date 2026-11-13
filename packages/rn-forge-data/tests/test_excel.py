@@ -11,15 +11,12 @@ pytest.importorskip("openpyxl")
 import rn_forge.data.excel as excel_module
 from openpyxl import Workbook
 from openpyxl.styles import Font
-
+from rn_forge.commons.testing import raise_
 from rn_forge.data.excel import (
     CellFormat,
     ExcelUtils,
     WorkbookTemplate,
 )
-
-from rn_forge.commons.testing import raise_
-
 
 # ---------------------------------------------------------------------------
 # CellFormat
@@ -180,7 +177,7 @@ class TestFormatRow:
         wb = Workbook()
         ws = wb.active
         ws.append([1.5, 0.25])
-        row = list(ws.iter_rows())[0]
+        row = next(iter(ws.iter_rows()))
         fmt = CellFormat(number_format="0.00%")
         ExcelUtils.format_row(row, row_format=fmt)
         for cell in row:
@@ -190,7 +187,7 @@ class TestFormatRow:
         wb = Workbook()
         ws = wb.active
         ws.append([1, 2, 3])
-        row = list(ws.iter_rows())[0]
+        row = next(iter(ws.iter_rows()))
         row_fmt = CellFormat(number_format="0.00")
         col_fmt = CellFormat(number_format="0.00%")
         ExcelUtils.format_row(row, row_format=row_fmt, column_formats={2: col_fmt})
@@ -202,7 +199,7 @@ class TestFormatRow:
         wb = Workbook()
         ws = wb.active
         ws.append([1])
-        row = list(ws.iter_rows())[0]
+        row = next(iter(ws.iter_rows()))
         original = row[0].number_format
         ExcelUtils.format_row(row, row_format=None)
         assert row[0].number_format == original
@@ -211,7 +208,7 @@ class TestFormatRow:
         wb = Workbook()
         ws = wb.active
         ws.append([1])
-        row = list(ws.iter_rows())[0]
+        row = next(iter(ws.iter_rows()))
         # Should not raise
         ExcelUtils.format_row(row, row_format=None, column_formats=None)
 
@@ -219,7 +216,7 @@ class TestFormatRow:
         wb = Workbook()
         ws = wb.active
         ws.append(["hello"])
-        row = list(ws.iter_rows())[0]
+        row = next(iter(ws.iter_rows()))
         fmt = CellFormat(font=Font(bold=True))
         ExcelUtils.format_row(row, row_format=fmt)
         assert row[0].font.bold is True

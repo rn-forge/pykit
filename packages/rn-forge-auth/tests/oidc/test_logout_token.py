@@ -10,8 +10,8 @@ import pytest
 jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from rn_forge.auth import InMemoryReplayStore  # noqa: E402
-from rn_forge.auth.oidc import LogoutTokenVerifier, TokenVerificationError  # noqa: E402
+from rn_forge.auth import InMemoryReplayStore
+from rn_forge.auth.oidc import LogoutTokenVerifier, TokenVerificationError
 
 pytestmark = pytest.mark.unit
 

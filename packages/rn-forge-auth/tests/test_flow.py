@@ -7,7 +7,6 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.auth import (
     ExternalIdentity,
     InMemoryTransactionStore,

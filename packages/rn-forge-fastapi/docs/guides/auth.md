@@ -15,8 +15,8 @@ extra, and with `oidc` for OIDC login or JWKS bearer tokens.
 
 ## Setup
 
-An end-to-end configuration with one OIDC provider, local password login and,
-in development, a fixture-account provider:
+An end-to-end configuration with one OIDC provider, local password login and, in
+development, a fixture-account provider:
 
 ```python
 # myapp/auth_config.py
@@ -98,12 +98,12 @@ app.include_router(auth_router(config))
 
 `sessions_for(config)` builds the `Sessions` from the same stores and timeouts
 as the routes, so the middleware and the routes agree. `SessionMiddleware`
-resolves the session once per request and runs the CSRF check; a router
-mounted without it is unprotected, and `current_principal` raises
-`RuntimeError` for a session request. `add_middleware` wraps the application,
-so the middleware added last is outermost. Add `SessionMiddleware` before the
-middleware that should also decorate its responses (security headers, CORS), so
-a `csrf-failed` rejection, which the middleware answers itself, carries them.
+resolves the session once per request and runs the CSRF check; a router mounted
+without it is unprotected, and `current_principal` raises `RuntimeError` for a
+session request. `add_middleware` wraps the application, so the middleware added
+last is outermost. Add `SessionMiddleware` before the middleware that should
+also decorate its responses (security headers, CORS), so a `csrf-failed`
+rejection, which the middleware answers itself, carries them.
 
 When the router is mounted under a prefix other than `/auth`, tell the
 middleware the paths it has special rules for:
@@ -140,8 +140,8 @@ is left out of the OpenAPI document. A `401` from any of them is a
 | `POST` | `login/password` | `200` with the session body, `401` for any failure, or `429` |
 
 A callback error redirects to `error_route` (`/auth/error`) with `?error=` set
-to one of `access_denied`, `account_not_provisioned` and `login_failed`.
-Details go to the log, never into the URL. A password login failure is one `401`
+to one of `access_denied`, `account_not_provisioned` and `login_failed`. Details
+go to the log, never into the URL. A password login failure is one `401`
 whatever its cause, so the response does not reveal which accounts exist. The
 login body is JSON or form-encoded `{username, password}`.
 
@@ -151,16 +151,16 @@ timeout). Session responses carry `Cache-Control: no-store`.
 
 The login transaction lives in its store for 10 minutes behind the
 `__Host-login-tx` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no
-`Domain`). A callback that carries more than one transaction cookie is
-rejected, and a transaction is consumed atomically, so a callback works once.
-The stores' synchronous calls and the Authlib providers run in the thread pool.
+`Domain`). A callback that carries more than one transaction cookie is rejected,
+and a transaction is consumed atomically, so a callback works once. The stores'
+synchronous calls and the Authlib providers run in the thread pool.
 
 ## Configuration
 
 `AuthRoutesConfig` is a frozen dataclass. `providers`, `accounts`, `contexts`
-and `account_state` are required, and so is `problem_type_base` (a
-`ValueError` otherwise): it is the prefix of the `type` URI of the problem
-responses, which is what tells `csrf-failed` from `forbidden`.
+and `account_state` are required, and so is `problem_type_base` (a `ValueError`
+otherwise): it is the prefix of the `type` URI of the problem responses, which
+is what tells `csrf-failed` from `forbidden`.
 
 | Field | Default |
 | -- | -- |
@@ -219,8 +219,8 @@ cache's `ttl` (60 seconds by default).
 The login session is a `rn-forge-auth` `SessionStore` entry behind the
 `__Host-session` cookie. It holds the account ID, the account's session version
 at login, provider, issuer, external subject, `auth_time`, `amr`, `session_ref`
-and the ID token (only with `rp_initiated_logout`), and never permissions:
-those are computed on each request.
+and the ID token (only with `rp_initiated_logout`), and never permissions: those
+are computed on each request.
 
 - **Timeouts.** A 30-minute sliding idle timeout (`idle_timeout`) and a 12-hour
   absolute timeout (`absolute_timeout`). `SessionMiddleware` extends the idle
@@ -234,11 +234,11 @@ those are computed on each request.
   `await rotate_session(request)` after a change to the account's privileges,
   so an ID seen before the change is useless afterwards; the middleware sets
   the new cookie.
-- **Logout.** `/auth/logout` ends the current session and starts a new
-  anonymous one. `/auth/logout/all` and a back-channel logout that names only
-  `sub` bump the account's session version through `account_state`, which ends
-  every session of the account on its next request. A back-channel logout with
-  a `sid` revokes that session only, until the absolute timeout. With
+- **Logout.** `/auth/logout` ends the current session and starts a new anonymous
+  one. `/auth/logout/all` and a back-channel logout that names only `sub` bump
+  the account's session version through `account_state`, which ends every
+  session of the account on its next request. A back-channel logout with a
+  `sid` revokes that session only, until the absolute timeout. With
   `rp_initiated_logout` on the provider, `/auth/logout` returns the identity
   provider's end-session URL.
 - **Disabling.** `contexts.set_active(account_id, False)` (or any change that
@@ -269,9 +269,9 @@ comparison is constant-time.
   with no cookie.
 - **Exempt:** `GET`, `HEAD`, `OPTIONS` and `TRACE`; a request with a `Bearer`
   `Authorization` header; the paths under `csrf_exempt_prefixes` (back-channel
-  logout, which carries a signed token); and a request with no session cookie to
-  an application route, which has no session to ride. A `Basic` header is not
-  exempt: browsers replay cached Basic credentials on their own.
+  logout, which carries a signed token); and a request with no session cookie
+  to an application route, which has no session to ride. A `Basic` header is
+  not exempt: browsers replay cached Basic credentials on their own.
 - **Origin.** The `Origin` header (the `Referer` over HTTPS when there is no
   `Origin`) must be the request's own origin or one of `trusted_origins`, and
   `Sec-Fetch-Site: cross-site` is rejected even from a trusted origin. The
@@ -331,9 +331,9 @@ internal deployments only.
 requirement with `rn_forge.auth.ScopeAuthorizer` (or the `authorizer` you pass).
 Insufficient access is a `403` with no challenge.
 `requires_permission(caller, permission_key, action)` enforces the key that
-`rn_forge.auth.requirement_for` builds from the base key and an explicit
-action, `list`, `retrieve` or `partial_update` for example; `action_map`
-overrides the default action-to-verb map:
+`rn_forge.auth.requirement_for` builds from the base key and an explicit action,
+`list`, `retrieve` or `partial_update` for example; `action_map` overrides the
+default action-to-verb map:
 
 ```python
 from fastapi import APIRouter, Depends
@@ -434,12 +434,15 @@ and runs in the thread pool.
   `AuthorizationContext`: `active`, `session_version`, `permissions`, `roles`
   and `attributes`. Wrap it in an `AuthorizationContextCache` and call
   `contexts.invalidate(account_id)` when a role or permission changes.
+
 - **`AccountStateWriter`.** `set_active(account_id, active)` and
   `bump_session_version(account_id)` persist the state the context carries.
   `/auth/logout/all` and a back-channel logout call them; the cache above
   writes through to it.
+
 - **`ResourcePolicy`.** `allows(principal, action, resource)` and
   `scope(principal, action, query)`, for `PolicyGuard`.
+
 - **`PasswordVerifier`.** For `PasswordIdentityProvider`: a callable
-  `(username, password) -> subject | None`. Hash comparison and the user lookup
-  are yours.
+  `(username, password) -> subject | None`. Hash comparison and the user
+  lookup are yours.

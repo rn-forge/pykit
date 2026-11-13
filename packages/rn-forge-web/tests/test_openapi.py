@@ -2,7 +2,6 @@
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.openapi import operation_id
 
 pytestmark = pytest.mark.unit

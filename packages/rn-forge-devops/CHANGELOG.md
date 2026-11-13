@@ -5,6 +5,23 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-13
+
+### Removed
+
+- Breaking: the planner moved to kiln as `kiln-devops`. The `plan`,
+  `releasable`, `released`, `smoke`, `adapters`, `sonar-target` and `notes`
+  subcommands and the modules `rn_forge.devops.ci`, `.uv` and `.github` are
+  gone, and the package facade re-exports nothing. The package keeps the
+  `requirements` and `umbrella` subcommands. A consumer of the planner runs
+  kiln's `kiln-devops`.
+
+- Breaking: the `index` subcommand and the `rn_forge.devops.index` and
+  `rn_forge.devops.releases` modules. The package index at
+  `https://rn-forge.github.io/pykit/simple/` is retired; packages resolve from
+  PyPI. A consumer that still declares the index deletes its
+  `[[tool.uv.index]]` table and runs `uv lock`.
+
 ## [0.3.1] - 2026-10-29
 
 ### Fixed

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from rn_forge.commons.text.markdown import MarkdownUtils
+from collections.abc import Iterator
+from typing import Any
+
+import pytest
+from markdown_it.token import Token
+from rn_forge.commons.text.markdown import _PARSER, MarkdownUtils, _structure
 
 
 class TestSlugify:
@@ -117,3 +122,116 @@ class TestStripFencedCode:
     def test_fence_closed_by_longer_fence(self) -> None:
         text = "a\n```\nx\n`````\nb\n"
         assert MarkdownUtils.strip_fenced_code(text) == "a\nb\n"
+
+
+MIXED = (
+    "Intro\r\n=====\r\n\r\n"
+    "## Part `one`\r\n\r\n"
+    "## Part *one*\r\n\r\n"
+    "See [a](b%20c.md), [ref][r], ![img](p%2Fq.png) and `[no](code.md)`.\r\n\r\n"
+    "[r]: other.md\r\n\r\n"
+    "| H1 | H2 |\r\n| -- | -- |\r\n| x |\r\n\r\n"
+    "```py\r\n# not a heading\r\n[x](y.md)\r\n```\r\n"
+    "tail"
+)
+
+
+@pytest.fixture
+def clean_cache() -> Iterator[None]:
+    _structure.cache_clear()
+    yield
+    _structure.cache_clear()
+
+
+def _all_helpers(text: str) -> tuple[object, ...]:
+    return (
+        MarkdownUtils.headings(text),
+        MarkdownUtils.anchors(text),
+        MarkdownUtils.title(text),
+        MarkdownUtils.links(text),
+        MarkdownUtils.tables(text),
+        MarkdownUtils.strip_fenced_code(text),
+    )
+
+
+@pytest.mark.usefixtures("clean_cache")
+class TestParseCache:
+    def test_one_parse_for_all_helpers(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls: list[str] = []
+        parse = _PARSER.parse
+
+        def counting(src: str, *args: Any, **kwargs: Any) -> list[Token]:
+            calls.append(src)
+            return parse(src, *args, **kwargs)
+
+        monkeypatch.setattr(_PARSER, "parse", counting)
+        first = _all_helpers(MIXED)
+        assert MarkdownUtils.strip_fenced_code(MIXED) == first[5]
+        assert MarkdownUtils.tables(MIXED) == first[4]
+        assert MarkdownUtils.title(MIXED) == first[2]
+        assert MarkdownUtils.anchors(MIXED) == first[1]
+        assert MarkdownUtils.links(MIXED) == first[3]
+        assert MarkdownUtils.headings(MIXED) == first[0]
+        assert calls == [MIXED]
+
+    @pytest.mark.parametrize(
+        "name", ["headings", "anchors", "title", "links", "tables", "strip_fenced_code"]
+    )
+    def test_any_helper_populates_cold_cache(self, name: str) -> None:
+        expected = _all_helpers(MIXED)
+        _structure.cache_clear()
+        getattr(MarkdownUtils, name)(MIXED)
+        assert _all_helpers(MIXED) == expected
+
+    def test_mixed_document_values(self) -> None:
+        for _ in range(2):  # cold, then warm
+            headings = MarkdownUtils.headings(MIXED)
+            assert [(h.level, h.text, h.anchor, h.line) for h in headings] == [
+                (1, "Intro", "intro", 0),
+                (2, "Part one", "part-one", 3),
+                (2, "Part one", "part-one_1", 5),
+            ]
+            assert MarkdownUtils.anchors(MIXED) == {"intro", "part-one", "part-one_1"}
+            assert MarkdownUtils.title(MIXED) == "Intro"
+            assert MarkdownUtils.links(MIXED) == ["b c.md", "other.md", "p/q.png"]
+            (table,) = MarkdownUtils.tables(MIXED)
+            assert table.header == ("H1", "H2")
+            assert table.rows == (("x", ""),)
+            fence = "```py\r\n# not a heading\r\n[x](y.md)\r\n```\r\n"
+            assert MarkdownUtils.strip_fenced_code(MIXED) == MIXED.replace(fence, "")
+
+    def test_mutation_does_not_leak(self) -> None:
+        MarkdownUtils.headings(MIXED).clear()
+        MarkdownUtils.links(MIXED).clear()
+        MarkdownUtils.tables(MIXED).clear()
+        MarkdownUtils.anchors(MIXED).clear()
+        assert len(MarkdownUtils.headings(MIXED)) == 3
+        assert len(MarkdownUtils.links(MIXED)) == 3
+        assert len(MarkdownUtils.tables(MIXED)) == 1
+        assert len(MarkdownUtils.anchors(MIXED)) == 3
+
+    def test_containers_are_distinct_for_empty_input(self) -> None:
+        assert MarkdownUtils.headings("") is not MarkdownUtils.headings("")
+        assert MarkdownUtils.links("") is not MarkdownUtils.links("")
+        assert MarkdownUtils.tables("") is not MarkdownUtils.tables("")
+        assert MarkdownUtils.anchors("") is not MarkdownUtils.anchors("")
+
+    def test_changed_text_misses_and_equal_text_hits(self) -> None:
+        original = "# a\n"
+        assert MarkdownUtils.title(original) == "a"
+        assert MarkdownUtils.title("# b\n") == "b"
+        assert _structure.cache_info().misses == 2
+        equal = original.encode().decode()
+        assert equal == original
+        assert equal is not original
+        MarkdownUtils.title(equal)
+        assert _structure.cache_info().misses == 2
+        assert _structure.cache_info().hits == 1
+
+    def test_bounded_and_evicted_text_reparses(self) -> None:
+        for number in range(2049):
+            MarkdownUtils.title(f"# t{number}\n")
+        assert _structure.cache_info().currsize == 2048
+        misses = _structure.cache_info().misses
+        MarkdownUtils.title("# t0\n")
+        assert _structure.cache_info().misses == misses + 1

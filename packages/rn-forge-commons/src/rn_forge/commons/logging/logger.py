@@ -3,7 +3,8 @@
 :class:`AppLogger` uses ``{}``-style messages and idempotent ``dictConfig``
 initialization. Console output uses Rich when color is enabled on a TTY; file
 output retains the full plain-text format. :class:`EnrichFilter` adds caller,
-service, environment, and optional OpenTelemetry fields.
+service, environment, and optional OpenTelemetry fields; :class:`RedactFilter`
+replaces secrets in messages, arguments and extra fields.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from rich.console import Console
 from rich.theme import Theme
 from rn_forge.commons.lang.reflection import ReflectUtils
 from rn_forge.commons.lang.types import VerboseLoggerBase
+from rn_forge.commons.logging.redaction import REDACTED, RedactionPolicy, redact
 
 # ---------------------------------------------------------------------------
 # TRACE level — below SPAM (5) and DEBUG (10).
@@ -190,6 +192,71 @@ class EnrichFilter(logging.Filter):
 
 
 # ---------------------------------------------------------------------------
+# RedactFilter — replaces secrets in the message, args and extra fields
+# ---------------------------------------------------------------------------
+_STANDARD_RECORD_ATTRS = frozenset(
+    logging.LogRecord("", 0, "", 0, "", (), None).__dict__
+) | {"message", "asctime", "taskName"}
+
+
+class RedactFilter(logging.Filter):
+    """Redacts secrets from every log record.
+
+    Redacts ``record.msg`` when it is a string, ``record.args`` (tuple or
+    mapping, with non-string arguments kept as they are) and every ``extra``
+    field, using :func:`~rn_forge.commons.logging.redaction.redact`. It assigns
+    new objects to the record and never mutates what the caller passed.
+    Running it more than once on a record changes nothing further.
+    """
+
+    def __init__(self, policy: RedactionPolicy | None = None) -> None:
+        """Initialize :class:`RedactFilter`.
+
+        Args:
+            policy: What to redact. Defaults to :meth:`RedactionPolicy.default`.
+        """
+        super().__init__()
+        self.policy = policy or RedactionPolicy.default()
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Redact *record* in place.
+
+        If redaction fails, the message is replaced by the redaction marker
+        rather than risk emitting a secret.
+
+        Args:
+            record: The log record to redact.
+
+        Returns:
+            Always ``True``.
+        """
+        try:
+            self._redact_record(record)
+        except Exception:  # noqa: BLE001  # logging must not raise
+            record.msg = REDACTED
+            record.args = ()
+        return True
+
+    def _redact_record(self, record: logging.LogRecord) -> None:
+        policy = self.policy
+        if record.args:
+            record.args = redact(record.args, policy=policy)
+            # A credential can form only once the message is formatted
+            # (``"Bearer %s"``), and scrubbing the template would break it.
+            formatted = record.getMessage()
+            scrubbed = policy.scrub(formatted)
+            if scrubbed != formatted:
+                record.msg, record.args = scrubbed, ()
+        elif isinstance(record.msg, str):
+            record.msg = policy.scrub(record.msg)
+        for name in tuple(vars(record)):
+            if name not in _STANDARD_RECORD_ATTRS:
+                setattr(
+                    record, name, redact(getattr(record, name), policy=policy, key=name)
+                )
+
+
+# ---------------------------------------------------------------------------
 # LoggingConfig — opinionated defaults that work in Django and non-Django
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
@@ -220,6 +287,7 @@ class LoggingConfig:
     otel_optional: bool
     level_styles: dict[str, str]
     rich_tracebacks: bool
+    redact: bool
 
     @classmethod
     def defaults(cls) -> dict[str, Any]:
@@ -255,6 +323,7 @@ class LoggingConfig:
             "otel_optional": True,  # suppress ImportError when opentelemetry is absent
             "level_styles": {},  # per-level Rich style overrides merged over _RICH_LEVEL_STYLES
             "rich_tracebacks": True,  # install rich.traceback for the RichHandler console path
+            "redact": True,  # replace secrets in every handler's output
         }
 
     @classmethod
@@ -367,6 +436,7 @@ class AppLogger(VerboseLoggerBase):
         otel_optional: bool | None = None,
         level_styles: dict[str, str] | None = None,
         rich_tracebacks: bool | None = None,
+        redact: bool | None = None,
         force_reconfigure: bool = False,
     ) -> AppLogger:
         """Idempotently configure logging in a thread-safe manner.
@@ -404,6 +474,10 @@ class AppLogger(VerboseLoggerBase):
             rich_tracebacks: Install ``rich.traceback`` for the RichHandler console
                 path. Default ``True``. Uses ``show_locals=False`` — tracebacks
                 routinely carry credentials in locals.
+            redact: Replace secrets in messages, arguments and extra fields with
+                :data:`~rn_forge.commons.logging.redaction.REDACTED` before any
+                handler formats them. Default ``True``. Exception tracebacks are
+                not redacted.
             force_reconfigure: Re-run configuration even if already configured.
                 Default ``False``.
 
@@ -433,6 +507,7 @@ class AppLogger(VerboseLoggerBase):
             otel_optional=otel_optional,
             level_styles=level_styles,
             rich_tracebacks=rich_tracebacks,
+            redact=redact,
         )
 
         with AppLogger._config_lock:
@@ -911,6 +986,11 @@ class AppLogger(VerboseLoggerBase):
             }
         }
 
+        handler_filters = ["enrich"]
+        if config.redact:
+            filters["redact"] = {"()": RedactFilter}
+            handler_filters.append("redact")
+
         use_rich = config.enable_color and config.isatty and not config.use_json
 
         formatters: dict[str, Any] = {"file": {"format": config.fmt}}
@@ -936,7 +1016,7 @@ class AppLogger(VerboseLoggerBase):
                 "()": "rich.logging.RichHandler",
                 "level": config.level,
                 "formatter": console_formatter_name,
-                "filters": ["enrich"],
+                "filters": handler_filters,
                 "console": _build_rich_console(config),
                 "rich_tracebacks": config.rich_tracebacks,
                 "markup": False,  # log messages interpolate untrusted values — never markup
@@ -950,7 +1030,7 @@ class AppLogger(VerboseLoggerBase):
                 "class": "logging.StreamHandler",
                 "level": config.level,
                 "formatter": console_formatter_name,
-                "filters": ["enrich"],
+                "filters": handler_filters,
                 # Logs are diagnostics, not results. They go to stderr so that
                 # a command's stdout carries only its structured output — a
                 # `--json` payload stays parseable even when the flag was given
@@ -966,7 +1046,7 @@ class AppLogger(VerboseLoggerBase):
                 "class": "logging.FileHandler",
                 "level": config.level,
                 "formatter": file_formatter_name,
-                "filters": ["enrich"],
+                "filters": handler_filters,
                 "filename": file_path,
             }
 
@@ -1054,4 +1134,5 @@ __all__ = [
     "BraceLogRecord",
     "EnrichFilter",
     "LoggingConfig",
+    "RedactFilter",
 ]

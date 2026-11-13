@@ -6,46 +6,33 @@
 · [Source](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-devops)
 · [All pykit packages](https://rn-forge.github.io/pykit/)
 
-CI and release automation for rn-forge repositories in any language, run with
-uv. The `rn-forge-devops` command reads a repository's workspace manifests,
-selects the packages a change affects, prints every CI job's matrix, and gates
-each package's release on its checks. Workflow files call it instead of carrying
-that logic.
+Release commands for the pykit workspace. The CI planner is kiln's
+`kiln-devops`; this package keeps only the commands pykit's own release process
+calls.
 
 It depends on `packaging` and on no other rn-forge package. It is a CI tool, not
 a library an application depends on.
 
-- `rn_forge.devops.ci` — the core: the member graph, change selection, check
-  matrices and release gating. It knows neither the CI platform nor the stack.
 - `rn_forge.devops.requirements` — the `requirements` check: every requirement
   between workspace members is a version range that admits the member's
   current version and has a ceiling.
-- `rn_forge.devops.uv` — the uv workspace adapter: it reads
-  `[tool.uv.workspace]` members, their internal requirements and their
-  `[tool.workspace-ci]` tables, and runs `smoke`.
-- `rn_forge.devops.github` — the GitHub Actions adapter: `$GITHUB_OUTPUT` lines
-  and the event context.
-- `rn_forge.devops.index` and `rn_forge.devops.releases` — the `index`
-  subcommand: a PEP 503 simple index rendered from a repository's GitHub
-  Release files, and the adapter that reads them with `gh`.
-- `rn_forge.devops.notes` — the `notes` and `umbrella` subcommands: a changelog
-  version's section, and the umbrella release for the newest shipped release
-  page.
+- `rn_forge.devops.notes` — the `umbrella` subcommand: the umbrella release for
+  the newest shipped release page.
 - `rn_forge.devops.cli` — the `rn-forge-devops` console script.
 
-The package facade re-exports the planner core only. The core never imports an
-adapter, and the package never imports another `rn_forge` package;
+The package facade re-exports nothing. The package never imports another
+`rn_forge` package, and `.requirements` and `.notes` never import each other;
 `.importlinter` proves both.
 
 ## Usage
 
-Run it from inside a uv workspace; the workspace root is the nearest directory
-at or above the current one whose `pyproject.toml` declares
+Run `requirements` from inside a uv workspace; the workspace root is the nearest
+directory at or above the current one whose `pyproject.toml` declares
 `[tool.uv.workspace]`.
 
 ```bash
-uvx --from "rn-forge-devops>=0.3,<0.4" rn-forge-devops plan
+uvx --from "rn-forge-devops>=0.4,<0.5" rn-forge-devops requirements
 ```
 
-The subcommands and the `[tool.workspace-ci]` tables are described in the
+The subcommands are described in the
 [subcommand reference](https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/subcommands.html).

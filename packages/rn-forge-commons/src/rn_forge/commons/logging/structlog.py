@@ -4,6 +4,7 @@ Use :meth:`~rn_forge.commons.logging.logger.AppLogger.get_logger` directly for
 unstructured logging. :class:`StructLogger` binds context carried across a
 chain of calls while retaining the configured Rich, file, or JSON handlers.
 :func:`otel_processor` adds the active OpenTelemetry span's ids to every event.
+:func:`redact_processor` replaces secrets in every event.
 
 **Call** :meth:`~rn_forge.commons.logging.logger.AppLogger.initialize` **before the
 first** :class:`StructLogger` **log call** (not necessarily before
@@ -23,8 +24,9 @@ from typing import Any, Self
 
 import structlog
 from rn_forge.commons.logging.logger import AppLogger
+from rn_forge.commons.logging.redaction import redact
 
-__all__ = ["StructLogger", "otel_processor"]
+__all__ = ["StructLogger", "otel_processor", "redact_processor"]
 
 _configured = False
 
@@ -62,6 +64,26 @@ def otel_processor(
         event_dict["trace_id"] = format(span_context.trace_id, "032x")
         event_dict["span_id"] = format(span_context.span_id, "016x")
     return event_dict
+
+
+def redact_processor(
+    logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
+    """Redact secrets in a structlog event dict.
+
+    Usable as a structlog processor in any chain, ahead of the renderer. Uses
+    :meth:`~rn_forge.commons.logging.redaction.RedactionPolicy.default`.
+
+    Args:
+        logger: The bound logger. Unused; part of the processor signature.
+        method_name: The log method's name. Unused; part of the signature.
+        event_dict: The event dictionary. Not mutated.
+
+    Returns:
+        A redacted copy of *event_dict*.
+    """
+    del logger, method_name
+    return redact(dict(event_dict))
 
 
 def _render_event(
@@ -109,6 +131,7 @@ def _configure_once() -> None:
         processors=[
             structlog.contextvars.merge_contextvars,
             otel_processor,
+            redact_processor,
             _render_event,
         ],
         logger_factory=_app_logger_factory,
