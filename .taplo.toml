@@ -1,0 +1,14 @@
+# Seeded by kiln — this file is yours.
+#
+# Taplo formats every TOML file git lists — tracked and untracked, less what
+# `.gitignore` ignores; `task lint` checks it and `task format` applies it. Even
+# Better TOML reads this file too, so the editor and the gate agree. `exclude` is
+# for files git does list but this repo does not format.
+#
+# The style matches what `uv init`, `uv add` and kiln itself write into
+# `pyproject.toml`: 4-space indent, one item per line, trailing comma.
+include = ["**/*.toml"]
+
+[formatting]
+indent_string = "    "
+array_auto_collapse = false
