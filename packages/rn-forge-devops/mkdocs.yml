@@ -1,6 +1,5 @@
 site_name: rn-forge-devops
 site_description: CI and release automation for rn-forge repositories
-site_dir: .out/site
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-devops/
 repo_url: https://github.com/rn-forge/pykit

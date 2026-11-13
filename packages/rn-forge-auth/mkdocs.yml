@@ -1,6 +1,5 @@
 site_name: rn-forge-auth
 site_description: Authentication primitives
-site_dir: .out/site
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-auth/
 repo_url: https://github.com/rn-forge/pykit

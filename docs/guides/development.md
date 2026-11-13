@@ -5,11 +5,12 @@ repository root unless a command says otherwise.
 
 ## Setup
 
-The repository is a uv workspace with ten packages. Install every package and
-every optional extra with:
+The repository is a uv workspace with ten packages. Install every package with
+its `dev` and `docs` dependency groups, which bring each package's optional
+extras, with:
 
 ```bash
-uv sync --all-extras
+task setup
 ```
 
 Package code targets Python 3.14 or later, and the floor stays at `>=3.14`
@@ -21,22 +22,34 @@ every docs build exits 1. Python 3.14.2 and later build cleanly.
 
 ## Commands
 
+Every gate is a `task` verb, run from the repository root.
+
 | Check | Command |
 | -- | -- |
-| All tests | `uv run pytest` |
+| Install | `task setup` |
+| All tests | `task test` |
+| Lint: ruff, format check, import boundaries, Markdown and TOML formatting, dependency audit, licences | `task lint` |
+| Format in place | `task format` |
+| Strict type check | `task typecheck` |
+| Combined documentation, root and every package, strict | `task docs:build` |
+| Lint, type check, tests and documentation together | `task validate` |
+| Regenerate the derived documentation regions | `task docs:generate` |
+| Broker profile (`rn-forge-auth`, needs Docker) | see below |
+
+A narrower run has no task verb. It filters a run and is not a gate:
+`task validate` is the gate.
+
+| Run | Command |
+| -- | -- |
 | One package's tests | `uv run pytest packages/rn-forge-cli` |
 | One test by name or keyword | `uv run pytest -k test_name` |
 | Fast isolated tests (`rn-forge-django`, `rn-forge-web`) | `uv run pytest -m unit` |
 | Database-backed tests (`rn-forge-django`) | `uv run pytest -m integration` |
-| Broker profile (`rn-forge-auth`, needs Docker) | see below |
-| Lint | `uv run ruff check .` |
-| Format | `uv run ruff format .`; add `--check` to report without writing |
-| Strict type check | `uv run pyright` |
-| Import boundaries | `uv run lint-imports` |
-| Combined documentation | `uv run --group docs mkdocs build --strict` |
 
 The broker profile tests run against a Keycloak container and skip without
-`RN_FORGE_AUTH_KEYCLOAK_URL`. They are optional in CI (`broker-profile.yml`):
+`RN_FORGE_AUTH_KEYCLOAK_URL`. CI runs them in the `integration` job of `ci.yml`,
+against the `keycloak` service that `rn-forge-auth` declares in
+`[tool.workspace-ci.integration.keycloak]`. To run them locally:
 
 ```bash
 docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
@@ -51,27 +64,18 @@ optional code path instead of skipping `pytest.importorskip`-gated tests.
 
 ## Dependency audit
 
-CI's `dependency-audit` job fails on a known vulnerability in `uv.lock`
-([ADR-0015](../adr/ADR-0015.md)). Run it locally with:
+`task lint` fails on a known vulnerability in `uv.lock` (`pip-audit` over
+`uv export --frozen`, [ADR-0015](../adr/ADR-0015.md)), and CI runs it in the
+`validate` job. To accept a finding, add its advisory ID and the reason to the
+`ignore` list of `[ci.checks.pip-audit]` in `.rn-forge/kiln/config.toml`, as
+`ignore = [{ id = "<ID>", reason = "<why, and when to revisit>" }]`, then run
+`task kiln:apply`. An entry without a reason is not allowed.
 
-```bash
-uv export --frozen --all-packages --all-extras --all-groups --no-emit-workspace \
-  --no-hashes --no-annotate --no-header -o /tmp/requirements.txt
-uvx pip-audit==2.10.1 -r /tmp/requirements.txt --no-deps --disable-pip --strict
-```
-
-A requirements file holding a vulnerable pin, such as `requests==2.19.0`, exits
-non-zero. To accept a finding, add `--ignore-vuln <ID>` to the CI step with a
-`#` comment beside it giving the reason and when to revisit it; an ignore
-without a reason is not allowed.
-
-CI's `licenses` job also writes the locked environment's licence inventory
-(`pip-licenses`, JSON) to the `licenses` artifact on every run. It fails on GPL,
-AGPL, SSPL or an `UNKNOWN` licence and allows LGPL; the deny lists are the
-`--fail-on` arguments in `.github/workflows/main.yml`. Workspace members are
-left out, so the check covers third-party dependencies only. A dual-licensed
-package used under its permissive option goes in `--ignore-packages`, with the
-reason in a `#` comment beside it.
+`task lint` also fails on a dependency whose licence matches GPL, AGPL or
+`UNKNOWN`, and allows LGPL. Workspace members are left out, so the check covers
+third-party dependencies only. `[ci.checks.licenses]` in the same file sets
+`deny` and `ignore`; a dual-licensed package used under its permissive option
+goes in `ignore`, then `task kiln:apply`.
 
 ## Sonar feedback
 
@@ -116,11 +120,11 @@ and is kept as the `scorecard-sarif` artifact, and no score fails a build.
 
 ## Documentation builds
 
-Each package also has a standalone MkDocs site. Build it from that package's
-directory with `uv run --group docs mkdocs build --strict`. The root site
+Each package also has a standalone MkDocs site. `task docs:build` builds the
+root site and then every package's own site, each with `--strict`: the root site
 includes all ten, but a combined build does not show that each standalone site
-resolves its own links, so check both. Use a temporary `--site-dir` to keep an
-existing preview.
+resolves its own links, so the task checks both. `task docs:build -- <dir>`
+writes the root site to `<dir>`, which keeps an existing preview.
 
 ## Tests and types
 

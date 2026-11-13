@@ -1,6 +1,5 @@
 site_name: rn-forge-web
 site_description: Framework-agnostic HTTP/API primitives built on rn-forge-commons
-site_dir: .out/site
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-web/
 repo_url: https://github.com/rn-forge/pykit

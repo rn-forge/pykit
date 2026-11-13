@@ -118,7 +118,7 @@ instead.
 ## Setup
 
 ```bash
-uv sync --all-extras
+task setup
 ```
 
 ## Development

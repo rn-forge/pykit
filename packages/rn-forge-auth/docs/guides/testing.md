@@ -81,7 +81,7 @@ RN_FORGE_AUTH_KEYCLOAK_URL=http://127.0.0.1:8080 \
   uv run pytest packages/rn-forge-auth -m broker
 ```
 
-The `broker-profile` workflow runs them weekly and on changes to this package.
-It is not a required check and does not gate merges. The realms under
+CI runs them in the `integration` job of `ci.yml`, against the `keycloak`
+service that this package's `pyproject.toml` declares. The realms under
 `tests/broker/realms/` also serve as a working configuration for
 [connecting a SAML IdP through a broker](login.md#connecting-a-saml-idp-through-a-broker).
