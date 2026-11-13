@@ -40,7 +40,7 @@ log redaction and server-sent events (F6.1 and F6.2,
 | [F17.4 — SQLite engine and embedded migrations](../../specs/epics/E17-local-first-web-app-extraction/F17.4-sqlite-engine-migrations.md) | E17 | Closed |
 | [F17.5 — Safe filesystem mutation](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | Closed |
 | [F18.6 — Cache Markdown structure by text](../../specs/epics/E18-kiln-extraction/F18.6-markdown-parse-cache.md) | E18 | Closed |
-| [F18.7 — A managed block's end marker can sit at a different indent](../../specs/epics/E18-kiln-extraction/F18.7-managed-block-end-indent.md) | E18 | Active |
+| [F18.7 — A managed block's end marker can sit at a different indent](../../specs/epics/E18-kiln-extraction/F18.7-managed-block-end-indent.md) | E18 | Closed |
 | [F21.5 — Retire the self-hosted index](../../specs/epics/E21-pypi-distribution/F21.5-retire-index.md) | E21 | Active |
 
 <!-- END derived scope -->

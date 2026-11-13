@@ -17,7 +17,11 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-dependencies = ["rn-forge-commons>=0.8.0,<0.9", "rich>=15.0.0", "typer>=0.26.8"]
+dependencies = [
+    "rn-forge-commons>=0.8.0,<0.10",
+    "rich>=15.0.0",
+    "typer>=0.26.8",
+]
 
 [project.optional-dependencies]
 testing = ["assertpy>=2.35", "pytest>=9.1.1"]

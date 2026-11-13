@@ -17,7 +17,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-dependencies = ["rn-forge-commons>=0.8.0,<0.9", "rn-forge-web>=0.3.0,<0.4"]
+dependencies = ["rn-forge-commons>=0.8.0,<0.10", "rn-forge-web>=0.3.0,<0.4"]
 
 [project.optional-dependencies]
 # Bearer and logout tokens are verified with PyJWT, keys from its `PyJWKClient`;

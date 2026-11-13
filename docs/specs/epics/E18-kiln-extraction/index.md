@@ -15,7 +15,7 @@
 | [F18.4 — Markdown structure](F18.4-markdown-structure.md) | Closed | release-6 | 1 Closed |
 | [F18.5 — One pin set on the new tags](F18.5-coherent-pins.md) | Removed | — | 1 Removed |
 | [F18.6 — Cache Markdown structure by text](F18.6-markdown-parse-cache.md) | Closed | release-8 | 1 Closed |
-| [F18.7 — A managed block's end marker can sit at a different indent](F18.7-managed-block-end-indent.md) | Active | release-8 | 1 New · 1 Closed |
+| [F18.7 — A managed block's end marker can sit at a different indent](F18.7-managed-block-end-indent.md) | Closed | release-8 | 2 Closed |
 
 <!-- END derived features -->
 

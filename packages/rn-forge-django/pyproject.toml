@@ -21,7 +21,7 @@ dependencies = [
     "django>=6.0.7",
     # Internal requirements are version ranges (ADR-0004).
     "rn-forge-auth>=0.1.0,<0.2",
-    "rn-forge-commons>=0.8.0,<0.9",
+    "rn-forge-commons>=0.8.0,<0.10",
     "rn-forge-web>=0.3.0,<0.4",
 ]
 

@@ -33,7 +33,7 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | [E15 — Package boundaries](E15-package-boundaries/index.md) | Active | 4 New · 2 Closed | release-4 |
 | [E16 — kiln adoption](E16-kiln-adoption/index.md) | Active | 1 Active · 1 New · 5 Closed | release-4, release-5, release-8 |
 | [E17 — Local-first web-app extraction](E17-local-first-web-app-extraction/index.md) | Active | 1 New · 5 Closed | release-8 |
-| [E18 — kiln extraction](E18-kiln-extraction/index.md) | Active | 1 Active · 5 Closed · 1 Removed | release-6, release-8 |
+| [E18 — kiln extraction](E18-kiln-extraction/index.md) | Active | 6 Closed · 1 Removed | release-6, release-8 |
 | [E19 — Version ranges between packages](E19-version-ranges/index.md) | Closed | 3 Closed | release-6 |
 | [E20 — Security baseline](E20-security-baseline/index.md) | Closed | 5 Closed | release-7 |
 

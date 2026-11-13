@@ -22,7 +22,7 @@ requires-python = ">=3.14"
 # `opentelemetry-api`, following OpenTelemetry's own library guidance (a no-op
 # until the application configures the SDK). See "Dependencies and why" in README.md.
 dependencies = [
-    "rn-forge-commons[pydantic]>=0.8.0,<0.9",
+    "rn-forge-commons[pydantic]>=0.8.0,<0.10",
     "opentelemetry-api>=1.44",
 ]
 
