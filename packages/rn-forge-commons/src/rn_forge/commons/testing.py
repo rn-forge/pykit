@@ -104,7 +104,7 @@ def assert_that(val: Any, description: str = "") -> Any:
     from assertpy import assert_that as _assert_that
 
     # With an `Any` argument assertpy 2's overloads resolve to Unknown.
-    return cast(Any, _assert_that(val, description))
+    return cast(Any, _assert_that(val, description=description))
 
 
 def soft_assertions() -> Any:
