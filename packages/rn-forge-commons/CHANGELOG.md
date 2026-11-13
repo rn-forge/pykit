@@ -40,6 +40,10 @@ Notable changes to `rn-forge-commons`, newest first, in the
   or `extra` fields now appear as `[redacted]`. Pass `redact=False` to
   `AppLogger.initialize` to keep the old output. Exception tracebacks are not
   redacted.
+- `MarkdownUtils` parses a document once and shares the result across
+  `headings`, `anchors`, `title`, `links`, `tables` and `strip_fenced_code`,
+  through a process-local cache of at most 2048 documents keyed by text. The
+  API and its results are unchanged.
 
 ## [0.8.1] - 2026-10-30
 

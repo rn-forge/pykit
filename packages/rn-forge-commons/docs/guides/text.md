@@ -61,6 +61,14 @@ uv add "rn-forge-commons[markdown]"
 Anchors follow Python-Markdown's `toc` extension, which MkDocs uses. Links and
 tables come from a CommonMark parser, so a link inside code is not a link.
 
+Parsing is shared automatically: the headings, anchors, title, links, tables and
+fenced-code helpers reuse one parsed structure per document, so no caller-side
+cache is needed. The reuse is process-local and keyed by the full text, so
+changed text is parsed afresh and equal text from any source shares an entry. At
+most 2048 documents are retained, counted in entries rather than bytes; a
+document evicted since its last use is parsed again. Every call returns a fresh
+list or set that the caller may modify.
+
 ```python
 from rn_forge.commons.text.markdown import MarkdownUtils
 
