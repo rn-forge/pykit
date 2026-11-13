@@ -4,7 +4,7 @@
 | -- | -- |
 | **Status** | planned |
 
-pykit cuts over onto kiln's `python-lib` archetype (F16.3, then F16.6,
+pykit cuts over onto kiln's `python-lib` archetype (F16.3,
 [E16](../../specs/epics/E16-kiln-adoption/index.md)), with every package already
 published to PyPI by [Release 7](../release-7/index.md). It also moves Apollo's
 generic plumbing into the packages that own its neighbours (F17.1 to F17.5,
@@ -18,9 +18,9 @@ log redaction and server-sent events (F6.1 and F6.2,
 ## Entry criteria
 
 - Release 7 is shipped.
-- For F16.3 and F16.6 only: the work runs first as kiln's S7.2.4 rehearsal from
-  kiln `feature/v1`, and the cutover merges once `task kiln:apply` re-renders
-  with no change at the configured `[kiln] ref`. kiln F6.7, F6.8 and F6.9 are
+- For F16.3 only: the work runs first as kiln's S7.2.4 rehearsal from kiln
+  `feature/v1`, and the cutover merges once `task kiln:apply` re-renders with
+  no change at the configured `[kiln] ref`. kiln F6.7, F6.8 and F6.9 are
   closed.
 
 ## Scope
@@ -32,7 +32,6 @@ log redaction and server-sent events (F6.1 and F6.2,
 | [F6.1 — Structured-log secret redaction](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) | E6 | Closed |
 | [F6.2 — Server-sent events](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Closed |
 | [F16.3 — Cut over onto kiln](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
-| [F16.6 — Retire the plan outputs generated CI does not read](../../specs/epics/E16-kiln-adoption/F16.6-retire-unread-plan-outputs.md) | E16 | New |
 | [F16.7 — Instruction files follow kiln's standard](../../specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md) | E16 | Closed |
 | [F17.1 — Problem rows from an exception hierarchy](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | Closed |
 | [F17.2 — Single-owner thread actor](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Closed |
@@ -56,8 +55,6 @@ log redaction and server-sent events (F6.1 and F6.2,
    onto kiln and adds `rn-forge-auth` to the kiln config. kiln must render the
    release behaviour F21.3 built in `main.yml`. S16.3.2 closes on the
    release's run on `main`.
-1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
-   not read.
 1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes
    before F17.3, whose guide names the actor rule.
 1. **F6.1 and F6.2** do not wait for kiln, or for each other.
@@ -80,6 +77,8 @@ log redaction and server-sent events (F6.1 and F6.2,
 - Owner decision, 2026-11-03: S16.3.3 converts the docs to kiln's format on
   `feature/release-8` ahead of `kiln init`, replacing branch
   `feature/kiln-docs-model`.
+- Owner decision, 2026-11-13: F16.6 is removed. S16.3.4 moved the planner to
+  kiln's `kiln-devops`, so its outputs are kiln's to retire.
 - Owner decision, 2026-11-13: F16.3's stories close on `feature/kiln-cutover`,
   which merges locally into `feature/release-8` with a merge commit; pull
   request #30 is closed unmerged, and the `feature/release-8` → `main` pull
