@@ -7,13 +7,13 @@ authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
@@ -21,8 +21,8 @@ requires-python = ">=3.14"
 # No database driver is declared: the application picks one (`asyncpg`,
 # `aiosqlite`). `rn-forge-commons` arrives through `rn-forge-web`.
 dependencies = [
-  "rn-forge-web>=0.3.0,<0.4",
-  "sqlalchemy[asyncio]>=2.0",
+    "rn-forge-web>=0.3.0,<0.4",
+    "sqlalchemy[asyncio]>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -50,8 +50,8 @@ rn-forge-sqlalchemy = { workspace = true }
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib"
 markers = [
-  "unit: fast isolated tests",
-  "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
+    "unit: fast isolated tests",
+    "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
 [tool.workspace-ci.postgres]
@@ -60,22 +60,22 @@ env = "RN_FORGE_TEST_POSTGRES_DSN"
 
 [dependency-groups]
 dev = [
-  "aiosqlite>=0.21",
-  "alembic>=1.20.1",
-  "assertpy>=2.35",
-  "asyncpg>=0.30",
-  "httpx>=0.28.1",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-asyncio>=1.3.0",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-fastapi[transfer]>=0.4.0,<0.5",
-  "ruff>=0.15.21",
+    "aiosqlite>=0.21",
+    "alembic>=1.20.1",
+    "assertpy>=2.35",
+    "asyncpg>=0.30",
+    "httpx>=0.28.1",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-fastapi[transfer]>=0.4.0,<0.5",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-sqlalchemy",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-sqlalchemy",
 ]

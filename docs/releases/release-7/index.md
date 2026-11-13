@@ -66,8 +66,8 @@ pykit's cutover onto kiln is [Release 8](../release-8/index.md).
    core), then F13.5 (Django) and F13.6 (FastAPI), which may run in parallel,
    then F13.7 (legacy removal).
 1. **F21.1 and F21.2 any time.** The owner creates each PyPI project and
-   attaches its trusted publisher before F21.3's first PyPI release, because the
-   workflow's token cannot create a project.
+   attaches its trusted publisher before F21.3's first PyPI release, because
+   the workflow's token cannot create a project.
 1. **F21.3** in `main.yml`. S21.3.3 closes when this release's merge publishes
    to PyPI.
 1. **F21.4** in the same merge as F21.3, so the install docs are true when the
@@ -123,11 +123,11 @@ pykit's cutover onto kiln is [Release 8](../release-8/index.md).
 
 Shipped 2026-10-30. Every feature in scope is closed.
 
-- E13: the design is settled, and ADR-0006 is revised with ADR-0013 and
-  ADR-0014 accepted. `rn-forge-auth` holds the core contracts and the login
-  adapters. `rn-forge-django` and `rn-forge-fastapi` serve the auth surface and
-  pass the shared security-control cases in `rn_forge.auth.conformance`. The
-  locally issued JWT flows are removed.
+- E13: the design is settled, and ADR-0006 is revised with ADR-0013 and ADR-0014
+  accepted. `rn-forge-auth` holds the core contracts and the login adapters.
+  `rn-forge-django` and `rn-forge-fastapi` serve the auth surface and pass the
+  shared security-control cases in `rn_forge.auth.conformance`. The locally
+  issued JWT flows are removed.
 - E20: the dependency audit, licence inventory, source and secret scans, push
   protection, SBOMs, attestations and `SECURITY.md` are in place, and
   [the evidence](security.md) records each control's result.
@@ -168,10 +168,10 @@ git log --format='%h %ad %s' --date=short -E --grep='F13\.|S13\.|F20\.|S20\.|F21
 
 The ten packages below were tagged and published to PyPI by
 [run 41151600463](https://github.com/rn-forge/pykit/actions/runs/41151600463),
-with a GitHub release for each. Each release has its changelog section as notes, is not "Latest", and carries only
-the wheel, the sdist and the `.cdx.json` SBOM. Each package's docs site serves
-the new major.minor as `latest`, and each project belongs to the `rn-forge` PyPI
-organization.
+with a GitHub release for each. Each release has its changelog section as notes,
+is not "Latest", and carries only the wheel, the sdist and the `.cdx.json` SBOM.
+Each package's docs site serves the new major.minor as `latest`, and each
+project belongs to the `rn-forge` PyPI organization.
 
 All ten were installed together by name from PyPI into a clean virtual
 environment, and `rn_forge.commons`, `rn_forge.devops`, `rn_forge.cli`,
@@ -179,9 +179,9 @@ environment, and `rn_forge.commons`, `rn_forge.devops`, `rn_forge.cli`,
 `rn_forge.tooling`, `rn_forge.django` and `rn_forge.fastapi` each imported.
 PyPI's integrity API returns provenance for all ten wheels. For
 `rn-forge-commons` 0.8.1 it names the GitHub repository `rn-forge/pykit`,
-workflow `main.yml` and environment `pypi`, and `gh attestation verify -R
-rn-forge/pykit` passes on its wheel. The [security evidence](security.md) holds
-the rest.
+workflow `main.yml` and environment `pypi`, and
+`gh attestation verify -R rn-forge/pykit` passes on its wheel. The
+[security evidence](security.md) holds the rest.
 
 | Deliverable | Version | Tag | Commit | Verification |
 | -- | -- | -- | -- | -- |

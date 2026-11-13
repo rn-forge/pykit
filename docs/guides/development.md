@@ -111,8 +111,8 @@ branch and puts a merge commit on `main`, which breaks its linear history.
 ## Scorecard
 
 `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on pushes to `main`,
-weekly and on demand. It reports only: the SARIF result goes to code scanning and
-is kept as the `scorecard-sarif` artifact, and no score fails a build.
+weekly and on demand. It reports only: the SARIF result goes to code scanning
+and is kept as the `scorecard-sarif` artifact, and no score fails a build.
 
 ## Documentation builds
 

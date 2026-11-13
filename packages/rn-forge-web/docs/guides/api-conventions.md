@@ -116,11 +116,11 @@ call:
 registry = default_registry(type_base="/problems/").register_hierarchy(AppError)
 ```
 
-`register_hierarchy(base)` registers `base` and every subclass, base first.
-Each class's `code` is its slug and its `status_code` its status; the title is
-the status's reason phrase. A subclass inherits or overrides either attribute.
-Use hyphenated codes, like every row in the table above. A class with no `code`
-or no `status_code` raises `TypeError` at registration. `code_attr` and
+`register_hierarchy(base)` registers `base` and every subclass, base first. Each
+class's `code` is its slug and its `status_code` its status; the title is the
+status's reason phrase. A subclass inherits or overrides either attribute. Use
+hyphenated codes, like every row in the table above. A class with no `code` or
+no `status_code` raises `TypeError` at registration. `code_attr` and
 `status_attr` name different attributes.
 
 Set a `type_base`. Without one the `type` is `about:blank` and the code never
@@ -330,19 +330,20 @@ readiness.
 - **The 401 body never says why verification failed.** Expired, bad signature
   and unknown `kid` are indistinguishable on the wire; the reason goes to the
   log.
-- The verified caller is a `Principal` (`rn-forge-auth`): `subject` (required), plus optional
-  `issuer`, `scopes`, `roles`, `tenant`, raw `claims` and `mechanism`. Scopes
-  and roles are separate sets and neither is encoded as the other.
+- The verified caller is a `Principal` (`rn-forge-auth`): `subject` (required),
+  plus optional `issuer`, `scopes`, `roles`, `tenant`, raw `claims` and
+  `mechanism`. Scopes and roles are separate sets and neither is encoded as
+  the other.
 - **A session-only route's 401 carries no `WWW-Authenticate`.** This deviates
   from RFC 9110 §15.5.2, which requires a challenge on every 401: a cookie
   session has no registered authentication scheme to name, and a `Bearer`
   challenge would misdescribe the route. A route that accepts bearer tokens
   keeps the challenge above. The application raises `SessionRequired`;
-  `render_problem` omits the header for it. The body is the same generic 401. —
-  `auth.session-only-401-has-no-challenge`
+  `render_problem` omits the header for it. The body is the same generic 401.
+  — `auth.session-only-401-has-no-challenge`
 - **A CSRF rejection → 403 with the `csrf-failed` problem type**, not
-  `forbidden`, so a client can tell it from a permission denial and refresh its
-  token. The application raises `CsrfFailed`. The detail is always
+  `forbidden`, so a client can tell it from a permission denial and refresh
+  its token. The application raises `CsrfFailed`. The detail is always
   `CSRF verification failed.` and never says which check failed; the `type`
   member tells the two 403s apart once a `type_base` is configured. —
   `auth.csrf-rejection-is-403-csrf-failed`
@@ -912,8 +913,8 @@ the wrong thing is not conformance.
 
 A case may declare `requires`, the optional capabilities (`session-routes`,
 `csrf`) a binding must provide for it to apply. A driver parametrizes over
-`cases_provided_by(PROVIDES)`, where `PROVIDES` is the set its fixture serves;
-a binding adds a capability to `PROVIDES` when it ships the feature, and from
-then its cases run like any other. A case without `requires` is never skipped.
+`cases_provided_by(PROVIDES)`, where `PROVIDES` is the set its fixture serves; a
+binding adds a capability to `PROVIDES` when it ships the feature, and from then
+its cases run like any other. A case without `requires` is never skipped.
 
 A rule stated here with no case in that table is treated as unfinished.

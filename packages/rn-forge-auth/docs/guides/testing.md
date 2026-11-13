@@ -43,8 +43,8 @@ the user endpoint.
 
 A test drives the browser leg with plain HTTP: it follows the authorization
 redirect, stops at the callback, and reads `code`, `state` and `iss` from the
-`Location` header. It then hands those parameters to `LoginFlow.complete` as
-the request's `query`.
+`Location` header. It then hands those parameters to `LoginFlow.complete` as the
+request's `query`.
 
 ## Failure switches
 

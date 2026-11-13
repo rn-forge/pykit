@@ -16,7 +16,6 @@ fake provider in `rn_forge.auth.testing`; the `redis` extra adds `redis` for
 - [Authentication and authorization](guides/usage.md) shows how the pieces fit
   and covers installing the core and its extras.
 - [Contracts](guides/contracts.md), [Login providers](guides/login.md),
-  [Token profiles](guides/tokens.md),
-  [Stores](guides/stores.md) and [Testing](guides/testing.md) cover each
-  subsystem.
+  [Token profiles](guides/tokens.md), [Stores](guides/stores.md) and
+  [Testing](guides/testing.md) cover each subsystem.
 - The [API reference](reference/index.md) is generated from the docstrings.

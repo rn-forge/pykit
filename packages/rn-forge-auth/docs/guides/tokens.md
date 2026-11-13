@@ -57,28 +57,27 @@ used at exactly one place. A token valid under one is never accepted by another.
 | `IdTokenVerifier` | The OIDC callback | An ID token for your login client, checked against the nonce you sent. |
 | `LogoutTokenVerifier` | The back-channel logout endpoint | A logout token, accepted once. |
 
-`JwtVerifier` takes `mode`. With `"rfc7519"` (the default) it accepts a `typ`
-of `JWT` or none, requires `iss`, `aud` and `exp`, and validates `sub`, `nbf`
-and `iat` when present. With `"rfc9068"` it accepts only `typ` `at+jwt` or
-`application/at+jwt` and requires `iss`, `exp`, `aud`, `sub`, `client_id`,
-`iat` and `jti`. In both modes it rejects any token that carries `nonce` or
-`events`, which an ID token and a logout token do.
+`JwtVerifier` takes `mode`. With `"rfc7519"` (the default) it accepts a `typ` of
+`JWT` or none, requires `iss`, `aud` and `exp`, and validates `sub`, `nbf` and
+`iat` when present. With `"rfc9068"` it accepts only `typ` `at+jwt` or
+`application/at+jwt` and requires `iss`, `exp`, `aud`, `sub`, `client_id`, `iat`
+and `jti`. In both modes it rejects any token that carries `nonce` or `events`,
+which an ID token and a logout token do.
 
-Pass your OIDC login client ID as `login_client_id`. An API audience equal to
-it is refused with `ValueError` unless `mode="rfc9068"`, because otherwise an ID
+Pass your OIDC login client ID as `login_client_id`. An API audience equal to it
+is refused with `ValueError` unless `mode="rfc9068"`, because otherwise an ID
 token issued to your login client would pass as an access token.
 
 `IdTokenVerifier.verify(token, nonce=..., access_token=...)` checks signature,
 `iss`, `aud`, `azp`, `exp`, `iat`, `nonce` and, when an access token is given,
-`at_hash`. With `max_age` set, `auth_time` is required and must be no older
-than that many seconds.
+`at_hash`. With `max_age` set, `auth_time` is required and must be no older than
+that many seconds.
 
-`LogoutTokenVerifier` needs a `ReplayStore`, such as `InMemoryReplayStore`
-(one process only). It requires the back-channel logout event, a `sid` or
-`sub`, no `nonce`, an `iat` no older than `max_age_seconds` (120 by default),
-and a `jti` it has not accepted before. The `jti` is stored under
-`"{iss}|{jti}"` until the token expires, and only once every other check has
-passed.
+`LogoutTokenVerifier` needs a `ReplayStore`, such as `InMemoryReplayStore` (one
+process only). It requires the back-channel logout event, a `sid` or `sub`, no
+`nonce`, an `iat` no older than `max_age_seconds` (120 by default), and a `jti`
+it has not accepted before. The `jti` is stored under `"{iss}|{jti}"` until the
+token expires, and only once every other check has passed.
 
 All three build with `from_issuer` or `from_jwks_url`, and all refuse a key-set
 URL that is not HTTPS.

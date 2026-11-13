@@ -84,9 +84,9 @@ holds it.
 
 **`fs/`** — everything that reads or writes a real file.
 
-- **`paths`** — `PathUtils`: atomic writes and replacements, no-clobber
-  moves, empty-directory pruning, backups, temp dirs, repository-root
-  discovery and the `assert_within` path-escape guard.
+- **`paths`** — `PathUtils`: atomic writes and replacements, no-clobber moves,
+  empty-directory pruning, backups, temp dirs, repository-root discovery and
+  the `assert_within` path-escape guard.
 - **`hashing`** — `ContentHash`: content and file digests, for detecting drift.
 - **`locks`** — `DirectoryLock`, `atomic_symlink`: cross-process serialization
   and atomic publication.
@@ -137,8 +137,8 @@ directly (never through the facade).
 - **`tasks`** — `Task`, `TaskPool`: parallel task execution via a managed thread
   pool; `TaskPool.map_settled` maps a function over items and returns a
   `Succeeded` or `Failed` for each.
-- **`actor`** — `ThreadActor`: owns one resource on a dedicated thread and
-  runs every call against it there, as a `Future` or an awaitable.
+- **`actor`** — `ThreadActor`: owns one resource on a dedicated thread and runs
+  every call against it there, as a `Future` or an awaitable.
 - **`plugins`** — `EntryPointLoader`: failure-isolated entry-point plugin
   discovery.
 

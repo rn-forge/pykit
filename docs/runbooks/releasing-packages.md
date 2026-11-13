@@ -38,10 +38,10 @@ Every build, including a pull request's, runs `twine check --strict`, so a
 package with broken metadata fails CI. On a push to `main`, `release` then
 uploads the package to PyPI by trusted publishing, unless PyPI already has that
 version. Each uploaded file carries a PEP 740 attestation, which the job signs
-beforehand with `pypi-attestations`; the GitHub release attaches only the
-wheel, the sdist and the SBOM. Only after the upload does `gh release create`
-attach the artifacts and publish the release, creating a missing tag at the
-pushed commit
+beforehand with `pypi-attestations`; the GitHub release attaches only the wheel,
+the sdist and the SBOM. Only after the upload does `gh release create` attach
+the artifacts and publish the release, creating a missing tag at the pushed
+commit
 ([GitHub CLI release creation](https://cli.github.com/manual/gh_release_create)).
 A published release therefore implies the version is on PyPI. Its notes are the
 package's changelog section for the version, and it is never marked "Latest". A

@@ -7,22 +7,22 @@ authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Framework :: Django",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Framework :: Django",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 dependencies = [
-  "django>=6.0.7",
-  # Internal requirements are version ranges (ADR-0004).
-  "rn-forge-auth>=0.1.0,<0.2",
-  "rn-forge-commons>=0.8.0,<0.9",
-  "rn-forge-web>=0.3.0,<0.4",
+    "django>=6.0.7",
+    # Internal requirements are version ranges (ADR-0004).
+    "rn-forge-auth>=0.1.0,<0.2",
+    "rn-forge-commons>=0.8.0,<0.9",
+    "rn-forge-web>=0.3.0,<0.4",
 ]
 
 [project.optional-dependencies]
@@ -30,19 +30,19 @@ drf = ["djangorestframework>=3.17.1"]
 # `rn_forge.django.drf.transfer` only: tabular export and import, batch create
 # and delete. `write_xlsx` comes from rn-forge-data, which brings openpyxl.
 transfer = [
-  "djangorestframework>=3.17.1",
-  "django-import-export>=4.4.1",
-  "rn-forge-data>=0.1.1,<0.2",
+    "djangorestframework>=3.17.1",
+    "django-import-export>=4.4.1",
+    "rn-forge-data>=0.1.1,<0.2",
 ]
 # `fixtures.py` reads workbooks through `ExcelAdapter`, which needs pandas.
 fixtures = [
-  "rn-forge-data[pandas]>=0.1.1,<0.2",
+    "rn-forge-data[pandas]>=0.1.1,<0.2",
 ]
 # JWKS bearer auth for externally issued tokens. The authenticator itself is
 # `rn_forge.auth.oidc`.
 oidc = [
-  "djangorestframework>=3.17.1",
-  "rn-forge-auth[oidc]>=0.1.0,<0.2",
+    "djangorestframework>=3.17.1",
+    "rn-forge-auth[oidc]>=0.1.0,<0.2",
 ]
 # The Redis client for Django's Redis cache backend, which holds login
 # transactions, replay records and revoked session IDs in production.
@@ -52,13 +52,13 @@ celery = ["celery>=5.6.3"]
 # taken: its last release is 1.4.2 (2023-02), with classifiers stopping at
 # Python 3.10 — casing lives in `rn_forge.django.drf.casing` instead.
 openapi = [
-  "djangorestframework>=3.17.1",
-  "drf-spectacular>=0.30.0",
+    "djangorestframework>=3.17.1",
+    "drf-spectacular>=0.30.0",
 ]
 # `rn_forge.django.security` only, for the OWASP header preset
 # (`rn_forge.web.security.API_SECURITY_HEADERS`, the `secure` library).
 security = [
-  "rn-forge-web[security]>=0.3.0,<0.4",
+    "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 # `rn_forge.django.cors` only. The application still owns its origins;
 # `cors_settings` only carries `CORS_EXPOSE_HEADERS`.
@@ -68,15 +68,15 @@ cors = ["django-cors-headers>=4.9.0"]
 # pull it in.
 otel = ["opentelemetry-instrumentation-django>=0.65b0"]
 all = [
-  "celery>=5.6.3",
-  "django-cors-headers>=4.9.0",
-  "django-import-export>=4.4.1",
-  "djangorestframework>=3.17.1",
-  "drf-spectacular>=0.30.0",
-  "opentelemetry-instrumentation-django>=0.65b0",
-  "rn-forge-auth[oidc,redis]>=0.1.0,<0.2",
-  "rn-forge-data[pandas]>=0.1.1,<0.2",
-  "rn-forge-web[security]>=0.3.0,<0.4",
+    "celery>=5.6.3",
+    "django-cors-headers>=4.9.0",
+    "django-import-export>=4.4.1",
+    "djangorestframework>=3.17.1",
+    "drf-spectacular>=0.30.0",
+    "opentelemetry-instrumentation-django>=0.65b0",
+    "rn-forge-auth[oidc,redis]>=0.1.0,<0.2",
+    "rn-forge-data[pandas]>=0.1.1,<0.2",
+    "rn-forge-web[security]>=0.3.0,<0.4",
 ]
 
 [project.urls]
@@ -108,7 +108,11 @@ setup = "tests/smoke_setup.py"
 modules = ["rn_forge.django", "rn_forge.django.models"]
 
 [tool.workspace-ci.smoke.extras]
-drf = ["rn_forge.django.drf", "rn_forge.django.drf.views", "rn_forge.django.auth.drf"]
+drf = [
+    "rn_forge.django.drf",
+    "rn_forge.django.drf.views",
+    "rn_forge.django.auth.drf",
+]
 fixtures = ["rn_forge.django.fixtures"]
 transfer = ["rn_forge.django.drf.transfer"]
 oidc = ["rn_forge.django.auth.drf.oidc"]
@@ -118,30 +122,30 @@ openapi = ["rn_forge.django.drf.openapi"]
 [tool.pytest.ini_options]
 addopts = "-ra --import-mode=importlib -m 'not scaffold'"
 markers = [
-  "unit: fast isolated tests",
-  "integration: tests that exercise database-backed behavior",
-  "scaffold: installs built wheels into a scaffolded application (slow)",
-  "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
+    "unit: fast isolated tests",
+    "integration: tests that exercise database-backed behavior",
+    "scaffold: installs built wheels into a scaffolded application (slow)",
+    "security_control: demonstrates the security control with the given rn_forge.auth.conformance case ID",
 ]
 
 [dependency-groups]
 dev = [
-  "assertpy>=2.35",
-  "django-stubs>=6.0.7",
-  "opentelemetry-sdk>=1.44",
-  # The PostgreSQL test job (RN_FORGE_DJANGO_TEST_DATABASE_URL); see tests/conftest.py.
-  "psycopg[binary]>=3.3.5",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-cov>=7.1.0",
-  "pytest-django>=4.12.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-django[all]",
-  "ruff>=0.15.21",
+    "assertpy>=2.35",
+    "django-stubs>=6.0.7",
+    "opentelemetry-sdk>=1.44",
+    # The PostgreSQL test job (RN_FORGE_DJANGO_TEST_DATABASE_URL); see tests/conftest.py.
+    "psycopg[binary]>=3.3.5",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.12.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-django[all]",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-django[all]",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-django[all]",
 ]

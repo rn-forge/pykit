@@ -45,7 +45,7 @@ packages.
 
 - **A fixed type URI for `csrf-failed` alone**, so a client can tell it from
   `forbidden` without a `type_base`. Rejected (owner decision, 2026-10-28): it
-  breaks the `about:blank` rule. A binding that mounts the auth surface instead
-  refuses to start without a problem `type_base`, so the two `403`s differ in
-  `type` ([CSRF](design.md#csrf)). Raised by S13.3.7; applies to S13.5.3 and
-  S13.6.3.
+  breaks the `about:blank` rule. A binding that mounts the auth surface
+  instead refuses to start without a problem `type_base`, so the two `403`s
+  differ in `type` ([CSRF](design.md#csrf)). Raised by S13.3.7; applies to
+  S13.5.3 and S13.6.3.
