@@ -5,6 +5,20 @@
 | **State** | Active |
 | **Start Date** | 2026-10-15 |
 
+<!-- BEGIN derived features -->
+
+| Feature | State | Iteration | Stories |
+| -- | -- | -- | -- |
+| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | Closed | release-4 | 3 Closed |
+| [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Closed | release-4 | 3 Closed |
+| [F16.3 — Cut over onto kiln](F16.3-cutover.md) | Active | release-8 | 1 Active · 7 New · 2 Closed · 2 Removed |
+| [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Closed | release-5 | 3 Closed |
+| [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | Closed | release-5 | 3 Closed |
+| [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | New | release-8 | 1 New |
+| [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | New | release-8 | 1 New |
+
+<!-- END derived features -->
+
 pykit moves onto [kiln](https://github.com/rn-forge/kiln)'s `python-lib`
 archetype, so that its CI, task surface and docs tooling are generated and
 checked like every other rn-forge repository, and pykit stops carrying its own
@@ -27,16 +41,6 @@ groups, the documentation first. The branch merges back into `feature/release-8`
 with `git merge --no-ff`; only `feature/release-8` → `main` waits for the tag.
 
 [Back to the work index](../../index.md)
-
-| Feature | Scope | State |
-| -- | -- | -- |
-| [F16.1 — The workspace planner ships in rn-forge-devops](F16.1-devops-package.md) | A new `rn-forge-devops` package holds `.github/scripts/workspace_ci.py` as a platform- and stack-neutral core with uv and GitHub Actions adapters, released as 0.1.0. Unblocks kiln's F6.4. | Closed |
-| [F16.2 — pykit passes the shared standard](F16.2-conform-to-the-standard.md) | Current lint and type tools, mdformat-clean Markdown, Keep a Changelog headings. | Closed |
-| [F16.3 — Cut over onto kiln](F16.3-cutover.md) | An overlay of a `kiln new` reference as `python-lib`, generated CI and tasks, and the files pykit stops owning. | Active |
-| [F16.4 — Every member passes its own gate](F16.4-member-gate.md) | Member test runs leave the scaffold suite to the root; `FastApiApp` turns FastAPI's native tracing off unless asked. Precedes F16.3. | Closed |
-| [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | A no-extras smoke entry for every selected package, the `plan` outputs as a documented contract, and `rn-forge-devops` 0.2.0. Precedes F16.3. | Closed |
-| [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | Settle whether `plan` keeps the outputs and the `sonar-target` subcommand that kiln's generated workflow does not read. Follows F16.3. | New |
-| [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | `README.md` holds the conventions for people, `AGENTS.md` the agent instructions plus kiln's block, and `CLAUDE.md` is `@AGENTS.md` plus what only Claude reads. Follows F16.3. | New |
 
 [ADR-0012](../../../adr/ADR-0012.md) records that CI and release logic ships as
 `rn-forge-devops`, never as workflow logic or copied scripts. kiln's matching

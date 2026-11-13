@@ -5,6 +5,18 @@
 | **State** | Active |
 | **Start Date** | 2026-10-26 |
 
+<!-- BEGIN derived features -->
+
+| Feature | State | Iteration | Stories |
+| -- | -- | -- | -- |
+| [F21.1 — PyPI as the index](F21.1-pypi-decision.md) | Closed | release-7 | 2 Closed |
+| [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | Closed | release-7 | 1 Closed |
+| [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | Closed | release-7 | 5 Closed |
+| [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | Closed | release-7 | 1 Closed |
+| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | Active | release-8 | 1 Active |
+
+<!-- END derived features -->
+
 pykit serves its packages from its own PEP 503 index at
 `https://rn-forge.github.io/pykit/simple/`, built from the files attached to
 each package's GitHub Release ([ADR-0004](../../../adr/ADR-0004.md)). As a
@@ -21,14 +33,6 @@ human-readable record with one "Latest" release per shipped release page, and
 the self-hosted index retires once consumers have moved.
 
 [Back to the work index](../../index.md)
-
-| Feature | Scope | State |
-| -- | -- | -- |
-| [F21.1 — PyPI as the index](F21.1-pypi-decision.md) | The decision, with ADR-0004 revised; the PyPI organization and GitHub environments set up by the owner. | Closed |
-| [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | The MIT licence, classifiers and a patch release of every package, so each one passes `twine check --strict`. | Closed |
-| [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | `main.yml` uploads each package to PyPI via OIDC, with a TestPyPI dry run, registering trusted publishers one upload at a time; per-package GitHub releases take their changelog section as notes and are never "Latest"; an umbrella `release-<n>` release per shipped release page; external install checked from PyPI. | Closed |
-| [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | The README, consuming guide, per-package install guides and release runbook describe PyPI with no index declaration. | Closed |
-| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | `rn-forge-devops index`, its adapter, the `package-index` action and `simple/` on Pages are removed, ahead of the kiln cutover in Release 8. | New |
 
 ## Context
 

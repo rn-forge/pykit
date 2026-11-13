@@ -5,6 +5,19 @@
 | **State** | Active |
 | **Start Date** | 2026-10-15 |
 
+<!-- BEGIN derived features -->
+
+| Feature | State | Iteration | Stories |
+| -- | -- | -- | -- |
+| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Closed | release-4 | 2 Closed |
+| [F15.3 — rn-forge-data package](F15.3-data-package.md) | Closed | release-4 | 4 Closed |
+| [F15.4 — Domain errors in commons](F15.4-domain-errors.md) | New | deferred | — |
+| [F15.5 — Framework-neutral messaging core](F15.5-neutral-messaging.md) | New | deferred | — |
+| [F15.6 — Framework-neutral fixtures](F15.6-neutral-fixtures.md) | New | deferred | — |
+| [F15.7 — Framework-neutral Celery app factory](F15.7-neutral-celery.md) | New | deferred | — |
+
+<!-- END derived features -->
+
 Split framework-neutral areas out of `rn-forge-commons` into purpose-named
 packages, only when they pass the three-test rule of
 [ADR-0011](../../../adr/ADR-0011.md), and give every such package one adapter
@@ -25,15 +38,6 @@ adapters in the same release. New adapter implementations are deliberately
 outside E15.
 
 [Back to the work index](../../index.md)
-
-| Feature | Scope | State |
-| -- | -- | -- |
-| [F15.1 — Package boundary rule](F15.1-package-boundary-rule.md) | Decide the three-test rule and the adapter structure, and enforce the structure with import contracts. | Closed |
-| [F15.3 — rn-forge-data package](F15.3-data-package.md) | Create the package and move the Excel and pandas code into it. | Closed |
-| [F15.4 — Domain errors in commons](F15.4-domain-errors.md) | Move `VersionConflict` and `DomainConflict` to commons so the ORM packages need no web import. | New |
-| [F15.5 — Framework-neutral messaging core](F15.5-neutral-messaging.md) | Split the outbox and inbox loops from their Django models. | New |
-| [F15.6 — Framework-neutral fixtures](F15.6-neutral-fixtures.md) | Split workbook reading and validation from Django's `loaddata` output. | New |
-| [F15.7 — Framework-neutral Celery app factory](F15.7-neutral-celery.md) | Make the Celery app factory usable without Django. | New |
 
 F15.4 to F15.7 are tagged `deferred`. Do not start them unless the owner asks.
 

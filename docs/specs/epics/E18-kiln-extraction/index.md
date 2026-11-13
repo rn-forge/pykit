@@ -5,6 +5,20 @@
 | **State** | Active |
 | **Start Date** | 2026-10-25 |
 
+<!-- BEGIN derived features -->
+
+| Feature | State | Iteration | Stories |
+| -- | -- | -- | -- |
+| [F18.1 — Templates, generation and state move to commons](F18.1-template-engine-in-commons.md) | Closed | release-6 | 3 Closed |
+| [F18.2 — Templated artifacts and plan diffs](F18.2-templated-artifacts-and-diffs.md) | Closed | release-6 | 2 Closed |
+| [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | Closed | release-6 | 4 Closed |
+| [F18.4 — Markdown structure](F18.4-markdown-structure.md) | Closed | release-6 | 1 Closed |
+| [F18.5 — One pin set on the new tags](F18.5-coherent-pins.md) | Removed | — | 1 Removed |
+| [F18.6 — Cache Markdown structure by text](F18.6-markdown-parse-cache.md) | New | release-8 | 1 New |
+| [F18.7 — A managed block's end marker can sit at a different indent](F18.7-managed-block-end-indent.md) | New | release-8 | 2 New |
+
+<!-- END derived features -->
+
 kiln, the rn-forge repository generator, grew plumbing that any application
 reading configuration, rendering text or checking Markdown would write again. It
 reads TOML through `tomllib` because `DocumentUtils` is seven times slower. It
@@ -21,15 +35,6 @@ kiln adopts this after the release and the pin bump it requires; until then it
 keeps its own code.
 
 [Back to the work index](../../index.md)
-
-| Feature | Scope | State |
-| -- | -- | -- |
-| [F18.1 — Templates, generation and state move to commons](F18.1-template-engine-in-commons.md) | `TemplateEngine` in `rn_forge.commons.text.templates` (`templates` extra), with `autoescape` and `cached`; the generation engine in `rn_forge.commons.generation`; `StateStore` in `rn_forge.commons.fs.state`; import contracts that can break. | Closed |
-| [F18.2 — Templated artifacts and plan diffs](F18.2-templated-artifacts-and-diffs.md) | `TemplateArtifact` and `render_artifacts` in `rn_forge.commons.generation.templated`; public `disk_content` and `diff` in the generation engine. | Closed |
-| [F18.3 — Fast, complete document reads and writes](F18.3-document-io.md) | libyaml loading; `tomllib` for plain TOML; package-resource reads; TOML header and array style; value-level typed reads; brace-safe error messages. | Closed |
-| [F18.4 — Markdown structure](F18.4-markdown-structure.md) | `MarkdownUtils` in `rn_forge.commons.text.markdown` behind a `markdown` extra: headings and anchors, links, title, pipe tables. | Closed |
-| [F18.5 — One pin set on the new tags](F18.5-coherent-pins.md) | Removed: F19.3 re-tags every dependent on ranges in the same cut. | Removed |
-| [F18.6 — Cache Markdown structure by text](F18.6-markdown-parse-cache.md) | One bounded immutable parse result shared by every `MarkdownUtils` parsing helper; public return types unchanged. | New |
 
 ## Context
 
