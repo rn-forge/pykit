@@ -1,6 +1,6 @@
 """Run the workspace's coverage tests and a SonarCloud branch analysis from a local checkout.
 
-The scope comes from `rn-forge-devops plan`. A full run uploads the working tree to
+The scope comes from `task ci:plan`. A full run uploads the working tree to
 SonarCloud and needs `SONAR_TOKEN` and an installed `sonar-scanner`. The development
 guide describes the prerequisites.
 
@@ -27,8 +27,9 @@ SCANNER_DIR = ".sonar-cleanup/scanner"
 def read_plan() -> dict[str, str]:
     """Return the planner's `key=value` lines, split on the first `=`."""
     result = subprocess.run(
-        ["uv", "run", "rn-forge-devops", "plan", ""],
+        ["task", "ci:plan"],
         cwd=ROOT,
+        env={k: v for k, v in os.environ.items() if k not in ("EVENT_NAME", "BASE")},
         capture_output=True,
         text=True,
         check=True,

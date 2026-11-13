@@ -2506,7 +2506,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-devops"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "packages/rn-forge-devops" }
 dependencies = [
     { name = "packaging" },

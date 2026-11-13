@@ -43,7 +43,7 @@ include_external_packages = True
 
 # Executable import boundaries for the pykit workspace (kiln ADR-0003).
 #
-# Ten rules, all of which a reader of the dependency graph would otherwise
+# Nine rules, all of which a reader of the dependency graph would otherwise
 # have to take on trust:
 #
 #   1. commons never reaches into cli or tooling and never imports Typer.
@@ -62,15 +62,12 @@ include_external_packages = True
 #      framework packages layer on top of it (web plan alignment §2).
 #   6. `rn_forge.sqlalchemy` sits beside the framework packages: it imports
 #      neither of them nor either framework.
-#   7. `rn_forge.devops` is CI tooling with no rn-forge dependency: it imports
+#   7. `rn_forge.devops` is release tooling with no rn-forge dependency: it imports
 #      no other `rn_forge` package (ADR-0012).
-#   8. `rn_forge.devops.ci` and `.requirements` are the core: none imports an
-#      adapter. `.requirements` and `.notes` stay in pykit, so none imports the
-#      planner (`ci`, `uv`, `github`).
-#   9. `rn_forge.data` is a sibling of web over commons, and its core never
+#   8. `rn_forge.data` is a sibling of web over commons, and its core never
 #      imports the `rn_forge.data.pandas` adapter (ADR-0011). The contract
 #      names the core module, not the package that contains the adapter.
-#  10. `rn_forge.auth` layers over web, and its core never imports the
+#   9. `rn_forge.auth` layers over web, and its core never imports the
 #      `rn_forge.auth.oidc`, `rn_forge.auth.redis` and `rn_forge.auth.testing` adapters (ADR-0011).
 #
 # There are deliberately no compatibility re-exports in any direction; a shim
@@ -225,28 +222,6 @@ forbidden_modules =
     rn_forge.fastapi
     rn_forge.web
     rn_forge.sqlalchemy
-
-[importlinter:contract:devops-core-has-no-adapter]
-name = rn_forge.devops.ci, .notes and .requirements never import the uv or GitHub adapters
-type = forbidden
-source_modules =
-    rn_forge.devops.ci
-    rn_forge.devops.notes
-    rn_forge.devops.requirements
-forbidden_modules =
-    rn_forge.devops.uv
-    rn_forge.devops.github
-
-[importlinter:contract:devops-requirements-is-standalone]
-name = rn_forge.devops.requirements and .notes never import the planner
-type = forbidden
-source_modules =
-    rn_forge.devops.requirements
-    rn_forge.devops.notes
-forbidden_modules =
-    rn_forge.devops.ci
-    rn_forge.devops.uv
-    rn_forge.devops.github
 
 [importlinter:contract:data-core-has-no-adapter]
 name = rn_forge.data's core modules never import the pandas adapter
