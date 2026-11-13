@@ -19,8 +19,9 @@ log redaction and server-sent events (F6.1 and F6.2,
 
 - Release 7 is shipped.
 - For F16.3 and F16.6 only: the work runs first as kiln's S7.2.4 rehearsal from
-  kiln `feature/v1`, and the cutover merges once `[kiln] ref = "v0.1.0"`. kiln
-  F6.7, F6.8 and F6.9 are closed.
+  kiln `feature/v1`, and the cutover merges once `task kiln:apply` re-renders
+  with no change at the configured `[kiln] ref`. kiln F6.7, F6.8 and F6.9 are
+  closed.
 
 ## Scope
 
@@ -48,11 +49,11 @@ log redaction and server-sent events (F6.1 and F6.2,
 
 1. **F21.5** first, on `feature/release-8`. It retires the self-hosted index
    before the cutover, so the cutover carries no index.
-1. **F16.3** as kiln's S7.2.4 rehearsal, merged once kiln tags `v0.1.0`
-   (*revised 2026-11-08:* it runs on `feature/kiln-cutover`, which may merge
-   into this branch before the tag; only this branch's merge to `main` waits).
-   It cuts pykit over onto kiln and adds `rn-forge-auth` to the kiln config.
-   kiln must render the release behaviour F21.3 built in `main.yml`.
+1. **F16.3** as kiln's S7.2.4 rehearsal, on `feature/kiln-cutover`, merged into
+   this branch and then to `main` once `task kiln:apply` re-renders with no
+   change (*revised 2026-11-12:* no longer waits for kiln's `v0.1.0` tag). It
+   cuts pykit over onto kiln and adds `rn-forge-auth` to the kiln config. kiln
+   must render the release behaviour F21.3 built in `main.yml`.
 1. **F16.6** after F16.3. It settles whether `plan` keeps the outputs kiln does
    not read.
 1. **F17.1, F17.2, F17.3, F17.5, F17.4** do not wait for kiln. F17.2 comes
@@ -66,6 +67,9 @@ log redaction and server-sent events (F6.1 and F6.2,
   release 1.
 - Owner decision, 2026-10-31: F17.1 to F17.5 join this release and F16.3 and
   F16.6 stay, so the release cannot ship until kiln's `v0.1.0` tag exists.
+- Owner decision, 2026-11-12: the cutover merges on `[kiln] ref = "feature/v1"`
+  once `task kiln:apply` re-renders with no change; the release no longer
+  waits for kiln's `v0.1.0` tag.
 - Owner decision, 2026-10-31: `alembic` is approved as the only dependency of
   `rn-forge-sqlalchemy[migrations]` (S17.4.1).
 - Owner decision, 2026-10-31: F6.1 and F6.2 join this release, and F16.3 and
