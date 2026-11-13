@@ -1,4 +1,16 @@
-# Area declaration for human-maintained root navigation. MkDocs nav remains manual.
+# Seeded by kiln — nav additions go here; kiln derives the rest.
+#
+# kiln writes it once and never touches it again: a repo
+# that needs an area kiln has never heard of adds it here, and the docs checkers
+# validate the tree against this file rather than against a list baked into
+# them. Order is nav order; re-run `task docs:generate` after editing.
+#
+# A `python-lib`'s Packages section comes from `packages` in kiln's config, after
+# `guides`. To retitle or move it, declare an area with `nav: include`.
+#
+# `nav` is one of: children (the area's pages), index-only (its index.md),
+# include (one entry per package site) or work (its index, its epic list and
+# its epics in ranges of ten, with their features and design).
 version: 1
 areas:
   - key: architecture
@@ -11,12 +23,16 @@ areas:
     title: Runbooks
     nav: children
     optional: true
+  - key: reference
+    title: Reference
+    nav: children
+    generated: true
   - key: releases
     title: Releases
     nav: index-only
   - key: specs
     title: Specs
-    nav: index-only
+    nav: work
   - key: adr
     title: Decisions
     nav: index-only

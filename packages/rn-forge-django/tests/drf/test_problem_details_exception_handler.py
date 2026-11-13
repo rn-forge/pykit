@@ -7,25 +7,23 @@ from assertpy import assert_that
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.http import Http404  # noqa: E402
-from django.test import RequestFactory  # noqa: E402
-from rest_framework import exceptions as drf_exceptions  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.exceptions import (  # noqa: E402
+from django.http import Http404
+from django.test import RequestFactory
+from opentelemetry import trace
+from rest_framework import exceptions as drf_exceptions
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.exceptions import (
     _field_errors,
     problem_details_exception_handler,
     problem_registry,
 )
-from opentelemetry import trace  # noqa: E402
-
-from rn_forge.django.exceptions import problem_details_handler404  # noqa: E402
-from rn_forge.web import (  # noqa: E402
+from rn_forge.django.exceptions import problem_details_handler404
+from rn_forge.web import (
     PROBLEM_MEDIA_TYPE,
     DomainConflict,
-    ProblemType,
     PreconditionRequired,
+    ProblemType,
     VersionConflict,
 )
 

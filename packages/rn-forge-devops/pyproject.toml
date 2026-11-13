@@ -1,19 +1,19 @@
 [project]
 name = "rn-forge-devops"
-version = "0.3.1"
-description = "CI and release automation for rn-forge repositories in any language, run with uv"
+version = "0.4.0"
+description = "Release commands for the pykit workspace"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 dependencies = ["packaging>=24"]
@@ -28,11 +28,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-devop
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.devops"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-devops = { workspace = true }
@@ -42,16 +50,16 @@ addopts = "-ra --import-mode=importlib"
 
 [dependency-groups]
 dev = [
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-devops",
-  "ruff>=0.15.21",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-devops",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-devops",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-devops",
 ]

@@ -3,7 +3,6 @@
 from datetime import UTC, datetime
 
 import pytest
-
 from rn_forge.web.models import WireModel
 
 pytestmark = pytest.mark.unit

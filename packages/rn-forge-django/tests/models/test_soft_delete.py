@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 import pytest
 from django.conf import settings
 from django.db import models
-
 from rn_forge.django.models import (
     BaseModel,
     SoftDeleteModelMixin,

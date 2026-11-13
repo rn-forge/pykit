@@ -10,7 +10,7 @@ jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 pytest.importorskip("authlib")
 
-from rn_forge.auth.oidc import IdTokenVerifier, TokenVerificationError  # noqa: E402
+from rn_forge.auth.oidc import IdTokenVerifier, TokenVerificationError
 
 pytestmark = pytest.mark.unit
 

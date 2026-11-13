@@ -6,7 +6,6 @@ import sys
 
 import pytest
 import typer
-
 from rn_forge.cli import CliApp, CliSurface, CommandSurface, ExitCode, LogLevel, run
 from rn_forge.commons.exceptions import AppException
 

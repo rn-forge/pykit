@@ -1,7 +1,6 @@
 """Tests for rn_forge.commons.exceptions."""
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 
 

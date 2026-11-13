@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.tooling.install import (

@@ -9,7 +9,6 @@ import json
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.asgi import BodySizeLimitMiddleware, Message, Receive, Scope, Send
 
 pytestmark = [pytest.mark.unit, pytest.mark.asyncio]

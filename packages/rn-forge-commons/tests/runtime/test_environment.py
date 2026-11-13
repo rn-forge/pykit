@@ -5,10 +5,8 @@ from __future__ import annotations
 import os
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.runtime.environment import Environment
-
 
 # ---------------------------------------------------------------------------
 # Environment

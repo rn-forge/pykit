@@ -15,19 +15,18 @@ from fastapi.testclient import TestClient
 jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from cryptography.hazmat.primitives.asymmetric import rsa  # noqa: E402
-from jwt.algorithms import RSAAlgorithm  # noqa: E402
-
-from rn_forge.fastapi import (  # noqa: E402
+from cryptography.hazmat.primitives.asymmetric import rsa
+from jwt.algorithms import RSAAlgorithm
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
+from rn_forge.auth.oidc import OidcAuthenticator
+from rn_forge.fastapi import (
     bearer_auth,
     register_problem_handlers,
     requires,
 )
-from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
-from rn_forge.web import (  # noqa: E402
+from rn_forge.web import (
     AUTH_FAILED_DETAIL,
 )
-from rn_forge.auth.oidc import OidcAuthenticator  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -73,7 +72,10 @@ class Contexts:
         )
 
 
-def build(jwks_url, requirement=Requirement()):
+_DEFAULT_REQUIREMENT = Requirement()
+
+
+def build(jwks_url, requirement=_DEFAULT_REQUIREMENT):
     authenticator = OidcAuthenticator.from_jwks_url(
         jwks_url, issuer=ISSUER, audience=AUDIENCE
     )

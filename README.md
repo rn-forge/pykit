@@ -17,7 +17,7 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 | [`rn-forge-auth`](packages/rn-forge-auth) | `rn_forge.auth` | Authentication and authorization primitives over `rn-forge-web`: the identity, account and authorization-context contracts, `Principal`, `Requirement`, `ScopeAuthorizer`, session, transaction and replay stores, `principal_from_claims`, `LoginFlow` and the local password and development login providers; the `oidc` extra adds the OIDC and OAuth 2.0 login provider (`OidcProvider`), back-channel logout, the OIDC token profiles (`OidcAuthenticator`, `JwtVerifier`, `IdTokenVerifier`, `LogoutTokenVerifier`) and a fake provider for tests, and the `redis` extra adds Redis stores. |
 | [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (sessions, OIDC bearer, permission hooks), DRF views/serializers/exceptions, a typed settings facade. |
 | [`rn-forge-fastapi`](packages/rn-forge-fastapi) | `rn_forge.fastapi` | FastAPI adapters over `rn-forge-web`: problem handlers, the OpenAPI error-type repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health router and the auth binding. Makes no wire decision of its own. |
-| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | CI and release automation for rn-forge repositories in any language, run with uv: the `rn-forge-devops` command plans each CI job's matrix from the workspace manifests and gates releases on their checks. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
+| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | Release commands for the pykit workspace: the `rn-forge-devops` command checks internal requirements and writes the umbrella release's notes. The CI planner is kiln's `kiln-devops`. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
 | [`rn-forge-data`](packages/rn-forge-data) | `rn_forge.data` | Excel and tabular data helpers over `rn-forge-commons`. Base dependencies are `openpyxl` and `tablib[xlsx]`; the `pandas` extra adds the pandas adapter. |
 | [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | `rn_forge.sqlalchemy` | Async SQLAlchemy models, upsert and keyset pagination over `rn-forge-web`: `Base`, `UTCDateTime`, audit and version mixins, `update_versioned`, `upsert`, `keyset`. PostgreSQL and SQLite. |
 
@@ -52,10 +52,8 @@ on it.
    `rn_forge.fastapi.codegen` may.
 1. `rn_forge.sqlalchemy` imports neither framework package nor `fastapi`,
    `starlette`, `django` or `rest_framework`.
-1. `rn_forge.devops` imports no other `rn_forge` package: CI tooling for any
-   language's repository carries no rn-forge dependency (ADR-0012).
-1. `rn_forge.devops.ci`, the core, imports neither the uv nor the GitHub Actions
-   adapter.
+1. `rn_forge.devops` imports no other `rn_forge` package: release tooling
+   carries no rn-forge dependency (ADR-0012).
 1. `rn_forge.data`, the core, never imports the `rn_forge.data.pandas` adapter
    (the contract names the core module, not the package that contains the
    adapter), and the framework packages layer over it as siblings of
@@ -118,7 +116,7 @@ instead.
 ## Setup
 
 ```bash
-uv sync --all-extras
+task setup
 ```
 
 ## Development

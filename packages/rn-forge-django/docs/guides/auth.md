@@ -10,8 +10,8 @@ The app is installable (label `rn_forge_django_auth`).
 
 ## Setup
 
-An end-to-end configuration with one OIDC provider, local password login and,
-in development, a fixture-account provider. Install `rn-forge-django` with the
+An end-to-end configuration with one OIDC provider, local password login and, in
+development, a fixture-account provider. Install `rn-forge-django` with the
 `drf`, `oidc` and `redis` extras.
 
 Settings:
@@ -58,8 +58,8 @@ it is called, so the provider must be reachable at startup.
 
 The Redis cache backend holds login transactions, replay records and revoked
 session IDs, which every worker must share; the `redis` extra installs its
-client. The session cookie is `Secure`, so serve development over `localhost`
-or HTTPS.
+client. The session cookie is `Secure`, so serve development over `localhost` or
+HTTPS.
 
 The auth objects, built once:
 
@@ -223,8 +223,8 @@ The URL names are `rn-forge-auth-<route>`. A `401` from any of them is a
 | `POST` | `login/password` | `200` with the session body, `401` for any failure, or `429` |
 
 A callback error redirects to `error_route` (`/auth/error`) with `?error=` set
-to one of `access_denied`, `account_not_provisioned` and `login_failed`.
-Details go to the log, never into the URL. A password login failure is one `401`
+to one of `access_denied`, `account_not_provisioned` and `login_failed`. Details
+go to the log, never into the URL. A password login failure is one `401`
 whatever its cause, so the response does not reveal which accounts exist. The
 login body is JSON or form-encoded `{username, password}`.
 
@@ -235,33 +235,33 @@ none. `Cache-Control: no-store` is set on session responses.
 
 The login transaction lives in the cache for 10 minutes behind the
 `__Host-login-tx` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no
-`Domain`). A callback that carries more than one transaction cookie is
-rejected, and a transaction is consumed atomically, so a callback works once.
+`Domain`). A callback that carries more than one transaction cookie is rejected,
+and a transaction is consumed atomically, so a callback works once.
 
 ## Sessions and revocation
 
 Sessions are `django.contrib.sessions` with the `db` or `cached_db` engine, in
 the `__Host-session` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no
 `Domain`). The session holds the account ID, the account's session version at
-login, provider, issuer, external subject, `auth_time`, `amr`, `session_ref`
-and the ID token (only with `rp_initiated_logout`), and never permissions: those
-are computed on each request.
+login, provider, issuer, external subject, `auth_time`, `amr`, `session_ref` and
+the ID token (only with `rp_initiated_logout`), and never permissions: those are
+computed on each request.
 
 - **Timeouts.** A 30-minute sliding idle timeout (`idle_timeout`) and a 12-hour
   absolute timeout (`absolute_timeout`). A normal read moves the idle expiry
   forward; `GET /auth/session` reads with `touch=False` and does not.
-- **One read path.** `Sessions.read` deletes the session, and the caller
-  answers `401`, when the absolute timeout has passed, the recorded session
-  version differs from the account's, the account is inactive, or the
-  `session_ref` is revoked.
-- **New IDs.** Login gives the session a new ID. Call
-  `rotate_session(request)` after a change to the account's privileges.
+- **One read path.** `Sessions.read` deletes the session, and the caller answers
+  `401`, when the absolute timeout has passed, the recorded session version
+  differs from the account's, the account is inactive, or the `session_ref` is
+  revoked.
+- **New IDs.** Login gives the session a new ID. Call `rotate_session(request)`
+  after a change to the account's privileges.
 - **Logout.** `/auth/logout` ends the current session. `/auth/logout/all` and a
-  back-channel logout that names only `sub` bump the account's session version,
-  which ends every session of the account on its next request. A back-channel
-  logout with a `sid` revokes that session only, until the absolute timeout.
-  With `rp_initiated_logout` on the provider, `/auth/logout` returns the
-  identity provider's end-session URL.
+  back-channel logout that names only `sub` bump the account's session
+  version, which ends every session of the account on its next request. A
+  back-channel logout with a `sid` revokes that session only, until the
+  absolute timeout. With `rp_initiated_logout` on the provider, `/auth/logout`
+  returns the identity provider's end-session URL.
 - **Disabling.** `contexts.set_active(account_id, False)` (or any change that
   makes the account inactive) fails the account's next request with `401`.
 
@@ -277,16 +277,17 @@ Every unsafe method on a session-authenticated route is protected by
 not `HttpOnly` so that Angular can copy it into the header.
 
 - `GET /auth/session` always sets the cookie, including when it answers `401`,
-  so `POST /auth/login/password` is protected before sign-in. The token rotates
-  at login and at logout.
+  so `POST /auth/login/password` is protected before sign-in. The token
+  rotates at login and at logout.
 - A rejection is the `403` `csrf-failed` problem (`CSRF_FAILURE_VIEW`); its
   reason is logged, never sent. `PROBLEM_TYPE_BASE` makes it differ in `type`
   from a permission denial.
 - Beyond Django's token and origin check, `AuthCsrfMiddleware` rejects
-  `Sec-Fetch-Site: cross-site` on an unsafe method, even from a trusted origin.
+  `Sec-Fetch-Site: cross-site` on an unsafe method, even from a trusted
+  origin.
 - Requests with a `Bearer` `Authorization` header skip the check, as does the
-  back-channel logout route, which carries a signed token. A `Basic` header does
-  not: browsers replay cached Basic credentials on their own.
+  back-channel logout route, which carries a signed token. A `Basic` header
+  does not: browsers replay cached Basic credentials on their own.
 - `CSRF_TRUSTED_ORIGINS` lists the other origins that may post. Behind a proxy,
   Django takes the request's scheme and host from forwarded headers only when
   `SECURE_PROXY_SSL_HEADER` and `USE_X_FORWARDED_HOST` are set, and the
@@ -321,17 +322,16 @@ an inactive account with `?error=access_denied`. The session version behind
 
 ## Authentication
 
-`PrincipalSessionAuthentication` yields a `Principal` with
-`mechanism="session"` from `Sessions.read`; `request.auth` is the
-`SessionInfo`. Subclass it and set `sessions = sessions_for(config)`.
+`PrincipalSessionAuthentication` yields a `Principal` with `mechanism="session"`
+from `Sessions.read`; `request.auth` is the `SessionInfo`. Subclass it and set
+`sessions = sessions_for(config)`.
 
 `PrincipalBearerAuthentication` and `JWKSBearerAuthentication` verify an
 externally issued token, then resolve its `(issuer, subject)` through
 `AccountResolver.lookup`. They never provision: an unlinked subject, or an
 inactive account, is `401`. The principal's `subject` is the account ID; its
 roles and attributes come from the authorization context, and its permissions
-are the account's, limited to what the token's scopes allow through
-`scope_map`:
+are the account's, limited to what the token's scopes allow through `scope_map`:
 
 ```python
 class Bearer(JWKSBearerAuthentication):
@@ -346,8 +346,8 @@ views, and the module that defines these classes imports DRF's views too.
 **One credential per request.** A request with an `Authorization` header is
 authenticated by the bearer class alone: an invalid token is `401` even with a
 valid session cookie, and the session class ignores the request. List the
-classes a view accepts. A view whose first class is the session class answers
-an unauthenticated request with `401` and no `WWW-Authenticate` header; with a
+classes a view accepts. A view whose first class is the session class answers an
+unauthenticated request with `401` and no `WWW-Authenticate` header; with a
 bearer class first, it answers with the `Bearer` challenge. Both need the
 problem-details exception handler.
 
@@ -356,14 +356,14 @@ problem-details exception handler.
 For an API whose callers hold tokens issued by an identity provider (Entra ID,
 Auth0, Okta, Keycloak), `JWKSBearerAuthentication` (the `oidc` extra) verifies
 the token against the provider's key set. Set `jwks_url`, `issuer`, `audience`,
-`accounts` and `contexts` on a subclass, as in [Setup](#setup).
-`cache_timeout` (300 seconds) is how long a fetched key set is kept,
-`cooldown_duration` (30 seconds) the fewest seconds between two fetches, which
-bounds how often an unknown `kid` can reach the provider, and `algorithms` and
-`leeway` set the accepted algorithms and the clock skew. Override
-`claims_to_principal()` where the provider keeps roles or scopes somewhere
-non-standard, such as Keycloak's nested `realm_access.roles`. The authenticator
-and key set are cached per subclass and process, so define the class once.
+`accounts` and `contexts` on a subclass, as in [Setup](#setup). `cache_timeout`
+(300 seconds) is how long a fetched key set is kept, `cooldown_duration` (30
+seconds) the fewest seconds between two fetches, which bounds how often an
+unknown `kid` can reach the provider, and `algorithms` and `leeway` set the
+accepted algorithms and the clock skew. Override `claims_to_principal()` where
+the provider keeps roles or scopes somewhere non-standard, such as Keycloak's
+nested `realm_access.roles`. The authenticator and key set are cached per
+subclass and process, so define the class once.
 
 | Provider | `jwks_url` |
 | -- | -- |
@@ -446,7 +446,6 @@ its `permission_key` (`rn_forge.auth.permission`, `rn_forge.auth.group`,
 `rn_forge.auth.user`) combined with the action. Mount them, or
 `rn_forge.django.auth.urls.urlpatterns`, which already registers them, under
 your API root.
-
 
 ## Rate limits and audit events
 

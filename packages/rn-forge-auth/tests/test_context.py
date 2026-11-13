@@ -3,7 +3,6 @@
 import dataclasses
 
 import pytest
-
 from rn_forge.auth import AuthorizationContext, AuthorizationContextProvider
 
 pytestmark = pytest.mark.unit

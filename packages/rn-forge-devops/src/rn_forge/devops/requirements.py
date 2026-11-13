@@ -13,6 +13,22 @@ from packaging.version import Version
 MANIFEST = "pyproject.toml"
 
 
+def find_root(start: Path) -> Path:
+    """Return the nearest directory at or above `start` whose `pyproject.toml`
+    declares `[tool.uv.workspace]`.
+
+    Raises:
+        FileNotFoundError: When there is none.
+    """
+    for directory in (start, *start.parents):
+        manifest = directory / MANIFEST
+        if manifest.is_file() and "workspace" in tomllib.loads(
+            manifest.read_text()
+        ).get("tool", {}).get("uv", {}):
+            return directory
+    raise FileNotFoundError(f"no uv workspace at or above {start}")
+
+
 def _members(root: Path) -> dict[str, tuple[str, str, dict[str, Any]]]:
     """Map each member's canonical name to its name, version and manifest."""
     workspace: dict[str, Any] = tomllib.loads((root / MANIFEST).read_text())["tool"][

@@ -8,18 +8,17 @@ import pytest
 
 rest_framework = pytest.importorskip("rest_framework")
 
-from django.db import models  # noqa: E402
-from django.test import override_settings  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.exceptions import problem_details_exception_handler  # noqa: E402
-from rn_forge.django.drf.pagination import (  # noqa: E402
+from django.db import models
+from django.test import override_settings
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.exceptions import problem_details_exception_handler
+from rn_forge.django.drf.pagination import (
     CursorPagination,
     LegacyPageNumberPagination,
     OrderByFilter,
 )
-from rn_forge.web import InvalidCursor, InvalidOrderBy, decode_cursor, encode_cursor  # noqa: E402
+from rn_forge.web import InvalidCursor, InvalidOrderBy, decode_cursor, encode_cursor
 
 
 class _PagedRow(models.Model):

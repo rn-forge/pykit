@@ -1,0 +1,596 @@
+{
+  "entries": {
+    ".editorconfig": {
+      "begin_marker": null,
+      "content_hash": "3f9ecf7da46a1c1ba04fcb6816c6785979cdd3a7e8b19f4a898da06877faba3e",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".editorconfig"
+    },
+    ".github/actions/setup/action.yml": {
+      "begin_marker": null,
+      "content_hash": "142b186bbb42bededeb94f84c3c566df0b5c98309eeefbe3a75a65f680451194",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/actions/setup/action.yml"
+    },
+    ".github/dependabot.yml": {
+      "begin_marker": null,
+      "content_hash": "6a1c42ee9c77d38c05bc55ab1837999ef984581fbf57d968bdcd5cc069fdf5cf",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/dependabot.yml"
+    },
+    ".github/workflows/_docs.yml": {
+      "begin_marker": null,
+      "content_hash": "63d23fcdbd5961654dd9baaa068a7d24fc855c8e25225f10aaf8c79639ee2eb0",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_docs.yml"
+    },
+    ".github/workflows/_integration.yml": {
+      "begin_marker": null,
+      "content_hash": "72c1137d84cd9f894bef711785fdb70ae98817859abaa1e13e2f41b10413b98d",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_integration.yml"
+    },
+    ".github/workflows/_release.yml": {
+      "begin_marker": null,
+      "content_hash": "13e55a1b7a982dbeb4505190fc333b509b777810bfca9d0d4d2de7dbc42f30ac",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_release.yml"
+    },
+    ".github/workflows/_smoke.yml": {
+      "begin_marker": null,
+      "content_hash": "d778a528748b54db0b4334bbd6fea947770e08aa8d5342c1572e7090dfbadf64",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_smoke.yml"
+    },
+    ".github/workflows/_sonar.yml": {
+      "begin_marker": null,
+      "content_hash": "4f66451e3ac5777ea836fc44500f3486966ae61725a629dabf90fd5b53de50f3",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_sonar.yml"
+    },
+    ".github/workflows/_verify-release.yml": {
+      "begin_marker": null,
+      "content_hash": "2f0379d01d80510d20c9e7549d7b8b822b009785d942d5c577bc5d8d796eef04",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/_verify-release.yml"
+    },
+    ".github/workflows/ci.yml": {
+      "begin_marker": null,
+      "content_hash": "cc5e0fe2c99506668249de0e675f49cac50597ca5695a62a0fe97c0ee34a00c8",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/ci.yml"
+    },
+    ".github/workflows/scorecard.yml": {
+      "begin_marker": null,
+      "content_hash": "c3cf70e24af6392093fbfc1bd911c347017adc67a2d4b098f4cc30c8d2019114",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".github/workflows/scorecard.yml"
+    },
+    ".gitignore#rn-forge kiln": {
+      "begin_marker": "# BEGIN rn-forge kiln",
+      "content_hash": "1d96c90030c07d0e898b19e501f3dd28e45cb3acb90668e2f7d639b92ab53095",
+      "end_marker": "# END rn-forge kiln",
+      "kind": "block",
+      "path": ".gitignore"
+    },
+    ".importlinter#rn-forge kiln": {
+      "begin_marker": "# BEGIN rn-forge kiln",
+      "content_hash": "bedf9a1903b72ba43d76d9da44529d90fd612aec5a3fad2b0c008513e7094510",
+      "end_marker": "# END rn-forge kiln",
+      "kind": "block",
+      "path": ".importlinter"
+    },
+    ".mdformat.toml": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": ".mdformat.toml"
+    },
+    ".rn-forge/kiln/standard.md": {
+      "begin_marker": null,
+      "content_hash": "984caad85b232e07518f513442944c7ae6c68e9333249f71c916966bd1400fb7",
+      "end_marker": null,
+      "kind": "managed",
+      "path": ".rn-forge/kiln/standard.md"
+    },
+    ".taplo.toml": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": ".taplo.toml"
+    },
+    ".yamlfmt.yaml": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": ".yamlfmt.yaml"
+    },
+    "AGENTS.md#rn-forge kiln": {
+      "begin_marker": "<!-- BEGIN rn-forge kiln -->",
+      "content_hash": "2c52eb643ca799bac87ee3e3c0e89489ca94db8e8ed9e6eb13c07e3094b77d34",
+      "end_marker": "<!-- END rn-forge kiln -->",
+      "kind": "block",
+      "path": "AGENTS.md"
+    },
+    "Taskfile.yml": {
+      "begin_marker": null,
+      "content_hash": "eeddfea86d86958b033f1a7461037a92bf850dc1ea689ac4550f8b3bcd2d7ac2",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "Taskfile.yml"
+    },
+    "docs/_areas.yml": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/_areas.yml"
+    },
+    "docs/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "199d46842524b5419a56b3bfb1c67da51f31e9a2777ba56e207d18682994a5ea",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/_structure.md"
+    },
+    "docs/adr/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "7d6b4a254e45e6ca9a01a3d98dcc7150335865f2014e5b12c85b2d810f2265db",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/adr/_structure.md"
+    },
+    "docs/adr/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/adr/index.md"
+    },
+    "docs/architecture/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "ced1ac8ddd9542c1543aa9c295a6553c2e8d25adce6331d3f0f6c96f9e049bc2",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/architecture/_structure.md"
+    },
+    "docs/architecture/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/architecture/index.md"
+    },
+    "docs/guides/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "e80984b0c02265869e524c05727aecc93909ff34150deae8af1387c5e834defe",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/guides/_structure.md"
+    },
+    "docs/guides/development.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/guides/development.md"
+    },
+    "docs/guides/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/guides/index.md"
+    },
+    "docs/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/index.md"
+    },
+    "docs/releases/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "2daa5bdcf0379a0b34f63e56925961a09d8626cf426f83b52c07bc6356b91722",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/releases/_structure.md"
+    },
+    "docs/releases/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/releases/index.md"
+    },
+    "docs/runbooks/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "32fd7c357c2d82be6fe939d6c7a5bae4a706de2a28d577b7d4898f0ded1aca73",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/runbooks/_structure.md"
+    },
+    "docs/runbooks/adding-a-package.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/runbooks/adding-a-package.md"
+    },
+    "docs/runbooks/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/runbooks/index.md"
+    },
+    "docs/runbooks/recovering-from-drift.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/runbooks/recovering-from-drift.md"
+    },
+    "docs/specs/_structure.md": {
+      "begin_marker": null,
+      "content_hash": "f6cb20b4390265fb9da9e6687d7d175bd8c2d33dc069cf13933ab9b4643d2630",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "docs/specs/_structure.md"
+    },
+    "docs/specs/epics/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/specs/epics/index.md"
+    },
+    "docs/specs/ideas/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/specs/ideas/index.md"
+    },
+    "docs/specs/index.md": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "docs/specs/index.md"
+    },
+    "mkdocs.yml": {
+      "begin_marker": null,
+      "content_hash": "6431709887507d13e29869d1f50b7090d7b1e199349491221d22cc5df4da6d13",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "mkdocs.yml"
+    },
+    "pykit.code-workspace": {
+      "begin_marker": null,
+      "content_hash": null,
+      "end_marker": null,
+      "kind": "seeded",
+      "path": "pykit.code-workspace"
+    },
+    "sonar-project.properties": {
+      "begin_marker": null,
+      "content_hash": "d86527d1e34225b809c1a26921318edea6f6dc3e8a9d22ef6d4fa6d7f3ecf3d8",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "sonar-project.properties"
+    },
+    "tasks/ci.yml": {
+      "begin_marker": null,
+      "content_hash": "dd4b0bae8e2253e833bd450a8204698e20cf19aa2c97e83fc066a5d96e499c68",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/ci.yml"
+    },
+    "tasks/docs.yml": {
+      "begin_marker": null,
+      "content_hash": "1ce10f84f0654441535db0cbcb7cbfc32ff050f096bff335dd19c35ac0b3f656",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/docs.yml"
+    },
+    "tasks/kiln.yml": {
+      "begin_marker": null,
+      "content_hash": "ac477d5d35826b8a27df084d38e2f37c92f40fa95336296ada5a6be5448ee993",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/kiln.yml"
+    },
+    "tasks/python.yml": {
+      "begin_marker": null,
+      "content_hash": "1bac614d2ccdb2a0a0a93715fdf7f60ad042510b4e411397255938ca3a7568ab",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/python.yml"
+    },
+    "tasks/quality.yml": {
+      "begin_marker": null,
+      "content_hash": "e88793e3da1c0c3abbc0089b3fd311a0c10c171063273c1d3441c270dbab5343",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/quality.yml"
+    },
+    "tasks/workspace.yml": {
+      "begin_marker": null,
+      "content_hash": "101ab257318d8767b658625917c2d135e39a3a2adaa109093141a3e4f106fed6",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/workspace.yml"
+    }
+  },
+  "metadata": {
+    "config_hash": "1db386c8bb92e744aef67c04e6c44c6217912ddfecea839f15a627cdaeea8a44",
+    "config_provenance": {
+      "archetype.python-lib.import_contracts": {
+        "layer": "source",
+        "value": "own"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-auth": {
+        "layer": "source",
+        "value": "rn_forge.auth"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-cli": {
+        "layer": "source",
+        "value": "rn_forge.cli"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-commons": {
+        "layer": "source",
+        "value": "rn_forge.commons"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-data": {
+        "layer": "source",
+        "value": "rn_forge.data"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-devops": {
+        "layer": "source",
+        "value": "rn_forge.devops"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-django": {
+        "layer": "source",
+        "value": "rn_forge.django"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-fastapi": {
+        "layer": "source",
+        "value": "rn_forge.fastapi"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-sqlalchemy": {
+        "layer": "source",
+        "value": "rn_forge.sqlalchemy"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-tooling": {
+        "layer": "source",
+        "value": "rn_forge.tooling"
+      },
+      "archetype.python-lib.modules.packages/rn-forge-web": {
+        "layer": "source",
+        "value": "rn_forge.web"
+      },
+      "archetype.python-lib.packages": {
+        "layer": "source",
+        "value": [
+          "packages/rn-forge-commons",
+          "packages/rn-forge-cli",
+          "packages/rn-forge-django",
+          "packages/rn-forge-fastapi",
+          "packages/rn-forge-sqlalchemy",
+          "packages/rn-forge-tooling",
+          "packages/rn-forge-web",
+          "packages/rn-forge-devops",
+          "packages/rn-forge-data",
+          "packages/rn-forge-auth"
+        ]
+      },
+      "ci.checks.scorecard": {
+        "layer": "source",
+        "value": true
+      },
+      "ci.checks.umbrella-release": {
+        "layer": "source",
+        "value": true
+      },
+      "ci.doctor_full": {
+        "layer": "defaults",
+        "value": "default-branch"
+      },
+      "ci.hooks.docs": {
+        "layer": "defaults",
+        "value": []
+      },
+      "ci.hooks.setup": {
+        "layer": "defaults",
+        "value": []
+      },
+      "ci.jobs": {
+        "layer": "defaults",
+        "value": []
+      },
+      "ci.provider": {
+        "layer": "defaults",
+        "value": "github"
+      },
+      "ci.release": {
+        "layer": "source",
+        "value": "pypi"
+      },
+      "ci.sonar": {
+        "layer": "defaults",
+        "value": true
+      },
+      "ci.sonar_coverage_exclusions": {
+        "layer": "defaults",
+        "value": []
+      },
+      "ci.sonar_exclusions": {
+        "layer": "defaults",
+        "value": []
+      },
+      "docs.external_url": {
+        "layer": "defaults",
+        "value": ""
+      },
+      "docs.profile": {
+        "layer": "flags",
+        "value": "mkdocs"
+      },
+      "docs.site_dir": {
+        "layer": "defaults",
+        "value": ".docs-site"
+      },
+      "kiln.ref": {
+        "layer": "flags",
+        "value": "feature/v1"
+      },
+      "repository.archetype": {
+        "layer": "flags",
+        "value": "python-lib"
+      },
+      "repository.lifecycle": {
+        "layer": "defaults",
+        "value": false
+      },
+      "repository.name": {
+        "layer": "flags",
+        "value": "pykit"
+      },
+      "repository.owner": {
+        "layer": "flags",
+        "value": "rn-forge"
+      },
+      "schema_version": {
+        "layer": "source",
+        "value": 1
+      },
+      "tasks.includes": {
+        "layer": "defaults",
+        "value": []
+      }
+    },
+    "kiln_version": "0.1.0",
+    "scaffolded": [
+      ".python-version",
+      "CLAUDE.md",
+      "README.md",
+      "packages/rn-forge-auth/CHANGELOG.md",
+      "packages/rn-forge-auth/README.md",
+      "packages/rn-forge-auth/docs/changelog.md",
+      "packages/rn-forge-auth/docs/guides/usage.md",
+      "packages/rn-forge-auth/docs/index.md",
+      "packages/rn-forge-auth/docs/reference/api.md",
+      "packages/rn-forge-auth/mkdocs.yml",
+      "packages/rn-forge-auth/pyproject.toml",
+      "packages/rn-forge-auth/src/rn_forge/auth/__init__.py",
+      "packages/rn-forge-auth/src/rn_forge/auth/py.typed",
+      "packages/rn-forge-cli/CHANGELOG.md",
+      "packages/rn-forge-cli/README.md",
+      "packages/rn-forge-cli/docs/changelog.md",
+      "packages/rn-forge-cli/docs/guides/usage.md",
+      "packages/rn-forge-cli/docs/index.md",
+      "packages/rn-forge-cli/docs/reference/api.md",
+      "packages/rn-forge-cli/mkdocs.yml",
+      "packages/rn-forge-cli/pyproject.toml",
+      "packages/rn-forge-cli/src/rn_forge/cli/__init__.py",
+      "packages/rn-forge-cli/src/rn_forge/cli/py.typed",
+      "packages/rn-forge-commons/CHANGELOG.md",
+      "packages/rn-forge-commons/README.md",
+      "packages/rn-forge-commons/docs/changelog.md",
+      "packages/rn-forge-commons/docs/guides/usage.md",
+      "packages/rn-forge-commons/docs/index.md",
+      "packages/rn-forge-commons/docs/reference/api.md",
+      "packages/rn-forge-commons/mkdocs.yml",
+      "packages/rn-forge-commons/pyproject.toml",
+      "packages/rn-forge-commons/src/rn_forge/commons/__init__.py",
+      "packages/rn-forge-commons/src/rn_forge/commons/py.typed",
+      "packages/rn-forge-data/CHANGELOG.md",
+      "packages/rn-forge-data/README.md",
+      "packages/rn-forge-data/docs/changelog.md",
+      "packages/rn-forge-data/docs/guides/usage.md",
+      "packages/rn-forge-data/docs/index.md",
+      "packages/rn-forge-data/docs/reference/api.md",
+      "packages/rn-forge-data/mkdocs.yml",
+      "packages/rn-forge-data/pyproject.toml",
+      "packages/rn-forge-data/src/rn_forge/data/__init__.py",
+      "packages/rn-forge-data/src/rn_forge/data/py.typed",
+      "packages/rn-forge-devops/CHANGELOG.md",
+      "packages/rn-forge-devops/README.md",
+      "packages/rn-forge-devops/docs/changelog.md",
+      "packages/rn-forge-devops/docs/guides/usage.md",
+      "packages/rn-forge-devops/docs/index.md",
+      "packages/rn-forge-devops/docs/reference/api.md",
+      "packages/rn-forge-devops/mkdocs.yml",
+      "packages/rn-forge-devops/pyproject.toml",
+      "packages/rn-forge-devops/src/rn_forge/devops/__init__.py",
+      "packages/rn-forge-devops/src/rn_forge/devops/py.typed",
+      "packages/rn-forge-django/CHANGELOG.md",
+      "packages/rn-forge-django/README.md",
+      "packages/rn-forge-django/docs/changelog.md",
+      "packages/rn-forge-django/docs/guides/usage.md",
+      "packages/rn-forge-django/docs/index.md",
+      "packages/rn-forge-django/docs/reference/api.md",
+      "packages/rn-forge-django/mkdocs.yml",
+      "packages/rn-forge-django/pyproject.toml",
+      "packages/rn-forge-django/src/rn_forge/django/__init__.py",
+      "packages/rn-forge-django/src/rn_forge/django/py.typed",
+      "packages/rn-forge-fastapi/CHANGELOG.md",
+      "packages/rn-forge-fastapi/README.md",
+      "packages/rn-forge-fastapi/docs/changelog.md",
+      "packages/rn-forge-fastapi/docs/guides/usage.md",
+      "packages/rn-forge-fastapi/docs/index.md",
+      "packages/rn-forge-fastapi/docs/reference/api.md",
+      "packages/rn-forge-fastapi/mkdocs.yml",
+      "packages/rn-forge-fastapi/pyproject.toml",
+      "packages/rn-forge-fastapi/src/rn_forge/fastapi/__init__.py",
+      "packages/rn-forge-fastapi/src/rn_forge/fastapi/py.typed",
+      "packages/rn-forge-sqlalchemy/CHANGELOG.md",
+      "packages/rn-forge-sqlalchemy/README.md",
+      "packages/rn-forge-sqlalchemy/docs/changelog.md",
+      "packages/rn-forge-sqlalchemy/docs/guides/usage.md",
+      "packages/rn-forge-sqlalchemy/docs/index.md",
+      "packages/rn-forge-sqlalchemy/docs/reference/api.md",
+      "packages/rn-forge-sqlalchemy/mkdocs.yml",
+      "packages/rn-forge-sqlalchemy/pyproject.toml",
+      "packages/rn-forge-sqlalchemy/src/rn_forge/sqlalchemy/__init__.py",
+      "packages/rn-forge-sqlalchemy/src/rn_forge/sqlalchemy/py.typed",
+      "packages/rn-forge-tooling/CHANGELOG.md",
+      "packages/rn-forge-tooling/README.md",
+      "packages/rn-forge-tooling/docs/changelog.md",
+      "packages/rn-forge-tooling/docs/guides/usage.md",
+      "packages/rn-forge-tooling/docs/index.md",
+      "packages/rn-forge-tooling/docs/reference/api.md",
+      "packages/rn-forge-tooling/mkdocs.yml",
+      "packages/rn-forge-tooling/pyproject.toml",
+      "packages/rn-forge-tooling/src/rn_forge/tooling/__init__.py",
+      "packages/rn-forge-tooling/src/rn_forge/tooling/py.typed",
+      "packages/rn-forge-web/CHANGELOG.md",
+      "packages/rn-forge-web/README.md",
+      "packages/rn-forge-web/docs/changelog.md",
+      "packages/rn-forge-web/docs/guides/usage.md",
+      "packages/rn-forge-web/docs/index.md",
+      "packages/rn-forge-web/docs/reference/api.md",
+      "packages/rn-forge-web/mkdocs.yml",
+      "packages/rn-forge-web/pyproject.toml",
+      "packages/rn-forge-web/src/rn_forge/web/__init__.py",
+      "packages/rn-forge-web/src/rn_forge/web/py.typed",
+      "pyproject.toml"
+    ]
+  },
+  "schema_version": "1"
+}

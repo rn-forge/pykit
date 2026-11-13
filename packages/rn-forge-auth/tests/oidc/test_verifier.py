@@ -9,7 +9,7 @@ import pytest
 jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from rn_forge.auth.oidc import (  # noqa: E402
+from rn_forge.auth.oidc import (
     JwtVerifier,
     TokenVerificationError,
     discover_oidc,

@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import json
 import time
+from typing import ClassVar
 
 import pytest
 
 jwt = pytest.importorskip("jwt")
 pytest.importorskip("rest_framework")
 
-from cryptography.hazmat.primitives.asymmetric import rsa  # noqa: E402
-from django.test import override_settings  # noqa: E402
-from jwt.algorithms import RSAAlgorithm  # noqa: E402
-from rest_framework.response import Response  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-from rest_framework.views import APIView  # noqa: E402
-
-from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication  # noqa: E402
-from rn_forge.django.auth.drf.principal import requires  # noqa: E402
-from rn_forge.auth import AuthorizationContext, Principal, Requirement  # noqa: E402
+from cryptography.hazmat.primitives.asymmetric import rsa
+from django.test import override_settings
+from jwt.algorithms import RSAAlgorithm
+from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
+from rn_forge.auth import AuthorizationContext, Principal, Requirement
+from rn_forge.django.auth.drf.oidc import JWKSBearerAuthentication
+from rn_forge.django.auth.drf.principal import requires
 
 pytestmark = pytest.mark.unit
 
@@ -86,10 +86,13 @@ def _custom(jwks_url):
     return Custom
 
 
-def _view(auth_class, requirement=Requirement()):
+_DEFAULT_REQUIREMENT = Requirement()
+
+
+def _view(auth_class, requirement=_DEFAULT_REQUIREMENT):
     class View(APIView):
-        authentication_classes = [auth_class]
-        permission_classes = [requires(requirement)]
+        authentication_classes: ClassVar = [auth_class]
+        permission_classes: ClassVar = [requires(requirement)]
 
         def get(self, request):
             user = request.user
@@ -238,7 +241,7 @@ class TestAgainstTheFakeProvider:
         self, idp
     ) -> None:
         view = _for(idp, cooldown=0.0)
-        mint = lambda: idp.access_token(audience="api://orders", profile="rfc7519")  # noqa: E731
+        mint = lambda: idp.access_token(audience="api://orders", profile="rfc7519")
         assert _get(view, mint())[0].status_code == 200
 
         idp.rotate_key()

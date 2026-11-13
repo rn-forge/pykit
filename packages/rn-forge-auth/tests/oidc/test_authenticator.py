@@ -10,9 +10,9 @@ from assertpy import assert_that
 jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 
-from rn_forge.auth import Principal  # noqa: E402
-from rn_forge.auth.oidc import OidcAuthenticator  # noqa: E402
-from rn_forge.web import AuthenticationFailed, Credentials  # noqa: E402
+from rn_forge.auth import Principal
+from rn_forge.auth.oidc import OidcAuthenticator
+from rn_forge.web import AuthenticationFailed, Credentials
 
 pytestmark = pytest.mark.unit
 

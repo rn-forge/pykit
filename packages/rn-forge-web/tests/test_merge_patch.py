@@ -4,7 +4,6 @@ import copy
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.exceptions import InvalidMergePatch
 from rn_forge.web.merge_patch import (
     MERGE_PATCH_MEDIA_TYPE,

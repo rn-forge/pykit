@@ -3,24 +3,23 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
-from django.contrib.auth import get_user_model  # noqa: E402
-from django.db import IntegrityError, transaction  # noqa: E402
-from rn_forge.auth import (  # noqa: E402
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
+from rn_forge.auth import (
     AccountRejected,
     AuthorizationContextCache,
     ExternalIdentity,
 )
-from rn_forge.django.auth.accounts import (  # noqa: E402
+from rn_forge.django.auth.accounts import (
     DjangoAccountResolver,
     DjangoAccountStateWriter,
     ProviderPolicy,
 )
-from rn_forge.django.auth.authorization import (  # noqa: E402
+from rn_forge.django.auth.authorization import (
     DjangoAuthorizationContextProvider,
     connect_authorization_signals,
 )
-from rn_forge.django.auth.models import ExternalAccount  # noqa: E402
+from rn_forge.django.auth.models import ExternalAccount
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 

@@ -9,11 +9,10 @@ import tarfile
 from pathlib import Path
 
 import pytest
-
 from rn_forge.cli import ExitCode
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
-from rn_forge.commons.runtime.console import OutputMode, console
+from rn_forge.commons.runtime.console import console
 from rn_forge.tooling.cli.lifecycle import build_tool_app, lifecycle_commands
 from rn_forge.tooling.install import Link, ToolProduct
 

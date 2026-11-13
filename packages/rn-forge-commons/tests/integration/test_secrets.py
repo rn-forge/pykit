@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from rn_forge.commons.integration.secrets import (
     AsyncSecretStore,
     EnvSecretStore,

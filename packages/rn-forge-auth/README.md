@@ -16,4 +16,5 @@ Authentication and authorization primitives for Python programming, built on
 | `rn_forge.auth.redis` | `redis` | `RedisTransactionStore`, `RedisSessionStore`, `RedisReplayStore` and `RedisAuthorizationVersions`. The core never imports it either. |
 | `rn_forge.auth.testing` | `oidc` | `FakeOidcProvider` and `Faults`, an offline OIDC provider for tests. The core never imports it. |
 
-Start with the [guides](https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/guides/usage.html).
+Start with the
+[guides](https://rn-forge.github.io/pykit/packages/rn-forge-auth/latest/guides/usage.html).

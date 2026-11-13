@@ -54,11 +54,11 @@ Optional extras:
   `routes` (the `/auth` URLconf and its configuration), `sessions`
   (`django.contrib.sessions` sessions with timeouts and revocation), `csrf`
   (CSRF middleware and settings), `stores` (login transactions and replay
-  records in Django's cache), `rate_limit`, `audit` (audit events),
-  `accounts` and `models` (the default account resolver and its link and state
-  tables), `authorization` (the default authorization context provider), and
-  `auth.drf` (session and bearer authentication, permission-key and
-  resource-policy hooks, serializers and the management viewsets).
+  records in Django's cache), `rate_limit`, `audit` (audit events), `accounts`
+  and `models` (the default account resolver and its link and state tables),
+  `authorization` (the default authorization context provider), and `auth.drf`
+  (session and bearer authentication, permission-key and resource-policy
+  hooks, serializers and the management viewsets).
 - **`drf`** — DRF integration outside the auth app: `drf.views` (base view
   classes, mixins, `PermissionByMethodMixin`), `drf.routers`
   (`CustomMethodRouter`, AIP-136 colon custom methods), `drf.transfer`

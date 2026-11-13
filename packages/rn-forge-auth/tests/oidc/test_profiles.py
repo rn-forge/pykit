@@ -10,8 +10,8 @@ jwt = pytest.importorskip("jwt")
 pytest.importorskip("cryptography")
 pytest.importorskip("authlib")
 
-from rn_forge.auth import InMemoryReplayStore  # noqa: E402
-from rn_forge.auth.oidc import (  # noqa: E402
+from rn_forge.auth import InMemoryReplayStore
+from rn_forge.auth.oidc import (
     IdTokenVerifier,
     JwtVerifier,
     LogoutTokenVerifier,

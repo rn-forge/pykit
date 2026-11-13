@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from typing import ClassVar
 
 import pytest
 from django.conf import settings
@@ -11,21 +12,20 @@ from rest_framework import serializers
 
 pytest.importorskip("drf_spectacular")
 
-from drf_spectacular.generators import SchemaGenerator  # noqa: E402
-from drf_spectacular.settings import patched_settings  # noqa: E402
-
-from rn_forge.django.drf.casing import CamelCaseJSONRenderer  # noqa: E402
-from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS  # noqa: E402
-from rn_forge.django.drf.routers import CustomMethodRouter  # noqa: E402
-from rn_forge.django.drf.transfer import BatchDeleteMixin  # noqa: E402
-from rn_forge.django.drf.views.base import BaseModelViewSet  # noqa: E402
-from rn_forge.django.drf.views.mixins import SoftDeleteMixin  # noqa: E402
-from rn_forge.django.models import (  # noqa: E402
+from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.settings import patched_settings
+from rn_forge.django.drf.casing import CamelCaseJSONRenderer
+from rn_forge.django.drf.openapi import SPECTACULAR_SETTINGS
+from rn_forge.django.drf.routers import CustomMethodRouter
+from rn_forge.django.drf.transfer import BatchDeleteMixin
+from rn_forge.django.drf.views.base import BaseModelViewSet
+from rn_forge.django.drf.views.mixins import SoftDeleteMixin
+from rn_forge.django.models import (
     BaseModel,
     SoftDeleteModelMixin,
     VersionedModelMixin,
 )
-from rn_forge.web import MERGE_PATCH_MEDIA_TYPE, EntityVersionETagCodec  # noqa: E402
+from rn_forge.web import MERGE_PATCH_MEDIA_TYPE, EntityVersionETagCodec
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -44,15 +44,15 @@ class _SoftNote(SoftDeleteModelMixin, VersionedModelMixin, BaseModel):
 class _NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = _SoftNote
-        fields = ["id", "text", "delete_time"]
-        read_only_fields = ["id", "delete_time"]
+        fields: ClassVar = ["id", "text", "delete_time"]
+        read_only_fields: ClassVar = ["id", "delete_time"]
 
 
 class _Notes(SoftDeleteMixin, BatchDeleteMixin, BaseModelViewSet):
     # View classes bind DEFAULT_RENDERER_CLASSES at import, before WIRING applies.
-    renderer_classes = [CamelCaseJSONRenderer]
-    authentication_classes: list = []
-    permission_classes: list = []
+    renderer_classes: ClassVar = [CamelCaseJSONRenderer]
+    authentication_classes: ClassVar[list] = []
+    permission_classes: ClassVar[list] = []
     queryset = _SoftNote.objects.order_by("id")
     serializer_class = _NoteSerializer
     etag_codec = EntityVersionETagCodec()
@@ -280,9 +280,11 @@ class TestBatchDelete:
 
 @pytest.fixture(scope="module")
 def schema():
-    with override_settings(**WIRING):
-        with patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}):
-            return SchemaGenerator().get_schema(request=None, public=True)
+    with (
+        override_settings(**WIRING),
+        patched_settings({**SPECTACULAR_SETTINGS, "TITLE": "t"}),
+    ):
+        return SchemaGenerator().get_schema(request=None, public=True)
 
 
 class TestSchema:

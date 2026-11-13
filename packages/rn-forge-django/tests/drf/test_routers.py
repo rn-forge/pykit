@@ -5,7 +5,6 @@ from django.urls import Resolver404, resolve, reverse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
-
 from rn_forge.django.drf.routers import CustomMethodRouter
 
 pytestmark = pytest.mark.unit

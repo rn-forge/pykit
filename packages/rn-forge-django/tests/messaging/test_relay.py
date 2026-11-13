@@ -6,7 +6,6 @@ from datetime import timedelta
 import pytest
 from django.db import connection, transaction
 from django.utils import timezone
-
 from rn_forge.commons.integration.messaging import InMemoryMessageBus
 from rn_forge.django.messaging.models import AbstractOutboxMessage
 from rn_forge.django.messaging.relay import make_outbox_relay

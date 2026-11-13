@@ -3,7 +3,6 @@
 import pytest
 from assertpy import assert_that
 from opentelemetry import trace
-
 from rn_forge.web.tracing import (
     EXPOSED_HEADERS,
     current_span_id,

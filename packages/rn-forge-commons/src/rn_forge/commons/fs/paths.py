@@ -34,6 +34,20 @@ def _fsync_path(path: Path) -> None:
         os.close(fd)
 
 
+def _fsync_dir(path: Path) -> None:
+    """Best-effort ``fsync`` of the directory at *path*; ``OSError`` is ignored."""
+    try:
+        dir_fd = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(dir_fd)
+    except OSError:
+        pass
+    finally:
+        os.close(dir_fd)
+
+
 class PathUtils:
     """Filesystem helpers with automatic parent-directory creation."""
 
@@ -172,20 +186,10 @@ class PathUtils:
                 os.chmod(tmp, existing_mode)
 
             os.replace(tmp, p)
+            _fsync_dir(p.parent)
         except BaseException:
             tmp.unlink(missing_ok=True)
             raise
-
-        try:
-            dir_fd = os.open(p.parent, os.O_RDONLY)
-        except OSError:
-            return
-        try:
-            os.fsync(dir_fd)
-        except OSError:
-            pass
-        finally:
-            os.close(dir_fd)
 
     @staticmethod
     def move_no_clobber(source: str | Path, destination: str | Path) -> Path:

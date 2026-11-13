@@ -10,8 +10,7 @@ from typing import Any
 
 import pytest
 from redis import Redis
-from rn_forge.fastapi import CsrfStore
-from rn_forge.fastapi import RateLimit, RateLimiter
+from rn_forge.fastapi import CsrfStore, RateLimit, RateLimiter
 from rn_forge.fastapi.auth.redis import RedisCsrfStore, RedisRateLimiter
 
 pytestmark = pytest.mark.unit
@@ -54,7 +53,7 @@ def test_a_token_is_one_prefixed_key_with_an_expiry() -> None:
 
 
 class _FakePipeline:
-    def __init__(self, client: "_FakeCounters") -> None:
+    def __init__(self, client: _FakeCounters) -> None:
         self._client = client
         self._queued: list[tuple[str, str, int | None]] = []
 

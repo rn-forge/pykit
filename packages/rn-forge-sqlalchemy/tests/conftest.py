@@ -6,9 +6,8 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-
 from rn_forge.sqlalchemy import Base
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 POSTGRES_DSN = "RN_FORGE_TEST_POSTGRES_DSN"
 

@@ -39,10 +39,11 @@ Use `fail_on_error=True` when task failures should raise `AppException`.
 ## Mapping over items
 
 `TaskPool.map_settled(fn, items)` runs `fn(item)` for every item on the pool and
-waits for all of them. No `Task` subclass or name is needed, and `TaskPool.tasks`
-is unchanged. It returns one result per item, in input order: `Succeeded` with
-the value, or `Failed` with the exception. An item failure raises nothing and is
-logged with the item's index. A `None` return is a valid `Succeeded(None)`.
+waits for all of them. No `Task` subclass or name is needed, and
+`TaskPool.tasks` is unchanged. It returns one result per item, in input order:
+`Succeeded` with the value, or `Failed` with the exception. An item failure
+raises nothing and is logged with the item's index. A `None` return is a valid
+`Succeeded(None)`.
 
 ```python
 from rn_forge.commons import Failed, Succeeded, TaskPool
@@ -72,9 +73,9 @@ free for other callers. To process items in groups, use `itertools.batched`.
 
 ## Thread actor
 
-`ThreadActor` owns one resource on a dedicated thread. Some libraries, such as
-a SQLite connection or a single-session SDK, must be created, used and closed
-on one thread. The actor guarantees this: `factory` builds the resource on the
+`ThreadActor` owns one resource on a dedicated thread. Some libraries, such as a
+SQLite connection or a single-session SDK, must be created, used and closed on
+one thread. The actor guarantees this: `factory` builds the resource on the
 owner thread, every call runs there one at a time in queue order, and `on_close`
 releases it there after the last queued call.
 
@@ -102,8 +103,8 @@ actor.close()
   `AppException`.
 - An exception from a call is set on that call's future and does not stop the
   actor.
-- `close()` runs the calls already queued, then `on_close`, and is idempotent.
-  A `submit` after it raises `AppException`.
+- `close()` runs the calls already queued, then `on_close`, and is idempotent. A
+  `submit` after it raises `AppException`.
 - The owner thread is a daemon, so a forgotten `close()` does not block
   interpreter exit; the resource is then not closed.
 

@@ -8,7 +8,6 @@ from typing import get_args
 
 import pytest
 from assertpy import assert_that
-
 from rn_forge.web.conformance import (
     CASES,
     REDACTED,

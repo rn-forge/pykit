@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 import threading
-from datetime import UTC, datetime, timedelta
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime, timedelta
 from http.cookies import SimpleCookie
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -16,9 +16,6 @@ import pytest
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 from rn_forge.auth import (
-    LoginTransaction,
-    audit,
-    SessionInfo,
     AccountRejected,
     AuthorizationContext,
     DevelopmentAccount,
@@ -27,7 +24,10 @@ from rn_forge.auth import (
     InMemoryReplayStore,
     InMemorySessionStore,
     InMemoryTransactionStore,
+    LoginTransaction,
     PasswordIdentityProvider,
+    SessionInfo,
+    audit,
 )
 from rn_forge.auth.oidc import BackchannelLogout, LogoutTokenVerifier, OidcProvider
 from rn_forge.auth.testing import FakeOidcProvider
@@ -1989,8 +1989,10 @@ class TestAudit:
         )
 
         assert _events(caplog) == [
-            "audit event=login.failure provider='password' code='login_failed' "
-            "reason='invalid credentials'"
+            (
+                "audit event=login.failure provider='password' code='login_failed' "
+                "reason='invalid credentials'"
+            )
         ]
         assert "hunter2" not in caplog.text
         assert "ada@example.com" not in caplog.text
@@ -2040,8 +2042,10 @@ class TestAudit:
 
         assert _events(caplog) == [
             "audit event=logout.backchannel provider='acme' scope='session'",
-            "audit event=logout.backchannel provider='acme' scope='account' "
-            "account_id='acct-u1'",
+            (
+                "audit event=logout.backchannel provider='acme' scope='account' "
+                "account_id='acct-u1'"
+            ),
         ]
         assert "sid-secret" not in caplog.text
 
@@ -2056,8 +2060,10 @@ class TestAudit:
 
         assert _events(caplog) == [
             "audit event=account.rejected provider='acme' reason='not provisioned'",
-            "audit event=login.failure provider='acme' "
-            "code='account_not_provisioned' reason='not provisioned'",
+            (
+                "audit event=login.failure provider='acme' "
+                "code='account_not_provisioned' reason='not provisioned'"
+            ),
         ]
         assert "x@example.com" not in caplog.text
 

@@ -7,8 +7,6 @@ import logging
 
 import pytest
 import typer
-from typer.testing import CliRunner
-
 from rn_forge.cli import (
     CliApp,
     CliOptions,
@@ -20,6 +18,7 @@ from rn_forge.cli import (
 )
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.runtime.console import OutputMode, console
+from typer.testing import CliRunner
 
 runner = CliRunner()
 

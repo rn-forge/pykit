@@ -12,10 +12,6 @@ import pytest
 from assertpy import assert_that
 from fastapi import Depends, Header, Query, Request, UploadFile
 from pydantic import ConfigDict, Field, field_validator
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
-from sqlalchemy.orm import Mapped, mapped_column
-
 from rn_forge.fastapi import (
     AppConfig,
     FastApiApp,
@@ -51,6 +47,9 @@ from rn_forge.web import (
     row_errors_problem,
 )
 from rn_forge.web.conformance import CASES, case_by_id, redact
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
+from sqlalchemy.orm import Mapped, mapped_column
 
 pytestmark = pytest.mark.unit
 
@@ -177,10 +176,13 @@ def build_app(engine: AsyncEngine) -> FastApiApp:
     app = FastApiApp(AppConfig(tracing=False))
     sessions = async_sessionmaker(engine, expire_on_commit=False)
 
+    params_dep = Depends(page_params(cap=2, default=2))
+    order_dep = Depends(order_by_param(allowed=["id"]))
+
     @app.get("/conformance/items")
     async def list_items(
-        params=Depends(page_params(cap=2, default=2)),
-        order=Depends(order_by_param(allowed=["id"])),
+        params=params_dep,
+        order=order_dep,
     ) -> Page[dict[str, str]]:
         size, cursor = params
         stmt = keyset(
@@ -202,10 +204,13 @@ def build_app(engine: AsyncEngine) -> FastApiApp:
             items=[{"id": row.id} for row in window], next_page_token=token
         )
 
+    params_dep = Depends(page_params(cap=5, default=5))
+    order_dep = Depends(order_by_param(allowed=["id", "team", "score"]))
+
     @app.get("/conformance/people")
     async def list_people(
-        params=Depends(page_params(cap=5, default=5)),
-        order=Depends(order_by_param(allowed=["id", "team", "score"])),
+        params=params_dep,
+        order=order_dep,
     ) -> Page[dict[str, str | int | None]]:
         size, cursor = params
         stmt = keyset(

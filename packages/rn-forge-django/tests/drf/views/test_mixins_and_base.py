@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 django = pytest.importorskip("django")
 rest_framework = pytest.importorskip("rest_framework")
 
-from rest_framework.generics import GenericAPIView  # noqa: E402
-from rest_framework.test import APIRequestFactory  # noqa: E402
-
-from rn_forge.django.drf.views.base import BaseAPIView  # noqa: E402
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated  # noqa: E402
-from rest_framework.request import Request  # noqa: E402
-
-from rn_forge.django.drf.views.mixins import (  # noqa: E402
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
+from rn_forge.django.drf.views.base import BaseAPIView
+from rn_forge.django.drf.views.mixins import (
     ExceptionContextViewMixin,
     PermissionByMethodMixin,
     RequestAccessViewMixin,
@@ -75,11 +75,14 @@ def _permission_types(view_class, method: str) -> list[type]:
 
 class TestPermissionByMethodMixin:
     class _Mapped(PermissionByMethodMixin):
-        permission_classes = [IsAuthenticated]
-        PERMISSION_CLASSES_BY_METHOD = {"POST": [IsAdminUser], "GET": [AllowAny]}
+        permission_classes: ClassVar = [IsAuthenticated]
+        PERMISSION_CLASSES_BY_METHOD: ClassVar = {
+            "POST": [IsAdminUser],
+            "GET": [AllowAny],
+        }
 
     class _Unmapped(PermissionByMethodMixin):
-        permission_classes = [IsAuthenticated]
+        permission_classes: ClassVar = [IsAuthenticated]
 
     def test_mapped_method_uses_its_classes(self) -> None:
         assert _permission_types(self._Mapped, "post") == [IsAdminUser]

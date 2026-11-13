@@ -15,7 +15,7 @@ combine packages.
 | [rn-forge-fastapi](rn-forge-fastapi/index.md) | FastAPI adapters and application assembly. |
 | [rn-forge-sqlalchemy](rn-forge-sqlalchemy/index.md) | Async SQLAlchemy models, upsert and keyset pagination. |
 | [rn-forge-data](rn-forge-data/index.md) | Excel and tabular data helpers; a pandas adapter behind an extra. |
-| [rn-forge-devops](rn-forge-devops/index.md) | CI and release automation for rn-forge repositories in any language, run with uv. |
+| [rn-forge-devops](rn-forge-devops/index.md) | Release commands for the pykit workspace. |
 
 For package choice and relationships, read
 [choosing packages](guides/choosing-packages.md) and

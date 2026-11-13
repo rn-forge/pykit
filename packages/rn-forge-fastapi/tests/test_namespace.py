@@ -2,9 +2,8 @@
 
 import fastapi
 import pytest
-from assertpy import assert_that
-
 import rn_forge.fastapi
+from assertpy import assert_that
 
 pytestmark = pytest.mark.unit
 

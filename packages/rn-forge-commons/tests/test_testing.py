@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import types
+from pathlib import Path
 
 import pytest
-
 import rn_forge.commons.testing as testing_module
 from rn_forge.commons.testing import assert_that, soft_assertions
-
 
 # ---------------------------------------------------------------------------
 # output_path fixture
@@ -25,7 +23,8 @@ class TestOutputPath:
         assert output_path.is_dir()
 
     def test_path_is_under_standardized_output_root(self, output_path: Path):
-        assert ".out" in output_path.parts
+        assert ".tmp" in output_path.parts
+        assert ".out" not in output_path.parts
         assert "rn-forge-commons" in output_path.parts
         assert "tests" in output_path.parts
         assert "output" in output_path.parts
@@ -55,7 +54,7 @@ class TestOutputPath:
             node=types.SimpleNamespace(nodeid="tests/test_something.py::test_case"),
         )
         result = testing_module.output_path.__wrapped__(fake_request)
-        assert ".out" in result.parts
+        assert ".tmp" in result.parts
         assert "workspace" in result.parts
 
 
@@ -135,10 +134,9 @@ class TestSoftAssertions:
         # Intentionally wraps multiple failing assertions — this verifies
         # soft_assertions() collects them all into one combined error raised
         # at context exit, not that a single call throws.
-        with pytest.raises(AssertionError) as exc_info:  # NOSONAR
-            with soft_assertions():
-                assert_that(1).is_equal_to(99)
-                assert_that("x").is_equal_to("y")
+        with pytest.raises(AssertionError) as exc_info, soft_assertions():  # NOSONAR
+            assert_that(1).is_equal_to(99)
+            assert_that("x").is_equal_to("y")
         # Both failures should appear in the combined message
         message = str(exc_info.value)
         assert "99" in message
@@ -169,9 +167,8 @@ class TestSoftAssertions:
         # Intentionally wraps the whole `with soft_assertions()` block — this
         # verifies a non-assertion exception propagates through the context
         # manager unchanged, not just that `raise` throws.
-        with pytest.raises(ValueError, match="boom"):  # NOSONAR
-            with soft_assertions():
-                raise ValueError("boom")
+        with pytest.raises(ValueError, match="boom"), soft_assertions():  # NOSONAR
+            raise ValueError("boom")
 
 
 class TestInternalHelpers:

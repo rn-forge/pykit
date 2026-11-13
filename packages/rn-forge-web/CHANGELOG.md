@@ -7,16 +7,16 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ### Added
 
-- `ProblemRegistry.register_hierarchy`: registers a row for an exception class and
-  every subclass from its `code` and `status_code` attributes.
+- `ProblemRegistry.register_hierarchy`: registers a row for an exception class
+  and every subclass from its `code` and `status_code` attributes.
 
 ## [0.3.0] - 2026-10-29
 
 ### Added
 
-- `csrf-failed` problem type: `CsrfFailed` (403, in `default_registry()`),
-  the `CSRF_FAILED` row and `CSRF_FAILED_DETAIL`. It is not a
-  `PermissionDenied`, and its detail never says which check failed.
+- `csrf-failed` problem type: `CsrfFailed` (403, in `default_registry()`), the
+  `CSRF_FAILED` row and `CSRF_FAILED_DETAIL`. It is not a `PermissionDenied`,
+  and its detail never says which check failed.
 - Session-only 401: `SessionRequired`, an `AuthenticationFailed` whose new
   `challenge` class attribute is false, so `render_problem` sends no
   `WWW-Authenticate`. The API conventions record the deviation from RFC 9110

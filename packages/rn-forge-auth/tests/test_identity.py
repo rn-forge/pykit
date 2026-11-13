@@ -5,8 +5,7 @@ from datetime import UTC, datetime
 from typing import get_args
 
 import pytest
-
-import rn_forge.auth as auth
+from rn_forge import auth
 from rn_forge.auth import (
     ExternalIdentity,
     IdentityProvider,

@@ -3,10 +3,7 @@ from itertools import permutations, product
 
 import pytest
 from assertpy import assert_that
-from sqlalchemy import select
-from sqlalchemy.orm import Mapped, mapped_column
-
-from rn_forge.sqlalchemy import AuditMixin, Base, keyset, next_page_token
+from rn_forge.sqlalchemy import Base, keyset, next_page_token
 from rn_forge.sqlalchemy.models import UTCDateTime
 from rn_forge.web import (
     Cursor,
@@ -15,6 +12,8 @@ from rn_forge.web import (
     decode_cursor,
     encode_cursor,
 )
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped, mapped_column
 
 pytestmark = pytest.mark.unit
 

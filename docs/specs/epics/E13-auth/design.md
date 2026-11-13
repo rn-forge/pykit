@@ -227,8 +227,8 @@ This is a sketch of the framework-neutral types in `rn-forge-auth` (see
 (`ProviderKind`, `ExternalIdentity`, `LoginTransaction`, `LoginStart`,
 `SessionInfo`, `IdentityProvider`), `accounts` (`AccountResolver`,
 `AccountRejected`), `context` (`AuthorizationContext`,
-`AuthorizationContextProvider`) and `policy` (`ResourcePolicy`), all
-re-exported by `rn_forge.auth`.
+`AuthorizationContextProvider`) and `policy` (`ResourcePolicy`), all re-exported
+by `rn_forge.auth`.
 
 ```python
 ProviderKind = Literal["oidc", "oauth2", "password", "development"]
@@ -373,9 +373,10 @@ change as follows. Each field keeps one provenance:
   `requirement_for(permission_key, action, *, action_map=None)` in
   `rn_forge.auth.permissions`, beside `DEFAULT_PERMISSION_ACTION_MAP`; an
   explicit `action_map` merges over the default. Both frameworks use it.
-- The scope limit is `effective_permissions(permissions, *, mechanism, scopes,
-  scope_map)`: session and basic callers keep their account's permissions, and
-  a bearer caller gets the intersection with the permissions its scopes map to.
+- The scope limit is
+  `effective_permissions(permissions, *, mechanism, scopes, scope_map)`:
+  session and basic callers keep their account's permissions, and a bearer
+  caller gets the intersection with the permissions its scopes map to.
 
 ## Libraries
 
@@ -503,8 +504,8 @@ conventions:
 `picture`, `attributes`, `authTime` and `amr` are optional. `attributes` is
 application-defined, holds only what the UI needs, and uses camelCase keys;
 `SessionBody.to_json` also converts snake_case attribute keys to camelCase at
-every depth, so either spelling arrives as camelCase.
-`expiresAt` is the absolute timeout.
+every depth, so either spelling arrives as camelCase. `expiresAt` is the
+absolute timeout.
 
 A `403` whose problem type is `csrf-failed` is a CSRF rejection, not a
 permission denial ([CSRF](#csrf)).
@@ -517,8 +518,8 @@ expired transaction). The client adds `session_not_established` itself
 into the URL.
 
 `return_to` validation raises `InvalidReturnTo`; the caller falls back to a
-default target. It rejects percent-encoded `/`, `\` and `.` in the path, and
-C0, DEL and C1 control characters. The codes are the `CallbackError` literal.
+default target. It rejects percent-encoded `/`, `\` and `.` in the path, and C0,
+DEL and C1 control characters. The codes are the `CallbackError` literal.
 
 A `401` from a route that accepts bearer tokens carries the existing `Bearer`
 challenge. A session-only route (`/auth/*`) sends no `WWW-Authenticate`, a
@@ -526,8 +527,8 @@ deviation from RFC 9110 §15.5.2 that the API conventions record, because cookie
 sessions have no registered scheme.
 
 `rn-forge-web` raises these as `SessionRequired` (an `AuthenticationFailed` with
-`challenge = False`, so `render_problem` omits the header) and `CsrfFailed`
-(a 403 of its own type, not a `PermissionDenied`). The conformance cases carry
+`challenge = False`, so `render_problem` omits the header) and `CsrfFailed` (a
+403 of its own type, not a `PermissionDenied`). The conformance cases carry
 `requires` capabilities (`session-routes`, `csrf`) that a binding adds to its
 driver's `PROVIDES` set when it ships them.
 
@@ -827,9 +828,9 @@ Decisions the code settles, in `rn_forge.auth.oidc`:
   and not a `TokenVerificationError`.
 - `IdTokenVerifier.verify(token, *, nonce, access_token=None)` hands the
   `PyJWKClient` key to joserfc (Authlib's JOSE layer, avoiding the deprecated
-  `authlib.jose`) and runs `CodeIDToken` on the result. An empty expected nonce
-  is refused because Authlib skips the check for one. `auth_time` is required
-  and bounded when `max_age` is set.
+  `authlib.jose`) and runs `CodeIDToken` on the result. An empty expected
+  nonce is refused because Authlib skips the check for one. `auth_time` is
+  required and bounded when `max_age` is set.
 - `LogoutTokenVerifier` records `jti` in a `ReplayStore` (`rn_forge.auth`) under
   `"{iss}|{jti}"` until `exp` (at least one second), only after every other
   check has passed. `iat` may be at most 120 seconds old by default.
@@ -881,9 +882,9 @@ only supplies the header; the server-side check is what protects.
   with the new session and a new token.
 - **Failure** is a `403` problem with its own type, `csrf-failed`, on both
   frameworks (Django through `CSRF_FAILURE_VIEW`), so the client can tell it
-  from a permission denial. A binding that mounts the auth surface refuses
-  to start without a problem `type_base`: with `about:blank` the two `403`s
-  would differ only in `detail` (owner decision, 2026-10-28).
+  from a permission denial. A binding that mounts the auth surface refuses to
+  start without a problem `type_base`: with `about:blank` the two `403`s would
+  differ only in `detail` (owner decision, 2026-10-28).
 - **Origin check:** `Origin`, or `Referer` when `Origin` is absent, must be one
   of the configured trusted origins, and `Sec-Fetch-Site: cross-site` is
   rejected. Behind a proxy, the scheme and host come from forwarded headers
@@ -1025,9 +1026,8 @@ behind the `oidc` extra that the facade does not re-export. Its `Faults`
 dataclass holds one boolean switch per failure: `response_iss`,
 `response_iss_missing`, `discovery_issuer`, `userinfo_sub_mismatch`,
 `wrong_nonce`, `wrong_aud`, `wrong_azp`, `wrong_at_hash`, `expired`, `alg_none`
-and `unknown_kid`.
-Applications use the development provider and `provideRnForgeAuthTesting`
-([ngkit client contract](#ngkit-client-contract)).
+and `unknown_kid`. Applications use the development provider and
+`provideRnForgeAuthTesting` ([ngkit client contract](#ngkit-client-contract)).
 
 ## Package placement
 

@@ -26,8 +26,9 @@ commons ──► web ──► auth ──► django
                           └───► fastapi
 ```
 
-It depends on `rn-forge-web`, `rn-forge-auth` and FastAPI, and never imports `rn_forge.django`,
-`rn_forge.cli` or `rn_forge.tooling`. `uv run lint-imports` proves it.
+It depends on `rn-forge-web`, `rn-forge-auth` and FastAPI, and never imports
+`rn_forge.django`, `rn_forge.cli` or `rn_forge.tooling`. `uv run lint-imports`
+proves it.
 
 **Adapt, do not re-decide.** A status code, a header name or an encoding decided
 here would be a divergence from the Django stack by definition, so there are

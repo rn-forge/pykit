@@ -5,7 +5,6 @@ import threading
 from concurrent.futures import Future
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.runtime.actor import ThreadActor
 

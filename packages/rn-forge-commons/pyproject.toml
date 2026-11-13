@@ -7,21 +7,21 @@ authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.14"
 dependencies = [
-  "ruamel.yaml[oldlibyaml]>=0.19.1",
-  "tomlkit>=0.15.0",
-  "verboselogs>=1.7",
-  "rich>=15.0.0",
-  "dacite>=1.9.2",
+    "ruamel.yaml[oldlibyaml]>=0.19.1",
+    "tomlkit>=0.15.0",
+    "verboselogs>=1.7",
+    "rich>=15.0.0",
+    "dacite>=1.9.2",
 ]
 
 [project.optional-dependencies]
@@ -34,16 +34,16 @@ markdown = ["markdown>=3.7", "markdown-it-py>=3.0"]
 templates = ["jinja2>=3.1.6"]
 testing = ["assertpy>=2.35", "pytest>=9.1.1"]
 all = [
-  "httpx>=0.28",
-  "jinja2>=3.1.6",
-  "markdown>=3.7",
-  "markdown-it-py>=3.0",
-  "opentelemetry-instrumentation-logging>=0.64b0",
-  "purgatory>=3.0.1",
-  "pydantic>=2.12",
-  "python-json-logger>=4.0.0",
-  "stamina>=25.2.0",
-  "structlog>=25.1.0",
+    "httpx>=0.28",
+    "jinja2>=3.1.6",
+    "markdown>=3.7",
+    "markdown-it-py>=3.0",
+    "opentelemetry-instrumentation-logging>=0.64b0",
+    "purgatory>=3.0.1",
+    "pydantic>=2.12",
+    "python-json-logger>=4.0.0",
+    "stamina>=25.2.0",
+    "structlog>=25.1.0",
 ]
 
 [project.urls]
@@ -53,11 +53,19 @@ Changelog = "https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-commo
 Issues = "https://github.com/rn-forge/pykit/issues"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "error"
+venv = ".venv"
+venvPath = "../.."
 
 [tool.uv.build-backend]
 module-name = "rn_forge.commons"
+source-exclude = ["**/.DS_Store"]
 
 [tool.uv.sources]
 rn-forge-commons = { workspace = true }
@@ -67,17 +75,17 @@ addopts = "-ra --import-mode=importlib"
 
 [dependency-groups]
 dev = [
-  "assertpy>=2.35",
-  "pyright>=1.1.411",
-  "pytest>=9.1.1",
-  "pytest-cov>=7.1.0",
-  "pytest-randomly>=4.1.0",
-  "rn-forge-commons[all]",
-  "ruff>=0.15.21",
+    "assertpy>=2.35",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=4.1.0",
+    "rn-forge-commons[all]",
+    "ruff>=0.15.21",
 ]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.6",
-  "mkdocstrings[python]>=1.0.6",
-  "rn-forge-commons[all]",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.6",
+    "rn-forge-commons[all]",
 ]

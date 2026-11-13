@@ -1,0 +1,180 @@
+# The one hand-authored input kiln reads (kiln ADR-0004). Edit this, then run
+# `kiln apply`. Everything else under .rn-forge/kiln/ is kiln's.
+
+# The config schema this file was written for. `kiln config-upgrade`
+# raises it; do not edit it by hand.
+schema_version = 1
+
+# What the repository asserts about itself.
+[repository]
+# The repository's name. It names the package and the project and is
+# written into generated files. Changing it re-renders them on `kiln apply`:
+# generated files follow the name, and seeded files keep the name they were
+# created with (the root `pyproject.toml`'s `[project].name`,
+# `<name>.code-workspace`).
+name = "pykit"
+
+# The GitHub owner (user or organisation) that holds the repository. It
+# forms the absolute URLs kiln writes: each package's `[project.urls]` and
+# the docs site's `site_url` and `repo_url`. There is no default. `kiln new`
+# takes it from `--owner`.
+owner = "rn-forge"
+
+# The repository's shape, which sets its modules, files and dependencies.
+# Changing it re-renders most generated files, and `kiln apply` does not
+# migrate the code itself.
+archetype = "python-lib"
+
+# Whether the repository installs itself as a tool (`kiln self` verbs).
+# `python-tool` always does. Changing it adds or removes the lifecycle files
+# on `kiln apply`.
+# Default: false.
+lifecycle = false
+
+# The kiln this repository pins. Absent until the first kiln release.
+[kiln]
+# A kiln release tag, `v<version>`; a branch only before kiln's first
+# release. `kiln apply` pins the dev dependency and the CI install to it.
+ref = "feature/v1"
+
+# The `python-lib` archetype's settings.
+[archetype.python-lib]
+# Workspace member directories, one per package. `kiln apply` renders each
+# member's `pyproject.toml`, tasks and CI entries; adding one needs
+# `kiln new` or `init` to create its files first.
+# Default: [].
+packages = [
+    "packages/rn-forge-commons",
+    "packages/rn-forge-cli",
+    "packages/rn-forge-django",
+    "packages/rn-forge-fastapi",
+    "packages/rn-forge-sqlalchemy",
+    "packages/rn-forge-tooling",
+    "packages/rn-forge-web",
+    "packages/rn-forge-devops",
+    "packages/rn-forge-data",
+    "packages/rn-forge-auth",
+]
+
+# Who writes the workspace's `.importlinter`: `kiln` renders it, `own`
+# leaves it to the repository. Changing it adds or stops managing the file on
+# `kiln apply`.
+# One of: "kiln", "own".
+# Default: "kiln".
+import_contracts = "own"
+
+# The import module of a member whose name differs from its directory,
+# keyed by the member's path in `packages`. Changing it rewrites the member's
+# build and import-contract settings on `kiln apply`.
+# Default: {}.
+[archetype.python-lib.modules]
+"packages/rn-forge-commons" = "rn_forge.commons"
+"packages/rn-forge-cli" = "rn_forge.cli"
+"packages/rn-forge-django" = "rn_forge.django"
+"packages/rn-forge-fastapi" = "rn_forge.fastapi"
+"packages/rn-forge-sqlalchemy" = "rn_forge.sqlalchemy"
+"packages/rn-forge-tooling" = "rn_forge.tooling"
+"packages/rn-forge-web" = "rn_forge.web"
+"packages/rn-forge-devops" = "rn_forge.devops"
+"packages/rn-forge-data" = "rn_forge.data"
+"packages/rn-forge-auth" = "rn_forge.auth"
+
+# How the repo publishes its documentation.
+[docs]
+# How the docs are published. `mkdocs` renders the docs tree, `mkdocs.yml`
+# and the docs tasks and CI job; `external` links to docs hosted elsewhere;
+# `none` has no docs. Changing it adds or removes those files on `kiln apply`.
+# One of: "mkdocs", "external", "none".
+# Default: "none".
+profile = "mkdocs"
+
+# Where `mkdocs` builds the site. It is ignored by git and cleaned by
+# `task clean`; changing it rewrites `.gitignore`, the docs tasks and the CI
+# workflows on `kiln apply`. `mkdocs` only.
+# Default: ".docs-site".
+site_dir = ".docs-site"
+
+# Where the docs live, linked from the generated `AGENTS.md` block. Changing
+# it rewrites that block on `kiln apply`. `external` only.
+# Default: "".
+external_url = ""
+
+# What the repo adds to the generated task surface.
+[tasks]
+# Repo-owned taskfiles the generated `Taskfile.yml` includes. Changing
+# the list rewrites `Taskfile.yml` on `kiln apply`.
+includes = []
+
+# Extra tasks a root verb calls, keyed by that verb (`validate`, `test`, ...).
+# Changing it rewrites the root verb in `Taskfile.yml` on `kiln apply`.
+# Default: {}.
+[tasks.extra_refs]
+
+# A replacement command for an inner task, keyed by the task's name.
+# Changing it rewrites that task in `tasks/*.yml` on `kiln apply`.
+# Default: {}.
+[tasks.command_overrides]
+
+# Which CI provider the workflows target, and what they run.
+[ci]
+# The CI provider the workflows target. `ado` is reserved and not yet
+# rendered; changing it re-renders the CI files on `kiln apply`.
+# One of: "github", "ado".
+# Default: "github".
+provider = "github"
+
+# Whether CI runs a Sonar analysis. Turning it off removes the Sonar job and
+# its properties file on `kiln apply`.
+# Default: true.
+sonar = true
+
+# How a release is published: `tag-exists` tags the default branch, `pypi`
+# publishes a library to PyPI, `nx-dispatch` is the `node-lib` flow, and
+# `none` has no release job. Changing it rewrites the release workflow on
+# `kiln apply`.
+# One of: "tag-exists", "pypi", "nx-dispatch", "none".
+# Default: `tag-exists`; `nx-dispatch` for `node-lib`.
+release = "pypi"
+
+# When CI runs `kiln doctor --full`: on pushes to the default branch and on
+# dispatch, or on every run. Changing it rewrites the validate job in
+# `ci.yml` on `kiln apply`.
+# One of: "default-branch", "every-run".
+# Default: "default-branch".
+doctor_full = "default-branch"
+
+# Paths Sonar skips, added to the archetype's own. Changing the list rewrites
+# the Sonar properties on `kiln apply`.
+# Default: [].
+sonar_exclusions = []
+
+# Paths Sonar counts but does not expect to have coverage. Changing the list
+# rewrites the Sonar properties on `kiln apply`.
+# Default: [].
+sonar_coverage_exclusions = []
+
+# Extra jobs, each calling one reusable workflow after `validate`. Changing
+# the list rewrites `ci.yml` on `kiln apply`.
+jobs = []
+
+# Local actions the generated CI runs at its extension points.
+[ci.hooks]
+# Local composite actions the generated setup action runs as its last steps.
+# Changing the list rewrites the setup action on `kiln apply`.
+# Default: [].
+setup = []
+
+# Local composite actions every Pages-uploading job runs before the upload,
+# with `SITE_DIR` set. Changing the list rewrites the workflows on
+# `kiln apply`.
+# Default: [].
+docs = []
+
+# Switches for the configurable checks: a name from the check registry set to
+# a bool, or for `licenses` a table of its policy; `pip-audit` is always on and
+# takes a table only. Changing it re-renders
+# `ci.yml` and the check tasks on `kiln apply`.
+# Default: {}.
+[ci.checks]
+umbrella-release = true
+scorecard = true

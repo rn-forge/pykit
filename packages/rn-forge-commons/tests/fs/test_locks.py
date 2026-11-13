@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.locks import DirectoryLock, atomic_symlink
 
@@ -49,19 +45,23 @@ class TestDirectoryLock:
     def test_second_acquisition_waits_then_times_out(self, tmp_path):
         lock_path = tmp_path / ".lock"
         lock_path.mkdir()
-        with pytest.raises(AppException):
-            with DirectoryLock(lock_path, timeout=0.1, poll_interval=0.02):
-                pass
+        with (
+            pytest.raises(AppException),
+            DirectoryLock(lock_path, timeout=0.1, poll_interval=0.02),
+        ):
+            pass
 
     def test_on_wait_called_when_blocked(self, tmp_path):
         lock_path = tmp_path / ".lock"
         lock_path.mkdir()
         waited = []
-        with pytest.raises(AppException):
-            with DirectoryLock(
+        with (
+            pytest.raises(AppException),
+            DirectoryLock(
                 lock_path, timeout=0.1, poll_interval=0.02, on_wait=waited.append
-            ):
-                pass
+            ),
+        ):
+            pass
         assert waited == [lock_path]
 
     def test_lock_released_on_exception(self, tmp_path):

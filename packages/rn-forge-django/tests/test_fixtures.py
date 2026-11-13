@@ -10,8 +10,8 @@ import pytest
 
 pd = pytest.importorskip("pandas")
 
-from rn_forge.commons.exceptions import AppException  # noqa: E402
-from rn_forge.django.fixtures import (  # noqa: E402
+from rn_forge.commons.exceptions import AppException
+from rn_forge.django.fixtures import (
     ColumnType,
     FixtureColumn,
     FixtureDefinition,

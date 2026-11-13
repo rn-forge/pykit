@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("jinja2")
 
-from rn_forge.commons.text.templates import RenderError, TemplateEngine  # noqa: E402
+from rn_forge.commons.text.templates import RenderError, TemplateEngine
 
 
 class TestConstruction:

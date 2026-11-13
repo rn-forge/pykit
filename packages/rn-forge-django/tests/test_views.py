@@ -6,10 +6,9 @@ import pytest
 
 django = pytest.importorskip("django")
 
-from django.http import HttpRequest  # noqa: E402
-from django.test import RequestFactory  # noqa: E402
-
-from rn_forge.django.views import (  # noqa: E402
+from django.http import HttpRequest
+from django.test import RequestFactory
+from rn_forge.django.views import (
     debug_request,
     debug_request_view,
     health_urlpatterns,
@@ -17,7 +16,7 @@ from rn_forge.django.views import (  # noqa: E402
     liveness_view,
     readiness_view,
 )
-from rn_forge.web import CheckResult, WebError  # noqa: E402
+from rn_forge.web import CheckResult, WebError
 
 pytestmark = pytest.mark.unit
 

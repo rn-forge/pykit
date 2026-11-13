@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 from django.test import override_settings
-
 from rn_forge.django import settings as rnf_settings
 from rn_forge.django.settings import (
     CasingSettings,
@@ -63,9 +62,11 @@ class TestOverrideAndReload:
             assert _current() is before
 
     def test_non_mapping_section_is_rejected(self) -> None:
-        with pytest.raises(TypeError):
-            with override_settings(RN_FORGE_DJANGO={"DRF": {"PAGINATION": 3}}):
-                pass
+        with (
+            pytest.raises(TypeError),
+            override_settings(RN_FORGE_DJANGO={"DRF": {"PAGINATION": 3}}),
+        ):
+            pass
 
 
 class TestLazyBuild:

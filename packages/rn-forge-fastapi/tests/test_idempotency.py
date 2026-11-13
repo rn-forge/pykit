@@ -5,10 +5,9 @@ from assertpy import assert_that
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
-
 from rn_forge.fastapi.idempotency import idempotent
 from rn_forge.fastapi.problem import register_problem_handlers
-from rn_forge.web import InMemoryAsyncIdempotencyStore, PROBLEM_MEDIA_TYPE
+from rn_forge.web import PROBLEM_MEDIA_TYPE, InMemoryAsyncIdempotencyStore
 
 pytestmark = pytest.mark.unit
 

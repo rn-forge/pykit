@@ -1,19 +1,20 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 django = pytest.importorskip("django")
 rest_framework = pytest.importorskip("rest_framework")
 
-from rest_framework import serializers  # noqa: E402
-
-from rn_forge.django.drf.serializers.fields import (  # noqa: E402
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import serializers
+from rn_forge.django.drf.serializers.fields import (
     EnumChoiceField,
     NestedReadPrimaryKeyRelatedField,
 )
-from rn_forge.django.models import Status  # noqa: E402
-from django.contrib.auth.models import Permission  # noqa: E402
-from django.contrib.contenttypes.models import ContentType  # noqa: E402
+from rn_forge.django.models import Status
 
 pytestmark = pytest.mark.unit
 
@@ -21,7 +22,7 @@ pytestmark = pytest.mark.unit
 class _PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
-        fields = ["id", "name", "codename", "content_type"]
+        fields: ClassVar = ["id", "name", "codename", "content_type"]
 
 
 class TestEnumChoiceField:

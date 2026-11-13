@@ -1,6 +1,5 @@
 site_name: rn-forge-data
 site_description: Excel and tabular data helpers
-site_dir: .out/site
 use_directory_urls: false
 site_url: https://rn-forge.github.io/pykit/packages/rn-forge-data/
 repo_url: https://github.com/rn-forge/pykit

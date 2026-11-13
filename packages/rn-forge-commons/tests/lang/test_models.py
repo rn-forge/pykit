@@ -2,8 +2,7 @@ import subprocess
 import sys
 
 import pytest
-from pydantic import BaseModel, ValidationError
-
+from pydantic import BaseModel, Field, ValidationError
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.models import (
     FieldError,
@@ -16,7 +15,7 @@ from rn_forge.commons.lang.models import (
 class Repository(StrictModel):
     name: str
     archetype: str = "python-tool"
-    packages: list[str] = []
+    packages: list[str] = Field(default_factory=list)
 
 
 class ProjectConfig(StrictModel):

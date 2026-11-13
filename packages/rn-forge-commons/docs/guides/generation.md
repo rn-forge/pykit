@@ -28,7 +28,7 @@ taskfile = Artifact(path="Taskfile.yml", kind=ArtifactKind.MANAGED, content=rend
 ignore = Artifact(
     path=".gitignore",
     kind=ArtifactKind.BLOCK,
-    content=".out/\n",
+    content=".tmp/\n",
     block=ManagedBlock("golden-tool"),
 )
 ```

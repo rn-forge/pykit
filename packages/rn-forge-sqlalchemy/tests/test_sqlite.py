@@ -4,11 +4,10 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from assertpy import assert_that
+from rn_forge.sqlalchemy import create_sqlite_engine
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-
-from rn_forge.sqlalchemy import create_sqlite_engine
 
 pytestmark = pytest.mark.unit
 

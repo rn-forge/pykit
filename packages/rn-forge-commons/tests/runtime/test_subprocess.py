@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 import rn_forge.commons.runtime.subprocess as subprocess_module
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.runtime.subprocess import (

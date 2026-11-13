@@ -5,10 +5,8 @@ import time
 from types import MappingProxyType
 
 import pytest
-
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.runtime.tasks import Failed, Succeeded, Task, TaskPool
-
 
 # ---------------------------------------------------------------------------
 # Concrete Task implementations for testing
@@ -250,10 +248,9 @@ class TestTaskPoolContextManager:
         # verifies that an exception raised inside the context manager's body
         # propagates out through TaskPool.__exit__, not just that the final
         # `raise` throws.
-        with pytest.raises(ValueError, match="outer"):  # NOSONAR
-            with TaskPool() as pool:
-                pool.submit(SimpleTask("t"))
-                raise ValueError("outer")
+        with pytest.raises(ValueError, match="outer"), TaskPool() as pool:  # NOSONAR
+            pool.submit(SimpleTask("t"))
+            raise ValueError("outer")
 
 
 class TestTaskPoolConcurrency:
@@ -407,18 +404,16 @@ class TestTaskPoolMapSettled:
             yield 1
             raise RuntimeError("bad iterable")
 
-        with TaskPool() as pool:
-            with pytest.raises(RuntimeError, match="bad iterable"):
-                pool.map_settled(ran.append, items())
+        with TaskPool() as pool, pytest.raises(RuntimeError, match="bad iterable"):
+            pool.map_settled(ran.append, items())
         assert ran == []
 
     def test_base_exception_propagates(self):
         def fn(i: int) -> int:
             raise KeyboardInterrupt
 
-        with TaskPool() as pool:
-            with pytest.raises(KeyboardInterrupt):
-                pool.map_settled(fn, [1])
+        with TaskPool() as pool, pytest.raises(KeyboardInterrupt):
+            pool.map_settled(fn, [1])
 
     def test_cancelled_item_becomes_failed(self):
         release = threading.Event()

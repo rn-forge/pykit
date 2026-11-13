@@ -6,8 +6,8 @@ settled before the merge, and everything that proves them happens after it.
 
 ## How CI tags
 
-`.github/workflows/main.yml` names no package; the `rn-forge-devops` package
-(`uv run rn-forge-devops`) reads them from the workspace manifests
+`.github/workflows/ci.yml` names no package; `task ci:plan` reads them from the
+workspace manifests
 ([F14.1](../specs/epics/E14-workspace-automation/F14.1-discovered-pipeline.md)).
 The import-boundary check and a `plan` job run first.
 
@@ -38,10 +38,10 @@ Every build, including a pull request's, runs `twine check --strict`, so a
 package with broken metadata fails CI. On a push to `main`, `release` then
 uploads the package to PyPI by trusted publishing, unless PyPI already has that
 version. Each uploaded file carries a PEP 740 attestation, which the job signs
-beforehand with `pypi-attestations`; the GitHub release attaches only the
-wheel, the sdist and the SBOM. Only after the upload does `gh release create`
-attach the artifacts and publish the release, creating a missing tag at the
-pushed commit
+beforehand with `pypi-attestations`; the GitHub release attaches only the wheel,
+the sdist and the SBOM. Only after the upload does `gh release create` attach
+the artifacts and publish the release, creating a missing tag at the pushed
+commit
 ([GitHub CLI release creation](https://cli.github.com/manual/gh_release_create)).
 A published release therefore implies the version is on PyPI. Its notes are the
 package's changelog section for the version, and it is never marked "Latest". A
@@ -87,7 +87,7 @@ no tags or releases; use it from the release branch to prove the uploads before
 the merge. The workflow's token cannot create a PyPI project, so before a
 package's first upload the owner creates the empty project from the `rn-forge`
 organization's *Projects* page and attaches the trusted publisher (owner
-`rn-forge`, repository `pykit`, workflow `main.yml`, environment `pypi`). That
+`rn-forge`, repository `pykit`, workflow `ci.yml`, environment `pypi`). That
 page allows the organization 10 new projects a day. Do not create a project by
 uploading with a user token: that path has a lower personal limit, and Release 7
 hit `429 Too many new projects created` after four projects, still in force 90
