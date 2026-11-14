@@ -1922,8 +1922,8 @@ single-page application through a server-side session, and API clients through
 bearer tokens, with one account and one authorization model behind both.</p>
 <p>The app is installable (label <code>rn_forge_django_auth</code>).</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p>An end-to-end configuration with one OIDC provider, local password login and,
-in development, a fixture-account provider. Install <code>rn-forge-django</code> with the
+<p>An end-to-end configuration with one OIDC provider, local password login and, in
+development, a fixture-account provider. Install <code>rn-forge-django</code> with the
 <code>drf</code>, <code>oidc</code> and <code>redis</code> extras.</p>
 <p>Settings:</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># settings.py</span>
@@ -1966,8 +1966,8 @@ in development, a fixture-account provider. Install <code>rn-forge-django</code>
 it is called, so the provider must be reachable at startup.</p>
 <p>The Redis cache backend holds login transactions, replay records and revoked
 session IDs, which every worker must share; the <code>redis</code> extra installs its
-client. The session cookie is <code>Secure</code>, so serve development over <code>localhost</code>
-or HTTPS.</p>
+client. The session cookie is <code>Secure</code>, so serve development over <code>localhost</code> or
+HTTPS.</p>
 <p>The auth objects, built once:</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># myapp/auth_config.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
@@ -2164,8 +2164,8 @@ The URL names are <code>rn-forge-auth-&lt;route&gt;</code>. A <code>401</code> f
 </tbody>
 </table>
 <p>A callback error redirects to <code>error_route</code> (<code>/auth/error</code>) with <code>?error=</code> set
-to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.
-Details go to the log, never into the URL. A password login failure is one <code>401</code>
+to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>. Details
+go to the log, never into the URL. A password login failure is one <code>401</code>
 whatever its cause, so the response does not reveal which accounts exist. The
 login body is JSON or form-encoded <code>{username, password}</code>.</p>
 <p>The session body is camelCase: <code>subject</code> (the account ID), <code>provider</code>, <code>roles</code>,
@@ -2174,31 +2174,31 @@ timeout). It omits <code>name</code>, <code>email</code> and <code>picture</code
 none. <code>Cache-Control: no-store</code> is set on session responses.</p>
 <p>The login transaction lives in the cache for 10 minutes behind the
 <code>__Host-login-tx</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
-<code>Domain</code>). A callback that carries more than one transaction cookie is
-rejected, and a transaction is consumed atomically, so a callback works once.</p>
+<code>Domain</code>). A callback that carries more than one transaction cookie is rejected,
+and a transaction is consumed atomically, so a callback works once.</p>
 <h2 id="sessions-and-revocation">Sessions and revocation<a class="headerlink" href="#sessions-and-revocation" title="Permanent link">&para;</a></h2>
 <p>Sessions are <code>django.contrib.sessions</code> with the <code>db</code> or <code>cached_db</code> engine, in
 the <code>__Host-session</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
 <code>Domain</code>). The session holds the account ID, the account's session version at
-login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code>
-and the ID token (only with <code>rp_initiated_logout</code>), and never permissions: those
-are computed on each request.</p>
+login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code> and
+the ID token (only with <code>rp_initiated_logout</code>), and never permissions: those are
+computed on each request.</p>
 <ul>
 <li><strong>Timeouts.</strong> A 30-minute sliding idle timeout (<code>idle_timeout</code>) and a 12-hour
   absolute timeout (<code>absolute_timeout</code>). A normal read moves the idle expiry
   forward; <code>GET /auth/session</code> reads with <code>touch=False</code> and does not.</li>
-<li><strong>One read path.</strong> <code>Sessions.read</code> deletes the session, and the caller
-  answers <code>401</code>, when the absolute timeout has passed, the recorded session
-  version differs from the account's, the account is inactive, or the
-  <code>session_ref</code> is revoked.</li>
-<li><strong>New IDs.</strong> Login gives the session a new ID. Call
-  <code>rotate_session(request)</code> after a change to the account's privileges.</li>
+<li><strong>One read path.</strong> <code>Sessions.read</code> deletes the session, and the caller answers
+  <code>401</code>, when the absolute timeout has passed, the recorded session version
+  differs from the account's, the account is inactive, or the <code>session_ref</code> is
+  revoked.</li>
+<li><strong>New IDs.</strong> Login gives the session a new ID. Call <code>rotate_session(request)</code>
+  after a change to the account's privileges.</li>
 <li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session. <code>/auth/logout/all</code> and a
-  back-channel logout that names only <code>sub</code> bump the account's session version,
-  which ends every session of the account on its next request. A back-channel
-  logout with a <code>sid</code> revokes that session only, until the absolute timeout.
-  With <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code> returns the
-  identity provider's end-session URL.</li>
+  back-channel logout that names only <code>sub</code> bump the account's session
+  version, which ends every session of the account on its next request. A
+  back-channel logout with a <code>sid</code> revokes that session only, until the
+  absolute timeout. With <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code>
+  returns the identity provider's end-session URL.</li>
 <li><strong>Disabling.</strong> <code>contexts.set_active(account_id, False)</code> (or any change that
   makes the account inactive) fails the account's next request with <code>401</code>.</li>
 </ul>
@@ -2212,16 +2212,17 @@ once through the cache that made it. Lower <code>ttl</code> where that delay mat
 not <code>HttpOnly</code> so that Angular can copy it into the header.</p>
 <ul>
 <li><code>GET /auth/session</code> always sets the cookie, including when it answers <code>401</code>,
-  so <code>POST /auth/login/password</code> is protected before sign-in. The token rotates
-  at login and at logout.</li>
+  so <code>POST /auth/login/password</code> is protected before sign-in. The token
+  rotates at login and at logout.</li>
 <li>A rejection is the <code>403</code> <code>csrf-failed</code> problem (<code>CSRF_FAILURE_VIEW</code>); its
   reason is logged, never sent. <code>PROBLEM_TYPE_BASE</code> makes it differ in <code>type</code>
   from a permission denial.</li>
 <li>Beyond Django's token and origin check, <code>AuthCsrfMiddleware</code> rejects
-  <code>Sec-Fetch-Site: cross-site</code> on an unsafe method, even from a trusted origin.</li>
+  <code>Sec-Fetch-Site: cross-site</code> on an unsafe method, even from a trusted
+  origin.</li>
 <li>Requests with a <code>Bearer</code> <code>Authorization</code> header skip the check, as does the
-  back-channel logout route, which carries a signed token. A <code>Basic</code> header does
-  not: browsers replay cached Basic credentials on their own.</li>
+  back-channel logout route, which carries a signed token. A <code>Basic</code> header
+  does not: browsers replay cached Basic credentials on their own.</li>
 <li><code>CSRF_TRUSTED_ORIGINS</code> lists the other origins that may post. Behind a proxy,
   Django takes the request's scheme and host from forwarded headers only when
   <code>SECURE_PROXY_SSL_HEADER</code> and <code>USE_X_FORWARDED_HOST</code> are set, and the
@@ -2253,16 +2254,15 @@ an inactive account with <code>?error=access_denied</code>. The session version 
 <code>/auth/logout/all</code> is stored by <code>DjangoAccountStateWriter</code> and read by
 <code>DjangoAuthorizationContextProvider</code>.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p><code>PrincipalSessionAuthentication</code> yields a <code>Principal</code> with
-<code>mechanism="session"</code> from <code>Sessions.read</code>; <code>request.auth</code> is the
-<code>SessionInfo</code>. Subclass it and set <code>sessions = sessions_for(config)</code>.</p>
+<p><code>PrincipalSessionAuthentication</code> yields a <code>Principal</code> with <code>mechanism="session"</code>
+from <code>Sessions.read</code>; <code>request.auth</code> is the <code>SessionInfo</code>. Subclass it and set
+<code>sessions = sessions_for(config)</code>.</p>
 <p><code>PrincipalBearerAuthentication</code> and <code>JWKSBearerAuthentication</code> verify an
 externally issued token, then resolve its <code>(issuer, subject)</code> through
 <code>AccountResolver.lookup</code>. They never provision: an unlinked subject, or an
 inactive account, is <code>401</code>. The principal's <code>subject</code> is the account ID; its
 roles and attributes come from the authorization context, and its permissions
-are the account's, limited to what the token's scopes allow through
-<code>scope_map</code>:</p>
+are the account's, limited to what the token's scopes allow through <code>scope_map</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Bearer</span><span class="p">(</span><span class="n">JWKSBearerAuthentication</span><span class="p">):</span>
     <span class="o">...</span>
     <span class="n">scope_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orders:read&quot;</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">&quot;orders.list&quot;</span><span class="p">,</span> <span class="s2">&quot;orders.read&quot;</span><span class="p">})}</span>
@@ -2274,22 +2274,22 @@ views, and the module that defines these classes imports DRF's views too.</p>
 <p><strong>One credential per request.</strong> A request with an <code>Authorization</code> header is
 authenticated by the bearer class alone: an invalid token is <code>401</code> even with a
 valid session cookie, and the session class ignores the request. List the
-classes a view accepts. A view whose first class is the session class answers
-an unauthenticated request with <code>401</code> and no <code>WWW-Authenticate</code> header; with a
+classes a view accepts. A view whose first class is the session class answers an
+unauthenticated request with <code>401</code> and no <code>WWW-Authenticate</code> header; with a
 bearer class first, it answers with the <code>Bearer</code> challenge. Both need the
 problem-details exception handler.</p>
 <h3 id="bearer-tokens-in-detail">Bearer tokens in detail<a class="headerlink" href="#bearer-tokens-in-detail" title="Permanent link">&para;</a></h3>
 <p>For an API whose callers hold tokens issued by an identity provider (Entra ID,
 Auth0, Okta, Keycloak), <code>JWKSBearerAuthentication</code> (the <code>oidc</code> extra) verifies
 the token against the provider's key set. Set <code>jwks_url</code>, <code>issuer</code>, <code>audience</code>,
-<code>accounts</code> and <code>contexts</code> on a subclass, as in <a href="#setup">Setup</a>.
-<code>cache_timeout</code> (300 seconds) is how long a fetched key set is kept,
-<code>cooldown_duration</code> (30 seconds) the fewest seconds between two fetches, which
-bounds how often an unknown <code>kid</code> can reach the provider, and <code>algorithms</code> and
-<code>leeway</code> set the accepted algorithms and the clock skew. Override
-<code>claims_to_principal()</code> where the provider keeps roles or scopes somewhere
-non-standard, such as Keycloak's nested <code>realm_access.roles</code>. The authenticator
-and key set are cached per subclass and process, so define the class once.</p>
+<code>accounts</code> and <code>contexts</code> on a subclass, as in <a href="#setup">Setup</a>. <code>cache_timeout</code>
+(300 seconds) is how long a fetched key set is kept, <code>cooldown_duration</code> (30
+seconds) the fewest seconds between two fetches, which bounds how often an
+unknown <code>kid</code> can reach the provider, and <code>algorithms</code> and <code>leeway</code> set the
+accepted algorithms and the clock skew. Override <code>claims_to_principal()</code> where
+the provider keeps roles or scopes somewhere non-standard, such as Keycloak's
+nested <code>realm_access.roles</code>. The authenticator and key set are cached per
+subclass and process, so define the class once.</p>
 <table>
 <thead>
 <tr>
