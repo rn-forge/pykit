@@ -1,5 +1,7 @@
 """Tests for rn_forge.fastapi.idempotency."""
 
+import asyncio
+
 import pytest
 from assertpy import assert_that
 from fastapi import FastAPI, Request
@@ -51,6 +53,7 @@ def test_a_missing_key_on_an_unsafe_method_is_a_400_problem():
     app = build_app(InMemoryAsyncIdempotencyStore())
     body = problem(TestClient(app).post("/charges"), 400)
     assert_that(body["detail"]).is_equal_to("Idempotency-Key is required")
+    assert_that(app.state.calls).is_empty()
 
 
 def test_first_sight_executes_and_preserves_response_headers():
@@ -59,6 +62,7 @@ def test_first_sight_executes_and_preserves_response_headers():
     assert_that(response.status_code).is_equal_to(201)
     assert_that(response.json()).is_equal_to({"charged": 1})
     assert_that(response.headers["x-made"]).is_equal_to("1")
+    assert_that(app.state.calls).is_length(1)
 
 
 def test_a_replay_returns_the_stored_response_without_re_executing():
@@ -79,3 +83,37 @@ def test_a_replayed_key_with_a_different_body_is_a_422_problem():
         client.post("/charges", headers={"Idempotency-Key": "k1"}, json={"a": 2}), 422
     )
     assert_that(body["detail"]).contains("replayed with a different request body")
+    assert_that(app.state.calls).is_length(1)
+
+
+def test_a_safe_method_with_arbitrary_bytes_reaches_the_handler():
+    app = build_app(InMemoryAsyncIdempotencyStore())
+    response = TestClient(app).request("GET", "/charges", content=b"\xff{not json")
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(app.state.calls).is_length(1)
+
+
+def test_malformed_json_on_an_unsafe_method_is_a_400_problem():
+    app = build_app(InMemoryAsyncIdempotencyStore())
+    client = TestClient(app)
+    body = problem(
+        client.post(
+            "/charges",
+            headers={"Idempotency-Key": "k1", "Content-Type": "application/json"},
+            content=b"{oops",
+        ),
+        400,
+    )
+    assert_that(body["detail"]).is_equal_to("Request body is not valid JSON")
+    assert_that(app.state.calls).is_empty()
+    response = client.post("/charges", headers={"Idempotency-Key": "k1"}, json={"a": 1})
+    assert_that(response.status_code).is_equal_to(201)
+    assert_that(app.state.calls).is_length(1)
+
+
+def test_an_in_flight_duplicate_is_a_409_problem():
+    store = InMemoryAsyncIdempotencyStore()
+    asyncio.run(store.record_or_replay(scope="charges", key="k1", request_body=None))
+    app = build_app(store)
+    problem(TestClient(app).post("/charges", headers={"Idempotency-Key": "k1"}), 409)
+    assert_that(app.state.calls).is_empty()

@@ -7,10 +7,11 @@ import json
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Concatenate
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from rn_forge.web import (
     IDEMPOTENCY_KEY_HEADER,
+    SAFE_METHODS,
     AsyncIdempotencyStore,
     run_idempotent_async,
 )
@@ -32,7 +33,9 @@ def idempotent[**P](
     The decorated route must declare ``request: Request`` as a parameter —
     FastAPI injects it like any other dependency — and must return a
     :class:`~fastapi.responses.Response` whose body is JSON. Safe methods
-    bypass the store. A missing key on an unsafe method raises
+    bypass the store without reading the request body. A malformed JSON body
+    on an unsafe method raises :class:`~fastapi.HTTPException` (400), rendered
+    as a problem response. A missing key on an unsafe method raises
     :class:`rn_forge.web.IdempotencyKeyRequired` (400); a replay returns the
     stored status and body verbatim; the same key with a different body
     raises :class:`rn_forge.web.IdempotencyKeyReuse` (422); a duplicate while
@@ -63,13 +66,19 @@ def idempotent[**P](
                 executed.append(response)
                 return response.status_code, json.loads(bytes(response.body))
 
-            raw_body = await request.body()
+            body = None
+            if request.method.upper() not in SAFE_METHODS:
+                try:
+                    raw_body = await request.body()
+                    body = json.loads(raw_body) if raw_body else None
+                except ValueError as exc:
+                    raise HTTPException(400, "Request body is not valid JSON") from exc
             result = await run_idempotent_async(
                 store,
                 scope=scope,
                 key=request.headers.get(header),
                 method=request.method,
-                body=json.loads(raw_body) if raw_body else None,
+                body=body,
                 execute=execute,
                 header=header,
             )

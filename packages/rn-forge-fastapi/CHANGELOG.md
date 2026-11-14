@@ -5,6 +5,12 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `idempotent` no longer reads or parses a safe request's body. Malformed JSON
+  on an unsafe method now returns a 400 problem with detail "Request body is
+  not valid JSON", instead of a 422 validation-error problem.
+
 ## [0.4.1] - 2026-11-13
 
 ### Added
