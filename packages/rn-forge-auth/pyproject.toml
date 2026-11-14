@@ -26,7 +26,7 @@ dependencies = ["rn-forge-commons>=0.8.0,<0.10", "rn-forge-web>=0.3.0,<0.4"]
 oidc = [
     "authlib>=1.9.1",
     "joserfc>=1.7.7",
-    "pyjwt[crypto]>=2.15.0",
+    "pyjwt[crypto]>=2.15.1",
     "requests>=2.34.2",
 ]
 # GETDEL, SET NX and INCR need Redis 6.2 or later.
