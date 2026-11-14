@@ -1397,25 +1397,24 @@ used at exactly one place. A token valid under one is never accepted by another.
 </tr>
 </tbody>
 </table>
-<p><code>JwtVerifier</code> takes <code>mode</code>. With <code>"rfc7519"</code> (the default) it accepts a <code>typ</code>
-of <code>JWT</code> or none, requires <code>iss</code>, <code>aud</code> and <code>exp</code>, and validates <code>sub</code>, <code>nbf</code>
-and <code>iat</code> when present. With <code>"rfc9068"</code> it accepts only <code>typ</code> <code>at+jwt</code> or
-<code>application/at+jwt</code> and requires <code>iss</code>, <code>exp</code>, <code>aud</code>, <code>sub</code>, <code>client_id</code>,
-<code>iat</code> and <code>jti</code>. In both modes it rejects any token that carries <code>nonce</code> or
-<code>events</code>, which an ID token and a logout token do.</p>
-<p>Pass your OIDC login client ID as <code>login_client_id</code>. An API audience equal to
-it is refused with <code>ValueError</code> unless <code>mode="rfc9068"</code>, because otherwise an ID
+<p><code>JwtVerifier</code> takes <code>mode</code>. With <code>"rfc7519"</code> (the default) it accepts a <code>typ</code> of
+<code>JWT</code> or none, requires <code>iss</code>, <code>aud</code> and <code>exp</code>, and validates <code>sub</code>, <code>nbf</code> and
+<code>iat</code> when present. With <code>"rfc9068"</code> it accepts only <code>typ</code> <code>at+jwt</code> or
+<code>application/at+jwt</code> and requires <code>iss</code>, <code>exp</code>, <code>aud</code>, <code>sub</code>, <code>client_id</code>, <code>iat</code>
+and <code>jti</code>. In both modes it rejects any token that carries <code>nonce</code> or <code>events</code>,
+which an ID token and a logout token do.</p>
+<p>Pass your OIDC login client ID as <code>login_client_id</code>. An API audience equal to it
+is refused with <code>ValueError</code> unless <code>mode="rfc9068"</code>, because otherwise an ID
 token issued to your login client would pass as an access token.</p>
 <p><code>IdTokenVerifier.verify(token, nonce=..., access_token=...)</code> checks signature,
 <code>iss</code>, <code>aud</code>, <code>azp</code>, <code>exp</code>, <code>iat</code>, <code>nonce</code> and, when an access token is given,
-<code>at_hash</code>. With <code>max_age</code> set, <code>auth_time</code> is required and must be no older
-than that many seconds.</p>
-<p><code>LogoutTokenVerifier</code> needs a <code>ReplayStore</code>, such as <code>InMemoryReplayStore</code>
-(one process only). It requires the back-channel logout event, a <code>sid</code> or
-<code>sub</code>, no <code>nonce</code>, an <code>iat</code> no older than <code>max_age_seconds</code> (120 by default),
-and a <code>jti</code> it has not accepted before. The <code>jti</code> is stored under
-<code>"{iss}|{jti}"</code> until the token expires, and only once every other check has
-passed.</p>
+<code>at_hash</code>. With <code>max_age</code> set, <code>auth_time</code> is required and must be no older than
+that many seconds.</p>
+<p><code>LogoutTokenVerifier</code> needs a <code>ReplayStore</code>, such as <code>InMemoryReplayStore</code> (one
+process only). It requires the back-channel logout event, a <code>sid</code> or <code>sub</code>, no
+<code>nonce</code>, an <code>iat</code> no older than <code>max_age_seconds</code> (120 by default), and a <code>jti</code>
+it has not accepted before. The <code>jti</code> is stored under <code>"{iss}|{jti}"</code> until the
+token expires, and only once every other check has passed.</p>
 <p>All three build with <code>from_issuer</code> or <code>from_jwks_url</code>, and all refuse a key-set
 URL that is not HTTPS.</p>
 <h3 id="the-key-set-cache">The key-set cache<a class="headerlink" href="#the-key-set-cache" title="Permanent link">&para;</a></h3>

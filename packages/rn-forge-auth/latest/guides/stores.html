@@ -1311,8 +1311,8 @@ storage whose operations above are atomic. The in-memory stores
 processes; use them in tests and single-process development only. The Redis
 stores need Redis 6.2 or later (for <code>GETDEL</code>).</p>
 <p>Every Redis store takes a client and a key <code>prefix</code> (<code>"rn-forge-auth:"</code> by
-default). Expiries are whole seconds, rounded up, and at least one. A session
-is stored as JSON, and a missing, expired or rotated-away key reads as absent.</p>
+default). Expiries are whole seconds, rounded up, and at least one. A session is
+stored as JSON, and a missing, expired or rotated-away key reads as absent.</p>
 <h2 id="authorization-versions">Authorization versions<a class="headerlink" href="#authorization-versions" title="Permanent link">&para;</a></h2>
 <p><code>AuthorizationVersions</code> holds the counters behind <code>AuthorizationContextCache</code>
 (see <a href="contracts.html#authorization-context-and-cache">Contracts</a>): a version per

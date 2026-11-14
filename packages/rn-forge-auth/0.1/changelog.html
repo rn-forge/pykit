@@ -1162,6 +1162,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#011-2026-11-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.1] - 2026-11-13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.1] - 2026-11-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010-2026-10-29" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1185,7 +1213,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1246,6 +1274,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#011-2026-11-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.1] - 2026-11-13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.1] - 2026-11-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010-2026-10-29" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1269,7 +1325,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1308,13 +1364,18 @@
 <p>Notable changes to <code>rn-forge-auth</code>, newest first, in the
 <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="011-2026-11-13">[0.1.1] - 2026-11-13<a class="headerlink" href="#011-2026-11-13" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>rn-forge-commons</code> requirement admits 0.9 (<code>&gt;=0.8.0,&lt;0.10</code>).</li>
+</ul>
 <h2 id="010-2026-10-29">[0.1.0] - 2026-10-29<a class="headerlink" href="#010-2026-10-29" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>rn_forge.auth.conformance</code>: <code>CASES</code>, one <code>SecurityControlCase</code> per row of the
-  design's security controls, <code>case_by_id</code>, and <code>tagged_tests</code>, which finds the
-  tests of a suite that carry <code>@pytest.mark.security_control("&lt;id&gt;")</code>. Both
-  framework bindings' suites fail when a case has no tagged test.</li>
+  design's security controls, <code>case_by_id</code>, and <code>tagged_tests</code>, which finds
+  the tests of a suite that carry <code>@pytest.mark.security_control("&lt;id&gt;")</code>.
+  Both framework bindings' suites fail when a case has no tagged test.</li>
 <li><code>rn_forge.auth.audit</code> (<code>audit</code>, <code>AUDIT_LOGGER</code>), the audit event helper on the
   <code>rn_forge.audit.auth</code> <code>AppLogger</code> channel, which both framework bindings
   emit their auth events through.</li>
@@ -1338,17 +1399,16 @@
   <code>AuthorizationContextProvider</code> and <code>ResourcePolicy</code>.</li>
 <li><code>requirement_for</code>, <code>effective_permissions</code> and <code>Mechanism</code>, and
   <code>DEFAULT_PERMISSION_ACTION_MAP</code>, moved from <code>rn-forge-django</code>.</li>
-<li><code>AuthorizationContextCache</code>, which caches an <code>AuthorizationContextProvider</code>
-  by account and authorization version with a TTL, with
-  <code>AuthorizationVersions</code>, <code>InMemoryAuthorizationVersions</code> and
-  <code>AccountStateWriter</code>.</li>
+<li><code>AuthorizationContextCache</code>, which caches an <code>AuthorizationContextProvider</code> by
+  account and authorization version with a TTL, with <code>AuthorizationVersions</code>,
+  <code>InMemoryAuthorizationVersions</code> and <code>AccountStateWriter</code>.</li>
 <li><code>IdTokenVerifier</code>, the ID-token profile, which runs Authlib's <code>CodeIDToken</code>
   and checks <code>auth_time</code> against <code>max_age</code>, and <code>LogoutTokenVerifier</code>, the
-  back-channel logout-token profile, which checks <code>typ</code>, the <code>iat</code> window and a
-  single-use <code>jti</code>.</li>
-<li><code>JwtVerifier</code> and <code>OidcAuthenticator</code> take <code>mode</code> (<code>"rfc9068"</code> or
-  <code>"rfc7519"</code>) and <code>login_client_id</code>; the latter is refused as an audience
-  outside RFC 9068 mode.</li>
+  back-channel logout-token profile, which checks <code>typ</code>, the <code>iat</code> window and
+  a single-use <code>jti</code>.</li>
+<li><code>JwtVerifier</code> and <code>OidcAuthenticator</code> take <code>mode</code> (<code>"rfc9068"</code> or <code>"rfc7519"</code>)
+  and <code>login_client_id</code>; the latter is refused as an audience outside RFC 9068
+  mode.</li>
 <li><code>ReplayStore</code> and <code>InMemoryReplayStore</code>, the single-use and revoked-<code>sid</code>
   records.</li>
 <li><code>TransactionStore</code> and <code>SessionStore</code>, with <code>InMemoryTransactionStore</code> and
@@ -1360,44 +1420,49 @@
   body; and <code>CallbackError</code>, the closed list of callback error codes.</li>
 <li><code>rn_forge.auth.testing</code>, behind the <code>oidc</code> extra: <code>FakeOidcProvider</code>, an
   in-process OIDC provider with discovery, key rotation, authorization, token
-  and UserInfo endpoints and logout tokens, and <code>Faults</code>, a switch for each OIDC
-  failure.</li>
-<li>The login adapters:</li>
+  and UserInfo endpoints and logout tokens, and <code>Faults</code>, a switch for each
+  OIDC failure.</li>
+<li>The login adapters:<ul>
 <li><code>LoginFlow</code> and <code>LoginFailed</code>, the framework-neutral login flow, and
-    <code>LoginRequest</code>, the thin request protocol providers read. <code>begin</code> validates
-    <code>return_to</code> and saves the transaction for 600 seconds; <code>complete</code> consumes
-    it once, rejects a missing, expired, used or foreign transaction, and ends
-    every failure in a <code>LoginFailed</code> carrying a <code>CallbackError</code>.</li>
+  <code>LoginRequest</code>, the thin request protocol providers read. <code>begin</code>
+  validates <code>return_to</code> and saves the transaction for 600 seconds;
+  <code>complete</code> consumes it once, rejects a missing, expired, used or foreign
+  transaction, and ends every failure in a <code>LoginFailed</code> carrying a
+  <code>CallbackError</code>.</li>
 <li><code>OidcProvider</code> in <code>rn_forge.auth.oidc</code>, the OIDC login provider over
-    Authlib's <code>OAuth2Session</code>: discovery with the issuer check, <code>state</code>, nonce,
-    PKCE S256, the RFC 9207 <code>iss</code> check, <code>max_age</code>, ID-token verification and
-    UserInfo with a <code>sub</code> check. <code>default_claim_mapper</code>, a <code>claim_mapper</code> hook
-    and a <code>token_hook</code> (the only receiver of the upstream tokens,
-    <code>UpstreamTokens</code>) shape the result. No token, code or verifier is logged.</li>
-<li><code>OidcProvider.oauth2</code> and <code>OAuth2Endpoints</code>, the same provider for an
-    OAuth 2.0 server that issues no ID token: it keeps <code>state</code> and PKCE, sends
-    no nonce, calls the user endpoint with the access token and maps the result
-    (<code>subject_field</code> picks the subject, numbers are stringified). The <code>iss</code>
-    response check applies only with <code>response_issuer</code>.</li>
+  Authlib's <code>OAuth2Session</code>: discovery with the issuer check, <code>state</code>,
+  nonce, PKCE S256, the RFC 9207 <code>iss</code> check, <code>max_age</code>, ID-token
+  verification and UserInfo with a <code>sub</code> check. <code>default_claim_mapper</code>, a
+  <code>claim_mapper</code> hook and a <code>token_hook</code> (the only receiver of the upstream
+  tokens, <code>UpstreamTokens</code>) shape the result. No token, code or verifier is
+  logged.</li>
+<li><code>OidcProvider.oauth2</code> and <code>OAuth2Endpoints</code>, the same provider for an OAuth
+  2.0 server that issues no ID token: it keeps <code>state</code> and PKCE, sends no
+  nonce, calls the user endpoint with the access token and maps the result
+  (<code>subject_field</code> picks the subject, numbers are stringified). The <code>iss</code>
+  response check applies only with <code>response_issuer</code>.</li>
 <li><code>OidcProvider.logout_redirect</code>, which returns the discovered
-    <code>end_session_endpoint</code> with <code>id_token_hint</code>, <code>post_logout_redirect_uri</code> and
-    <code>client_id</code> when the provider is built with <code>rp_initiated_logout=True</code>, and
-    <code>BackchannelLogout</code> with <code>LogoutRevocation</code>, which validate a back-channel
-    logout token and return the <code>(issuer, sid)</code> to revoke, or the account whose
-    session version to bump for a token with only <code>sub</code>.</li>
+  <code>end_session_endpoint</code> with <code>id_token_hint</code>, <code>post_logout_redirect_uri</code>
+  and <code>client_id</code> when the provider is built with
+  <code>rp_initiated_logout=True</code>, and <code>BackchannelLogout</code> with
+  <code>LogoutRevocation</code>, which validate a back-channel logout token and return
+  the <code>(issuer, sid)</code> to revoke, or the account whose session version to
+  bump for a token with only <code>sub</code>.</li>
 <li><code>PasswordIdentityProvider</code> and <code>DevelopmentIdentityProvider</code> in
-    <code>rn_forge.auth.local</code>, with <code>PasswordVerifier</code>, <code>DevelopmentAccount</code> and
-    <code>DevelopmentModeRequired</code>. Neither needs an extra.</li>
+  <code>rn_forge.auth.local</code>, with <code>PasswordVerifier</code>, <code>DevelopmentAccount</code> and
+  <code>DevelopmentModeRequired</code>. Neither needs an extra.</li>
 <li><code>OidcConfiguration.metadata</code>, the whole discovery document.</li>
+</ul>
+</li>
 <li><code>FakeOidcProvider</code> gains <code>oauth2_only</code> and <code>auth_age</code>, and <code>Faults</code> gains
   <code>userinfo_error</code>.</li>
 <li>Optional Keycloak tests of the broker profile under <code>tests/broker/</code>, run by
   the non-gating <code>broker-profile</code> workflow.</li>
 <li>Guides for the contracts, the login providers (including connecting a SAML IdP
-  through a broker), the token profiles, the stores, and the fake provider with
-  the broker tests.</li>
+  through a broker), the token profiles, the stores, and the fake provider
+  with the broker tests.</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Breaking: <code>Principal</code> gains <code>external_subject</code>, <code>permissions</code>, <code>attributes</code>,
   <code>auth_time</code> and <code>amr</code>, and <code>mechanism</code> is the <code>Mechanism</code> literal
@@ -1409,8 +1474,8 @@
 <li><code>JwtVerifier</code> takes its keys from PyJWT's <code>PyJWKClient</code>, replacing
   <code>JwksCache</code>. <code>from_issuer</code> and <code>from_jwks_url</code> take <code>lifespan</code> (default 300
   seconds) and <code>cooldown_duration</code> (default 30 seconds) in place of <code>max_age</code>,
-  and <code>from_jwks_url</code> no longer takes <code>fetch</code>: only the discovery document uses
-  <code>fetch_json</code>.</li>
+  and <code>from_jwks_url</code> no longer takes <code>fetch</code>: only the discovery document
+  uses <code>fetch_json</code>.</li>
 <li>The <code>oidc</code> extra is <code>pyjwt[crypto]</code> with <code>authlib&gt;=1.9.1</code> and
   <code>joserfc&gt;=1.7.7</code>; it requires PyJWT 2.15.0 or later.</li>
 <li>The package declares the MIT licence and is published to PyPI.</li>

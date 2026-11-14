@@ -1477,13 +1477,13 @@ and development logins the same way.</p>
 </tbody>
 </table>
 <p><code>rn_forge.auth.oidc</code> needs the <code>oidc</code> extra and is imported directly. The
-<code>rn_forge.auth</code> facade re-exports <code>LoginFlow</code>, <code>LoginFailed</code>, <code>LoginRequest</code>
-and the <code>rn_forge.auth.local</code> providers.</p>
+<code>rn_forge.auth</code> facade re-exports <code>LoginFlow</code>, <code>LoginFailed</code>, <code>LoginRequest</code> and
+the <code>rn_forge.auth.local</code> providers.</p>
 <h2 id="the-request-and-the-flow">The request and the flow<a class="headerlink" href="#the-request-and-the-flow" title="Permanent link">&para;</a></h2>
-<p>A provider reads two mappings from the request: <code>query</code>, the URL parameters
-(the IdP's callback arrives there), and <code>form</code>, the decoded <code>POST</code> fields (a
-password login arrives there). A binding passes its native request when it has
-both, or a small wrapper:</p>
+<p>A provider reads two mappings from the request: <code>query</code>, the URL parameters (the
+IdP's callback arrives there), and <code>form</code>, the decoded <code>POST</code> fields (a password
+login arrives there). A binding passes its native request when it has both, or a
+small wrapper:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
 
@@ -1527,9 +1527,8 @@ began) before the provider sees the response. The transaction cookie is
 <code>__Host-login-tx</code> with <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code> and
 <code>Max-Age=600</code>: <code>Lax</code> sends it on the IdP's top-level redirect back, and the
 <code>__Host-</code> prefix stops a sibling subdomain from planting one. Reject a callback
-that carries more than one. Because the transaction binds the
-callback to the browser that started it, a callback replayed in another browser
-fails.</p>
+that carries more than one. Because the transaction binds the callback to the
+browser that started it, a callback replayed in another browser fails.</p>
 <p>Every failure is one exception, <code>LoginFailed</code>, with a <code>code</code> from
 <code>CallbackError</code>: <code>login_failed</code>, or <code>access_denied</code> when the IdP returned
 <code>error=access_denied</code>. Send the code to the error route and keep <code>reason</code> in the
@@ -1548,10 +1547,10 @@ a provider raises is logged and also becomes <code>login_failed</code>.</p>
 <span class="p">)</span>
 </code></pre></div>
 
-<p>The provider reads the discovery document on first use and checks that it
-names the configured issuer. It sends <code>state</code>, a nonce and a PKCE S256
-challenge, and records all three, with the verifier, on the transaction. On the
-callback it requires the same <code>state</code>, then checks the <code>iss</code> parameter
+<p>The provider reads the discovery document on first use and checks that it names
+the configured issuer. It sends <code>state</code>, a nonce and a PKCE S256 challenge, and
+records all three, with the verifier, on the transaction. On the callback it
+requires the same <code>state</code>, then checks the <code>iss</code> parameter
 (<a href="https://www.rfc-editor.org/rfc/rfc9207">RFC 9207</a>): a different <code>iss</code> fails,
 and a missing one fails when discovery advertises
 <code>authorization_response_iss_parameter_supported</code>. It then exchanges the code and
@@ -1617,25 +1616,25 @@ raise <code>LoginFailed</code> to refuse the login:</p>
 </code></pre></div>
 
 <h3 id="upstream-tokens">Upstream tokens<a class="headerlink" href="#upstream-tokens" title="Permanent link">&para;</a></h3>
-<p>pykit stores no upstream token. The access and refresh tokens are dropped
-after the exchange unless the application passes a <code>token_hook</code>, which is called
-once the login has succeeded:</p>
+<p>pykit stores no upstream token. The access and refresh tokens are dropped after
+the exchange unless the application passes a <code>token_hook</code>, which is called once
+the login has succeeded:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">keep_tokens</span><span class="p">(</span><span class="n">identity</span><span class="p">,</span> <span class="n">tokens</span><span class="p">):</span>  <span class="c1"># tokens is an UpstreamTokens</span>
     <span class="n">vault</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">identity</span><span class="o">.</span><span class="n">issuer</span><span class="p">,</span> <span class="n">identity</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">tokens</span><span class="o">.</span><span class="n">refresh_token</span><span class="p">)</span>
 </code></pre></div>
 
 <p>The tokens have no <code>repr</code>, so a logged <code>UpstreamTokens</code> does not leak them.</p>
 <h3 id="logout">Logout<a class="headerlink" href="#logout" title="Permanent link">&para;</a></h3>
-<p>With <code>rp_initiated_logout=True</code>, <code>logout_redirect(session, post_logout_redirect=...)</code>
-returns the discovered <code>end_session_endpoint</code> with <code>id_token_hint</code>,
-<code>post_logout_redirect_uri</code> and <code>client_id</code>. It returns <code>None</code>, and the binding
-logs out locally only, when the flag is off, the provider advertises no
-endpoint, or the session kept no ID token. A session keeps its ID token
-(<code>SessionInfo.id_token</code>) only when the application enables RP-initiated logout:
-with the flag on, the provider sets <code>ExternalIdentity.id_token</code> and the binding
-copies it into the session; with it off the field stays <code>None</code>.
-Signing out of the app does not normally need to sign the user out of their
-whole IdP session, so the flag is off by default.</p>
+<p>With <code>rp_initiated_logout=True</code>,
+<code>logout_redirect(session, post_logout_redirect=...)</code> returns the discovered
+<code>end_session_endpoint</code> with <code>id_token_hint</code>, <code>post_logout_redirect_uri</code> and
+<code>client_id</code>. It returns <code>None</code>, and the binding logs out locally only, when the
+flag is off, the provider advertises no endpoint, or the session kept no ID
+token. A session keeps its ID token (<code>SessionInfo.id_token</code>) only when the
+application enables RP-initiated logout: with the flag on, the provider sets
+<code>ExternalIdentity.id_token</code> and the binding copies it into the session; with it
+off the field stays <code>None</code>. Signing out of the app does not normally need to
+sign the user out of their whole IdP session, so the flag is off by default.</p>
 <h2 id="oauth-20-providers">OAuth 2.0 providers<a class="headerlink" href="#oauth-20-providers" title="Permanent link">&para;</a></h2>
 <p>A server that issues no ID token, such as GitHub, uses <code>OidcProvider.oauth2</code>
 with explicit endpoints and a fixed issuer string. The flow keeps <code>state</code> and
@@ -1675,8 +1674,8 @@ PKCE, sends no nonce, and calls the user endpoint with the access token:</p>
 <p>The user endpoint's JSON object becomes the claim set, with <code>iss</code> set to
 <code>issuer</code> and <code>sub</code> set to the <code>subject_field</code> member as a string, so GitHub's
 numeric <code>id</code> works. A user without that member fails the login. The default
-mapper reads the standard names; a provider with other names (<code>avatar_url</code>
-here) needs a mapper. The <code>iss</code> response check applies only when you pass
+mapper reads the standard names; a provider with other names (<code>avatar_url</code> here)
+needs a mapper. The <code>iss</code> response check applies only when you pass
 <code>response_issuer</code>, because most OAuth 2.0 servers send none. Such a provider has
 no ID token to keep, so <code>logout_redirect</code> returns <code>None</code>, and <code>token_hook</code>
 receives <code>UpstreamTokens</code> with <code>id_token=None</code>. A failed user call, an HTTP
@@ -1786,9 +1785,10 @@ to them needs no broker.</p>
    require signed assertions. Import the IdP's metadata when it publishes it.</li>
 <li>Add attribute mappers from the SAML attributes to user attributes (<code>email</code>,
    <code>firstName</code>, <code>lastName</code>), so that they reach the ID token as claims.</li>
-<li>Configure <code>OidcProvider</code> with the realm's issuer, <code>https://&lt;host&gt;/realms/&lt;realm&gt;</code>,
-   and the client's ID and secret. To send users straight to the SAML IdP, add
-   Keycloak's <code>kc_idp_hint=saml-idp</code> parameter to the redirect URL.</li>
+<li>Configure <code>OidcProvider</code> with the realm's issuer,
+   <code>https://&lt;host&gt;/realms/&lt;realm&gt;</code>, and the client's ID and secret. To send
+   users straight to the SAML IdP, add Keycloak's <code>kc_idp_hint=saml-idp</code>
+   parameter to the redirect URL.</li>
 </ol>
 <div class="codehilite"><pre><span></span><code><span class="n">broker</span> <span class="o">=</span> <span class="n">OidcProvider</span><span class="p">(</span>
     <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;keycloak&quot;</span><span class="p">,</span>
@@ -1805,8 +1805,8 @@ signed in through. The SAML assertion is the broker's to validate; the
 application sees only the broker's signed ID token. <code>tests/broker/</code> holds a
 working configuration: <code>realms/idp-realm.json</code> is a SAML IdP, and
 <code>realms/broker-realm.json</code> is a broker realm with the client, the SAML identity
-provider and the attribute mappers above. <a href="testing.html">Testing</a> describes how
-to run them.</p>
+provider and the attribute mappers above. <a href="testing.html">Testing</a> describes how to
+run them.</p>
 
 
 

@@ -1311,8 +1311,8 @@ the user endpoint.</p>
 <h2 id="driving-a-login">Driving a login<a class="headerlink" href="#driving-a-login" title="Permanent link">&para;</a></h2>
 <p>A test drives the browser leg with plain HTTP: it follows the authorization
 redirect, stops at the callback, and reads <code>code</code>, <code>state</code> and <code>iss</code> from the
-<code>Location</code> header. It then hands those parameters to <code>LoginFlow.complete</code> as
-the request's <code>query</code>.</p>
+<code>Location</code> header. It then hands those parameters to <code>LoginFlow.complete</code> as the
+request's <code>query</code>.</p>
 <h2 id="failure-switches">Failure switches<a class="headerlink" href="#failure-switches" title="Permanent link">&para;</a></h2>
 <p><code>idp.faults</code> is a <code>Faults</code>; every field is off by default and turns on one
 failure:</p>
@@ -1376,8 +1376,8 @@ through <code>OidcAuthenticator</code>. They need Docker and are skipped unless
 <span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>packages/rn-forge-auth<span class="w"> </span>-m<span class="w"> </span>broker
 </code></pre></div>
 
-<p>The <code>broker-profile</code> workflow runs them weekly and on changes to this package.
-It is not a required check and does not gate merges. The realms under
+<p>CI runs them in the <code>integration</code> job of <code>ci.yml</code>, against the <code>keycloak</code>
+service that this package's <code>pyproject.toml</code> declares. The realms under
 <code>tests/broker/realms/</code> also serve as a working configuration for
 <a href="login.html#connecting-a-saml-idp-through-a-broker">connecting a SAML IdP through a broker</a>.</p>
 

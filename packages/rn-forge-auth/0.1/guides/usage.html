@@ -1277,10 +1277,11 @@
 <h1 id="authentication-and-authorization">Authentication and authorization<a class="headerlink" href="#authentication-and-authorization" title="Permanent link">&para;</a></h1>
 <p>The package has one core and two adapters. <code>rn_forge.auth</code> holds the contracts
 and needs no third-party package. <code>rn_forge.auth.oidc</code> runs OIDC and OAuth 2.0
-logins and verifies OIDC bearer tokens (see <a href="login.html">Login providers</a>), and <code>rn_forge.auth.redis</code> keeps sessions and single-use records in
-Redis; both import the core and the core never imports them. The <code>oidc</code> extra
-installs <code>pyjwt[crypto]</code> and <code>authlib</code>, the <code>redis</code> extra installs <code>redis</code>, and
-the <code>rn_forge.auth</code> facade re-exports neither adapter.</p>
+logins and verifies OIDC bearer tokens (see <a href="login.html">Login providers</a>), and
+<code>rn_forge.auth.redis</code> keeps sessions and single-use records in Redis; both
+import the core and the core never imports them. The <code>oidc</code> extra installs
+<code>pyjwt[crypto]</code> and <code>authlib</code>, the <code>redis</code> extra installs <code>redis</code>, and the
+<code>rn_forge.auth</code> facade re-exports neither adapter.</p>
 <h2 id="how-the-pieces-fit">How the pieces fit<a class="headerlink" href="#how-the-pieces-fit" title="Permanent link">&para;</a></h2>
 <p>A login and each later request pass through the same stages:</p>
 <div class="codehilite"><pre><span></span><code>provider -&gt; ExternalIdentity -&gt; AccountResolver -&gt; account ID
@@ -1338,8 +1339,8 @@ the <code>rn_forge.auth</code> facade re-exports neither adapter.</p>
 Importing <code>rn_forge.auth.oidc</code> without the extra fails with
 <code>ModuleNotFoundError</code> for <code>jwt</code>. <code>rn-forge-django[oidc]</code> and
 <code>rn-forge-fastapi[oidc]</code> already name <code>rn-forge-auth[oidc]</code>. Importing
-<code>rn_forge.auth.redis</code> without the <code>redis</code> extra fails with
-<code>ModuleNotFoundError</code> for <code>redis</code>.</p>
+<code>rn_forge.auth.redis</code> without the <code>redis</code> extra fails with <code>ModuleNotFoundError</code>
+for <code>redis</code>.</p>
 <h2 id="with-rn-forge-web-and-the-framework-packages">With rn-forge-web and the framework packages<a class="headerlink" href="#with-rn-forge-web-and-the-framework-packages" title="Permanent link">&para;</a></h2>
 <p><code>rn-forge-web</code> owns the wire contract that surrounds these types:</p>
 <ul>

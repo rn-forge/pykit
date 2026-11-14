@@ -1458,9 +1458,9 @@ This guide walks them in the order a request meets them; the
 <a href="usage.html">overview</a> shows how they connect. For tokens, see
 <a href="tokens.html">Token profiles</a>; for server-side state, see <a href="stores.html">Stores</a>.</p>
 <h2 id="identity-providers-and-external-identities">Identity providers and external identities<a class="headerlink" href="#identity-providers-and-external-identities" title="Permanent link">&para;</a></h2>
-<p>An <code>IdentityProvider[RequestT]</code> is one login method, generic over the framework's
-native request type. It has an <code>id</code> and a <code>kind</code> (<code>ProviderKind</code>: <code>"oidc"</code>,
-<code>"oauth2"</code>, <code>"password"</code> or <code>"development"</code>) and three methods:</p>
+<p>An <code>IdentityProvider[RequestT]</code> is one login method, generic over the
+framework's native request type. It has an <code>id</code> and a <code>kind</code> (<code>ProviderKind</code>:
+<code>"oidc"</code>, <code>"oauth2"</code>, <code>"password"</code> or <code>"development"</code>) and three methods:</p>
 <ul>
 <li><code>begin(request, *, return_to)</code> returns a <code>LoginStart</code>: the <code>LoginTransaction</code>
   to persist and the <code>redirect_url</code> to send the browser to, or <code>None</code> when the
@@ -1471,11 +1471,12 @@ native request type. It has an <code>id</code> and a <code>kind</code> (<code>Pr
   logout URL, or <code>None</code> for a local logout only.</li>
 </ul>
 <p><code>ExternalIdentity</code> is a verified identity asserted by a provider: <code>provider</code>,
-<code>issuer</code>, <code>subject</code>, and optionally <code>email</code>, <code>email_verified</code>, <code>name</code>, <code>picture</code>,
-<code>groups</code>, <code>attributes</code>, <code>auth_time</code>, <code>amr</code> and <code>session_ref</code> (the OIDC <code>sid</code>).
-Everything after this value is framework-neutral. <code>LoginTransaction</code> is the
-state of one login in flight (<code>state</code>, <code>nonce</code>, <code>code_verifier</code>, <code>return_to</code>),
-saved in a <code>TransactionStore</code> between <code>begin</code> and <code>complete</code>.</p>
+<code>issuer</code>, <code>subject</code>, and optionally <code>email</code>, <code>email_verified</code>, <code>name</code>,
+<code>picture</code>, <code>groups</code>, <code>attributes</code>, <code>auth_time</code>, <code>amr</code> and <code>session_ref</code> (the
+OIDC <code>sid</code>). Everything after this value is framework-neutral.
+<code>LoginTransaction</code> is the state of one login in flight (<code>state</code>, <code>nonce</code>,
+<code>code_verifier</code>, <code>return_to</code>), saved in a <code>TransactionStore</code> between <code>begin</code> and
+<code>complete</code>.</p>
 <p><code>SessionInfo</code> is what a login session stores: the internal <code>account_id</code>, the
 <code>session_version</code> at login, how the user authenticated, and <code>expires_at</code>. It
 holds no permissions; they are looked up per request (see
@@ -1483,8 +1484,9 @@ holds no permissions; they are looked up per request (see
 <h2 id="account-resolution">Account resolution<a class="headerlink" href="#account-resolution" title="Permanent link">&para;</a></h2>
 <p>An <code>AccountResolver</code> maps an <code>ExternalIdentity</code> to an internal account ID.
 <code>resolve(identity)</code> links, provisions or rejects a login and returns the account
-ID; it raises <code>AccountRejected</code> when the login may not proceed. <code>lookup(issuer,
-subject)</code> returns the linked account ID, or <code>None</code>, and never provisions.</p>
+ID; it raises <code>AccountRejected</code> when the login may not proceed.
+<code>lookup(issuer, subject)</code> returns the linked account ID, or <code>None</code>, and never
+provisions.</p>
 <p><code>AccountRejected</code> carries a <code>reason</code> for logs. The user is never shown it: the
 callback sends one of the <code>CallbackError</code> codes instead (see
 <a href="#return-targets-the-session-body-and-callback-errors">Return targets, the session body and callback errors</a>).</p>
@@ -1684,8 +1686,8 @@ one of the configured prefixes, matched on whole segments:</p>
 
 <p>It rejects absolute and scheme-relative URLs, backslashes, control characters,
 percent-encoded slashes, backslashes and dots in the path, <code>..</code> segments and
-paths outside the prefixes. A query string and fragment may follow the path.
-The caller falls back to a default on <code>InvalidReturnTo</code>.</p>
+paths outside the prefixes. A query string and fragment may follow the path. The
+caller falls back to a default on <code>InvalidReturnTo</code>.</p>
 <p><code>SessionBody.build(session, context, name=..., email=..., picture=...)</code> makes
 the <code>/auth/session</code> body; <code>subject</code> is the internal account ID. <code>to_json()</code>
 returns camelCase keys, RFC 3339 UTC timestamps, sorted <code>roles</code>, <code>permissions</code>
