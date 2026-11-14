@@ -140,11 +140,6 @@ jobs:
       smoke: ${{ steps.plan.outputs.smoke }}
       suites: ${{ steps.plan.outputs.suites }}
       pytest-args: ${{ steps.plan.outputs.pytest-args }}
-      cov-args: ${{ steps.plan.outputs.cov-args }}
-      test-paths: ${{ steps.plan.outputs.test-paths }}
-      sonar-sources: ${{ steps.plan.outputs.sonar-sources }}
-      sonar-tests: ${{ steps.plan.outputs.sonar-tests }}
-      sonar: ${{ steps.plan.outputs.sonar }}
       docs: ${{ steps.plan.outputs.docs }}
     steps:
       - name: Checkout
@@ -288,14 +283,65 @@ jobs:
   release:
     needs: [plan, checks-ok]
     if: ${{ !cancelled() && needs.checks-ok.result == 'success' && needs.plan.outputs.release-order != '[]' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.testpypi)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.testpypi && 'testpypi' || 'pypi' }}
+    # The provenance step's `if:` reads this; a step's own `env:` is not in scope there.
+    env:
+      TESTPYPI: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
     permissions:
       contents: write
       id-token: write
       attestations: write
-    uses: ./.github/workflows/_release.yml # zizmor: ignore[self-repository] actionlint rejects the $/ form
-    with:
-      release-order: ${{ needs.plan.outputs.release-order }}
-      testpypi: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the toolchain
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint rejects the $/ form
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download the check markers
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: ok-*
+          merge-multiple: true
+          path: ok/
+
+      - name: Build releases
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTPYPI: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
+          SELECTED: ${{ needs.plan.outputs.release-order }}
+        run: task ci:release:build
+
+      # Attested before anything is published, because the release, not the
+      # tag, is the record: a failure here leaves nothing published, and a
+      # rerun attests again. Skipped when every package was already released.
+      - name: Generate provenance
+        if: steps.build.outputs.built != '0' && env.TESTPYPI != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*/*.whl
+            dist/*/*.tar.gz
+            dist/*/*.cdx.json
+
+      # uv publish uploads the *.publish.attestation files it is given. One file at a time, because a Rekor write can stall into a 502 and signing never retries.
+      - name: Attest PyPI publish
+        if: steps.build.outputs.built != '0'
+        run: task ci:release:sign
+
+      - name: Publish releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTPYPI: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
+          SELECTED: ${{ needs.plan.outputs.release-order }}
+        run: task ci:release:publish
 
   # Package checks resolve internal dependencies from the workspace, which
   # never proves a tag installs on its own.

@@ -36,3 +36,6 @@ coverage.xml
 # Docs build output ([docs] site_dir)
 .docs-site/
 # END rn-forge kiln
+
+# SonarScanner working directory (task sonar:local)
+.scannerwork/

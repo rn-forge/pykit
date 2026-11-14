@@ -122,7 +122,6 @@ extend-immutable-calls = [
 ]
 # Repository tooling outside packages/, which is what the source scan covers.
 "conftest.py" = ["S"]
-".github/scripts/*" = ["S"]
 
 [dependency-groups]
 dev = [

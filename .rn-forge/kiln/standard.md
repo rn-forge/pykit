@@ -36,8 +36,10 @@ The developer surface for this repo is exactly:
 | `task format` | Format Python code, TOML, YAML and Markdown prose in place. |
 | `task kiln:apply` | Re-render the generated files from .rn-forge/kiln/config.toml. Pass --dry-run, or --force \<path> to overwrite a drifted file, after `--`. |
 | `task kiln:diff` | Show every generated file that differs from a fresh render, writing nothing. Pass --artifact \<key or path> after `--` to limit it to one. |
+| `task kiln:pin` | Move kiln to another ref (tag, branch or SHA) and re-render with it. Pass the ref after `--`. |
 | `task lint` | Every lint — Python, imports, Markdown, TOML and YAML formatting, kiln's checks (generated files, task layout, CI, dependencies, docs), workflow security, dependency vulnerabilities, dependency licences. |
 | `task setup` | Install the project and its dev + docs dependency groups. |
+| `task sonar:local` | Run the coverage tests and scan the checked-out branch on SonarCloud, awaiting the quality gate. Needs SONAR_TOKEN and sonar-scanner on PATH; pass --dry-run after -- to print the commands. |
 | `task test` | Run each package's pytest suite. |
 | `task test:coverage` | Run each package's tests with coverage, combined into one XML report (used by CI/Sonar). |
 | `task typecheck` | Type-check each package in pyright strict mode. |
@@ -179,6 +181,11 @@ it with `uvx` in its own environment (kiln ADR-0006). A repository's lock holds
 none of kiln's dependencies, and kiln's pykit pins never constrain the
 repository's.
 
+To move the pin to another ref (a tag, a branch or a SHA, higher or lower), run
+`task kiln:pin -- <ref>`. It checks that the ref resolves, sets `[kiln] ref`,
+and re-renders with the kiln at that ref, so the move is one reviewable diff. Do
+not edit the ref by hand: `task kiln:apply` would then run the old kiln.
+
 ## 4. The import boundary
 
 The rn-forge peer rule is enforced at the dependency declaration, above:
@@ -210,7 +217,8 @@ PyPI. A dispatch with `testpypi` set uploads every package to TestPyPI instead
 and creates no tag or release. Once per repository, the owner creates the GitHub
 environments `pypi` (deployment branch `main`) and `testpypi`, and adds a
 trusted publisher per package on pypi.org and on test.pypi.org, naming workflow
-`ci.yml` and the environment.
+`ci.yml` and the environment (not `_release.yml`; PyPI rejects an upload from a
+called workflow).
 
 `task validate` proves: ruff is clean and formatted in every package; the
 archetype's dependency set is present, allowed and pinned; the import contracts

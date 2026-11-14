@@ -86,19 +86,18 @@ need a server analysis, which the IDE cannot certify.
 To analyze the working tree before pushing:
 
 ```bash
-python3 .github/scripts/sonar_local.py --dry-run
-python3 .github/scripts/sonar_local.py
+task sonar:local -- --dry-run
+task sonar:local
 ```
 
 The first command prints the target branch and the exact test and scanner
-commands, which use the same packages, coverage arguments and sources as CI; it
-needs no token and runs nothing. The second runs the workspace coverage tests,
-then uploads the code and results to SonarCloud and exits with the quality
-gate's status. A full scan needs:
+commands; it needs no token and runs nothing. The second runs the workspace
+coverage tests, then uploads the code and results to SonarCloud and exits with
+the quality gate's status. A full scan needs:
 
 - network access, and a non-`main` branch on a plan with branch analysis; the
-  script refuses `main`, and `--branch` must match the checked-out branch
-  unless HEAD is detached;
+  verb refuses `main`, and `--branch` must match the checked-out branch unless
+  HEAD is detached;
 - a SonarCloud token provided by the project owner, exported as `SONAR_TOKEN`;
 - the official
   [SonarScanner CLI](https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/sonarscanner-cli/)
