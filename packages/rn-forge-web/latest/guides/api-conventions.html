@@ -506,6 +506,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#registering-an-exception-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering an exception hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keeping-programming-errors-at-500" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping programming errors at 500
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#proving-the-exception-table-is-total" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1599,6 +1621,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#registering-an-exception-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering an exception hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keeping-programming-errors-at-500" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping programming errors at 500
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#proving-the-exception-table-is-total" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2047,6 +2091,39 @@ reaches the wire for one. An application does <strong>not</strong> get this by p
 arbitrary context on <code>AppException.error_data</code>: that dict routinely carries
 credentials and internal identifiers and is never published automatically: the
 application chooses what to expose by implementing the protocol.</p>
+<h3 id="registering-an-exception-hierarchy">Registering an exception hierarchy<a class="headerlink" href="#registering-an-exception-hierarchy" title="Permanent link">&para;</a></h3>
+<p>An application that raises its own exception hierarchy, each class carrying a
+stable machine <code>code</code> and an HTTP <code>status_code</code>, registers every class with one
+call:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">registry</span> <span class="o">=</span> <span class="n">default_registry</span><span class="p">(</span><span class="n">type_base</span><span class="o">=</span><span class="s2">&quot;/problems/&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">register_hierarchy</span><span class="p">(</span><span class="n">AppError</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>register_hierarchy(base)</code> registers <code>base</code> and every subclass, base first. Each
+class's <code>code</code> is its slug and its <code>status_code</code> its status; the title is the
+status's reason phrase. A subclass inherits or overrides either attribute. Use
+hyphenated codes, like every row in the table above. A class with no <code>code</code> or
+no <code>status_code</code> raises <code>TypeError</code> at registration. <code>code_attr</code> and
+<code>status_attr</code> name different attributes.</p>
+<p>Set a <code>type_base</code>. Without one the <code>type</code> is <code>about:blank</code> and the code never
+reaches the wire; with one, <code>type</code> is <code>type_base</code> plus the code, so a client
+matches on <code>type</code>. A relative base such as <code>/problems/</code> is enough.</p>
+<p>Only classes already imported are seen. Register after every module that
+declares part of the hierarchy has been imported.</p>
+<h3 id="keeping-programming-errors-at-500">Keeping programming errors at 500<a class="headerlink" href="#keeping-programming-errors-at-500" title="Permanent link">&para;</a></h3>
+<p><code>default_registry()</code> maps <code>LookupError</code> to <code>not-found</code> (404) and <code>ValueError</code> to
+<code>validation-error</code> (422), so a <code>KeyError</code> or <code>IndexError</code> raised by a bug
+becomes a 404. Register the two classes against <code>INTERNAL_ERROR</code> to keep them at
+500:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">registry</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">default_registry</span><span class="p">(</span><span class="n">type_base</span><span class="o">=</span><span class="s2">&quot;/problems/&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="n">INTERNAL_ERROR</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="n">INTERNAL_ERROR</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>The MRO walk finds <code>KeyError</code> and <code>IndexError</code> before <code>LookupError</code>, so a plain
+<code>LookupError</code> still resolves to 404. The recipe leaves the <code>ValueError</code> default
+alone: a <code>ValueError</code> still resolves to 422.</p>
 <h3 id="proving-the-exception-table-is-total">Proving the exception table is total<a class="headerlink" href="#proving-the-exception-table-is-total" title="Permanent link">&para;</a></h3>
 <p>An unregistered domain exception silently resolves to <code>internal-error</code>/500,
 which is easy to miss. <code>unmapped_exceptions(registry, *bases)</code> walks every
@@ -2249,19 +2326,20 @@ readiness.</p>
 <li><strong>The 401 body never says why verification failed.</strong> Expired, bad signature
   and unknown <code>kid</code> are indistinguishable on the wire; the reason goes to the
   log.</li>
-<li>The verified caller is a <code>Principal</code> (<code>rn-forge-auth</code>): <code>subject</code> (required), plus optional
-  <code>issuer</code>, <code>scopes</code>, <code>roles</code>, <code>tenant</code>, raw <code>claims</code> and <code>mechanism</code>. Scopes
-  and roles are separate sets and neither is encoded as the other.</li>
+<li>The verified caller is a <code>Principal</code> (<code>rn-forge-auth</code>): <code>subject</code> (required),
+  plus optional <code>issuer</code>, <code>scopes</code>, <code>roles</code>, <code>tenant</code>, raw <code>claims</code> and
+  <code>mechanism</code>. Scopes and roles are separate sets and neither is encoded as
+  the other.</li>
 <li><strong>A session-only route's 401 carries no <code>WWW-Authenticate</code>.</strong> This deviates
   from RFC 9110 §15.5.2, which requires a challenge on every 401: a cookie
   session has no registered authentication scheme to name, and a <code>Bearer</code>
   challenge would misdescribe the route. A route that accepts bearer tokens
   keeps the challenge above. The application raises <code>SessionRequired</code>;
-  <code>render_problem</code> omits the header for it. The body is the same generic 401. —
-  <code>auth.session-only-401-has-no-challenge</code></li>
+  <code>render_problem</code> omits the header for it. The body is the same generic 401.
+  — <code>auth.session-only-401-has-no-challenge</code></li>
 <li><strong>A CSRF rejection → 403 with the <code>csrf-failed</code> problem type</strong>, not
-  <code>forbidden</code>, so a client can tell it from a permission denial and refresh its
-  token. The application raises <code>CsrfFailed</code>. The detail is always
+  <code>forbidden</code>, so a client can tell it from a permission denial and refresh
+  its token. The application raises <code>CsrfFailed</code>. The detail is always
   <code>CSRF verification failed.</code> and never says which check failed; the <code>type</code>
   member tells the two 403s apart once a <code>type_base</code> is configured. —
   <code>auth.csrf-rejection-is-403-csrf-failed</code></li>
@@ -2908,9 +2986,9 @@ table — never against the other stack's output, because two stacks agreeing on
 the wrong thing is not conformance.</p>
 <p>A case may declare <code>requires</code>, the optional capabilities (<code>session-routes</code>,
 <code>csrf</code>) a binding must provide for it to apply. A driver parametrizes over
-<code>cases_provided_by(PROVIDES)</code>, where <code>PROVIDES</code> is the set its fixture serves;
-a binding adds a capability to <code>PROVIDES</code> when it ships the feature, and from
-then its cases run like any other. A case without <code>requires</code> is never skipped.</p>
+<code>cases_provided_by(PROVIDES)</code>, where <code>PROVIDES</code> is the set its fixture serves; a
+binding adds a capability to <code>PROVIDES</code> when it ships the feature, and from then
+its cases run like any other. A case without <code>requires</code> is never skipped.</p>
 <p>A rule stated here with no case in that table is treated as unfinished.</p>
 
 

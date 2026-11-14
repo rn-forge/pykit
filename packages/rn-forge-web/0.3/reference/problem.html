@@ -951,6 +951,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.web.problem.ProblemRegistry.register_hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;register_hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.web.problem.ProblemRegistry.rows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1737,6 +1748,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;register
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.web.problem.ProblemRegistry.register_hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;register_hierarchy
       
     </span>
   </a>
@@ -2685,6 +2707,138 @@ reason phrase resolves to the fallback.</p>
     <div class="doc doc-contents ">
 
         <p>Register <em>problem</em> for <em>exc_type</em>, returning <code>self</code> for chaining.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.web.problem.ProblemRegistry.register_hierarchy" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">register_hierarchy</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">code_attr</span><span class="o">=</span><span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="n">status_attr</span><span class="o">=</span><span class="s1">&#39;status_code&#39;</span><span class="p">)</span></code>
+
+<a href="#rn_forge.web.problem.ProblemRegistry.register_hierarchy" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Register a row for <em>base</em> and every subclass, returning <code>self</code>.</p>
+<p>Each class gets <code>ProblemType(code, status, phrase)</code>: its <em>code_attr</em>
+is the slug, its <em>status_attr</em> the HTTP status, and the title is that
+status's IANA reason phrase. The attributes are read with <code>getattr</code>,
+so a subclass inherits them or overrides them. Classes are walked depth
+first, base first, in <code>__subclasses__()</code> order, each once; only
+classes already imported are seen.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>base</code>
+            </td>
+            <td>
+                  <code><span title="type">type</span>[<span title="Exception">Exception</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The root of the exception hierarchy.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>code_attr</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The class attribute holding the slug.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;code&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>status_attr</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The class attribute holding the HTTP status.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;status_code&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="TypeError">TypeError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A class in the hierarchy has no <em>code_attr</em> or no
+<em>status_attr</em>; the message names the class and the attribute.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A class's status has no IANA reason phrase.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code><span class="n">class</span><span class="w"> </span><span class="n">AppError</span><span class="p">(</span><span class="n">Exception</span><span class="p">)</span><span class="o">:</span>
+<span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;app-error&quot;</span>
+<span class="w">    </span><span class="n">status_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">500</span>
+
+<span class="n">class</span><span class="w"> </span><span class="n">OrderLocked</span><span class="p">(</span><span class="n">AppError</span><span class="p">)</span><span class="o">:</span>
+<span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;order-locked&quot;</span>
+<span class="w">    </span><span class="n">status_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">409</span>
+
+<span class="n">registry</span><span class="p">.</span><span class="n">register_hierarchy</span><span class="p">(</span><span class="n">AppError</span><span class="p">)</span>
+</code></pre></div>
 
 
     </div>
