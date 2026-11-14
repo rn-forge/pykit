@@ -2,7 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | planned |
+| **Status** | shipped |
+| **Start Date** | 2026-10-29 |
+| **Finish Date** | 2026-11-14 |
 
 pykit cuts over onto kiln's `python-lib` archetype (F16.3,
 [E16](../../specs/epics/E16-kiln-adoption/index.md)), with every package already
@@ -31,7 +33,7 @@ log redaction and server-sent events (F6.1 and F6.2,
 | -- | -- | -- |
 | [F6.1 — Structured-log secret redaction](../../specs/epics/E6-consumer-reuse/F6.1-log-redaction.md) | E6 | Closed |
 | [F6.2 — Server-sent events](../../specs/epics/E6-consumer-reuse/F6.2-sse.md) | E6 | Closed |
-| [F16.3 — Cut over onto kiln](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Active |
+| [F16.3 — Cut over onto kiln](../../specs/epics/E16-kiln-adoption/F16.3-cutover.md) | E16 | Closed |
 | [F16.7 — Instruction files follow kiln's standard](../../specs/epics/E16-kiln-adoption/F16.7-instructions-follow-kiln-standard.md) | E16 | Closed |
 | [F17.1 — Problem rows from an exception hierarchy](../../specs/epics/E17-local-first-web-app-extraction/F17.1-problem-rows-from-exceptions.md) | E17 | Closed |
 | [F17.2 — Single-owner thread actor](../../specs/epics/E17-local-first-web-app-extraction/F17.2-thread-actor.md) | E17 | Closed |
@@ -40,7 +42,7 @@ log redaction and server-sent events (F6.1 and F6.2,
 | [F17.5 — Safe filesystem mutation](../../specs/epics/E17-local-first-web-app-extraction/F17.5-safe-fs-and-tool-probe.md) | E17 | Closed |
 | [F18.6 — Cache Markdown structure by text](../../specs/epics/E18-kiln-extraction/F18.6-markdown-parse-cache.md) | E18 | Closed |
 | [F18.7 — A managed block's end marker can sit at a different indent](../../specs/epics/E18-kiln-extraction/F18.7-managed-block-end-indent.md) | E18 | Closed |
-| [F21.5 — Retire the self-hosted index](../../specs/epics/E21-pypi-distribution/F21.5-retire-index.md) | E21 | Active |
+| [F21.5 — Retire the self-hosted index](../../specs/epics/E21-pypi-distribution/F21.5-retire-index.md) | E21 | Closed |
 
 <!-- END derived scope -->
 
@@ -100,4 +102,37 @@ git log --format='%h %ad %s' --date=short -E --grep='F16\.[36]|S16\.[36]\.|F21\.
 
 ## Shipped
 
-Filled at the cut.
+Shipped 2026-11-14. Every feature in scope is closed. The pull requests
+[#31](https://github.com/rn-forge/pykit/pull/31) and
+[#34](https://github.com/rn-forge/pykit/pull/34) merged into `main`, and
+[run 43591842240](https://github.com/rn-forge/pykit/actions/runs/43591842240) at
+`637a7df` passed every job, including `plan` (`task ci:internal-ranges`),
+`umbrella` (`task ci:release:umbrella`) and `integration (rn-forge-auth)`, which
+started the `keycloak` service beside redis. `main.yml` no longer exists.
+
+PyPI serves these versions, each with an `rn-forge-<package>-v<version>` tag and
+a GitHub release:
+
+| Package | Version |
+| -- | -- |
+| `rn-forge-commons` | `0.9.0` |
+| `rn-forge-auth` | `0.1.1` |
+| `rn-forge-cli` | `0.1.3` |
+| `rn-forge-data` | `0.1.3` |
+| `rn-forge-devops` | `0.4.0` |
+| `rn-forge-django` | `0.6.1` |
+| `rn-forge-fastapi` | `0.4.1` |
+| `rn-forge-sqlalchemy` | `0.2.3` |
+| `rn-forge-tooling` | `0.3.2` |
+| `rn-forge-web` | `0.3.1` |
+
+Each package's docs are served at
+`https://rn-forge.github.io/pykit/packages/rn-forge-<package>/latest/`, the root
+site returns 200, and `https://rn-forge.github.io/pykit/simple/` returns 404.
+
+**Known issue.** The umbrella step did not create `release-8`, which was still
+`planned` on `main`. It created tags and GitHub releases `release-1` to
+`release-5`, all at `637a7df`, for releases that had never been tagged, and
+GitHub marks "Release 5" as Latest. `release-6` (`ed566a0`) and `release-7`
+(`63495d8`) were untouched. Moving or deleting the tags is the owner's; the
+cause is in kiln's `kiln-devops umbrella`.

@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-26 |
+| **Closed Date** | 2026-11-14 |
 
 <!-- BEGIN derived features -->
 
@@ -13,7 +14,7 @@
 | [F21.2 — Package metadata for PyPI](F21.2-package-metadata.md) | Closed | release-7 | 1 Closed |
 | [F21.3 — Publish from the release job](F21.3-publish-from-release.md) | Closed | release-7 | 5 Closed |
 | [F21.4 — Consumers install from PyPI](F21.4-consumer-docs.md) | Closed | release-7 | 1 Closed |
-| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | Active | release-8 | 1 Active |
+| [F21.5 — Retire the self-hosted index](F21.5-retire-index.md) | Closed | release-8 | 1 Closed |
 
 <!-- END derived features -->
 
