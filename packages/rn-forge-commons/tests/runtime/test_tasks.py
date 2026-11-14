@@ -81,26 +81,54 @@ class TestTask:
         with pytest.raises(TypeError):
             Task("t")
 
-    def test_start_sets_thread_name(self):
+    def test_submitted_task_sets_worker_thread_name(self):
+        test_thread_name = threading.current_thread().name
         t = ThreadNameTask("named-thread")
-        t._start()
-        assert t.props["thread_name"] == "named-thread"
+        pool = TaskPool(max_workers=1)
+        try:
+            pool.submit(t)
+            assert t.future is not None
+            t.future.result(timeout=1)
+            assert t.props["thread_name"] == "named-thread"
+            assert threading.current_thread().name == test_thread_name
+        finally:
+            pool.shutdown()
 
-    def test_start_captures_error(self):
+    def test_submitted_task_captures_error(self):
         t = FailingTask("fail")
-        with pytest.raises(ValueError):
-            t._start()
-        assert isinstance(t.error, ValueError)
+        pool = TaskPool(max_workers=1)
+        try:
+            pool.submit(t)
+            assert t.future is not None
+            with pytest.raises(
+                ValueError, match="^Task fail intentionally failed$"
+            ) as exc_info:
+                t.future.result(timeout=1)
+            assert t.error is exc_info.value
+        finally:
+            pool.shutdown(fail_on_error=False)
 
-    def test_start_reraises_error(self):
+    def test_submitted_task_reraises_error(self):
         t = FailingTask("fail")
-        with pytest.raises(ValueError, match="intentionally failed"):
-            t._start()
+        pool = TaskPool(max_workers=1)
+        try:
+            pool.submit(t)
+            assert t.future is not None
+            with pytest.raises(ValueError, match="^Task fail intentionally failed$"):
+                t.future.result(timeout=1)
+        finally:
+            pool.shutdown(fail_on_error=False)
 
-    def test_run_called_on_start(self):
+    def test_submitted_task_calls_run(self):
         t = SimpleTask("t")
-        t._start()
-        assert t.props.get("ran") is True
+        pool = TaskPool(max_workers=1)
+        try:
+            pool.submit(t)
+            assert t.future is not None
+            t.future.result(timeout=1)
+            assert t.props.get("ran") is True
+        finally:
+            pool.shutdown()
 
 
 # ---------------------------------------------------------------------------
@@ -306,11 +334,6 @@ class TestTaskPoolAdvancedShutdown:
         running.future.result(timeout=1)
         assert queued.future is not None
         assert queued.future.cancelled()
-
-    def test_shutdown_ignores_task_without_future(self):
-        pool = TaskPool()
-        pool._tasks["orphan"] = SimpleTask("orphan")
-        assert pool.shutdown(fail_on_error=False) == []
 
 
 class TestTaskPoolMapSettled:

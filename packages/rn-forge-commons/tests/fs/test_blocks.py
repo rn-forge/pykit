@@ -26,26 +26,26 @@ class TestMarkers:
             == "  # BEGIN generated nav\n- a\n  # END generated nav\n"
         )
 
-    def test_s18_7_1_1_end_indent_defaults_to_indent(self):
+    def test_end_indent_defaults_to_indent(self):
         assert ManagedBlock("n", indent="  ").end == "  # END n"
         assert ManagedBlock("n", indent="  ", end_indent=None).render(
             "", "- a\n"
         ) == ManagedBlock("n", indent="  ").render("", "- a\n")
 
-    def test_s18_7_1_2_end_indent_applies_to_the_end_marker_only(self):
+    def test_end_indent_applies_to_the_end_marker_only(self):
         block = ManagedBlock("n", indent="  ", end_indent="")
         assert block.begin == "  # BEGIN n"
         assert block.end == "# END n"
 
-    def test_s18_7_1_3_html_end_indent(self):
+    def test_html_end_indent(self):
         block = ManagedBlock("n", comment="<!--", indent="  ", end_indent="    ")
         assert block.end == "    <!-- END n -->"
 
-    def test_s18_7_1_4_render_writes_begin_indented_and_end_at_the_margin(self):
+    def test_render_writes_begin_indented_and_end_at_the_margin(self):
         block = ManagedBlock("n", indent="  ", end_indent="")
         assert block.render("", "- a\n") == "  # BEGIN n\n- a\n# END n\n"
 
-    def test_s18_7_1_5_end_indent_is_not_validated(self):
+    def test_end_indent_is_not_validated(self):
         ManagedBlock("n", indent="  ", end_indent="\t")
         ManagedBlock("n", end_indent="  ")
 
@@ -98,15 +98,15 @@ class TestEndIndent:
     def block(self) -> ManagedBlock:
         return ManagedBlock("n", indent="  ", end_indent="")
 
-    def test_s18_7_1_6_extract_reads_either_end_form(self, block):
+    def test_extract_reads_either_end_form(self, block):
         assert block.extract(self.at_margin) == "- a\n"
         assert block.extract(self.indented) == "- a\n"
 
-    def test_s18_7_1_7_render_replaces_either_end_form(self, block):
+    def test_render_replaces_either_end_form(self, block):
         for text in (self.at_margin, self.indented):
             assert block.render(text, "- b\n") == "  # BEGIN n\n- b\n# END n\n"
 
-    def test_s18_7_1_8_remove_and_round_trip(self, block):
+    def test_remove_and_round_trip(self, block):
         rendered = block.render("head\n", "- a\n")
         assert block.remove(rendered) == "head\n"
         assert block.render(rendered, "- a\n") == rendered
@@ -122,7 +122,7 @@ class TestEndIndent:
             (ManagedBlock("n", indent="  "), "head\n\n  # BEGIN n\nx\n  # END n\n"),
         ],
     )
-    def test_s18_7_1_9_default_output_is_unchanged(self, block, expected):
+    def test_default_output_is_unchanged(self, block, expected):
         assert block.render("head\n", "x\n") == expected
 
 
