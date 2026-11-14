@@ -448,6 +448,56 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sqlite-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedded-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedded migrations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Embedded migrations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#envpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        env.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script location
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -766,6 +816,56 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sqlite-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedded-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedded migrations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Embedded migrations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#envpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        env.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script location
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -879,6 +979,136 @@ different number of values, is a <code>400</code>.</p>
     <span class="n">select</span><span class="p">(</span><span class="n">Person</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">terms</span><span class="o">=</span><span class="n">terms</span><span class="p">,</span> <span class="n">cursor</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">Person</span><span class="o">.</span><span class="n">id</span>
 <span class="p">)</span>
 </code></pre></div>
+
+<h2 id="sqlite-engine">SQLite engine<a class="headerlink" href="#sqlite-engine" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_sqlite_engine</span>
+
+<span class="n">engine</span> <span class="o">=</span> <span class="n">create_sqlite_engine</span><span class="p">(</span><span class="s2">&quot;var/app.db&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The helper creates the parent directory and returns an <code>AsyncEngine</code> that runs
+these pragmas on every new connection:</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Pragma</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>busy_timeout_ms</code></td>
+<td><code>busy_timeout</code></td>
+<td>How long a connection waits on a locked database</td>
+</tr>
+<tr>
+<td><code>wal=True</code></td>
+<td><code>journal_mode=WAL</code></td>
+<td>Readers do not block the writer</td>
+</tr>
+<tr>
+<td><code>synchronous</code></td>
+<td><code>synchronous</code></td>
+<td><code>OFF</code>, <code>NORMAL</code>, <code>FULL</code> or <code>EXTRA</code>, in any case</td>
+</tr>
+<tr>
+<td><code>foreign_keys=True</code></td>
+<td><code>foreign_keys=ON</code></td>
+<td>Enforces foreign-key constraints</td>
+</tr>
+</tbody>
+</table>
+<p>A false flag leaves that pragma at SQLite's default. The application declares
+<code>aiosqlite</code>; the package declares no driver.</p>
+<p>The exact string <code>":memory:"</code> opens an in-memory database for tests. It skips
+the directory step and WAL, and uses a single shared connection, so every
+session sees the same database. The helper never creates tables: schema is the
+migrations' job.</p>
+<h2 id="embedded-migrations">Embedded migrations<a class="headerlink" href="#embedded-migrations" title="Permanent link">&para;</a></h2>
+<p>Install the extra, which adds <code>alembic</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-sqlalchemy[migrations]&gt;=0.2.3,&lt;0.3&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">asynccontextmanager</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_sqlite_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.sqlalchemy.migrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_migrations</span>
+
+<span class="n">DB_PATH</span> <span class="o">=</span> <span class="s2">&quot;var/app.db&quot;</span>
+
+
+<span class="nd">@asynccontextmanager</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">):</span>
+    <span class="c1"># The engine helper creates the database&#39;s directory; it connects lazily.</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_sqlite_engine</span><span class="p">(</span><span class="n">DB_PATH</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span>
+        <span class="n">run_migrations</span><span class="p">,</span>
+        <span class="s2">&quot;myapp:migrations&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;sqlite+aiosqlite:///</span><span class="si">{</span><span class="n">DB_PATH</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">yield</span>
+    <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
+</code></pre></div>
+
+<p><code>run_migrations</code> is not re-exported from <code>rn_forge.sqlalchemy</code>; importing it
+without the extra raises <code>ImportError</code>, and the rest of the package works
+without it. Run it from application startup, not from the engine helper.</p>
+<p>It blocks, and the async <code>env.py</code> below calls <code>asyncio.run()</code>, which cannot run
+inside a running event loop. <code>asyncio.to_thread</code> gives it a thread with no loop.
+A failing migration propagates unchanged.</p>
+<p>If the path holds characters that are special in a URL, build <code>db_url</code> with
+<code>sqlalchemy.engine.URL.create("sqlite+aiosqlite", database=path)</code> and
+<code>.render_as_string(hide_password=False)</code>.</p>
+<h3 id="envpy"><code>env.py</code><a class="headerlink" href="#envpy" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">logging.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">fileConfig</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">alembic</span><span class="w"> </span><span class="kn">import</span> <span class="n">context</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_engine_from_config</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">config</span>
+<span class="c1"># run_migrations sets this to False; without the check, fileConfig runs</span>
+<span class="c1"># whenever an alembic.ini is passed.</span>
+<span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">config_file_name</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;configure_logger&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="n">fileConfig</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">config_file_name</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="n">connection</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span> <span class="n">render_as_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">context</span><span class="o">.</span><span class="n">begin_transaction</span><span class="p">():</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">run_migrations</span><span class="p">()</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_online</span><span class="p">():</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">async_engine_from_config</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">get_section</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">config_ini_section</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;sqlalchemy.&quot;</span><span class="p">,</span>
+        <span class="n">poolclass</span><span class="o">=</span><span class="n">pool</span><span class="o">.</span><span class="n">NullPool</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="n">_run</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
+
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">_online</span><span class="p">())</span>
+</code></pre></div>
+
+<ul>
+<li><code>render_as_batch=True</code> makes autogenerated migrations rebuild a table, because
+  SQLite cannot <code>ALTER</code> most columns in place.</li>
+<li><code>run_migrations</code> sets <code>config.attributes["configure_logger"] = False</code> so the
+  application's logging is not reconfigured. Only your <code>env.py</code> can honor it:
+  one without the <code>configure_logger</code> check reconfigures logging whenever an
+  <code>alembic_ini</code> is passed. Alembic's stock template does not have the check.</li>
+</ul>
+<h3 id="script-location">Script location<a class="headerlink" href="#script-location" title="Permanent link">&para;</a></h3>
+<p><code>script_location</code> is a directory, or a package resource such as
+<code>"myapp:migrations"</code>, meaning the <code>migrations</code> directory inside the <code>myapp</code>
+package. The resource form keeps working once the application is installed as a
+wheel, where a filesystem path relative to the source tree no longer exists.</p>
 
 
 
