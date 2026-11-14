@@ -20,7 +20,6 @@ deleted. A dropped idea is deleted too.
 | [tool-version-probe](#tool-version-probe) | Ask an external executable for its version in `rn-forge-commons`. Waits for a second application that probes tools. | F17.5 review, 2026-10-23 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
-| [full-local-sonar-scan](#full-local-sonar-scan) | Run the authorized full local Sonar scan. | S14.4.3, amended 2026-10-03 |
 
 ## model-vocabulary
 
@@ -129,10 +128,7 @@ the added confidence is wanted.
 
 The organization's Sonar plan rejects reading non-main branch data, so a
 dispatched branch scan cannot read its quality gate. Pull request analysis works
-and is the validation route. Decide whether a plan change is worth it.
-
-## full-local-sonar-scan
-
-`.github/scripts/sonar_local.py` has a dry-run and mocked tests. The full
-authorized scan needs `sonar-scanner` installed and a `SONAR_TOKEN` from the
-owner; it has never been run.
+and is the validation route. Decide whether a plan change is worth it. The first
+full `task sonar:local` run (2026-11-13) hit the same limit: the scan uploaded,
+then reading the gate failed with "Organization is not allowed to access data
+from non main branches".

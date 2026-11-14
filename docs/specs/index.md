@@ -24,12 +24,6 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 Features with no Iteration, by State and epic.
 
-### New
-
-| Epic | Features |
-| -- | -- |
-| [E16 — kiln adoption](epics/E16-kiln-adoption/index.md) | [F16.8](epics/E16-kiln-adoption/F16.8-retire-local-sonar-script.md) |
-
 ### Deferred
 
 | Epic | Features | Entry criteria |

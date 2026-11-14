@@ -16,7 +16,7 @@
 | [F16.5 — rn-forge-devops meets kiln's CI contract](F16.5-devops-meets-kiln-ci.md) | Closed | release-5 | 3 Closed |
 | [F16.6 — Retire the plan outputs generated CI does not read](F16.6-retire-unread-plan-outputs.md) | Removed | — | 1 Removed |
 | [F16.7 — Instruction files follow kiln's standard](F16.7-instructions-follow-kiln-standard.md) | Closed | release-8 | 1 Closed |
-| [F16.8 — Retire the local Sonar script for kiln's verb](F16.8-retire-local-sonar-script.md) | New | — | 1 New |
+| [F16.8 — Retire the local Sonar script for kiln's verb](F16.8-retire-local-sonar-script.md) | Closed | — | 1 Closed |
 
 <!-- END derived features -->
 
