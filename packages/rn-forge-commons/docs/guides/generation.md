@@ -98,6 +98,18 @@ is on disk, and what was recorded the last time it was applied:
 | a seeded file that already exists | `SKIP` |
 | recorded but no longer rendered | `DELETE` / `REMOVE` / `FORGET` |
 
+`ApplyResult.written` reports paths according to `Plan.writes`:
+
+| Action | Reported in `written` |
+| -- | -- |
+| `CREATE`, `INSERT`, `UPDATE`, `DELETE`, `REMOVE` | yes |
+| `UNCHANGED`, `SKIP`, `FORGET` | no |
+| approved `DRIFT`, `CONFLICT`, `MISSING` | yes |
+
+Each path appears once, at its first position in plan order. Dry runs report
+`written == ()` while `changes` retains the whole plan. An approved `MISSING`
+that intends `DELETE` is still reported even though the file is already absent.
+
 `DRIFT`, `CONFLICT` and `MISSING` are **blocking**: they abort the whole plan
 before anything is written unless the caller passed that exact path in `force`.
 There is no "force everything" value — approving a path approves that path.

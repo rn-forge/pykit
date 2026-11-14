@@ -200,6 +200,72 @@ class TestDiff:
 
 
 class TestApply:
+    def test_written_lists_only_paths_whose_bytes_changed(self, tmp_path):
+        run(tmp_path, [managed(path="a.yml"), managed(path="b.yml"), seeded()])
+
+        result, _ = run(
+            tmp_path,
+            [managed(path="a.yml", content="v2\n"), managed(path="b.yml"), seeded()],
+        )
+
+        assert result.written == ("a.yml",)
+
+    def test_written_covers_create_delete_remove_and_excludes_forget(self, tmp_path):
+        run(
+            tmp_path,
+            [
+                managed(path="old.yml"),
+                block(),
+                seeded(),
+            ],
+        )
+
+        result, _ = run(tmp_path, [managed(path="new.yml")])
+
+        assert result.written == ("new.yml", ".gitignore", "old.yml")
+
+    def test_dry_run_reports_nothing_written(self, tmp_path):
+        artifacts = [managed(), seeded(), block()]
+
+        result, _ = run(tmp_path, artifacts, dry_run=True)
+
+        assert result.written == ()
+        assert len(result.changes) == len(artifacts)
+
+    def test_forced_drift_is_reported_written(self, tmp_path):
+        artifacts = [managed(path="drift.yml"), managed(path="unchanged.yml")]
+        run(tmp_path, artifacts)
+        (tmp_path / "drift.yml").write_text("edited\n")
+
+        result, _ = run(tmp_path, artifacts, force=["drift.yml"])
+
+        assert result.written == ("drift.yml",)
+
+    def test_reporting_adds_no_writes(self, tmp_path):
+        artifacts = [managed(), block()]
+        run(tmp_path, artifacts)
+
+        def snapshot():
+            state_paths = {
+                tmp_path / ".rn-forge/state.json",
+                tmp_path / ".rn-forge/state.lock",
+                *tmp_path.glob(".rn-forge/backups/*/.rn-forge/state.json"),
+            }
+            return {
+                path.relative_to(tmp_path): (
+                    path.read_bytes(),
+                    path.stat().st_mtime_ns,
+                )
+                for path in tmp_path.rglob("*")
+                if path.is_file() and path not in state_paths
+            }
+
+        before = snapshot()
+        run(tmp_path, artifacts)
+        after = snapshot()
+
+        assert after == before
+
     def test_creates_and_records(self, tmp_path):
         result, state = run(tmp_path, [managed(), seeded(), block()])
         assert actions(result) == {
@@ -337,6 +403,17 @@ class TestSeveralBlocksInOneFile:
         text = (tmp_path / ".gitignore").read_text()
         assert KILN_BLOCK.extract(text) == ".build/\n"
         assert OTHER_BLOCK.extract(text) == "site/\n"
+
+    def test_written_lists_a_file_once_for_several_blocks(self, tmp_path):
+        (tmp_path / ".gitignore").write_text("repo line\n")
+        run(tmp_path, [block(), other_block()])
+
+        result, _ = run(
+            tmp_path,
+            [block(content=".build/\n"), other_block(content="site/\n")],
+        )
+
+        assert result.written == (".gitignore",)
 
     def test_removing_one_block_while_updating_the_other(self, tmp_path):
         (tmp_path / ".gitignore").write_text("repo line\n")

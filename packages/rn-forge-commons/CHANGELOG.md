@@ -5,6 +5,12 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- `ApplyResult.written` reports each write path once in plan order and no longer
+  lists unchanged, skipped, forgotten or dry-run paths. This public behaviour
+  change warrants a minor version bump while the package is pre-1.0.
+
 ## [0.9.0] - 2026-11-13
 
 ### Added
