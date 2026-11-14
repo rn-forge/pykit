@@ -25,6 +25,7 @@ includes:
   docs: tasks/docs.yml
   workspace: tasks/workspace.yml
   ci: tasks/ci.yml
+  sonar: tasks/sonar.yml
 
 tasks:
   setup:

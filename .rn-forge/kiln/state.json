@@ -35,13 +35,6 @@
       "kind": "managed",
       "path": ".github/workflows/_integration.yml"
     },
-    ".github/workflows/_release.yml": {
-      "begin_marker": null,
-      "content_hash": "13e55a1b7a982dbeb4505190fc333b509b777810bfca9d0d4d2de7dbc42f30ac",
-      "end_marker": null,
-      "kind": "managed",
-      "path": ".github/workflows/_release.yml"
-    },
     ".github/workflows/_smoke.yml": {
       "begin_marker": null,
       "content_hash": "d778a528748b54db0b4334bbd6fea947770e08aa8d5342c1572e7090dfbadf64",
@@ -65,7 +58,7 @@
     },
     ".github/workflows/ci.yml": {
       "begin_marker": null,
-      "content_hash": "cc5e0fe2c99506668249de0e675f49cac50597ca5695a62a0fe97c0ee34a00c8",
+      "content_hash": "1977440a75fcb3d98bb7a8d9b177cbcc0aea82716023ada17fa7d302280bd451",
       "end_marker": null,
       "kind": "managed",
       "path": ".github/workflows/ci.yml"
@@ -100,7 +93,7 @@
     },
     ".rn-forge/kiln/standard.md": {
       "begin_marker": null,
-      "content_hash": "984caad85b232e07518f513442944c7ae6c68e9333249f71c916966bd1400fb7",
+      "content_hash": "0b5f2dfb9ca9c2b6eded4c925a4f6902421794bd12a66b975b2ffc1adebd7d7a",
       "end_marker": null,
       "kind": "managed",
       "path": ".rn-forge/kiln/standard.md"
@@ -128,7 +121,7 @@
     },
     "Taskfile.yml": {
       "begin_marker": null,
-      "content_hash": "eeddfea86d86958b033f1a7461037a92bf850dc1ea689ac4550f8b3bcd2d7ac2",
+      "content_hash": "8241a425983735d9df9fc3f4ad453947caa1c862069d5371fa71578eb4860bcd",
       "end_marker": null,
       "kind": "managed",
       "path": "Taskfile.yml"
@@ -310,7 +303,7 @@
     },
     "tasks/kiln.yml": {
       "begin_marker": null,
-      "content_hash": "ac477d5d35826b8a27df084d38e2f37c92f40fa95336296ada5a6be5448ee993",
+      "content_hash": "be60873f48ca442bedb34430e99ad55610ad86fbe1b50d44bffc64fe67d944be",
       "end_marker": null,
       "kind": "managed",
       "path": "tasks/kiln.yml"
@@ -328,6 +321,13 @@
       "end_marker": null,
       "kind": "managed",
       "path": "tasks/quality.yml"
+    },
+    "tasks/sonar.yml": {
+      "begin_marker": null,
+      "content_hash": "356677e40f184b8aebb0a277f8b14e1432193ca68589f16cc0c249f143658586",
+      "end_marker": null,
+      "kind": "managed",
+      "path": "tasks/sonar.yml"
     },
     "tasks/workspace.yml": {
       "begin_marker": null,
