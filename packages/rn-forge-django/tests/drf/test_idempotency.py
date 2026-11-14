@@ -21,6 +21,7 @@ from rn_forge.web import (
     IdempotencyKeyRequired,
     IdempotencyKeyReuse,
     IdempotencyStore,
+    request_hash,
 )
 
 pytestmark = pytest.mark.unit
@@ -78,6 +79,69 @@ class TestCacheIdempotencyStore:
         assert cache.add.call_args.args[2] == 30
         cache.set.assert_not_called()
         cache.get.assert_not_called()
+
+    def test_a_vanished_entry_is_reclaimed_before_executing(self) -> None:
+        cache = MagicMock()
+        cache.add.side_effect = [False, True]
+        cache.get.return_value = None
+        with patch("rn_forge.django.drf.idempotency.caches", {"default": cache}):
+            result = CacheIdempotencyStore().record_or_replay(
+                scope="s", key="k", request_body={"a": 1}
+            )
+        assert result is None
+        assert cache.add.call_count == 2
+
+    def test_competing_callers_never_both_execute(self) -> None:
+        store = CacheIdempotencyStore()
+        slot = store.cache_key("s", "k")
+        digest = request_hash({"a": 1})
+        results: list[object | None] = []
+
+        class FakeCache:
+            def __init__(self) -> None:
+                self.entries: dict[str, dict[str, object]] = {
+                    slot: {"hash": digest, "response": None}
+                }
+                self.get_hook_used = False
+
+            def add(self, key: str, value: dict[str, object], timeout: int) -> bool:
+                return self.entries.setdefault(key, value) is value
+
+            def get(self, key: str) -> dict[str, object] | None:
+                if not self.get_hook_used:
+                    self.get_hook_used = True
+                    del self.entries[key]
+                    results.append(
+                        store.record_or_replay(
+                            scope="s", key="k", request_body={"a": 1}
+                        )
+                    )
+                    return None
+                return self.entries.get(key)
+
+        fake = FakeCache()
+        with (
+            patch("rn_forge.django.drf.idempotency.caches", {"default": fake}),
+            pytest.raises(IdempotencyKeyInFlight),
+        ):
+            results.append(
+                store.record_or_replay(scope="s", key="k", request_body={"a": 1})
+            )
+        assert results == [None]
+        assert sum(result is None for result in results) == 1
+
+    def test_a_cache_that_keeps_losing_entries_is_in_flight(self) -> None:
+        cache = MagicMock()
+        cache.add.return_value = False
+        cache.get.return_value = None
+        with (
+            patch("rn_forge.django.drf.idempotency.caches", {"default": cache}),
+            pytest.raises(IdempotencyKeyInFlight),
+        ):
+            CacheIdempotencyStore().record_or_replay(
+                scope="s", key="k", request_body={"a": 1}
+            )
+        assert cache.add.call_count == 3
 
     def test_complete_honours_timeout(self) -> None:
         cache = MagicMock()

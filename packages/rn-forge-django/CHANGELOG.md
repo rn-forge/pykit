@@ -5,6 +5,11 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- A competing idempotent request could execute after claim expiry without
+  acquiring its own claim. Retry the claim up to three times, then return 409.
+
 ## [0.6.1] - 2026-11-13
 
 ### Changed

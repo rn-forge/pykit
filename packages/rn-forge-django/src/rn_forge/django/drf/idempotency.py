@@ -51,26 +51,33 @@ class CacheIdempotencyStore:
         """See :meth:`rn_forge.web.IdempotencyStore.record_or_replay`."""
         cache = caches[self._cache_alias]
         slot, digest = self.cache_key(scope, key), request_hash(request_body)
-        if cache.add(slot, {"hash": digest, "response": None}, self._timeout):
-            return None
-        entry = cast(Mapping[str, Any] | None, cache.get(slot))
-        if entry is None:  # expired between add and get
-            return None
-        if entry["hash"] != digest:
-            raise IdempotencyKeyReuse(
-                "Idempotency key {} was replayed with a different request body",
-                key,
-                error_code=422,
+        for _ in range(3):
+            if cache.add(slot, {"hash": digest, "response": None}, self._timeout):
+                return None
+            entry = cast(Mapping[str, Any] | None, cache.get(slot))
+            if entry is None:
+                # A vanished entry requires a new claim before execution.
+                continue
+            if entry["hash"] != digest:
+                raise IdempotencyKeyReuse(
+                    "Idempotency key {} was replayed with a different request body",
+                    key,
+                    error_code=422,
+                )
+            stored = cast(Mapping[str, Any] | None, entry["response"])
+            if stored is None:
+                raise IdempotencyKeyInFlight(
+                    "Idempotency key {} is still processing its original request",
+                    key,
+                    error_code=409,
+                )
+            return StoredResponse(
+                status=int(stored["status"]), body=stored["body"], replayed=True
             )
-        stored = cast(Mapping[str, Any] | None, entry["response"])
-        if stored is None:
-            raise IdempotencyKeyInFlight(
-                "Idempotency key {} is still processing its original request",
-                key,
-                error_code=409,
-            )
-        return StoredResponse(
-            status=int(stored["status"]), body=stored["body"], replayed=True
+        raise IdempotencyKeyInFlight(
+            "Idempotency key {} is still processing its original request",
+            key,
+            error_code=409,
         )
 
     def complete(
