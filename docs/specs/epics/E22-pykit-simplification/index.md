@@ -17,7 +17,7 @@
 | [F22.6 — Installer transactions with honest recovery](F22.6-tooling.md) | New | release-9 | 3 New |
 | [F22.7 — HTTP policy with bounded readiness](F22.7-web.md) | New | release-9 | 3 New |
 | [F22.8 — Auth policy and bounded caches](F22.8-auth.md) | New | release-9 | 4 New |
-| [F22.9 — Django adapters with safe parsing and ownership](F22.9-django.md) | Active | release-9 | 2 New · 1 Closed |
+| [F22.9 — Django adapters with safe parsing and ownership](F22.9-django.md) | Active | release-9 | 1 New · 2 Closed |
 | [F22.10 — FastAPI adapters with clear validation boundaries](F22.10-fastapi.md) | Active | release-9 | 2 New · 1 Closed |
 | [F22.11 — SQLAlchemy bulk work with explicit bounds](F22.11-sqlalchemy.md) | New | release-9 | 2 New |
 | [F22.12 — Tabular helpers without redundant copies](F22.12-data.md) | New | release-9 | 2 New |

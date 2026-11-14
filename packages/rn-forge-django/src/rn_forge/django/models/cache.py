@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from operator import attrgetter
 from typing import Any, Protocol, cast
-
-from rn_forge.commons.lang.utils import AppUtils
 
 __all__ = ["ModelLookupCache"]
 
 
 class _ModelClassProtocol[ModelClassT_co](Protocol):
     objects: Any
+
+
+def _lookup_key(values: Iterable[object]) -> tuple[str, ...]:
+    return tuple(str(value) for value in values)
 
 
 def _cache_namespace(model_class: type[object]) -> str:
@@ -39,14 +42,18 @@ class ModelLookupCache:
     __slots__ = ("__cache",)
 
     def __init__(self) -> None:
-        self.__cache: dict[str, dict[str, object]] = {}
+        self.__cache: dict[str, dict[tuple[str, ...], object]] = {}
 
     def load[ModelT](self, model_class: type[ModelT], *model_keys: str) -> None:
         """Bulk-load all instances of *model_class* and index by *model_keys*."""
         key_getter = attrgetter(*model_keys)
         typed_model_class = cast(_ModelClassProtocol[ModelT], model_class)
         self.__cache[_cache_namespace(model_class)] = {
-            AppUtils.join_string(".", key_getter(instance)): instance
+            _lookup_key(
+                (key_getter(instance),)
+                if len(model_keys) == 1
+                else key_getter(instance)
+            ): instance
             for instance in typed_model_class.objects.select_related()
         }
 
@@ -57,7 +64,7 @@ class ModelLookupCache:
         return cast(
             ModelT | None,
             self.__cache.get(_cache_namespace(model_class), {}).get(
-                AppUtils.join_string(".", model_key_values)
+                _lookup_key(model_key_values)
             ),
         )
 
@@ -67,5 +74,9 @@ class ModelLookupCache:
         """Insert or update *instance* in the cache."""
         key_getter = attrgetter(*model_keys)
         self.__cache.setdefault(_cache_namespace(model_class), {})[
-            AppUtils.join_string(".", key_getter(instance))
+            _lookup_key(
+                (key_getter(instance),)
+                if len(model_keys) == 1
+                else key_getter(instance)
+            )
         ] = instance

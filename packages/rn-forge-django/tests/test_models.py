@@ -224,6 +224,38 @@ class TestModelLookupCacheWithoutDb:
         cache.set(cls, obj, "a", "b")  # type: ignore[arg-type]
         assert cache.get(cls, "x", "y") is obj  # type: ignore[arg-type]
 
+    def test_composite_keys_containing_the_separator_do_not_collide(self) -> None:
+        cache = self._make_cache()
+
+        class TwoKey:
+            __name__ = "TwoKey"
+
+            def __init__(self, a: str, b: str) -> None:
+                self.a = a
+                self.b = b
+
+        cls = TwoKey
+        obj1 = cls("a.b", "c")
+        obj2 = cls("a", "b.c")
+        cache.set(cls, obj1, "a", "b")  # type: ignore[arg-type]
+        cache.set(cls, obj2, "a", "b")  # type: ignore[arg-type]
+        assert cache.get(cls, "a.b", "c") is obj1  # type: ignore[arg-type]
+        assert cache.get(cls, "a", "b.c") is obj2  # type: ignore[arg-type]
+
+    def test_scalar_values_are_matched_by_their_string_form(self) -> None:
+        cache = self._make_cache()
+
+        class OneKey:
+            __name__ = "OneKey"
+
+            def __init__(self, key: int) -> None:
+                self.key = key
+
+        cls = OneKey
+        obj = cls(7)
+        cache.set(cls, obj, "key")  # type: ignore[arg-type]
+        assert cache.get(cls, "7") is obj  # type: ignore[arg-type]
+
     def test_set_overwrites_existing_entry(self) -> None:
         cache = self._make_cache()
         obj1 = _FakeModel("k", "first")

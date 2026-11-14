@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Any, cast, override
@@ -33,6 +34,8 @@ from rn_forge.web import (
 
 __all__ = ["CursorPagination", "LegacyPageNumberPagination", "OrderByFilter"]
 
+_PAGE_SIZE_PATTERN = re.compile(r"-?[0-9]+", re.ASCII)
+
 
 def _page_size(
     request: Request, *, page_size: int | None, max_page_size: int | None
@@ -40,11 +43,19 @@ def _page_size(
     """Resolve the page size from the query string, clamped and never rejected."""
     conf = rnf_settings.rn_forge_django_settings.drf.pagination
     raw = request.query_params.get(conf.page_size_query_param)
-    requested = int(raw) if raw is not None and raw.lstrip("-").isdigit() else None
+    cap = max_page_size if max_page_size is not None else conf.max_page_size
+    requested = None
+    if (
+        raw is not None
+        and _PAGE_SIZE_PATTERN.fullmatch(raw)
+        and not raw.startswith("-")
+        and raw.strip("0")
+    ):
+        requested = cap if len(raw) > 18 else int(raw)
     return clamp_page_size(
         requested,
         default=page_size if page_size is not None else conf.page_size,
-        cap=max_page_size if max_page_size is not None else conf.max_page_size,
+        cap=cap,
     )
 
 

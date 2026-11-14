@@ -7,6 +7,9 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Fixed
 
+- Malformed `pageSize` values fall back to the default instead of causing a
+  server error; oversized positive values use the cap.
+- Composite model lookup keys containing separators no longer collide.
 - A competing idempotent request could execute after claim expiry without
   acquiring its own claim. Retry the claim up to three times, then return 409.
 

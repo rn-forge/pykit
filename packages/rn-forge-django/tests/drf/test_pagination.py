@@ -88,6 +88,19 @@ class TestPageSize:
         assert cls().get_page_size(_request(pageSize="100000")) == 200
 
     @pytest.mark.parametrize("cls", [CursorPagination, LegacyPageNumberPagination])
+    @pytest.mark.parametrize("value", ["--1", "²", "٣", "+5", "", "5.0", "1e3"])
+    def test_malformed_page_size_falls_back_to_the_default(self, cls, value) -> None:
+        assert cls().get_page_size(_request(pageSize=value)) == 50
+
+    @pytest.mark.parametrize("value", ["0", "-5"])
+    def test_non_positive_page_size_falls_back_to_the_default(self, value) -> None:
+        assert CursorPagination().get_page_size(_request(pageSize=value)) == 50
+
+    @pytest.mark.parametrize("value", ["9" * 30, "9" * 5000])
+    def test_huge_page_size_is_the_cap(self, value) -> None:
+        assert CursorPagination().get_page_size(_request(pageSize=value)) == 200
+
+    @pytest.mark.parametrize("cls", [CursorPagination, LegacyPageNumberPagination])
     def test_page_size_query_param_is_honoured(self, cls) -> None:
         assert cls().get_page_size(_request(pageSize="7")) == 7
 
