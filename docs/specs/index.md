@@ -11,6 +11,7 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 | Release | Status | Features |
 | -- | -- | -- |
+| [Release 9 — pykit simplification](../releases/release-9/index.md) | planned | 13 New |
 | [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | shipped (2026-11-14) | 12 Closed |
 | [Release 7 — authentication and PyPI distribution](../releases/release-7/index.md) | shipped (2026-10-30) | 16 Closed |
 | [Release 6 — kit upgrades for kiln](../releases/release-6/index.md) | shipped (2026-10-25) | 7 Closed |

@@ -42,5 +42,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | Epic | State | Features | Iterations |
 | -- | -- | -- | -- |
 | [E21 — Publish to PyPI](E21-pypi-distribution/index.md) | Closed | 5 Closed | release-7, release-8 |
+| [E22 — Pykit simplification](E22-pykit-simplification/index.md) | New | 13 New | release-9 |
 
 <!-- END derived epics -->

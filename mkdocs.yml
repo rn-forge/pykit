@@ -216,6 +216,22 @@ nav:
               - F21.3 — Publish from the release job: specs/epics/E21-pypi-distribution/F21.3-publish-from-release.md
               - F21.4 — Consumers install from PyPI: specs/epics/E21-pypi-distribution/F21.4-consumer-docs.md
               - F21.5 — Retire the self-hosted index: specs/epics/E21-pypi-distribution/F21.5-retire-index.md
+          - E22 — Pykit simplification:
+              - specs/epics/E22-pykit-simplification/index.md
+              - F22.1 — Short specs with stable work records: specs/epics/E22-pykit-simplification/F22.1-specs.md
+              - F22.2 — One current explanation per audience: specs/epics/E22-pykit-simplification/F22.2-documentation.md
+              - F22.3 — Behavioral tests and performance baselines: specs/epics/E22-pykit-simplification/F22.3-tests-and-measurements.md
+              - F22.4 — Commons with explicit side effects: specs/epics/E22-pykit-simplification/F22.4-commons.md
+              - F22.5 — CLI invocation state with a clear lifetime: specs/epics/E22-pykit-simplification/F22.5-cli.md
+              - F22.6 — Installer transactions with honest recovery: specs/epics/E22-pykit-simplification/F22.6-tooling.md
+              - F22.7 — HTTP policy with bounded readiness: specs/epics/E22-pykit-simplification/F22.7-web.md
+              - F22.8 — Auth policy and bounded caches: specs/epics/E22-pykit-simplification/F22.8-auth.md
+              - F22.9 — Django adapters with safe parsing and ownership: specs/epics/E22-pykit-simplification/F22.9-django.md
+              - F22.10 — FastAPI adapters with clear validation boundaries: specs/epics/E22-pykit-simplification/F22.10-fastapi.md
+              - F22.11 — SQLAlchemy bulk work with explicit bounds: specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md
+              - F22.12 — Tabular helpers without redundant copies: specs/epics/E22-pykit-simplification/F22.12-data.md
+              - F22.13 — Small release utilities with one metadata path: specs/epics/E22-pykit-simplification/F22.13-devops.md
+              - Pykit simplification — review and proposed design: specs/epics/E22-pykit-simplification/design.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md
