@@ -29,7 +29,7 @@ gives the evidence and tradeoffs.
 | [F22.2 — One current explanation per audience](../../specs/epics/E22-pykit-simplification/F22.2-documentation.md) | E22 | New |
 | [F22.3 — Behavioral tests and performance baselines](../../specs/epics/E22-pykit-simplification/F22.3-tests-and-measurements.md) | E22 | Active |
 | [F22.4 — Commons with explicit side effects](../../specs/epics/E22-pykit-simplification/F22.4-commons.md) | E22 | Active |
-| [F22.5 — CLI invocation state with a clear lifetime](../../specs/epics/E22-pykit-simplification/F22.5-cli.md) | E22 | New |
+| [F22.5 — CLI invocation state with a clear lifetime](../../specs/epics/E22-pykit-simplification/F22.5-cli.md) | E22 | Active |
 | [F22.6 — Installer transactions with honest recovery](../../specs/epics/E22-pykit-simplification/F22.6-tooling.md) | E22 | New |
 | [F22.7 — HTTP policy with bounded readiness](../../specs/epics/E22-pykit-simplification/F22.7-web.md) | E22 | New |
 | [F22.8 — Auth policy and bounded caches](../../specs/epics/E22-pykit-simplification/F22.8-auth.md) | E22 | New |

@@ -21,6 +21,7 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.runtime.console import console
+from typer._click.core import ParameterSource
 
 # Typer 0.26 vendors Click, so `click.UsageError` and Typer's own are different
 # classes and an `except click.UsageError` never fires. These are the ones a
@@ -70,6 +71,7 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
 
     Diagnosed :class:`~rn_forge.commons.exceptions.AppException` instances are
     reported without a traceback; unexpected exceptions are logged in full.
+    The console mode on return is the mode on entry.
 
     Args:
         app: The Typer application to run.
@@ -79,8 +81,9 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
     Returns:
         The exit code to hand to :func:`sys.exit`.
     """
-    command = typer.main.get_command(app)
+    prior = console.mode
     try:
+        command = typer.main.get_command(app)
         # `standalone_mode=False` stops Click from printing and exiting on its
         # own, so the codes below are the only ones this process can produce.
         # In that mode Click *returns* the code an explicit exit asked for.
@@ -105,6 +108,8 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
         console.error("Unexpected error: {}", unexpected)
         _LOGGER.exception("Unhandled exception escaped the command")
         return ExitCode.FAILURE
+    finally:
+        console.set_mode(prior)
 
 
 class CliApp(typer.Typer):
@@ -163,10 +168,15 @@ class CliApp(typer.Typer):
             # whatever the level is and wherever on the command line it was
             # given.
             CliOptions(quiet=quiet, json_output=json_output).apply(ctx)
+            explicit = any(
+                ctx.get_parameter_source(name) is not ParameterSource.DEFAULT
+                for name in ("log_level", "log_file")
+            )
             AppLogger.initialize(
                 root_logger_name=self._logger_name,
                 level=log_level.to_int(),
                 file=str(log_file) if log_file else None,
+                force_reconfigure=explicit,
             )
 
     @classmethod

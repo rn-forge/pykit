@@ -5,6 +5,16 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Restore the console mode after each invocation, including failed and nested
+  commands.
+- Honor explicit logging level and file options on each invocation, preserving
+  existing logging when neither option is passed.
+
+Versioning assessment: patch release; fixes invocation state without changing
+the public API.
+
 ## [0.1.3] - 2026-11-13
 
 ### Changed
