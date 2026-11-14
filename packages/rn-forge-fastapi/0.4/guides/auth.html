@@ -992,6 +992,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../reference/sse.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server-sent events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -1001,10 +1029,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
@@ -1022,8 +1050,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1468,8 +1496,8 @@ stores; this page documents the FastAPI side. The Django binding in
 development it lives in Redis. Install <code>rn-forge-fastapi</code> with the <code>redis</code>
 extra, and with <code>oidc</code> for OIDC login or JWKS bearer tokens.</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p>An end-to-end configuration with one OIDC provider, local password login and,
-in development, a fixture-account provider:</p>
+<p>An end-to-end configuration with one OIDC provider, local password login and, in
+development, a fixture-account provider:</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># myapp/auth_config.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">Redis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -1547,12 +1575,12 @@ in development, a fixture-account provider:</p>
 
 <p><code>sessions_for(config)</code> builds the <code>Sessions</code> from the same stores and timeouts
 as the routes, so the middleware and the routes agree. <code>SessionMiddleware</code>
-resolves the session once per request and runs the CSRF check; a router
-mounted without it is unprotected, and <code>current_principal</code> raises
-<code>RuntimeError</code> for a session request. <code>add_middleware</code> wraps the application,
-so the middleware added last is outermost. Add <code>SessionMiddleware</code> before the
-middleware that should also decorate its responses (security headers, CORS), so
-a <code>csrf-failed</code> rejection, which the middleware answers itself, carries them.</p>
+resolves the session once per request and runs the CSRF check; a router mounted
+without it is unprotected, and <code>current_principal</code> raises <code>RuntimeError</code> for a
+session request. <code>add_middleware</code> wraps the application, so the middleware added
+last is outermost. Add <code>SessionMiddleware</code> before the middleware that should
+also decorate its responses (security headers, CORS), so a <code>csrf-failed</code>
+rejection, which the middleware answers itself, carries them.</p>
 <p>When the router is mounted under a prefix other than <code>/auth</code>, tell the
 middleware the paths it has special rules for:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
@@ -1627,8 +1655,8 @@ is left out of the OpenAPI document. A <code>401</code> from any of them is a
 </tbody>
 </table>
 <p>A callback error redirects to <code>error_route</code> (<code>/auth/error</code>) with <code>?error=</code> set
-to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>.
-Details go to the log, never into the URL. A password login failure is one <code>401</code>
+to one of <code>access_denied</code>, <code>account_not_provisioned</code> and <code>login_failed</code>. Details
+go to the log, never into the URL. A password login failure is one <code>401</code>
 whatever its cause, so the response does not reveal which accounts exist. The
 login body is JSON or form-encoded <code>{username, password}</code>.</p>
 <p>The session body is camelCase: <code>subject</code> (the account ID), <code>provider</code>, <code>roles</code>,
@@ -1636,14 +1664,14 @@ login body is JSON or form-encoded <code>{username, password}</code>.</p>
 timeout). Session responses carry <code>Cache-Control: no-store</code>.</p>
 <p>The login transaction lives in its store for 10 minutes behind the
 <code>__Host-login-tx</code> cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, no
-<code>Domain</code>). A callback that carries more than one transaction cookie is
-rejected, and a transaction is consumed atomically, so a callback works once.
-The stores' synchronous calls and the Authlib providers run in the thread pool.</p>
+<code>Domain</code>). A callback that carries more than one transaction cookie is rejected,
+and a transaction is consumed atomically, so a callback works once. The stores'
+synchronous calls and the Authlib providers run in the thread pool.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
 <p><code>AuthRoutesConfig</code> is a frozen dataclass. <code>providers</code>, <code>accounts</code>, <code>contexts</code>
-and <code>account_state</code> are required, and so is <code>problem_type_base</code> (a
-<code>ValueError</code> otherwise): it is the prefix of the <code>type</code> URI of the problem
-responses, which is what tells <code>csrf-failed</code> from <code>forbidden</code>.</p>
+and <code>account_state</code> are required, and so is <code>problem_type_base</code> (a <code>ValueError</code>
+otherwise): it is the prefix of the <code>type</code> URI of the problem responses, which
+is what tells <code>csrf-failed</code> from <code>forbidden</code>.</p>
 <table>
 <thead>
 <tr>
@@ -1772,8 +1800,8 @@ cache's <code>ttl</code> (60 seconds by default).</p>
 <p>The login session is a <code>rn-forge-auth</code> <code>SessionStore</code> entry behind the
 <code>__Host-session</code> cookie. It holds the account ID, the account's session version
 at login, provider, issuer, external subject, <code>auth_time</code>, <code>amr</code>, <code>session_ref</code>
-and the ID token (only with <code>rp_initiated_logout</code>), and never permissions:
-those are computed on each request.</p>
+and the ID token (only with <code>rp_initiated_logout</code>), and never permissions: those
+are computed on each request.</p>
 <ul>
 <li><strong>Timeouts.</strong> A 30-minute sliding idle timeout (<code>idle_timeout</code>) and a 12-hour
   absolute timeout (<code>absolute_timeout</code>). <code>SessionMiddleware</code> extends the idle
@@ -1787,11 +1815,11 @@ those are computed on each request.</p>
   <code>await rotate_session(request)</code> after a change to the account's privileges,
   so an ID seen before the change is useless afterwards; the middleware sets
   the new cookie.</li>
-<li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session and starts a new
-  anonymous one. <code>/auth/logout/all</code> and a back-channel logout that names only
-  <code>sub</code> bump the account's session version through <code>account_state</code>, which ends
-  every session of the account on its next request. A back-channel logout with
-  a <code>sid</code> revokes that session only, until the absolute timeout. With
+<li><strong>Logout.</strong> <code>/auth/logout</code> ends the current session and starts a new anonymous
+  one. <code>/auth/logout/all</code> and a back-channel logout that names only <code>sub</code> bump
+  the account's session version through <code>account_state</code>, which ends every
+  session of the account on its next request. A back-channel logout with a
+  <code>sid</code> revokes that session only, until the absolute timeout. With
   <code>rp_initiated_logout</code> on the provider, <code>/auth/logout</code> returns the identity
   provider's end-session URL.</li>
 <li><strong>Disabling.</strong> <code>contexts.set_active(account_id, False)</code> (or any change that
@@ -1820,9 +1848,9 @@ comparison is constant-time.</p>
   with no cookie.</li>
 <li><strong>Exempt:</strong> <code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code> and <code>TRACE</code>; a request with a <code>Bearer</code>
   <code>Authorization</code> header; the paths under <code>csrf_exempt_prefixes</code> (back-channel
-  logout, which carries a signed token); and a request with no session cookie to
-  an application route, which has no session to ride. A <code>Basic</code> header is not
-  exempt: browsers replay cached Basic credentials on their own.</li>
+  logout, which carries a signed token); and a request with no session cookie
+  to an application route, which has no session to ride. A <code>Basic</code> header is
+  not exempt: browsers replay cached Basic credentials on their own.</li>
 <li><strong>Origin.</strong> The <code>Origin</code> header (the <code>Referer</code> over HTTPS when there is no
   <code>Origin</code>) must be the request's own origin or one of <code>trusted_origins</code>, and
   <code>Sec-Fetch-Site: cross-site</code> is rejected even from a trusted origin. The
@@ -1874,9 +1902,9 @@ internal deployments only.</p>
 requirement with <code>rn_forge.auth.ScopeAuthorizer</code> (or the <code>authorizer</code> you pass).
 Insufficient access is a <code>403</code> with no challenge.
 <code>requires_permission(caller, permission_key, action)</code> enforces the key that
-<code>rn_forge.auth.requirement_for</code> builds from the base key and an explicit
-action, <code>list</code>, <code>retrieve</code> or <code>partial_update</code> for example; <code>action_map</code>
-overrides the default action-to-verb map:</p>
+<code>rn_forge.auth.requirement_for</code> builds from the base key and an explicit action,
+<code>list</code>, <code>retrieve</code> or <code>partial_update</code> for example; <code>action_map</code> overrides the
+default action-to-verb map:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Principal</span><span class="p">,</span> <span class="n">Requirement</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires</span><span class="p">,</span> <span class="n">requires_permission</span>
@@ -2000,15 +2028,21 @@ from rn_forge.auth import audit</p>
   and <code>attributes</code>. Wrap it in an <code>AuthorizationContextCache</code> and call
   <code>contexts.invalidate(account_id)</code> when a role or permission changes.</p>
 </li>
-<li><strong><code>AccountStateWriter</code>.</strong> <code>set_active(account_id, active)</code> and
+<li>
+<p><strong><code>AccountStateWriter</code>.</strong> <code>set_active(account_id, active)</code> and
   <code>bump_session_version(account_id)</code> persist the state the context carries.
   <code>/auth/logout/all</code> and a back-channel logout call them; the cache above
-  writes through to it.</li>
-<li><strong><code>ResourcePolicy</code>.</strong> <code>allows(principal, action, resource)</code> and
-  <code>scope(principal, action, query)</code>, for <code>PolicyGuard</code>.</li>
-<li><strong><code>PasswordVerifier</code>.</strong> For <code>PasswordIdentityProvider</code>: a callable
-  <code>(username, password) -&gt; subject | None</code>. Hash comparison and the user lookup
-  are yours.</li>
+  writes through to it.</p>
+</li>
+<li>
+<p><strong><code>ResourcePolicy</code>.</strong> <code>allows(principal, action, resource)</code> and
+  <code>scope(principal, action, query)</code>, for <code>PolicyGuard</code>.</p>
+</li>
+<li>
+<p><strong><code>PasswordVerifier</code>.</strong> For <code>PasswordIdentityProvider</code>: a callable
+  <code>(username, password) -&gt; subject | None</code>. Hash comparison and the user
+  lookup are yours.</p>
+</li>
 </ul>
 
 

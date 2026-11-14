@@ -915,6 +915,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../reference/sse.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server-sent events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -924,10 +952,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
@@ -945,8 +973,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1310,10 +1338,11 @@
 
 <p><code>rn-forge-web</code> and <code>rn-forge-commons</code> come in transitively, each as a version
 range. FastAPI comes in as an ordinary PyPI dependency, and pydantic and
-Starlette with it. The optional <code>oidc</code> extra adds JWKS bearer auth and OIDC login; <code>redis</code> adds the
-Redis stores the auth binding needs outside development
+Starlette with it. The optional <code>oidc</code> extra adds JWKS bearer auth and OIDC
+login; <code>redis</code> adds the Redis stores the auth binding needs outside development
 (<code>rn_forge.auth.redis</code> and <code>rn_forge.fastapi.auth.redis</code>); <code>transfer</code> adds
-tabular export and import (<code>rn_forge.fastapi.transfer</code>).</p>
+tabular export and import (<code>rn_forge.fastapi.transfer</code>); <code>sse</code> adds server-sent
+events (<code>rn_forge.fastapi.sse</code>).</p>
 <h2 id="inside-this-workspace">Inside this workspace<a class="headerlink" href="#inside-this-workspace" title="Permanent link">&para;</a></h2>
 <p><code>packages/rn-forge-fastapi</code> is a <code>uv</code> workspace member, so the root
 <code>[tool.uv.sources]</code> overrides the requirement above with the local checkout:</p>

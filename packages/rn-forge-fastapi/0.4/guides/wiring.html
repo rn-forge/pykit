@@ -472,6 +472,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#logging-server-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging server errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#routes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -564,6 +575,17 @@
     <span class="md-ellipsis">
       
         What an application still writes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-sent-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server-sent events
       
     </span>
   </a>
@@ -1025,6 +1047,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../reference/sse.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server-sent events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -1034,10 +1084,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
@@ -1055,8 +1105,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1381,6 +1431,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#logging-server-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging server errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#routes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1473,6 +1534,17 @@
     <span class="md-ellipsis">
       
         What an application still writes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-sent-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server-sent events
       
     </span>
   </a>
@@ -1588,6 +1660,18 @@ resource.</p>
    (<code>/orders/{order_id}/cancel</code>) is indistinguishable from a sub-collection
    and needs an explicit <code>operation_id=</code>.</li>
 </ol>
+<h2 id="logging-server-errors">Logging server errors<a class="headerlink" href="#logging-server-errors" title="Permanent link">&para;</a></h2>
+<p>A 5xx problem body carries no detail, so the cause goes to the log.
+<code>AppConfig.log</code> is <code>None</code> by default and logs nothing; pass
+<code>log=log_server_errors()</code> to log each 5xx at <code>ERROR</code> with the original
+traceback, status, request path and trace id:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppConfig</span><span class="p">,</span> <span class="n">log_server_errors</span>
+
+<span class="n">AppConfig</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log_server_errors</span><span class="p">())</span>
+</code></pre></div>
+
+<p>It logs through <code>AppLogger.get_logger("rn_forge.fastapi.problem")</code>; pass an
+<code>AppLogger</code> to use another. A 4xx logs nothing.</p>
 <h2 id="routes">Routes<a class="headerlink" href="#routes" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -1801,6 +1885,50 @@ async def create_charge(request: Request, body: ChargeIn) -&gt; JSONResponse:
   dependency is reported as <code>fail</code> rather than hanging <code>/readyz</code>; the default,
   <code>None</code>, waits indefinitely.</p>
 </li>
+</ul>
+<h2 id="server-sent-events">Server-sent events<a class="headerlink" href="#server-sent-events" title="Permanent link">&para;</a></h2>
+<p>The <code>sse</code> extra adds <code>sse-starlette</code>. <code>sse_response</code> wraps an async iterable of
+<code>ServerSentEvent</code> in an <code>EventSourceResponse</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Header</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.fastapi.sse</span><span class="w"> </span><span class="kn">import</span> <span class="n">sse_response</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sse_starlette</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerSentEvent</span>
+
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/jobs/</span><span class="si">{job_id}</span><span class="s2">/events&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">job_events</span><span class="p">(</span><span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">last_event_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">events</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ServerSentEvent</span><span class="p">]:</span>
+        <span class="k">async</span> <span class="k">for</span> <span class="n">update</span> <span class="ow">in</span> <span class="n">job_updates</span><span class="p">(</span><span class="n">job_id</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">last_event_id</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">ServerSentEvent</span><span class="p">(</span><span class="n">update</span><span class="o">.</span><span class="n">json</span><span class="p">(),</span> <span class="nb">id</span><span class="o">=</span><span class="n">update</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="s2">&quot;update&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sse_response</span><span class="p">(</span><span class="n">events</span><span class="p">(),</span> <span class="n">instance</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/jobs/</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">/events&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<ul>
+<li><strong>Frames.</strong> The stream opens with a <code>retry: 5000</code> frame, so a browser
+  <code>EventSource</code> waits that long before it reconnects; pass <code>retry=None</code> to
+  omit it. A heartbeat comment is sent every 15 seconds while the stream is
+  idle; <code>ping=None</code> turns it off.</li>
+<li><strong>Resuming.</strong> A reconnecting browser sends the last <code>id</code> it received as
+  <code>Last-Event-ID</code>. The route reads it and decides what to replay;
+  <code>sse_response</code> does not.</li>
+<li><strong>Rejected fields.</strong> An <code>id</code> or <code>event</code> containing <code>\r</code>, <code>\n</code> or <code>\x00</code> raises
+  <code>WebError</code>, where <code>sse-starlette</code> alone would strip the line break and send
+  a different field. Raised while streaming, the status line is already sent,
+  so the rejection reaches the client as the terminal frame below.</li>
+<li><strong>Errors.</strong> The status line is sent before the first frame, so an exception
+  raised by the iterable cannot become an HTTP error. The stream ends with one
+  frame whose <code>event</code> is <code>error</code> and whose <code>data</code> is the problem as JSON,
+  built by the registry (<code>default_registry()</code> unless <code>registry=</code> is given)
+  with <code>instance</code> and the current <code>traceId</code>. A 5xx problem carries the generic
+  detail, so pass <code>log=log_server_errors()</code> to keep the cause: the
+  application's <code>AppConfig.log</code> never sees it. A client disconnect or
+  cancellation sends nothing.</li>
+<li><strong>Headers.</strong> <code>headers=</code> is applied last and replaces the defaults, including
+  <code>cache-control</code> and <code>x-accel-buffering</code>.</li>
+<li><strong>Shutdown.</strong> Importing the module makes <code>sse-starlette</code> patch
+  <code>uvicorn.Server.handle_exit</code> so open streams end when the server is asked to
+  exit.</li>
 </ul>
 <h2 id="conformance">Conformance<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
 <p><code>tests/test_conformance.py</code> in this package is the FastAPI driver for the

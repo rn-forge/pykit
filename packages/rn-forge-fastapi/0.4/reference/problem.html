@@ -695,6 +695,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.fastapi.problem.log_server_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;log_server_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.fastapi.problem.register_problem_handlers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -921,6 +932,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="sse.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server-sent events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -930,10 +969,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
@@ -951,8 +990,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1278,6 +1317,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.fastapi.problem.log_server_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;log_server_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.fastapi.problem.register_problem_handlers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1369,6 +1419,62 @@ handler also logs the current trace id.</p>
 </div>
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.fastapi.problem.log_server_errors" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">log_server_errors</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.fastapi.problem.log_server_errors" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a :data:<code>Log</code> that logs each 5xx problem at <code>ERROR</code>, with its traceback.</p>
+<p>The record carries the event, status, instance and trace id in its message
+and the exception's traceback as <code>exc_info</code>. Events other than
+<code>problem.server_error</code> are ignored.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>logger</code>
+            </td>
+            <td>
+                  <code><span title="rn_forge.commons.logging.AppLogger">AppLogger</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Where to log. Defaults to
+<code>AppLogger.get_logger("rn_forge.fastapi.problem")</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code>AppConfig(log=log_server_errors())
+</code></pre></div>
+
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
