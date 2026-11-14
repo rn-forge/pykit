@@ -72,6 +72,37 @@ class TestGetField:
 
 
 class TestGetStringField:
+    @pytest.mark.parametrize(("value", "expected"), [(0, "0"), (0.0, "0.0")])
+    def test_zero_is_preserved(self, value, expected):
+        assert (
+            PandasUtils.get_string_field(_row(n=value), "n", required=False) == expected
+        )
+
+    def test_false_is_preserved(self):
+        assert (
+            PandasUtils.get_string_field(_row(flag=False), "flag", required=False)
+            == "False"
+        )
+
+    @pytest.mark.parametrize(
+        ("value", "expected"), [(0, "0"), (0.0, "0.0"), (False, "False")]
+    )
+    def test_zero_and_false_satisfy_required(self, value, expected):
+        assert (
+            PandasUtils.get_string_field(_row(n=value), "n", required=True) == expected
+        )
+
+    @pytest.mark.parametrize("value", ["", "   "])
+    def test_empty_string_is_not_missing(self, value):
+        assert PandasUtils.get_string_field(_row(s=value), "s", required=True) == ""
+
+    @pytest.mark.parametrize("value", [None, float("nan"), pd.NA, pd.NaT])
+    def test_missing_sentinels_follow_required(self, value):
+        row = _row(s=value)
+        assert PandasUtils.get_string_field(row, "s", required=False) == ""
+        with pytest.raises(AppException, match="Field is required: s"):
+            PandasUtils.get_string_field(row, "s", required=True)
+
     def test_returns_string(self):
         row = _row(city="london")
         assert PandasUtils.get_string_field(row, "city") == "london"
@@ -96,6 +127,15 @@ class TestGetStringField:
 
 
 class TestGetDecimalField:
+    def test_zero_cell_is_zero(self):
+        result = PandasUtils.get_decimal_field(_row(n=0), "n")
+        assert result == Decimal("0.00")
+        assert result.as_tuple().exponent == -2
+
+    def test_false_cell_raises(self):
+        with pytest.raises(decimal.InvalidOperation):
+            PandasUtils.get_decimal_field(_row(flag=False), "flag")
+
     def test_basic_conversion(self):
         row = _row(amount="12.50")
         result = PandasUtils.get_decimal_field(row, "amount")

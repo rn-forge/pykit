@@ -67,5 +67,20 @@ customer = PandasUtils.get_string_field(row, "customer_id")
 total = PandasUtils.get_decimal_field(row, "total", precision=2)
 ```
 
+`PandasUtils.get_string_field` converts values as follows:
+
+| Value | `required=False` | `required=True` |
+| -- | -- | -- |
+| `None`, `float("nan")`, `pandas.NA`, `pandas.NaT` | `""` | Raises `AppException("Field is required: <name>")` |
+| `0` | `"0"` | `"0"` |
+| `0.0` | `"0.0"` | `"0.0"` |
+| `False` | `"False"` | `"False"` |
+| `""` or whitespace-only string | `""` | `""` |
+| Other non-missing value | `str(value).strip()` | `str(value).strip()` |
+
+`get_decimal_field` returns `Decimal(0)` for empty strings and optional missing
+values, and `Decimal("0.00")` for numeric zero at the default precision. A
+`False` cell raises `decimal.InvalidOperation`.
+
 `series_value` and `series_columns` give typed access to a row's value and
 labels, and `SeriesRow` is the row type.

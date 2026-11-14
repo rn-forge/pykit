@@ -112,12 +112,19 @@ class PandasUtils:
         field_name: str,
         required: bool = True,
     ) -> str:
-        """Return *field_name* from *row* as a string.
+        """Return *field_name* from *row* as a stripped string.
 
-        NaN values are returned as an empty string ``""``.
+        | Value | ``required=False`` | ``required=True`` |
+        | -- | -- | -- |
+        | ``None``, ``float("nan")``, ``pandas.NA``, ``pandas.NaT`` | ``""`` | Raises ``AppException("Field is required: <name>")`` |
+        | ``0`` | ``"0"`` | ``"0"`` |
+        | ``0.0`` | ``"0.0"`` | ``"0.0"`` |
+        | ``False`` | ``"False"`` | ``"False"`` |
+        | ``""`` or whitespace-only string | ``""`` | ``""`` |
+        | Other non-missing value | ``str(value).strip()`` | ``str(value).strip()`` |
         """
         field_value = PandasUtils.get_field(row, field_name, required)
-        result = str(field_value or "").strip()
+        result = "" if field_value is None else str(field_value).strip()
         _LOGGER.trace(
             "PandasUtils.get_string_field | field={} | required={} | result={}",
             field_name,

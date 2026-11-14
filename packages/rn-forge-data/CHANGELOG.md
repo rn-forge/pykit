@@ -5,6 +5,15 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `PandasUtils.get_string_field` preserves present `0`, `0.0` and `False` as
+  `"0"`, `"0.0"` and `"False"`. Missing values still follow `required`;
+  `get_decimal_field` now raises `decimal.InvalidOperation` for a `False`
+  cell. Versioning: patch bug fix for `rn-forge-data`; callers relying on
+  empty strings for zero/False or decimal zero for False must adjust to these
+  corrected results.
+
 ## [0.1.3] - 2026-11-13
 
 ### Changed
