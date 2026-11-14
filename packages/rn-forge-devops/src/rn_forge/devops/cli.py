@@ -75,5 +75,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         root = requirements.find_root(Path.cwd())
     except FileNotFoundError as error:
-        sys.exit(str(error))
-    return _requirements(root)
+        print(str(error), file=sys.stderr)
+        return 2
+    try:
+        return _requirements(root)
+    except requirements.InvalidManifest as error:
+        print(str(error), file=sys.stderr)
+        return 2

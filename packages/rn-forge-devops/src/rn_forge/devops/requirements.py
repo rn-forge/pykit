@@ -6,11 +6,15 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 
 MANIFEST = "pyproject.toml"
+
+
+class InvalidManifest(ValueError):
+    """A workspace manifest contains invalid input for requirement checks."""
 
 
 def find_root(start: Path) -> Path:
@@ -29,28 +33,41 @@ def find_root(start: Path) -> Path:
     raise FileNotFoundError(f"no uv workspace at or above {start}")
 
 
-def _members(root: Path) -> dict[str, tuple[str, str, dict[str, Any]]]:
-    """Map each member's canonical name to its name, version and manifest."""
+def _members(root: Path) -> dict[str, tuple[str, str, dict[str, Any], Path]]:
+    """Map each canonical name to its name, version, manifest and path."""
     workspace: dict[str, Any] = tomllib.loads((root / MANIFEST).read_text())["tool"][
         "uv"
     ]["workspace"]
+    if "members" not in workspace:
+        raise InvalidManifest(f"{root / MANIFEST}: workspace lacks members")
     excluded = {
         path
         for pattern in workspace.get("exclude", [])
         for path in root.glob(f"{pattern}/{MANIFEST}")
     }
-    members: dict[str, tuple[str, str, dict[str, Any]]] = {}
+    members: dict[str, tuple[str, str, dict[str, Any], Path]] = {}
     for pattern in workspace["members"]:
         for path in sorted(root.glob(f"{pattern}/{MANIFEST}")):
             if path in excluded:
                 continue
             manifest: dict[str, Any] = tomllib.loads(path.read_text())
+            if "project" not in manifest:
+                raise InvalidManifest(f"{path}: missing [project]")
             project: dict[str, Any] = manifest["project"]
+            if "name" not in project:
+                raise InvalidManifest(f"{path}: missing [project].name")
             name: str = project["name"]
+            version: str = project.get("version", "")
+            if "version" in project:
+                try:
+                    Version(version)
+                except InvalidVersion as error:
+                    raise InvalidManifest(f"{path}: {error}") from error
             members[canonicalize_name(name)] = (
                 name,
-                project.get("version", ""),
+                version,
                 manifest,
+                path,
             )
     return members
 
@@ -69,24 +86,40 @@ def check_requirements(root: Path) -> list[str]:
     """Return the problems with requirements on other workspace members.
 
     Reads the members listed under `[tool.uv.workspace]` in `root/pyproject.toml`.
-    A requirement on a member, in `dependencies`, `optional-dependencies` or
-    `[dependency-groups]`, is reported when it is a URL, when its specifier
-    excludes the member's `[project]` version, or when its specifier has no
-    `<` or `<=` clause. Requirements on anything else are ignored.
+    Checks `dependencies`, every `optional-dependencies` list and string items
+    in `[dependency-groups]`. Names are canonicalized, extras are accepted and
+    markers are ignored. A requirement on another member is reported when it
+    is a direct URL or path, excludes the member's `[project].version`, or has
+    no `<` or `<=` ceiling; `~=` and `==` alone have no ceiling.
+
+    Non-members (including excluded members), self-references, `include-group`
+    entries and member globs matching no manifest are skipped. A member with
+    no version skips only the version check; its ceiling is still checked.
 
     Args:
         root: The workspace root directory.
 
     Returns:
         One message per problem, empty when the requirements are all ranges.
+
+    Raises:
+        InvalidManifest: A requirement is malformed, a member lacks `[project]`
+            or `name`, a version is unparsable, or the workspace lacks `members`.
+            The message names the manifest and any malformed requirement text;
+            no result is returned for invalid input.
     """
     members = _members(root)
     problems: list[str] = []
-    for key, (name, _, manifest) in members.items():
+    for key, (name, _, manifest, path) in members.items():
         for text in _requirements(
             manifest["project"], manifest.get("dependency-groups", {})
         ):
-            req = Requirement(text)
+            try:
+                req = Requirement(text)
+            except InvalidRequirement as error:
+                raise InvalidManifest(
+                    f"{path}: invalid requirement {text!r}: {error}"
+                ) from error
             target_key = canonicalize_name(req.name)
             target = members.get(target_key)
             # A package naming itself (an extra that includes other extras) is no dependency.
