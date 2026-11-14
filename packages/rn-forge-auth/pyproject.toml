@@ -93,7 +93,7 @@ dev = [
     "pytest-randomly>=4.1.0",
     "rn-forge-auth[oidc,redis]",
     "ruff>=0.15.21",
-    "types-authlib>=1.8.0",
+    "types-authlib>=1.8.0.20261106",
 ]
 docs = [
     "mkdocs>=1.6.1",
