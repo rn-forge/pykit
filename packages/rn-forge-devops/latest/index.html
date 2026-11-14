@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="CI and release automation for rn-forge repositories">
+        <meta name="description" content="Release commands for the pykit workspace">
       
       
       
@@ -14,7 +14,7 @@
       
       
       
-        <link rel="next" href="reference/index.html">
+        <link rel="next" href="guides/index.html">
       
       
         
@@ -283,7 +283,7 @@
   <span class="md-ellipsis">
     
   
-    Reference
+    Guides
   
 
     
@@ -296,6 +296,88 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guides/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -348,146 +430,6 @@
     
   
     Subcommands
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/ci.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/uv.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    uv adapter
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/github.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    GitHub Actions adapter
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/index-core.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package index
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/releases.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Releases adapter
   
 
     
@@ -602,27 +544,19 @@
 
 
 <h1 id="rn-forge-devops">rn-forge-devops<a class="headerlink" href="#rn-forge-devops" title="Permanent link">&para;</a></h1>
-<p><code>rn-forge-devops</code> is CI and release automation for rn-forge repositories in any
-language, run with uv.</p>
-<p>The <code>rn-forge-devops</code> command reads a repository's workspace manifests, selects
-the packages a change affects, prints every CI job's matrix, and gates each
-package's release on its checks. A workflow file keeps only its platform's
-constructs and calls the command.</p>
-<p>It is built from four modules:</p>
+<p><code>rn-forge-devops</code> holds the release commands for the pykit workspace. The CI
+planner is kiln's <code>kiln-devops</code>.</p>
+<p>It is built from three modules:</p>
 <ul>
-<li><code>rn_forge.devops.ci</code>, the core: the member graph, change selection, check
-  matrices and release gating. It knows neither the CI platform nor the stack.</li>
-<li><code>rn_forge.devops.uv</code>, the uv workspace adapter: it reads the
-  <code>[tool.uv.workspace]</code> members, their internal requirements and their
-  <code>[tool.workspace-ci]</code> tables into the core's graph, and runs <code>smoke</code>.</li>
-<li><code>rn_forge.devops.github</code>, the GitHub Actions adapter: it writes
-  <code>$GITHUB_OUTPUT</code> lines and reads the event context.</li>
-<li><code>rn_forge.devops.cli</code>, the console script that wires the subcommands to the
-  core and the adapters.</li>
+<li><code>rn_forge.devops.requirements</code>, the <code>requirements</code> check: every requirement
+  between workspace members is a version range that admits the member's
+  current version and has a ceiling.</li>
+<li><code>rn_forge.devops.notes</code>, the <code>umbrella</code> subcommand's logic: the umbrella
+  release for the newest shipped release page.</li>
+<li><code>rn_forge.devops.cli</code>, the console script that wires the subcommands.</li>
 </ul>
-<p>The package depends on <code>packaging</code> and no other rn-forge package. The core
-imports neither adapter; <code>uv run lint-imports</code> proves both rules. The facade
-re-exports the core only.</p>
+<p>The package depends on <code>packaging</code> and no other rn-forge package;
+<code>uv run lint-imports</code> proves it. The facade re-exports nothing.</p>
 <p>Use the <a href="reference/index.html">reference</a> for the subcommands and the API.</p>
 
 
