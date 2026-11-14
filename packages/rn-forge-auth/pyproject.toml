@@ -86,7 +86,7 @@ markers = [
 
 [dependency-groups]
 dev = [
-    "assertpy>=2.35",
+    "assertpy>=2.36.0",
     "pyright>=1.1.411",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
