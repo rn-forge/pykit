@@ -16,7 +16,7 @@
         <link rel="prev" href="../fs/state.html">
       
       
-        <link rel="next" href="structlog.html">
+        <link rel="next" href="redaction.html">
       
       
         
@@ -1717,6 +1717,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.RedactFilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RedactFilter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" RedactFilter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.RedactFilter.filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1726,6 +1754,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2627,6 +2683,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.RedactFilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RedactFilter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" RedactFilter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.RedactFilter.filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2671,7 +2755,8 @@
 <p>:class:<code>AppLogger</code> uses <code>{}</code>-style messages and idempotent <code>dictConfig</code>
 initialization. Console output uses Rich when color is enabled on a TTY; file
 output retains the full plain-text format. :class:<code>EnrichFilter</code> adds caller,
-service, environment, and optional OpenTelemetry fields.</p>
+service, environment, and optional OpenTelemetry fields; :class:<code>RedactFilter</code>
+replaces secrets in messages, arguments and extra fields.</p>
 
 
 
@@ -3142,7 +3227,7 @@ yet been called.</p>
 
 
 <h4 id="rn_forge.commons.logging.logger.AppLogger.initialize" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">initialize</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root_logger_name</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enable_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">isatty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_json</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">configure_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_loggers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enable_otel_correlation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">otel_optional</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level_styles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rich_tracebacks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_reconfigure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">initialize</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root_logger_name</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enable_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">isatty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_json</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">configure_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_loggers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enable_otel_correlation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">otel_optional</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level_styles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rich_tracebacks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">redact</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_reconfigure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
@@ -3386,6 +3471,25 @@ RichHandler console path.</p>
                 <p>Install <code>rich.traceback</code> for the RichHandler console
 path. Default <code>True</code>. Uses <code>show_locals=False</code> — tracebacks
 routinely carry credentials in locals.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>redact</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Replace secrets in messages, arguments and extra fields with
+:data:<code>~rn_forge.commons.logging.redaction.REDACTED</code> before any
+handler formats them. Default <code>True</code>. Exception tracebacks are
+not redacted.</p>
               </div>
             </td>
             <td>
@@ -3963,7 +4067,7 @@ Defaults to <code>False</code>.</p>
 
 
 <h3 id="rn_forge.commons.logging.logger.LoggingConfig" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">LoggingConfig</span><span class="p">(</span><span class="n">root_logger_name</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">rich_fmt</span><span class="p">,</span> <span class="n">enable_color</span><span class="p">,</span> <span class="n">isatty</span><span class="p">,</span> <span class="n">use_json</span><span class="p">,</span> <span class="n">configure_root</span><span class="p">,</span> <span class="n">update_loggers</span><span class="p">,</span> <span class="n">enable_otel_correlation</span><span class="p">,</span> <span class="n">otel_optional</span><span class="p">,</span> <span class="n">level_styles</span><span class="p">,</span> <span class="n">rich_tracebacks</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">LoggingConfig</span><span class="p">(</span><span class="n">root_logger_name</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">rich_fmt</span><span class="p">,</span> <span class="n">enable_color</span><span class="p">,</span> <span class="n">isatty</span><span class="p">,</span> <span class="n">use_json</span><span class="p">,</span> <span class="n">configure_root</span><span class="p">,</span> <span class="n">update_loggers</span><span class="p">,</span> <span class="n">enable_otel_correlation</span><span class="p">,</span> <span class="n">otel_optional</span><span class="p">,</span> <span class="n">level_styles</span><span class="p">,</span> <span class="n">rich_tracebacks</span><span class="p">,</span> <span class="n">redact</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -4056,6 +4160,169 @@ wins for every handler type, including Rich.</p>
 <p>This is the single source of truth for every default value.
 Dynamic defaults (TTY detection, env-var level) are resolved here
 at call time, not at import time.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="rn_forge.commons.logging.logger.RedactFilter" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">RedactFilter</span><span class="p">(</span><span class="n">policy</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.commons.logging.logger.RedactFilter" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="logging.Filter">Filter</span></code></p>
+
+
+
+        <p>Redacts secrets from every log record.</p>
+<p>Redacts <code>record.msg</code> when it is a string, <code>record.args</code> (tuple or
+mapping, with non-string arguments kept as they are) and every <code>extra</code>
+field, using :func:<code>~rn_forge.commons.logging.redaction.redact</code>. It assigns
+new objects to the record and never mutates what the caller passed.
+Running it more than once on a record changes nothing further.</p>
+
+        <p>Initialize :class:<code>RedactFilter</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>policy</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              RedactionPolicy(field_pattern, scrub_credentials=True, scrub_url_passwords=True)
+
+  
+      dataclass
+   (rn_forge.commons.logging.redaction.RedactionPolicy)" href="redaction.html#rn_forge.commons.logging.redaction.RedactionPolicy">RedactionPolicy</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>What to redact. Defaults to :meth:<code>RedactionPolicy.default</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.commons.logging.logger.RedactFilter.filter" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="nb">filter</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></code>
+
+<a href="#rn_forge.commons.logging.logger.RedactFilter.filter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Redact <em>record</em> in place.</p>
+<p>If redaction fails, the message is replaced by the redaction marker
+rather than risk emitting a secret.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>record</code>
+            </td>
+            <td>
+                  <code><span title="logging.LogRecord">LogRecord</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The log record to redact.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Always <code>True</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

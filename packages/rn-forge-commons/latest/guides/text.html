@@ -1426,6 +1426,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/logging/structlog.html" class="md-nav__link">
         
   
@@ -2076,6 +2104,13 @@ needs the <code>markdown</code> extra and is imported directly, never through
 
 <p>Anchors follow Python-Markdown's <code>toc</code> extension, which MkDocs uses. Links and
 tables come from a CommonMark parser, so a link inside code is not a link.</p>
+<p>Parsing is shared automatically: the headings, anchors, title, links, tables and
+fenced-code helpers reuse one parsed structure per document, so no caller-side
+cache is needed. The reuse is process-local and keyed by the full text, so
+changed text is parsed afresh and equal text from any source shares an entry. At
+most 2048 documents are retained, counted in entries rather than bytes; a
+document evicted since its last use is parsed again. Every call returns a fresh
+list or set that the caller may modify.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.text.markdown</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkdownUtils</span>
 
 <span class="n">page</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;# Guide</span>

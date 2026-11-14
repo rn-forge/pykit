@@ -1315,6 +1315,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.atomic_replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;atomic_replace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.fs.paths.PathUtils.atomic_write" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1359,10 +1370,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.move_no_clobber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;move_no_clobber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.fs.paths.PathUtils.normalize_relative" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;normalize_relative
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.prune_empty_parents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;prune_empty_parents
       
     </span>
   </a>
@@ -1508,6 +1541,34 @@
     
   
     Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
   
 
     
@@ -2126,6 +2187,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.atomic_replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;atomic_replace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.fs.paths.PathUtils.atomic_write" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2170,10 +2242,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.move_no_clobber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;move_no_clobber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.fs.paths.PathUtils.normalize_relative" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;normalize_relative
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.fs.paths.PathUtils.prune_empty_parents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;prune_empty_parents
       
     </span>
   </a>
@@ -2417,6 +2511,149 @@ symlinks, so a single post-resolution containment check catches both.</p>
               <div class="doc-md-description">
                 <p>The resolved <em>target</em> is not <em>root</em> itself and is
 not inside it.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.commons.fs.paths.PathUtils.atomic_replace" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">atomic_replace</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#rn_forge.commons.fs.paths.PathUtils.atomic_replace" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Edit a temporary sibling of <em>path</em> and publish it over <em>path</em> atomically.</p>
+<p>Yields a <code>.&lt;name&gt;.&lt;random&gt;.tmp</code> path in <em>path</em>'s directory. When
+<em>copy</em> is true it starts as a :func:<code>shutil.copy2</code> copy of <em>path</em>; the
+caller edits it with any tool, including one that replaces it by
+rename. On a clean exit the temporary is <code>fsync</code>'d, given its
+permissions, published over <em>path</em> with :func:<code>os.replace</code>, and the
+parent directory is best-effort <code>fsync</code>'d.</p>
+<p>Permissions: an explicit <em>mode</em> wins; otherwise an existing <em>path</em>'s
+mode is kept; otherwise the temporary's default (restrictive)
+permissions are left as-is.</p>
+<p>On any :class:<code>BaseException</code>, including :exc:<code>KeyboardInterrupt</code>,
+the temporary is removed and <em>path</em> is left untouched.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>path</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The file to replace. Its directory must exist.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>copy</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pre-fill the temporary with a copy of <em>path</em>. When false the
+temporary starts empty and <em>path</em> may not exist yet.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mode</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional explicit permission bits for the published file.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Yields:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Generator">Generator</span>[<span title="pathlib.Path">Path</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The temporary path to edit.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>copy</em> is true and <em>path</em> does not exist.</p>
               </div>
             </td>
           </tr>
@@ -2927,6 +3164,149 @@ directory when no marker matches anywhere up the tree.
 <div class="doc doc-object doc-function">
 
 
+<h4 id="rn_forge.commons.fs.paths.PathUtils.move_no_clobber" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">move_no_clobber</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#rn_forge.commons.fs.paths.PathUtils.move_no_clobber" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Move <em>source</em> to <em>destination</em>, never overwriting an existing file.</p>
+<p>Creates <em>destination</em>'s parent directories, then publishes with
+:func:<code>os.link</code> and unlinks <em>source</em>. The link fails atomically when
+<em>destination</em> exists, so a file that appears there during the call is
+never replaced. Across filesystems, <em>source</em> is copied with
+:func:<code>shutil.copy2</code> to a temporary beside <em>destination</em>, <code>fsync</code>'d,
+linked to <em>destination</em> and removed, then <em>source</em> is removed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>source</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The file to move.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>destination</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The path to move it to.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>destination</em>, as a :class:<code>~pathlib.Path</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileExistsError">FileExistsError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>destination</em> exists. Both files are left as
+they were.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>source</em> does not exist.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="OSError">OSError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Any other failure, including a filesystem without hard
+links. Parent directories already created are kept.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="rn_forge.commons.fs.paths.PathUtils.normalize_relative" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">normalize_relative</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span></code>
 
@@ -3016,6 +3396,115 @@ not touch the filesystem or resolve symlinks; pair with
             <td>
               <div class="doc-md-description">
                 <p><em>raw</em> is empty/blank, absolute, or escapes the root.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.commons.fs.paths.PathUtils.prune_empty_parents" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">prune_empty_parents</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#rn_forge.commons.fs.paths.PathUtils.prune_empty_parents" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove <em>start</em> and its empty ancestors, up to but excluding <em>stop</em>.</p>
+<p>Both paths are resolved first. Starting at <em>start</em>, each directory is
+removed with :meth:<code>~pathlib.Path.rmdir</code> and the walk moves to its
+parent, ending at the first directory that is not empty. Only
+directories strictly inside <em>stop</em> are touched: nothing happens when
+the resolved <em>start</em> is <em>stop</em> or lies outside it. A directory that
+no longer exists is skipped.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>start</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The directory to remove first.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stop</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The directory that bounds the walk; it is never removed.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="NotADirectoryError">NotADirectoryError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>start</em> is a file.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="OSError">OSError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>rmdir</code> failed for a reason other than the directory
+being non-empty or missing, e.g. :exc:<code>PermissionError</code>.</p>
               </div>
             </td>
           </tr>

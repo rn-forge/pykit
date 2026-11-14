@@ -1357,6 +1357,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../logging/structlog.html" class="md-nav__link">
         
   
@@ -1737,6 +1765,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Settled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;Settled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Succeeded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Succeeded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.runtime.tasks.Task" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1880,6 +1941,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__exit__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.TaskPool.map_settled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;map_settled
       
     </span>
   </a>
@@ -2175,6 +2247,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Settled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-type_alias"></code>&nbsp;Settled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.Succeeded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Succeeded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.runtime.tasks.Task" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2325,6 +2430,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.runtime.tasks.TaskPool.map_settled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;map_settled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.runtime.tasks.TaskPool.shutdown" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2396,7 +2512,9 @@
     Task: Abstract base class for units of concurrent work.  Subclass and
         implement :meth:<code>Task.run</code>.
     TaskPool: Thread pool that submits :class:<code>Task</code> instances, tracks their
-        futures, and reports failures on shutdown.</p>
+        futures, and reports failures on shutdown.  Its
+        :meth:<code>TaskPool.map_settled</code> fans a function over items.
+    Succeeded, Failed, Settled: Per-item outcome of :meth:<code>TaskPool.map_settled</code>.</p>
 <p>Typical usage::</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.runtime.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">TaskPool</span>
 
@@ -2431,6 +2549,171 @@
 
 
 
+<div class="doc doc-object doc-type_alias">
+
+
+
+<h3 id="rn_forge.commons.runtime.tasks.Settled" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-type_alias"></code>            <code class=" language-python"><span class="n">Settled</span> <span class="o">=</span> <span class="n">Succeeded</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">Failed</span></code>
+
+<a href="#rn_forge.commons.runtime.tasks.Settled" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Outcome of one item: :class:<code>Succeeded</code> or :class:<code>Failed</code>.</p>
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="rn_forge.commons.runtime.tasks.Failed" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Failed</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#rn_forge.commons.runtime.tasks.Failed" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Outcome of an item whose function raised an :class:<code>Exception</code>.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.commons.runtime.tasks.Failed.error">error</span></code></td>
+            <td>
+                  <code><span title="Exception">Exception</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The exception the function raised.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="rn_forge.commons.runtime.tasks.Succeeded" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">Succeeded</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#rn_forge.commons.runtime.tasks.Succeeded" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Outcome of an item whose function returned.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="rn_forge.commons.runtime.tasks.Succeeded.value">value</span></code></td>
+            <td>
+                  <code><span title="rn_forge.commons.runtime.tasks.Succeeded[T]">T</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The value the function returned; <code>None</code> is a valid value.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 
@@ -3182,6 +3465,128 @@ here — inspect :attr:<code>Task.error</code> or call :meth:<code>shutdown</cod
           </tr>
       </tbody>
     </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.commons.runtime.tasks.TaskPool.map_settled" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">map_settled</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></code>
+
+<a href="#rn_forge.commons.runtime.tasks.TaskPool.map_settled" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run <code>fn(item)</code> for every item on the pool and wait for all of them.</p>
+<p>No :class:<code>Task</code> is created and :attr:<code>tasks</code> is unchanged.  An item
+whose function raises an :class:<code>Exception</code> is logged and returned as
+:class:<code>Failed</code>; the other items still run.  An item cancelled by
+<code>shutdown(cancel_futures=True)</code> is returned as :class:<code>Failed</code>.  A
+<code>BaseException</code> from <em>fn</em> is not captured: it propagates from this
+call, and items not yet collected are left running.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fn</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="rn_forge.commons.runtime.tasks.TaskPool.map_settled[I]">I</span>], <span title="rn_forge.commons.runtime.tasks.TaskPool.map_settled[T]">T</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Called with each item on a pool thread.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>items</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<span title="rn_forge.commons.runtime.tasks.TaskPool.map_settled[I]">I</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Inputs.  Consumed fully before any item is submitted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>One</code></td>            <td>
+                  <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="            Settled = Succeeded[T] | Failed (rn_forge.commons.runtime.tasks.Settled)" href="#rn_forge.commons.runtime.tasks.Settled">Settled</a>[<span title="rn_forge.commons.runtime.tasks.TaskPool.map_settled[T]">T</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>class:<code>Succeeded</code> or :class:<code>Failed</code> per item, in input order.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              AppException(message, *message_args, error_code=-1, **error_data) (rn_forge.commons.exceptions.AppException)" href="../exceptions.html#rn_forge.commons.exceptions.AppException">AppException</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the pool has already been shut down.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Example::</p>
+<div class="codehilite"><pre><span></span><code>for item, result in zip(paths, pool.map_settled(read, paths)):
+    if isinstance(result, Failed):
+        print(item, result.error)
+</code></pre></div>
 
 
     </div>

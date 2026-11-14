@@ -667,6 +667,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#mapping-over-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping over items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thread-actor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread actor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thread actor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keep-the-actor-short" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep the actor short
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1426,6 +1465,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/logging/structlog.html" class="md-nav__link">
         
   
@@ -2010,6 +2077,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#mapping-over-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping over items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thread-actor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread actor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thread actor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keep-the-actor-short" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep the actor short
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2062,6 +2168,80 @@
 </code></pre></div>
 
 <p>Use <code>fail_on_error=True</code> when task failures should raise <code>AppException</code>.</p>
+<h2 id="mapping-over-items">Mapping over items<a class="headerlink" href="#mapping-over-items" title="Permanent link">&para;</a></h2>
+<p><code>TaskPool.map_settled(fn, items)</code> runs <code>fn(item)</code> for every item on the pool and
+waits for all of them. No <code>Task</code> subclass or name is needed, and
+<code>TaskPool.tasks</code> is unchanged. It returns one result per item, in input order:
+<code>Succeeded</code> with the value, or <code>Failed</code> with the exception. An item failure
+raises nothing and is logged with the item's index. A <code>None</code> return is a valid
+<code>Succeeded(None)</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons</span><span class="w"> </span><span class="kn">import</span> <span class="n">Failed</span><span class="p">,</span> <span class="n">Succeeded</span><span class="p">,</span> <span class="n">TaskPool</span>
+
+<span class="k">with</span> <span class="n">TaskPool</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map_settled</span><span class="p">(</span><span class="n">read_size</span><span class="p">,</span> <span class="n">paths</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+    <span class="k">match</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">case</span> <span class="n">Succeeded</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">size</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">case</span> <span class="n">Failed</span><span class="p">(</span><span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;failed:&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>isinstance(result, Failed)</code> narrows the same way. An exception that is not an
+<code>Exception</code>, such as <code>KeyboardInterrupt</code>, is not captured and propagates from
+the call.</p>
+<p>The caller sizes the pool. Choose <code>max_workers</code> by what the work waits on, such
+as the number of subprocesses or I/O requests you want in flight, not by CPU
+count: a thread waiting on I/O does not use a core.</p>
+<p>This is how to fan out off a <a href="#keep-the-actor-short">thread actor</a>: read what
+you need on the actor, then map the plain data across the pool so the actor is
+free for other callers. To process items in groups, use <code>itertools.batched</code>.</p>
+<h2 id="thread-actor">Thread actor<a class="headerlink" href="#thread-actor" title="Permanent link">&para;</a></h2>
+<p><code>ThreadActor</code> owns one resource on a dedicated thread. Some libraries, such as a
+SQLite connection or a single-session SDK, must be created, used and closed on
+one thread. The actor guarantees this: <code>factory</code> builds the resource on the
+owner thread, every call runs there one at a time in queue order, and <code>on_close</code>
+releases it there after the last queued call.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadActor</span>
+
+<span class="n">actor</span> <span class="o">=</span> <span class="n">ThreadActor</span><span class="p">(</span>
+    <span class="k">lambda</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;app.db&quot;</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;db&quot;</span><span class="p">,</span>
+    <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span> <span class="n">conn</span><span class="p">:</span> <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">(),</span>
+<span class="p">)</span>
+<span class="n">future</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="k">lambda</span> <span class="n">conn</span><span class="p">:</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">())</span>
+<span class="n">row</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+<span class="c1"># In async code, await the same call without blocking the event loop.</span>
+<span class="n">row</span> <span class="o">=</span> <span class="k">await</span> <span class="n">actor</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="k">lambda</span> <span class="n">conn</span><span class="p">:</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">())</span>
+
+<span class="n">actor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>
+
+<ul>
+<li>An exception from <code>factory</code> is raised by the constructor as <code>AppException</code>
+  with the original as <code>__cause__</code>. Exceeding <code>startup_timeout</code> also raises
+  <code>AppException</code>.</li>
+<li>An exception from a call is set on that call's future and does not stop the
+  actor.</li>
+<li><code>close()</code> runs the calls already queued, then <code>on_close</code>, and is idempotent. A
+  <code>submit</code> after it raises <code>AppException</code>.</li>
+<li>The owner thread is a daemon, so a forgotten <code>close()</code> does not block
+  interpreter exit; the resource is then not closed.</li>
+</ul>
+<h3 id="keep-the-actor-short">Keep the actor short<a class="headerlink" href="#keep-the-actor-short" title="Permanent link">&para;</a></h3>
+<p>A caller must never hold the actor during a network call or other long external
+work. Every other caller waits behind it, and the kit cannot detect a violation.
+Do that work outside the actor and pass the results in.</p>
+<p>When one job touches many files, split it into three phases:</p>
+<ol>
+<li>Work on the actor.</li>
+<li>A cheap projection to plain data, also on the actor.</li>
+<li>Fan out off the actor, with <code>TaskPool.map_settled</code>.</li>
+</ol>
 
 
 

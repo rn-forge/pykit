@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-commons/latest/reference/logging/structlog.html">
       
       
-        <link rel="prev" href="logger.html">
+        <link rel="prev" href="redaction.html">
       
       
         <link rel="next" href="../text/markdown.html">
@@ -1356,6 +1356,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1606,6 +1634,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;otel_processor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.structlog.redact_processor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;redact_processor
       
     </span>
   </a>
@@ -2361,6 +2400,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.structlog.redact_processor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;redact_processor
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2405,7 +2455,8 @@
 <p>Use :meth:<code>~rn_forge.commons.logging.logger.AppLogger.get_logger</code> directly for
 unstructured logging. :class:<code>StructLogger</code> binds context carried across a
 chain of calls while retaining the configured Rich, file, or JSON handlers.
-:func:<code>otel_processor</code> adds the active OpenTelemetry span's ids to every event.</p>
+:func:<code>otel_processor</code> adds the active OpenTelemetry span's ids to every event.
+:func:<code>redact_processor</code> replaces secrets in every event.</p>
 <p><strong>Call</strong> :meth:<code>~rn_forge.commons.logging.logger.AppLogger.initialize</code> <strong>before the
 first</strong> :class:<code>StructLogger</code> <strong>log call</strong> (not necessarily before
 constructing one — the underlying logger is resolved lazily, on first use).
@@ -2854,6 +2905,112 @@ never requires it.</p>
             <td>
               <div class="doc-md-description">
                 <p>when <code>opentelemetry</code> is not installed.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rn_forge.commons.logging.structlog.redact_processor" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class=" language-python"><span class="n">redact_processor</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">event_dict</span><span class="p">)</span></code>
+
+<a href="#rn_forge.commons.logging.structlog.redact_processor" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Redact secrets in a structlog event dict.</p>
+<p>Usable as a structlog processor in any chain, ahead of the renderer. Uses
+:meth:<code>~rn_forge.commons.logging.redaction.RedactionPolicy.default</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>logger</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The bound logger. Unused; part of the processor signature.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>method_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The log method's name. Unused; part of the signature.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>event_dict</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.MutableMapping">MutableMapping</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The event dictionary. Not mutated.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.MutableMapping">MutableMapping</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A redacted copy of <em>event_dict</em>.</p>
               </div>
             </td>
           </tr>

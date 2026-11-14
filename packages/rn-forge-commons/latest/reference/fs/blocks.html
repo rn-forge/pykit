@@ -1517,6 +1517,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../logging/structlog.html" class="md-nav__link">
         
   
@@ -2303,7 +2331,7 @@ rest of the file.</p>
 
 
 <h3 id="rn_forge.commons.fs.blocks.ManagedBlock" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ManagedBlock</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="n">HASH_COMMENT</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">ManagedBlock</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="n">HASH_COMMENT</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">end_indent</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -2385,6 +2413,23 @@ inserted as given.</p>
             </td>
             <td>
                   <code>&#39;&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>end_indent</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Leading whitespace of the end marker alone. <code>None</code> (the default)
+uses <em>indent</em>; <code>""</code> puts the end marker at the left margin.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>

@@ -1465,6 +1465,34 @@
   
   
     <li class="md-nav__item">
+      <a href="logging/redaction.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="logging/structlog.html" class="md-nav__link">
         
   
@@ -2266,10 +2294,10 @@ assert_that(path).exists().is_file()
 
     <div class="doc doc-contents ">
 
-        <p>Provide a persistent, per-test output directory under <code>.out/&lt;scope&gt;/tests/output/</code>.</p>
+        <p>Provide a persistent, per-test output directory under <code>.tmp/&lt;scope&gt;/tests/output/</code>.</p>
 <p>Unlike <code>tmp_path</code>, the directory is <strong>not</strong> cleaned up after the test
 run — useful for inspecting generated files when debugging failures.</p>
-<p>Path format: <code>&lt;rootdir&gt;/.out/&lt;scope&gt;/tests/output/&lt;sanitised-node-id&gt;/</code></p>
+<p>Path format: <code>&lt;rootdir&gt;/.tmp/&lt;scope&gt;/tests/output/&lt;sanitised-node-id&gt;/</code></p>
 <p>Import this fixture into <code>conftest.py</code> to make it available project-wide::</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># conftest.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.testing</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_path</span>  <span class="c1"># noqa: F401</span>
