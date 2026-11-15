@@ -30,6 +30,13 @@ from rn_forge.commons.testing import raise_
 
 
 @pytest.fixture(autouse=True)
+def restore_record_factory():
+    saved = logging.getLogRecordFactory()
+    yield
+    logging.setLogRecordFactory(saved)
+
+
+@pytest.fixture(autouse=True)
 def reset_logger_state():
     AppLogger._configured = False
     yield
@@ -114,6 +121,42 @@ def test_initialize_no_duplicate_handlers() -> None:
 def test_initialize_registers_brace_log_record() -> None:
     _configure()
     assert logging.getLogRecordFactory() is BraceLogRecord
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="S22.4.5: get_logger overwrites a consumer record factory",
+)
+def test_get_logger_preserves_a_factory_installed_after_initialize() -> None:
+    _configure()
+    current = logging.getLogRecordFactory()
+
+    def consumer_factory(*args, **kwargs):
+        record = current(*args, **kwargs)
+        record.trace_id = "t-1"
+        return record
+
+    logging.setLogRecordFactory(consumer_factory)
+    _logger("test.keep")
+    record = logging.getLogRecordFactory()("n", logging.INFO, "", 0, "m", (), None)
+    assert hasattr(record, "trace_id")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="S22.4.5: get_logger overwrites a consumer record factory",
+)
+def test_get_logger_preserves_a_factory_installed_before_first_retrieval() -> None:
+    current = logging.getLogRecordFactory()
+
+    def consumer_factory(*args, **kwargs):
+        record = current(*args, **kwargs)
+        record.trace_id = "t-1"
+        return record
+
+    logging.setLogRecordFactory(consumer_factory)
+    _logger("test.keep2")
+    assert logging.getLogRecordFactory() is consumer_factory
 
 
 # -- TRACE level -----------------------------------------------------------
