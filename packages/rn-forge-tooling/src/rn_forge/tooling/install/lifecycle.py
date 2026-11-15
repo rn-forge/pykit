@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -106,8 +107,10 @@ def install(
         force: Reinstall even when *version* is already active.
 
     Raises:
-        AppException: Any step failed; everything it did has been undone.
-        BaseException: An interruption, re-raised once everything is undone.
+        AppException: A step failed; all undo steps were attempted, with any
+            recovery failures and retained displaced version's path reported.
+        BaseException: An interruption, re-raised after recovery with any
+            recovery failures and retained path logged at error level.
     """
     home = home or ToolHome(product.name)
     source = source or product.source
@@ -186,7 +189,16 @@ def cleanup(
         stale = [v for v in home.installed_versions() if v != current]
         for stale_version in stale:
             shutil.rmtree(home.version_dir(stale_version))
-        shutil.rmtree(home.work_dir, ignore_errors=True)
+        if home.work_dir.is_dir():
+            for entry in home.work_dir.iterdir():
+                if entry.is_dir() and (entry / "displaced").exists():
+                    _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
+                        "Keeping retained transaction directory {}", entry
+                    )
+                elif entry.is_dir() and not entry.is_symlink():
+                    shutil.rmtree(entry, ignore_errors=True)
+                else:
+                    entry.unlink(missing_ok=True)
     return CleanupResult(product.name, current, stale)
 
 
@@ -231,11 +243,12 @@ def _install(
     previous: str | None,
 ) -> None:
     """The install transaction proper. The caller holds the lock."""
-    undo: list[Callable[[], object]] = []
-    work = home.work_dir / f"{target}-{os.getpid()}"
-    shutil.rmtree(work, ignore_errors=True)
+    undo: list[tuple[str, Callable[[], object]]] = []
+    home.work_dir.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix=f"{target}-", dir=home.work_dir))
     version_dir = home.version_dir(target)
     displaced = work / "displaced"
+    retained = False
     try:
         release_root = fetch_release(source, target, work / "release")
 
@@ -243,15 +256,22 @@ def _install(
             # A reinstall: set the existing directory aside rather than
             # deleting it, so a failed rebuild can put it back.
             version_dir.rename(displaced)
-            undo.append(lambda: displaced.rename(version_dir))
+            undo.append(
+                ("restore displaced version", lambda: displaced.rename(version_dir))
+            )
         version_dir.parent.mkdir(parents=True, exist_ok=True)
-        undo.append(lambda: shutil.rmtree(version_dir, ignore_errors=True))
+        undo.append(
+            (
+                f"remove versions/{target}",
+                lambda: shutil.rmtree(version_dir, ignore_errors=True),
+            )
+        )
         product.build(release_root, version_dir)
 
         for link in product.artifacts():
-            undo.append(_place_link(home, link))
+            undo.append((f"restore link {link.path}", _place_link(home, link)))
 
-        undo.append(_restore_file(home.state_path))
+        undo.append(("restore state.json", _restore_file(home.state_path)))
         if previous is not None and previous != target:
             product.migrate(previous, target)
         PathUtils.atomic_write(
@@ -263,11 +283,35 @@ def _install(
             home.state_path,
         )
 
-        undo.append(_restore_current(home))
+        undo.append(("restore current", _restore_current(home)))
         home.activate(target)
     except BaseException as exc:
-        for step in reversed(undo):
-            step()
+        failures: list[tuple[str, Exception]] = []
+        for label, step in reversed(undo):
+            try:
+                step()
+            except Exception as error:  # noqa: BLE001 - attempt every undo step
+                failures.append((label, error))
+        retained = displaced.exists()
+        if failures:
+            details = "; ".join(f"{label}: {error}" for label, error in failures)
+            if retained:
+                details += f"; the previous version is kept at {work}"
+            if isinstance(exc, Exception):
+                raise AppException(
+                    "Install of {} {} failed: {}; recovery is incomplete: {}",
+                    product.name,
+                    target,
+                    exc,
+                    details,
+                ) from exc
+            _LOGGER.error(  # noqa: PLE1205  # brace-style log format
+                "Install of {} {} failed: {}; recovery is incomplete: {}",
+                product.name,
+                target,
+                exc,
+                details,
+            )
         if isinstance(exc, Exception):
             raise AppException(
                 "Install of {} {} failed and was rolled back: {}",
@@ -277,7 +321,8 @@ def _install(
             ) from exc
         raise
     finally:
-        shutil.rmtree(work, ignore_errors=True)
+        if not retained:
+            shutil.rmtree(work, ignore_errors=True)
 
 
 def _link_target(home: ToolHome, link: Link) -> str:

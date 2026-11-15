@@ -76,10 +76,19 @@ shows that the check ran.
 1. migrate from the active version, then write `state.json`;
 1. swap `current` **last**.
 
-If any step raises, the steps already taken are undone in reverse, and the
-previous version is active again. An `Exception` is re-raised as an
-`AppException`. An interruption (`KeyboardInterrupt`) is re-raised as-is, after
-the rollback.
+If any step raises, every undo step is attempted in reverse, even if an undo
+step fails. An `Exception` is re-raised as an `AppException` with the initiating
+failure as its cause. Its message says "rolled back" only when every undo step
+succeeded; otherwise it says `recovery is incomplete` and names each failed step
+and its error. An interruption such as `KeyboardInterrupt` is re-raised as-is
+after recovery, with recovery failures logged at error level.
+
+If restoring a displaced version fails, it survives in a unique transaction
+directory under `$RNF_HOME/<product>/.work`, at the reported path. `cleanup`
+keeps that directory and warns with its path; later installs leave it alone.
+Recover the previous version by hand, then remove the retained directory.
+`uninstall` still removes the whole product directory, including retained
+versions. For interruptions, the retained path is logged at error level.
 
 Other verbs:
 

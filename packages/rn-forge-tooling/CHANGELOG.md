@@ -5,6 +5,11 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- A failed undo step no longer stops install recovery or hides the initiating
+  failure, and a failed restoration no longer deletes the displaced version.
+
 ## [0.3.2] - 2026-11-13
 
 ### Changed

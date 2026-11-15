@@ -241,15 +241,18 @@ class TestRollback:
 
 
 class TestRecoveryFailure:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="S22.6.3: a failed undo masks the initiating failure and stops recovery",
-    )
     def test_a_failed_undo_step_does_not_stop_remaining_recovery(
         self, home, source, monkeypatch
     ):
         install(product(source), home=home)
         source.newest = "2.0.0"
+        migration_error = RuntimeError("migration exploded")
+        tool = product(source)
+
+        def fail_migration(self, frm, to):
+            raise migration_error
+
+        monkeypatch.setattr(Tool, "migrate", fail_migration)
         atomic_symlink = lifecycle_module.atomic_symlink
         calls = 0
 
@@ -261,14 +264,15 @@ class TestRecoveryFailure:
             return atomic_symlink(link, target)
 
         monkeypatch.setattr(lifecycle_module, "atomic_symlink", fail_restore)
-        with pytest.raises(AppException, match="migration exploded"):
-            upgrade(product(source, fail_migration=True), home=home)
+        with pytest.raises(
+            AppException,
+            match="migration exploded.*recovery is incomplete.*restore link",
+        ) as excinfo:
+            upgrade(tool, home=home)
+        assert excinfo.value.__cause__ is migration_error
         assert not home.version_dir("2.0.0").exists()
+        assert json.loads(home.state_path.read_text())["version"] == "1.0.0"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="S22.6.3: failed restoration deletes the displaced version",
-    )
     def test_a_failed_restoration_keeps_the_displaced_version(
         self, home, source, monkeypatch
     ):
@@ -281,15 +285,103 @@ class TestRecoveryFailure:
             return rename(path, target)
 
         monkeypatch.setattr(Path, "rename", fail_restore)
-        with pytest.raises((AppException, OSError)):
+        with pytest.raises(AppException, match="recovery is incomplete") as excinfo:
             install(product(source, fail_build=True), home=home, force=True)
-        assert any(
-            path.read_text() == "tool 1.0.0\n"
-            for path in home.product_dir.rglob("bin/tool")
-        )
+        binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
+        assert len(binaries) == 1
+        assert binaries[0].read_text() == "tool 1.0.0\n"
+        assert home.work_dir in binaries[0].parents
+        assert str(binaries[0].parents[2]) in str(excinfo.value)
+
+    def test_an_interrupted_install_with_failed_restoration_keeps_the_displaced_version(
+        self, home, source, monkeypatch, caplog
+    ):
+        install(product(source), home=home)
+        rename = Path.rename
+
+        def fail_restore(path, target):
+            if path.name == "displaced":
+                raise OSError("restore failed")
+            return rename(path, target)
+
+        def interrupt(self, version):
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(Path, "rename", fail_restore)
+        monkeypatch.setattr(ToolHome, "activate", interrupt)
+        with pytest.raises(KeyboardInterrupt):
+            install(product(source), home=home, force=True)
+        binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
+        assert len(binaries) == 1
+        assert binaries[0].read_text() == "tool 1.0.0\n"
+        assert "restore displaced version" in caplog.text
+        assert str(binaries[0].parents[2]) in caplog.text
+
+    @pytest.mark.parametrize("boundary", ["link", "state", "activate"])
+    def test_a_failure_at_each_mutation_boundary_restores_the_previous_version(
+        self, boundary, home, source, monkeypatch
+    ):
+        TestRollback()._installed_at_one(home, source)
+        if boundary == "link":
+            original = lifecycle_module.atomic_symlink
+            calls = 0
+
+            def fail_once(link, target):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    raise OSError("mutation failed")
+                return original(link, target)
+
+            monkeypatch.setattr(lifecycle_module, "atomic_symlink", fail_once)
+        elif boundary == "state":
+            original = lifecycle_module.PathUtils.atomic_write
+            calls = 0
+
+            def fail_once(content, path):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    raise OSError("mutation failed")
+                return original(content, path)
+
+            monkeypatch.setattr(lifecycle_module.PathUtils, "atomic_write", fail_once)
+        else:
+            original = ToolHome.activate
+            calls = 0
+
+            def fail_once(self, version):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    raise OSError("mutation failed")
+                return original(self, version)
+
+            monkeypatch.setattr(ToolHome, "activate", fail_once)
+        with pytest.raises(AppException, match="rolled back"):
+            upgrade(product(source), home=home)
+        TestRollback()._assert_still_one(home)
 
 
 class TestUninstallAndCleanup:
+    def test_cleanup_keeps_a_retained_directory(self, home, source):
+        install(product(source), home=home)
+        retained = home.work_dir / "1.0.0-a"
+        disposable = home.work_dir / "2.0.0-b"
+        (retained / "displaced").mkdir(parents=True)
+        (disposable / "release").mkdir(parents=True)
+        cleanup(product(source), home=home)
+        assert retained.exists()
+        assert not disposable.exists()
+
+    def test_a_later_install_keeps_a_retained_directory(self, home, source):
+        install(product(source), home=home)
+        retained_file = home.work_dir / f"1.0.0-{os.getpid()}" / "displaced" / "keep"
+        retained_file.parent.mkdir(parents=True)
+        retained_file.touch()
+        install(product(source), home=home, force=True)
+        assert retained_file.exists()
+
     def test_uninstall_removes_the_product_and_its_links(self, home, source):
         install(product(source), home=home)
         result = uninstall(product(source), home=home)
