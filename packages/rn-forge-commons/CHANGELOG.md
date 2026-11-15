@@ -7,9 +7,15 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ### Changed
 
+- `AppLogger` no longer replaces the process record factory; its own records
+  format braces over any factory.
 - `ApplyResult.written` reports each write path once in plan order and no longer
   lists unchanged, skipped, forgotten or dry-run paths. This public behaviour
   change warrants a minor version bump while the package is pre-1.0.
+
+### Fixed
+
+- `AppLogger` level methods report the caller's file, line and function.
 
 ## [0.9.0] - 2026-11-13
 

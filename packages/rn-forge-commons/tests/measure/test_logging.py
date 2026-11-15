@@ -21,7 +21,11 @@ type Measure = Callable[
 
 
 @pytest.mark.parametrize("enabled", [False, True])
-def test_logging(measure: Measure, enabled: bool) -> None:
+@pytest.mark.parametrize("message", ["record %s", "record {}"])
+def test_logging(measure: Measure, enabled: bool, message: str) -> None:
+    factory = logging.getLogRecordFactory()
+    logger_class = logging.getLoggerClass()
+    AppLogger.get_logger("measurement.registration")
     stream = StringIO()
     handler = logging.StreamHandler(stream)
     logger = AppLogger("measurement", logging.INFO)
@@ -29,16 +33,21 @@ def test_logging(measure: Measure, enabled: bool) -> None:
     logger.addHandler(handler)
     logger.disabled = not enabled
     try:
+        case = "logging_enabled" if enabled else "logging_disabled"
+        if message == "record {}":
+            case += "_brace"
         with measure(
-            "logging_enabled" if enabled else "logging_disabled",
-            {"records": 10_000, "enabled": enabled},
+            case,
+            {"records": 10_000, "enabled": enabled, "message": message},
             "cpu",
         ) as counts:
             for index in range(10_000):
-                logger.info("record %s", index)
+                logger.info(message, index)
             counts["attempted_records"] = 10_000
             counts["records"] = len(stream.getvalue().splitlines())
             assert counts["records"] == (10_000 if enabled else 0)
     finally:
         logger.removeHandler(handler)
         handler.close()
+        logging.setLogRecordFactory(factory)
+        logging.setLoggerClass(logger_class)
