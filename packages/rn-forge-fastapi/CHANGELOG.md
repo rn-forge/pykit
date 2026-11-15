@@ -5,6 +5,11 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Bearer/session principal projection, persisted records and fixed-window
+  arithmetic now come from `rn-forge-auth`, with no behaviour change.
+
 ### Fixed
 
 - `idempotent` no longer reads or parses a safe request's body. Malformed JSON

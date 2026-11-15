@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-import hashlib
-import math
 import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Protocol, runtime_checkable
+
+from rn_forge.auth import (
+    fixed_window_key,
+    fixed_window_retry_after,
+    fixed_window_seconds,
+)
 
 __all__ = [
     "InMemoryRateLimiter",
@@ -53,13 +57,12 @@ class RateLimiter(Protocol):
 
 def window_seconds(rate: RateLimit) -> int:
     """The length of *rate*'s window in whole seconds, at least one."""
-    return max(1, math.ceil(rate.window.total_seconds()))
+    return fixed_window_seconds(rate.window)
 
 
 def window_key(scope: str, subject: str, rate: RateLimit, now: float) -> str:
     """The counter key for a hit at *now*: a digest, so *subject* is never stored."""
-    digest = hashlib.sha256(f"{scope}\0{subject}".encode()).hexdigest()
-    return f"{digest}:{int(now // window_seconds(rate))}"
+    return fixed_window_key(scope, subject, window_seconds(rate), now)
 
 
 class InMemoryRateLimiter:
@@ -88,4 +91,4 @@ class InMemoryRateLimiter:
             self._counts[key] = (count, ends)
         if count <= rate.limit:
             return None
-        return max(1, math.ceil(ends - now))
+        return fixed_window_retry_after(window, now)

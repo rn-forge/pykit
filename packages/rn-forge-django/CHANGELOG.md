@@ -5,6 +5,11 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Bearer/session principal projection, persisted records and fixed-window
+  arithmetic now come from `rn-forge-auth`, with no behaviour change.
+
 ### Fixed
 
 - Malformed `pageSize` values fall back to the default instead of causing a

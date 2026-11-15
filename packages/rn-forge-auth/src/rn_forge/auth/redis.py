@@ -8,13 +8,19 @@ from __future__ import annotations
 import json
 import math
 import secrets
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from urllib.parse import quote
 
 from redis import Redis
 from rn_forge.auth.identity import LoginTransaction, SessionInfo
+from rn_forge.auth.records import (
+    session_from_record,
+    session_to_record,
+    transaction_from_record,
+    transaction_to_record,
+)
 
 __all__ = [
     "RedisAuthorizationVersions",
@@ -40,14 +46,6 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
-def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value is not None else None
-
-
-def _parse(value: str | None) -> datetime | None:
-    return datetime.fromisoformat(value) if value is not None else None
-
-
 class RedisTransactionStore:
     """:class:`~rn_forge.auth.stores.TransactionStore` over Redis.
 
@@ -65,16 +63,7 @@ class RedisTransactionStore:
 
     def save(self, transaction: LoginTransaction, *, ttl: timedelta) -> None:
         """Store *transaction* with ``SET ... EX``."""
-        document = {
-            "id": transaction.id,
-            "provider": transaction.provider,
-            "return_to": transaction.return_to,
-            "created_at": transaction.created_at.isoformat(),
-            "state": transaction.state,
-            "nonce": transaction.nonce,
-            "code_verifier": transaction.code_verifier,
-            "extra": dict(transaction.extra),
-        }
+        document = transaction_to_record(transaction)
         self._client.set(
             self._prefix + transaction.id, json.dumps(document), ex=_seconds(ttl)
         )
@@ -85,16 +74,7 @@ class RedisTransactionStore:
         if raw is None:
             return None
         document = cast("dict[str, Any]", json.loads(raw))
-        return LoginTransaction(
-            id=document["id"],
-            provider=document["provider"],
-            return_to=document["return_to"],
-            created_at=datetime.fromisoformat(document["created_at"]),
-            state=document["state"],
-            nonce=document["nonce"],
-            code_verifier=document["code_verifier"],
-            extra=cast("Mapping[str, str]", document["extra"]),
-        )
+        return transaction_from_record(document)
 
 
 class RedisSessionStore:
@@ -173,38 +153,12 @@ class RedisSessionStore:
 
 
 def _encode_session(session: SessionInfo) -> str:
-    return json.dumps(
-        {
-            "account_id": session.account_id,
-            "session_version": session.session_version,
-            "provider": session.provider,
-            "issuer": session.issuer,
-            "external_subject": session.external_subject,
-            "created_at": session.created_at.isoformat(),
-            "expires_at": session.expires_at.isoformat(),
-            "auth_time": _iso(session.auth_time),
-            "amr": sorted(session.amr),
-            "session_ref": session.session_ref,
-            "id_token": session.id_token,
-        }
-    )
+    return json.dumps(session_to_record(session))
 
 
 def _decode_session(raw: str) -> SessionInfo:
     document = cast("dict[str, Any]", json.loads(raw))
-    return SessionInfo(
-        account_id=document["account_id"],
-        session_version=document["session_version"],
-        provider=document["provider"],
-        issuer=document["issuer"],
-        external_subject=document["external_subject"],
-        created_at=datetime.fromisoformat(document["created_at"]),
-        expires_at=datetime.fromisoformat(document["expires_at"]),
-        auth_time=_parse(document["auth_time"]),
-        amr=frozenset(cast("list[str]", document["amr"])),
-        session_ref=document["session_ref"],
-        id_token=document["id_token"],
-    )
+    return session_from_record(document)
 
 
 class RedisReplayStore:

@@ -5,6 +5,17 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `link_bearer_principal`, `session_principal` and `PrincipalLinkError`, session
+  and transaction record functions, and fixed-window arithmetic functions in
+  `rn_forge.auth`.
+
+### Changed
+
+- Session ID tokens and login transaction state, nonce and PKCE verifier no
+  longer appear in dataclass representations.
+
 ## [0.1.1] - 2026-11-13
 
 ### Changed

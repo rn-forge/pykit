@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -244,6 +246,62 @@ def test_a_session_yields_a_session_principal_from_the_context() -> None:
     assert_that(body["roles"]).is_equal_to(["staff"])
     assert_that(body["tenant"]).is_equal_to("t-1")
     assert_that(body["external"]).is_equal_to("ada")
+
+
+def test_persisted_old_shape_session_still_reads() -> None:
+    from rn_forge.auth import InMemorySessionStore
+    from rn_forge.auth.redis import _decode_session
+
+    now = datetime.now(UTC)
+    document = {
+        "account_id": "acct-ada",
+        "session_version": 1,
+        "provider": "password",
+        "issuer": "local",
+        "external_subject": "ada",
+        "created_at": now.isoformat(),
+        "expires_at": (now + timedelta(hours=1)).isoformat(),
+        "auth_time": now.isoformat(),
+        "amr": ["pwd"],
+        "session_ref": None,
+        "id_token": None,
+    }
+    store = InMemorySessionStore()
+    info = _decode_session(json.dumps(document))
+    session_id = store.create(info, idle_ttl=timedelta(minutes=30))
+    config = AuthRoutesConfig(
+        providers={},
+        accounts=Accounts(),
+        contexts=Contexts(),
+        account_state=State(),
+        sessions=store,
+        debug=True,
+        problem_type_base="https://errors.example/",
+    )
+    app = FastAPI()
+    app.add_middleware(SessionMiddleware, sessions=sessions_for(config))
+    who = current_principal()
+
+    @app.get("/me")
+    def me(principal: Principal = Depends(who)):
+        return {
+            "subject": principal.subject,
+            "mechanism": principal.mechanism,
+            "amr": sorted(principal.amr),
+            "auth_time": principal.auth_time.isoformat(),
+        }
+
+    client = TestClient(app, base_url=ORIGIN)
+    client.cookies.set("__Host-session", session_id)
+    response = client.get("/me")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "subject": "acct-ada",
+        "mechanism": "session",
+        "amr": ["pwd"],
+        "auth_time": now.isoformat(),
+    }
 
 
 def test_no_credentials_with_bearer_is_a_401_with_the_bearer_challenge() -> None:

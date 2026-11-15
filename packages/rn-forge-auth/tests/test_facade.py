@@ -57,3 +57,46 @@ def test_facade_imports_no_adapter_libraries() -> None:
         [sys.executable, "-c", script], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "[]"
+
+
+def test_facade_exports_the_policy_functions() -> None:
+    from rn_forge import auth
+    from rn_forge.auth import (
+        PrincipalLinkError,
+        fixed_window_key,
+        fixed_window_retry_after,
+        fixed_window_seconds,
+        link_bearer_principal,
+        session_from_record,
+        session_principal,
+        session_to_record,
+        transaction_from_record,
+        transaction_to_record,
+    )
+
+    assert {
+        "PrincipalLinkError",
+        "fixed_window_key",
+        "fixed_window_retry_after",
+        "fixed_window_seconds",
+        "link_bearer_principal",
+        "session_from_record",
+        "session_principal",
+        "session_to_record",
+        "transaction_from_record",
+        "transaction_to_record",
+    } <= set(auth.__all__)
+    assert all(
+        (
+            PrincipalLinkError,
+            fixed_window_key,
+            fixed_window_retry_after,
+            fixed_window_seconds,
+            link_bearer_principal,
+            session_from_record,
+            session_principal,
+            session_to_record,
+            transaction_from_record,
+            transaction_to_record,
+        )
+    )

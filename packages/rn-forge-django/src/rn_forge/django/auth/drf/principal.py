@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import replace
 from typing import Any, ClassVar, override
 
 from rest_framework.authentication import BaseAuthentication
@@ -16,9 +15,10 @@ from rn_forge.auth import (
     AuthorizationContextProvider,
     Authorizer,
     Principal,
+    PrincipalLinkError,
     Requirement,
     ScopeAuthorizer,
-    effective_permissions,
+    link_bearer_principal,
 )
 from rn_forge.commons.logging import AppLogger
 from rn_forge.django.drf import RequestUtils
@@ -104,31 +104,15 @@ class PrincipalBearerAuthentication(_PrincipalAuthentication):
 
     @override
     def link_principal(self, principal: Principal) -> Principal:
-        account_id = (
-            self.accounts.lookup(principal.issuer, principal.subject)
-            if principal.issuer
-            else None
-        )
-        if account_id is None:
-            raise AuthenticationFailed("No account is linked to the token subject")
-        context = self.contexts.resolve(account_id)
-        if not context.active:
-            raise AuthenticationFailed("The account is not active")
-        tenant = context.attributes.get("tenant")
-        return replace(
-            principal,
-            subject=account_id,
-            external_subject=principal.subject,
-            permissions=effective_permissions(
-                context.permissions,
-                mechanism="bearer",
-                scopes=principal.scopes,
+        try:
+            return link_bearer_principal(
+                principal,
+                accounts=self.accounts,
+                contexts=self.contexts,
                 scope_map=self.scope_map,
-            ),
-            roles=context.roles,
-            tenant=tenant if isinstance(tenant, str) else None,
-            attributes=context.attributes,
-        )
+            )
+        except PrincipalLinkError as exc:
+            raise AuthenticationFailed(str(exc)) from exc
 
 
 class PrincipalBasicAuthentication(_PrincipalAuthentication):

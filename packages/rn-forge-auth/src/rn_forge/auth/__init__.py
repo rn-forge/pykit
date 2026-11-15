@@ -30,6 +30,11 @@ from rn_forge.auth.identity import (
     ProviderKind,
     SessionInfo,
 )
+from rn_forge.auth.linking import (
+    PrincipalLinkError,
+    link_bearer_principal,
+    session_principal,
+)
 from rn_forge.auth.local import (
     DevelopmentAccount,
     DevelopmentIdentityProvider,
@@ -48,6 +53,17 @@ from rn_forge.auth.principal import (
     Principal,
     Requirement,
     principal_from_claims,
+)
+from rn_forge.auth.rate_window import (
+    fixed_window_key,
+    fixed_window_retry_after,
+    fixed_window_seconds,
+)
+from rn_forge.auth.records import (
+    session_from_record,
+    session_to_record,
+    transaction_from_record,
+    transaction_to_record,
 )
 from rn_forge.auth.redirects import InvalidReturnTo, validate_return_to
 from rn_forge.auth.session_body import CALLBACK_ERRORS, CallbackError, SessionBody
@@ -95,6 +111,7 @@ __all__ = [
     "PasswordIdentityProvider",
     "PasswordVerifier",
     "Principal",
+    "PrincipalLinkError",
     "ProviderKind",
     "ReplayStore",
     "Requirement",
@@ -106,7 +123,16 @@ __all__ = [
     "TransactionStore",
     "audit",
     "effective_permissions",
+    "fixed_window_key",
+    "fixed_window_retry_after",
+    "fixed_window_seconds",
+    "link_bearer_principal",
     "principal_from_claims",
     "requirement_for",
+    "session_from_record",
+    "session_principal",
+    "session_to_record",
+    "transaction_from_record",
+    "transaction_to_record",
     "validate_return_to",
 ]

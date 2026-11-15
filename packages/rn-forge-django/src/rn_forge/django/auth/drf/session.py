@@ -6,7 +6,7 @@ from typing import ClassVar, override
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.request import Request
-from rn_forge.auth import Principal, SessionInfo
+from rn_forge.auth import Principal, SessionInfo, session_principal
 from rn_forge.django.auth.csrf import enforce_csrf
 from rn_forge.django.auth.routes import AuthRoutesConfig
 from rn_forge.django.auth.sessions import Sessions
@@ -61,19 +61,7 @@ class PrincipalSessionAuthentication(BaseAuthentication):
         # DRF views are csrf_exempt, so the middleware does not guard them.
         enforce_csrf(django_request)
         info, context = active.info, active.context
-        tenant = context.attributes.get("tenant")
-        principal = Principal(
-            subject=info.account_id,
-            issuer=info.issuer,
-            external_subject=info.external_subject,
-            permissions=context.permissions,
-            roles=context.roles,
-            tenant=tenant if isinstance(tenant, str) else None,
-            attributes=context.attributes,
-            mechanism="session",
-            auth_time=info.auth_time,
-            amr=info.amr,
-        )
+        principal = session_principal(info, context)
         return principal, info
 
     @override
