@@ -305,9 +305,13 @@ readiness.
     - A `warn` never changes the HTTP status.
     - A check that raises is reported as a failure. `/readyz` never 500s: a
       readiness endpoint that 500s tells a load balancer nothing.
-    - Each check runs with a 2-second timeout by default — below every host's
-      probe timeout — and a check still running at the timeout is reported
-      `fail` with `"timed out after Ns"`.
+    - All checks share one deadline, 2 seconds by default — below every host's
+      probe timeout. A check still running at the deadline is reported `fail`
+      with `"timed out after Ns"`; a timed-out sync check keeps running and
+      holding its worker slot.
+    - Sync checks use a shared pool of at most 32 workers. When the pool is full,
+      a check fails immediately with
+      `"not run: health check capacity exhausted"`.
     - The response is `application/json`, **not** problem+json, even at 503 — a
       readiness report is the endpoint's normal representation and the 503 is
       its verdict, not an error.
