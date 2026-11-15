@@ -36,7 +36,7 @@ gives the evidence and tradeoffs.
 | [F22.9 — Django adapters with safe parsing and ownership](../../specs/epics/E22-pykit-simplification/F22.9-django.md) | E22 | Active |
 | [F22.10 — FastAPI adapters with clear validation boundaries](../../specs/epics/E22-pykit-simplification/F22.10-fastapi.md) | E22 | Active |
 | [F22.11 — SQLAlchemy bulk work with explicit bounds](../../specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md) | E22 | Active |
-| [F22.12 — Tabular helpers without redundant copies](../../specs/epics/E22-pykit-simplification/F22.12-data.md) | E22 | Active |
+| [F22.12 — Tabular helpers without redundant copies](../../specs/epics/E22-pykit-simplification/F22.12-data.md) | E22 | Closed |
 | [F22.13 — Small release utilities with one metadata path](../../specs/epics/E22-pykit-simplification/F22.13-devops.md) | E22 | Active |
 
 <!-- END derived scope -->
