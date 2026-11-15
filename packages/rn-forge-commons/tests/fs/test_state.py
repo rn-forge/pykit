@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import threading
+import tracemalloc
 from dataclasses import dataclass
 
 import pytest
@@ -95,6 +98,49 @@ class TestStateStore:
 
 
 class TestContentHash:
+    @pytest.mark.parametrize(
+        ("size", "algorithm"),
+        [(0, "sha256"), (5, "sha256"), (3 * 1024 * 1024 + 17, "sha256"), (5, "md5")],
+    )
+    def test_of_file_matches_hashlib_for_empty_small_and_multi_chunk(
+        self, tmp_path, size, algorithm
+    ):
+        from rn_forge.commons.fs.hashing import ContentHash
+
+        data = os.urandom(size)
+        path = tmp_path / "payload"
+        path.write_bytes(data)
+        expected = (
+            hashlib.sha256(data).hexdigest()
+            if algorithm == "sha256"
+            else hashlib.md5(data, usedforsecurity=False).hexdigest()
+        )
+        assert ContentHash.of_file(path, algorithm=algorithm) == expected
+
+    def test_of_file_peak_memory_excludes_whole_file(self, tmp_path):
+        from rn_forge.commons.fs.hashing import ContentHash
+
+        path = tmp_path / "large"
+        chunk = b"x" * (1024 * 1024)
+        with path.open("wb") as handle:
+            for _ in range(16):
+                handle.write(chunk)
+        tracemalloc.start()
+        try:
+            ContentHash.of_file(path)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        assert peak < 4 * 1024 * 1024
+
+    def test_of_file_unknown_algorithm_raises(self, tmp_path):
+        from rn_forge.commons.fs.hashing import ContentHash
+
+        path = tmp_path / "payload"
+        path.write_bytes(b"hello")
+        with pytest.raises(ValueError):
+            ContentHash.of_file(path, algorithm="unknown-algorithm")
+
     def test_of_deterministic(self):
         from rn_forge.commons.fs.hashing import ContentHash
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from typing import ClassVar
 
 import pytest
@@ -133,6 +134,41 @@ class TestDictSet:
 
 
 class TestDictMerge:
+    def test_merge_leaves_overrides_unchanged_and_unshared(self) -> None:
+        override = {"a": {"items": [1]}}
+        before = copy.deepcopy(override)
+        target = {}
+        DictUtils.merge(target, override)
+        assert override == before
+        target["a"]["items"].append(2)
+        assert override == before
+        override["a"]["items"].append(3)
+        assert target == {"a": {"items": [1, 2]}}
+
+    def test_merge_keeps_existing_nested_dict_identity(self) -> None:
+        nested = {"x": 0}
+        target = {"a": nested}
+        DictUtils.merge(target, {"a": {"y": 1}})
+        assert target["a"] is nested
+        assert nested == {"x": 0, "y": 1}
+
+    @pytest.mark.parametrize("replacement", [42, None, {"y": 1}])
+    def test_merge_replacement_drops_subtree(self, replacement) -> None:
+        target = {"a": 42 if isinstance(replacement, dict) else {"x": {"z": 0}}}
+        DictUtils.merge(target, {"a": replacement})
+        assert target == {"a": replacement}
+        assert "a" in target
+
+    def test_merge_later_override_wins_per_key(self) -> None:
+        target = {"a": {"b": {"x": 0}}}
+        DictUtils.merge(
+            target,
+            {"a": {"b": {"x": 1, "y": 1}}},
+            {"a": {"b": {"x": 2, "z": 2}}},
+            {"a": {"b": {"x": 3, "y": 3}}},
+        )
+        assert target == {"a": {"b": {"x": 3, "y": 3, "z": 2}}}
+
     def test_no_overrides_returns_target(self) -> None:
         target = {"a": 1}
         assert (

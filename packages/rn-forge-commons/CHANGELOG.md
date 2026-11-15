@@ -7,6 +7,9 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ### Changed
 
+- File digests no longer read the whole file into memory.
+- `TaskPool.submit` counts duplicate names in one pass.
+- `DictUtils.merge` copies override values only when assigning them.
 - `AppLogger` no longer replaces the process record factory; its own records
   format braces over any factory.
 - `ApplyResult.written` reports each write path once in plan order and no longer

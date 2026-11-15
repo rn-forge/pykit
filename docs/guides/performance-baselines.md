@@ -113,3 +113,40 @@ values, not performance thresholds.
 
 Docs figures are from `/usr/bin/time -l task docs:build`: elapsed (`real`) and
 maximum resident set size.
+
+### S22.4.4 allocation and algorithm costs
+
+Baseline measurements used detached commit
+`7f11a7caf0790ac0add12fe782896117456a7b92` with the measurement harness copied
+into the checkout. Comparison measurements used
+`be88ead000e59df8c1a02044863c19999da5821e` plus the uncommitted source changes.
+Both runs used Python 3.14.2, macOS 27.2.1 (26B131), arm64, and uv 0.13.8 from
+its Homebrew installation symlink. Hardware was a Mac mini (Mac14,12), Apple M2
+Pro, 10 CPU cores (6 performance and 4 efficiency), 16 GB RAM. The machine's
+idle status was not controlled.
+
+Wall times are seconds; peak values are traced Python allocation bytes. Counts
+and inputs are identical across each pair; they are observations, not test
+thresholds. Raw records: `/tmp/S22.4.4-measure-baseline/results.jsonl` and
+`/tmp/S22.4.4-measure-comparison/results.jsonl`.
+
+| Workload | Inputs | Baseline wall / peak | Comparison wall / peak | Counts |
+| -- | -- | -- | -- | -- |
+| File digest | size_mib=8 | 0.004797 / 8,389,793 | 0.004155 / 395,368 | bytes=8,388,608 |
+| File digest | size_mib=64 | 0.033831 / 67,110,053 | 0.032279 / 395,372 | bytes=67,108,864 |
+| File digest | size_mib=256 | 0.135940 / 268,436,649 | 0.142800 / 395,376 | bytes=268,435,456 |
+| Duplicate check | size=1,000 | 0.026543 / 1,830,392 | 0.013436 / 1,770,312 | names=1,000 |
+| Duplicate check | size=4,000 | 0.153058 / 6,831,928 | 0.063503 / 6,917,500 | names=4,000 |
+| Duplicate check | size=16,000 | 1.732357 / 27,293,232 | 0.280489 / 27,290,392 | names=16,000 |
+| Dict merge, empty target | depth=8, fanout=4 | 0.068877 / 4,683,400 | 0.066504 / 4,683,400 | leaves=65,536 |
+| Dict merge, equal target | depth=8, fanout=4 | 0.583678 / 1,670,120 | 0.073448 / 944 | leaves=65,536 |
+
+File digests changed to streaming: traced peak stays near 395 KB for all file
+sizes instead of growing with the file. Duplicate detection changed to a
+single-pass count: baseline time grew 5.77× for the first 4× increase in names
+and 11.32× for the second, with the largest case at 1.732 s; the larger step is
+below the idealized 16× quadratic ratio because submission overhead is also
+measured. Deep merge changed to copy on assignment: the equal-target workload
+improved 87.42% in wall time and 99.94% in peak traced memory, exceeding the 30%
+rule; the empty-target workload was essentially unchanged. No timing thresholds
+were added to tests.

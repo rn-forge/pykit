@@ -165,6 +165,32 @@ class TestTaskPoolBasic:
 
 
 class TestTaskPoolSubmit:
+    def test_duplicate_rejection_names_each_duplicate_once_sorted(self):
+        pool = TaskPool(max_workers=1)
+        try:
+            with pytest.raises(AppException) as exc_info:
+                pool.submit(
+                    *(SimpleTask(name) for name in ("c", "a", "b", "a", "c", "a"))
+                )
+            assert "['a', 'c']" in str(exc_info.value)
+        finally:
+            pool.shutdown(fail_on_error=False)
+
+    def test_duplicate_rejection_starts_no_task(self):
+        pool = TaskPool(max_workers=1)
+        results: list[str] = []
+        rejected = [ProducerTask(name, results=results) for name in ("a", "b", "a")]
+        try:
+            with pytest.raises(AppException):
+                pool.submit(*rejected)
+            assert not pool.tasks
+            assert all(task.future is None for task in rejected)
+            assert results == []
+            pool.submit(*(ProducerTask(name, results=results) for name in ("a", "b")))
+        finally:
+            pool.shutdown(fail_on_error=False)
+        assert sorted(results) == ["a", "b"]
+
     def test_submit_returns_self(self):
         pool = TaskPool()
         result = pool.submit(SimpleTask("t"))

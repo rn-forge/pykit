@@ -429,13 +429,11 @@ class DictUtils:
     @staticmethod
     def _merge_key(target: dict[str, Any], key: str, value: Any) -> None:
         """Merge a single *key*/*value* pair from an override into *target*."""
-        new_value = copy.deepcopy(value)
         existing = target.get(key)
-        if isinstance(existing, dict) and isinstance(new_value, dict):
-            DictUtils.merge(
-                cast(dict[str, Any], existing), cast(dict[str, Any], new_value)
-            )
+        if isinstance(existing, dict) and isinstance(value, dict):
+            DictUtils.merge(cast(dict[str, Any], existing), cast(dict[str, Any], value))
             return
+        new_value = copy.deepcopy(value)
         if key in target and existing != new_value:
             _LOGGER.trace("OVERRIDE: {}", [key])
         target[key] = new_value
