@@ -14,7 +14,7 @@
 | [F22.3 — Behavioral tests and performance baselines](F22.3-tests-and-measurements.md) | Active | release-9 | 1 New · 2 Closed |
 | [F22.4 — Commons with explicit side effects](F22.4-commons.md) | Active | release-9 | 4 New · 1 Closed |
 | [F22.5 — CLI invocation state with a clear lifetime](F22.5-cli.md) | Active | release-9 | 1 New · 1 Closed |
-| [F22.6 — Installer transactions with honest recovery](F22.6-tooling.md) | New | release-9 | 3 New |
+| [F22.6 — Installer transactions with honest recovery](F22.6-tooling.md) | Active | release-9 | 2 New · 1 Closed |
 | [F22.7 — HTTP policy with bounded readiness](F22.7-web.md) | New | release-9 | 3 New |
 | [F22.8 — Auth policy and bounded caches](F22.8-auth.md) | New | release-9 | 4 New |
 | [F22.9 — Django adapters with safe parsing and ownership](F22.9-django.md) | Active | release-9 | 1 New · 2 Closed |

@@ -27,6 +27,7 @@ from rn_forge.tooling.install import (
     upgrade,
 )
 from rn_forge.tooling.install import home as home_module
+from rn_forge.tooling.install import lifecycle as lifecycle_module
 
 
 def make_archive(directory: Path, version: str) -> Path:
@@ -237,6 +238,55 @@ class TestRollback:
             install(tool, home=home)
         assert (home.root / "bin/tool").read_text() == "mine"
         assert home.current_version() is None
+
+
+class TestRecoveryFailure:
+    @pytest.mark.xfail(
+        strict=True,
+        reason="S22.6.3: a failed undo masks the initiating failure and stops recovery",
+    )
+    def test_a_failed_undo_step_does_not_stop_remaining_recovery(
+        self, home, source, monkeypatch
+    ):
+        install(product(source), home=home)
+        source.newest = "2.0.0"
+        atomic_symlink = lifecycle_module.atomic_symlink
+        calls = 0
+
+        def fail_restore(link, target):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("undo failed")
+            return atomic_symlink(link, target)
+
+        monkeypatch.setattr(lifecycle_module, "atomic_symlink", fail_restore)
+        with pytest.raises(AppException, match="migration exploded"):
+            upgrade(product(source, fail_migration=True), home=home)
+        assert not home.version_dir("2.0.0").exists()
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="S22.6.3: failed restoration deletes the displaced version",
+    )
+    def test_a_failed_restoration_keeps_the_displaced_version(
+        self, home, source, monkeypatch
+    ):
+        install(product(source), home=home)
+        rename = Path.rename
+
+        def fail_restore(path, target):
+            if path.name == "displaced":
+                raise OSError("restore failed")
+            return rename(path, target)
+
+        monkeypatch.setattr(Path, "rename", fail_restore)
+        with pytest.raises((AppException, OSError)):
+            install(product(source, fail_build=True), home=home, force=True)
+        assert any(
+            path.read_text() == "tool 1.0.0\n"
+            for path in home.product_dir.rglob("bin/tool")
+        )
 
 
 class TestUninstallAndCleanup:
