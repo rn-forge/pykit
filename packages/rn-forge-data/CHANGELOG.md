@@ -5,6 +5,12 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- `write_xlsx` removes a redundant row list to reduce internal memory use;
+  output is unchanged. The usage guide clarifies that the caller's whole
+  dataset and the returned workbook bytes remain in memory.
+
 ### Fixed
 
 - `PandasUtils.get_string_field` preserves present `0`, `0.0` and `False` as

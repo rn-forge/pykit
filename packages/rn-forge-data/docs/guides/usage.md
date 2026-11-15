@@ -30,8 +30,10 @@ made formats.
 ## Exporting a dataset
 
 `write_xlsx` writes a `tablib.Dataset` to `.xlsx` bytes with a number format per
-column, which tablib's own xlsx writer does not offer. It streams through a
-write-only workbook, so large datasets stay cheap.
+column, which tablib's own xlsx writer does not offer. It iterates the dataset
+directly into a write-only workbook. The caller holds the whole `tablib.Dataset`
+in memory, and the whole workbook is returned as one `bytes` object; this is not
+end-to-end streaming.
 
 ```python
 from datetime import date

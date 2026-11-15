@@ -67,6 +67,7 @@ platforms.
 | Commons | Disabled and enabled logging to an in-memory handler | 10,000 records | CPU |
 | Web | Sync readiness with eight slow checks | 8 checks at 0.2 seconds each, timeout unset and set | I/O |
 | Data | Excel write then load | 50,000 rows × 10 columns; file size | Buffering |
+| Data | `excel_write`: Excel write only, dataset built before measurement | 50,000 rows × 10 columns; bytes, rows, cells | Buffering |
 | Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS request count | I/O |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
 | CLI scaffold | Built workspace wheels and one clean-venv install | Build count and duration; install duration | Tool startup |
@@ -150,3 +151,38 @@ measured. Deep merge changed to copy on assignment: the equal-target workload
 improved 87.42% in wall time and 99.94% in peak traced memory, exceeding the 30%
 rule; the empty-target workload was essentially unchanged. No timing thresholds
 were added to tests.
+
+### 7f11a7c before and after S22.12.2
+
+Collected on 2026-11-15 at checkout `be88ead000e59df8c1a02044863c19999da5821e`.
+Before measurement, `excel.py` was unchanged from `7f11a7c`; after measurement,
+only the redundant row list was removed. Both runs used the same machine with no
+concurrent jobs launched by this agent. Process inspection was denied by the
+sandbox, so other machine activity could not be verified.
+
+Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 CPU cores (6 performance and
+4 efficiency), 16 GB RAM; macOS 27.2.1 (26B131), arm64; Python 3.14.2; uv
+0.13.8, read from the Homebrew installation symlink
+(`/opt/homebrew/Cellar/uv/0.13.8/bin/uv`).
+
+Each workload uses 50,000 rows and 10 columns. Wall times are seconds; peaks are
+traced Python allocation bytes. The write-only case builds the dataset before
+tracing; the unchanged round-trip case includes dataset construction, writing
+and loading.
+
+| Workload | Phase | Wall (s) | Peak (bytes) | Counts |
+| -- | -- | -- | -- | -- |
+| `excel_write` | Before | 17.990195 | 8,679,433 | bytes=1577015, rows=50000, cells=500000 |
+| `excel_write` | After | 16.409417 | 2,134,784 | bytes=1577015, rows=50000, cells=500000 |
+| `excel_roundtrip` | Before | 24.422749 | 225,584,449 | bytes=1577015, rows=50000, cells=500000 |
+| `excel_roundtrip` | After | 24.269110 | 225,328,754 | bytes=1577014, rows=50000, cells=500000 |
+
+The write-phase traced peak fell by 6,544,649 bytes (75.4%); the round-trip peak
+fell by 255,695 bytes (0.11%). The caller still holds the complete dataset, and
+the function returns the complete workbook as bytes.
+
+As with S22.3.2, these are observations, not thresholds or timing assertions.
+Single-run timings vary with machine activity; `tracemalloc` excludes native
+allocations and child processes, and these peaks are not process RSS. XLSX ZIP
+metadata can vary between saves, including the resulting compressed size; byte
+counts do not establish byte-for-byte identity.

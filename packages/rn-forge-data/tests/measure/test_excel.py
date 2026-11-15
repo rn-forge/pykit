@@ -41,3 +41,15 @@ def test_excel(measure: Measure) -> None:
             counts["cells"] = 500_000
         finally:
             workbook.close()
+
+
+def test_excel_write(measure: Measure) -> None:
+    dataset = tablib.Dataset(headers=[f"column{i}" for i in range(10)])
+    for index in range(50_000):
+        dataset.append([index * 10 + column for column in range(10)])
+
+    with measure("excel_write", {"rows": 50_000, "columns": 10}, "buffering") as counts:
+        content = write_xlsx(dataset)
+        counts["bytes"] = len(content)
+        counts["rows"] = 50_000
+        counts["cells"] = 500_000

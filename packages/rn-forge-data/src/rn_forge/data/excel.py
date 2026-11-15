@@ -390,10 +390,7 @@ def write_xlsx(
     sheet = workbook.create_sheet(sheet_title)
     if headers:
         sheet.append(headers)
-    rows = cast(
-        "list[tuple[Any, ...]]", list(cast("Any", dataset))
-    )  # tablib is untyped
-    for row in rows:
+    for row in cast("Any", dataset):  # tablib is untyped
         cells: list[Any] = []
         for index, value in enumerate(row):
             cell = WriteOnlyCell(sheet, value=value)

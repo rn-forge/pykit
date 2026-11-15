@@ -330,6 +330,73 @@ class TestAutoAdjustColumnWidth:
 
 
 class TestWriteXlsx:
+    def test_round_trip_preserves_values_and_sheet_title(self):
+        import datetime
+
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["name", "count", "ratio", "due", "note"])
+        dataset.append(["alice", 3, 1.25, datetime.date(2026, 1, 31), None])
+        dataset.append(["bob", 0, 0.5, datetime.date(2026, 2, 1), "ready"])
+
+        workbook = ExcelUtils.load_workbook(
+            BytesIO(excel_module.write_xlsx(dataset, sheet_title="Report"))
+        )
+        sheet = workbook.active
+        assert sheet.title == "Report"
+        assert [cell.value for cell in sheet[1]] == [
+            "name",
+            "count",
+            "ratio",
+            "due",
+            "note",
+        ]
+        assert list(sheet.iter_rows(min_row=2, values_only=True)) == [
+            ("alice", 3, 1.25, datetime.datetime(2026, 1, 31), None),
+            ("bob", 0, 0.5, datetime.datetime(2026, 2, 1), "ready"),
+        ]
+
+    def test_round_trip_without_headers(self):
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset()
+        dataset.append(["alice", 1])
+        dataset.append(["bob", 2])
+
+        sheet = ExcelUtils.load_workbook(
+            BytesIO(excel_module.write_xlsx(dataset))
+        ).active
+
+        assert list(sheet.iter_rows(values_only=True)) == [("alice", 1), ("bob", 2)]
+
+    def test_formats_apply_to_every_row(self):
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["name", "amount"])
+        dataset.append(["alice", 1.25])
+        dataset.append(["bob", 2.5])
+        dataset.append(["cara", 3.75])
+
+        sheet = ExcelUtils.load_workbook(
+            BytesIO(excel_module.write_xlsx(dataset, column_formats={"amount": "0.00"}))
+        ).active
+
+        for row in range(2, 5):
+            assert sheet.cell(row, 1).number_format == "General"
+            assert sheet.cell(row, 2).number_format == "0.00"
+
+    def test_unknown_columns_error_lists_all_sorted(self):
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["known"])
+
+        with pytest.raises(KeyError, match=r"\['alpha', 'zeta'\]"):
+            excel_module.write_xlsx(dataset, column_formats={"zeta": "0", "alpha": "0"})
+
+    def test_unknown_column_with_rows_raises(self):
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["known"])
+        dataset.append([1])
+
+        with pytest.raises(KeyError, match="unknown columns"):
+            excel_module.write_xlsx(dataset, column_formats={"missing": "0"})
+
     def test_writes_headers_rows_and_formats(self):
         import datetime
 
