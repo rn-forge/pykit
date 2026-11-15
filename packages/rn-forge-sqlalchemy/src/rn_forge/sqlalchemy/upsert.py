@@ -38,8 +38,10 @@ async def upsert(
 ) -> UpsertCounts:
     """Create the rows whose *key* is absent and update those whose *fields* differ.
 
-    The existing rows are read first, so the counts are exact. Created and
-    updated rows are then written with one
+    The existing rows are read first, and the counts describe that snapshot. A
+    writer that commits between the read and the write can make them wrong, so
+    serialize writers when exact counts matter. Created and updated rows are then
+    written with one
     ``INSERT … ON CONFLICT (key) DO UPDATE``; ``create_time`` and ``created_by``
     are set on insert only, ``update_time`` and ``updated_by`` on both. Never
     commits: the caller's transaction decides, and rolling back after the call is
@@ -54,12 +56,14 @@ async def upsert(
         actor: Stamped into ``created_by`` and ``updated_by``.
 
     Raises:
-        ValueError: A row lacks a column, or two rows share a key.
+        ValueError: *key* is empty, a row lacks a column, or two rows share a key.
         TypeError: *model* does not use ``AuditMixin``.
         NotImplementedError: The session's dialect is not PostgreSQL or SQLite.
     """
     if not issubclass(model, AuditMixin):
         raise TypeError(f"{model.__name__} must use AuditMixin")
+    if not key:
+        raise ValueError("key must not be empty")
     columns = [*key, *fields]
     keyed = _keyed(rows, key, columns)
     dialect = session.get_bind().dialect.name

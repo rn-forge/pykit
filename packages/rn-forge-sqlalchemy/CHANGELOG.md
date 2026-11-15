@@ -5,6 +5,13 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `upsert` raises `ValueError` for an empty `key`, instead of
+  `ZeroDivisionError`.
+- `upsert`'s docstring no longer calls its counts exact: they describe the rows
+  read before the write, and a competing writer can change them.
+
 ## [0.2.3] - 2026-11-13
 
 ### Added

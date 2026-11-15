@@ -1,9 +1,12 @@
+import asyncio
+import importlib
 from datetime import UTC
 
 import pytest
 from assertpy import assert_that
 from rn_forge.sqlalchemy import AuditMixin, Base, UpsertCounts, upsert
-from sqlalchemy import UniqueConstraint, select
+from sqlalchemy import UniqueConstraint, event, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 pytestmark = pytest.mark.unit
@@ -131,3 +134,119 @@ async def test_a_composite_key(session):
     )
 
     assert_that(counts).is_equal_to(UpsertCounts(0, 1, 1))
+
+
+@pytest.mark.asyncio
+@pytest.mark.postgres
+async def test_competing_writer_between_read_and_write_miscounts(
+    session, engine, monkeypatch, request
+):
+    upsert_module = importlib.import_module("rn_forge.sqlalchemy.upsert")
+    original_existing = upsert_module._existing
+    competing_session = AsyncSession(engine, expire_on_commit=False)
+    raced = False
+
+    async def insert_between_read_and_write(*args, **kwargs):
+        nonlocal raced
+        existing = await original_existing(*args, **kwargs)
+        if not raced:
+            raced = True
+            await _upsert(competing_session, _rows("race"), actor="writer B")
+            await competing_session.commit()
+        return existing
+
+    monkeypatch.setattr(upsert_module, "_existing", insert_between_read_and_write)
+    try:
+        counts = await _upsert(session, _rows("race", name="writer A"))
+        await session.commit()
+    finally:
+        await competing_session.close()
+
+    products = await _load(session)
+    assert raced
+    assert_that(len(products)).is_equal_to(1)
+    assert_that(products["race"].name).is_equal_to("writer A")
+    assert_that((products["race"].created_by, products["race"].updated_by)).is_equal_to(
+        ("writer B", "ann")
+    )
+    assert counts == UpsertCounts(1, 0, 0)
+    request.node.add_marker(
+        pytest.mark.xfail(
+            strict=True,
+            raises=AssertionError,
+            reason="S22.11.1: pre-write snapshot reports a creation for an update",
+        )
+    )
+    assert counts == UpsertCounts(0, 1, 0)
+
+
+@pytest.mark.asyncio
+async def test_two_sessions_upserting_the_same_new_keys(session, engine, monkeypatch):
+    upsert_module = importlib.import_module("rn_forge.sqlalchemy.upsert")
+    original_existing = upsert_module._existing
+    both_read = asyncio.Event()
+    readers = 0
+
+    async def synchronize_reads(*args, **kwargs):
+        nonlocal readers
+        existing = await original_existing(*args, **kwargs)
+        readers += 1
+        if readers == 2:
+            both_read.set()
+        await asyncio.wait_for(both_read.wait(), timeout=10)
+        return existing
+
+    monkeypatch.setattr(upsert_module, "_existing", synchronize_reads)
+
+    async def run(actor):
+        async with AsyncSession(engine, expire_on_commit=False) as current:
+            counts = await _upsert(current, _rows("shared"), actor=actor)
+            await current.commit()
+            return ("success", counts)
+
+    outcomes = await asyncio.gather(run("first"), run("second"))
+    products = await _load(session)
+    assert outcomes == [("success", UpsertCounts(1, 0, 0))] * 2
+    assert_that(len(products)).is_equal_to(1)
+    assert products["shared"].name == "n"
+    assert products["shared"].qty == 1
+    assert {products["shared"].created_by, products["shared"].updated_by} == {
+        "first",
+        "second",
+    }
+
+
+@pytest.mark.asyncio
+async def test_serial_upserts_report_exact_counts(session):
+    first = await _upsert(session, _rows("serial"))
+    await session.commit()
+    second = await _upsert(session, _rows("serial", name="changed"))
+    await session.commit()
+
+    assert_that(first).is_equal_to(UpsertCounts(1, 0, 0))
+    assert_that(second).is_equal_to(UpsertCounts(0, 1, 0))
+
+
+@pytest.mark.asyncio
+async def test_empty_rows_runs_no_query(session, engine):
+    statements = 0
+
+    def count_statement(*_):
+        nonlocal statements
+        statements += 1
+
+    event.listen(engine.sync_engine, "before_cursor_execute", count_statement)
+    try:
+        counts = await _upsert(session, [])
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", count_statement)
+
+    assert_that(counts).is_equal_to(UpsertCounts(0, 0, 0))
+    assert_that(statements).is_equal_to(0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("rows", [[], _rows("a")])
+async def test_an_empty_key_raises_value_error(session, rows):
+    with pytest.raises(ValueError, match="key.*must not be empty"):
+        await upsert(session, Product, rows, key=[], fields=["name"], actor="ann")
