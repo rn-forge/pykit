@@ -9,6 +9,13 @@ import pytest
 from rn_forge.devops import cli
 
 
+@pytest.mark.parametrize("name", ["plan", "smoke", "releasable"])
+def test_planner_subcommands_are_not_restored(name: str) -> None:
+    with pytest.raises(SystemExit) as caught:
+        cli.main([name])
+    assert caught.value.code == 2
+
+
 def test_cli_requirements_prints_each_problem_and_exits_1(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

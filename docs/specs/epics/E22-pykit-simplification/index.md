@@ -21,7 +21,7 @@
 | [F22.10 — FastAPI adapters with clear validation boundaries](F22.10-fastapi.md) | Active | release-9 | 2 New · 1 Closed |
 | [F22.11 — SQLAlchemy bulk work with explicit bounds](F22.11-sqlalchemy.md) | Active | release-9 | 1 New · 1 Closed |
 | [F22.12 — Tabular helpers without redundant copies](F22.12-data.md) | Closed | release-9 | 2 Closed |
-| [F22.13 — Small release utilities with one metadata path](F22.13-devops.md) | Active | release-9 | 1 New · 1 Closed |
+| [F22.13 — Small release utilities with one metadata path](F22.13-devops.md) | Active | release-9 | 2 Closed |
 
 <!-- END derived features -->
 

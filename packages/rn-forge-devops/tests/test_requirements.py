@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,23 @@ def _workspace(
             text += f"dependencies = {json.dumps(list(dependencies))}\n{extra}"
         path.write_text(text)
     return root
+
+
+def test_each_member_manifest_is_read_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _workspace(tmp_path)
+    reads: Counter[Path] = Counter()
+    read_text = Path.read_text
+
+    def counted_read_text(path: Path, *args: object, **kwargs: object) -> str:
+        reads[path] += 1
+        return read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counted_read_text)
+    assert requirements.check_requirements(root) == []
+    for path in root.glob("pkgs/*/pyproject.toml"):
+        assert reads[path] == 1
 
 
 def test_name_canonicalization_matches_member(tmp_path: Path) -> None:
