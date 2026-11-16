@@ -108,6 +108,38 @@ class TestSurfaceIsStrictlyTyped:
             CliSurface.load({"name": "demo", "default_log_level": "shouty"})
 
 
+class TestSurfaceShapeErrors:
+    def test_commands_string_is_rejected(self):
+        with pytest.raises(
+            AppException, match="commands must be an array of tables, not str"
+        ):
+            CliSurface.load({"name": "demo", "commands": "x"})
+
+    def test_commands_entry_names_its_index(self):
+        with pytest.raises(
+            AppException, match=r"commands\[0\] must be a table, not int"
+        ):
+            CliSurface.load({"name": "demo", "commands": [1]})
+
+    def test_commands_table_is_rejected(self):
+        with pytest.raises(
+            AppException, match="commands must be an array of tables, not dict"
+        ):
+            CliSurface.load(
+                {"name": "demo", "commands": {"name": "a", "target": "m:f"}}
+            )
+
+    def test_missing_target_names_the_nested_field(self):
+        with pytest.raises(AppException, match=r"commands\.target"):
+            CliSurface.load({"name": "demo", "commands": [{"name": "a"}]})
+
+    def test_target_list_names_the_nested_field(self):
+        with pytest.raises(AppException, match=r"commands\.target"):
+            CliSurface.load(
+                {"name": "demo", "commands": [{"name": "a", "target": ["x"]}]}
+            )
+
+
 class TestFromSurface:
     def test_a_function_target_becomes_a_command(self, capsys):
         app = CliApp.from_surface(CliSurface.load({"name": "demo", **_commands()}))

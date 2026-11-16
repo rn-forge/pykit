@@ -82,8 +82,9 @@ class CliSurface(DataclassMixin):
             The parsed, validated surface.
 
         Raises:
-            AppException: The document has no *key* table, or a declared value
-                does not match its field's type.
+            AppException: The document has no *key* table, ``commands`` is not
+                an array of tables, an entry in ``commands`` is not a table,
+                or a declared value does not match its field's type.
         """
         data = (
             dict(source) if isinstance(source, Mapping) else DocumentUtils.read(source)
@@ -92,7 +93,29 @@ class CliSurface(DataclassMixin):
             data = data[key]
         elif "name" not in data:
             raise AppException("No [{}] table to build a CLI from", key)
+        _validate_commands(data, key)
         return cls.from_dict(dict(data))
+
+
+def _validate_commands(data: Mapping[str, Any], key: str) -> None:
+    if "commands" not in data:
+        return
+    commands = data["commands"]
+    entries: Iterable[object] = commands
+    if not isinstance(commands, list | tuple):
+        raise AppException(
+            "[{}] commands must be an array of tables, not {}",
+            key,
+            type(commands).__name__,
+        )
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, Mapping):
+            raise AppException(
+                "[{}] commands[{}] must be a table, not {}",
+                key,
+                index,
+                type(entry).__name__,
+            )
 
 
 def _duplicates(names: Iterable[str]) -> list[str]:

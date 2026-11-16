@@ -5,6 +5,11 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- Malformed `commands` values in a declared CLI surface name the table and key
+  in errors, including the index of a non-table entry.
+
 ### Fixed
 
 - Restore the console mode after each invocation, including failed and nested
@@ -12,8 +17,8 @@ Notable changes to `rn-forge-cli`, newest first, in the
 - Honor explicit logging level and file options on each invocation, preserving
   existing logging when neither option is passed.
 
-Versioning assessment: patch release; fixes invocation state without changing
-the public API.
+Versioning assessment: patch release; fixes invocation state and clarifies
+malformed `commands` errors without changing the public API.
 
 ## [0.1.3] - 2026-11-13
 
