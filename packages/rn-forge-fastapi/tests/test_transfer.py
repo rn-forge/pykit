@@ -1,12 +1,18 @@
+import asyncio
+import csv
 import io
+import json
+import threading
 from datetime import date
+from typing import ClassVar
 
+import httpx
 import pytest
 from assertpy import assert_that
 from fastapi import Depends, FastAPI, UploadFile
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, ConfigDict, Field, computed_field
-from rn_forge.fastapi import AppConfig, FastApiApp
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from rn_forge.fastapi import AppConfig, FastApiApp, transfer
 from rn_forge.fastapi.transfer import (
     batch_create_router,
     batch_delete_router,
@@ -979,3 +985,204 @@ def test_openapi_describes_the_batch_get_and_update_routes():
             assert_that(operation["responses"][status]["content"]).contains_key(
                 "application/problem+json"
             )
+
+
+class Counted(BaseModel):
+    """A row whose every validation is counted and placed on a thread."""
+
+    calls: ClassVar[list[int]] = []
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def record(cls, value: str) -> str:
+        cls.calls.append(threading.get_ident())
+        return value
+
+
+class Shown(BaseModel):
+    """A response row whose construction is placed on a thread."""
+
+    model_config = ConfigDict(from_attributes=True)
+    calls: ClassVar[list[int]] = []
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def record(cls, value: str) -> str:
+        cls.calls.append(threading.get_ident())
+        return value
+
+
+class ThreadedStore:
+    """Records the thread each store call runs on, which is the loop's."""
+
+    def __init__(self) -> None:
+        self.threads: list[int] = []
+
+    async def create_many(self, items):
+        self.threads.append(threading.get_ident())
+        return [Order(str(n), i.name) for n, i in enumerate(items, 1)]
+
+
+def threaded_app() -> tuple[FastAPI, ThreadedStore]:
+    store = ThreadedStore()
+    Counted.calls.clear()
+    Shown.calls.clear()
+    app = FastAPI()
+    app.include_router(
+        batch_create_router(
+            "/orders",
+            model=Counted,
+            response_model=Shown,
+            resource_name="orders",
+            store=lambda: store,
+        )
+    )
+    return app, store
+
+
+def lines_of(count: int) -> list[Item]:
+    return [Item() for _ in range(count)]
+
+
+async def chunks_of(response) -> list[str]:
+    return [chunk async for chunk in response.body_iterator]
+
+
+@pytest.mark.asyncio
+async def test_csv_export_streams_chunks_of_a_thousand_rows():
+    response = await tabular_response(
+        lines_of(2_500), Line, TABULAR_FORMATS["csv"], "l.csv"
+    )
+    chunks = await chunks_of(response)
+    assert_that([c.count("\r\n") for c in chunks]).is_equal_to([1_001, 1_000, 500])
+
+
+@pytest.mark.asyncio
+async def test_csv_export_reads_rows_one_chunk_at_a_time():
+    consumed = 0
+
+    def rows():
+        nonlocal consumed
+        for item in lines_of(2_500):
+            consumed += 1
+            yield item
+
+    response = await tabular_response(rows(), Line, TABULAR_FORMATS["csv"], "l.csv")
+    stream = aiter(response.body_iterator)
+    first = await anext(stream)
+    assert_that(first.count("\r\n")).is_equal_to(1_001)
+    assert_that(consumed).is_equal_to(1_000)
+    await anext(stream)
+    assert_that(consumed).is_equal_to(2_000)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("count", [0, 1, 1_000, 1_001])
+async def test_csv_export_body_is_the_same_whatever_the_chunking(count):
+    response = await tabular_response(
+        lines_of(count), Line, TABULAR_FORMATS["csv"], "l.csv"
+    )
+    expected = io.StringIO()
+    writer = csv.writer(expected)
+    writer.writerow(["SKU", "Quantity", "Due", "Label"])
+    for _ in range(count):
+        writer.writerow(["a", 2, "2026-01-02", "ax2"])
+    assert_that("".join(await chunks_of(response))).is_equal_to(expected.getvalue())
+
+
+def test_batch_create_validates_each_item_once():
+    app, _store = threaded_app()
+    response = TestClient(app).post(
+        "/orders:batchCreate", json={"requests": [{"name": "a"}, {"name": "b"}]}
+    )
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(response.json()).is_equal_to({"orders": [{"name": "a"}, {"name": "b"}]})
+    assert_that(Counted.calls).is_length(2)
+
+
+def test_batch_create_validates_items_off_the_event_loop():
+    app, store = threaded_app()
+    TestClient(app).post("/orders:batchCreate", json={"requests": [{"name": "a"}]})
+    assert_that(Counted.calls).is_length(1)
+    assert_that(Counted.calls).does_not_contain(store.threads[0])
+
+
+def test_batch_create_builds_the_response_off_the_event_loop():
+    app, store = threaded_app()
+    TestClient(app).post("/orders:batchCreate", json={"requests": [{"name": "a"}]})
+    assert_that(Shown.calls).is_length(1)
+    assert_that(Shown.calls).does_not_contain(store.threads[0])
+
+
+def test_batch_create_parses_the_body_off_the_event_loop(monkeypatch):
+    app, store = threaded_app()
+    body = b'{"requests":[{"name":"a"}]}'
+    parsed: list[int] = []
+    real = json.loads
+
+    def loads(data, *args, **kwargs):
+        if data == body:
+            parsed.append(threading.get_ident())
+        return real(data, *args, **kwargs)
+
+    monkeypatch.setattr(json, "loads", loads)
+    TestClient(app).post(
+        "/orders:batchCreate",
+        content=body,
+        headers={"content-type": "application/json"},
+    )
+    assert_that(parsed).is_length(1)
+    assert_that(parsed).does_not_contain(store.threads[0])
+
+
+@pytest.mark.asyncio
+async def test_a_blocked_batch_create_validation_does_not_block_the_event_loop():
+    released = threading.Event()
+    seen: list[bool] = []
+
+    class Gated(BaseModel):
+        name: str
+
+        @field_validator("name")
+        @classmethod
+        def wait_for_the_loop(cls, value: str) -> str:
+            seen.append(released.wait(timeout=1))
+            return value
+
+    class Out(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        name: str
+
+    app = FastAPI()
+    app.include_router(
+        batch_create_router(
+            "/orders",
+            model=Gated,
+            response_model=Out,
+            resource_name="orders",
+            store=lambda: ThreadedStore(),
+        )
+    )
+
+    async def release() -> None:
+        await asyncio.sleep(0)
+        released.set()
+
+    task = asyncio.ensure_future(release())
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as http:
+        response = await http.post(
+            "/orders:batchCreate", json={"requests": [{"name": "a"}]}
+        )
+    await task
+    assert_that(response.status_code).is_equal_to(200)
+    assert_that(seen).is_equal_to([True])
+
+
+def test_every_public_transfer_name_is_defined_in_the_transfer_module():
+    for name in transfer.__all__:
+        owner = getattr(getattr(transfer, name), "__module__", transfer.__name__)
+        assert_that(owner).described_as(name).is_equal_to("rn_forge.fastapi.transfer")

@@ -54,14 +54,16 @@ class Accounts:
 class Contexts:
     def __init__(self) -> None:
         self.inactive: set[str] = set()
+        self.permissions = frozenset({"orders.read", "orders.update"})
+        self.tenant = "t-1"
 
     def resolve(self, account_id: str) -> AuthorizationContext:
         return AuthorizationContext(
             active=account_id not in self.inactive,
             session_version=1,
-            permissions=frozenset({"orders.read", "orders.update"}),
+            permissions=self.permissions,
             roles=frozenset({"staff"}),
-            attributes={"tenant": "t-1"},
+            attributes={"tenant": self.tenant},
         )
 
 
@@ -550,3 +552,30 @@ def test_an_allowed_request_is_not_audited(caplog: pytest.LogCaptureFixture) -> 
 
 def _csrf(world: World) -> dict[str, str]:
     return {"X-XSRF-TOKEN": world.client.cookies["XSRF-TOKEN"]}
+
+
+def test_a_changed_context_reaches_the_next_session_request() -> None:
+    world = World()
+    world.login()
+    assert_that(world.client.get("/read").status_code).is_equal_to(200)
+
+    world.contexts.permissions = frozenset({"orders.update"})
+    world.contexts.tenant = "t-2"
+    body = world.client.get("/me").json()
+
+    assert_that(body["permissions"]).is_equal_to(["orders.update"])
+    assert_that(body["tenant"]).is_equal_to("t-2")
+    assert_that(world.client.get("/read").status_code).is_equal_to(403)
+
+
+def test_a_changed_context_reaches_the_next_bearer_request() -> None:
+    world = World()
+    assert_that(world.client.get("/read", headers=GOOD).status_code).is_equal_to(200)
+
+    world.contexts.permissions = frozenset({"orders.update"})
+    world.contexts.tenant = "t-2"
+    body = world.client.get("/me", headers=GOOD).json()
+
+    assert_that(body["permissions"]).is_equal_to([])
+    assert_that(body["tenant"]).is_equal_to("t-2")
+    assert_that(world.client.get("/read", headers=GOOD).status_code).is_equal_to(403)

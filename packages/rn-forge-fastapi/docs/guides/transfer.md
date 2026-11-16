@@ -287,9 +287,10 @@ than `max_rows`.
 The export model is a pydantic model. Its `serialization_alias`es are the column
 headers, and a `computed_field` is a column, which covers foreign-key traversal,
 full names and enum display names. Rows are validated with
-`from_attributes=True`, so ORM objects work directly. CSV is streamed; xlsx is
-written with `rn_forge.data.write_xlsx`. `tabular_response` is the same without
-the cap, for a route that applies its own.
+`from_attributes=True`, so ORM objects work directly. CSV is streamed in chunks
+of 1,000 rows; xlsx is written with `rn_forge.data.write_xlsx`.
+`tabular_response` is the same without the cap, for a route that applies its
+own.
 
 ## Reading a file yourself
 

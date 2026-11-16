@@ -451,3 +451,49 @@ import 687,973 / 7,077,973 bytes for 10,000 / 100,000 rows, with the same
 create 1,577,794 / 15,977,794 bytes. XLSX ZIP metadata can change file sizes
 between runs. Input rows are deterministic: sequential ID and SKU, Widget,
 Standard item, North, Ops, quantity 3, price 12.5, due 2026-01-02, active true.
+
+### cd0b069 S22.10.2 FastAPI transfer after the change
+
+Collected on 2026-11-16 on commit `cd0b06958c72c0b4dd20ed200e9d8085b297429d`
+with the S22.10.2 change uncommitted. Environment: Mac mini (Mac14,12), Apple M2
+Pro, 10 cores, 16 GB RAM; macOS 27.2.1, arm64; Python 3.14.2; uv 0.13.8. No
+other jobs were launched by this agent during the three sequential runs.
+Machine-wide idle status could not be verified.
+
+Exact first command; repeated with output directories `/tmp/S22.10.2-run-2` and
+`/tmp/S22.10.2-run-3`:
+
+```bash
+unset VIRTUAL_ENV
+PYKIT_MEASURE_OUT=/tmp/S22.10.2-run-1 \
+PYTEST_ADDOPTS='tests/measure/test_contract.py tests/measure/test_transfer.py -p no:randomly' \
+  task test PACKAGE_DIRS=packages/rn-forge-fastapi
+```
+
+Raw records: `/tmp/S22.10.2-run-{1,2,3}/results.jsonl` (11 each). Each run was
+`12 passed`; all 33 request statuses were 200. Response sizes are unchanged from
+the S22.10.3 baseline: 7,077,837 bytes for CSV export and 15,977,790 for batch
+create at 100,000 rows. Before and After are medians of three runs; Peak after
+is the maximum. Bounds are the metrics judged: wall for CSV export, peak for CSV
+export, CSV import and dry-run and batch create, and lag for batch create; every
+other case is judged at 1.25 x its baseline median wall and lag (lag never below
+0.016 s).
+
+| Case | Format / rows / dry-run | Bound | Before | After | Peak after (bytes) | Met |
+| -- | -- | -- | -: | -: | -: | -- |
+| `fastapi_export` | csv / 10,000 / — | wall at most 0.30 s; peak at most 1,048,576 | wall 1.249249 s; peak 235,123 | wall 0.088818 s | 646,969 | yes |
+| `fastapi_export` | csv / 100,000 / — | wall at most 3.0 s; peak at most 1,048,576 | wall 12.141380 s; peak 264,607 | wall 0.793433 s | 626,730 | yes |
+| `fastapi_export` | xlsx / 10,000 / — | no bound set; wall at most 4.328 s, lag at most 0.0205 s | wall 3.462552 s; lag 0.016410 s | wall 3.442899 s; lag 0.016441 s | 3,470,227 | yes |
+| `fastapi_export` | xlsx / 100,000 / — | no bound set; wall at most 38.644 s, lag at most 0.0275 s | wall 30.915327 s; lag 0.021964 s | wall 31.331633 s; lag 0.020656 s | 29,352,061 | yes |
+| `fastapi_import` | csv / 10,000 / false | peak at most 26,214,400; wall at most 0.184 s, lag at most 0.0236 s | wall 0.147006 s; lag 0.018863 s; peak 23,681,025 | wall 0.140319 s; lag 0.022520 s | 23,669,863 | yes |
+| `fastapi_import` | csv / 100,000 / false | peak at most 241,172,480; wall at most 1.833 s, lag at most 0.1644 s | wall 1.466050 s; lag 0.131530 s; peak 229,128,617 | wall 1.480388 s; lag 0.140263 s | 229,128,185 | yes |
+| `fastapi_import` | xlsx / 10,000 / false | no bound set; wall at most 2.441 s, lag at most 0.1341 s | wall 1.952598 s; lag 0.107315 s | wall 1.894994 s; lag 0.123968 s | 20,928,497 | yes |
+| `fastapi_import` | xlsx / 100,000 / false | no bound set; wall at most 23.960 s, lag at most 0.3751 s | wall 19.168049 s; lag 0.300066 s | wall 18.165460 s; lag 0.291586 s | 204,089,659 | yes |
+| `fastapi_import` | csv / 100,000 / true | peak at most 241,172,480; wall at most 1.909 s, lag at most 0.1485 s | wall 1.527289 s; lag 0.118767 s; peak 229,131,627 | wall 1.439095 s; lag 0.109699 s | 229,131,220 | yes |
+| `fastapi_batch_create` | json / 10,000 / — | peak at most 37,748,736; lag at most 0.075 s | lag 0.151127 s; peak 35,500,680 | lag 0.044876 s; wall 0.095824 s | 22,492,295 | yes |
+| `fastapi_batch_create` | json / 100,000 / — | peak at most 367,001,600; lag at most 0.750 s | lag 1.337377 s; peak 354,722,482 | lag 0.504502 s; wall 0.972012 s | 224,796,916 | yes |
+
+Every case met its bound. The batch create lag of 0.5045 s at 100,000 rows is
+the thread parse of the 15,977,794-byte body. The CSV import lag at 10,000 rows
+(0.0225 s against 0.0236 s) is the closest to a bound among the cases judged at
+1.25 x baseline.
