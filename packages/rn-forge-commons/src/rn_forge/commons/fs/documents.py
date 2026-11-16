@@ -518,7 +518,7 @@ class DocumentUtils:
             case ConfigFormat.YAML:
                 body = YamlUtils.serialize(plain, default_flow_style=False)
             case ConfigFormat.JSON:
-                body = json.dumps(plain, indent=2, sort_keys=True) + "\n"
+                body = _json_document(plain)
         if header is None:
             return body
         comment = "".join(
@@ -642,7 +642,7 @@ class DocumentUtils:
                 _yaml_dump(_round_trip_yaml(), document, stream)
                 content = stream.getvalue()
             case ConfigFormat.JSON:
-                content = json.dumps(document, indent=2, sort_keys=True) + "\n"
+                content = _json_document(document)
         PathUtils.atomic_write(content, p)
 
     @staticmethod
@@ -689,6 +689,11 @@ class DocumentUtils:
 # ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
+
+
+def _json_document(value: Any) -> str:
+    """Serialize *value* as sorted, indented JSON with a trailing newline."""
+    return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
 def _multiline_tables(node: Any) -> None:

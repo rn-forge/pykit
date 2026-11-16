@@ -531,8 +531,7 @@ class DictUtils:
         """
         result: dict[str, Any] = {}
         for key, item in value.items():
-            escaped_key = str(key).replace(".", "\\.")
-            path = f"{prefix}.{escaped_key}" if prefix else escaped_key
+            path = _join_key_path(prefix, key)
             if isinstance(item, Mapping):
                 result.update(DictUtils.flatten(cast(Mapping[str, Any], item), path))
             else:
@@ -766,6 +765,12 @@ class ListUtils:
 # ---------------------------------------------------------------------------
 
 
+def _join_key_path(prefix: str, key: object) -> str:
+    """Append *key* to a dotted path, escaping literal dots in the key."""
+    escaped_key = str(key).replace(".", "\\.")
+    return f"{prefix}.{escaped_key}" if prefix else escaped_key
+
+
 def _split_key_path(key_path: str) -> list[str]:
     """Split a dot-delimited key path, respecting backslash-escaped dots."""
     return [part.replace("\\.", ".") for part in _DOT_SPLITTER.split(key_path)]
@@ -782,8 +787,7 @@ def _deep_merge_layer(
     """Merge one named *layer* into *target*, recording provenance for :meth:`DictUtils.merge_layers`."""
     for raw_key, value in incoming.items():
         key = str(raw_key)
-        escaped_key = key.replace(".", "\\.")
-        path = f"{prefix}.{escaped_key}" if prefix else escaped_key
+        path = _join_key_path(prefix, key)
         if isinstance(value, Mapping):
             if not isinstance(target.get(key), dict):
                 target[key] = {}

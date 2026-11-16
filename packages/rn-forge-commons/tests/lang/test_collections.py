@@ -219,6 +219,16 @@ class TestDictMerge:
 
 
 class TestDictMergeLayers:
+    def test_leaf_provenance_keys_match_flatten(self) -> None:
+        layer = {"a.b": {"c": 1}, "a": {"b": {"c": 2}}, "d": [1]}
+        result = DictUtils.merge_layers(layer)
+        leaf_keys = {
+            key
+            for key in result.provenance
+            if not isinstance(DictUtils.get(result.config, key), dict)
+        }
+        assert leaf_keys == set(DictUtils.flatten(result.config))
+
     def test_deep_merge_list_strategies_and_provenance(self) -> None:
         result = DictUtils.merge_layers(
             (
@@ -341,6 +351,11 @@ class TestDictMergeLayers:
 
 
 class TestDictFlatten:
+    def test_flat_keys_resolve_through_get(self) -> None:
+        nested = {"a.b": {"c": 1}, "a": {"b": {"c": 2}}, "d": [1]}
+        for key, value in DictUtils.flatten(nested).items():
+            assert DictUtils.get(nested, key) == value
+
     def test_flattens_nested_mapping(self) -> None:
         assert DictUtils.flatten({"a": {"b": 1, "c": 2}, "d": 3}) == {
             "a.b": 1,

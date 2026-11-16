@@ -48,6 +48,10 @@ class TestConfigFormat:
 
 
 class TestPlainIO:
+    def test_json_dumps_text_is_sorted_indented_newline(self):
+        text = DocumentUtils.dumps({"b": 1, "a": {"d": 2, "c": 3}}, ConfigFormat.JSON)
+        assert text == '{\n  "a": {\n    "c": 3,\n    "d": 2\n  },\n  "b": 1\n}\n'
+
     def test_toml_round_trip(self):
         text = DocumentUtils.dumps({"a": 1, "b": {"c": 2}}, ConfigFormat.TOML)
         assert DocumentUtils.loads(text, ConfigFormat.TOML) == {"a": 1, "b": {"c": 2}}
@@ -90,6 +94,16 @@ class TestPlainIO:
 
 
 class TestRoundTripDocuments:
+    def test_json_write_document_matches_dumps(self, tmp_path):
+        data = {"b": 1, "a": {"d": 2, "c": 3}}
+        path = tmp_path / "config.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        document = DocumentUtils.read_document(path)
+        DocumentUtils.write_document(path, document)
+        assert path.read_text(encoding="utf-8") == DocumentUtils.dumps(
+            data, ConfigFormat.JSON
+        )
+
     def test_toml_comments_and_key_order_survive(self, tmp_path):
         path = tmp_path / "config.toml"
         original = "# leading comment\na = 1\nb = 2  # trailing comment\n"

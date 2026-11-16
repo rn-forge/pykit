@@ -12,7 +12,7 @@
 | [F22.1 — Short specs with stable work records](F22.1-specs.md) | New | release-9 | 2 New |
 | [F22.2 — One current explanation per audience](F22.2-documentation.md) | New | release-9 | 2 New |
 | [F22.3 — Behavioral tests and performance baselines](F22.3-tests-and-measurements.md) | Active | release-9 | 1 New · 2 Closed |
-| [F22.4 — Commons with explicit side effects](F22.4-commons.md) | Active | release-9 | 1 New · 4 Closed |
+| [F22.4 — Commons with explicit side effects](F22.4-commons.md) | Active | release-9 | 5 Closed |
 | [F22.5 — CLI invocation state with a clear lifetime](F22.5-cli.md) | Closed | release-9 | 2 Closed |
 | [F22.6 — Installer transactions with honest recovery](F22.6-tooling.md) | Closed | release-9 | 3 Closed |
 | [F22.7 — HTTP policy with bounded readiness](F22.7-web.md) | Active | release-9 | 1 New · 2 Closed |
