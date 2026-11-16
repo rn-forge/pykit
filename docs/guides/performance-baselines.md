@@ -68,6 +68,7 @@ platforms.
 | Web | Sync readiness with eight slow checks | 8 checks at 0.2 seconds each, timeout unset and set | I/O |
 | Data | Excel write then load | 50,000 rows × 10 columns; file size | Buffering |
 | Data | `excel_write`: Excel write only, dataset built before measurement | 50,000 rows × 10 columns; bytes, rows, cells | Buffering |
+| Tooling | Install a verified local release archive | 64 MiB; download, hash, and extract counts | Buffering |
 | Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS request count | I/O |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
 | CLI scaffold | Built workspace wheels and one clean-venv install | Build count and duration; install duration | Tool startup |

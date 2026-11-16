@@ -235,6 +235,14 @@ def doctor(product: ToolProduct, *, home: ToolHome | None = None) -> list[Findin
 # -- install transaction ----------------------------------------------------
 
 
+@dataclass(frozen=True, slots=True)
+class _Prepared:
+    """A transaction's work directory and verified, extracted release root."""
+
+    work: Path
+    release_root: Path
+
+
 def _install(
     product: ToolProduct,
     home: ToolHome,
@@ -242,87 +250,131 @@ def _install(
     target: str,
     previous: str | None,
 ) -> None:
-    """The install transaction proper. The caller holds the lock."""
+    """Prepare and activate a release. The caller holds the lock."""
+    prepared = _prepare(product, home, source, target)
     undo: list[tuple[str, Callable[[], object]]] = []
-    home.work_dir.mkdir(parents=True, exist_ok=True)
-    work = Path(tempfile.mkdtemp(prefix=f"{target}-", dir=home.work_dir))
-    version_dir = home.version_dir(target)
-    displaced = work / "displaced"
     retained = False
     try:
-        release_root = fetch_release(source, target, work / "release")
-
-        if version_dir.exists():
-            # A reinstall: set the existing directory aside rather than
-            # deleting it, so a failed rebuild can put it back.
-            version_dir.rename(displaced)
-            undo.append(
-                ("restore displaced version", lambda: displaced.rename(version_dir))
-            )
-        version_dir.parent.mkdir(parents=True, exist_ok=True)
-        undo.append(
-            (
-                f"remove versions/{target}",
-                lambda: shutil.rmtree(version_dir, ignore_errors=True),
-            )
-        )
-        product.build(release_root, version_dir)
-
-        for link in product.artifacts():
-            undo.append((f"restore link {link.path}", _place_link(home, link)))
-
-        undo.append(("restore state.json", _restore_file(home.state_path)))
-        if previous is not None and previous != target:
-            product.migrate(previous, target)
-        PathUtils.atomic_write(
-            json.dumps(
-                {"version": target, "schema_version": product.state_schema_version},
-                indent=2,
-            )
-            + "\n",
-            home.state_path,
-        )
-
-        undo.append(("restore current", _restore_current(home)))
-        home.activate(target)
+        _activate(product, home, prepared, target, previous, undo)
     except BaseException as exc:
-        failures: list[tuple[str, Exception]] = []
-        for label, step in reversed(undo):
-            try:
-                step()
-            except Exception as error:  # noqa: BLE001 - attempt every undo step
-                failures.append((label, error))
-        retained = displaced.exists()
-        if failures:
-            details = "; ".join(f"{label}: {error}" for label, error in failures)
-            if retained:
-                details += f"; the previous version is kept at {work}"
-            if isinstance(exc, Exception):
-                raise AppException(
-                    "Install of {} {} failed: {}; recovery is incomplete: {}",
-                    product.name,
-                    target,
-                    exc,
-                    details,
-                ) from exc
-            _LOGGER.error(  # noqa: PLE1205  # brace-style log format
+        failures = _recover(undo)
+        retained = (prepared.work / "displaced").exists()
+        _failure(product, target, exc, failures, prepared.work, retained)
+        raise
+    finally:
+        if not retained:
+            shutil.rmtree(prepared.work, ignore_errors=True)
+
+
+def _prepare(
+    product: ToolProduct, home: ToolHome, source: ReleaseSource, target: str
+) -> _Prepared:
+    """Download, verify and extract a release; remove its work directory on failure."""
+    work: Path | None = None
+    try:
+        home.work_dir.mkdir(parents=True, exist_ok=True)
+        work = Path(tempfile.mkdtemp(prefix=f"{target}-", dir=home.work_dir))
+        return _Prepared(work, fetch_release(source, target, work / "release"))
+    except BaseException as exc:
+        if work is not None:
+            shutil.rmtree(work, ignore_errors=True)
+        _failure(product, target, exc, [], work, False)
+        raise
+
+
+def _activate(
+    product: ToolProduct,
+    home: ToolHome,
+    prepared: _Prepared,
+    target: str,
+    previous: str | None,
+    undo: list[tuple[str, Callable[[], object]]],
+) -> None:
+    """Build and activate a release, appending recovery steps to *undo*."""
+    version_dir = home.version_dir(target)
+    displaced = prepared.work / "displaced"
+    if version_dir.exists():
+        # A failed reinstall must be able to put the existing directory back.
+        version_dir.rename(displaced)
+        undo.append(
+            ("restore displaced version", lambda: displaced.rename(version_dir))
+        )
+    version_dir.parent.mkdir(parents=True, exist_ok=True)
+    undo.append(
+        (
+            f"remove versions/{target}",
+            lambda: shutil.rmtree(version_dir, ignore_errors=True),
+        )
+    )
+    product.build(prepared.release_root, version_dir)
+
+    for link in product.artifacts():
+        undo.append((f"restore link {link.path}", _place_link(home, link)))
+
+    undo.append(("restore state.json", _restore_file(home.state_path)))
+    if previous is not None and previous != target:
+        product.migrate(previous, target)
+    PathUtils.atomic_write(
+        json.dumps(
+            {"version": target, "schema_version": product.state_schema_version},
+            indent=2,
+        )
+        + "\n",
+        home.state_path,
+    )
+
+    undo.append(("restore current", _restore_current(home)))
+    home.activate(target)
+
+
+def _recover(
+    undo: list[tuple[str, Callable[[], object]]],
+) -> list[tuple[str, Exception]]:
+    """Attempt every undo step in reverse order and return recovery failures."""
+    failures: list[tuple[str, Exception]] = []
+    for label, step in reversed(undo):
+        try:
+            step()
+        except Exception as error:  # noqa: BLE001 - attempt every undo step
+            failures.append((label, error))
+    return failures
+
+
+def _failure(
+    product: ToolProduct,
+    target: str,
+    exc: BaseException,
+    failures: list[tuple[str, Exception]],
+    work: Path | None,
+    retained: bool,
+) -> None:
+    """Raise an install error, or log incomplete recovery for an interruption."""
+    if failures:
+        details = "; ".join(f"{label}: {error}" for label, error in failures)
+        if retained:
+            details += f"; the previous version is kept at {work}"
+        if isinstance(exc, Exception):
+            raise AppException(
                 "Install of {} {} failed: {}; recovery is incomplete: {}",
                 product.name,
                 target,
                 exc,
                 details,
-            )
-        if isinstance(exc, Exception):
-            raise AppException(
-                "Install of {} {} failed and was rolled back: {}",
-                product.name,
-                target,
-                exc,
             ) from exc
-        raise
-    finally:
-        if not retained:
-            shutil.rmtree(work, ignore_errors=True)
+        _LOGGER.error(  # noqa: PLE1205  # brace-style log format
+            "Install of {} {} failed: {}; recovery is incomplete: {}",
+            product.name,
+            target,
+            exc,
+            details,
+        )
+    if isinstance(exc, Exception):
+        raise AppException(
+            "Install of {} {} failed and was rolled back: {}",
+            product.name,
+            target,
+            exc,
+        ) from exc
 
 
 def _link_target(home: ToolHome, link: Link) -> str:

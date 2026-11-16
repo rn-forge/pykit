@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
+from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.tooling.install import (
     Link,
     LocalArchive,
@@ -238,6 +239,97 @@ class TestRollback:
             install(tool, home=home)
         assert (home.root / "bin/tool").read_text() == "mine"
         assert home.current_version() is None
+
+
+class TestPreparation:
+    def test_a_checksum_mismatch_leaves_the_prior_install_usable(
+        self, home, source, tmp_path
+    ):
+        TestRollback()._installed_at_one(home, source)
+        bad = LocalArchive(make_archive(tmp_path, "2.0.0"), "2.0.0", "0" * 64)
+        with pytest.raises(AppException, match="Checksum mismatch"):
+            install(product(source, fail_build=True), home=home, source=bad)
+        TestRollback()._assert_still_one(home)
+        assert not home.version_dir("2.0.0").exists()
+
+    def test_a_malformed_archive_leaves_the_prior_install_usable(
+        self, home, source, tmp_path
+    ):
+        TestRollback()._installed_at_one(home, source)
+        archive = tmp_path / "malformed.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            for root in ("one", "two"):
+                info = tarfile.TarInfo(f"{root}/bin/tool")
+                info.size = 1
+                tar.addfile(info, io.BytesIO(b"x"))
+        with pytest.raises(AppException, match="exactly one root directory"):
+            install(product(source), home=home, source=LocalArchive(archive, "2.0.0"))
+        TestRollback()._assert_still_one(home)
+
+    def test_an_interrupted_download_restores_nothing_and_reraises(
+        self, home, source, monkeypatch
+    ):
+        TestRollback()._installed_at_one(home, source)
+
+        def interrupted(version, destination):
+            raise KeyboardInterrupt
+
+        def unexpected_recovery(*args):
+            pytest.fail("preparation must not restore install state")
+
+        monkeypatch.setattr(source, "download", interrupted)
+        monkeypatch.setattr(lifecycle_module, "_restore_file", unexpected_recovery)
+        monkeypatch.setattr(lifecycle_module, "_restore_current", unexpected_recovery)
+        with pytest.raises(KeyboardInterrupt):
+            install(product(source), home=home)
+        TestRollback()._assert_still_one(home)
+        assert not any(home.work_dir.iterdir())
+
+    def test_preparation_runs_under_the_lock(self, home, source, monkeypatch):
+        download = source.download
+        errors = []
+
+        def under_lock(version, destination):
+            with (
+                pytest.raises(AppException) as excinfo,
+                ToolHome("tool", home.root).lock(timeout=0.1),
+            ):
+                pass
+            errors.append(excinfo.value)
+            return download(version, destination)
+
+        monkeypatch.setattr(source, "download", under_lock)
+        assert install(product(source), home=home).outcome == "installed"
+        assert len(errors) == 1
+
+    def test_a_release_is_downloaded_and_hashed_once(
+        self, home, source, tmp_path, monkeypatch
+    ):
+        archive = make_archive(tmp_path, "2.0.0")
+        local = LocalArchive(archive, "2.0.0", ContentHash.of_file(archive))
+        download = LocalArchive.download
+        of_file = ContentHash.of_file
+        counts = {"downloads": 0, "hashes": 0}
+
+        def counted_download(self, version, destination):
+            counts["downloads"] += 1
+            return download(self, version, destination)
+
+        def counted_hash(path):
+            counts["hashes"] += 1
+            return of_file(path)
+
+        monkeypatch.setattr(LocalArchive, "download", counted_download)
+        monkeypatch.setattr(ContentHash, "of_file", staticmethod(counted_hash))
+        install(product(source), home=home, source=local)
+        assert counts == {"downloads": 1, "hashes": 1}
+
+    def test_a_failed_preparation_never_builds_or_migrates(self, home, source):
+        TestRollback()._installed_at_one(home, source)
+        source.fail_download = True
+        with pytest.raises(AppException, match="network down"):
+            install(product(source, fail_migration=True, fail_build=True), home=home)
+        TestRollback()._assert_still_one(home)
 
 
 class TestRecoveryFailure:

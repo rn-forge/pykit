@@ -13,7 +13,12 @@ from rn_forge.cli import ExitCode
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.commons.runtime.console import console
-from rn_forge.tooling.cli.lifecycle import build_tool_app, lifecycle_commands
+from rn_forge.tooling.cli.lifecycle import (
+    VERBS,
+    LifecycleSurface,
+    build_tool_app,
+    lifecycle_commands,
+)
 from rn_forge.tooling.install import Link, ToolProduct
 
 
@@ -90,6 +95,28 @@ def test_only_the_declared_verbs_are_mounted(capsys):
 def test_an_unknown_verb_is_rejected():
     with pytest.raises(AppException, match="Unknown lifecycle verb"):
         lifecycle_commands(PRODUCT, ["explode"])
+
+
+def test_the_advertised_verbs_are_the_mounted_ones():
+    names = [
+        command.name for command in lifecycle_commands(PRODUCT).registered_commands
+    ]
+    assert names == list(VERBS)
+    assert LifecycleSurface(product="x:y").verbs == VERBS
+
+
+@pytest.mark.parametrize(
+    ("source", "message"),
+    [
+        ({"lifecycle": "x"}, "lifecycle"),
+        ({"product": "a:b", "verbs": "status"}, "verbs"),
+        ({"product": "a:b", "verbs": ["status", "status"]}, "Duplicate"),
+        ({"product": "a:b", "verbs": ["explode"]}, "Unknown"),
+    ],
+)
+def test_a_malformed_lifecycle_table_is_diagnosed(source, message):
+    with pytest.raises(AppException, match=message):
+        LifecycleSurface.load(source)
 
 
 def test_a_non_product_is_rejected():
