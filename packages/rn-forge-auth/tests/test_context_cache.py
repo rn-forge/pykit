@@ -133,3 +133,20 @@ def test_shared_versions_invalidate_across_caches():
     one.invalidate("a")
     two.resolve("a")
     assert store.calls == 3
+
+
+def test_entries_of_accounts_no_longer_requested_are_retained_today():
+    cache, _, clock = make()
+    # S22.8.1 replaces this characterization of the current retention behaviour.
+    for index in range(2000):
+        clock.now = float(index)
+        cache.resolve(f"a{index}")
+
+    assert len(cache._entries) == 2000
+    assert (
+        sum(clock.now - entry.stored_at < 60.0 for entry in cache._entries.values())
+        == 60
+    )
+
+    cache.resolve("a0")
+    assert len(cache._entries) == 2000

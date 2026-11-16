@@ -70,6 +70,7 @@ platforms.
 | Data | `excel_write`: Excel write only, dataset built before measurement | 50,000 rows × 10 columns; bytes, rows, cells | Buffering |
 | Tooling | Install a verified local release archive | 64 MiB; download, hash, and extract counts | Buffering |
 | Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS requests; first, refresh and median cached verification seconds | I/O |
+| Auth | Authorization-context cache churn with an injected clock | 1,000 to 16,000 distinct accounts, plus a hot-set case; entries retained, lock hold | CPU |
 | Auth | Fill empty in-memory replay, transaction and session stores with live records | 1,000, 4,000 and 16,000 records; 1 hour TTL; operation count | CPU |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
 | Django | Export and batch get/create/update/delete over the transfer mixins | 100 to 9,000 rows; SQL query count, response bytes | I/O |
@@ -339,3 +340,59 @@ JWKS requests in every run.
 | -- | -- | -- | -- | -- | -- | -- |
 | Before | 0.101847458 | 302,546 | 0.010706542 | 0.005855458 | 0.000133480 | 2 |
 | After | 0.092315791 | 300,106 | 0.010232708 | 0.005510708 | 0.000129167 | 2 |
+
+### S22.8.4 authorization-context churn baseline
+
+Five sequential runs were collected on 2026-11-16 with production source
+unchanged, including `context_cache.py` (also unchanged from the brief's
+`01a8985`). The measurement tests were uncommitted. No concurrent jobs were
+launched by this agent during measurement; machine idle status was not verified.
+
+| Checkout commit | CPU and hardware | OS | Python | uv |
+| -- | -- | -- | -- | -- |
+| `d0a1a8085dd01d7db871d9a7413b4ad91269f0fd` | Mac mini (Mac14,12), Apple M2 Pro, 10 cores (6 performance, 4 efficiency), 16 GB RAM | macOS 27.2.1 (26B131), arm64 | 3.14.2 | 0.13.8 (Homebrew installation symlink) |
+
+Raw records: `/tmp/S22.8.4-baseline-five/run-{1,2,3,4,5}/results.jsonl`, five
+records per run. Earlier exploratory records under `/tmp/S22.8.4-baseline` are
+excluded. Each step advances the injected clock by one second and resolves a
+fresh account, with a fresh context on each provider call and a 60 s TTL. The
+invalidated case also invalidates that account after resolving it. The hot case
+additionally resolves one of 20 recurring accounts per step. A hit does not
+refresh `stored_at`.
+
+Wall times and counts below are medians across five runs; peak memory is the
+maximum across runs. Memory is traced Python allocation bytes, not process RSS.
+Lock holds run under `tracemalloc`, so their absolute durations are inflated and
+comparable only within this harness. Only the cache's entry lock is timed, not
+its version-counter lock. These figures are observations, not thresholds.
+
+| Case | Accounts / steps | Wall (s) | Peak bytes (max) | Retained bytes (median) |
+| -- | -: | -: | -: | -: |
+| Plain | 1,000 | 0.008551709 | 437,212 | 436,878 |
+| Plain | 4,000 | 0.030114625 | 1,732,990 | 1,598,550 |
+| Plain | 16,000 | 0.137117000 | 6,846,758 | 6,787,846 |
+| Invalidated | 16,000 | 0.140850084 | 7,261,894 | 7,202,870 |
+| Hot (20 accounts) | 16,000 | 0.219739542 | 6,927,852 | 6,797,548 |
+
+| Case | Accounts / steps | Entries q1 / q2 / q3 / q4 | Entries end | TTL-live end | Version accounts | Provider calls |
+| -- | -: | -- | -: | -: | -: | -: |
+| Plain | 1,000 | 250 / 500 / 750 / 1,000 | 1,000 | 60 | — | — |
+| Plain | 4,000 | 1,000 / 2,000 / 3,000 / 4,000 | 4,000 | 60 | — | — |
+| Plain | 16,000 | 4,000 / 8,000 / 12,000 / 16,000 | 16,000 | 60 | — | — |
+| Invalidated | 16,000 | 4,000 / 8,000 / 12,000 / 16,000 | 16,000 | 60 | 16,000 | — |
+| Hot (20 accounts) | 16,000 | 4,020 / 8,020 / 12,020 / 16,020 | 16,020 | 80 | — | 21,340 |
+
+| Case | Accounts / steps | Lock acquisitions | Hold total (s, median) | Hold max (s, median) | Hold max (s, maximum) |
+| -- | -: | -: | -: | -: | -: |
+| Plain | 1,000 | 2,000 | 0.001504556 | 0.000009916 | 0.000020708 |
+| Plain | 4,000 | 8,000 | 0.004812193 | 0.000014916 | 0.000023375 |
+| Plain | 16,000 | 32,000 | 0.021412113 | 0.000050791 | 0.000076292 |
+| Invalidated | 16,000 | 32,000 | 0.022043150 | 0.000044458 | 0.000055959 |
+| Hot (20 accounts) | 16,000 | 53,340 | 0.034928622 | 0.000049667 | 0.000076541 |
+
+Entries grow with distinct accounts ever requested, despite only 60 plain
+entries remaining younger than the TTL. The hot case makes 16,000 cold calls and
+5,340 hot calls: a hot account recurs every 20 s but still expires every 60 s.
+Invalidation leaves 16,000 entries and 16,000 version counters; its TTL-live
+count measures age only, not version validity. Its memory figures include both
+entries and counters and do not isolate counter allocation.
