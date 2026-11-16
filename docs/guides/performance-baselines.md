@@ -74,6 +74,7 @@ platforms.
 | Auth | Fill empty in-memory replay, transaction and session stores with live records | 1,000, 4,000 and 16,000 records; 1 hour TTL; operation count | CPU |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
 | Django | Export and batch get/create/update/delete over the transfer mixins | 100 to 9,000 rows; SQL query count, response bytes | I/O |
+| FastAPI | Transfer export, import and batch create driven through the ASGI app | 10,000 and 100,000 rows × 10 columns; response bytes, event-loop lag | I/O |
 | CLI scaffold | Built workspace wheels and one clean-venv install | Build count and duration; install duration | Tool startup |
 | Docs | Strict root and package builds | 11 builds | Tool startup |
 
@@ -396,3 +397,57 @@ entries remaining younger than the TTL. The hot case makes 16,000 cold calls and
 Invalidation leaves 16,000 entries and 16,000 version counters; its TTL-live
 count measures age only, not version validity. Its memory figures include both
 entries and counters and do not isolate counter allocation.
+
+### 9bcf9b0 S22.10.3 FastAPI transfer baseline
+
+Collected on 2026-11-16 at commit `9bcf9b0e6b4b6bb4a4c7ad2ec409e30a7f62d17a`,
+with the measurement tests uncommitted and production source unchanged.
+Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 cores (6 performance and 4
+efficiency), 16 GB RAM; macOS 27.2.1 (26B131), arm64; Python 3.14.2; uv 0.13.8.
+No other jobs were launched by this agent during the three sequential runs.
+Machine-wide idle status could not be verified: process inspection was denied by
+the sandbox.
+
+Exact first command; repeated with output directories `/tmp/S22.10.3-run-2` and
+`/tmp/S22.10.3-run-3`:
+
+```bash
+unset VIRTUAL_ENV
+PYKIT_MEASURE_OUT=/tmp/S22.10.3-run-1 \
+PYTEST_ADDOPTS='tests/measure/test_contract.py tests/measure/test_transfer.py -p no:randomly' \
+  task test PACKAGE_DIRS=packages/rn-forge-fastapi
+```
+
+Raw records: `/tmp/S22.10.3-run-{1,2,3}/results.jsonl` (11 each).
+
+| Case | Format / rows / dry-run | Wall median / max (s) | Peak max (bytes) | Lag max median / max (s) | p99 median (s) | Heartbeats range | Response bytes range |
+| -- | -- | -: | -: | -: | -: | -: | -: |
+| `fastapi_export` | csv / 10,000 / — | 1.249249 / 1.255332 | 235,123 | 0.010022 / 0.011498 | 0.000131 | 246–248 | 687,837 |
+| `fastapi_export` | csv / 100,000 / — | 12.141380 / 12.163089 | 264,607 | 0.009431 / 0.009930 | 0.000099 | 2,396–2,402 | 7,077,837 |
+| `fastapi_export` | xlsx / 10,000 / — | 3.462552 / 3.491984 | 3,471,279 | 0.016410 / 0.016427 | 0.016373 | 187–190 | 378,148–378,149 |
+| `fastapi_export` | xlsx / 100,000 / — | 30.915327 / 31.064210 | 29,350,992 | 0.021964 / 0.037788 | 0.016390 | 1,625–1,632 | 3,742,582–3,742,583 |
+| `fastapi_import` | csv / 10,000 / false | 0.147006 / 0.147787 | 23,681,025 | 0.018863 / 0.020379 | 0.016368† | 8† | 62 |
+| `fastapi_import` | csv / 100,000 / false | 1.466050 / 1.529704 | 229,128,617 | 0.131530 / 0.131557 | 0.047659† | 63–67† | 63 |
+| `fastapi_import` | xlsx / 10,000 / false | 1.952598 / 1.963844 | 20,929,404 | 0.107315 / 0.123496 | 0.090906† | 42–56† | 62 |
+| `fastapi_import` | xlsx / 100,000 / false | 19.168049 / 19.180899 | 204,092,667 | 0.300066 / 0.300617 | 0.136018 | 406–411 | 63 |
+| `fastapi_import` | csv / 100,000 / true | 1.527289 / 1.535227 | 229,131,627 | 0.118767 / 0.120848 | 0.072601† | 65† | 62 |
+| `fastapi_batch_create` | json / 10,000 / — | 0.263132 / 0.267298 | 35,500,680 | 0.151127 / 0.152035 | 0.121079† | 2† | 1,577,790 |
+| `fastapi_batch_create` | json / 100,000 / — | 2.603145 / 2.612255 | 354,722,482 | 1.337377 / 1.338772 | 1.272576† | 2† | 15,977,790 |
+
+All cases have `columns=10` and `kind="io"`; all 33 request statuses were 200.
+Wall times and p99 are medians of three runs; peaks and the second maximum lag
+figure are maxima across runs. Heartbeats and response sizes show observed
+ranges. Tracing starts after building the app, source rows and request body; the
+ASGI send callback counts and discards response chunks without buffering.
+
+† Fewer than 100 heartbeats: p99 is not meaningful; use the maximum lag. The
+heartbeat sleeps 5 ms on the app's own loop, settles for three intervals, and
+records oversleep until completion. Worker-thread GIL contention remains
+visible, including the roughly 16 ms p99 floor on XLSX export.
+
+Request sizes (`inputs.request_bytes`, including multipart framing) were: CSV
+import 687,973 / 7,077,973 bytes for 10,000 / 100,000 rows, with the same
+7,077,973 for dry-run; XLSX import 378,582–378,586 / 3,742,998 bytes; batch
+create 1,577,794 / 15,977,794 bytes. XLSX ZIP metadata can change file sizes
+between runs. Input rows are deterministic: sequential ID and SKU, Widget,
+Standard item, North, Ops, quantity 3, price 12.5, due 2026-01-02, active true.
