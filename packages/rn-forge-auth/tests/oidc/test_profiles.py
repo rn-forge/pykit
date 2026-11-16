@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 
 import pytest
 
@@ -27,15 +28,22 @@ EVENT = "http://schemas.openid.net/event/backchannel-logout"
 KEYS = "/keys"
 
 
-def _tokens(idp):
+def _tokens(idp, **sign):
     now = int(time.time())
     base = {"iss": idp.issuer, "iat": now, "exp": now + 100}
     return {
-        "access": idp.sign({**base, "aud": API, "sub": "u1"}, typ="JWT"),
-        "id": idp.sign({**base, "aud": CLIENT, "sub": "u1", "nonce": NONCE}),
+        "access": idp.sign({**base, "aud": API, "sub": "u1"}, typ="JWT", **sign),
+        "id": idp.sign({**base, "aud": CLIENT, "sub": "u1", "nonce": NONCE}, **sign),
         "logout": idp.sign(
-            {**base, "aud": CLIENT, "jti": "j1", "sid": "s1", "events": {EVENT: {}}},
+            {
+                **base,
+                "aud": CLIENT,
+                "jti": str(uuid.uuid4()),
+                "sid": "s1",
+                "events": {EVENT: {}},
+            },
             typ="logout+jwt",
+            **sign,
         ),
     }
 
@@ -139,3 +147,63 @@ class TestKeyCooldown:
             kid="k2",
         )
         assert verifier.verify(token, nonce=NONCE)["sub"] == "u"
+
+
+def _build(kind, idp, **kwargs):
+    if kind == "access":
+        return JwtVerifier.from_jwks_url(
+            idp.jwks_url, issuer=idp.issuer, audience=API, **kwargs
+        ).verify
+    if kind == "id":
+        verifier = IdTokenVerifier.from_jwks_url(
+            idp.jwks_url, issuer=idp.issuer, client_id=CLIENT, **kwargs
+        )
+        return lambda token: verifier.verify(token, nonce=NONCE)
+    return LogoutTokenVerifier.from_jwks_url(
+        idp.jwks_url,
+        issuer=idp.issuer,
+        client_id=CLIENT,
+        replay_store=InMemoryReplayStore(),
+        **kwargs,
+    ).verify
+
+
+def _token(kind, idp, **sign):
+    return _tokens(idp, **sign)[kind]
+
+
+@pytest.mark.parametrize("kind", ["access", "id", "logout"])
+class TestEveryProfile:
+    def test_accepts_rotated_key_after_cooldown(self, kind, idp):
+        verify = _build(kind, idp, cooldown_duration=0.0)
+        verify(_token(kind, idp))
+        idp.publish("k2")
+        verify(_token(kind, idp, kid="k2"))
+        assert idp.fetches(KEYS) == 2
+
+    def test_refuses_rotated_key_during_cooldown(self, kind, idp):
+        verify = _build(kind, idp, cooldown_duration=3600.0)
+        verify(_token(kind, idp))
+        idp.publish("k2")
+        with pytest.raises(TokenVerificationError):
+            verify(_token(kind, idp, kid="k2"))
+        assert idp.fetches(KEYS) == 1
+
+    def test_refuses_unknown_key_during_cooldown(self, kind, idp):
+        verify = _build(kind, idp, cooldown_duration=3600.0)
+        verify(_token(kind, idp))
+        for _ in range(5):
+            with pytest.raises(TokenVerificationError):
+                verify(_token(kind, idp, kid="unknown", key=idp.forged_key))
+        assert idp.fetches(KEYS) == 1
+
+    def test_refuses_missing_kid(self, kind, idp):
+        token = jwt.encode(
+            {"iss": idp.issuer}, idp.private_keys["k1"], algorithm="RS256"
+        )
+        with pytest.raises(TokenVerificationError, match="kid"):
+            _build(kind, idp)(token)
+
+    def test_refuses_unsigned_token(self, kind, idp):
+        with pytest.raises(TokenVerificationError, match="not accepted"):
+            _build(kind, idp)(_token(kind, idp, alg="none"))

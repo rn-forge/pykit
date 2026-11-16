@@ -51,12 +51,22 @@ def test_core_modules_import_only_stdlib_and_rn_forge() -> None:
 def test_facade_imports_no_adapter_libraries() -> None:
     script = (
         "import sys, rn_forge.auth;"
-        "print([n for n in ('jwt', 'authlib', 'redis') if n in sys.modules])"
+        "print([n for n in ('jwt', 'authlib', 'joserfc', 'requests', 'cryptography', 'redis') if n in sys.modules])"
     )
     result = subprocess.run(
         [sys.executable, "-c", script], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "[]"
+
+
+def test_oidc_import_does_not_load_the_test_provider() -> None:
+    script = (
+        "import sys, rn_forge.auth.oidc; print('rn_forge.auth.testing' in sys.modules)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    assert result.stdout.strip() == "False"
 
 
 def test_facade_exports_the_policy_functions() -> None:

@@ -12,6 +12,7 @@ pytest.importorskip("cryptography")
 from rn_forge.auth.oidc import (
     JwtVerifier,
     TokenVerificationError,
+    _new_jwks_client,
     discover_oidc,
     fetch_json,
 )
@@ -147,11 +148,27 @@ class TestKeyCaching:
                 verifier.verify(forged)
         assert idp.fetches(KEYS) == 1
 
-    def test_key_set_is_refetched_after_its_lifespan(self, idp, monkeypatch):
-        verifier = _verifier(idp, lifespan=100.0)
+    def test_key_set_is_refetched_after_its_lifespan(self, idp):
+        class _Clock:
+            now = 1000.0
+
+            def __call__(self):
+                return self.now
+
+        clock = _Clock()
+        verifier = JwtVerifier(
+            jwks=_new_jwks_client(
+                idp.jwks_url, lifespan=100.0, cooldown_duration=30.0, clock=clock
+            ),
+            issuer=idp.issuer,
+            audience=AUDIENCE,
+        )
         verifier.verify(idp.token())
-        later = time.monotonic() + 101
-        monkeypatch.setattr(jwt.jwk_set_cache.time, "monotonic", lambda: later)
+        assert idp.fetches(KEYS) == 1
+        clock.now += 100
+        verifier.verify(idp.token())
+        assert idp.fetches(KEYS) == 1
+        clock.now += 1
         verifier.verify(idp.token())
         assert idp.fetches(KEYS) == 2
 

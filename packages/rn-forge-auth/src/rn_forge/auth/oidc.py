@@ -165,12 +165,49 @@ def discover_oidc(issuer: str, *, fetch: FetchJson = fetch_json) -> OidcConfigur
     )
 
 
+class _KeySetClient(PyJWKClient):
+    def __init__(
+        self,
+        url: str,
+        *,
+        lifespan: float,
+        cooldown_duration: float,
+        clock: Callable[[], float],
+    ) -> None:
+        super().__init__(
+            url, lifespan=lifespan, cooldown_duration=cooldown_duration, timeout=5.0
+        )
+        self._clock = clock
+        self._lifespan = lifespan
+        self._fetched_at: float | None = None
+        assert self.jwk_set_cache is not None  # noqa: S101
+        # PyJWT's expiry reads time.monotonic directly and cannot use our clock.
+        self.jwk_set_cache.lifespan = math.inf
+
+    def fetch_data(self) -> Any:
+        data = super().fetch_data()
+        self._fetched_at = self._clock()
+        return data
+
+    def get_jwk_set(self, refresh: bool = False) -> jwt.PyJWKSet:
+        if (
+            self._fetched_at is not None
+            and self._clock() > self._fetched_at + self._lifespan
+        ):
+            refresh = True
+        return super().get_jwk_set(refresh)
+
+
 def _new_jwks_client(
-    url: str, *, lifespan: float, cooldown_duration: float
+    url: str,
+    *,
+    lifespan: float,
+    cooldown_duration: float,
+    clock: Callable[[], float] = time.monotonic,
 ) -> PyJWKClient:
     _require_secure_url(url)
-    return PyJWKClient(
-        url, lifespan=lifespan, cooldown_duration=cooldown_duration, timeout=5.0
+    return _KeySetClient(
+        url, lifespan=lifespan, cooldown_duration=cooldown_duration, clock=clock
     )
 
 

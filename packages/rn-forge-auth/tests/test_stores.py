@@ -219,3 +219,35 @@ def test_rotate_leaves_the_old_id_unreadable() -> None:
     assert store.get(old) is None
     assert store.get(new) == _session()
     assert store.rotate(old, idle_ttl=IDLE) is None
+
+
+def test_later_replay_record_can_expire_first() -> None:
+    clock = _Clock()
+    store = InMemoryReplayStore(clock=clock)
+    store.record_once("long", ttl=timedelta(seconds=100))
+    clock.now += 1
+    store.record_once("short", ttl=TTL)
+    clock.now += 11
+    assert store.record_once("short", ttl=TTL) is True
+    assert store.record_once("long", ttl=TTL) is False
+
+
+def test_later_session_can_expire_first() -> None:
+    clock = _WallClock()
+    store = InMemorySessionStore(clock=clock)
+    first = store.create(_session(), idle_ttl=timedelta(minutes=60))
+    clock.now += timedelta(minutes=1)
+    second = store.create(_session(), idle_ttl=timedelta(minutes=10))
+    clock.now += timedelta(minutes=10, seconds=1)
+    assert store.get(second) is None
+    assert store.get(first) is not None
+
+
+def test_touch_can_shorten_session_expiry() -> None:
+    clock = _WallClock()
+    store = InMemorySessionStore(clock=clock)
+    session_id = store.create(_session(), idle_ttl=timedelta(minutes=60))
+    clock.now += timedelta(minutes=1)
+    assert store.touch(session_id, idle_ttl=timedelta(minutes=5)) is True
+    clock.now += timedelta(minutes=5, seconds=1)
+    assert store.get(session_id) is None

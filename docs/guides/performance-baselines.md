@@ -69,7 +69,8 @@ platforms.
 | Data | Excel write then load | 50,000 rows × 10 columns; file size | Buffering |
 | Data | `excel_write`: Excel write only, dataset built before measurement | 50,000 rows × 10 columns; bytes, rows, cells | Buffering |
 | Tooling | Install a verified local release archive | 64 MiB; download, hash, and extract counts | Buffering |
-| Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS request count | I/O |
+| Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS requests; first, refresh and median cached verification seconds | I/O |
+| Auth | Fill empty in-memory replay, transaction and session stores with live records | 1,000, 4,000 and 16,000 records; 1 hour TTL; operation count | CPU |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
 | Django | Export and batch get/create/update/delete over the transfer mixins | 100 to 9,000 rows; SQL query count, response bytes | I/O |
 | CLI scaffold | Built workspace wheels and one clean-venv install | Build count and duration; install duration | Tool startup |
@@ -301,3 +302,40 @@ guard installs nothing. The full scaffold run therefore has 10 cases, 10 builds,
 Third-party requirements resolve through the package index using the warm uv
 cache; workspace wheels are served locally. Build and install setup account for
 about 1.2 s of about 80 s, and the wall times are noisy. No setup was reduced.
+
+### 6e0572f before and after S22.8.3
+
+Collected on 2026-11-16 at checkout `6e0572fb99e82033345229fc8f20e111ae115e6a`,
+before and after the uncommitted S22.8.3 source changes. Environment: Mac mini
+(Mac14,12), Apple M2 Pro, 10 CPU cores (6 performance and 4 efficiency), 16 GB
+RAM; macOS 27.2.1 (26B131), arm64; Python 3.14.2; uv 0.13.8 from its Homebrew
+installation symlink. Five sequential runs per phase used the same machine, with
+no other agent-launched jobs during measurement. Machine idle status was not
+verified. Raw records: `/tmp/S22.8.3-before/results.jsonl` and
+`/tmp/S22.8.3-after/results.jsonl` (50 records each).
+
+Wall times are medians of five runs; peaks are the maximum traced Python
+allocation bytes. Each store starts empty and receives distinct live records
+with a one-hour TTL. Counts are observations, not test thresholds.
+
+| Workload | Records | Before wall (s) | After wall (s) | Before peak (bytes) | After peak (bytes) | Operations |
+| -- | -- | -- | -- | -- | -- | -- |
+| Replay | 1,000 | 0.021692666 | 0.002485500 | 131,530 | 92,582 | 1,000 |
+| Replay | 4,000 | 0.286680333 | 0.009467375 | 533,314 | 377,406 | 4,000 |
+| Replay | 16,000 | 4.587994875 | 0.038046667 | 2,144,914 | 1,524,358 | 16,000 |
+| Transaction | 1,000 | 0.027857125 | 0.007170250 | 403,266 | 304,693 | 1,000 |
+| Transaction | 4,000 | 0.342122208 | 0.037973042 | 1,622,402 | 1,467,197 | 4,000 |
+| Transaction | 16,000 | 5.207494334 | 0.142185834 | 6,428,874 | 5,748,549 | 16,000 |
+| Session | 1,000 | 0.032801917 | 0.007477584 | 430,620 | 391,820 | 1,000 |
+| Session | 4,000 | 0.404766500 | 0.035189916 | 1,589,308 | 1,433,772 | 4,000 |
+| Session | 16,000 | 6.104716000 | 0.155544375 | 6,797,244 | 6,238,828 | 16,000 |
+
+Key refresh performs 100 verifications and one rotation. Single-call latencies
+below are medians across five runs; cached latency is the median across runs of
+each run's median of the other 98 verifications. Both phases made exactly two
+JWKS requests in every run.
+
+| Phase | Wall (s) | Peak (bytes) | First verify (s) | Refresh verify (s) | Cached verify median (s) | Requests |
+| -- | -- | -- | -- | -- | -- | -- |
+| Before | 0.101847458 | 302,546 | 0.010706542 | 0.005855458 | 0.000133480 | 2 |
+| After | 0.092315791 | 300,106 | 0.010232708 | 0.005510708 | 0.000129167 | 2 |

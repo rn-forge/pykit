@@ -4,6 +4,7 @@ import os
 import time
 from collections.abc import Callable
 from contextlib import AbstractContextManager
+from statistics import median
 
 import pytest
 
@@ -40,16 +41,17 @@ def test_key_refresh(
             audience=idp.client_id,
             cooldown_duration=0.0,
         )
-        verifier.verify(
-            idp.sign(
-                {
-                    "sub": "u1",
-                    "iss": idp.issuer,
-                    "aud": idp.client_id,
-                    "exp": int(time.time()) + 300,
-                }
-            )
+        first_token = idp.sign(
+            {
+                "sub": "u1",
+                "iss": idp.issuer,
+                "aud": idp.client_id,
+                "exp": int(time.time()) + 300,
+            }
         )
+        started = time.perf_counter()
+        verifier.verify(first_token)
+        counts["first_verify_s"] = time.perf_counter() - started
         idp.rotate_key()
         token = idp.sign(
             {
@@ -59,8 +61,14 @@ def test_key_refresh(
                 "exp": int(time.time()) + 300,
             }
         )
+        started = time.perf_counter()
         verifier.verify(token)
+        counts["refresh_verify_s"] = time.perf_counter() - started
+        cached = []
         for _ in range(verifications - 2):
+            started = time.perf_counter()
             verifier.verify(token)
+            cached.append(time.perf_counter() - started)
+        counts["cached_verify_median_s"] = median(cached)
         counts["verifications"] = verifications
         counts["requests"] = idp.fetches("/keys")
