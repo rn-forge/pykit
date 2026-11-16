@@ -71,6 +71,7 @@ platforms.
 | Tooling | Install a verified local release archive | 64 MiB; download, hash, and extract counts | Buffering |
 | Auth | JWT verification against local JWKS server, including one key rotation | 100 verifications; JWKS request count | I/O |
 | SQLAlchemy | SQLite upsert of initial and mixed rows | 33,000 initial rows and 33,000 mixed rows; SQL statement count | I/O |
+| Django | Export and batch get/create/update/delete over the transfer mixins | 100 to 9,000 rows; SQL query count, response bytes | I/O |
 | CLI scaffold | Built workspace wheels and one clean-venv install | Build count and duration; install duration | Tool startup |
 | Docs | Strict root and package builds | 11 builds | Tool startup |
 
@@ -163,8 +164,7 @@ sandbox, so other machine activity could not be verified.
 
 Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 CPU cores (6 performance and
 4 efficiency), 16 GB RAM; macOS 27.2.1 (26B131), arm64; Python 3.14.2; uv
-0.13.8, read from the Homebrew installation symlink
-(`/opt/homebrew/Cellar/uv/0.13.8/bin/uv`).
+0.13.8.
 
 Each workload uses 50,000 rows and 10 columns. Wall times are seconds; peaks are
 traced Python allocation bytes. The write-only case builds the dataset before
@@ -187,6 +187,48 @@ Single-run timings vary with machine activity; `tracemalloc` excludes native
 allocations and child processes, and these peaks are not process RSS. XLSX ZIP
 metadata can vary between saves, including the resulting compressed size; byte
 counts do not establish byte-for-byte identity.
+
+### S22.9.3 transfer queries and memory
+
+Collected on 2026-11-16 at checkout `c85de6ebcbb77d2ac7219413533e27448b867cf9`,
+with the measurement tests uncommitted and production source unchanged.
+Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 CPU cores (6 performance and
+4 efficiency), 16 GB RAM; macOS 27.2.1 (26B131), arm64; Python 3.14.2; uv
+0.13.8. No concurrent jobs were launched by this agent during the single
+measurement run. Process inspection was denied by the sandbox, so machine idle
+status could not be verified. Raw records: `/tmp/S22.9.3-measure/results.jsonl`.
+
+The dialect is SQLite. Wall times are seconds; peaks are traced Python
+allocation bytes, not process RSS. Seeding is outside the measurement, and SQL
+queries are counted with `connection.execute_wrapper`, without retaining SQL
+strings. These are observations, with no memory or timing thresholds.
+
+| Operation | Rows | wall_s | peak_bytes | queries | response_bytes |
+| -- | -: | -: | -: | -: | -: |
+| export | 1,000 | 0.057230 | 564,408 | 2 | 15,902 |
+| export | 9,000 | 0.443740 | 3,580,505 | 2 | 151,902 |
+| batch_get | 100 | 0.007705 | 91,932 | 1 | 2,300 |
+| batch_get | 900 | 0.047507 | 708,616 | 1 | 22,300 |
+| batch_create | 100 | 0.066071 | 223,712 | 202 | 4,592 |
+| batch_create | 900 | 0.512092 | 1,534,374 | 1,802 | 43,901 |
+| batch_update | 100 | 0.103678 | 1,177,539 | 103 | 2,110 |
+| batch_update | 900 | 0.971890 | 8,608,042 | 903 | 19,710 |
+| batch_delete | 100 | 0.026588 | 129,231 | 103 | 0 |
+| batch_delete | 900 | 0.210383 | 817,316 | 903 | 0 |
+
+All query counts match the brief's Current behaviour figures. All traced peaks
+differ from its approximate figures; the largest difference is batch update at
+900 rows: 8,608,042 bytes here versus about 6,218,092 bytes in the brief. No
+source was changed to match those figures.
+
+Writes cost queries per row by design: create 2, update 1, delete 1. Read query
+counts do not grow with rows. Export is constant only for a viewset that shapes
+its queryset; this measurement uses `select_related("team")` and related team
+rows.
+
+PostgreSQL slope guards also passed in `task ci:integration -- rn-forge-django`:
+824 passed, 5 measurement cases skipped, 1 deselected. Resource measurements
+above remain SQLite-only.
 
 ### d709103 before and after S22.11.2
 
