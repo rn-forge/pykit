@@ -270,3 +270,34 @@ target. The chunk-only trial peaked at 27,543,664 bytes for single keys and
 PostgreSQL parity was checked separately with the integration service
 (`task ci:integration -- rn-forge-sqlalchemy`): 167 passed, 2 expected failures
 (the documented snapshot race), and only measurement cases skipped.
+
+### 3027d9d S22.3.3 setup audit — 2026-11-16
+
+Reviewer audit at `3027d9d`; environment recorded by the audit: macOS arm64,
+Python 3.14, warm uv cache. Other jobs may have shared the machine, so wall
+times are noisy. The audit did not record more specific hardware or version
+details.
+
+`task ci:suites` with `SUITE_ARGS='-q -m scaffold -c pyproject.toml'` ran one
+pytest session: 7 scaffold cases passed in 78–85 s, with 2 skipped and 4,533
+deselected. The skipped cases were the CLI measurement without
+`PYKIT_MEASURE_OUT` and the Redis test without a Redis URL. The unchanged run
+performed 10 wheel builds, 7 venv creations, and 7 installs. The 10 builds took
+0.20 s total. The 7 venv creations and installs each took 0.09–0.37 s, 0.97 s
+total. Case durations were 59.95 s for the Django conformance driver, 7.49 s for
+FastAPI conformance, 2.55 s for FastAPI SSE, 1.50 s for tooling lifecycle, and
+0.77, 0.74, and 0.58 s for the three CLI cases. These durations are served
+application runtime, not setup.
+
+The unchanged large-input SQL regression writes 33,000 rows, exceeding SQLite's
+32,766 parameter limit, in 0.35 s. The new guards leave its input and chunk size
+unchanged (900).
+
+After adding the three guards, the targeted CLI scaffold run passed 6 cases in
+3.40 s. It added 2 venv creations and 2 installs, about 0.8 s; the wheel-set
+guard installs nothing. The full scaffold run therefore has 10 cases, 10 builds,
+9 venv creations, and 9 installs; it passed 10 cases with 2 skipped.
+
+Third-party requirements resolve through the package index using the warm uv
+cache; workspace wheels are served locally. Build and install setup account for
+about 1.2 s of about 80 s, and the wall times are noisy. No setup was reduced.
