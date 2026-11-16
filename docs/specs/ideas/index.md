@@ -20,6 +20,8 @@ deleted. A dropped idea is deleted too.
 | [tool-version-probe](#tool-version-probe) | Ask an external executable for its version in `rn-forge-commons`. Waits for a second application that probes tools. | F17.5 review, 2026-10-23 |
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
+| auth-version-counter-retention | `InMemoryAuthorizationVersions` keeps one counter per account ever invalidated (16,000 after 16,000 invalidations, measured in S22.8.4). Deleting a counter can make an old context current, so a bound needs a protocol that keeps invalidation across caches sharing versions. | S22.8.4, owner 2026-11-16 |
+| xlsx-transfer-speed | `rn_forge.data.write_xlsx` takes about 30 s and tablib's XLSX load about 19 s for 100,000 rows × 10 columns (measured in S22.10.3), nearly all of the FastAPI XLSX export and import time. A data-package concern, outside route assembly. | S22.10.3, owner 2026-11-16 |
 
 ## model-vocabulary
 
