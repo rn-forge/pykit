@@ -1,5 +1,6 @@
 import asyncio
 import importlib
+import weakref
 from datetime import UTC
 
 import pytest
@@ -243,6 +244,101 @@ async def test_empty_rows_runs_no_query(session, engine):
 
     assert_that(counts).is_equal_to(UpsertCounts(0, 0, 0))
     assert_that(statements).is_equal_to(0)
+
+
+@pytest.mark.asyncio
+async def test_existing_rows_are_read_and_released_per_chunk(session, monkeypatch):
+    upsert_module = importlib.import_module("rn_forge.sqlalchemy.upsert")
+    original_existing = upsert_module._existing
+    prior_results = []
+    call_sizes = []
+
+    class ExistingRows(dict):
+        pass
+
+    async def track_existing(*args, **kwargs):
+        assert all(result() is None for result in prior_results)
+        identities = args[4]
+        call_sizes.append(len(identities))
+        existing = await original_existing(*args, **kwargs)
+        result = ExistingRows(existing)
+        prior_results.append(weakref.ref(result))
+        return result
+
+    skus = [f"s{i}" for i in range(2_000)]
+    rows = _rows(*skus)
+    await _upsert(session, rows)
+    await session.commit()
+
+    monkeypatch.setattr(upsert_module, "_existing", track_existing)
+    await _upsert(session, rows)
+
+    assert_that(call_sizes).is_equal_to([900, 900, 200])
+    assert_that(len(prior_results)).is_equal_to(3)
+
+
+@pytest.mark.asyncio
+async def test_a_duplicate_in_the_last_chunk_runs_no_query(session, engine):
+    statements = 0
+
+    def count_statement(*_):
+        nonlocal statements
+        statements += 1
+
+    rows = _rows(*(f"s{i}" for i in range(1_999)))
+    rows.append(rows[0])
+    event.listen(engine.sync_engine, "before_cursor_execute", count_statement)
+    try:
+        with pytest.raises(ValueError, match="duplicate key"):
+            await _upsert(session, rows)
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", count_statement)
+
+    assert_that(statements).is_equal_to(0)
+
+
+@pytest.mark.asyncio
+async def test_a_row_missing_a_column_in_the_last_chunk_runs_no_query(session, engine):
+    statements = 0
+
+    def count_statement(*_):
+        nonlocal statements
+        statements += 1
+
+    rows = _rows(*(f"s{i}" for i in range(1_999)))
+    rows.append({"sku": "last", "name": "n"})
+    event.listen(engine.sync_engine, "before_cursor_execute", count_statement)
+    try:
+        with pytest.raises(ValueError, match="qty"):
+            await _upsert(session, rows)
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", count_statement)
+
+    assert_that(statements).is_equal_to(0)
+
+
+@pytest.mark.asyncio
+async def test_statement_count_is_reads_plus_one(session, engine):
+    skus = [f"s{i}" for i in range(2_000)]
+    await _upsert(session, _rows(*skus))
+    await session.commit()
+    statements = 0
+    writes = 0
+
+    def count_statement(_conn, _cursor, statement, *_):
+        nonlocal statements, writes
+        statements += 1
+        if statement.lstrip().upper().startswith("INSERT"):
+            writes += 1
+
+    event.listen(engine.sync_engine, "before_cursor_execute", count_statement)
+    try:
+        await _upsert(session, _rows(*skus, qty=2))
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", count_statement)
+
+    assert_that(statements).is_equal_to(4)
+    assert_that(writes).is_equal_to(1)
 
 
 @pytest.mark.asyncio

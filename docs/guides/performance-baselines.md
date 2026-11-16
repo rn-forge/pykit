@@ -187,3 +187,44 @@ Single-run timings vary with machine activity; `tracemalloc` excludes native
 allocations and child processes, and these peaks are not process RSS. XLSX ZIP
 metadata can vary between saves, including the resulting compressed size; byte
 counts do not establish byte-for-byte identity.
+
+### d709103 before and after S22.11.2
+
+Measurements were collected on 2026-11-15. The checkout was HEAD
+`d709103f84c6ba50c0cf8b690ec3fd93991da8a7`; after measurements, the S22.11.2
+upsert change was uncommitted. Both runs used a Mac mini (Mac14,12), Apple M2
+Pro, 10 CPU cores (6 performance and 4 efficiency), 16 GB RAM; macOS 27.2.1
+(26B131), arm64; Python 3.14.2; uv 0.13.8; SQLite 3.50.4. Five sequential task
+test runs were collected before and after, with no other agent-launched jobs
+during measurement. Machine idle status was not verified. Raw records:
+`/tmp/S22.11.2-before/results.jsonl` and `/tmp/S22.11.2-after/results.jsonl` (20
+records each).
+
+Each case used 33,000 rows. Wall times are the median of five runs; peak memory
+is the maximum observed traced Python allocation peak across five runs. These
+measurements are evidence, not test thresholds. S22.11.1 set the all-new target
+at 16 MiB; on 2026-11-16 the owner revised it to at most 27 MiB (28,311,552
+bytes), because the remaining peak is the single write list and batching the
+write would break the statement targets. The mostly unchanged target is at most
+12 MiB (12,582,912 bytes), and the statement targets are 38 for single keys and
+75 for composite keys.
+
+| Workload | Before median wall (s) | After median wall (s) | Before peak (bytes) | After peak (bytes) | Statements before / after |
+| -- | -: | -: | -: | -: | -: |
+| Created, single key | 1.317372292 | 1.405893709 | 30,586,048 | 24,642,134 | 38 / 38 |
+| Created, composite key | 2.182281083 | 1.929263417 | 31,005,526 | 26,804,635 | 75 / 75 |
+| Mixed, single key | 0.636553333 | 0.706001833 | 14,826,115 | 3,835,424 | 38 / 38 |
+| Mixed, composite key | 1.018990833 | 1.133083750 | 16,420,648 | 4,163,304 | 75 / 75 |
+
+After the change, both all-new peaks (23.5 and 25.6 MiB) meet the revised target
+and both mixed peaks meet 12 MiB; all statement targets were met before and
+after. Median wall time changed by +6.72% for created single-key, -11.59% for
+created composite-key, +10.91% for mixed single-key, and +11.20% for mixed
+composite-key; the owner accepted these in place of the no-median-regression
+target. The chunk-only trial peaked at 27,543,664 bytes for single keys and
+29,455,034 bytes for composite keys, so audit values were bound once with
+`insert.values(stamps)`.
+
+PostgreSQL parity was checked separately with the integration service
+(`task ci:integration -- rn-forge-sqlalchemy`): 167 passed, 2 expected failures
+(the documented snapshot race), and only measurement cases skipped.

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from itertools import batched
 from typing import Any
 
 from rn_forge.sqlalchemy.models import AuditMixin, Base
@@ -41,7 +42,7 @@ async def upsert(
     The existing rows are read first, and the counts describe that snapshot. A
     writer that commits between the read and the write can make them wrong, so
     serialize writers when exact counts matter. Created and updated rows are then
-    written with one
+    held in a write list containing changed rows only and written with one
     ``INSERT … ON CONFLICT (key) DO UPDATE``; ``create_time`` and ``created_by``
     are set on insert only, ``update_time`` and ``updated_by`` on both. Never
     commits: the caller's transaction decides, and rolling back after the call is
@@ -69,12 +70,33 @@ async def upsert(
     dialect = session.get_bind().dialect.name
     if dialect not in ("postgresql", "sqlite"):
         raise NotImplementedError(f"upsert does not support {dialect}")
+    del keyed
 
     table: Table = model.__table__  # pyright: ignore[reportAssignmentType]
-    existing = await _existing(session, table, key, fields, list(keyed))
-    to_write, created, updated = _changes(keyed, existing, columns, fields, actor)
+    total = len(rows)
+    to_write: list[dict[str, Any]] = []
+    created = updated = 0
+    now = datetime.now(UTC)
+    stamps = {
+        "create_time": now,
+        "created_by": actor,
+        "update_time": now,
+        "updated_by": actor,
+    }
+    for chunk in batched(rows, _MAX_PARAMETERS // len(key)):
+        identities = [tuple(row[k] for k in key) for row in chunk]
+        existing = await _existing(session, table, key, fields, identities)
+        changes, new, changed = _changes(chunk, identities, existing, columns, fields)
+        to_write.extend(changes)
+        created += new
+        updated += changed
+        del existing
     if to_write:
-        insert = (postgresql if dialect == "postgresql" else sqlite).insert(table)
+        insert = (
+            (postgresql if dialect == "postgresql" else sqlite)
+            .insert(table)
+            .values(stamps)
+        )
         statement = insert.on_conflict_do_update(
             index_elements=list(key),
             set_={
@@ -83,35 +105,34 @@ async def upsert(
             },
         )
         await session.execute(statement, to_write)
-    return UpsertCounts(created, updated, len(keyed) - created - updated)
+    return UpsertCounts(created, updated, total - created - updated)
 
 
 def _keyed(
     rows: Sequence[Mapping[str, Any]], key: Sequence[str], columns: Sequence[str]
-) -> dict[tuple[Any, ...], Mapping[str, Any]]:
-    keyed: dict[tuple[Any, ...], Mapping[str, Any]] = {}
+) -> set[tuple[Any, ...]]:
+    keyed: set[tuple[Any, ...]] = set()
     for row in rows:
         if missing := [c for c in columns if c not in row]:
             raise ValueError(f"row lacks columns {missing}")
         identity = tuple(row[k] for k in key)
         if identity in keyed:
             raise ValueError(f"duplicate key {identity}")
-        keyed[identity] = row
+        keyed.add(identity)
     return keyed
 
 
 def _changes(
-    keyed: Mapping[tuple[Any, ...], Mapping[str, Any]],
+    rows: Sequence[Mapping[str, Any]],
+    identities: Sequence[tuple[Any, ...]],
     existing: Mapping[tuple[Any, ...], Mapping[str, Any]],
     columns: Sequence[str],
     fields: Sequence[str],
-    actor: str,
 ) -> tuple[list[dict[str, Any]], int, int]:
     """The rows to write, with how many of them are creations and updates."""
     to_write: list[dict[str, Any]] = []
     created = updated = 0
-    now = datetime.now(UTC)
-    for identity, row in keyed.items():
+    for identity, row in zip(identities, rows, strict=True):
         current = existing.get(identity)
         if current is not None and all(row[f] == current[f] for f in fields):
             continue
@@ -119,15 +140,7 @@ def _changes(
             created += 1
         else:
             updated += 1
-        to_write.append(
-            {c: row[c] for c in columns}
-            | {
-                "create_time": now,
-                "created_by": actor,
-                "update_time": now,
-                "updated_by": actor,
-            }
-        )
+        to_write.append({c: row[c] for c in columns})
     return to_write, created, updated
 
 
@@ -140,20 +153,14 @@ async def _existing(
 ) -> dict[tuple[Any, ...], Mapping[str, Any]]:
     key_columns = [table.c[k] for k in key]
     found: dict[tuple[Any, ...], Mapping[str, Any]] = {}
-    for chunk in _chunks(identities, _MAX_PARAMETERS // len(key)):
-        match = (
-            key_columns[0].in_([i[0] for i in chunk])
-            if len(key) == 1
-            else tuple_(*key_columns).in_(chunk)
-        )
-        result = await session.execute(
-            select(*key_columns, *(table.c[f] for f in fields)).where(match)
-        )
-        for record in result.mappings():
-            found[tuple(record[k] for k in key)] = dict(record)
+    match = (
+        key_columns[0].in_([i[0] for i in identities])
+        if len(key) == 1
+        else tuple_(*key_columns).in_(identities)
+    )
+    result = await session.execute(
+        select(*key_columns, *(table.c[f] for f in fields)).where(match)
+    )
+    for record in result.mappings():
+        found[tuple(record[k] for k in key)] = dict(record)
     return found
-
-
-def _chunks[T](items: list[T], size: int) -> Iterator[list[T]]:
-    for start in range(0, len(items), size):
-        yield items[start : start + size]
