@@ -31,11 +31,11 @@ gives the evidence and tradeoffs.
 | [F22.4 — Commons with explicit side effects](../../specs/epics/E22-pykit-simplification/F22.4-commons.md) | E22 | Closed |
 | [F22.5 — CLI invocation state with a clear lifetime](../../specs/epics/E22-pykit-simplification/F22.5-cli.md) | E22 | Closed |
 | [F22.6 — Installer transactions with honest recovery](../../specs/epics/E22-pykit-simplification/F22.6-tooling.md) | E22 | Closed |
-| [F22.7 — HTTP policy with bounded readiness](../../specs/epics/E22-pykit-simplification/F22.7-web.md) | E22 | Active |
+| [F22.7 — HTTP policy with bounded readiness](../../specs/epics/E22-pykit-simplification/F22.7-web.md) | E22 | Closed |
 | [F22.8 — Auth policy and bounded caches](../../specs/epics/E22-pykit-simplification/F22.8-auth.md) | E22 | Active |
 | [F22.9 — Django adapters with safe parsing and ownership](../../specs/epics/E22-pykit-simplification/F22.9-django.md) | E22 | Active |
 | [F22.10 — FastAPI adapters with clear validation boundaries](../../specs/epics/E22-pykit-simplification/F22.10-fastapi.md) | E22 | Active |
-| [F22.11 — SQLAlchemy bulk work with explicit bounds](../../specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md) | E22 | Active |
+| [F22.11 — SQLAlchemy bulk work with explicit bounds](../../specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md) | E22 | Closed |
 | [F22.12 — Tabular helpers without redundant copies](../../specs/epics/E22-pykit-simplification/F22.12-data.md) | E22 | Closed |
 | [F22.13 — Small release utilities with one metadata path](../../specs/epics/E22-pykit-simplification/F22.13-devops.md) | E22 | Closed |
 
