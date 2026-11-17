@@ -26,7 +26,7 @@ gives the evidence and tradeoffs.
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F22.1 — Short specs with stable work records](../../specs/epics/E22-pykit-simplification/F22.1-specs.md) | E22 | Active |
-| [F22.2 — One current explanation per audience](../../specs/epics/E22-pykit-simplification/F22.2-documentation.md) | E22 | New |
+| [F22.2 — One current explanation per audience](../../specs/epics/E22-pykit-simplification/F22.2-documentation.md) | E22 | Active |
 | [F22.3 — Behavioral tests and performance baselines](../../specs/epics/E22-pykit-simplification/F22.3-tests-and-measurements.md) | E22 | Closed |
 | [F22.4 — Commons with explicit side effects](../../specs/epics/E22-pykit-simplification/F22.4-commons.md) | E22 | Closed |
 | [F22.5 — CLI invocation state with a clear lifetime](../../specs/epics/E22-pykit-simplification/F22.5-cli.md) | E22 | Closed |

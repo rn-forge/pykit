@@ -41,12 +41,11 @@ async def upsert(
 
     The existing rows are read first, and the counts describe that snapshot. A
     writer that commits between the read and the write can make them wrong, so
-    serialize writers when exact counts matter. Created and updated rows are then
-    held in a write list containing changed rows only and written with one
-    ``INSERT … ON CONFLICT (key) DO UPDATE``; ``create_time`` and ``created_by``
-    are set on insert only, ``update_time`` and ``updated_by`` on both. Never
-    commits: the caller's transaction decides, and rolling back after the call is
-    a dry run. *key* must be backed by a unique constraint.
+    serialize writers when exact counts matter. Only new and changed rows are
+    written, with one ``INSERT … ON CONFLICT (key) DO UPDATE``; ``create_time``
+    and ``created_by`` are set on insert only, ``update_time`` and ``updated_by``
+    on both. Never commits: the caller's transaction decides, and rolling back
+    after the call is a dry run. *key* must be backed by a unique constraint.
 
     Args:
         session: An ``AsyncSession`` on PostgreSQL or SQLite.

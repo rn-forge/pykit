@@ -109,8 +109,8 @@ def models_guard[T: BaseModel](
 ) -> Any:
     """Check the body's *key* member, validate each item into *item_model* and yield the models.
 
-    Runs before FastAPI validates the body, so the checks fire in the order
-    the wire contract states and item failures use the row-error wording.
+    Runs before FastAPI validates the body. The checks fire in the order the
+    wire contract states, and item failures use the row-error wording.
     """
     items = TypeAdapter(item_model)
 

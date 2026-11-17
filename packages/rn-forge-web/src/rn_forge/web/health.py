@@ -251,10 +251,8 @@ def run_checks_sync(
         The aggregate report, including the HTTP status to serve.
 
     Raises:
-        WebError: A check returned an awaitable. This is raised rather than
-            swallowed into a ``fail``, because it is a wiring mistake in the
-            caller's code, not a sick dependency — and reporting it as a
-            failing check would hide it behind a red dependency.
+        WebError: A check returned an awaitable. It is raised, not reported
+            as a failing check.
     """
     deadline = None if timeout is None else time.monotonic() + timeout
     names = list(checks)

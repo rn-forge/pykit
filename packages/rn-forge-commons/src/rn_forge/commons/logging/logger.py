@@ -449,8 +449,8 @@ class AppLogger(VerboseLoggerBase):
         factory. Subsequent calls return the existing logger unless
         *force_reconfigure* is ``True``.
 
-        All arguments are keyword-only.  Pass only what you want to override —
-        :meth:`LoggingConfig.build` fills in opinionated defaults for
+        All arguments are keyword-only. Pass only what you want to
+        override; :meth:`LoggingConfig.build` supplies the defaults for
         everything omitted or left as ``None``.
 
         Args:
@@ -473,9 +473,8 @@ class AppLogger(VerboseLoggerBase):
                 ``{"critical": "bold white on red"}``), merged over the built-in
                 theme that styles verboselogs' custom levels. Only applies to the
                 RichHandler console path.
-            rich_tracebacks: Install ``rich.traceback`` for the RichHandler console
-                path. Default ``True``. Uses ``show_locals=False`` — tracebacks
-                routinely carry credentials in locals.
+            rich_tracebacks: Install ``rich.traceback`` for the RichHandler
+                console path, without local variables. Default ``True``.
             redact: Replace secrets in messages, arguments and extra fields with
                 :data:`~rn_forge.commons.logging.redaction.REDACTED` before any
                 handler formats them. Default ``True``. Exception tracebacks are
