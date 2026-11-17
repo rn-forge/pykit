@@ -233,6 +233,10 @@ nav:
               - F22.12 — Tabular helpers without redundant copies: specs/epics/E22-pykit-simplification/F22.12-data.md
               - F22.13 — Small release utilities with one metadata path: specs/epics/E22-pykit-simplification/F22.13-devops.md
               - Pykit simplification — review and proposed design: specs/epics/E22-pykit-simplification/design.md
+          - E23 — What kiln's standalone install found:
+              - specs/epics/E23-standalone-tool-findings/index.md
+              - F23.1 — Help text reads as written, and a command starts quietly: specs/epics/E23-standalone-tool-findings/F23.1-help-text.md
+              - F23.2 — A Python tool installs from a branch, a tag or a commit: specs/epics/E23-standalone-tool-findings/F23.2-install-from-a-ref.md
           - E24 — Release 9 follow-ups:
               - specs/epics/E24-release-9-follow-ups/index.md
               - F24.1 — Django transfer at its limits: specs/epics/E24-release-9-follow-ups/F24.1-django-transfer-limits.md
