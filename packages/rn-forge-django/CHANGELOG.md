@@ -20,6 +20,8 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Fixed
 
+- More query or form fields (or files) than Django's upload limits is a 400
+  problem instead of a 500.
 - Malformed `pageSize` values fall back to the default instead of causing a
   server error; oversized positive values use the cap.
 - Composite model lookup keys containing separators no longer collide.

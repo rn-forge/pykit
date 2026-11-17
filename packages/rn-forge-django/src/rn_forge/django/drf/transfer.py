@@ -382,6 +382,8 @@ class BatchGetMixin(_BatchResourceMixin):
     under the plural resource name, one per requested id in request order. A
     missing ``ids`` parameter, or more ids than ``transfer.max_rows``, is a 400
     problem; an id outside the view's scope is a 404 problem naming the id.
+    Django's ``DATA_UPLOAD_MAX_NUMBER_FIELDS`` (1,000 by default) also bounds
+    ``ids``, and more is a 400 problem.
 
     Attributes:
         batch_resource_name: The response key; the model's plural verbose name

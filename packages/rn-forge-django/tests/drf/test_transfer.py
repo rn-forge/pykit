@@ -533,6 +533,20 @@ class TestBatchGet:
         assert response.status_code == 404
         assert response.json()["detail"] == f"Book {hidden.pk} not found"
 
+    def test_more_ids_than_djangos_field_limit_is_a_400(self, client) -> None:
+        (book,) = make_books("a")
+        response = client.get(
+            "/books:batchGet",
+            {"ids": [book.pk] * 1001},
+            raise_request_exception=False,
+        )
+        assert response.status_code == 400
+        assert response["Content-Type"] == "application/problem+json"
+        assert (
+            response.json()["detail"]
+            == "Request has more fields than the configured limit"
+        )
+
     def test_empty_ids_are_a_400(self, client) -> None:
         response = client.get("/books:batchGet?ids=")
         assert response.status_code == 400
