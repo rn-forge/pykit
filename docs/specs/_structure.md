@@ -17,6 +17,9 @@
   `## Context` section — never in the cell.
 - Open questions, as a `## Open questions` section on the epic or feature they
   block.
+- A story's brief, `epics/E<n>-<slug>/_briefs/S<n>.<m>.<k>.md`, one per story:
+  what an implementing agent needs, unpublished, and deleted when the story
+  closes ([Briefs](#briefs)).
 - Ideas not yet agreed as work, in `ideas/`: a row each in `ideas/index.md`, and
   a page beside the index, `ideas/<idea>.md`, for an idea its row cannot hold.
 - `epics/index.md`, the derived epic list. The specs tab lists every epic in
@@ -31,6 +34,7 @@
 | What a release carries beyond its scope | `releases/` |
 | History and evidence | the commit message |
 | A `progress.md`, `decisions.md` or `overview.md` | the epic, an ADR, or the README |
+| Build steps and verbatim code on a feature page | the story's brief |
 
 ## Work items
 
@@ -145,6 +149,89 @@ An epic design, `epics/E<n>-<slug>/design.md`, opens with what it covers and the
 feature that settles it into ADRs and implementation. Nothing in it is decided
 until it is.
 
+### Briefs
+
+A brief is a per-story build file, `epics/E<n>-<slug>/_briefs/S<n>.<m>.<k>.md`.
+The feature page keeps scope, acceptance and state; the brief holds the rest, so
+build lists and verbatim code never outlive the code they describe.
+
+- **Unpublished:** the `_` prefix keeps it off the site, and a published page
+  does not link to it.
+- **Self-contained:** it is written for a reader with no other context. It names
+  the commit its line references are at, and repeats any repository rule the
+  change could break.
+- **Precondition:** a brief is written only once the story's decisions are
+  settled. A decision still to be made stays its own story, so a brief never
+  asks its reader to decide. A brief for a decision story asks for the
+  reproduction and the comparison of options; the owner decides.
+- **Validation is split:** the implementer runs the full gate in its worktree
+  and records the results in the brief; the reviewer re-runs only the brief's
+  targeted tests after the merge, having read the diff and the results; the
+  full gate runs again once per feature, when it closes.
+- **Closing:** the commit that flips the story to `Closed (<date>)` deletes the
+  brief and adds at most one outcome line to the story, such as a measurement
+  its acceptance asked for. History keeps the brief.
+
+A brief, `epics/E<n>-<slug>/_briefs/S<n>.<m>.<k>.md`:
+
+```markdown
+# S<n>.<m>.<k> — <Title>
+
+Brief for [S<n>.<m>.<k>](../F<n>.<m>-<slug>.md#<anchor>), at `<commit>`.
+
+## Goal
+
+<one or two sentences: the change and why>
+
+## Settled
+
+<each decision this brief relies on, with its source: an ADR, a decision
+story, or the owner on a date. A contract settled here is copied into the
+story's acceptance when it closes.>
+
+## Current behaviour
+
+<what the code does now, with file:line references>
+
+## Change
+
+- **Change:** <files and what changes in each>
+- **Leave alone:** <files and areas the change must not touch>
+
+## Tests first
+
+<each test: its file, its name, what it asserts, and that it fails before the
+change>
+
+## Out of scope
+
+<what a reader might reasonably do here and must not>
+
+## Validation
+
+Run in the worktree, in order; each must exit 0:
+
+1. `task setup`
+1. `task format`
+1. <the targeted test commands>
+1. `task validate`
+
+## Review re-run
+
+<the targeted test commands the reviewer runs after the merge>
+
+## Rules
+
+- Do not commit, push, or edit any spec page except `## Result` below.
+- Do not edit a file whose header says kiln generated it.
+- Do not add a dependency.
+
+## Result
+
+<filled by the implementer: each validation command with its exit code, the
+files changed, and any deviation from this brief with its reason>
+```
+
 ## Naming
 
 - `epics/E<n>-<slug>/` directories; feature files `F<n>.<m>-<slug>.md`.
@@ -207,9 +294,12 @@ may name removed behaviour to say it is gone.
 **Working on and closing out work:**
 
 1. Starting: set the feature, and its epic, to `Active` with a `Start Date`, and
-   give the feature its `Iteration`.
+   give the feature its `Iteration`. Write a story's brief only once the
+   story's decisions are settled; the implementer records the full gate in it,
+   and the reviewer re-runs only its targeted tests ([Briefs](#briefs)).
 1. A story is `Closed (<date>)` when its acceptance holds; run the feature's
-   acceptance block, then flip the story's state.
+   acceptance block, then flip the story's state. The same commit deletes the
+   story's brief and adds at most one outcome line to the story.
 1. When every story is closed, the feature is `Closed` with its `Closed Date`;
    its `Iteration` stays. When every feature is closed, the epic is `Closed`
    with its `Closed Date` and the acceptance as run. Closed work is never

@@ -94,7 +94,7 @@ tasks:
       - task: python:typecheck
 
   test:
-    desc: Run each package's pytest suite.
+    desc: Run each package's pytest suite, or one package's with pytest arguments (pass -- <package> [args]).
     cmds:
       - task: python:test
 

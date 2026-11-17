@@ -5,10 +5,10 @@ version: "3"
 # standard's rules on the rest — run once, by `lint`. `doctor` is internal;
 # `diff` and `apply` are public, reached as `kiln:diff` and `kiln:apply`, and
 # pass their arguments through (`task kiln:diff -- --artifact Taskfile.yml`).
-# `pin` moves the repository to another kiln ref (`task kiln:pin -- <ref>`).
+# `pin` pins a branch's newest commit, a tag or a SHA (`task kiln:pin -- <ref>`); with no argument it follows `track`.
 
 vars:
-  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@feature/v1" kiln'
+  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@fc79b96f09335068267bfde142d8a86c674808f2" kiln'
 
 tasks:
   doctor:
@@ -31,11 +31,7 @@ tasks:
       - '{{.KILN}} apply {{.CLI_ARGS}}'
 
   pin:
-    desc: Move kiln to another ref (tag, branch or SHA) and re-render with it. Pass the ref after `--`.
-    preconditions:
-      - sh: '[ -n "{{.CLI_ARGS}}" ]'
-        msg: pass a kiln ref after --
+    desc: Pin kiln to a branch's newest commit, a tag or a SHA and re-render with it. Pass it after `--`; with none, follow `track`.
     cmds:
-      - 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@{{.CLI_ARGS}}" kiln version'
       - '{{.KILN}} pin {{.CLI_ARGS}}'
-      - 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@{{.CLI_ARGS}}" kiln apply'
+      - 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@$({{.KILN}} pin --show)" kiln apply'

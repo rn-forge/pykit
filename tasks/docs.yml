@@ -6,7 +6,7 @@ version: "3"
 # non-root public tasks the vocabulary allows (see .rn-forge/kiln/standard.md).
 
 vars:
-  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@feature/v1" kiln'
+  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@fc79b96f09335068267bfde142d8a86c674808f2" kiln'
 
 tasks:
   build:

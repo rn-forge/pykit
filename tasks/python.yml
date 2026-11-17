@@ -18,7 +18,7 @@ version: "3"
 vars:
   PACKAGE_DIRS: packages/rn-forge-commons packages/rn-forge-cli packages/rn-forge-django packages/rn-forge-fastapi packages/rn-forge-sqlalchemy packages/rn-forge-tooling packages/rn-forge-web packages/rn-forge-devops packages/rn-forge-data packages/rn-forge-auth
   PACKAGES: rn-forge-commons rn-forge-cli rn-forge-django rn-forge-fastapi rn-forge-sqlalchemy rn-forge-tooling rn-forge-web rn-forge-devops rn-forge-data rn-forge-auth
-  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@feature/v1" kiln-devops'
+  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@fc79b96f09335068267bfde142d8a86c674808f2" kiln-devops'
 
 tasks:
   install:
@@ -106,8 +106,25 @@ tasks:
     desc: Run each workspace package's pytest suite.
     internal: true
     cmds:
-      - for: {var: PACKAGE_DIRS, split: " "}
-        cmd: uv run --directory {{.ITEM}} --package {{base .ITEM}} pytest -q || [ $? -eq 5 ]
+      - |
+        set -euo pipefail
+        set -- {{.CLI_ARGS}}
+        if [ $# -eq 0 ]; then
+          for dir in {{.PACKAGE_DIRS}}; do
+            uv run --directory "$dir" --package "${dir##*/}" pytest -q || [ $? -eq 5 ]
+          done
+          exit 0
+        fi
+        package="$1"
+        shift
+        for dir in {{.PACKAGE_DIRS}}; do
+          if [ "${dir##*/}" = "$package" ]; then
+            uv run --directory "$dir" --package "$package" pytest -q "$@"
+            exit $?
+          fi
+        done
+        echo "task test: unknown package '$package'; one of: {{.PACKAGES}}" >&2
+        exit 1
 
   test:coverage:
     desc: Run each package's tests with coverage, then combine into one XML report.
