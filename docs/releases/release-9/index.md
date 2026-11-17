@@ -12,6 +12,9 @@ performance work starts with measurements. The
 [review and proposed design](../../specs/epics/E22-pykit-simplification/design.md)
 gives the evidence and tradeoffs.
 
+Defects and spec drift found while closing E22 are fixed before the cut
+([E24](../../specs/epics/E24-release-9-follow-ups/index.md)).
+
 [Back to releases](../index.md) ·
 [Release runbook](../../runbooks/releasing-packages.md)
 
@@ -38,6 +41,10 @@ gives the evidence and tradeoffs.
 | [F22.11 — SQLAlchemy bulk work with explicit bounds](../../specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md) | E22 | Closed |
 | [F22.12 — Tabular helpers without redundant copies](../../specs/epics/E22-pykit-simplification/F22.12-data.md) | E22 | Closed |
 | [F22.13 — Small release utilities with one metadata path](../../specs/epics/E22-pykit-simplification/F22.13-devops.md) | E22 | Closed |
+| [F24.1 — Django transfer at its limits](../../specs/epics/E24-release-9-follow-ups/F24.1-django-transfer-limits.md) | E24 | New |
+| [F24.2 — ID tokens refuse other profiles' types](../../specs/epics/E24-release-9-follow-ups/F24.2-id-token-type.md) | E24 | New |
+| [F24.3 — Declared CLI surfaces reject unknown keys](../../specs/epics/E24-release-9-follow-ups/F24.3-strict-cli-surface.md) | E24 | New |
+| [F24.4 — Specs and runbooks match the tree](../../specs/epics/E24-release-9-follow-ups/F24.4-spec-and-runbook-drift.md) | E24 | New |
 
 <!-- END derived scope -->
 
