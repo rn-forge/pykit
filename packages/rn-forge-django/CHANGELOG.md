@@ -20,6 +20,8 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ### Fixed
 
+- A tabular export no longer issues one query per row for foreign-key columns
+  when the viewset's queryset has no `select_related`.
 - More query or form fields (or files) than Django's upload limits is a 400
   problem instead of a 500.
 - Malformed `pageSize` values fall back to the default instead of causing a

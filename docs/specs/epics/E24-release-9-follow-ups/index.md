@@ -2,14 +2,15 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-17 |
+| **Closed Date** | 2026-11-17 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F24.1 — Django transfer at its limits](F24.1-django-transfer-limits.md) | Active | release-9 | 1 New · 1 Closed |
+| [F24.1 — Django transfer at its limits](F24.1-django-transfer-limits.md) | Closed | release-9 | 2 Closed |
 | [F24.2 — ID tokens refuse other profiles' types](F24.2-id-token-type.md) | Closed | release-9 | 1 Closed |
 | [F24.3 — Declared CLI surfaces reject unknown keys](F24.3-strict-cli-surface.md) | Closed | release-9 | 1 Closed |
 | [F24.4 — Specs and runbooks match the tree](F24.4-spec-and-runbook-drift.md) | Closed | release-9 | 1 Closed |

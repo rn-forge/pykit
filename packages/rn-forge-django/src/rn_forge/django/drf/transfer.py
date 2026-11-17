@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar, cast, override
 
 import tablib
+from django.core.exceptions import FieldDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.http import JsonResponse
@@ -132,6 +133,34 @@ def _tabular_response(
     )
 
 
+def _forward_relation_paths(model: Any, resource: Any) -> list[str]:
+    """Return the ``select_related`` paths for the forward relations *resource* reads."""
+    paths: list[str] = []
+    for field in cast(_AnyList, resource.get_export_fields()):
+        attribute = getattr(field, "attribute", None)
+        if not isinstance(attribute, str) or not attribute:
+            continue
+        current: Any = model
+        walked: list[str] = []
+        for segment in attribute.split("__"):
+            try:
+                relation: Any = current._meta.get_field(segment)
+            except FieldDoesNotExist:
+                break
+            if not (
+                relation.concrete
+                and relation.is_relation
+                and (relation.many_to_one or relation.one_to_one)
+            ):
+                break
+            walked.append(segment)
+            current = relation.related_model
+        path = "__".join(walked)
+        if path and path not in paths:
+            paths.append(path)
+    return paths
+
+
 def _max_rows() -> int | None:
     # The facade is rebuilt on setting_changed, so it is read through the module.
     return django_settings.rn_forge_django_settings.drf.transfer.max_rows
@@ -144,6 +173,8 @@ class ResourceExportMixin(ListModelMixin, GenericAPIView):
     ``filter_queryset()`` then ``export_resource_class().export()``. The result
     is not paginated. More rows than ``transfer.max_rows`` is a 422 problem
     naming the cap. Without a tabular ``Accept`` the JSON list is unchanged.
+    Forward foreign-key and one-to-one paths the resource reads are joined with
+    ``select_related``.
 
     Attributes:
         export_resource_class: An ``import_export.resources.Resource`` subclass.
@@ -180,6 +211,9 @@ class ResourceExportMixin(ListModelMixin, GenericAPIView):
         if cap is not None and queryset.count() > cap:
             return _problem_response(export_cap_problem(cap, instance=request.path))
         resource = self.get_export_resource()
+        paths = _forward_relation_paths(queryset.model, resource)
+        if paths:
+            queryset = queryset.select_related(*paths)
         dataset = cast(
             tablib.Dataset, resource.export(queryset, user=cast(Any, request).user)
         )

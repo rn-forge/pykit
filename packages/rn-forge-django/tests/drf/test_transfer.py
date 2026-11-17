@@ -25,6 +25,7 @@ from rn_forge.django.drf.transfer import (
     BatchUpdateMixin,
     ResourceExportMixin,
     ResourceImportMixin,
+    _forward_relation_paths,
     _indexed_errors,
 )
 from rn_forge.django.drf.views.base import BaseModelViewSet
@@ -748,7 +749,8 @@ def _post(client, path, body):
 class TestQueryCounts:
     """What a request costs in queries, as a function of its row count."""
 
-    def test_export_costs_the_same_for_any_number_of_rows(self, client) -> None:
+    @pytest.mark.parametrize("path", ["/shaped", "/members"])
+    def test_export_costs_the_same_for_any_number_of_rows(self, client, path) -> None:
         team = Team.objects.create(code="EAST")
 
         def seed(start, stop):
@@ -758,12 +760,15 @@ class TestQueryCounts:
             )
 
         def export():
-            return client.get("/shaped", headers={"Accept": "text/csv"})
+            return client.get(path, headers={"Accept": "text/csv"})
 
         seed(0, 3)
         small = _queries(export)
         seed(3, 12)
         assert _queries(export) == small
+
+    def test_forward_relation_paths_skip_columns_and_unknown_names(self) -> None:
+        assert _forward_relation_paths(Member, MemberExport()) == ["team"]
 
     def test_batch_get_costs_the_same_for_any_number_of_ids(self, client) -> None:
         ids = [book.pk for book in make_books(*[f"b{i}" for i in range(12)])]
