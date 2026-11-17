@@ -398,6 +398,79 @@ Invalidation leaves 16,000 entries and 16,000 version counters; its TTL-live
 count measures age only, not version validity. Its memory figures include both
 entries and counters and do not isolate counter allocation.
 
+### S22.8.1 authorization-context churn after the change
+
+Five sequential runs were collected on 2026-11-16 at checkout
+`25cbb473093df3d6f0ec4a4d5435d20424971689`, with the S22.8.1 changes
+uncommitted. Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 CPU cores (6
+performance and 4 efficiency), 16 GB RAM; macOS 27.2.1 (26B131), arm64; Python
+3.14.2; uv 0.13.8 (reported by the validation build). No other jobs were
+launched by this agent during measurement; machine idle status was not verified.
+
+Each run used
+`unset VIRTUAL_ENV; PYKIT_MEASURE_OUT=/tmp/S22.8.1-after/run-$n PYTEST_ADDOPTS='tests/measure/test_context_churn.py' task test PACKAGE_DIRS=packages/rn-forge-auth`
+for `n=1,2,3,4,5`. Each exited 0 with five passed cases and five records. Raw
+records: `/tmp/S22.8.1-after/run-{1,2,3,4,5}/results.jsonl` (25 total).
+
+The workload and harness are unchanged from S22.8.4: a 60 s TTL, one second per
+fresh account, with invalidation or 20 recurring accounts where indicated.
+Paired cells below show S22.8.4 baseline → S22.8.1 after; single values are
+unchanged. Wall times and counts are medians of five runs; peak bytes and the
+last lock column are maxima across runs. Memory is traced Python allocation, not
+process RSS. Lock holds are inflated by `tracemalloc` and compare only within
+this harness; only the entry lock is timed, not the version-counter lock. These
+observations are not thresholds.
+
+| Case | Accounts / steps | Wall (s) | Peak bytes (max) | Retained bytes (median) |
+| -- | -: | -: | -: | -: |
+| Plain | 1,000 | 0.008551709 → 0.008212417 | 437,212 → 33,877 | 436,878 → 25,152 |
+| Plain | 4,000 | 0.030114625 → 0.033203375 | 1,732,990 → 33,937 | 1,598,550 → 25,212 |
+| Plain | 16,000 | 0.137117000 → 0.127250125 | 6,846,758 → 28,277 | 6,787,846 → 25,272 |
+| Invalidated | 16,000 | 0.140850084 → 0.137095542 | 7,261,894 → 1,185,100 | 7,202,870 → 1,178,366 |
+| Hot (20 accounts) | 16,000 | 0.219739542 → 0.205115709 | 6,927,852 → 41,459 | 6,797,548 → 31,518 |
+
+| Case | Accounts / steps | Entries q1 / q2 / q3 / q4 | Entries end | TTL-live end | Version accounts | Provider calls |
+| -- | -: | -- | -: | -: | -: | -: |
+| Plain | 1,000 | 250 / 500 / 750 / 1,000 → 60 / 60 / 60 / 60 | 1,000 → 60 | 60 | — | — |
+| Plain | 4,000 | 1,000 / 2,000 / 3,000 / 4,000 → 60 / 60 / 60 / 60 | 4,000 → 60 | 60 | — | — |
+| Plain | 16,000 | 4,000 / 8,000 / 12,000 / 16,000 → 60 / 60 / 60 / 60 | 16,000 → 60 | 60 | — | — |
+| Invalidated | 16,000 | 4,000 / 8,000 / 12,000 / 16,000 → 60 / 60 / 60 / 60 | 16,000 → 60 | 60 | 16,000 | — |
+| Hot (20 accounts) | 16,000 | 4,020 / 8,020 / 12,020 / 16,020 → 80 / 80 / 80 / 80 | 16,020 → 80 | 80 | — | 21,340 |
+
+| Case | Accounts / steps | Lock acquisitions | Hold total (s, median) | Hold max (s, median) | Hold max (s, maximum) |
+| -- | -: | -: | -: | -: | -: |
+| Plain | 1,000 | 2,000 | 0.001504556 → 0.002909271 | 0.000009916 → 0.000016958 | 0.000020708 → 0.000023250 |
+| Plain | 4,000 | 8,000 | 0.004812193 → 0.012166388 | 0.000014916 → 0.000027333 | 0.000023375 → 0.000043417 |
+| Plain | 16,000 | 32,000 | 0.021412113 → 0.046389403 | 0.000050791 → 0.000041458 | 0.000076292 → 0.000077416 |
+| Invalidated | 16,000 | 32,000 | 0.022043150 → 0.046045244 | 0.000044458 → 0.000043042 | 0.000055959 → 0.000648375 |
+| Hot (20 accounts) | 16,000 | 53,340 | 0.034928622 → 0.066478913 | 0.000049667 → 0.000056542 | 0.000076541 → 0.000070542 |
+
+Median lock hold totals are higher in every case: plain 1,000 by 0.001404715 s
+(93.4%), plain 4,000 by 0.007354195 s (152.8%), plain 16,000 by 0.024977290 s
+(116.7%), invalidated by 0.024002094 s (108.9%), and hot by 0.031550291 s
+(90.3%). The sweep adds work under the existing lock. Median maximum holds are
+higher for plain 1,000 by 0.000007042 s (71.0%), plain 4,000 by 0.000012417 s
+(83.2%), and hot by 0.000006875 s (13.8%); they are lower for plain 16,000 by
+0.000009333 s (18.4%) and invalidated by 0.000001416 s (3.2%). Acquisitions are
+unchanged in all five cases.
+
+After a miss, entries are bounded by the accounts resolved within one TTL: plain
+churn retains 60 entries, all TTL-live; hot churn retains 80, all TTL-live. An
+idle cache keeps its last entries until the next miss, and hits do not refresh
+`stored_at`. A burst of N distinct accounts inside one TTL retains N entries;
+there is no hard cap. Concurrent inserts can leave an expired entry behind a
+live front entry until a later sweep reaches it.
+
+Version counters are not pruned: invalidated churn still retains 16,000 counters
+and 1,178,366 B (about 1.18 MB), despite only 60 entries. TTL-live counts
+measure age, not version validity; retained memory includes both entries and
+counters and does not isolate counter allocation.
+
+Single-flight was not added: there is no measured need. Hot churn still makes
+21,340 provider calls (16,000 cold and 5,340 hot), and the sweep adds neither
+provider calls nor lock acquisitions. Concurrent misses for the same account
+still each call the provider.
+
 ### 9bcf9b0 S22.10.3 FastAPI transfer baseline
 
 Collected on 2026-11-16 at commit `9bcf9b0e6b4b6bb4a4c7ad2ec409e30a7f62d17a`,

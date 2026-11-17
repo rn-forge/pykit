@@ -135,18 +135,60 @@ def test_shared_versions_invalidate_across_caches():
     assert store.calls == 3
 
 
-def test_entries_of_accounts_no_longer_requested_are_retained_today():
+def test_retention_is_bounded_by_accounts_resolved_within_one_ttl():
     cache, _, clock = make()
-    # S22.8.1 replaces this characterization of the current retention behaviour.
     for index in range(2000):
         clock.now = float(index)
         cache.resolve(f"a{index}")
+        assert len(cache._entries) == min(index + 1, 60)
 
-    assert len(cache._entries) == 2000
-    assert (
-        sum(clock.now - entry.stored_at < 60.0 for entry in cache._entries.values())
-        == 60
-    )
-
+    clock.now = 2000.0
     cache.resolve("a0")
-    assert len(cache._entries) == 2000
+    assert len(cache._entries) == 60
+
+
+def test_reinserted_entry_moves_to_the_back():
+    cache, store, _ = make()
+    cache.resolve("a")
+    cache.resolve("b")
+    cache.invalidate("a")
+    cache.resolve("a")
+    assert list(cache._entries) == ["b", "a"]
+    assert store.calls == 3
+
+
+def test_expired_entry_is_removed_by_a_later_insert():
+    cache, store, clock = make(ttl=timedelta(seconds=10))
+    cache.resolve("a")
+    clock.now = 10.0
+    cache.resolve("b")
+    assert list(cache._entries) == ["b"]
+    cache.resolve("a")
+    assert store.calls == 3
+
+
+def test_version_counters_are_not_pruned_with_entries():
+    cache, _, clock = make()
+    cache.resolve("a")
+    cache.invalidate("a")
+    for index in range(1, 200):
+        clock.now = float(index)
+        cache.resolve(f"b{index}")
+    assert "a" not in cache._entries
+    assert cache._versions.current("a") == (1, 0)
+
+
+def test_bump_during_provider_resolution_leaves_the_entry_stale():
+    store = Store()
+    versions = InMemoryAuthorizationVersions()
+
+    class Racing:
+        def resolve(self, account_id: str) -> AuthorizationContext:
+            context = store.resolve(account_id)
+            versions.bump(account_id)
+            return context
+
+    cache = AuthorizationContextCache(Racing(), versions=versions)
+    cache.resolve("a")
+    cache.resolve("a")
+    assert store.calls == 2

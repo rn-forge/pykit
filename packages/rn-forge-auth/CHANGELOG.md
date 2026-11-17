@@ -13,6 +13,8 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Changed
 
+- The authorization-context cache drops expired entries when it next stores one,
+  bounding entries held by the accounts resolved within one TTL.
 - In-memory replay, transaction and session stores sweep expired records only
   when one can have expired, instead of on every call.
 - Session ID tokens and login transaction state, nonce and PKCE verifier no
