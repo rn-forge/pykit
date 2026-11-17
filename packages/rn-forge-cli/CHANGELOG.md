@@ -13,6 +13,8 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ### Fixed
 
+- Square brackets that are not Rich markup, such as `[kiln]`, show in a declared
+  command's `--help` instead of being dropped.
 - Restore the console mode after each invocation, including failed and nested
   commands.
 - Honor explicit logging level and file options on each invocation, preserving

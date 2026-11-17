@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import inspect
+import re
 from collections.abc import Mapping, Sequence
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Self
 
 import typer
+from rich.errors import StyleSyntaxError
+from rich.style import Style
 from rn_forge.cli.options import (
     CliOptions,
     JsonOption,
@@ -32,6 +36,27 @@ from typer._click.exceptions import ClickException, UsageError
 __all__ = ["CliApp", "ExitCode", "run"]
 
 _LOGGER = AppLogger.get_logger(__name__)
+
+_BRACKET_GROUP = re.compile(r"\[([^\[\]]*)\]")
+
+
+def _escape_markup(text: str) -> str:
+    """Escape each ``[...]`` group in *text* that is not Rich markup.
+
+    A group stays markup when it is a closing tag or parses as a Rich style.
+    """
+
+    def escape(match: re.Match[str]) -> str:
+        content = match.group(1)
+        if not content or content.startswith("/"):
+            return match.group(0)
+        try:
+            Style.parse(content)
+        except StyleSyntaxError:
+            return "\\" + match.group(0)
+        return match.group(0)
+
+    return _BRACKET_GROUP.sub(escape, text)
 
 
 class ExitCode(IntEnum):
@@ -206,7 +231,7 @@ class CliApp(typer.Typer):
         """Build the application an already-parsed *surface* describes."""
         app = cls(
             surface.name,
-            surface.help,
+            _escape_markup(surface.help) if surface.help else surface.help,
             default_log_level=surface.default_log_level,
             **typer_kwargs,
         )
@@ -235,8 +260,15 @@ class CliApp(typer.Typer):
                 command.target,
                 error,
             ) from error
+        text = command.help
+        if text is None:
+            if isinstance(target, typer.Typer):
+                text = target.info.help if isinstance(target.info.help, str) else None
+            elif callable(target):
+                text = inspect.getdoc(target)
+        help_text = _escape_markup(text) if text else None
         if isinstance(target, typer.Typer):
-            self.add_typer(target, name=command.name, help=command.help)
+            self.add_typer(target, name=command.name, help=help_text)
             return
         if not callable(target):
             raise AppException(
@@ -244,7 +276,7 @@ class CliApp(typer.Typer):
                 command.name,
                 command.target,
             )
-        self.command(name=command.name, help=command.help)(target)
+        self.command(name=command.name, help=help_text)(target)
 
     def run(self, args: Sequence[str] | None = None, **kwargs: Any) -> int:
         """Invoke this application and return its exit code. See :func:`run`."""

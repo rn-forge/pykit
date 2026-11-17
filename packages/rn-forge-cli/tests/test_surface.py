@@ -8,6 +8,7 @@ import pytest
 import typer
 from rn_forge.cli import CliApp, CliSurface, CommandSurface, ExitCode, LogLevel, run
 from rn_forge.commons.exceptions import AppException
+from typer.testing import CliRunner
 
 # Command implementations the declared surfaces below point at. They are
 # ordinary functions and an ordinary Typer app: nothing here knows it is being
@@ -26,6 +27,10 @@ nested = typer.Typer()
 def inner() -> None:
     """A command in a namespace."""
     print("inner ran")
+
+
+def bracketed() -> None:
+    """Set the current repository's `[kiln] ref`, and [bold]bold[/bold] [project] name."""
 
 
 sys.modules.setdefault("rn_forge_cli_test_commands", sys.modules[__name__])
@@ -199,6 +204,38 @@ class TestFromConfig:
         path.write_text(CONFIG)
         assert CliApp.from_config(path).run(["greet", "world"]) == ExitCode.OK
         assert "hello world" in capsys.readouterr().out
+
+
+class TestHelpText:
+    @staticmethod
+    def _help(tmp_path, monkeypatch, *args, entry_help=""):
+        monkeypatch.setenv("COLUMNS", "200")
+        path = tmp_path / "config.toml"
+        path.write_text(
+            f'[cli]\nname = "demo"\n\n[[cli.commands]]\nname = "set"\n'
+            f'{entry_help}target = "{HERE}:bracketed"\n'
+        )
+        result = CliRunner().invoke(CliApp.from_config(path), [*args, "--help"])
+        return result.output
+
+    def test_brackets_show_in_the_command_help(self, tmp_path, monkeypatch):
+        out = self._help(tmp_path, monkeypatch, "set")
+        assert "`[kiln] ref`" in out
+        assert "[project] name" in out
+
+    def test_brackets_show_in_the_command_list(self, tmp_path, monkeypatch):
+        assert "[kiln] ref" in self._help(tmp_path, monkeypatch)
+
+    def test_rich_style_tags_still_style(self, tmp_path, monkeypatch):
+        out = self._help(tmp_path, monkeypatch, "set")
+        assert "bold" in out
+        assert "[bold]" not in out
+
+    def test_an_explicit_help_keeps_its_brackets(self, tmp_path, monkeypatch):
+        out = self._help(
+            tmp_path, monkeypatch, "set", entry_help='help = "Reads [project] name."\n'
+        )
+        assert "Reads [project] name." in out
 
 
 def _commands():
