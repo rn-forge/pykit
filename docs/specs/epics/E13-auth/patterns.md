@@ -470,14 +470,7 @@ configuration.
 
 ## Where this design sits
 
-| Catalog entry | Position in design.md |
-| -- | -- |
-| OIDC, OAuth 2.0 social, local, development providers | Adapters behind `IdentityProvider` ([Contracts](design.md#contracts)); SAML through a broker ([SAML identity providers](design.md#saml-identity-providers)) |
-| Broker | Recommended profile, with direct federation as first-class ([Deployment profiles](design.md#deployment-profiles)) |
-| Account linking | On (issuer, subject); email only when verified and authoritative ([Account linking](design.md#account-linking)) |
-| Browser carriage | BFF with a server session ([Sessions and cookies](design.md#sessions-and-cookies)) |
-| Machine carriage | Bearer JWTs from an authorization server, verified by `OidcAuthenticator`; pykit never mints tokens ([Machine clients](design.md#machine-clients-and-downstream-services)) |
-| Logout | RP-initiated and back-channel ([Logout](design.md#logout)) |
-| Authorization | Permissions as the unit, RBAC with ABAC through `ResourcePolicy`, computed per request ([Authorization model](design.md#authorization-model)) |
-| Passkeys, magic links, API keys, opaque tokens, refresh tokens, DPoP, ReBAC, policy engines | Positions in [Goals and non-goals](design.md#goals-and-non-goals), [Machine clients](design.md#machine-clients-and-downstream-services) and [Authorization model](design.md#authorization-model) |
-| The three-layer split | [Layers](design.md#layers) |
+Each pattern's position in this design is in [the design](design.md): the
+adapters, the broker profile, account linking, the browser and machine carriage,
+logout and the authorization model. The shipped behaviour is documented in the
+`rn-forge-auth` guides.

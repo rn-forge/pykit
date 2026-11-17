@@ -16,81 +16,35 @@ structure, and the owner answered the open questions on 2026-10-15.
 
 ## Problem
 
-The problem in `rn-forge-commons` is its extras plumbing and its cohesion, not
-its install size.
-
-- **Base install.** Five small libraries: `ruamel.yaml`, `tomlkit`,
-  `verboselogs`, `rich` and `dacite`. Importing `rn_forge.commons`, its
-  logging or its config loads none of the optional libraries (verified).
-- **Nine extras.** `auth`, `json`, `structlog`, `resilience`, `excel`, `otel`,
-  `pandas`, `pydantic` and `testing`, plus `all`.
-- **Who asks for them.** Only pykit's own packages and kiln, which uses
-  `rn-forge-commons[pydantic]`. No kiln golden depends on a commons extra.
-
-The plumbing between pykit's framework packages is where it breaks down.
-
-| Commons extra | Requested by | Note |
-| -- | -- | -- |
-| `pydantic` | `rn-forge-web` (base), kiln | Web needs it for every install. |
-| `auth` | `rn-forge-web[auth]`, `rn-forge-django[oidc]`, then `rn-forge-fastapi[oidc]` through web | A chain three hops long. E13 replaces it. |
-| `excel` | `rn-forge-fastapi[transfer]`, `rn-forge-django[fixtures]` | `rn_forge.django.drf.transfer` imports `rn_forge.commons.data.excel.write_xlsx`, but django's `transfer` extra does not declare `rn-forge-commons[excel]`. It works only because `django-import-export[xlsx]` brings openpyxl. `rn_forge.fastapi.transfer` imports the same `write_xlsx` and does declare `rn-forge-commons[excel]`. |
-| `pandas` | `rn-forge-django[fixtures]` | The heaviest dependency set in the workspace (pandas and numpy). |
-| `resilience` | nobody | No import in pykit or kiln. |
-| `json`, `structlog`, `otel` | applications | Logging back ends. They belong with logging. |
-| `testing` | test suites | A dev-time extra. |
+The problem in `rn-forge-commons` was its extras plumbing and its cohesion, not
+its install size: nine extras, requested only by pykit's own packages and kiln,
+and a chain of extras between the framework packages (`rn-forge-web[auth]` to
+`rn-forge-django[oidc]` to `rn-forge-fastapi[oidc]`). The `resilience` extra has
+no consumer, and the `excel` and `pandas` extras are requested by the framework
+packages' transfer and fixtures extras. The moves below resolve this.
 
 ## Commons, module by module
 
-Line counts come from `wc -l` on `packages/rn-forge-commons/src`. Consumers come
-from searching every package's `src` for imports, plus kiln's `src`.
-
-| Area | Lines | Third-party | Used by | Verdict |
-| -- | -- | -- | -- | -- |
-| `lang`, `fs`, `runtime`, `config`, `exceptions`, `findings` | about 5,300 | base only | cli, tooling, django, web, kiln | Keep. |
-| `logging` and the `json`, `structlog`, `otel` extras | 1,280 | optional back ends | every package | Keep. |
-| `lang/models` (`pydantic` extra) | 146 | pydantic | web, kiln | Keep. |
-| `testing` | 143 | assertpy, pytest | test suites | Keep. |
-| `integration/messaging`, `objects`, `secrets` | 279 | none | django (messaging) | Keep as dependency-free protocols. |
-| `integration/resilience` | 316 | httpx, purgatory, stamina | nobody | Keep as an extra until it has a consumer. |
-| `integration/auth` | 277 | pyjwt[crypto] | web, django | Move to `rn-forge-auth`. |
-| `data/excel`, `data/pandas` | 675 | openpyxl, tablib, pandas | django transfer and fixtures, fastapi transfer | Move to `rn-forge-data`. |
+Commons keeps `lang`, `fs`, `runtime`, `config`, `exceptions`, `findings`,
+`logging` and its back-end extras, `lang/models`, `testing`, the dependency-free
+`integration` protocols and `integration/resilience` (as an extra until it has a
+consumer). `integration/auth` moves to `rn-forge-auth`, and `data/excel` and
+`data/pandas` move to `rn-forge-data`.
 
 ## The rule
 
-[ADR-0011](../../../adr/ADR-0011.md) records the decision. A part becomes a
-package only when it passes all three tests:
-
-1. A distinct dependency set, heavy or security-sensitive enough that a consumer
-   should choose it on purpose.
-1. A consumer today, not an expected one.
-1. One audience: the people who install it want all of it, so it needs few or no
-   extras of its own.
-
-Every package has a fixed cost here: a tag and a pin
-([ADR-0004](../../../adr/ADR-0004.md)), a CI verify job, a MkDocs site, a
-changelog and a slot in the release batch, a pin bump in every consumer on each
-release, and an entry in kiln's archetype allowed lists and its `rn-forge-deps`
-check. A part that fails any test stays in commons, behind an extra if it has
-dependencies.
+[ADR-0011](../../../adr/ADR-0011.md) records the decision: a part becomes a
+package only when it has a distinct dependency set, a consumer today and one
+audience, and the fixed cost of a package ([ADR-0004](../../../adr/ADR-0004.md))
+is why a part that fails any test stays in commons.
 
 ## Adapter structure
 
-A new package is useful only if the next adapter does not force a refactor.
-Every package that integrates with external systems takes one shape.
-
-- **The core** holds protocols, data types and neutral logic. It has no
-  third-party dependency beyond its rn-forge base.
-- **Each adapter** is its own module or subpackage, `rn_forge.<pkg>.<adapter>`,
-  behind an extra named after it. The core never imports an adapter. An
-  `.importlinter` forbidden contract per package enforces it. Adapters import
-  the core.
-- **The facade.** The curated `__init__` re-exports the core only. Adapter
-  modules are imported directly ([ADR-0003](../../../adr/ADR-0003.md)).
-- **Framework packages** (`rn-forge-django`, `rn-forge-fastapi`,
-  `rn-forge-sqlalchemy`) bind a package through their own extra, which names
-  `rn-forge-<pkg>[<adapter>]`. They never list commons extras.
-- **Adding an adapter** is a new module, a new extra, a docs page and tests. The
-  core's public API does not change.
+[ADR-0011](../../../adr/ADR-0011.md) records the structure every package that
+integrates with external systems takes: a core, adapters behind extras, a facade
+that re-exports the core only, and framework packages that name
+`rn-forge-<pkg>[<adapter>]`. A new package is useful only if the next adapter
+does not force a refactor.
 
 | Package | Core | Adapters (extra) |
 | -- | -- | -- |
@@ -103,182 +57,46 @@ where the shape is cheapest to get right.
 
 ## Today's map and target map
 
-Solid lines are base dependencies. Dashed lines are dependencies an extra adds.
-Every dashed line is something a framework package's maintainer has to keep in
-sync.
-
-```mermaid
-flowchart BT
-  CO["rn-forge-commons<br/>9 extras"]
-  CLI["rn-forge-cli"] --> CO
-  TO["rn-forge-tooling"] --> CLI
-  WE["rn-forge-web"] -->|"[pydantic]"| CO
-  WE -.->|"[auth] extra → commons[auth]"| CO
-  SA["rn-forge-sqlalchemy"] --> WE
-  FA["rn-forge-fastapi"] -->|"[security]"| WE
-  FA -.->|"[transfer] → commons[excel]"| CO
-  DJ["rn-forge-django"] --> WE
-  DJ --> CO
-  DJ -.->|"[oidc] → web[auth], commons[auth]<br/>[fixtures] → commons[excel,pandas]"| CO
-```
-
-Framework packages then name a package instead of a list of commons extras.
-Commons drops from nine extras to six, and loses its two heaviest dependency
-sets: pandas and the crypto and JWT stack. `rn-forge-auth` depends on
-`rn-forge-web`, following
+The package map after the split is in the
+[workspace architecture](../../../architecture/workspace.md). Framework packages
+name a package instead of a list of commons extras, so commons drops from nine
+extras to six and loses its two heaviest dependency sets: pandas and the crypto
+and JWT stack. `rn-forge-auth` depends on `rn-forge-web`, following
 [E13's package placement](../E13-auth/design.md#package-placement).
-
-```mermaid
-flowchart BT
-  CO["rn-forge-commons<br/>lang · fs · runtime · config · logging<br/>protocols · extras: json structlog otel pydantic resilience testing"]
-  CLI["rn-forge-cli"] --> CO
-  TO["rn-forge-tooling"] --> CLI
-  WE["rn-forge-web<br/>HTTP wire contract only"] --> CO
-  AU["rn-forge-auth (new)<br/>tokens · Principal · adapters<br/>extras: oidc redis"] --> WE
-  DA["rn-forge-data (new)<br/>Excel · pandas · workbook-to-rows"] --> CO
-  SA["rn-forge-sqlalchemy"] --> WE
-  FA["rn-forge-fastapi"] --> WE
-  FA -.->|"[auth]"| AU
-  FA -.->|"[transfer]"| DA
-  DJ["rn-forge-django"] --> WE
-  DJ -.->|"[auth]"| AU
-  DJ -.->|"[transfer] [fixtures]"| DA
-```
-
-The extra names in the target map are illustrative.
-[F13.2](../E13-auth/F13.2-auth-package.md) and [F15.3](F15.3-data-package.md)
-settle them.
 
 ## rn-forge-auth contents
 
 [E13's package placement](../E13-auth/design.md#package-placement) decides why
-auth is a separate package. This section lists what E13's F13.2 moves. Of the
-commons token code, F13.2 moves only what E13's
-[library evaluation](../E13-auth/design.md#library-evaluation) keeps, and
-deletes the rest.
-
-| From | Moves to `rn-forge-auth` |
-| -- | -- |
-| `rn_forge.commons.integration.auth` (277 lines) | `JwtVerifier`, `JwksCache`, `discover_oidc`, `fetch_json` |
-| `rn_forge.web.auth` | `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer`, `principal_from_claims` |
-| `rn_forge.web.oidc` | `OidcAuthenticator` |
-
-`rn-forge-web` keeps the wire contract: `Credentials`, `parse_authorization`,
-`challenge_header`, `AUTH_FAILED_DETAIL`, `AuthenticationFailed`,
-`PermissionDenied` and the problem responses.
-
-Package wiring after the move:
-
-- `rn-forge-auth` depends on `rn-forge-web`, which depends on `rn-forge-commons`
-  (auth, then web, then commons).
-- Commons loses its `auth` extra. Web loses its `auth` extra.
-- Django's `oidc` extra and FastAPI's `oidc` extra repoint to `rn-forge-auth`.
-- Django's `jwt` extra and the simplejwt flows are removed by E13, not E15.
+auth is a separate package, and [F13.2](../E13-auth/F13.2-auth-package.md) moved
+the token code, `Principal`, `Requirement` and `OidcAuthenticator` into it.
+`rn-forge-web` kept the wire contract. Django's `jwt` extra and the simplejwt
+flows are removed by E13, not E15.
 
 ## rn-forge-data contents
 
-| From | Moves to `rn-forge-data` |
-| -- | -- |
-| `rn_forge.commons.data.excel` (527 lines; openpyxl, tablib) | `ExcelAdapter`, `write_xlsx` and the workbook helpers |
-| `rn_forge.commons.data.pandas` (148 lines; pandas) | `PandasUtils` |
-| `rn_forge.commons.lang.types` | The pandas aliases: the guarded `pandas` import, `SeriesRow`, `series_value` and `series_columns` |
-
-Proposed shape: base dependencies are `openpyxl` and `tablib[xlsx]`, and a
-`pandas` extra holds pandas. `ExcelAdapter` converts between workbooks and
-DataFrames, so it lives in the `rn_forge.data.pandas` adapter with
-`PandasUtils`, and the core never imports pandas.
-
-Commons loses its `excel` and `pandas` extras, which takes it from nine extras
-to six: `json`, `structlog`, `otel`, `pydantic`, `resilience` and `testing`. The
-root development group's `rn-forge-commons[excel]` entry is replaced.
-
-Callers to repoint (a search of every package's `src` finds no other import of
-`data.excel` or `data.pandas`, and no commons module imports them):
-
-| Caller | Imports | Extra after the move |
-| -- | -- | -- |
-| `rn_forge.django.drf.transfer` | `write_xlsx` | `transfer` names `rn-forge-data`. This fixes the undeclared openpyxl dependency. |
-| `rn_forge.django.fixtures` | `ExcelAdapter`, `PandasUtils` | `fixtures` names `rn-forge-data[pandas]`. |
-| `rn_forge.fastapi.transfer` | `write_xlsx` | `transfer` names `rn-forge-data`. |
+[F15.3](F15.3-data-package.md) moved the Excel and pandas code into
+`rn-forge-data`: base dependencies `openpyxl` and `tablib[xlsx]`, and a `pandas`
+extra, with `ExcelAdapter` in the `rn_forge.data.pandas` adapter so the core
+never imports pandas. Commons lost its `excel` and `pandas` extras, and the
+Django and FastAPI transfer and fixtures extras name `rn-forge-data`, which
+fixed Django's undeclared openpyxl dependency.
 
 ## What a new package needs in this workspace
 
-[Adding a package](../../../runbooks/adding-a-package.md) is the procedure. For
-`rn-forge-<x>`:
-
-- `packages/rn-forge-<x>/` with a `pyproject.toml` that pins internal
-  dependencies to direct-URL tags ([ADR-0004](../../../adr/ADR-0004.md)), a
-  `README.md`, a `CHANGELOG.md`, `docs/` and a standalone strict `mkdocs.yml`.
-- `src/rn_forge/<x>/__init__.py`, the curated facade, and a `py.typed` marker.
-- `tests/` mirroring the source layout, with no `__init__.py`.
-- The root `pyproject.toml`: a `[tool.uv.workspace].members` entry, the root
-  development group and local `[tool.uv.sources]`. Pyright already includes
-  `packages`, so it needs no edit.
-- `.importlinter`: add the package to `root_packages` and to the `web-layers`
-  contract, plus its forbidden contract that the core never imports an
-  adapter.
-- The combined site: a nav entry in the root `mkdocs.yml`, the package's source
-  path under `mkdocstrings`, and its row in `docs/index.md`.
-- The root `README.md` package table, `docs/architecture/workspace.md` and
-  `docs/guides/choosing-packages.md`.
-- CI: [F14.1](../E14-workspace-automation/F14.1-discovered-pipeline.md) plans
-  jobs from the workspace manifests, so the workflow needs no edit. A
-  `[tool.workspace-ci.smoke]` table is needed for any extra that needs an
-  isolated install check, as `rn-forge-django` has. Neither new package needs
-  a PostgreSQL table.
-- The first version is `0.1.0`, tagged `rn-forge-<x>-v0.1.0`.
+[Adding a package](../../../runbooks/adding-a-package.md) is the procedure for a
+new workspace member.
 
 ## Consumers
 
-What each kiln golden installs, from `uv export --no-dev --frozen` in each
-golden:
-
-```mermaid
-flowchart LR
-  LIB["python-lib"] --> CO["commons"]
-  APP["python-app"] --> CO
-  APP --> CLI["cli"]
-  TOOL["python-tool"] --> CO
-  TOOL --> CLI
-  TOOL --> TO["tooling"]
-  API["python-web-api<br/>backend=fastapi"] --> CO
-  API --> CLI
-  API --> WE["web"]
-  API --> FA["fastapi"]
-  WAPP["python-web-app<br/>fastapi + angular"] --> CO
-  WAPP --> CLI
-  WAPP --> WE
-  WAPP --> FA
-  KILN["kiln itself"] -->|"[pydantic]"| CO
-  KILN --> CLI
-  KILN --> TO
-```
-
-| Golden | rn-forge packages | Runtime closure | Third-party it brings |
-| -- | -- | -- | -- |
-| `python-lib` | commons (required); tooling allowed | — | The golden's own members declare none; a real library gets the commons base. |
-| `python-app` | commons, cli | 14 | rich, typer, ruamel-yaml, tomlkit, dacite, verboselogs and their transitive dependencies |
-| `python-tool` | commons, cli, tooling | 16 | Adds jinja2 and markupsafe |
-| `python-web-api` (fastapi) | commons, cli, web, fastapi | 37 | Adds fastapi, starlette, anyio, pydantic, secure, six OpenTelemetry packages and wrapt |
-| `python-web-app` (fastapi and angular) | same as `python-web-api` | 37 | Same backend; the frontend is pnpm |
-
 Kiln builds the allowed rn-forge set from the archetype's list, the chosen
-backend framework and, for lifecycle, tooling
-(`src/rn_forge/kiln/archetypes/__init__.py`, lines 117 to 124). The goldens are
-unaffected by today's commons extras and stay unaffected after the split. A web
-golden picks up `rn-forge-auth` when it turns auth on and `rn-forge-data` when
-it turns import and export on. Kiln's composed allowed set is where those
-choices are expressed.
-
-Kiln follow-ups belong to kiln's own backlog and, per
-[ADR-0008](../../../adr/ADR-0008.md), do not gate pykit:
-
-- Allow `rn-forge-auth` and `rn-forge-data` in the web archetypes' composition
-  when a project turns auth or import and export on.
-- Update kiln's `standard.md.j2` package description.
-
-The goldens pin pykit to `@main`, not to the release tags that
-[ADR-0004](../../../adr/ADR-0004.md) describes. That is fine for goldens that
+backend framework and, for lifecycle, tooling. The goldens are unaffected by
+commons extras. A web golden picks up `rn-forge-auth` when it turns auth on and
+`rn-forge-data` when it turns import and export on. Kiln follow-ups belong to
+kiln's own backlog and, per [ADR-0008](../../../adr/ADR-0008.md), do not gate
+pykit: allow `rn-forge-auth` and `rn-forge-data` in the web archetypes'
+composition, and update kiln's `standard.md.j2` package description. The goldens
+pin pykit to `@main`, not to the release tags that
+[ADR-0004](../../../adr/ADR-0004.md) describes, which is fine for goldens that
 track the pykit branch under test, but generated repositories need tags.
 
 ## Framework-neutral areas still in rn-forge-django

@@ -222,161 +222,27 @@ flowchart TB
 
 ## Contracts
 
-This is a sketch of the framework-neutral types in `rn-forge-auth` (see
-[Package placement](#package-placement)). The core modules are `identity`
-(`ProviderKind`, `ExternalIdentity`, `LoginTransaction`, `LoginStart`,
-`SessionInfo`, `IdentityProvider`), `accounts` (`AccountResolver`,
-`AccountRejected`), `context` (`AuthorizationContext`,
-`AuthorizationContextProvider`) and `policy` (`ResourcePolicy`), all re-exported
-by `rn_forge.auth`.
-
-```python
-ProviderKind = Literal["oidc", "oauth2", "password", "development"]
-
-
-@dataclass(frozen=True)
-class LoginTransaction:
-    id: str                       # opaque handle the transaction cookie carries
-    provider: str
-    return_to: str
-    created_at: datetime
-    state: str | None = None
-    nonce: str | None = None
-    code_verifier: str | None = None
-    extra: Mapping[str, str] = field(default_factory=dict)  # provider-specific
-
-
-@dataclass(frozen=True)
-class LoginStart:
-    transaction: LoginTransaction
-    redirect_url: str | None      # None: the provider takes a form (password)
-
-
-@dataclass(frozen=True)
-class SessionInfo:                # the session content; identity only, no store
-    account_id: str
-    session_version: int
-    provider: str
-    issuer: str
-    external_subject: str
-    created_at: datetime
-    expires_at: datetime          # absolute timeout
-    auth_time: datetime | None = None
-    amr: frozenset[str] = frozenset()
-    session_ref: str | None = None
-    id_token: str | None = None
-
-
-@dataclass(frozen=True)
-class ExternalIdentity:
-    provider: str                 # configured provider id, e.g. "workspace"
-    issuer: str                   # OIDC iss, or "local"
-    subject: str                  # OIDC sub
-    email: str | None = None
-    email_verified: bool = False
-    name: str | None = None
-    picture: str | None = None
-    groups: frozenset[str] = frozenset()
-    attributes: Mapping[str, Any] = field(default_factory=dict)  # other mapped claims
-    auth_time: datetime | None = None
-    amr: frozenset[str] = frozenset()   # how the user authenticated (pwd, mfa, hwk)
-    session_ref: str | None = None      # OIDC sid, for logout
-
-
-class IdentityProvider[RequestT](Protocol):
-    id: str
-    kind: ProviderKind            # oidc | oauth2 | password | development
-
-    def begin(self, request: RequestT, *, return_to: str) -> LoginStart:
-        """Return the redirect (or form) and the LoginTransaction to persist."""
-
-    def complete(
-        self, request: RequestT, transaction: LoginTransaction
-    ) -> ExternalIdentity:
-        """Validate the IdP's response against the transaction."""
-
-    def logout_redirect(
-        self, session: SessionInfo, *, post_logout_redirect: str
-    ) -> str | None:
-        """Return the IdP's logout URL, or None for local logout only."""
-
-
-class AccountRejected(AppException):
-    reason: str                   # for logs; never rendered to the user
-
-
-class AccountResolver(Protocol):
-    def resolve(self, identity: ExternalIdentity) -> str:
-        """Link, provision or reject a login; return the account ID.
-
-        Raises AccountRejected.
-        """
-
-    def lookup(self, issuer: str, subject: str) -> str | None:
-        """Return the account ID linked to a bearer token's issuer and subject.
-
-        Never provisions.
-        """
-
-
-@dataclass(frozen=True)
-class AuthorizationContext:
-    active: bool
-    session_version: int
-    permissions: frozenset[str] = frozenset()
-    roles: frozenset[str] = frozenset()
-    attributes: Mapping[str, Any] = field(default_factory=dict)  # ABAC inputs
-
-
-class AuthorizationContextProvider(Protocol):
-    def resolve(self, account_id: str) -> AuthorizationContext: ...
-
-
-class ResourcePolicy[ResourceT, QueryT](Protocol):
-    def allows(self, principal: Principal, action: str, resource: ResourceT) -> bool: ...
-    def scope(self, principal: Principal, action: str, query: QueryT) -> QueryT: ...
-```
+The framework-neutral types (`ExternalIdentity`, `IdentityProvider`,
+`AccountResolver`, `AuthorizationContext`, `Principal`, `Requirement`,
+`ResourcePolicy` and the store protocols) shipped in `rn-forge-auth`, placed by
+[ADR-0011](../../../adr/ADR-0011.md) and specified by
+[ADR-0013](../../../adr/ADR-0013.md). The `rn-forge-auth` contracts, stores and
+token guides document them, and its API reference is built from the docstrings.
 
 The neutral boundary is the login's result, not its request. A protocol handler
-takes the framework's native request; what stays neutral is what comes out: an
-`ExternalIdentity`, then the `Principal`, the authorization contracts and the
-[session resource](#http-surface). Each login flow on each framework has exactly
-one owner, either a library's integration or pykit's adapter over the library's
-core, never both. No framework integration met the requirements, so pykit's
-adapters own every flow on both frameworks
+takes the framework's native request; what stays neutral is the
+`ExternalIdentity` that comes out, then the `Principal`, the authorization
+contracts and the session resource. Each login flow on each framework has
+exactly one owner, either a library's integration or pykit's adapter over the
+library's core, never both. No framework integration met the requirements, so
+pykit's adapters own every flow on both frameworks
 ([Login flow owners](#login-flow-owners)).
 
-`Principal` and `Requirement` move from `rn-forge-web` to `rn-forge-auth` and
-change as follows. Each field keeps one provenance:
-
-| `Principal` field | Holds | Source |
-| -- | -- | -- |
-| `subject` | Internal account or service-account ID | `AccountResolver` |
-| `issuer`, `external_subject` | The external identity that authenticated | Session metadata, or the verified token |
-| `mechanism` | `"session"`, `"bearer"` or `"basic"` | The authenticator |
-| `scopes` | Delegated scopes; empty for a session | The verified token |
-| `permissions` | Effective permissions | Authorization context, limited by scopes ([Authorization model](#authorization-model)) |
-| `roles`, `attributes`, `tenant` | Application authorization data | Authorization context |
-| `claims` | Verified token claims, for the application's own use; empty for a session | The verified token |
-| `auth_time`, `amr` | How and when the caller authenticated | Session metadata, or the verified token |
-
-- `Requirement` gains `any_permission` and `all_permissions`, checked against
-  `Principal.permissions`, and loses its role clauses. Every protected action
-  requires an effective permission: because scopes already limit effective
-  permissions, no requirement can bypass a token's scopes, whereas a role
-  check would pass an administrator's read-only token on a write route. Roles
-  stay on the `Principal` as an input the context provider used and as a
-  display hint. The scope clauses stay for a route that must name a scope
-  directly; they can only narrow access further.
-- The action-to-key mapping (`orders` + `partial_update` → `orders.update`),
-  formerly in the Django mixins, is the neutral helper
-  `requirement_for(permission_key, action, *, action_map=None)` in
-  `rn_forge.auth.permissions`, beside `DEFAULT_PERMISSION_ACTION_MAP`; an
-  explicit `action_map` merges over the default. Both frameworks use it.
-- The scope limit is
-  `effective_permissions(permissions, *, mechanism, scopes, scope_map)`:
-  session and basic callers keep their account's permissions, and a bearer
-  caller gets the intersection with the permissions its scopes map to.
+`Requirement` has no role clauses. Every protected action requires an effective
+permission: because scopes already limit effective permissions, no requirement
+can bypass a token's scopes, whereas a role check would pass an administrator's
+read-only token on a write route. Roles stay on the `Principal` as an input the
+context provider used and as a display hint.
 
 ## Libraries
 
@@ -462,75 +328,13 @@ FastAPI binding uses pykit's own.
 
 ## HTTP surface
 
-Django and FastAPI mount the same routes. The prefix is configurable.
-`{provider}` is a configured provider ID.
-
-| Method | Path | Purpose | Response |
-| -- | -- | -- | -- |
-| `GET` | `/auth/providers` | Login options for the login page | `200` list of `{id, name, kind}` |
-| `GET` | `/auth/login/{provider}?return_to=` | Start a login (full-page navigation, not XHR) | `302` to the IdP |
-| `GET` | `/auth/callback/{provider}` | OIDC and OAuth 2.0 redirect URI | `302` to `return_to`, or to the error route |
-| `GET` | `/auth/session` | Current user for the SPA; sets the CSRF cookie | `200` session body, or `401` problem |
-| `POST` | `/auth/logout` | End this session (CSRF protected) | `200 {"redirect": url or null}` |
-| `POST` | `/auth/logout/all` | End every session of this account (CSRF protected) | `200 {"redirect": null}` |
-| `POST` | `/auth/backchannel-logout/{provider}` | OIDC Back-Channel Logout | `200` |
-| `POST` | `/auth/login/password` | Local password login (optional provider) | `200` session body, or `401` |
-
-`kind` is one of `oidc`, `oauth2`, `password` and `development`. The SPA
-navigates to every kind except `password`, for which it shows a form. Adding a
-kind is a contract change.
-
-The `/auth/session` body is the SPA's only source of identity and permissions.
-It is pykit's own resource, so it follows the camelCase wire rule of the API
-conventions:
-
-```json
-{
-  "subject": "acct_8f14e45f",
-  "name": "Ada Lovelace",
-  "email": "ada@example.com",
-  "picture": "https://example.com/ada.png",
-  "provider": "workspace",
-  "roles": ["store-manager"],
-  "permissions": ["orders.list", "orders.read", "orders.update"],
-  "attributes": {"orgUnits": [{"type": "store", "id": "S-104"}]},
-  "authTime": "2026-09-27T09:12:44Z",
-  "amr": ["pwd", "mfa"],
-  "expiresAt": "2026-09-27T17:12:44Z"
-}
-```
-
-`subject` is the internal account ID, never the IdP's `sub`. `name`, `email`,
-`picture`, `attributes`, `authTime` and `amr` are optional. `attributes` is
-application-defined, holds only what the UI needs, and uses camelCase keys;
-`SessionBody.to_json` also converts snake_case attribute keys to camelCase at
-every depth, so either spelling arrives as camelCase. `expiresAt` is the
-absolute timeout.
-
-A `403` whose problem type is `csrf-failed` is a CSRF rejection, not a
-permission denial ([CSRF](#csrf)).
-
-Callback errors redirect to the SPA's error route, a backend setting that
-defaults to `/auth/error`, with one code from a closed list: `access_denied`,
-`account_not_provisioned` and `login_failed` (a verification failure or an
-expired transaction). The client adds `session_not_established` itself
-([ngkit client contract](#ngkit-client-contract)). Details go to the log, never
-into the URL.
-
-`return_to` validation raises `InvalidReturnTo`; the caller falls back to a
-default target. It rejects percent-encoded `/`, `\` and `.` in the path, and C0,
-DEL and C1 control characters. The codes are the `CallbackError` literal.
-
-A `401` from a route that accepts bearer tokens carries the existing `Bearer`
-challenge. A session-only route (`/auth/*`) sends no `WWW-Authenticate`, a
-deviation from RFC 9110 §15.5.2 that the API conventions record, because cookie
-sessions have no registered scheme.
-
-`rn-forge-web` raises these as `SessionRequired` (an `AuthenticationFailed` with
-`challenge = False`, so `render_problem` omits the header) and `CsrfFailed` (a
-403 of its own type, not a `PermissionDenied`). The conformance cases carry
-`requires` capabilities (`session-routes`, `csrf`) that a binding adds to its
-driver's `PROVIDES` set when it ships them.
+The routes, status codes, session body, callback error codes and the `401`
+without `WWW-Authenticate` that Django and FastAPI mount are described in
+[ADR-0014](../../../adr/ADR-0014.md). The `rn-forge-django` and
+`rn-forge-fastapi` auth guides (*Routes and responses*) document them, and the
+`rn-forge-web` API conventions record the `401` deviation from RFC 9110 §15.5.2.
+The client adds the callback error code `session_not_established` itself
+([ngkit client contract](#ngkit-client-contract)).
 
 ## Flows
 
@@ -565,225 +369,68 @@ and then shows a forbidden view.
 
 ### OIDC login (authorization code with PKCE)
 
-This flow also covers social providers that speak OIDC, and every login in the
-broker profile.
-
-```mermaid
-sequenceDiagram
-  autonumber
-  actor U as User agent
-  participant BE as Backend /auth
-  participant TX as Transaction store
-  participant IDP as OIDC provider
-  U->>BE: GET /auth/login/acme?return_to=/orders
-  BE->>BE: Validate return_to (relative path, allowlisted)
-  BE->>BE: Authlib generates state, nonce, PKCE verifier and S256 challenge
-  BE->>TX: Save transaction (provider, state, nonce, verifier, return_to) for 10 minutes
-  BE-->>U: 302 to authorization endpoint, Set-Cookie login transaction handle
-  U->>IDP: Authenticate (password, MFA, passkey)
-  IDP-->>U: 302 to /auth/callback/acme with code, state, iss
-  U->>BE: GET /auth/callback/acme with login transaction cookie
-  BE->>TX: Consume transaction atomically, check state and cookie match
-  BE->>BE: Check iss equals the provider's issuer (RFC 9207)
-  BE->>IDP: POST token endpoint (code, code_verifier, client authentication)
-  IDP-->>BE: id_token, access_token, optional refresh_token
-  BE->>BE: Authlib validates id_token (signature, iss, aud, azp, exp, nonce, at_hash)
-  opt Claims missing from id_token
-    BE->>IDP: GET userinfo
-    BE->>BE: Reject unless userinfo sub equals id_token sub
-  end
-  BE->>BE: Map claims to ExternalIdentity, then AccountResolver
-  BE->>BE: Rotate session ID, store account ID and auth metadata
-  BE-->>U: 302 to /orders, Set-Cookie session, clear login transaction cookie
-```
-
-- PKCE is used even though the backend is a confidential client
-  ([RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) §2.1.1).
-- The client never uses the implicit or password grant.
-- The ID token is validated by Authlib under the
-  [ID-token profile](#token-validation), never by the bearer verifier. It is
-  never accepted anywhere else.
-- A provider configured with `max_age` sends it on the authorization request,
-  and the adapter rejects an ID token whose `auth_time` is older.
-- Upstream access and refresh tokens are discarded by default. An application
-  that calls upstream APIs on the user's behalf receives them through a hook;
-  pykit does not store them.
-- For an OAuth 2.0-only social provider (no ID token), the adapter calls the
-  provider's user endpoint over the back channel and maps the result. The same
-  `ExternalIdentity` comes out.
+The authorization-code flow with PKCE, state, nonce and the RFC 9207 `iss` check
+is documented in the `rn-forge-auth` login guide (*OIDC*), and the ID token is
+validated under the [ID-token profile](#token-validation), never by the bearer
+verifier. This flow also covers social providers that speak OIDC and every login
+in the broker profile. The client never uses the implicit or password grant, and
+PKCE is used although the backend is a confidential client
+([RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) §2.1.1).
 
 ### SAML identity providers
 
-pykit speaks no SAML. A SAML IdP federates through a broker (Keycloak, Entra ID,
-Auth0, Okta and others), which runs the SAML exchange and signs the user in to
-the app through the [OIDC login](#oidc-login-authorization-code-with-pkce)
-above. The app sees an ordinary OIDC provider; the broker's SAML connection
-carries the IdP's attributes as claims, mapped like any other.
-
-Most workforce IdPs (Google Workspace, Entra ID, Okta, AD FS) also speak OIDC,
-and a direct OIDC connection to them needs no broker. A broker is needed only
-for an IdP that offers SAML alone.
+pykit speaks no SAML ([ADR-0006](../../../adr/ADR-0006.md)). A SAML IdP
+federates through a broker that signs the user in through the
+[OIDC login](#oidc-login-authorization-code-with-pkce); the `rn-forge-auth`
+login guide (*Connecting a SAML IdP through a broker*) shows how. Most workforce
+IdPs also speak OIDC and need no broker.
 
 ### Local password login (optional provider)
 
-Local passwords are one more provider. The login page posts
-`{username, password}` with the CSRF header to `/auth/login/password`. The
-adapter verifies the password with the framework's hasher (Django's auth
-backends, or an application-supplied verifier on FastAPI) and returns an
-`ExternalIdentity` with `issuer="local"`. The rest of the pipeline is unchanged.
-The endpoint is rate-limited per account and per client, and its failures do not
-reveal whether the account exists. For production, SSO or passkeys are
-preferred.
-
-A **development provider** has the same shape. It shows a list of fixture
-accounts with stable, documented markup, and also accepts the account as a
-parameter on `/auth/login/development`, so an end-to-end test can sign in
-without a person. It is available only when the app runs in debug mode, and
-replaces any "disable auth" switch. The auth path is then exercised in every
-environment.
+Local passwords and the development provider are documented in the
+`rn-forge-auth` login guide (*Password login*, *Development login*). The
+development provider replaces any "disable auth" switch, so the auth path is
+exercised in every environment.
 
 ### Authenticated request and authorization
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant SPA
-  participant AN as Authentication
-  participant AZ as Authorization context cache
-  participant DB as App data
-  participant V as View or route
-  participant POL as ResourcePolicy
-  SPA->>AN: PATCH /api/orders/7 with session cookie and X-XSRF-TOKEN
-  AN->>AN: Load session, check idle and absolute timeouts, check CSRF and Origin
-  alt No valid session
-    AN-->>SPA: 401 problem+json
-  end
-  AN->>AZ: Context for account at current version
-  alt Cache hit
-    AZ-->>AN: active, permissions, roles, attributes
-  else Miss or stale version
-    AZ->>DB: Resolve account status, roles, permissions and attributes
-    AZ-->>AN: Context (now cached)
-  end
-  alt Account disabled
-    AN->>AN: Delete the session
-    AN-->>SPA: 401 problem+json
-  end
-  AN->>V: Principal(mechanism=session)
-  V->>V: Requirement from permission key and action, orders.update
-  alt Missing permission
-    V-->>SPA: 403 problem+json
-  end
-  V->>POL: allows(principal, update, order 7)
-  alt Denied by resource rule
-    POL-->>SPA: 404 when existence is sensitive, otherwise 403
-  end
-  V-->>SPA: 200
-```
-
-List endpoints call `ResourcePolicy.scope` to filter the query (a Django
-queryset, or a SQLAlchemy select), so a user never sees rows outside their
-scope. Checking each row after fetching them would also break pagination.
+The request path (session or bearer authentication, the authorization context,
+`Requirement` and `ResourcePolicy`) is documented in the `rn-forge-django` and
+`rn-forge-fastapi` auth guides (*Authentication*, *Authorization*). List
+endpoints call `ResourcePolicy.scope` to filter the query, because checking each
+row after fetching them would break pagination.
 
 **One credential per request.** When a request carries an `Authorization`
 header, the bearer path alone authenticates it: the session cookie is ignored,
 CSRF does not apply, and an invalid token is a `401` with no fallback to the
-session. A route can also restrict itself to one mechanism: the `/auth/*` routes
-accept sessions only, and an application can mark machine-only routes as
-bearer-only.
+session.
 
 ### Authorization changes
 
-```mermaid
-sequenceDiagram
-  autonumber
-  actor ADM as Administrator
-  participant BE as Backend
-  participant AZ as Authorization context cache
-  participant SPA as Affected user's SPA
-  ADM->>BE: Change a role's permissions, disable an account, or import entitlements
-  BE->>AZ: Bump authorization version (one account, or global)
-  SPA->>BE: Next API request
-  BE->>AZ: Look up at the new version, miss
-  AZ-->>BE: Recomputed context
-  BE-->>SPA: Decision uses the new permissions
-  SPA->>BE: GET /auth/session (on window focus or after a 403)
-  BE-->>SPA: Updated permissions for feature toggles
-```
-
-The server applies a change on the next request. The UI catches up on its next
-session fetch, and until then any action it still offers fails safely with
-`403`. A time-to-live (TTL) on cache entries bounds staleness when a change
-bypasses the invalidation hook, for example a direct database edit.
-
-The cache (`AuthorizationContextCache`) keeps one entry per account, stamped
-with the `(account version, global version)` it was computed at. An
-`AuthorizationVersions` protocol (`current`, `bump`, `bump_all`) holds the
-counters; `InMemoryAuthorizationVersions` is process-local and a shared
-implementation comes with the Redis stores. An `AccountStateWriter` the
-application implements (`set_active`, `bump_session_version`) lets the cache
-persist `active` and the session version and bump the account's version in one
-call; without a writer those calls raise `RuntimeError`.
+The server applies a change on the next request through the versioned
+authorization context cache, which the `rn-forge-auth` contracts guide (*Caching
+contexts*) and stores guide (*Authorization versions*) document. The UI catches
+up on its next session fetch, and until then any action it still offers fails
+safely with `403`.
 
 ### Logout
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant SPA
-  participant BE as Backend
-  participant IDP
-  SPA->>BE: POST /auth/logout with CSRF header
-  BE->>BE: Delete the server session, expire the cookie, rotate the CSRF token
-  alt Provider supports RP-initiated logout and the app enables it
-    BE-->>SPA: 200 with redirect to end_session_endpoint (id_token_hint, post_logout_redirect_uri)
-    SPA->>IDP: Full-page navigation
-    IDP-->>SPA: 302 to post_logout_redirect_uri
-  else Local logout only
-    BE-->>SPA: 200 with redirect null
-  end
-  Note over IDP,BE: Independently, when the user signs out at the IdP
-  IDP->>BE: POST /auth/backchannel-logout/acme with logout_token
-  BE->>BE: Validate under the logout-token profile, record jti
-  BE->>BE: Revoke (issuer, sid), or bump the session version of (issuer, sub)'s account
-```
-
-Logout at the IdP is optional per provider. Signing out of the app should not
-normally sign the user out of their whole Workspace or Entra session, so the
-local session timeouts do the real work. [Revocation](#revocation) defines how
-each logout invalidates sessions.
+Logout, RP-initiated logout and back-channel logout are documented in the
+`rn-forge-auth` login guide and the framework auth guides (*Sessions and
+revocation*); [Revocation](#revocation) defines how each logout invalidates
+sessions. Logout at the IdP is optional per provider: signing out of the app
+should not normally sign the user out of their whole Workspace or Entra session,
+so the local session timeouts do the real work.
 
 ### Machine clients and downstream services
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant M as Machine client
-  participant AS as Authorization server (broker or IdP)
-  participant API as Backend API
-  participant AR as AccountResolver
-  participant AZ as Authorization context
-  M->>AS: POST token endpoint (client_credentials, client authentication)
-  AS-->>M: access_token (JWT, aud=this API)
-  M->>API: GET /api/orders with Authorization Bearer
-  API->>API: Validate under the access-token profile
-  API->>AR: lookup(iss, sub)
-  alt No linked account
-    API-->>M: 401
-  end
-  AR-->>API: Service-account ID
-  API->>AZ: Context for the service account
-  API->>API: Principal(mechanism=bearer, permissions = context permissions limited by scopes)
-  API->>API: Requirement on permissions
-  API-->>M: 200 or 403
-```
-
-The same path serves a user-delegated token: `(iss, sub)` resolves to the user's
-account, and the token's scopes limit what that account may do. A token whose
-subject has no linked account is rejected; bearer lookup never provisions.
-
+Machine clients obtain a token from the broker or IdP with the
+client-credentials grant and call the API with a bearer token, which the
+access-token profile validates and `AccountResolver.lookup` resolves to a
+service account; a token whose subject has no linked account is rejected and
+bearer lookup never provisions. The same path serves a user-delegated token.
 When the application calls a downstream service, it uses its own
-client-credentials token. Forwarding a user's identity requires token exchange
+client-credentials token; forwarding a user's identity requires token exchange
 ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)) at the broker.
 
 Positions on other machine-client mechanisms:
@@ -801,175 +448,65 @@ Positions on other machine-client mechanisms:
 
 ## Token validation
 
-An issuer can produce several kinds of JWT, so each kind has its own validation
-profile with rules that exclude the others
-([RFC 8725](https://www.rfc-editor.org/rfc/rfc8725) §3.11, §3.12). A profile is
-used at exactly one place, and a token valid under one profile is never accepted
-by another.
-
-Each profile is the standard's complete rule set, run by the library. pykit adds
-only the deployment restrictions in the last column.
-
-| Profile | Used at | Standard profile, run by the library | Deployment restrictions pykit adds |
-| -- | -- | -- | -- |
-| Access token | Bearer authentication on API routes | [RFC 9068](https://www.rfc-editor.org/rfc/rfc9068) §4 when the provider issues RFC 9068 tokens: `typ` `at+jwt` or `application/at+jwt`, and `iss`, `exp`, `aud`, `sub`, `client_id`, `iat`, `jti` required. Otherwise RFC 7519 with `iss`, `aud` and `exp` required, and `sub`, `nbf` and `iat` validated when present. | Algorithm allow-list; `iss` equals the configured issuer; `aud` contains this API's audience; reject a token carrying `nonce` or `events`; in RFC 9068 mode reject any other `typ`, otherwise accept only `JWT` or none |
-| ID token | The OIDC callback only | [OIDC Core](https://openid.net/specs/openid-connect-core-1_0.html) §3.1.3.7 through Authlib: signature, `iss`, `aud`, `azp`, `exp`, `iat`, `nonce`, `at_hash` | `auth_time` within `max_age` when configured; UserInfo `sub` equal to the ID token's |
-| Logout token | `/auth/backchannel-logout/{provider}` only | [Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html) §2.6: signature, `iss`, `aud`, `iat`, `exp`, `jti` and `events` required, `sid` or `sub` present, `nonce` absent | `typ` `logout+jwt` or none; `iat` within a short window; `jti` not seen before |
-
-Configuration refuses an API audience equal to the OIDC login client ID unless
-the provider is in RFC 9068 mode, because otherwise an ID token would pass the
-access-token profile.
-
-Decisions the code settles, in `rn_forge.auth.oidc`:
-
-- The access-token profile is `JwtVerifier`, with `mode` (`TokenMode`:
-  `"rfc9068"` or `"rfc7519"`, default `"rfc7519"`) and `login_client_id`. The
-  audience refusal is a `ValueError` at construction, a configuration error
-  and not a `TokenVerificationError`.
-- `IdTokenVerifier.verify(token, *, nonce, access_token=None)` hands the
-  `PyJWKClient` key to joserfc (Authlib's JOSE layer, avoiding the deprecated
-  `authlib.jose`) and runs `CodeIDToken` on the result. An empty expected
-  nonce is refused because Authlib skips the check for one. `auth_time` is
-  required and bounded when `max_age` is set.
-- `LogoutTokenVerifier` records `jti` in a `ReplayStore` (`rn_forge.auth`) under
-  `"{iss}|{jti}"` until `exp` (at least one second), only after every other
-  check has passed. `iat` may be at most 120 seconds old by default.
+Each kind of JWT has its own validation profile with rules that exclude the
+others ([RFC 8725](https://www.rfc-editor.org/rfc/rfc8725) §3.11, §3.12). A
+profile is used at exactly one place, and a token valid under one profile is
+never accepted by another. The access-token, ID-token and logout-token profiles
+and the deployment restrictions pykit adds are documented in the `rn-forge-auth`
+token profiles guide, and [ADR-0006](../../../adr/ADR-0006.md) records the
+decision.
 
 ## Sessions and cookies
 
-```mermaid
-stateDiagram-v2
-  [*] --> Anonymous
-  Anonymous --> LoginPending: GET /auth/login
-  LoginPending --> Anonymous: Callback error or transaction expired
-  LoginPending --> Active: Callback verified, session ID rotated
-  Active --> Active: Request within idle timeout
-  Active --> Expired: Idle or absolute timeout
-  Active --> Anonymous: Logout, back-channel logout, or account disabled
-  Expired --> Anonymous: Next request answered 401
-```
-
-| Setting | Default | Reason |
-| -- | -- | -- |
-| Session storage | Server side, in a [supported configuration](#supported-storage) | Supports revocation, back-channel logout and "sign out everywhere". Signed-cookie sessions cannot do these. |
-| Session content | Account ID, the account's session version at login, provider, issuer, external subject, `auth_time`, `amr`, `session_ref`, `id_token` if RP logout is enabled | Identity only. No permissions: those are computed per request. |
-| Session cookie | `__Host-session`, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/` | The `__Host-` prefix forbids `Domain`, so subdomains cannot plant or read the cookie. `Strict` would drop the cookie on the redirect back from the IdP. |
-| Login transaction cookie | `__Host-login-tx`, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain`, `Max-Age=600` | Binds a callback to the browser that started it. The callback is a top-level `GET`, so `Lax` sends the cookie. The `__Host-` prefix stops a sibling subdomain from planting one; a callback that carries more than one transaction cookie is rejected. |
-| Idle timeout | 30 minutes, sliding | OWASP session management guidance; configurable. `GET /auth/session` reads the session without extending it, so a polling SPA cannot keep an idle session alive. |
-| Absolute timeout | 12 hours | Ends the local session and refreshes IdP attributes at the next login. The IdP may sign the user straight back in from its own SSO session; a provider that needs fresh authentication sets `max_age`. |
-| Rotation | New session ID at login and on privilege change; new CSRF token at login and logout | Prevents session fixation and token reuse across sessions. |
+The session and cookie settings, rotation and timeouts are documented in the
+`rn-forge-django` and `rn-forge-fastapi` auth guides (*Sessions and
+revocation*), and [ADR-0014](../../../adr/ADR-0014.md) requires them to match.
+Sessions are stored server side so that revocation, back-channel logout and
+"sign out everywhere" work, which signed-cookie sessions cannot do. The
+`__Host-` cookie prefix forbids `Domain`, so subdomains cannot plant or read the
+cookie, and `SameSite=Strict` would drop the cookie on the redirect back from
+the IdP. `GET /auth/session` reads the session without extending it, so a
+polling SPA cannot keep an idle session alive. The absolute timeout ends the
+local session and refreshes IdP attributes at the next login; a provider that
+needs fresh authentication sets `max_age`.
 
 ### CSRF
 
 Both frameworks protect every unsafe method on a session-authenticated route
-with a token and an origin check. The cookie and header names are configured to
-match Angular's `HttpClient` XSRF support (`withXsrfConfiguration`). Angular
-only supplies the header; the server-side check is what protects.
-
-- **Django** uses `CsrfViewMiddleware` with `CSRF_TRUSTED_ORIGINS`. Django sets
-  its CSRF cookie only when a view uses the token, so `/auth/session` always
-  sets it.
-- **FastAPI** uses a synchronizer token, which the OWASP CSRF cheat sheet
-  recommends for applications with server-side state: a random token stored in
-  the session, exposed to Angular through a readable cookie, and compared in
-  constant time with the header on each unsafe request. pykit writes it: no
-  evaluated library binds its token to the session
-  ([Library evaluation](#library-evaluation)). A plain cookie-equals-header
-  check is not enough, because a subdomain or a network attacker can plant the
-  cookie.
-- **Before sign-in**, a short-lived anonymous session holds the token, so
-  `/auth/login/password` is protected against login CSRF. Sign-in replaces it
-  with the new session and a new token.
-- **Failure** is a `403` problem with its own type, `csrf-failed`, on both
-  frameworks (Django through `CSRF_FAILURE_VIEW`), so the client can tell it
-  from a permission denial. A binding that mounts the auth surface refuses to
-  start without a problem `type_base`: with `about:blank` the two `403`s would
-  differ only in `detail` (owner decision, 2026-10-28).
-- **Origin check:** `Origin`, or `Referer` when `Origin` is absent, must be one
-  of the configured trusted origins, and `Sec-Fetch-Site: cross-site` is
-  rejected. Behind a proxy, the scheme and host come from forwarded headers
-  only when the proxy is configured as trusted.
-- **Exempt:** the back-channel logout endpoint, which carries a signed token,
-  and bearer-authenticated requests, whose credential the browser never sends
-  on its own.
+with a token and an origin check, documented in the framework auth guides
+(*CSRF*). FastAPI uses a synchronizer token, which the OWASP CSRF cheat sheet
+recommends for applications with server-side state; pykit writes it because no
+evaluated library binds its token to the session
+([Library evaluation](#library-evaluation)). A plain cookie-equals-header check
+is not enough, because a subdomain or a network attacker can plant the cookie.
 
 ### Revocation
 
-Revocation takes effect on the next request, without finding and deleting every
-affected session:
+Revocation takes effect on the next request through the session version, the
+account status and revoked `(issuer, sid)` pairs; the framework auth guides
+(*Sessions and revocation*) document it.
 
-- **Session version.** Each account has a session version, carried in its
-  authorization context, and each session records the version it started with.
-  A session whose version no longer matches is invalid and is deleted when it
-  is next read. "Sign out everywhere" (`/auth/logout/all`), disabling the
-  account, and a back-channel logout that names only `sub` all bump the
-  version.
-- **Account status.** The authorization context carries `active`. A disabled
-  account fails every request with `401`. Changing either value bumps the
-  account's authorization version, so the cache cannot serve the old one.
-- **Back-channel logout by `sid`.** The `(issuer, sid)` pair is recorded as
-  revoked until the absolute timeout has passed, and a session whose
-  `session_ref` is revoked is invalid.
 - **No resurrection.** A request in flight when a session is revoked may still
   write the session back, but the written copy carries the old version or a
   revoked `sid`, so it is rejected on the next read.
-- **Single use.** Login transactions are consumed atomically (a delete that
-  reports whether it removed the record), and logout-token `jti` values are
-  recorded with an atomic set-if-absent until they expire.
-- **Tests** cover concurrent requests racing a logout, a back-channel logout and
-  an account disablement, and show that no request after the revocation
-  succeeds.
 
 ### Supported storage
 
-Transactions, replay records and revoked `sid` values must be shared by every
-worker, and their atomic operations need real backend support. Each framework
-has one tested production configuration:
-
-| Framework | Sessions | Transactions, replay records, revoked `sid` values |
-| -- | -- | -- |
-| Django | `django.contrib.sessions` with the `db` or `cached_db` backend | Django's Redis cache backend |
-| FastAPI | pykit's session middleware over the Redis `SessionStore` from `rn-forge-auth[redis]` | Redis, through the same extra |
-
-In-memory stores, and Django's local-memory cache, are not safe across
-processes. They serve tests and single-process development only, and the
-bindings refuse them outside debug mode.
-
-The protocols are `TransactionStore` (`save`, atomic `consume`), `SessionStore`
-(`create` returns the new ID; `get` does not extend the idle timeout; `touch`
-extends it up to `expires_at`; `delete`; `rotate` returns a new ID and removes
-the old record) and `ReplayStore`. The Redis stores take a client and a key
-prefix, and use `SET EX`, `GETDEL`, `SET NX EX`, `EXISTS`, `EXPIRE` and, for
-`AuthorizationVersions`, `INCR` and `MGET`. The version and revoked-`sid` checks
-belong to the bindings, not to the stores.
+Each framework has one tested production configuration, and the in-memory stores
+serve tests and single-process development only. The `rn-forge-auth` stores
+guide (*Supported storage*) documents the configurations and the protocols.
 
 ## Authorization model
 
-- **Permissions are the unit of enforcement.** Keys are dotted, lowercase and
-  stable, in the form `<resource>.<action>` with an optional namespace
-  (`inventory.stock.adjust`). Views declare a base key, and the action map
-  supplies the suffix. The application declares its catalog in code, and the
-  same keys appear in `/auth/session` for the UI.
-- **Roles group permissions.** A role is a named set of permissions. Accounts
-  get roles directly, through groups, or through a mapping from IdP groups.
-  Routes and policies check permissions, never roles.
-- **IdP attributes are a snapshot from login time.** Groups, titles and org
-  units asserted by the IdP are written onto the account by the
-  `AccountResolver` at each login. The authorization context reads them from
-  there, alongside the application's live data (entitlement tables, an HR
-  master, tenancy). Changes at the IdP between logins arrive at the next
-  login, or immediately through SCIM if the application adds it later.
-- **Attributes drive resource policy.** Tenant, org units and ownership feed
-  `ResourcePolicy` for record-level decisions and query scoping. This is
-  attribute-based access control (ABAC) layered on role-based access control
-  (RBAC), which covers most line-of-business applications without an external
-  policy engine.
-- **Scopes limit tokens; they do not grant permissions.** The application maps
-  each scope it accepts to the permission keys it allows (`orders:read` →
-  `orders.list`, `orders.read`). A bearer principal's effective permissions
-  are its account's permissions limited to those its scopes allow, and a scope
-  the map does not name allows nothing. A session principal has no scopes and
-  its effective permissions are its account's.
+Permissions, roles, scopes and resource policy are documented in the
+`rn-forge-auth` contracts guide and decided in
+[ADR-0013](../../../adr/ADR-0013.md). Positions that no guide records:
+
+- **IdP attributes are a snapshot from login time.** The `AccountResolver`
+  writes the groups, titles and org units the IdP asserts onto the account at
+  each login, and the authorization context reads them from there. Changes at
+  the IdP between logins arrive at the next login, or immediately through SCIM
+  if the application adds it later.
 - **Staff and superuser bypass is explicit.** It is a role that grants every
   permission, visible in `/auth/session`, not a hidden branch in the
   permission class.
@@ -982,18 +519,14 @@ belong to the bindings, not to the stores.
 
 ## Account linking
 
-- Link on `(issuer, subject)`. Never link on `(provider, email)` alone.
-- Automatic linking of a new external identity to an existing account by email
-  is allowed only when `email_verified` is true and the provider is configured
-  as authoritative for that email domain. Otherwise a social provider with
-  unverified emails becomes an account-takeover path.
-- The provisioning policy is set per provider: `existing` (reject unknown
-  users), `jit` (create on first login), or `jit` with an email-domain
-  allowlist.
-- Service accounts are linked explicitly by the application, from the
-  `(issuer, subject)` their client-credentials tokens carry.
-- A rejected login ends at the SPA's error route with
-  `?error=account_not_provisioned` and is logged as an audit event.
+Accounts link on `(issuer, subject)`, never on `(provider, email)` alone, and
+the provisioning policy is set per provider; the `rn-forge-django` auth guide
+(*Accounts and linking*) and the `rn-forge-auth` contracts guide document it,
+and [ADR-0013](../../../adr/ADR-0013.md) records the decision. Linking a new
+external identity to an existing account by email is allowed only when
+`email_verified` is true and the provider is authoritative for that email
+domain, because otherwise a social provider with unverified emails becomes an
+account-takeover path.
 
 ## Security controls
 
@@ -1031,33 +564,11 @@ and `unknown_kid`. Applications use the development provider and
 
 ## Package placement
 
-A new package, `rn-forge-auth`, holds everything about identity and access that
-does not depend on a web framework, including the protocol adapters behind
-extras. The name is `auth` rather than `identity` because the package covers
-authorization as well as authentication.
-
-```mermaid
-flowchart TB
-  DJ["rn-forge-django<br/>routes, DRF binding, Django sessions, default account and context providers"]
-  FA["rn-forge-fastapi<br/>APIRouter, session and CSRF binding, dependencies"]
-  SA["rn-forge-sqlalchemy"]
-  AU["rn-forge-auth<br/>token validation, Principal and Requirement, protocol adapters,<br/>account, context and policy contracts, session store protocol"]
-  WE["rn-forge-web<br/>HTTP wire contract: credentials parsing, challenge header, 401/403 problems"]
-  CO["rn-forge-commons"]
-  DJ --> AU
-  FA --> AU
-  SA -. "later: link table" .-> AU
-  AU --> WE --> CO
-  SA --> WE
-```
-
-| Package | Gains | Loses |
-| -- | -- | -- |
-| `rn-forge-auth` (new) | `JwtVerifier`, `discover_oidc` and `fetch_json` from commons, as [Libraries](#libraries) decides (`JwksCache` is deleted); `Principal`, `Requirement`, `Authenticator`, `AsyncAuthenticator`, `Authorizer`, `ScopeAuthorizer`, `principal_from_claims` and `OidcAuthenticator` from web; the new contracts; the adapters behind extras: `oidc` (Authlib with `requests`, PyJWT), `redis` (redis-py, for the session, transaction, replay and revoked-`sid` stores) | — |
-| `rn-forge-web` | — | The types above and its `auth` extra. It keeps the wire contract: `Credentials`, `parse_authorization`, `challenge_header`, `AUTH_FAILED_DETAIL`, `AuthenticationFailed`, `PermissionDenied` and the problem responses. |
-| `rn-forge-commons` | — | `rn_forge.commons.integration.auth` and its `auth` extra. Token validation has no consumer outside a web backend: non-web code acquires tokens, which is an HTTP client's job, and does not validate them. |
-| `rn-forge-django` | Bindings for the new contracts. Its `oidc` extra now depends on `rn-forge-auth[oidc]`. | Protocol code, and its `jwt` and `saml` extras. |
-| `rn-forge-fastapi` | Bindings for the new contracts, including the session middleware and CSRF check. Its `oidc` extra now depends on `rn-forge-auth[oidc]`, and a new `redis` extra on `rn-forge-auth[redis]`. | Protocol code. |
+`rn-forge-auth` holds everything about identity and access that does not depend
+on a web framework, with the protocol adapters behind extras, and
+[ADR-0011](../../../adr/ADR-0011.md) sets its structure. The name is `auth`
+rather than `identity` because the package covers authorization as well as
+authentication.
 
 Why a separate package instead of more extras on `rn-forge-web`:
 

@@ -77,6 +77,12 @@ third-party dependencies only. `[ci.checks.licenses]` in the same file sets
 `deny` and `ignore`; a dual-licensed package used under its permissive option
 goes in `ignore`, then `task kiln:apply`.
 
+`task lint` also runs ruff's `S` rules (Bandit's checks, including the Django
+ones) over the packages, and CI scans the full git history for secrets with
+gitleaks (`task ci:secret-scan`), which is not part of `task lint`. Report a
+vulnerability privately through GitHub private vulnerability reporting, as
+`SECURITY.md` says.
+
 ## Sonar feedback
 
 Connect SonarQube for IDE to the project's SonarCloud server (connected mode)
