@@ -12,7 +12,6 @@ identity providers, account resolver and authorization context provider are
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -34,22 +33,21 @@ from django.utils.cache import add_never_cache_headers
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from rn_forge.auth import (
-    AccountRejected,
+    TRANSACTION_COOKIE,
     AccountResolver,
     AccountStateWriter,
     AuthorizationContextProvider,
-    CallbackError,
     DevelopmentIdentityProvider,
     IdentityProvider,
-    InvalidReturnTo,
     LoginFailed,
     LoginFlow,
     LoginRequest,
     ReplayStore,
     SessionBody,
-    SessionInfo,
     TransactionStore,
-    validate_return_to,
+    admit_login,
+    json_string_fields,
+    transaction_cookie_value,
 )
 from rn_forge.auth.audit import audit
 from rn_forge.commons.logging import AppLogger
@@ -64,12 +62,9 @@ from rn_forge.web import SessionRequired, TooManyRequests, default_registry
 if TYPE_CHECKING:
     from rn_forge.auth.oidc import BackchannelLogout
 
-__all__ = ["TRANSACTION_COOKIE", "AuthRoutesConfig", "auth_urlpatterns"]
+__all__ = ["AuthRoutesConfig", "auth_urlpatterns"]
 
 _LOGGER = AppLogger.get_logger(__name__)
-
-TRANSACTION_COOKIE = "__Host-login-tx"
-"""The cookie that binds a callback to the browser that began the login."""
 
 _TRANSACTION_MAX_AGE = 600
 
@@ -221,7 +216,7 @@ class _Views:
                 request,
                 provider_id,
                 _Request(query=request.GET.dict(), form={}),
-                self._transaction_cookie(request),
+                transaction_cookie_value([request.META.get("HTTP_COOKIE", "")]),
             )
         except LoginFailed as exc:
             self._audit_failure(provider_id, exc)
@@ -343,44 +338,27 @@ class _Views:
         completed = self._flow.complete(
             provider_id, login_request, transaction_id=transaction_id
         )
-        identity = completed.identity
-        try:
-            account_id = self._config.accounts.resolve(identity)
-        except AccountRejected as exc:
-            audit("account.rejected", provider=provider_id, reason=exc.reason)
-            raise self._refused("account_not_provisioned", provider_id, exc.reason)
-        context = self._config.contexts.resolve(account_id)
-        if not context.active:
-            audit("account.disabled", account_id=account_id, provider=provider_id)
-            raise self._refused("access_denied", provider_id, "account is not active")
         moment = self.sessions.now()
-        self.sessions.start(
-            request,
-            SessionInfo(
-                account_id=account_id,
-                session_version=context.session_version,
-                provider=identity.provider,
-                issuer=identity.issuer,
-                external_subject=identity.subject,
-                created_at=moment,
-                expires_at=moment + self._config.absolute_timeout,
-                auth_time=identity.auth_time,
-                amr=identity.amr,
-                session_ref=identity.session_ref,
-                id_token=identity.id_token,
-            ),
-        )
-        rotate_token(request)
-        audit("login.success", account_id=account_id, provider=provider_id)
-        return self._return_to(completed.return_to)
-
-    def _return_to(self, return_to: str) -> str:
         try:
-            return validate_return_to(
-                return_to, prefixes=self._config.return_to_prefixes
+            admitted = admit_login(
+                completed,
+                provider_id=provider_id,
+                accounts=self._config.accounts,
+                contexts=self._config.contexts,
+                now=moment,
+                absolute_timeout=self._config.absolute_timeout,
+                return_to_prefixes=self._config.return_to_prefixes,
+                default_return_to=self._config.default_return_to,
             )
-        except InvalidReturnTo:
-            return self._config.default_return_to
+        except LoginFailed as exc:
+            _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
+                "Login with {} refused: {}", provider_id, exc.reason
+            )
+            raise
+        self.sessions.start(request, admitted.session)
+        rotate_token(request)
+        audit("login.success", account_id=admitted.account_id, provider=provider_id)
+        return admitted.return_to
 
     @staticmethod
     def _audit_failure(provider_id: str, exc: LoginFailed) -> None:
@@ -413,29 +391,6 @@ class _Views:
                     )
                 )
         return None
-
-    @staticmethod
-    def _refused(code: CallbackError, provider_id: str, reason: str) -> LoginFailed:
-        _LOGGER.warning(  # noqa: PLE1205  # brace-style log format
-            "Login with {} refused: {}", provider_id, reason
-        )
-        return LoginFailed(code, reason)
-
-    @staticmethod
-    def _transaction_cookie(request: HttpRequest) -> str | None:
-        # Django's cookie parsing keeps one value per name, so duplicates are
-        # counted in the raw header.
-        values = [
-            value.strip()
-            for name, _, value in (
-                part.partition("=")
-                for part in request.META.get("HTTP_COOKIE", "").split(";")
-            )
-            if name.strip() == TRANSACTION_COOKIE
-        ]
-        if len(values) > 1:
-            raise LoginFailed("login_failed", "more than one transaction cookie")
-        return values[0] if values else None
 
     # Providers --------------------------------------------------------------
 
@@ -502,18 +457,7 @@ def _no_store[ResponseT: HttpResponseBase](response: ResponseT) -> ResponseT:
 def _credentials(request: HttpRequest) -> dict[str, str]:
     """The ``username`` and ``password`` of a JSON or form-encoded login request."""
     if request.content_type == "application/json":
-        try:
-            document: object = json.loads(request.body)
-        except ValueError:
-            return {}
-        if not isinstance(document, dict):
-            return {}
-        fields = document  # pyright: ignore[reportUnknownVariableType]
-        return {
-            str(name): value  # pyright: ignore[reportUnknownArgumentType]
-            for name, value in fields.items()  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(value, str)
-        }
+        return json_string_fields(request.body)
     return request.POST.dict()
 
 

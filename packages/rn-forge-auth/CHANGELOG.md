@@ -11,6 +11,11 @@ Notable changes to `rn-forge-auth`, newest first, in the
   and transaction record functions, and fixed-window arithmetic functions in
   `rn_forge.auth`.
 
+- `admit_login` and `AdmittedLogin`, which turn a completed login into the
+  account, session content and validated `return_to` or a `LoginFailed`;
+  `TRANSACTION_COOKIE` and `transaction_cookie_value`; and
+  `json_string_fields`, in `rn_forge.auth`.
+
 ### Changed
 
 - The authorization-context cache drops expired entries when it next stores one,

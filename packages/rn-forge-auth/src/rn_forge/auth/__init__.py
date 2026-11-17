@@ -6,6 +6,7 @@ imported directly.
 """
 
 from rn_forge.auth.accounts import AccountRejected, AccountResolver
+from rn_forge.auth.admission import AdmittedLogin, admit_login
 from rn_forge.auth.audit import AUDIT_LOGGER, audit
 from rn_forge.auth.authorization import (
     AsyncAuthenticator,
@@ -20,7 +21,13 @@ from rn_forge.auth.context_cache import (
     AuthorizationVersions,
     InMemoryAuthorizationVersions,
 )
-from rn_forge.auth.flow import CompletedLogin, LoginFailed, LoginFlow
+from rn_forge.auth.flow import (
+    TRANSACTION_COOKIE,
+    CompletedLogin,
+    LoginFailed,
+    LoginFlow,
+    transaction_cookie_value,
+)
 from rn_forge.auth.identity import (
     ExternalIdentity,
     IdentityProvider,
@@ -41,6 +48,7 @@ from rn_forge.auth.local import (
     DevelopmentModeRequired,
     PasswordIdentityProvider,
     PasswordVerifier,
+    json_string_fields,
 )
 from rn_forge.auth.permissions import (
     DEFAULT_PERMISSION_ACTION_MAP,
@@ -80,9 +88,11 @@ __all__ = [
     "AUDIT_LOGGER",
     "CALLBACK_ERRORS",
     "DEFAULT_PERMISSION_ACTION_MAP",
+    "TRANSACTION_COOKIE",
     "AccountRejected",
     "AccountResolver",
     "AccountStateWriter",
+    "AdmittedLogin",
     "AsyncAuthenticator",
     "Authenticator",
     "AuthorizationContext",
@@ -121,17 +131,20 @@ __all__ = [
     "SessionInfo",
     "SessionStore",
     "TransactionStore",
+    "admit_login",
     "audit",
     "effective_permissions",
     "fixed_window_key",
     "fixed_window_retry_after",
     "fixed_window_seconds",
+    "json_string_fields",
     "link_bearer_principal",
     "principal_from_claims",
     "requirement_for",
     "session_from_record",
     "session_principal",
     "session_to_record",
+    "transaction_cookie_value",
     "transaction_from_record",
     "transaction_to_record",
     "validate_return_to",

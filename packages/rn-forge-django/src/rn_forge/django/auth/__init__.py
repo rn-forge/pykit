@@ -9,7 +9,6 @@ from rn_forge.django.auth.csrf import (
 )
 from rn_forge.django.auth.rate_limit import FixedWindowLimiter, RateLimit
 from rn_forge.django.auth.routes import (
-    TRANSACTION_COOKIE,
     AuthRoutesConfig,
     auth_urlpatterns,
 )
@@ -27,7 +26,6 @@ __all__ = [
     "CSRF_SETTINGS",
     "SESSION_COOKIE",
     "SESSION_SETTINGS",
-    "TRANSACTION_COOKIE",
     "ActiveSession",
     "AuthConfig",
     "AuthCsrfMiddleware",

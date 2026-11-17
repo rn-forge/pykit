@@ -135,6 +135,23 @@ def test_development_unknown_account_fails(make_request, transaction) -> None:
             provider.complete(request, transaction)
 
 
+def test_json_string_fields_keeps_the_string_members() -> None:
+    from rn_forge.auth import json_string_fields
+
+    body = (
+        b'{"username": "ada", "password": "x", "n": 1, "ok": true, "o": {}, "z": null}'
+    )
+    assert json_string_fields(body) == {"username": "ada", "password": "x"}
+    assert json_string_fields(body.decode()) == {"username": "ada", "password": "x"}
+
+
+@pytest.mark.parametrize("body", [b"", b"{", b"[1]", b'"text"', b"null", b"\xff\xfe"])
+def test_json_string_fields_is_empty_for_anything_else(body: bytes) -> None:
+    from rn_forge.auth import json_string_fields
+
+    assert json_string_fields(body) == {}
+
+
 def test_facade_exports_local_names() -> None:
     for name in (
         "PasswordIdentityProvider",

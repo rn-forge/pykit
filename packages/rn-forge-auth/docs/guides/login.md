@@ -63,6 +63,12 @@ login = flow.complete("acme", request, transaction_id=cookie_value)
 # the user. Clear the cookie, resolve the account, start the session.
 ```
 
+After `complete`, a binding calls `admit_login` to resolve the account and build
+the session content and validated `return_to`. It uses
+`transaction_cookie_value` for raw cookie headers and `json_string_fields` for
+JSON login fields. The binding keeps session start, CSRF token rotation,
+responses, form parsing, header access and rate limiting.
+
 `begin` checks `return_to` with `validate_return_to`, asks the provider for the
 redirect, and saves the transaction for the TTL. `complete` consumes the
 transaction first, so a callback works once whatever its outcome, then rejects a

@@ -7,13 +7,23 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ### Changed
 
+- Login admission, transaction-cookie parsing and JSON login fields now come
+  from `rn-forge-auth`, with no behaviour change.
+
 - Bearer/session principal projection, persisted records and fixed-window
   arithmetic now come from `rn-forge-auth`, with no behaviour change.
+
 - CSV export streams 1,000 rows per chunk, with the same bytes; 100,000 rows
   take under a second instead of 12 s.
+
 - `batch_create_router` parses the body, validates each item and builds the
   response once, in worker threads, with unchanged responses, error problems
   and OpenAPI schema.
+
+### Removed
+
+- `TRANSACTION_COOKIE` is no longer exported from the package; import it from
+  `rn_forge.auth`.
 
 ### Fixed
 

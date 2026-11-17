@@ -12,6 +12,7 @@ The core, `rn_forge.auth`:
 - [Persisted records](records.md)
 - [Rate-window arithmetic](rate_window.md)
 - [Login flow](flow.md)
+- [Login admission](admission.md)
 - [Accounts](accounts.md)
 - [Authorization context](context.md)
 - [Authorization context cache](context_cache.md)

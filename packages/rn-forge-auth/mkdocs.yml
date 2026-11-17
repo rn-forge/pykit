@@ -60,6 +60,7 @@ nav:
       - Persisted records: reference/records.md
       - Rate-window arithmetic: reference/rate_window.md
       - Login flow: reference/flow.md
+      - Login admission: reference/admission.md
       - Accounts: reference/accounts.md
       - Authorization context: reference/context.md
       - Authorization context cache: reference/context_cache.md

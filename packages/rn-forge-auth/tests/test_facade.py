@@ -110,3 +110,31 @@ def test_facade_exports_the_policy_functions() -> None:
             transaction_to_record,
         )
     )
+
+
+def test_facade_exports_the_login_admission_names() -> None:
+    from rn_forge import auth
+    from rn_forge.auth import (
+        TRANSACTION_COOKIE,
+        AdmittedLogin,
+        admit_login,
+        json_string_fields,
+        transaction_cookie_value,
+    )
+
+    assert {
+        "AdmittedLogin",
+        "admit_login",
+        "TRANSACTION_COOKIE",
+        "transaction_cookie_value",
+        "json_string_fields",
+    } <= set(auth.__all__)
+    assert all(
+        (
+            AdmittedLogin,
+            admit_login,
+            TRANSACTION_COOKIE,
+            transaction_cookie_value,
+            json_string_fields,
+        )
+    )

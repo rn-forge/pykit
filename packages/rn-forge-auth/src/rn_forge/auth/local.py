@@ -8,6 +8,7 @@ raises :class:`~rn_forge.auth.flow.LoginFailed` with code ``login_failed``.
 from __future__ import annotations
 
 import html
+import json
 import secrets
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
@@ -32,7 +33,32 @@ __all__ = [
     "DevelopmentModeRequired",
     "PasswordIdentityProvider",
     "PasswordVerifier",
+    "json_string_fields",
 ]
+
+
+def json_string_fields(body: bytes | str) -> dict[str, str]:
+    """Return the string-valued members of a JSON object body.
+
+    Args:
+        body: A JSON document as bytes or text.
+
+    Returns:
+        String fields with names as strings, or an empty dict for invalid JSON
+        or a document that is not an object.
+    """
+    try:
+        document: object = json.loads(body)
+    except ValueError:
+        return {}
+    if not isinstance(document, dict):
+        return {}
+    fields = document  # pyright: ignore[reportUnknownVariableType]
+    return {
+        str(name): value  # pyright: ignore[reportUnknownArgumentType]
+        for name, value in fields.items()  # pyright: ignore[reportUnknownVariableType]
+        if isinstance(value, str)
+    }
 
 
 class PasswordVerifier(Protocol):

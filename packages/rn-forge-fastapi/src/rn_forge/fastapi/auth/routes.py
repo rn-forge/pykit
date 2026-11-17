@@ -15,7 +15,6 @@ stores are :mod:`rn_forge.auth` objects the application builds and passes in
 
 from __future__ import annotations
 
-import json
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -28,17 +27,15 @@ from fastapi import APIRouter, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from rn_forge.auth import (
-    AccountRejected,
+    TRANSACTION_COOKIE,
     AccountResolver,
     AccountStateWriter,
     AuthorizationContextProvider,
-    CallbackError,
     DevelopmentIdentityProvider,
     IdentityProvider,
     InMemoryReplayStore,
     InMemorySessionStore,
     InMemoryTransactionStore,
-    InvalidReturnTo,
     LoginFailed,
     LoginFlow,
     LoginRequest,
@@ -47,8 +44,10 @@ from rn_forge.auth import (
     SessionInfo,
     SessionStore,
     TransactionStore,
+    admit_login,
     audit,
-    validate_return_to,
+    json_string_fields,
+    transaction_cookie_value,
 )
 from rn_forge.fastapi.auth.csrf import CsrfProtection, CsrfStore, InMemoryCsrfStore
 from rn_forge.fastapi.auth.proxies import TrustedProxies
@@ -71,12 +70,9 @@ from rn_forge.web import (
 if TYPE_CHECKING:
     from rn_forge.auth.oidc import BackchannelLogout
 
-__all__ = ["TRANSACTION_COOKIE", "AuthRoutesConfig", "auth_router", "sessions_for"]
+__all__ = ["AuthRoutesConfig", "auth_router", "sessions_for"]
 
 _LOGGER = logging.getLogger(__name__)
-
-TRANSACTION_COOKIE = "__Host-login-tx"
-"""The cookie that binds a callback to the browser that began the login."""
 
 _TRANSACTION_MAX_AGE = 600
 _PASSWORD_PER_CLIENT = RateLimit(30, timedelta(minutes=5))
@@ -273,7 +269,7 @@ class _Views:
                 request,
                 provider_id,
                 _Request(query=dict(request.query_params), form={}),
-                self._transaction_cookie(request),
+                transaction_cookie_value(request.headers.getlist("cookie")),
             )
         except LoginFailed as exc:
             self._audit_failure(provider_id, exc)
@@ -444,41 +440,26 @@ class _Views:
         completed = self._flow.complete(
             provider_id, login_request, transaction_id=transaction_id
         )
-        identity = completed.identity
-        try:
-            account_id = self._config.accounts.resolve(identity)
-        except AccountRejected as exc:
-            audit("account.rejected", provider=provider_id, reason=exc.reason)
-            raise self._refused("account_not_provisioned", provider_id, exc.reason)
-        context = self._config.contexts.resolve(account_id)
-        if not context.active:
-            audit("account.disabled", account_id=account_id, provider=provider_id)
-            raise self._refused("access_denied", provider_id, "account is not active")
         moment = self.sessions.now()
-        info = SessionInfo(
-            account_id=account_id,
-            session_version=context.session_version,
-            provider=identity.provider,
-            issuer=identity.issuer,
-            external_subject=identity.subject,
-            created_at=moment,
-            expires_at=moment + self._config.absolute_timeout,
-            auth_time=identity.auth_time,
-            amr=identity.amr,
-            session_ref=identity.session_ref,
-            id_token=identity.id_token,
-        )
-        session_id, token = self.sessions.start(info, previous=previous_session_id)
-        audit("login.success", account_id=account_id, provider=provider_id)
-        return _Started(self._return_to(completed.return_to), session_id, token, info)
-
-    def _return_to(self, return_to: str) -> str:
         try:
-            return validate_return_to(
-                return_to, prefixes=self._config.return_to_prefixes
+            admitted = admit_login(
+                completed,
+                provider_id=provider_id,
+                accounts=self._config.accounts,
+                contexts=self._config.contexts,
+                now=moment,
+                absolute_timeout=self._config.absolute_timeout,
+                return_to_prefixes=self._config.return_to_prefixes,
+                default_return_to=self._config.default_return_to,
             )
-        except InvalidReturnTo:
-            return self._config.default_return_to
+        except LoginFailed as exc:
+            _LOGGER.warning("Login with %s refused: %s", provider_id, exc.reason)
+            raise
+        session_id, token = self.sessions.start(
+            admitted.session, previous=previous_session_id
+        )
+        audit("login.success", account_id=admitted.account_id, provider=provider_id)
+        return _Started(admitted.return_to, session_id, token, admitted.session)
 
     @staticmethod
     def _audit_failure(provider_id: str, exc: LoginFailed) -> None:
@@ -510,28 +491,6 @@ class _Views:
                     )
                 )
         return None
-
-    @staticmethod
-    def _refused(code: CallbackError, provider_id: str, reason: str) -> LoginFailed:
-        _LOGGER.warning("Login with %s refused: %s", provider_id, reason)
-        return LoginFailed(code, reason)
-
-    @staticmethod
-    def _transaction_cookie(request: Request) -> str | None:
-        # Starlette's cookie parsing keeps one value per name, so duplicates
-        # are counted in the raw header.
-        values = [
-            value.strip()
-            for name, _, value in (
-                part.partition("=")
-                for header in request.headers.getlist("cookie")
-                for part in header.split(";")
-            )
-            if name.strip() == TRANSACTION_COOKIE
-        ]
-        if len(values) > 1:
-            raise LoginFailed("login_failed", "more than one transaction cookie")
-        return values[0] if values else None
 
     # Providers --------------------------------------------------------------
 
@@ -671,18 +630,7 @@ async def _credentials(request: Request) -> dict[str, str]:
     body = await request.body()
     media_type = request.headers.get("content-type", "").partition(";")[0].strip()
     if media_type == "application/json":
-        try:
-            document: object = json.loads(body)
-        except ValueError:
-            return {}
-        if not isinstance(document, dict):
-            return {}
-        fields = document  # pyright: ignore[reportUnknownVariableType]
-        return {
-            str(name): value  # pyright: ignore[reportUnknownArgumentType]
-            for name, value in fields.items()  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(value, str)
-        }
+        return json_string_fields(body)
     return _form(body)
 
 
