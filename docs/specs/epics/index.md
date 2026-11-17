@@ -33,7 +33,7 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | [E15 — Package boundaries](E15-package-boundaries/index.md) | Active | 4 New · 2 Closed | release-4 |
 | [E16 — kiln adoption](E16-kiln-adoption/index.md) | Closed | 7 Closed · 1 Removed | release-4, release-5, release-8 |
 | [E17 — Local-first web-app extraction](E17-local-first-web-app-extraction/index.md) | Active | 1 New · 5 Closed | release-8 |
-| [E18 — kiln extraction](E18-kiln-extraction/index.md) | Active | 6 Closed · 1 Removed | release-6, release-8 |
+| [E18 — kiln extraction](E18-kiln-extraction/index.md) | Closed | 6 Closed · 1 Removed | release-6, release-8 |
 | [E19 — Version ranges between packages](E19-version-ranges/index.md) | Closed | 3 Closed | release-6 |
 | [E20 — Security baseline](E20-security-baseline/index.md) | Closed | 5 Closed | release-7 |
 
@@ -43,6 +43,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | -- | -- | -- | -- |
 | [E21 — Publish to PyPI](E21-pypi-distribution/index.md) | Closed | 5 Closed | release-7, release-8 |
 | [E22 — Pykit simplification](E22-pykit-simplification/index.md) | Closed | 13 Closed | release-9 |
-| [E24 — Release 9 follow-ups](E24-release-9-follow-ups/index.md) | Active | 1 Active · 1 New · 2 Closed | release-9 |
+| [E24 — Release 9 follow-ups](E24-release-9-follow-ups/index.md) | Active | 1 Active · 3 Closed | release-9 |
 
 <!-- END derived epics -->

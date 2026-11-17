@@ -107,8 +107,8 @@ package=rn-forge-web
 version=0.1.0
 module=rn_forge.web
 tmp=$(mktemp -d)
-uv venv -q "$tmp/venv"
-VIRTUAL_ENV="$tmp/venv" uv pip install "$package==$version"
+python3 -m venv "$tmp/venv"
+"$tmp/venv/bin/pip" install -q "$package==$version"
 "$tmp/venv/bin/python" -c "import $module"
 ```
 
