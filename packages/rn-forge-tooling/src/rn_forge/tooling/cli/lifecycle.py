@@ -189,14 +189,27 @@ def _add_install(app: typer.Typer, product: ToolProduct) -> None:
         force: Annotated[
             bool, typer.Option("--force", help="Reinstall the active version.")
         ] = False,
+        ref: Annotated[
+            str | None,
+            typer.Option(
+                "--ref",
+                help="Install a branch, tag or commit of the product's GitHub repository.",
+            ),
+        ] = None,
     ) -> None:
         """Install a release and make it the active version."""
+        if ref is not None and (version is not None or archive is not None):
+            raise typer.BadParameter(
+                "--ref cannot be combined with --version or --archive"
+            )
         source = None
         if archive is not None:
             if version is None:
                 raise typer.BadParameter("--archive needs --version")
             source = LocalArchive(archive, version)
-        result = lifecycle.install(product, version=version, source=source, force=force)
+        result = lifecycle.install(
+            product, version=version, source=source, force=force, ref=ref
+        )
         _emit(result, _install_text(result))
 
 

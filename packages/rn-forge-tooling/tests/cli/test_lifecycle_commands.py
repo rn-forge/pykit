@@ -88,6 +88,11 @@ def test_archive_without_version_is_a_usage_error(tmp_path):
     assert app().run(["install", "--archive", str(tmp_path / "x")]) == ExitCode.USAGE
 
 
+@pytest.mark.parametrize("other", [["--version", "1.0.0"], ["--archive", "x"]])
+def test_ref_with_version_or_archive_is_a_usage_error(other):
+    assert app().run(["install", "--ref", "main", *other]) == ExitCode.USAGE
+
+
 def test_only_the_declared_verbs_are_mounted(capsys):
     assert app(["status"]).run(["doctor"]) == ExitCode.USAGE
 

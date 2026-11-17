@@ -6,7 +6,9 @@ import io
 import json
 import os
 import tarfile
+import threading
 from dataclasses import dataclass, field
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,7 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.tooling.install import (
+    GitHubReleases,
     Link,
     LocalArchive,
     ToolHome,
@@ -89,6 +92,59 @@ class Tool(ToolProduct):
         self.migrations.append((frm, to))
 
 
+SHA = "0123456789abcdef0123456789abcdef01234567"
+
+
+def make_commit_archive() -> bytes:
+    """A commit tarball: one root directory with bin/tool and a pyproject.toml."""
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
+        for name, payload in (
+            (f"r-{SHA}/bin/tool", b"tool main\n"),
+            (f"r-{SHA}/pyproject.toml", b'[project]\nversion = "1.1.0.dev0"\n'),
+        ):
+            info = tarfile.TarInfo(name)
+            info.size = len(payload)
+            tar.addfile(info, io.BytesIO(payload))
+    return buffer.getvalue()
+
+
+class _GitHubHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        prefix = "/repos/o/r/commits/"
+        if self.path.startswith(prefix) and self.path[len(prefix) :] in {
+            "main",
+            "v1.0.0",
+            SHA,
+        }:
+            body = json.dumps({"sha": SHA}).encode()
+        elif self.path == f"/o/r/archive/{SHA}.tar.gz":
+            body = make_commit_archive()
+        else:
+            self.send_error(404)
+            return
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format: str, *args: object) -> None:
+        pass
+
+
+@pytest.fixture
+def github():
+    """A GitHubReleases for ``o/r`` served by a local fake GitHub."""
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _GitHubHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    yield GitHubReleases("o/r", api_url=url, web_url=url)
+    server.shutdown()
+    server.server_close()
+    thread.join()
+
+
 @pytest.fixture
 def home(tmp_path):
     return ToolHome("tool", tmp_path / "home")
@@ -134,7 +190,12 @@ class TestInstall:
         link = home.root / "bin/tool"
         assert link.read_text() == "tool 1.0.0\n"
         state = json.loads(home.state_path.read_text())
-        assert state == {"version": "1.0.0", "schema_version": 1}
+        assert state == {
+            "version": "1.0.0",
+            "ref": "1.0.0",
+            "commit": None,
+            "schema_version": 1,
+        }
         assert not home.work_dir.exists() or not any(home.work_dir.iterdir())
 
     def test_the_active_version_is_not_reinstalled(self, home, source):
@@ -514,7 +575,66 @@ class TestUninstallAndCleanup:
             cleanup(tool, home=home)
 
 
+class TestGitHubRefs:
+    @pytest.mark.parametrize("ref", ["main", "v1.0.0", SHA])
+    def test_resolve_returns_the_commit(self, github, ref):
+        assert github.resolve(ref) == SHA
+
+    def test_download_commit_writes_the_archive(self, github, tmp_path):
+        archive = github.download_commit(SHA, tmp_path)
+        assert archive == tmp_path / f"{SHA}.tar.gz"
+        assert tarfile.is_tarfile(archive)
+
+    def test_an_unknown_ref_is_named(self, github):
+        with pytest.raises(AppException, match="nope"):
+            github.resolve("nope")
+
+
+class TestRefInstall:
+    def test_a_branch_installs_under_its_short_commit(self, home, github):
+        result = install(product(github), ref="main", home=home)
+        assert result.version == SHA[:12]
+        assert (home.versions_dir / SHA[:12]).is_dir()
+        assert home.current_version() == SHA[:12]
+        assert json.loads(home.state_path.read_text()) == {
+            "version": "1.1.0.dev0",
+            "ref": "main",
+            "commit": SHA,
+            "schema_version": 1,
+        }
+
+    def test_an_unknown_ref_leaves_the_home_untouched(self, home, github):
+        with pytest.raises(AppException):
+            install(product(github), ref="nope", home=home)
+        assert not (home.product_dir / "versions").exists()
+        assert not home.state_path.exists()
+
+    def test_version_and_ref_together_are_rejected(self, home, github):
+        with pytest.raises(AppException):
+            install(product(github), version="1.0.0", ref="main", home=home)
+
+    def test_a_ref_needs_a_github_source(self, home, source):
+        with pytest.raises(AppException, match="cannot install a ref"):
+            install(product(source), ref="main", home=home)
+        assert not home.state_path.exists()
+
+    def test_a_release_install_records_its_tag(self, home, source):
+        install(product(source), home=home)
+        state = json.loads(home.state_path.read_text())
+        assert state["ref"] == "1.0.0"
+        assert state["commit"] is None
+
+
 class TestStatusAndDoctor:
+    def test_state_without_ref_still_reports(self, home, source):
+        install(product(source), home=home)
+        home.state_path.write_text(
+            json.dumps({"version": "1.0.0", "schema_version": 1})
+        )
+        assert status(product(source), home=home).installed == "1.0.0"
+        codes = [f.code for f in doctor(product(source), home=home)]
+        assert "install.state-unreadable" not in codes
+
     def test_status_reports_running_and_installed(self, home, source):
         install(product(source), home=home)
         result = status(product(source, version="1.0.0"), home=home).as_dict()

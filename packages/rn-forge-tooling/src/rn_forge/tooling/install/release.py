@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +20,8 @@ from rn_forge.tooling.install.archive import extract_archive
 __all__ = ["GitHubReleases", "LocalArchive", "ReleaseSource", "fetch_release"]
 
 _LOGGER = AppLogger.get_logger(__name__)
+
+_SHA = re.compile(r"[0-9a-f]{40}")
 
 _TIMEOUT = 60.0
 """Seconds before a network request to a release host is abandoned."""
@@ -97,8 +101,47 @@ class GitHubReleases:
             AppException: The download failed.
         """
         tag = f"{self.tag_prefix}{version}"
-        url = f"{self.web_url}/{self.repo}/archive/refs/tags/{tag}.tar.gz"
-        archive = destination / f"{tag}.tar.gz"
+        return self._fetch(
+            f"{self.web_url}/{self.repo}/archive/refs/tags/{tag}.tar.gz",
+            destination / f"{tag}.tar.gz",
+        )
+
+    def resolve(self, ref: str) -> str:
+        """Return the 40-character commit SHA that a branch, tag or SHA names.
+
+        Raises:
+            AppException: The request failed, the ref does not exist, or the
+                response carries no valid SHA.
+        """
+        url = f"{self.api_url}/repos/{self.repo}/commits/{urllib.parse.quote(ref, safe='')}"
+        try:
+            with urllib.request.urlopen(url, timeout=_TIMEOUT) as response:  # noqa: S310  # URL built from the configured GitHub host
+                sha = str(json.load(response).get("sha") or "")
+        except (urllib.error.URLError, ValueError, AttributeError) as error:
+            raise AppException(
+                "Cannot resolve ref {!r} of {}: {}", ref, self.repo, error
+            ) from error
+        if not _SHA.fullmatch(sha):
+            raise AppException(
+                "Cannot resolve ref {!r} of {}: malformed sha {!r}",
+                ref,
+                self.repo,
+                sha,
+            )
+        return sha
+
+    def download_commit(self, sha: str, destination: Path) -> Path:
+        """Download the source tarball of commit *sha* into *destination*.
+
+        Raises:
+            AppException: The download failed.
+        """
+        return self._fetch(
+            f"{self.web_url}/{self.repo}/archive/{sha}.tar.gz",
+            destination / f"{sha}.tar.gz",
+        )
+
+    def _fetch(self, url: str, archive: Path) -> Path:
         try:
             with (
                 urllib.request.urlopen(url, timeout=_TIMEOUT) as response,  # noqa: S310  # URL built from the configured GitHub host

@@ -10,7 +10,7 @@
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
 | [F23.1 — Help text reads as written, and a command starts quietly](F23.1-help-text.md) | Active | release-9 | 1 New · 2 Closed |
-| [F23.2 — A Python tool installs from a branch, a tag or a commit](F23.2-install-from-a-ref.md) | Active | release-9 | 3 New |
+| [F23.2 — A Python tool installs from a branch, a tag or a commit](F23.2-install-from-a-ref.md) | Active | release-9 | 2 New · 1 Closed |
 
 <!-- END derived features -->
 

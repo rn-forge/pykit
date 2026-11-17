@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import tempfile
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,9 +17,14 @@ from rn_forge.commons.fs.locks import atomic_symlink
 from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.logging import AppLogger
+from rn_forge.tooling.install.archive import extract_archive
 from rn_forge.tooling.install.home import ToolHome
 from rn_forge.tooling.install.product import Link, ToolProduct
-from rn_forge.tooling.install.release import ReleaseSource, fetch_release
+from rn_forge.tooling.install.release import (
+    GitHubReleases,
+    ReleaseSource,
+    fetch_release,
+)
 
 __all__ = [
     "CleanupResult",
@@ -96,31 +102,50 @@ def install(
     source: ReleaseSource | None = None,
     home: ToolHome | None = None,
     force: bool = False,
+    ref: str | None = None,
 ) -> InstallResult:
-    """Install *version* of *product* and make it the active one.
+    """Install *version* of *product*, or the commit *ref* names, and make it active.
 
     Args:
         product: The product to install.
         version: The version to install. Defaults to the source's latest.
+            Not combined with *ref*.
         source: Where to fetch from. Defaults to ``product.source``.
         home: The home to install into. Defaults to the product's.
         force: Reinstall even when *version* is already active.
+        ref: A branch, tag or commit SHA of the source's GitHub repository.
+            The install is recorded under the first 12 characters of the
+            commit.
 
     Raises:
-        AppException: A step failed; all undo steps were attempted, with any
-            recovery failures and retained displaced version's path reported.
+        AppException: Both *version* and *ref* were given, *ref* was given
+            for a source that is not a :class:`GitHubReleases`, or a step
+            failed; all undo steps were attempted, with any recovery failures
+            and retained displaced version's path reported.
         BaseException: An interruption, re-raised after recovery with any
             recovery failures and retained path logged at error level.
     """
     home = home or ToolHome(product.name)
     source = source or product.source
-    target = version or source.latest()
+    sha: str | None = None
+    if ref is not None:
+        if version is not None:
+            raise AppException("A version and a ref cannot be combined")
+        if not isinstance(source, GitHubReleases):
+            raise AppException(
+                "{} cannot install a ref: its source is not a GitHub repository",
+                product.name,
+            )
+        sha = source.resolve(ref)
+        target = sha[:12]
+    else:
+        target = version or source.latest()
     home.version_dir(target)  # validates the version before anything is written
     with home.lock():
         previous = home.current_version()
         if previous == target and not force:
             return InstallResult(product.name, "already-current", target, previous)
-        _install(product, home, source, target, previous)
+        _install(product, home, source, target, previous, ref, sha)
     _LOGGER.verbose("install: {} {} active (was {})", product.name, target, previous)
     return InstallResult(product.name, "installed", target, previous)
 
@@ -249,13 +274,15 @@ def _install(
     source: ReleaseSource,
     target: str,
     previous: str | None,
+    ref: str | None,
+    sha: str | None,
 ) -> None:
-    """Prepare and activate a release. The caller holds the lock."""
-    prepared = _prepare(product, home, source, target)
+    """Prepare and activate a release or commit. The caller holds the lock."""
+    prepared = _prepare(product, home, source, target, sha)
     undo: list[tuple[str, Callable[[], object]]] = []
     retained = False
     try:
-        _activate(product, home, prepared, target, previous, undo)
+        _activate(product, home, source, prepared, target, previous, ref, sha, undo)
     except BaseException as exc:
         failures = _recover(undo)
         retained = (prepared.work / "displaced").exists()
@@ -267,14 +294,25 @@ def _install(
 
 
 def _prepare(
-    product: ToolProduct, home: ToolHome, source: ReleaseSource, target: str
+    product: ToolProduct,
+    home: ToolHome,
+    source: ReleaseSource,
+    target: str,
+    sha: str | None,
 ) -> _Prepared:
-    """Download, verify and extract a release; remove its work directory on failure."""
+    """Download, verify and extract a release or commit; remove its work directory on failure."""
     work: Path | None = None
     try:
         home.work_dir.mkdir(parents=True, exist_ok=True)
         work = Path(tempfile.mkdtemp(prefix=f"{target}-", dir=home.work_dir))
-        return _Prepared(work, fetch_release(source, target, work / "release"))
+        if sha is None:
+            root = fetch_release(source, target, work / "release")
+        else:
+            assert isinstance(source, GitHubReleases)  # noqa: S101  # checked by install
+            (work / "release").mkdir()
+            archive = source.download_commit(sha, work / "release")
+            root = extract_archive(archive, work / "release" / "extracted")
+        return _Prepared(work, root)
     except BaseException as exc:
         if work is not None:
             shutil.rmtree(work, ignore_errors=True)
@@ -285,9 +323,12 @@ def _prepare(
 def _activate(
     product: ToolProduct,
     home: ToolHome,
+    source: ReleaseSource,
     prepared: _Prepared,
     target: str,
     previous: str | None,
+    ref: str | None,
+    sha: str | None,
     undo: list[tuple[str, Callable[[], object]]],
 ) -> None:
     """Build and activate a release, appending recovery steps to *undo*."""
@@ -316,7 +357,12 @@ def _activate(
         product.migrate(previous, target)
     PathUtils.atomic_write(
         json.dumps(
-            {"version": target, "schema_version": product.state_schema_version},
+            {
+                "version": target if sha is None else _source_version(prepared, target),
+                "ref": ref if ref is not None else _tag(source, target),
+                "commit": sha,
+                "schema_version": product.state_schema_version,
+            },
             indent=2,
         )
         + "\n",
@@ -325,6 +371,22 @@ def _activate(
 
     undo.append(("restore current", _restore_current(home)))
     home.activate(target)
+
+
+def _tag(source: ReleaseSource, target: str) -> str:
+    """The tag a release install came from."""
+    if isinstance(source, GitHubReleases):
+        return source.tag_prefix + target
+    return target
+
+
+def _source_version(prepared: _Prepared, default: str) -> str:
+    """``[project] version`` of the extracted tree, or *default* when absent."""
+    try:
+        with (prepared.release_root / "pyproject.toml").open("rb") as stream:
+            return str(tomllib.load(stream)["project"]["version"])
+    except OSError, KeyError, TypeError, ValueError:
+        return default
 
 
 def _recover(

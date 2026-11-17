@@ -5,6 +5,11 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `install --ref` installs a branch, tag or commit of a GitHub repository, and
+  `state.json` records `ref` and `commit`.
+
 ### Fixed
 
 - A failed undo step no longer stops install recovery or hides the initiating
