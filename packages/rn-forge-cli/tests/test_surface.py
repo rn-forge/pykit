@@ -71,6 +71,24 @@ class TestCliSurfaceLoad:
         with pytest.raises(AppException):
             CliSurface.load(path)
 
+    def test_an_unknown_top_level_key_is_refused(self):
+        with pytest.raises(AppException, match="comands"):
+            CliSurface.load({"name": "demo", "comands": []})
+
+    def test_an_unknown_command_key_is_refused(self):
+        data = {
+            "name": "demo",
+            "commands": [{"name": "a", "target": "m:f", "hlep": "x"}],
+        }
+        with pytest.raises(AppException, match=r"commands\.0\.hlep"):
+            CliSurface.load(data)
+
+    def test_an_unknown_key_in_a_file_is_refused(self, tmp_path):
+        path = tmp_path / "config.toml"
+        path.write_text('[cli]\nname = "demo"\ncolour = "red"\n')
+        with pytest.raises(AppException, match="colour"):
+            CliSurface.load(path)
+
     def test_a_minimal_surface_declares_no_commands(self):
         surface = CliSurface.load({"name": "demo"})
         assert surface.commands == ()

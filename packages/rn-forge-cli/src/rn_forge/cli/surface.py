@@ -10,7 +10,7 @@ from typing import Any, Self
 from rn_forge.cli.options import LogLevel
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import DocumentUtils
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import StrictDataclassMixin
 
 __all__ = [
     "SURFACE_KEY",
@@ -23,7 +23,7 @@ SURFACE_KEY = "cli"
 
 
 @dataclass(frozen=True, slots=True)
-class CommandSurface(DataclassMixin):
+class CommandSurface(StrictDataclassMixin):
     """One command or command namespace of a declared CLI.
 
     Args:
@@ -41,7 +41,7 @@ class CommandSurface(DataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
-class CliSurface(DataclassMixin):
+class CliSurface(StrictDataclassMixin):
     """A whole declared command line.
 
     Args:
@@ -84,7 +84,8 @@ class CliSurface(DataclassMixin):
         Raises:
             AppException: The document has no *key* table, ``commands`` is not
                 an array of tables, an entry in ``commands`` is not a table,
-                or a declared value does not match its field's type.
+                a declared value does not match its field's type, or a key names no
+                field.
         """
         data = (
             dict(source) if isinstance(source, Mapping) else DocumentUtils.read(source)
