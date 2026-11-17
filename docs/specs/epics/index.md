@@ -43,6 +43,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | -- | -- | -- | -- |
 | [E21 — Publish to PyPI](E21-pypi-distribution/index.md) | Closed | 5 Closed | release-7, release-8 |
 | [E22 — Pykit simplification](E22-pykit-simplification/index.md) | Closed | 13 Closed | release-9 |
-| [E24 — Release 9 follow-ups](E24-release-9-follow-ups/index.md) | Active | 1 Active · 2 New · 1 Closed | release-9 |
+| [E24 — Release 9 follow-ups](E24-release-9-follow-ups/index.md) | Active | 1 Active · 1 New · 2 Closed | release-9 |
 
 <!-- END derived epics -->

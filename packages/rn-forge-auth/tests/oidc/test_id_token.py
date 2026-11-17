@@ -148,3 +148,25 @@ class TestMaxAge:
 def test_from_issuer_uses_discovery(idp):
     verifier = IdTokenVerifier.from_issuer(idp.issuer, client_id=CLIENT)
     assert verifier.verify(idp.sign(_claims(idp)), nonce=NONCE)["sub"] == "u1"
+
+
+@pytest.mark.parametrize(
+    "typ",
+    [
+        "at+jwt",
+        "application/at+jwt",
+        "logout+jwt",
+        "application/logout+jwt",
+        "secevent+jwt",
+    ],
+)
+def test_a_typ_other_than_jwt_is_refused(idp, typ):
+    token = idp.sign(_claims(idp), typ=typ)
+    with pytest.raises(TokenVerificationError, match="is not an ID token"):
+        _verifier(idp).verify(token, nonce=NONCE)
+
+
+@pytest.mark.parametrize("typ", [None, "JWT", "jwt"])
+def test_no_typ_or_jwt_is_accepted(idp, typ):
+    token = idp.sign(_claims(idp), typ=typ)
+    assert _verifier(idp).verify(token, nonce=NONCE)["sub"] == "u1"

@@ -18,6 +18,7 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Changed
 
+- An ID token whose `typ` header is neither absent nor `JWT` is rejected.
 - The authorization-context cache drops expired entries when it next stores one,
   bounding entries held by the accounts resolved within one TTL.
 - In-memory replay, transaction and session stores sweep expired records only

@@ -431,7 +431,8 @@ class IdTokenVerifier:
 
     Authlib's ``CodeIDToken`` checks ``iss``, ``aud``, ``azp``, ``exp``,
     ``iat``, ``nonce`` and ``at_hash``. Added here: the algorithm allow-list,
-    a mandatory non-empty nonce, and ``auth_time`` within *max_age*.
+    a mandatory non-empty nonce, ``auth_time`` within *max_age*, and a ``typ``
+    header that is absent or ``JWT`` (case-insensitive).
 
     Args:
         jwks: Where signing keys come from.
@@ -558,7 +559,11 @@ class IdTokenVerifier:
         if not nonce:
             raise TokenVerificationError("An ID token needs the expected nonce")
         try:
-            _, key = _signing_key(self._jwks, token, self._algorithms)
+            header, key = _signing_key(self._jwks, token, self._algorithms)
+            if _media_type(header) not in (None, "jwt"):
+                raise TokenVerificationError(
+                    "Token typ {} is not an ID token", header.get("typ")
+                )
             # joserfc takes key material, not a cryptography key object; an
             # HMAC key has no public_bytes and fails as AttributeError below.
             pem = key.key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
