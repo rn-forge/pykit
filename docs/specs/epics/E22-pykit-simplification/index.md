@@ -2,15 +2,16 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-14 |
+| **Closed Date** | 2026-11-17 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F22.1 — Short specs with stable work records](F22.1-specs.md) | Active | release-9 | 2 Closed |
-| [F22.2 — One current explanation per audience](F22.2-documentation.md) | Active | release-9 | 2 Closed |
+| [F22.1 — Short specs with stable work records](F22.1-specs.md) | Closed | release-9 | 2 Closed |
+| [F22.2 — One current explanation per audience](F22.2-documentation.md) | Closed | release-9 | 2 Closed |
 | [F22.3 — Behavioral tests and performance baselines](F22.3-tests-and-measurements.md) | Closed | release-9 | 3 Closed |
 | [F22.4 — Commons with explicit side effects](F22.4-commons.md) | Closed | release-9 | 5 Closed |
 | [F22.5 — CLI invocation state with a clear lifetime](F22.5-cli.md) | Closed | release-9 | 2 Closed |
