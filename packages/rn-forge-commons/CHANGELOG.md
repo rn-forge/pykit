@@ -18,6 +18,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ### Fixed
 
+- Configuring the logger no longer logs a `NOTICE`; it is `DEBUG` now. A
+  plain-format timestamp shows its milliseconds once.
 - `AppLogger` level methods report the caller's file, line and function.
 
 ## [0.9.0] - 2026-11-13

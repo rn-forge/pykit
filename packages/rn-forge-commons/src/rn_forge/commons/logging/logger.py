@@ -38,13 +38,13 @@ TRACE = 1
 
 # Log format strings
 _DEFAULT_FORMAT = (
-    "%(asctime)s,%(msecs)03d %(threadName)s[%(process)d] "
+    "%(asctime)s %(threadName)s[%(process)d] "
     "%(caller)s %(levelname)s "
     "[svc=%(service)s env=%(env)s] "
     "%(message)s"
 )
 _OTEL_FORMAT = (
-    "%(asctime)s,%(msecs)03d %(threadName)s[%(process)d] "
+    "%(asctime)s %(threadName)s[%(process)d] "
     "%(caller)s %(levelname)s "
     "[svc=%(service)s env=%(env)s "
     "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s] "
@@ -552,7 +552,7 @@ class AppLogger(VerboseLoggerBase):
             AppLogger._configured = True
 
             logger = AppLogger.get_logger(_config.root_logger_name)
-            logger.notice(
+            logger.debug(  # noqa: PLE1205  # brace-style log format
                 "App Logger Configured -> {} | {}",
                 logging.getLevelName(_config.level),
                 file_path,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import logging
+import re
 import subprocess
 import sys
 import types
@@ -195,6 +196,47 @@ def test_initialize_with_name() -> None:
 def test_initialize_force_reconfigure() -> None:
     AppLogger.initialize(root_logger_name="test")
     AppLogger.initialize(root_logger_name="test", force_reconfigure=True)
+
+
+def _configure_plain(level: int) -> None:
+    AppLogger.initialize(
+        root_logger_name="test",
+        level=level,
+        isatty=False,
+        force_reconfigure=True,
+    )
+
+
+def test_configuring_at_info_writes_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_plain(logging.INFO)
+    captured = capsys.readouterr()
+    assert "App Logger Configured" not in captured.out
+    assert "App Logger Configured" not in captured.err
+
+
+def test_configuring_at_debug_logs_the_notice(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_plain(logging.DEBUG)
+    captured = capsys.readouterr()
+    assert "App Logger Configured" in captured.out + captured.err
+
+
+def test_a_plain_timestamp_has_one_millisecond_field() -> None:
+    _configure_plain(logging.INFO)
+    handler = next(
+        h for h in logging.getLogger().handlers if type(h) is logging.StreamHandler
+    )
+    assert handler.formatter is not None
+    record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", None, None)
+    record.caller = "c"
+    record.service = "s"
+    record.env = "e"
+    text = handler.formatter.format(record)
+    assert re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} ", text)
+    assert not re.search(r",\d{3},\d{3}", text)
 
 
 # -- DEFAULT_FORMAT vs OTEL_FORMAT -----------------------------------------
