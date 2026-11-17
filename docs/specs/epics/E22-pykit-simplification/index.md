@@ -16,7 +16,7 @@
 | [F22.5 — CLI invocation state with a clear lifetime](F22.5-cli.md) | Closed | release-9 | 2 Closed |
 | [F22.6 — Installer transactions with honest recovery](F22.6-tooling.md) | Closed | release-9 | 3 Closed |
 | [F22.7 — HTTP policy with bounded readiness](F22.7-web.md) | Closed | release-9 | 3 Closed |
-| [F22.8 — Auth policy and bounded caches](F22.8-auth.md) | Active | release-9 | 5 Closed |
+| [F22.8 — Auth policy and bounded caches](F22.8-auth.md) | Closed | release-9 | 5 Closed |
 | [F22.9 — Django adapters with safe parsing and ownership](F22.9-django.md) | Closed | release-9 | 3 Closed |
 | [F22.10 — FastAPI adapters with clear validation boundaries](F22.10-fastapi.md) | Closed | release-9 | 3 Closed |
 | [F22.11 — SQLAlchemy bulk work with explicit bounds](F22.11-sqlalchemy.md) | Closed | release-9 | 2 Closed |
