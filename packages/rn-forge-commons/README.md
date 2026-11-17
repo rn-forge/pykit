@@ -15,7 +15,7 @@ Require the package by version range:
 
 ```toml
 [project]
-dependencies = ["rn-forge-commons>=0.8,<0.9"]
+dependencies = ["rn-forge-commons>=0.9,<0.10"]
 ```
 
 Optional extras:
@@ -159,6 +159,11 @@ cfg = Config("config")
 logger.info("database.host={}", cfg.get("database.host"))
 ```
 
+Failures a caller handles are `AppException`s: a message, an integer
+`error_code` and `error_data`. `Config(path)` raises `FileNotFoundError` for a
+missing path and `RecursionError` for a circular reference, and a strict
+`from_dict` rejects a mismatched value with an `AppException` naming the field.
+
 ### The developer-tooling packages
 
 The command-line layer lives in
@@ -167,32 +172,7 @@ and the file-owning tooling in
 [`rn-forge-tooling`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling).
 Both depend on this package; neither is depended on by it, and there are
 deliberately no compatibility re-exports in either direction — that would
-reverse the dependency. `uv run lint-imports` proves it.
+reverse the dependency. `task lint` proves it.
 
-| Concern | Package |
-| -- | -- |
-| `AppConsole`, Typer app factory, standard options, exit codes, the `[cli]` surface | `rn-forge-cli` |
-| `extract_archive`, the install lifecycle, docs checkers | `rn-forge-tooling` |
-
-## Docs
-
-Full API reference and guides are built with mkdocs:
-
-```bash
-uv run --group docs mkdocs serve   # or `mkdocs build`
-```
-
-Source lives in
-[`docs/`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-commons/docs),
-configured via
-[`mkdocs.yml`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-commons/mkdocs.yml).
-
-## Development
-
-From the repo root or this directory:
-
-```bash
-uv run pytest packages/rn-forge-commons
-uv run ruff check packages/rn-forge-commons
-uv run pyright
-```
+Maintainer commands are in the
+[development guide](https://rn-forge.github.io/pykit/guides/development/).

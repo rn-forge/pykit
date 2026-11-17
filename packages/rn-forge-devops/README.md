@@ -34,5 +34,11 @@ directory at or above the current one whose `pyproject.toml` declares
 uvx --from "rn-forge-devops>=0.4,<0.5" rn-forge-devops requirements
 ```
 
+The package has no extras.
+
+`requirements` exits 0 when every requirement is a range that admits the
+member's version and has a ceiling, 1 when at least one is not (one stderr line
+each), and 2 for invalid input, with a diagnostic and no traceback.
+
 The subcommands are described in the
 [subcommand reference](https://rn-forge.github.io/pykit/packages/rn-forge-devops/latest/reference/subcommands.html).

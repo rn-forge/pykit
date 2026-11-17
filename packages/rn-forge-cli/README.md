@@ -44,6 +44,9 @@ Require the package by version range:
 dependencies = ["rn-forge-cli>=0.1,<0.2"]
 ```
 
+No extra is needed to run a command line. The `testing` extra installs
+`assertpy` and `pytest`.
+
 ## Usage
 
 ```python
@@ -72,3 +75,9 @@ Or declare the commands in a `[cli]` table and build the app from it:
 ```python
 app = CliApp.from_config("cli.toml")
 ```
+
+## Errors
+
+An `AppException` exits 1 as one line; a bad command line exits 2; `Ctrl-C`
+exits 130; any other exception exits 1 with its traceback logged. A command that
+raises `typer.Exit(n)` exits `n`.

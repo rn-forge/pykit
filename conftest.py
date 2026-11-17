@@ -41,16 +41,17 @@ def built_wheels(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
 def scaffold_venv(built_wheels: dict[str, Path], tmp_path: Path) -> Installer:
     """Return ``install(*requirements)``, which makes a clean venv and returns its ``bin`` dir.
 
-    A requirement naming a workspace package (``rn-forge-web[drf]``) is served by its built wheel;
-    anything else resolves from the index. Extras named here apply to the served wheel; the override
-    replaces a sibling's git pin whole, so an extra it needs is named here too.
+    A requirement naming a workspace package (``rn-forge-django[drf]``) is served by its
+    built wheel; anything else resolves from the index. Extras named here apply to the
+    served wheel. The override replaces a sibling's version range and extras whole, so an
+    extra a sibling needs is named here too, and a range is never checked.
     """
 
     def install(*requirements: str) -> Path:
         venv = tmp_path / "venv"
         wanted = dict(_split(requirement) for requirement in requirements)
-        # The wheels pin their siblings as git URLs; overriding them with the local wheels
-        # keeps every install offline from the repository.
+        # The wheels require their siblings by version range, which would resolve to PyPI
+        # releases; overriding them with the local wheels installs this checkout's code.
         overrides = tmp_path / "overrides.txt"
         overrides.write_text(
             "".join(

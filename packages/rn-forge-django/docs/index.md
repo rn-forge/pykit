@@ -15,4 +15,18 @@ It provides:
   (`transfer` extra), audit-field population, auth-aware permissions
 - Excel-to-fixture generation for Django `loaddata`
 
+## Install
+
+```toml
+dependencies = ["rn-forge-django>=0.6,<0.7"]
+```
+
+Extras: `drf`, `transfer`, `openapi`, `oidc`, `redis`, `celery`, `fixtures`,
+`security`, `cors`, `otel` and `all`; see
+[Installation](guides/installation.md). Minimum example:
+[Quickstart](guides/quickstart.md). Set
+`rn_forge.django.drf.exceptions.problem_details_exception_handler` as the DRF
+exception handler to render every error as RFC 9457 `application/problem+json`;
+see [DRF Views](guides/drf-views.md#exceptions).
+
 Use the guides for common workflows and the API reference for module details.

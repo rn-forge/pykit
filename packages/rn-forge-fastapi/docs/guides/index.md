@@ -1,7 +1,7 @@
 # Guides
 
-- [Installation](installation.md) — how a consumer declares the dependency, and
-  why `uv add` is not it.
+- [Installation](installation.md) — how a consumer declares the dependency and
+  its extras.
 - [Quickstart](quickstart.md) — the four lines every application starts with.
 - [Wiring an application](wiring.md) — the whole wiring module, the rules it
   depends on, and what an application still writes itself.

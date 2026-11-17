@@ -27,16 +27,9 @@ router factory and an OpenAPI repair. **It makes no wire decision of its own.**
 
 ## Where it sits
 
-```text
-commons ──► web ──► auth ──► django
-                          └───► fastapi      (this package)
-```
-
-`rn-forge-fastapi` depends on `rn-forge-web`, `rn-forge-auth` and FastAPI. It
-never imports `rn_forge.django` — the two framework packages are independent
-siblings — nor `rn_forge.cli` or `rn_forge.tooling`. `.importlinter` carries the
-`fastapi-runtime-has-no-tooling` and `web-layers` contracts, and
-`uv run lint-imports` proves them.
+`rn-forge-fastapi` depends on `rn-forge-web`, `rn-forge-auth` and FastAPI; it
+never imports `rn_forge.django`, `rn_forge.cli` or `rn_forge.tooling`;
+`task lint` proves it.
 
 ## The import path
 
@@ -60,8 +53,24 @@ problem types, the auth contract), and this package does not re-export it.
 Declare `rn-forge-web` as well, so the import is not an undeclared transitive
 dependency.
 
-Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
-local checkout, for local development only.
+Extras: `oidc` (JWKS bearer auth and OIDC login, `rn-forge-auth[oidc]`), `redis`
+(the Redis stores and `rn_forge.fastapi.auth.redis`), `transfer`
+(`rn-forge-data` and `python-multipart`, for `rn_forge.fastapi.transfer`), `sse`
+(`sse-starlette`, for `rn_forge.fastapi.sse`) and `testing` (`assertpy`, `httpx`
+and `pytest`).
+
+## Minimum example
+
+```python
+from rn_forge.fastapi import FastApiApp
+
+app = FastApiApp(title="Orders")
+```
+
+The app serves `/healthz` and `/readyz` and renders every error as a problem
+body; the
+[quickstart](https://rn-forge.github.io/pykit/packages/rn-forge-fastapi/latest/guides/quickstart.html)
+adds pagination and readiness checks.
 
 ## What this package deliberately does not ship
 
@@ -88,8 +97,8 @@ local checkout, for local development only.
 ## Dependencies
 
 **`rn-forge-web`** — every module adapts one of its primitives.
-`rn-forge-commons` is not declared: nothing here imports it directly, and it
-arrives through `rn-forge-web`.
+
+**`rn-forge-commons`** — declared directly: `problem` uses its `AppLogger`.
 
 **`rn-forge-auth`** — a base dependency: the `auth` package is built on its
 login flows, `Principal`, `Requirement` and authenticator contracts. Its OIDC
@@ -123,6 +132,5 @@ the same literal segment collide silently here.
 
 ## Documentation
 
-`uv run --directory packages/rn-forge-fastapi --group docs mkdocs build --strict`,
-or the combined site from the repo root. The wiring guide is the page an
-application is written from.
+`task docs:build` builds the combined site and every package site. The wiring
+guide is the page an application is written from.

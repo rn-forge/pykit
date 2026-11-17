@@ -34,33 +34,24 @@ Every gate is a `task` verb, run from the repository root.
 | Combined documentation, root and every package, strict | `task docs:build` |
 | Lint, type check, tests and documentation together | `task validate` |
 | Regenerate the derived documentation regions | `task docs:generate` |
-| Broker profile (`rn-forge-auth`, needs Docker) | see below |
+| Broker profile (`rn-forge-auth`, needs Docker) | `task ci:integration -- rn-forge-auth` |
 
-A narrower run has no task verb. It filters a run and is not a gate:
+A narrower run filters a run through `task test` and is not a gate:
 `task validate` is the gate.
 
 | Run | Command |
 | -- | -- |
-| One package's tests | `uv run pytest packages/rn-forge-cli` |
-| One test by name or keyword | `uv run pytest -k test_name` |
-| Fast isolated tests (`rn-forge-django`, `rn-forge-web`) | `uv run pytest -m unit` |
-| Database-backed tests (`rn-forge-django`) | `uv run pytest -m integration` |
+| One package's tests | `task test PACKAGE_DIRS=packages/rn-forge-cli` |
+| One test file or test, by package-relative id | `PYTEST_ADDOPTS='tests/test_command_paths.py::test_exit_codes' task test PACKAGE_DIRS=packages/rn-forge-cli` |
+| By keyword | `PYTEST_ADDOPTS='-k test_name' task test PACKAGE_DIRS=packages/<pkg>` |
+| Fast isolated tests (`rn-forge-django`, `rn-forge-web`) | `PYTEST_ADDOPTS='-m unit' task test PACKAGE_DIRS=packages/<pkg>` |
+| Database-backed tests (`rn-forge-django`, `rn-forge-sqlalchemy`) | `task ci:integration -- <package>` (needs Docker) |
 
 The broker profile tests run against a Keycloak container and skip without
 `RN_FORGE_AUTH_KEYCLOAK_URL`. CI runs them in the `integration` job of `ci.yml`,
 against the `keycloak` service that `rn-forge-auth` declares in
-`[tool.workspace-ci.integration.keycloak]`. To run them locally:
-
-```bash
-docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
-RN_FORGE_AUTH_KEYCLOAK_URL=http://127.0.0.1:8080 uv run pytest packages/rn-forge-auth -m broker
-docker compose -f packages/rn-forge-auth/tests/broker/compose.yml down -v
-```
-
-Per-package commands work the same way with `--directory packages/<pkg>`, or
-from inside the package directory. Each package's `dev` and `docs` dependency
-groups include its own optional extras, so a `--group dev` sync runs every
-optional code path instead of skipping `pytest.importorskip`-gated tests.
+`[tool.workspace-ci.integration.keycloak]`. The broker profile (`rn-forge-auth`,
+needs Docker) runs as `task ci:integration -- rn-forge-auth`.
 
 ## Dependency audit
 

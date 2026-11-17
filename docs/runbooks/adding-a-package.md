@@ -21,8 +21,9 @@ setup.
    them.
 1. Add the member to root `[tool.uv.workspace].members` and the root development
    dependency group. Add local `[tool.uv.sources]` overrides for its internal
-   dependencies while keeping the declared dependencies pinned to intended git
-   tags. Inspect optional extras independently.
+   dependencies while declaring the dependencies by version range
+   (`task ci:internal-ranges` checks that). Inspect optional extras
+   independently.
 1. Update the root `.importlinter` file with the new package's place in the
    graph. Keep the import rules executable before adding cross-package
    imports. The [workspace page](../architecture/workspace.md) describes the

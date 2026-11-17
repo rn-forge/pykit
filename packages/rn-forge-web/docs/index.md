@@ -28,6 +28,9 @@ It provides:
   protocols are `rn-forge-auth`'s
 - **`conformance`** — the scenario table both framework packages are tested
   against, shipped as framework-free data
+- **`models`, `openapi`, `merge_patch`, `read_mask`, `soft_delete`, `transfer`,
+  `operations`, `deprecation`, `security`** — see the
+  [API reference](reference/index.md)
 
 ## Why this package exists
 
@@ -43,20 +46,25 @@ docstring. Those calls are the substance; the code is small.
 
 ## Where it sits
 
-```text
-commons ──► web ──► auth ──► django
-              │        └───► fastapi
-              └───► sqlalchemy
-```
-
 It depends on `rn-forge-commons` and nothing else in the workspace, and it
 imports no web framework, no `rn_forge.cli` and no `rn_forge.tooling`.
-`uv run lint-imports` proves it, and CI gates every other job on that.
+`task lint` proves it, and CI gates every other job on that.
 
 **Inbound, not outbound.** Circuit breakers, retries and rate limiting are
 transport-agnostic and live in `rn-forge-commons` — a worker retrying a database
 call needs them and serves no HTTP. This package is about what a server promises
 its callers.
+
+## Install
+
+```toml
+dependencies = ["rn-forge-web>=0.3,<0.4"]
+```
+
+Extras: `security` and `testing`. Minimum example:
+[Quickstart](guides/quickstart.md). Every exception here is an `AppException`
+and renders as an RFC 9457 `application/problem+json` body; see
+[API conventions](guides/api-conventions.md#2-errors).
 
 ## Where to start
 

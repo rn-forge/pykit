@@ -3,13 +3,13 @@
 Base package:
 
 ```bash
-uv add "rn-forge-commons>=0.8,<0.9"
+uv add "rn-forge-commons>=0.9,<0.10"
 ```
 
 All optional integrations:
 
 ```bash
-uv add "rn-forge-commons[all]>=0.8,<0.9"
+uv add "rn-forge-commons[all]>=0.9,<0.10"
 ```
 
 Targeted extras:
@@ -18,12 +18,8 @@ Targeted extras:
 - `markdown` for Markdown structure (`rn_forge.commons.text.markdown`)
 - `otel` for OpenTelemetry log correlation
 - `pydantic` for strict configuration models (`rn_forge.commons.lang.models`)
+- `resilience` for async circuit breakers and HTTP retries
+- `structlog` for structured logging over the stdlib handlers
 - `templates` for the Jinja template engine (`rn_forge.commons.text.templates`)
 - `testing` for `assertpy` test helpers
-
-Docs commands:
-
-```bash
-uv run --directory packages/rn-forge-commons --group docs mkdocs serve
-uv run --directory packages/rn-forge-commons --group docs mkdocs build
-```
+- `all` for every extra above

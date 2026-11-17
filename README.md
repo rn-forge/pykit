@@ -8,61 +8,32 @@ Docs: [rn-forge.github.io/pykit](https://rn-forge.github.io/pykit/)
 
 ## Packages
 
-| Package | Import path | Description |
-| -- | -- | -- |
-| [`rn-forge-commons`](packages/rn-forge-commons) | `rn_forge.commons` | Runtime-neutral utilities, grouped by kind of mechanism: `lang` (collections, dataclasses, reflection, values), `fs` (paths, hashing, locks, blocks, documents, state), `generation` (plan, diff and atomic apply of owned files), `data` (Excel/pandas), `text` (templates, Markdown — each behind an extra), `logging`, `runtime` (environment, subprocess, tasks, plugins) and `integration` (messaging/object/secret protocols, resilience), plus config, exceptions, findings and testing helpers. No web framework. |
-| [`rn-forge-cli`](packages/rn-forge-cli) | `rn_forge.cli` | The shared command-line layer: `CliApp` (a `typer.Typer` subclass), the standard option set, the error-to-exit-code mapping and the declared `[cli]` surface. What an ordinary batch application wants as much as a developer tool does. Console output is not here — it is a property of the process, and lives in `rn-forge-commons`. |
-| [`rn-forge-tooling`](packages/rn-forge-tooling) | `rn_forge.tooling` | Developer-tool lifecycle verbs and install mechanics: `$RNF_HOME`, release fetching and verification, transactional install/upgrade/uninstall. Depends on `rn-forge-cli`; never a runtime dependency of a deployed app. |
-| [`rn-forge-web`](packages/rn-forge-web) | `rn_forge.web` | Framework-agnostic HTTP/API primitives — the wire semantics an application promises its callers: W3C Trace Context, RFC 9457 problem details, ETag preconditions, AIP-158 pagination, idempotency, readiness, ASGI middleware, the auth wire contract (`Credentials`, the `Authorization` parser, the `WWW-Authenticate` challenge), and a framework-free conformance table. Depends on `rn-forge-commons` and nothing else. |
-| [`rn-forge-auth`](packages/rn-forge-auth) | `rn_forge.auth` | Authentication and authorization primitives over `rn-forge-web`: the identity, account and authorization-context contracts, `Principal`, `Requirement`, `ScopeAuthorizer`, session, transaction and replay stores, `principal_from_claims`, `LoginFlow` and the local password and development login providers; the `oidc` extra adds the OIDC and OAuth 2.0 login provider (`OidcProvider`), back-channel logout, the OIDC token profiles (`OidcAuthenticator`, `JwtVerifier`, `IdTokenVerifier`, `LogoutTokenVerifier`) and a fake provider for tests, and the `redis` extra adds Redis stores. |
-| [`rn-forge-django`](packages/rn-forge-django) | `rn_forge.django` | Django/DRF integration layer built on `rn-forge-commons`: abstract model base classes, auth (sessions, OIDC bearer, permission hooks), DRF views/serializers/exceptions, a typed settings facade. |
-| [`rn-forge-fastapi`](packages/rn-forge-fastapi) | `rn_forge.fastapi` | FastAPI adapters over `rn-forge-web`: problem handlers, the OpenAPI error-type repair and `operationId` convention, pagination/idempotency/`If-Match` dependencies, a health router and the auth binding. Makes no wire decision of its own. |
-| [`rn-forge-devops`](packages/rn-forge-devops) | `rn_forge.devops` | Release commands for the pykit workspace: the `rn-forge-devops` command checks internal requirements and writes the umbrella release's notes. The CI planner is kiln's `kiln-devops`. Depends on `packaging` and no other rn-forge package; a CI tool, not an application dependency. |
-| [`rn-forge-data`](packages/rn-forge-data) | `rn_forge.data` | Excel and tabular data helpers over `rn-forge-commons`. Base dependencies are `openpyxl` and `tablib[xlsx]`; the `pandas` extra adds the pandas adapter. |
-| [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | `rn_forge.sqlalchemy` | Async SQLAlchemy models, upsert and keyset pagination over `rn-forge-web`: `Base`, `UTCDateTime`, audit and version mixins, `update_versioned`, `upsert`, `keyset`. PostgreSQL and SQLite. |
+| Package | Purpose |
+| -- | -- |
+| [`rn-forge-commons`](packages/rn-forge-commons) | Runtime-neutral utilities, protocols, logging and console output. |
+| [`rn-forge-cli`](packages/rn-forge-cli) | The shared command-line layer: Typer application, standard options and exit codes. |
+| [`rn-forge-tooling`](packages/rn-forge-tooling) | Install and lifecycle verbs for command-line developer tools. |
+| [`rn-forge-web`](packages/rn-forge-web) | Framework-agnostic HTTP wire contracts and a conformance table. |
+| [`rn-forge-auth`](packages/rn-forge-auth) | Authentication and authorization primitives; OIDC and Redis behind extras. |
+| [`rn-forge-django`](packages/rn-forge-django) | Django and DRF adapters over the web and auth contracts. |
+| [`rn-forge-fastapi`](packages/rn-forge-fastapi) | FastAPI adapters over the web and auth contracts. |
+| [`rn-forge-devops`](packages/rn-forge-devops) | Release commands for the pykit workspace; a CI tool, not an application dependency. |
+| [`rn-forge-data`](packages/rn-forge-data) | Excel and tabular data helpers; a pandas adapter behind an extra. |
+| [`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy) | Async SQLAlchemy models, upsert and keyset pagination. |
+
+[Choosing packages](docs/guides/choosing-packages.md) says which to take;
+[workspace boundaries](docs/architecture/workspace.md) explains how they depend
+on each other.
 
 ## Import boundaries
 
-The boundaries between these packages are executable, not conventional.
-[`.importlinter`](.importlinter) states fifteen contracts, summarised by the
-rules below, and the import-boundary check proves them; CI gates every other job
-on it.
+The boundaries between packages are executable: [`.importlinter`](.importlinter)
+states them, `task lint` proves them and CI gates every other job on it.
+[Workspace boundaries](docs/architecture/workspace.md) explains the graph and
+the rules. There are no compatibility re-exports in any direction
+([ADR-0002](docs/adr/ADR-0002.md)).
 
-1. `rn_forge.commons` never reaches into `rn_forge.cli` or `rn_forge.tooling`
-   and never imports Typer. Jinja and the Markdown parsers enter only through
-   `rn_forge.commons.text`, and `rn_forge.commons.generation` and `text` are
-   imported directly, never by commons' core or facade.
-1. `rn_forge.cli` never imports `rn_forge.tooling` or Jinja — a batch
-   application takes the command-line layer without the file-owning machinery
-   (ADR-0002).
-1. The three libraries layer strictly: `tooling` → `cli` → `commons`.
-1. `rn_forge.django`'s runtime surface imports none of them. Only
-   `rn_forge.django.codegen` may, and only with the (not yet built) `codegen`
-   extra installed.
-1. `rn_forge.web` imports no web framework (`django`, `fastapi`, `starlette`,
-   `rest_framework`) and neither `rn_forge.cli` nor `rn_forge.tooling` — it
-   ships into an ASGI server and has no business reaching the command-line or
-   file-owning layers.
-1. The framework packages layer on top of it: `django` → `auth` → `web` →
-   `commons`, `fastapi` → `auth` → `web` → `commons` and `sqlalchemy` → `web`
-   → `commons`, as independent siblings, so none may import another.
-1. `rn_forge.auth`'s core never imports the `rn_forge.auth.oidc` adapter.
-1. `rn_forge.fastapi` imports neither `rn_forge.django`, `rn_forge.cli`,
-   `rn_forge.tooling` nor Jinja. Only its (not yet built)
-   `rn_forge.fastapi.codegen` may.
-1. `rn_forge.sqlalchemy` imports neither framework package nor `fastapi`,
-   `starlette`, `django` or `rest_framework`.
-1. `rn_forge.devops` imports no other `rn_forge` package: release tooling
-   carries no rn-forge dependency (ADR-0012).
-1. `rn_forge.data`, the core, never imports the `rn_forge.data.pandas` adapter
-   (the contract names the core module, not the package that contains the
-   adapter), and the framework packages layer over it as siblings of
-   `rn_forge.web`.
-
-There are deliberately **no compatibility re-exports** in any direction: a shim
-would satisfy a caller and reverse the dependency.
-
-All packages ship a `py.typed` marker and are type-checked in strict mode.
+Every package ships a `py.typed` marker and is type-checked in strict mode.
 
 ## Design principles
 
@@ -76,9 +47,8 @@ All packages ship a `py.typed` marker and are type-checked in strict mode.
 1. **Situational dependencies live behind extras**, outside the package facade.
    ([ADR-0003](docs/adr/ADR-0003.md))
 1. **Packages release independently and depend on each other by range.** Each
-   package has its own version and tag, and requires its dependencies by
-   version range from pykit's index; nothing is published to PyPI.
-   ([ADR-0004](docs/adr/ADR-0004.md))
+   requires its dependencies by version range; every package is published to
+   PyPI. ([ADR-0004](docs/adr/ADR-0004.md))
 1. **pykit is upstream.** Applications are built on these libraries rather than
    re-deriving them, so apps sharing pykit share logic and read alike.
 
@@ -89,24 +59,11 @@ linked decisions state each rule in full.
 
 ## Installing a package
 
-Every package is published to PyPI. A consumer requires one by version range:
-
-```toml
-dependencies = ["rn-forge-commons>=0.8,<0.9"]
-```
-
-Or pin a tag by git direct URL with its subdirectory:
-
-```toml
-dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.8.0#subdirectory=packages/rn-forge-commons",
-]
-```
-
-The [consuming guide](docs/guides/consuming-packages.md) covers both. The
-[release pages](docs/releases/index.md) record which tags exist. Inside this
-workspace, `[tool.uv.sources]` resolves every package to the local checkout
-instead.
+Every package is published to PyPI and required by version range, for example
+`rn-forge-commons>=0.9,<0.10`. The
+[consuming guide](docs/guides/consuming-packages.md) covers ranges, exact pins
+and git direct URLs, and the [release pages](docs/releases/index.md) record
+which tags exist.
 
 ## Requirements
 
@@ -122,8 +79,7 @@ task setup
 ## Development
 
 The [development guide](docs/guides/development.md) lists the setup, test, lint,
-type-check, import-boundary and documentation commands. All packages build with
-`uv_build`, with `module-name` mapped to their `rn_forge.*` namespace package.
+type-check, import-boundary and documentation commands.
 
 ## Working here
 
@@ -230,17 +186,8 @@ versions are published separately, at
 
 **Using the packages.** Each package's `README.md` and `docs/` hold its usage
 guides, API reference and changelog, and build as a standalone site. Start with
-[choosing packages](docs/guides/choosing-packages.md), then the package:
-[`rn-forge-commons`](packages/rn-forge-commons),
-[`rn-forge-cli`](packages/rn-forge-cli),
-[`rn-forge-tooling`](packages/rn-forge-tooling),
-[`rn-forge-web`](packages/rn-forge-web),
-[`rn-forge-auth`](packages/rn-forge-auth),
-[`rn-forge-django`](packages/rn-forge-django),
-[`rn-forge-fastapi`](packages/rn-forge-fastapi),
-[`rn-forge-sqlalchemy`](packages/rn-forge-sqlalchemy),
-[`rn-forge-devops`](packages/rn-forge-devops) or
-[`rn-forge-data`](packages/rn-forge-data).
+[choosing packages](docs/guides/choosing-packages.md), then the package's README
+from the table above.
 
 **Maintaining the workspace.** [`docs/`](docs/index.md) holds what spans
 packages: the [spec board](docs/specs/index.md) of current and planned work

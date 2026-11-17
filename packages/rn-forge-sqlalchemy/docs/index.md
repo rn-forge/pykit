@@ -7,9 +7,23 @@ and SQLite.
 
 It provides:
 
-- **`models`** — `Base`, `UTCDateTime`, `AuditMixin` and `VersionMixin`
+- **`models`** — `Base`, `UTCDateTime`, `AuditMixin`, `VersionMixin`,
+  `SoftDeleteMixin`, `live`, `soft_delete` and `undelete`
 - **`concurrency`** — `update_versioned`
 - **`upsert`** — `upsert` and `UpsertCounts`
 - **`pagination`** — `keyset` and `next_page_token`
 
 It imports no web framework. See [Using the package](guides/usage.md).
+
+## Install
+
+```toml
+dependencies = [
+  "rn-forge-sqlalchemy>=0.2,<0.3",
+  "rn-forge-web>=0.3,<0.4",
+]
+```
+
+`[migrations]` adds `alembic`. Minimum example:
+[Models](guides/usage.md#models). `update_versioned` raises `VersionConflict`
+(412); see [Optimistic concurrency](guides/usage.md#optimistic-concurrency).

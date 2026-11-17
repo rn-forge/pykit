@@ -188,3 +188,10 @@ REST_FRAMEWORK = {
 `ExceptionContextViewMixin` (included in the base views) supplies friendlier
 per-action error messages (e.g. "Error creating records.") consumed by that
 handler.
+
+To return RFC 9457 `application/problem+json` instead, register
+`rn_forge.django.drf.exceptions.problem_details_exception_handler`. It takes an
+optional `registry` (default `problem_registry()`, with the
+`RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]` setting applied when set), maps
+DRF validation errors to 422 and an oversized body to 413, and sends no
+`WWW-Authenticate` for a `NO_CHALLENGE` value.
