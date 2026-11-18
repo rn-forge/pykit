@@ -415,17 +415,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#verifying-the-boundary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verifying the boundary
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1271,17 +1260,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#verifying-the-boundary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verifying the boundary
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1309,32 +1287,15 @@
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-web&gt;=0.3,&lt;0.4&quot;</span><span class="p">]</span>
 </code></pre></div>
 
-<p><code>rn-forge-commons</code> comes in transitively, as a version range. There is nothing
-else to install: this package has no third-party dependency of its own, and no
-optional extras.</p>
+<p>Its dependencies are <code>rn-forge-commons[pydantic]</code> and <code>opentelemetry-api</code>. The
+<code>security</code> extra adds <code>secure</code>, for <code>rn_forge.web.security</code>; the <code>testing</code> extra
+adds <code>assertpy</code> and <code>pytest</code>.</p>
 <h2 id="inside-this-workspace">Inside this workspace<a class="headerlink" href="#inside-this-workspace" title="Permanent link">&para;</a></h2>
-<p><code>packages/rn-forge-web</code> is a <code>uv</code> workspace member, so the root
-<code>[tool.uv.sources]</code> overrides the requirement above with the local checkout:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">[tool.uv.sources]</span>
-<span class="n">rn-forge-web</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">workspace</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
-</code></pre></div>
-
-<p>That override is <strong>local development only</strong>. It does not survive into a built
-wheel, which is why the <code>pyproject.toml</code> still carries the version range — that
-is what a consumer outside the workspace actually resolves.</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
-uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>packages/rn-forge-web
-</code></pre></div>
-
-<h2 id="verifying-the-boundary">Verifying the boundary<a class="headerlink" href="#verifying-the-boundary" title="Permanent link">&para;</a></h2>
-<p>The package's central claim is that it imports no web framework and neither of
-the development-layer packages. That claim is executable:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>lint-imports
-</code></pre></div>
-
-<p>The <code>web-is-framework-free</code> and <code>web-layers</code> contracts in <code>.importlinter</code> are
-what CI trusts, because they see transitive imports. A grep over the source is a
-useful fast local check but is not the gate.</p>
+<p>The workspace resolves this package to the local checkout, for development only;
+see the
+<a href="https://rn-forge.github.io/pykit/architecture/workspace/">workspace boundaries</a>
+page. The package imports no web framework, <code>rn_forge.cli</code> or
+<code>rn_forge.tooling</code>; <code>task lint</code> proves it.</p>
 
 
 

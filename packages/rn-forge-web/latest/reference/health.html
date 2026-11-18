@@ -1919,7 +1919,10 @@ A name not present in <em>checks</em> is ignored.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Run <em>checks</em> concurrently in a thread pool and aggregate them.</p>
+        <p>Run <em>checks</em> concurrently on a shared pool of at most 32 workers.</p>
+<p>All checks share one deadline. A check that finds the pool full fails
+immediately with <code>not run: health check capacity exhausted</code>. A timed-out
+check keeps running and holding its slot until its callable returns.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1974,8 +1977,8 @@ A name not present in <em>checks</em> is ignored.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Seconds each check may run before it is reported as
-<code>fail</code>. <code>None</code> (the default) waits indefinitely.</p>
+                <p>Seconds for the shared deadline, after which unfinished
+checks are reported as <code>fail</code>. <code>None</code> waits indefinitely.</p>
               </div>
             </td>
             <td>
@@ -2024,10 +2027,8 @@ A name not present in <em>checks</em> is ignored.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A check returned an awaitable. This is raised rather than
-swallowed into a <code>fail</code>, because it is a wiring mistake in the
-caller's code, not a sick dependency — and reporting it as a
-failing check would hide it behind a red dependency.</p>
+                <p>A check returned an awaitable. It is raised, not reported
+as a failing check.</p>
               </div>
             </td>
           </tr>
