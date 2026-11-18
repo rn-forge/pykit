@@ -2,13 +2,14 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-11-18 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F25.1 — Typed application state](F25.1-typed-application-state.md) | New | release-10 | 2 New |
+| [F25.1 — Typed application state](F25.1-typed-application-state.md) | Active | release-10 | 1 New · 1 Closed |
 | [F25.2 — Faster XLSX transfer](F25.2-faster-xlsx-transfer.md) | New | release-10 | 2 New |
 
 <!-- END derived features -->
