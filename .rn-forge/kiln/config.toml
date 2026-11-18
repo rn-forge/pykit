@@ -35,7 +35,7 @@ lifecycle = false
 [kiln]
 # A kiln release tag, `v<version>`; a branch only before kiln's first
 # release. `kiln apply` pins the dev dependency and the CI install to it.
-ref = "fc79b96f09335068267bfde142d8a86c674808f2"
+ref = "5a865f66e2c9e3b0dd5dc2bd11f6ccffa88aa311"
 
 # The `python-lib` archetype's settings.
 track = "feature/v1"

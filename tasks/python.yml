@@ -18,7 +18,6 @@ version: "3"
 vars:
   PACKAGE_DIRS: packages/rn-forge-commons packages/rn-forge-cli packages/rn-forge-django packages/rn-forge-fastapi packages/rn-forge-sqlalchemy packages/rn-forge-tooling packages/rn-forge-web packages/rn-forge-devops packages/rn-forge-data packages/rn-forge-auth
   PACKAGES: rn-forge-commons rn-forge-cli rn-forge-django rn-forge-fastapi rn-forge-sqlalchemy rn-forge-tooling rn-forge-web rn-forge-devops rn-forge-data rn-forge-auth
-  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@fc79b96f09335068267bfde142d8a86c674808f2" kiln-devops'
 
 tasks:
   install:

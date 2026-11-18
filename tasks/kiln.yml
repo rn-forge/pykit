@@ -7,9 +7,6 @@ version: "3"
 # pass their arguments through (`task kiln:diff -- --artifact Taskfile.yml`).
 # `pin` pins a branch's newest commit, a tag or a SHA (`task kiln:pin -- <ref>`); with no argument it follows `track`.
 
-vars:
-  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@fc79b96f09335068267bfde142d8a86c674808f2" kiln'
-
 tasks:
   doctor:
     desc: Run kiln's checks on this repository — generated files, task layout, CI, dependencies, docs.
@@ -33,5 +30,5 @@ tasks:
   pin:
     desc: Pin kiln to a branch's newest commit, a tag or a SHA and re-render with it. Pass it after `--`; with none, follow `track`.
     cmds:
-      - '{{.KILN}} pin {{.CLI_ARGS}}'
+      - '{{.KILN}} pin{{if .CLI_ARGS}} --ref {{.CLI_ARGS}}{{end}}'
       - 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@$({{.KILN}} pin --show)" kiln apply'

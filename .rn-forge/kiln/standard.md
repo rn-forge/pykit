@@ -281,7 +281,7 @@ model.
 | Docs strict build | `task docs:build` | D: `[docs] profile = "mkdocs"` |
 | `dependency-review` | action | S |
 | Sonar | `sonar` job | C: `[ci] sonar`, default `true` |
-| Release | `release` job | C: `[ci] release`, default `tag-exists`; `pypi` for `python-lib`; `nx-dispatch` for `node-lib`; `none` |
+| Release | `release` job | C: `[ci] release`, default `tag-exists`; `pypi` for `python-lib`; `nx-dispatch` or `npm` for `node-lib`; `none` |
 | `verify-release` | `task ci:verify-release` | D: a release mode other than `none` |
 | Docs deploy | `docs` job | D: `[docs] profile = "mkdocs"` |
 | `ci-ok` | none | S |
