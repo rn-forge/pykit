@@ -54,6 +54,7 @@ from rn_forge.fastapi.soft_delete import (
     show_deleted_param,
     soft_delete_router,
 )
+from rn_forge.fastapi.state import app_state, state_lifespan
 
 __all__ = [
     "ANONYMOUS_PREFIX",
@@ -80,6 +81,7 @@ __all__ = [
     "SoftDeleteState",
     "SoftDeleteStore",
     "active_session",
+    "app_state",
     "apply_cors",
     "auth_router",
     "basic_auth",
@@ -107,4 +109,5 @@ __all__ = [
     "sessions_for",
     "show_deleted_param",
     "soft_delete_router",
+    "state_lifespan",
 ]

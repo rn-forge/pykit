@@ -5,6 +5,12 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- Typed application state: `app_state` and `state_lifespan` declare an
+  application's resources as a class and inject them into routes through
+  `Depends`.
+
 ## [0.5.0] - 2026-11-17
 
 ### Changed

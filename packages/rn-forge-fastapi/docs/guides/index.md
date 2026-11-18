@@ -7,6 +7,8 @@
   depends on, and what an application still writes itself.
 - [Tabular export and import](transfer.md) — the `transfer` extra: CSV and xlsx
   download, validated upload.
+- [Typed application state](state.md) — declare long-lived resources once and
+  inject them into routes with types.
 - [Auth](auth.md) — the `/auth` routes, sessions, CSRF, bearer auth,
   authorization, and the Redis stores.
 

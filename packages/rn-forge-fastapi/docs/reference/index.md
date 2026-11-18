@@ -4,5 +4,5 @@ The API reference is generated from source docstrings with `mkdocstrings`.
 
 Start with the [application class](app.md), [problem handlers](problem.md), and
 [OpenAPI helpers](openapi.md). The remaining pages cover request dependencies,
-health, partial responses, tabular transfer, server-sent events, and
-[auth](auth/index.md).
+health, [application state](state.md), partial responses, tabular transfer,
+server-sent events, and [auth](auth/index.md).

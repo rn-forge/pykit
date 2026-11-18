@@ -22,7 +22,7 @@
 
 | Feature | Epic | State |
 | -- | -- | -- |
-| [F25.1 — Typed application state](../../specs/epics/E25-typed-state-and-xlsx-speed/F25.1-typed-application-state.md) | E25 | Active |
+| [F25.1 — Typed application state](../../specs/epics/E25-typed-state-and-xlsx-speed/F25.1-typed-application-state.md) | E25 | Closed |
 | [F25.2 — Faster XLSX transfer](../../specs/epics/E25-typed-state-and-xlsx-speed/F25.2-faster-xlsx-transfer.md) | E25 | New |
 
 <!-- END derived scope -->
