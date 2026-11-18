@@ -444,6 +444,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#installing-a-branch-tag-or-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing a branch, tag or commit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-install-guarantees" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -706,6 +728,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#installing-a-branch-tag-or-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing a branch, tag or commit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-install-guarantees" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -768,7 +812,7 @@ with a <code>ToolProduct</code>; this package owns every algorithm around that d
   golden-tool/
     versions/1.0.0/             one directory per installed version
     current -&gt; versions/1.0.0   swapped atomically
-    state.json                  installed version and state schema
+    state.json                  version, ref, commit, schema_version
     .lock/                      held by every verb that writes
 </code></pre></div>
 
@@ -833,6 +877,11 @@ changes what they resolve to without touching them.</p>
 <td>add product rows to <code>doctor</code></td>
 </tr>
 <tr>
+<td><code>preflight()</code></td>
+<td>nothing</td>
+<td>refuse an install before it writes anything</td>
+</tr>
+<tr>
 <td><code>build(release_root, version_dir)</code></td>
 <td>copy the tree</td>
 <td>build an environment in place</td>
@@ -846,6 +895,64 @@ changes what they resolve to without touching them.</p>
 </table>
 <p>Return an <code>info</code> finding from a passing check rather than nothing, so <code>doctor</code>
 shows that the check ran.</p>
+<h2 id="installing-a-branch-tag-or-commit">Installing a branch, tag or commit<a class="headerlink" href="#installing-a-branch-tag-or-commit" title="Permanent link">&para;</a></h2>
+<p><code>install --ref &lt;ref&gt;</code> installs the commit a branch, tag or commit SHA of the
+product's GitHub repository names, with no release needed. It is exclusive with
+<code>--version</code> and <code>--archive</code>, and the product's source must be a
+<code>GitHubReleases</code>. The version directory is named for the commit's first 12
+characters.</p>
+<p><code>state.json</code> records what was asked for and what was installed:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version</code></td>
+<td>the package version the build reports, from the built tree's <code>pyproject.toml</code>; the target when absent</td>
+</tr>
+<tr>
+<td><code>ref</code></td>
+<td>the ref as given, or the release tag for a release install</td>
+</tr>
+<tr>
+<td><code>commit</code></td>
+<td>the 40-character SHA for a ref install, <code>null</code> for a release install</td>
+</tr>
+<tr>
+<td><code>schema_version</code></td>
+<td>the product's state schema version</td>
+</tr>
+</tbody>
+</table>
+<p>A state recorded before <code>ref</code> existed reads as a release install whose <code>ref</code> is
+the release tag.</p>
+<ul>
+<li><code>upgrade</code> re-resolves a ref install's <code>ref</code>, and returns <code>already-current</code>
+  when the commit has not moved. A release install moves to the newest
+  release.</li>
+<li><code>status</code> prints <code>installed: &lt;version&gt; (&lt;ref&gt; @ &lt;commit 12&gt;)</code> for a ref
+  install; its <code>--json</code> carries <code>ref</code>, <code>commit</code> and <code>package_version</code>.</li>
+<li><code>doctor</code>'s <code>install.version-mismatch</code> compares the running version with
+  <code>state.json</code>'s <code>version</code>, not the directory name.</li>
+</ul>
+<h2 id="python-tools">Python tools<a class="headerlink" href="#python-tools" title="Permanent link">&para;</a></h2>
+<p><code>PythonTool</code> is a <code>ToolProduct</code> for a tool released as a Python package:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.tooling.install</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonTool</span>
+
+<span class="n">PRODUCT</span> <span class="o">=</span> <span class="n">PythonTool</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;golden-tool&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">__version__</span><span class="p">,</span> <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;rn-forge/golden-tool&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Its <code>build</code> runs <code>uv tool install</code> on the release tree with <code>UV_TOOL_DIR</code> and
+<code>UV_TOOL_BIN_DIR</code> inside the version directory, so the console script lands in
+<code>&lt;version&gt;/bin/&lt;name&gt;</code> and the default <code>artifacts()</code> link <code>bin/&lt;name&gt;</code> runs it
+through <code>current</code>. The package must declare a console script named like the
+product. <code>uv</code> must be on <code>PATH</code>; without it the install is refused before
+anything is written. <code>uninstall</code> removes the uv environment with the version
+directory.</p>
 <h2 id="what-install-guarantees">What <code>install</code> guarantees<a class="headerlink" href="#what-install-guarantees" title="Permanent link">&para;</a></h2>
 <p><code>install</code> runs in the same shape as <code>rn_forge.commons.generation.apply</code>:</p>
 <ol>
@@ -856,10 +963,18 @@ shows that the check ran.</p>
 <li>migrate from the active version, then write <code>state.json</code>;</li>
 <li>swap <code>current</code> <strong>last</strong>.</li>
 </ol>
-<p>If any step raises, the steps already taken are undone in reverse, and the
-previous version is active again. An <code>Exception</code> is re-raised as an
-<code>AppException</code>. An interruption (<code>KeyboardInterrupt</code>) is re-raised as-is, after
-the rollback.</p>
+<p>If any step raises, every undo step is attempted in reverse, even if an undo
+step fails. An <code>Exception</code> is re-raised as an <code>AppException</code> with the initiating
+failure as its cause. Its message says "rolled back" only when every undo step
+succeeded; otherwise it says <code>recovery is incomplete</code> and names each failed step
+and its error. An interruption such as <code>KeyboardInterrupt</code> is re-raised as-is
+after recovery, with recovery failures logged at error level.</p>
+<p>If restoring a displaced version fails, it survives in a unique transaction
+directory under <code>$RNF_HOME/&lt;product&gt;/.work</code>, at the reported path. <code>cleanup</code>
+keeps that directory and warns with its path; later installs leave it alone.
+Recover the previous version by hand, then remove the retained directory.
+<code>uninstall</code> still removes the whole product directory, including retained
+versions. For interruptions, the retained path is logged at error level.</p>
 <p>Other verbs:</p>
 <ul>
 <li><code>uninstall</code> does not assume the install ever completed.</li>

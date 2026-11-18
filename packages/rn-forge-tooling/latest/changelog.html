@@ -602,6 +602,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#033-2026-11-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.3] - 2026-11-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.3] - 2026-11-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#032-2026-11-13" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -614,7 +664,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -642,7 +692,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -681,7 +731,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -753,6 +803,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#033-2026-11-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.3.3] - 2026-11-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.3.3] - 2026-11-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#032-2026-11-13" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -765,7 +865,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -793,7 +893,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -832,7 +932,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -882,13 +982,34 @@
 <p>Notable changes to <code>rn-forge-tooling</code>, newest first, in the
 <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
-<h2 id="032-2026-11-13">[0.3.2] - 2026-11-13<a class="headerlink" href="#032-2026-11-13" title="Permanent link">&para;</a></h2>
+<h2 id="033-2026-11-17">[0.3.3] - 2026-11-17<a class="headerlink" href="#033-2026-11-17" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>install --ref</code> installs a branch, tag or commit of a GitHub repository, and
+  <code>state.json</code> records <code>ref</code> and <code>commit</code>.</li>
+<li><code>PythonTool</code> builds a Python tool's runnable command with <code>uv</code>, and
+  <code>ToolProduct.preflight</code> lets a product refuse an install before anything is
+  written.</li>
+</ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>rn-forge-commons</code> requirement admits 0.10 (<code>&lt;0.11</code>).</li>
+<li>The <code>rn-forge-cli</code> requirement admits 0.2 (<code>&lt;0.3</code>).</li>
+<li><code>upgrade</code> follows an install's recorded ref, <code>status</code> reports it, and <code>doctor</code>
+  compares the running version with the recorded package version.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A failed undo step no longer stops install recovery or hides the initiating
+  failure, and a failed restoration no longer deletes the displaced version.</li>
+</ul>
+<h2 id="032-2026-11-13">[0.3.2] - 2026-11-13<a class="headerlink" href="#032-2026-11-13" title="Permanent link">&para;</a></h2>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The <code>rn-forge-commons</code> requirement admits 0.9 (<code>&gt;=0.8.0,&lt;0.10</code>).</li>
 </ul>
 <h2 id="031-2026-10-29">[0.3.1] - 2026-10-29<a class="headerlink" href="#031-2026-10-29" title="Permanent link">&para;</a></h2>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The package declares the MIT licence and is published to PyPI.</li>
 </ul>
@@ -901,7 +1022,7 @@
   <code>rn_forge.commons.text.templates</code> (extra <code>templates</code>); the names are
   unchanged. Tooling no longer depends on <code>jinja2</code>.</li>
 </ul>
-<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Requires its rn-forge dependencies by version range from pykit's index
   (ADR-0004), not by git URL.</li>

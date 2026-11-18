@@ -1064,7 +1064,7 @@
 
 
 <h3 id="rn_forge.tooling.cli.lifecycle.VERBS" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">VERBS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;install&#39;</span><span class="p">,</span> <span class="s1">&#39;upgrade&#39;</span><span class="p">,</span> <span class="s1">&#39;uninstall&#39;</span><span class="p">,</span> <span class="s1">&#39;cleanup&#39;</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;doctor&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class=" language-python"><span class="n">VERBS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_COMMANDS</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
@@ -1088,7 +1088,7 @@
 
 
 <h3 id="rn_forge.tooling.cli.lifecycle.LifecycleSurface" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">LifecycleSurface</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">verbs</span><span class="o">=</span><span class="n">VERBS</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">LifecycleSurface</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">verbs</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">VERBS</span><span class="p">)(),</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -1146,11 +1146,11 @@
               </div>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            VERBS = ('install', 'upgrade', 'uninstall', 'cleanup', 'status', 'doctor')
+                  <code>(lambda: <a class="autorefs autorefs-internal" title="            VERBS = tuple(_COMMANDS)
 
   
       module-attribute
-   (rn_forge.tooling.cli.lifecycle.VERBS)" href="#rn_forge.tooling.cli.lifecycle.VERBS">VERBS</a></code>
+   (rn_forge.tooling.cli.lifecycle.VERBS)" href="#rn_forge.tooling.cli.lifecycle.VERBS">VERBS</a>)()</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2190,7 +2190,7 @@ imported.</p>
               </div>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            VERBS = ('install', 'upgrade', 'uninstall', 'cleanup', 'status', 'doctor')
+                  <code><a class="autorefs autorefs-internal" title="            VERBS = tuple(_COMMANDS)
 
   
       module-attribute

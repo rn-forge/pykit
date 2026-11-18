@@ -237,6 +237,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
@@ -253,6 +271,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -581,6 +629,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -607,6 +674,8 @@ versions. File generation, local state and templates live in <code>rn-forge-comm
 <ul>
 <li>the tool lifecycle: <code>$RNF_HOME</code> layout, release fetching and verification, and
   transactional install/upgrade/uninstall/cleanup/status/doctor verbs</li>
+<li><code>build_tool_app</code>, which builds an <code>rn-forge-cli</code> application from a <code>[cli]</code>
+  table and adds the lifecycle verbs declared in a <code>[lifecycle]</code> table</li>
 </ul>
 <p>Where <code>rn-forge-commons</code> is runtime-neutral — safe in a web server, a worker or
 a container — and <code>rn-forge-cli</code> is the command-line shape every application
@@ -614,7 +683,15 @@ wants, this package is deliberately workstation-shaped: it assumes a developer's
 filesystem and a tool that owns files in it. A repository that only needs a
 command line takes <code>rn-forge-cli</code> and stops there. A package that ships into a
 deployed runtime must not depend on this one outside a <code>codegen</code> extra;
-<code>uv run lint-imports</code> enforces that.</p>
+<code>task lint</code> enforces that.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-tooling&gt;=0.3,&lt;0.4&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The <code>testing</code> extra installs <code>assertpy</code> and <code>pytest</code>. Minimum example:
+<a href="guides/lifecycle.html#exposing-the-verbs-on-a-command-line">Tool lifecycle</a>.
+Errors:
+<a href="guides/lifecycle.html#what-install-guarantees">What <code>install</code> guarantees</a>.</p>
 <p>Use the guides for common workflows and the API reference for module details.</p>
 
 
