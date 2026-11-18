@@ -237,6 +237,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
@@ -253,6 +271,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -553,6 +601,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -577,6 +644,13 @@
 <p>The base install carries <code>openpyxl</code> and <code>tablib[xlsx]</code> and gives the Excel core,
 <code>rn_forge.data</code>. The <code>pandas</code> extra adds pandas for the adapter,
 <code>rn_forge.data.pandas</code>, which the core never imports.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-data&gt;=0.1,&lt;0.2&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>Minimum example: <a href="guides/usage.html#workbooks">Excel and pandas</a>. <code>write_xlsx</code>
+raises <code>KeyError</code> when <code>column_formats</code> names a column the dataset lacks, and
+the pandas helpers raise <code>AppException</code> for a missing required field.</p>
 <p>Start with the <a href="guides/index.html">guide</a>, then the
 <a href="reference/index.html">reference</a>.</p>
 

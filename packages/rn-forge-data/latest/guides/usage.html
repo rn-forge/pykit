@@ -711,8 +711,10 @@ sheet's columns and default formats.</p>
 made formats.</p>
 <h2 id="exporting-a-dataset">Exporting a dataset<a class="headerlink" href="#exporting-a-dataset" title="Permanent link">&para;</a></h2>
 <p><code>write_xlsx</code> writes a <code>tablib.Dataset</code> to <code>.xlsx</code> bytes with a number format per
-column, which tablib's own xlsx writer does not offer. It streams through a
-write-only workbook, so large datasets stay cheap.</p>
+column, which tablib's own xlsx writer does not offer. It iterates the dataset
+directly into a write-only workbook. The caller holds the whole <code>tablib.Dataset</code>
+in memory, and the whole workbook is returned as one <code>bytes</code> object; this is not
+end-to-end streaming.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tablib</span>
@@ -742,6 +744,51 @@ DataFrames, and <code>PandasUtils</code> reads typed fields from rows.</p>
 <span class="n">total</span> <span class="o">=</span> <span class="n">PandasUtils</span><span class="o">.</span><span class="n">get_decimal_field</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s2">&quot;total&quot;</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
 
+<p><code>PandasUtils.get_string_field</code> converts values as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th><code>required=False</code></th>
+<th><code>required=True</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code>, <code>float("nan")</code>, <code>pandas.NA</code>, <code>pandas.NaT</code></td>
+<td><code>""</code></td>
+<td>Raises <code>AppException("Field is required: &lt;name&gt;")</code></td>
+</tr>
+<tr>
+<td><code>0</code></td>
+<td><code>"0"</code></td>
+<td><code>"0"</code></td>
+</tr>
+<tr>
+<td><code>0.0</code></td>
+<td><code>"0.0"</code></td>
+<td><code>"0.0"</code></td>
+</tr>
+<tr>
+<td><code>False</code></td>
+<td><code>"False"</code></td>
+<td><code>"False"</code></td>
+</tr>
+<tr>
+<td><code>""</code> or whitespace-only string</td>
+<td><code>""</code></td>
+<td><code>""</code></td>
+</tr>
+<tr>
+<td>Other non-missing value</td>
+<td><code>str(value).strip()</code></td>
+<td><code>str(value).strip()</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>get_decimal_field</code> returns <code>Decimal(0)</code> for empty strings and optional missing
+values, and <code>Decimal("0.00")</code> for numeric zero at the default precision. A
+<code>False</code> cell raises <code>decimal.InvalidOperation</code>.</p>
 <p><code>series_value</code> and <code>series_columns</code> give typed access to a row's value and
 labels, and <code>SeriesRow</code> is the row type.</p>
 

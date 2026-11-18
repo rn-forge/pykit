@@ -1500,8 +1500,48 @@ total = PandasUtils.get_decimal_field(row, &quot;total&quot;, precision=2)
 
     <div class="doc doc-contents ">
 
-        <p>Return <em>field_name</em> from <em>row</em> as a string.</p>
-<p>NaN values are returned as an empty string <code>""</code>.</p>
+        <p>Return <em>field_name</em> from <em>row</em> as a stripped string.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th><code>required=False</code></th>
+<th><code>required=True</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code>, <code>float("nan")</code>, <code>pandas.NA</code>, <code>pandas.NaT</code></td>
+<td><code>""</code></td>
+<td>Raises <code>AppException("Field is required: &lt;name&gt;")</code></td>
+</tr>
+<tr>
+<td><code>0</code></td>
+<td><code>"0"</code></td>
+<td><code>"0"</code></td>
+</tr>
+<tr>
+<td><code>0.0</code></td>
+<td><code>"0.0"</code></td>
+<td><code>"0.0"</code></td>
+</tr>
+<tr>
+<td><code>False</code></td>
+<td><code>"False"</code></td>
+<td><code>"False"</code></td>
+</tr>
+<tr>
+<td><code>""</code> or whitespace-only string</td>
+<td><code>""</code></td>
+<td><code>""</code></td>
+</tr>
+<tr>
+<td>Other non-missing value</td>
+<td><code>str(value).strip()</code></td>
+<td><code>str(value).strip()</code></td>
+</tr>
+</tbody>
+</table>
 
 
     </div>
