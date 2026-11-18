@@ -2,7 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | planned |
+| **Status** | shipped |
+| **Start Date** | 2026-11-14 |
+| **Finish Date** | 2026-11-18 |
 
 The ten packages, their tests and their documentation get simpler
 ([E22](../../specs/epics/E22-pykit-simplification/index.md), F22.1 to F22.13).
@@ -57,6 +59,46 @@ The order follows
 first, then the correctness cases and F22.4 to F22.13, with F22.2 and F22.1
 last.
 
+## Commits
+
+Commits whose subject names a scope ID, newest first:
+
+```bash
+git log --format='%h %ad %s' --date=short -E --grep='F2[234]\.|S2[234]\.'
+```
+
+## Exit criteria
+
+- Every feature on this page's Scope is `Closed`.
+- `task docs:generate` leaves the working tree unchanged.
+- The main CI, including the Sonar gate, passes on the release's version bumps.
+
 ## Shipped
 
-Filled at the cut.
+Shipped 2026-11-18. Every feature in scope is closed. The pull request
+[#36](https://github.com/rn-forge/pykit/pull/36) merged into `main` as
+`dc5336e`, and
+[run 44242812688](https://github.com/rn-forge/pykit/actions/runs/44242812688) at
+`dc5336e` passed every job, including `release`, `verify-release`, `umbrella`,
+`sonar` and `docs`.
+
+PyPI serves these versions, each with an `rn-forge-<package>-v<version>` tag at
+`dc5336e` and a published GitHub release:
+
+| Package | Version |
+| -- | -- |
+| `rn-forge-commons` | `0.10.0` |
+| `rn-forge-auth` | `0.2.0` |
+| `rn-forge-cli` | `0.2.0` |
+| `rn-forge-data` | `0.1.4` |
+| `rn-forge-devops` | `0.5.0` |
+| `rn-forge-django` | `0.7.0` |
+| `rn-forge-fastapi` | `0.5.0` |
+| `rn-forge-sqlalchemy` | `0.2.4` |
+| `rn-forge-tooling` | `0.3.3` |
+| `rn-forge-web` | `0.3.2` |
+
+Each package's docs at
+`https://rn-forge.github.io/pykit/packages/rn-forge-<package>/latest/` serve the
+new minor version. The `release-9` umbrella tag is created by the first `main`
+run after this page says `shipped`.

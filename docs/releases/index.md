@@ -4,7 +4,7 @@ Coordinated package releases, newest first. Each package keeps its own version
 and tag; a release maps to an Azure DevOps Iteration Path. The
 [release runbook](../runbooks/releasing-packages.md) describes how to run one.
 
-- [Release 9 — pykit simplification](release-9/index.md) — planned
+- [Release 9 — pykit simplification](release-9/index.md) — shipped
 - [Release 8 — kiln adoption and local-first extraction](release-8/index.md) —
   shipped
 - [Release 7 — authentication and PyPI distribution](release-7/index.md) —
