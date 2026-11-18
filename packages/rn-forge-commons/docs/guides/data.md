@@ -53,6 +53,13 @@ Plain YAML loads use libyaml. YAML 1.2 rules apply, so `on`, `yes` and `no` load
 as strings, not booleans. A GitHub Actions workflow's `on:` key is the string
 `"on"`.
 
+`DocumentUtils.read` also takes a package resource, such as
+`files("my_tool").joinpath("defaults.toml")`, and names the source in a parse
+error. `DocumentUtils.dumps` and `write` take `header` (comment text written
+before the document, for TOML and YAML) and `multiline_arrays` (each non-empty
+TOML array on one element per line); `DocumentUtils.multiline_arrays` formats
+the arrays of a round-trip TOML document, all or at given key paths.
+
 ## Dataclasses
 
 ```python

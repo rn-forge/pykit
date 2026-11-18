@@ -73,15 +73,10 @@ The fake covers the protocol; a real broker covers the configuration. The tests
 in `tests/broker/` run `OidcProvider` against Keycloak: an OIDC login, a login
 federated from a SAML IdP inside Keycloak, and a client-credentials bearer call
 through `OidcAuthenticator`. They need Docker and are skipped unless
-`RN_FORGE_AUTH_KEYCLOAK_URL` is set:
-
-```bash
-docker compose -f packages/rn-forge-auth/tests/broker/compose.yml up -d --wait
-RN_FORGE_AUTH_KEYCLOAK_URL=http://127.0.0.1:8080 \
-  uv run pytest packages/rn-forge-auth -m broker
-```
-
-CI runs them in the `integration` job of `ci.yml`, against the `keycloak`
-service that this package's `pyproject.toml` declares. The realms under
-`tests/broker/realms/` also serve as a working configuration for
+`RN_FORGE_AUTH_KEYCLOAK_URL` is set. Run them with
+`task ci:integration -- rn-forge-auth` (needs Docker); the
+[development guide](https://rn-forge.github.io/pykit/guides/development/) covers
+it. CI runs them in the `integration` job against the `keycloak` service this
+package's `pyproject.toml` declares. The realms under `tests/broker/realms/`
+also serve as a working configuration for
 [connecting a SAML IdP through a broker](login.md#connecting-a-saml-idp-through-a-broker).

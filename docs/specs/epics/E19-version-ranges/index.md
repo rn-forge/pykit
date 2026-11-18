@@ -43,17 +43,10 @@ simply locks the newest version every range admits. A breaking release still
 needs each dependent to widen its upper bound, after checking that it works on
 the new version. That is real work and should stay a release.
 
-**What survives the kiln cutover.** The range check and the index publish live
-in files pykit owns: a reusable workflow, a composite action, and two
-`rn-forge-devops` modules apart from the planner. `main.yml` references them
-today. After the cutover, kiln's generated CI references the same files through
-`[[ci.jobs]]` and a `[ci.hooks] docs` anchor (kiln F4.11's extension by
-reference). Only the `docs` anchor is new kiln work, and it gates the cutover
-(F16.3), not this epic.
-
-**What a consumer changes.** A consumer that keeps declaring direct URLs keeps
-working: uv lets a root URL requirement satisfy a transitive requirement by
-name. A consumer that wants ranges adds one `[[tool.uv.index]]` entry.
+**Outcome.** The range check and the index publish live in files pykit owns, and
+the Release 6 cut moved every package to ranges. The self-hosted index was later
+retired for PyPI ([E21](../E21-pypi-distribution/index.md)); consumer usage is
+in the [consuming guide](../../../guides/consuming-packages.md).
 
 ## Considered and rejected
 

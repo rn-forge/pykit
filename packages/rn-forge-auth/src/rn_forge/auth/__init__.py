@@ -6,6 +6,7 @@ imported directly.
 """
 
 from rn_forge.auth.accounts import AccountRejected, AccountResolver
+from rn_forge.auth.admission import AdmittedLogin, admit_login
 from rn_forge.auth.audit import AUDIT_LOGGER, audit
 from rn_forge.auth.authorization import (
     AsyncAuthenticator,
@@ -20,7 +21,13 @@ from rn_forge.auth.context_cache import (
     AuthorizationVersions,
     InMemoryAuthorizationVersions,
 )
-from rn_forge.auth.flow import CompletedLogin, LoginFailed, LoginFlow
+from rn_forge.auth.flow import (
+    TRANSACTION_COOKIE,
+    CompletedLogin,
+    LoginFailed,
+    LoginFlow,
+    transaction_cookie_value,
+)
 from rn_forge.auth.identity import (
     ExternalIdentity,
     IdentityProvider,
@@ -30,12 +37,18 @@ from rn_forge.auth.identity import (
     ProviderKind,
     SessionInfo,
 )
+from rn_forge.auth.linking import (
+    PrincipalLinkError,
+    link_bearer_principal,
+    session_principal,
+)
 from rn_forge.auth.local import (
     DevelopmentAccount,
     DevelopmentIdentityProvider,
     DevelopmentModeRequired,
     PasswordIdentityProvider,
     PasswordVerifier,
+    json_string_fields,
 )
 from rn_forge.auth.permissions import (
     DEFAULT_PERMISSION_ACTION_MAP,
@@ -48,6 +61,17 @@ from rn_forge.auth.principal import (
     Principal,
     Requirement,
     principal_from_claims,
+)
+from rn_forge.auth.rate_window import (
+    fixed_window_key,
+    fixed_window_retry_after,
+    fixed_window_seconds,
+)
+from rn_forge.auth.records import (
+    session_from_record,
+    session_to_record,
+    transaction_from_record,
+    transaction_to_record,
 )
 from rn_forge.auth.redirects import InvalidReturnTo, validate_return_to
 from rn_forge.auth.session_body import CALLBACK_ERRORS, CallbackError, SessionBody
@@ -64,9 +88,11 @@ __all__ = [
     "AUDIT_LOGGER",
     "CALLBACK_ERRORS",
     "DEFAULT_PERMISSION_ACTION_MAP",
+    "TRANSACTION_COOKIE",
     "AccountRejected",
     "AccountResolver",
     "AccountStateWriter",
+    "AdmittedLogin",
     "AsyncAuthenticator",
     "Authenticator",
     "AuthorizationContext",
@@ -95,6 +121,7 @@ __all__ = [
     "PasswordIdentityProvider",
     "PasswordVerifier",
     "Principal",
+    "PrincipalLinkError",
     "ProviderKind",
     "ReplayStore",
     "Requirement",
@@ -104,9 +131,21 @@ __all__ = [
     "SessionInfo",
     "SessionStore",
     "TransactionStore",
+    "admit_login",
     "audit",
     "effective_permissions",
+    "fixed_window_key",
+    "fixed_window_retry_after",
+    "fixed_window_seconds",
+    "json_string_fields",
+    "link_bearer_principal",
     "principal_from_claims",
     "requirement_for",
+    "session_from_record",
+    "session_principal",
+    "session_to_record",
+    "transaction_cookie_value",
+    "transaction_from_record",
+    "transaction_to_record",
     "validate_return_to",
 ]

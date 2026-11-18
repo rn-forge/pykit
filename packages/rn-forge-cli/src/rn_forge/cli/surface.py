@@ -10,7 +10,7 @@ from typing import Any, Self
 from rn_forge.cli.options import LogLevel
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.documents import DocumentUtils
-from rn_forge.commons.lang.dataclasses import DataclassMixin
+from rn_forge.commons.lang.dataclasses import StrictDataclassMixin
 
 __all__ = [
     "SURFACE_KEY",
@@ -23,7 +23,7 @@ SURFACE_KEY = "cli"
 
 
 @dataclass(frozen=True, slots=True)
-class CommandSurface(DataclassMixin):
+class CommandSurface(StrictDataclassMixin):
     """One command or command namespace of a declared CLI.
 
     Args:
@@ -31,8 +31,8 @@ class CommandSurface(DataclassMixin):
         target: Import path of the implementation, as ``module:attribute`` or
             a dotted path. A :class:`typer.Typer` becomes a namespace; a
             callable becomes a single command.
-        help: Help text. Defaults to the target's own docstring, which is
-            where it belongs when there is one.
+        help: Help text, used as written. Defaults to the target's
+            docstring up to its first section (``Args:``, ``Raises:``, ...).
     """
 
     name: str
@@ -41,7 +41,7 @@ class CommandSurface(DataclassMixin):
 
 
 @dataclass(frozen=True, slots=True)
-class CliSurface(DataclassMixin):
+class CliSurface(StrictDataclassMixin):
     """A whole declared command line.
 
     Args:
@@ -82,8 +82,10 @@ class CliSurface(DataclassMixin):
             The parsed, validated surface.
 
         Raises:
-            AppException: The document has no *key* table, or a declared value
-                does not match its field's type.
+            AppException: The document has no *key* table, ``commands`` is not
+                an array of tables, an entry in ``commands`` is not a table,
+                a declared value does not match its field's type, or a key names no
+                field.
         """
         data = (
             dict(source) if isinstance(source, Mapping) else DocumentUtils.read(source)
@@ -92,7 +94,29 @@ class CliSurface(DataclassMixin):
             data = data[key]
         elif "name" not in data:
             raise AppException("No [{}] table to build a CLI from", key)
+        _validate_commands(data, key)
         return cls.from_dict(dict(data))
+
+
+def _validate_commands(data: Mapping[str, Any], key: str) -> None:
+    if "commands" not in data:
+        return
+    commands = data["commands"]
+    entries: Iterable[object] = commands
+    if not isinstance(commands, list | tuple):
+        raise AppException(
+            "[{}] commands must be an array of tables, not {}",
+            key,
+            type(commands).__name__,
+        )
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, Mapping):
+            raise AppException(
+                "[{}] commands[{}] must be a table, not {}",
+                key,
+                index,
+                type(entry).__name__,
+            )
 
 
 def _duplicates(names: Iterable[str]) -> list[str]:

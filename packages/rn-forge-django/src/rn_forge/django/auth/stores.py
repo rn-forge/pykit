@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import hashlib
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from django.core.cache import caches
-from rn_forge.auth import LoginTransaction
+from rn_forge.auth import (
+    LoginTransaction,
+    transaction_from_record,
+    transaction_to_record,
+)
 
 __all__ = ["CacheReplayStore", "CacheTransactionStore"]
 
@@ -46,16 +50,7 @@ class CacheTransactionStore:
 
     def save(self, transaction: LoginTransaction, *, ttl: timedelta) -> None:
         """See :meth:`rn_forge.auth.TransactionStore.save`."""
-        document: dict[str, Any] = {
-            "id": transaction.id,
-            "provider": transaction.provider,
-            "return_to": transaction.return_to,
-            "created_at": transaction.created_at.isoformat(),
-            "state": transaction.state,
-            "nonce": transaction.nonce,
-            "code_verifier": transaction.code_verifier,
-            "extra": dict(transaction.extra),
-        }
+        document = transaction_to_record(transaction)
         caches[self.alias].set(
             _key(self._prefix, transaction.id), document, _timeout(ttl)
         )
@@ -69,16 +64,7 @@ class CacheTransactionStore:
         # it still there receives it.
         if document is None or not cache.delete(key):
             return None
-        return LoginTransaction(
-            id=document["id"],
-            provider=document["provider"],
-            return_to=document["return_to"],
-            created_at=datetime.fromisoformat(document["created_at"]),
-            state=document["state"],
-            nonce=document["nonce"],
-            code_verifier=document["code_verifier"],
-            extra=document["extra"],
-        )
+        return transaction_from_record(document)
 
 
 class CacheReplayStore:

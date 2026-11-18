@@ -96,3 +96,50 @@ class TestGoldenApp:
         result = _run(golden_app, "fail")
         assert result.returncode == 1
         assert "could not do the thing" in result.stdout + result.stderr
+
+
+_WORKSPACE = Path(__file__).parents[3]
+_WHERE = (
+    "import pydantic, rn_forge.cli, rn_forge.commons;"
+    "print(rn_forge.cli.__file__, rn_forge.commons.__file__, pydantic.__file__)"
+)
+
+
+@pytest.mark.scaffold
+class TestScaffoldInstall:
+    def test_one_wheel_is_built_for_every_workspace_package(self, built_wheels):
+        packages = {path.name for path in (_WORKSPACE / "packages").glob("rn-forge-*")}
+        assert len(packages) == 10
+        assert set(built_wheels) == packages
+
+    def test_installs_the_built_distributions_outside_the_workspace(
+        self, scaffold_venv, tmp_path: Path
+    ):
+        bin_dir = scaffold_venv("rn-forge-commons[pydantic]", "rn-forge-cli")
+        result = subprocess.run(
+            [str(bin_dir / "python"), "-c", _WHERE],
+            cwd=tmp_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        paths = [Path(item) for item in result.stdout.split()]
+        assert len(paths) == 3
+        for path in paths:
+            assert path.is_relative_to(bin_dir.parent / "lib")
+            assert not path.is_relative_to(_WORKSPACE / "packages")
+
+    def test_an_extra_is_installed_only_when_asked_for(
+        self, scaffold_venv, tmp_path: Path
+    ):
+        bin_dir = scaffold_venv("rn-forge-commons")
+        result = subprocess.run(
+            [str(bin_dir / "python"), "-c", "import pydantic"],
+            cwd=tmp_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "ModuleNotFoundError" in result.stderr

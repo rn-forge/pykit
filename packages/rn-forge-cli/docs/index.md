@@ -27,6 +27,17 @@ command or a worker entry point needs it without taking a Typer dependency. This
 package drives it — `--quiet`/`--json` set its mode.
 
 `rn_forge.cli` never imports `rn_forge.tooling`, and `rn_forge.commons` never
-imports either; `uv run lint-imports` proves it.
+imports either; `task lint` proves it.
+
+## Install
+
+```toml
+dependencies = ["rn-forge-cli>=0.1,<0.2"]
+```
+
+No extras; `testing` installs `assertpy` and `pytest`. Minimum example:
+[CLI](guides/cli.md). An `AppException` exits 1 as one line; a bad command line
+exits 2; `Ctrl-C` exits 130; any other exception exits 1 with its traceback
+logged. See [Exit codes](guides/cli.md#exit-codes).
 
 Use the guides for common workflows and the API reference for module details.

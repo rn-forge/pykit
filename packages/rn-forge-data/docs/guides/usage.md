@@ -30,8 +30,10 @@ made formats.
 ## Exporting a dataset
 
 `write_xlsx` writes a `tablib.Dataset` to `.xlsx` bytes with a number format per
-column, which tablib's own xlsx writer does not offer. It streams through a
-write-only workbook, so large datasets stay cheap.
+column, which tablib's own xlsx writer does not offer. It iterates the dataset
+directly into a write-only workbook. The caller holds the whole `tablib.Dataset`
+in memory, and the whole workbook is returned as one `bytes` object; this is not
+end-to-end streaming.
 
 ```python
 from datetime import date
@@ -66,6 +68,21 @@ row = frames["Sheet1"].iloc[0]
 customer = PandasUtils.get_string_field(row, "customer_id")
 total = PandasUtils.get_decimal_field(row, "total", precision=2)
 ```
+
+`PandasUtils.get_string_field` converts values as follows:
+
+| Value | `required=False` | `required=True` |
+| -- | -- | -- |
+| `None`, `float("nan")`, `pandas.NA`, `pandas.NaT` | `""` | Raises `AppException("Field is required: <name>")` |
+| `0` | `"0"` | `"0"` |
+| `0.0` | `"0.0"` | `"0.0"` |
+| `False` | `"False"` | `"False"` |
+| `""` or whitespace-only string | `""` | `""` |
+| Other non-missing value | `str(value).strip()` | `str(value).strip()` |
+
+`get_decimal_field` returns `Decimal(0)` for empty strings and optional missing
+values, and `Decimal("0.00")` for numeric zero at the default precision. A
+`False` cell raises `decimal.InvalidOperation`.
 
 `series_value` and `series_columns` give typed access to a row's value and
 labels, and `SeriesRow` is the row type.

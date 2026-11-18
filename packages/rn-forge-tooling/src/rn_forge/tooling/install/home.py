@@ -75,7 +75,10 @@ class ToolHome:
 
     @property
     def work_dir(self) -> Path:
-        """Scratch space for a transaction in flight; removed when it finishes."""
+        """Scratch space holding unique transaction directories.
+
+        A failed restoration retains its displaced version here; cleanup keeps it.
+        """
         return self.product_dir / ".work"
 
     def version_dir(self, version: str) -> Path:

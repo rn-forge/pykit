@@ -13,7 +13,12 @@ from rn_forge.cli import ExitCode
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
 from rn_forge.commons.runtime.console import console
-from rn_forge.tooling.cli.lifecycle import build_tool_app, lifecycle_commands
+from rn_forge.tooling.cli.lifecycle import (
+    VERBS,
+    LifecycleSurface,
+    build_tool_app,
+    lifecycle_commands,
+)
 from rn_forge.tooling.install import Link, ToolProduct
 
 
@@ -83,6 +88,44 @@ def test_archive_without_version_is_a_usage_error(tmp_path):
     assert app().run(["install", "--archive", str(tmp_path / "x")]) == ExitCode.USAGE
 
 
+@pytest.mark.parametrize("other", [["--version", "1.0.0"], ["--archive", "x"]])
+def test_ref_with_version_or_archive_is_a_usage_error(other):
+    assert app().run(["install", "--ref", "main", *other]) == ExitCode.USAGE
+
+
+def _install_ref_state(tmp_path):
+    built = archive(tmp_path, "1.0.0")
+    assert app().run(["install", "--archive", str(built), "--version", "1.0.0"]) == 0
+    state = tmp_path / "home/golden-tool/state.json"
+    state.write_text(
+        json.dumps(
+            {
+                "version": "1.1.0.dev0",
+                "ref": "main",
+                "commit": "0123456789abcdef0123456789abcdef01234567",
+                "schema_version": 1,
+            }
+        )
+    )
+
+
+def test_status_text_names_the_ref_and_commit(tmp_path, capsys):
+    _install_ref_state(tmp_path)
+    capsys.readouterr()
+    assert app().run(["status"]) == ExitCode.OK
+    assert "installed: 1.1.0.dev0 (main @ 0123456789ab)" in capsys.readouterr().out
+
+
+def test_status_json_carries_ref_and_commit(tmp_path, capsys):
+    _install_ref_state(tmp_path)
+    capsys.readouterr()
+    assert app().run(["--json", "status"]) == ExitCode.OK
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ref"] == "main"
+    assert payload["commit"] == "0123456789abcdef0123456789abcdef01234567"
+    assert payload["package_version"] == "1.1.0.dev0"
+
+
 def test_only_the_declared_verbs_are_mounted(capsys):
     assert app(["status"]).run(["doctor"]) == ExitCode.USAGE
 
@@ -90,6 +133,28 @@ def test_only_the_declared_verbs_are_mounted(capsys):
 def test_an_unknown_verb_is_rejected():
     with pytest.raises(AppException, match="Unknown lifecycle verb"):
         lifecycle_commands(PRODUCT, ["explode"])
+
+
+def test_the_advertised_verbs_are_the_mounted_ones():
+    names = [
+        command.name for command in lifecycle_commands(PRODUCT).registered_commands
+    ]
+    assert names == list(VERBS)
+    assert LifecycleSurface(product="x:y").verbs == VERBS
+
+
+@pytest.mark.parametrize(
+    ("source", "message"),
+    [
+        ({"lifecycle": "x"}, "lifecycle"),
+        ({"product": "a:b", "verbs": "status"}, "verbs"),
+        ({"product": "a:b", "verbs": ["status", "status"]}, "Duplicate"),
+        ({"product": "a:b", "verbs": ["explode"]}, "Unknown"),
+    ],
+)
+def test_a_malformed_lifecycle_table_is_diagnosed(source, message):
+    with pytest.raises(AppException, match=message):
+        LifecycleSurface.load(source)
 
 
 def test_a_non_product_is_rejected():

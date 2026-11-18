@@ -5,6 +5,28 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-17
+
+### Added
+
+- `install --ref` installs a branch, tag or commit of a GitHub repository, and
+  `state.json` records `ref` and `commit`.
+- `PythonTool` builds a Python tool's runnable command with `uv`, and
+  `ToolProduct.preflight` lets a product refuse an install before anything is
+  written.
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+- The `rn-forge-cli` requirement admits 0.2 (`<0.3`).
+- `upgrade` follows an install's recorded ref, `status` reports it, and `doctor`
+  compares the running version with the recorded package version.
+
+### Fixed
+
+- A failed undo step no longer stops install recovery or hides the initiating
+  failure, and a failed restoration no longer deletes the displaced version.
+
 ## [0.3.2] - 2026-11-13
 
 ### Changed

@@ -9,9 +9,6 @@ version: "3"
 # line, which go-task refuses for an internal task. They are CI's, not a
 # developer's; the ten root verbs do not change.
 
-vars:
-  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@feature/v1" kiln-devops'
-
 tasks:
   lint:workflows:
     desc: Fail on a workflow security finding (zizmor) or a workflow syntax error (actionlint).

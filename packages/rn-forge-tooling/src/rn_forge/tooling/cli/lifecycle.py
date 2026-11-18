@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Self, cast
 
 import typer
 from rn_forge.cli import CliApp, CliOptions, CliSurface, YesOption
@@ -20,37 +20,8 @@ from rn_forge.tooling.install.release import LocalArchive
 
 __all__ = ["VERBS", "LifecycleSurface", "build_tool_app", "lifecycle_commands"]
 
-VERBS = ("install", "upgrade", "uninstall", "cleanup", "status", "doctor")
-"""Every verb this module can mount, in ``--help`` order."""
-
 LIFECYCLE_KEY = "lifecycle"
 """The table :meth:`LifecycleSurface.load` reads by default."""
-
-
-def lifecycle_commands(
-    product: ToolProduct, verbs: Sequence[str] = VERBS
-) -> typer.Typer:
-    """Return a Typer app holding *verbs* as commands over *product*.
-
-    Args:
-        product: The product the commands act on.
-        verbs: Which of :data:`VERBS` to include.
-
-    Raises:
-        AppException: *product* is not a :class:`ToolProduct`, or a verb is
-            not one of :data:`VERBS`.
-    """
-    if not isinstance(product, ToolProduct):  # pyright: ignore[reportUnnecessaryIsInstance] - named by a config string
-        raise AppException("{!r} is not a ToolProduct", product)
-    unknown = sorted(set(verbs) - set(VERBS))
-    if unknown:
-        raise AppException("Unknown lifecycle verb(s): {}", ", ".join(unknown))
-
-    app = typer.Typer()
-    for verb in VERBS:
-        if verb in verbs:
-            _COMMANDS[verb](app, product)
-    return app
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +37,7 @@ class LifecycleSurface(DataclassMixin):
     """
 
     product: str
-    verbs: tuple[str, ...] = VERBS
+    verbs: tuple[str, ...] = field(default_factory=lambda: VERBS)
     namespace: str | None = None
 
     def __post_init__(self) -> None:
@@ -106,9 +77,18 @@ class LifecycleSurface(DataclassMixin):
             dict(source) if isinstance(source, Mapping) else DocumentUtils.read(source)
         )
         if key in data:
-            data = data[key]
+            table = data[key]
+            if not isinstance(table, Mapping):
+                raise AppException("[{}] must be a table", key)
+            data = dict(cast(Mapping[str, Any], table))
         elif "product" not in data:
             raise AppException("No [{}] table to build lifecycle verbs from", key)
+        if "verbs" in data:
+            verbs = data["verbs"]
+            if not isinstance(verbs, list) or not all(
+                isinstance(verb, str) for verb in cast(list[object], verbs)
+            ):
+                raise AppException("Lifecycle verbs must be a list of strings")
         return cls.from_dict(dict(data))
 
 
@@ -209,21 +189,34 @@ def _add_install(app: typer.Typer, product: ToolProduct) -> None:
         force: Annotated[
             bool, typer.Option("--force", help="Reinstall the active version.")
         ] = False,
+        ref: Annotated[
+            str | None,
+            typer.Option(
+                "--ref",
+                help="Install a branch, tag or commit of the product's GitHub repository.",
+            ),
+        ] = None,
     ) -> None:
         """Install a release and make it the active version."""
+        if ref is not None and (version is not None or archive is not None):
+            raise typer.BadParameter(
+                "--ref cannot be combined with --version or --archive"
+            )
         source = None
         if archive is not None:
             if version is None:
                 raise typer.BadParameter("--archive needs --version")
             source = LocalArchive(archive, version)
-        result = lifecycle.install(product, version=version, source=source, force=force)
+        result = lifecycle.install(
+            product, version=version, source=source, force=force, ref=ref
+        )
         _emit(result, _install_text(result))
 
 
 def _add_upgrade(app: typer.Typer, product: ToolProduct) -> None:
     @app.command("upgrade")
     def upgrade() -> None:
-        """Install the latest release over the current install."""
+        """Install the latest release, or the recorded ref's current commit, over the current install."""
         result = lifecycle.upgrade(product)
         _emit(result, _install_text(result))
 
@@ -269,10 +262,16 @@ def _add_status(app: typer.Typer, product: ToolProduct) -> None:
     def status() -> None:
         """Show the running version and what is installed."""
         result = lifecycle.status(product)
+        installed = result.installed or "none"
+        if result.commit is not None:
+            installed = (
+                f"{result.package_version or installed} "
+                f"({result.ref} @ {result.commit[:12]})"
+            )
         _emit(
             result,
             f"{result.product} {result.version} — installed: "
-            f"{result.installed or 'none'} ({result.home})",
+            f"{installed} ({result.home})",
         )
 
 
@@ -308,3 +307,33 @@ _COMMANDS = {
     "status": _add_status,
     "doctor": _add_doctor,
 }
+"""Command adders in ``--help`` order."""
+
+VERBS = tuple(_COMMANDS)
+"""Every verb this module can mount, in ``--help`` order."""
+
+
+def lifecycle_commands(
+    product: ToolProduct, verbs: Sequence[str] = VERBS
+) -> typer.Typer:
+    """Return a Typer app holding *verbs* as commands over *product*.
+
+    Args:
+        product: The product the commands act on.
+        verbs: Which of :data:`VERBS` to include.
+
+    Raises:
+        AppException: *product* is not a :class:`ToolProduct`, or a verb is
+            not one of :data:`VERBS`.
+    """
+    if not isinstance(product, ToolProduct):  # pyright: ignore[reportUnnecessaryIsInstance] - named by a config string
+        raise AppException("{!r} is not a ToolProduct", product)
+    unknown = sorted(set(verbs) - set(VERBS))
+    if unknown:
+        raise AppException("Unknown lifecycle verb(s): {}", ", ".join(unknown))
+
+    app = typer.Typer()
+    for verb, add_command in _COMMANDS.items():
+        if verb in verbs:
+            add_command(app, product)
+    return app

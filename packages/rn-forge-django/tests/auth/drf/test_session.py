@@ -100,6 +100,44 @@ def test_session_yields_a_session_principal() -> None:
     assert response.data == {"mechanism": "session", "roles": ["staff"]}
 
 
+def test_persisted_old_shape_session_still_reads() -> None:
+    user = User.objects.create_user("ada", is_staff=True)
+    request = APIRequestFactory().get("/")
+    request.session = SessionStore()
+    now = datetime.now(UTC)
+    request.session["rn_forge_auth"] = {
+        "account_id": str(user.pk),
+        "session_version": 0,
+        "provider": "p",
+        "issuer": "iss",
+        "external_subject": "s1",
+        "created_at": now.isoformat(),
+        "expires_at": (now + timedelta(hours=1)).isoformat(),
+        "auth_time": now.isoformat(),
+        "amr": ["pwd"],
+        "session_ref": None,
+        "id_token": None,
+    }
+    request.session.save()
+    request.session = SessionStore(session_key=request.session.session_key)
+
+    active = SESSIONS.read(request)
+
+    assert active is not None
+    assert active.info == SessionInfo(
+        account_id=str(user.pk),
+        session_version=0,
+        provider="p",
+        issuer="iss",
+        external_subject="s1",
+        created_at=now,
+        expires_at=now + timedelta(hours=1),
+        auth_time=now,
+        amr=frozenset({"pwd"}),
+    )
+    assert _View.as_view()(request).data == {"mechanism": "session", "roles": ["staff"]}
+
+
 @pytest.mark.security_control("one-credential-per-request")
 def test_authorization_header_is_decided_by_the_bearer_path_alone() -> None:
     user = User.objects.create_user("ada")

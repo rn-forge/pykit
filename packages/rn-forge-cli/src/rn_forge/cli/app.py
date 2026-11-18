@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import inspect
+import re
 from collections.abc import Mapping, Sequence
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Self
 
 import typer
+from rich.errors import StyleSyntaxError
+from rich.style import Style
 from rn_forge.cli.options import (
     CliOptions,
     JsonOption,
@@ -21,6 +25,7 @@ from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.logging import AppLogger
 from rn_forge.commons.runtime.console import console
+from typer._click.core import ParameterSource
 
 # Typer 0.26 vendors Click, so `click.UsageError` and Typer's own are different
 # classes and an `except click.UsageError` never fires. These are the ones a
@@ -31,6 +36,42 @@ from typer._click.exceptions import ClickException, UsageError
 __all__ = ["CliApp", "ExitCode", "run"]
 
 _LOGGER = AppLogger.get_logger(__name__)
+
+_BRACKET_GROUP = re.compile(r"\[([^\[\]]*)\]")
+
+
+def _escape_markup(text: str) -> str:
+    """Escape each ``[...]`` group in *text* that is not Rich markup.
+
+    A group stays markup when it is a closing tag or parses as a Rich style.
+    """
+
+    def escape(match: re.Match[str]) -> str:
+        content = match.group(1)
+        if not content or content.startswith("/"):
+            return match.group(0)
+        try:
+            Style.parse(content)
+        except StyleSyntaxError:
+            return "\\" + match.group(0)
+        return match.group(0)
+
+    return _BRACKET_GROUP.sub(escape, text)
+
+
+_SECTION_HEADER = re.compile(
+    r"^(?:Args|Arguments|Returns|Raises|Yields|Examples|Note):$", re.MULTILINE
+)
+
+
+def _strip_sections(doc: str) -> str:
+    """Return *doc* up to its first Google-style section header.
+
+    A header is a line that is, in full, ``Args:``, ``Arguments:``,
+    ``Returns:``, ``Raises:``, ``Yields:``, ``Examples:`` or ``Note:``.
+    """
+    header = _SECTION_HEADER.search(doc)
+    return (doc[: header.start()] if header else doc).rstrip()
 
 
 class ExitCode(IntEnum):
@@ -70,6 +111,7 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
 
     Diagnosed :class:`~rn_forge.commons.exceptions.AppException` instances are
     reported without a traceback; unexpected exceptions are logged in full.
+    The console mode on return is the mode on entry.
 
     Args:
         app: The Typer application to run.
@@ -79,8 +121,9 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
     Returns:
         The exit code to hand to :func:`sys.exit`.
     """
-    command = typer.main.get_command(app)
+    prior = console.mode
     try:
+        command = typer.main.get_command(app)
         # `standalone_mode=False` stops Click from printing and exiting on its
         # own, so the codes below are the only ones this process can produce.
         # In that mode Click *returns* the code an explicit exit asked for.
@@ -105,6 +148,8 @@ def run(app: typer.Typer, args: Sequence[str] | None = None, **kwargs: Any) -> i
         console.error("Unexpected error: {}", unexpected)
         _LOGGER.exception("Unhandled exception escaped the command")
         return ExitCode.FAILURE
+    finally:
+        console.set_mode(prior)
 
 
 class CliApp(typer.Typer):
@@ -163,10 +208,15 @@ class CliApp(typer.Typer):
             # whatever the level is and wherever on the command line it was
             # given.
             CliOptions(quiet=quiet, json_output=json_output).apply(ctx)
+            explicit = any(
+                ctx.get_parameter_source(name) is not ParameterSource.DEFAULT
+                for name in ("log_level", "log_file")
+            )
             AppLogger.initialize(
                 root_logger_name=self._logger_name,
                 level=log_level.to_int(),
                 file=str(log_file) if log_file else None,
+                force_reconfigure=explicit,
             )
 
     @classmethod
@@ -196,7 +246,7 @@ class CliApp(typer.Typer):
         """Build the application an already-parsed *surface* describes."""
         app = cls(
             surface.name,
-            surface.help,
+            _escape_markup(surface.help) if surface.help else surface.help,
             default_log_level=surface.default_log_level,
             **typer_kwargs,
         )
@@ -225,8 +275,15 @@ class CliApp(typer.Typer):
                 command.target,
                 error,
             ) from error
+        text = command.help
+        if text is None:
+            if isinstance(target, typer.Typer):
+                text = target.info.help if isinstance(target.info.help, str) else None
+            elif callable(target):
+                text = _strip_sections(inspect.getdoc(target) or "")
+        help_text = _escape_markup(text) if text else None
         if isinstance(target, typer.Typer):
-            self.add_typer(target, name=command.name, help=command.help)
+            self.add_typer(target, name=command.name, help=help_text)
             return
         if not callable(target):
             raise AppException(
@@ -234,7 +291,7 @@ class CliApp(typer.Typer):
                 command.name,
                 command.target,
             )
-        self.command(name=command.name, help=command.help)(target)
+        self.command(name=command.name, help=help_text)(target)
 
     def run(self, args: Sequence[str] | None = None, **kwargs: Any) -> int:
         """Invoke this application and return its exit code. See :func:`run`."""

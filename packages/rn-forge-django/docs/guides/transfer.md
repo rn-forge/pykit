@@ -71,6 +71,10 @@ transfer section of the `rn-forge-web` API conventions.
 | `POST /orders:batchUpdate`, `{"requests": [{"id", "patch", "ifMatch"}]}` | Each `patch` is a JSON Merge Patch merged into the row and validated through the serializer, all or nothing, in one transaction. `200 {"orders": [...]}` in request order. A failed precondition is a 428, 400 or 412 at `/requests/<i>/ifMatch`; an invalid merge is a 422 at `/requests/<i>/patch/<field>`. |
 | `POST /orders:batchDelete`, `{"ids": [...]}` | All or nothing, `204`. An id outside the filtered queryset is a 404 naming it. |
 
+In `:batchGet`, `:batchUpdate` and `:batchDelete`, an id the primary key cannot
+hold, such as `abc` for an integer key, is a 404 naming it, like any other id
+outside the queryset.
+
 Row numbers in pointers count from 0. A pointer names the column as it appears
 in the file when the failing field is an import field. An error `import-export`
 raises outside field validation (a `ForeignKeyWidget` that finds no row, or an

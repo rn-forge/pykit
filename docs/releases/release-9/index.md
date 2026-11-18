@@ -1,0 +1,62 @@
+# Release 9 — pykit simplification
+
+|  |  |
+| -- | -- |
+| **Status** | planned |
+
+The ten packages, their tests and their documentation get simpler
+([E22](../../specs/epics/E22-pykit-simplification/index.md), F22.1 to F22.13).
+Shared policy gets one owner, redundant work goes, and framework adapters keep
+to translation. Correctness cases get regression tests before refactoring, and
+performance work starts with measurements. The
+[review and proposed design](../../specs/epics/E22-pykit-simplification/design.md)
+gives the evidence and tradeoffs.
+
+Defects and spec drift found while closing E22 are fixed before the cut
+([E24](../../specs/epics/E24-release-9-follow-ups/index.md)).
+
+[Back to releases](../index.md) ·
+[Release runbook](../../runbooks/releasing-packages.md)
+
+## Entry criteria
+
+- Release 8 is shipped.
+
+## Scope
+
+<!-- BEGIN derived scope -->
+
+| Feature | Epic | State |
+| -- | -- | -- |
+| [F22.1 — Short specs with stable work records](../../specs/epics/E22-pykit-simplification/F22.1-specs.md) | E22 | Closed |
+| [F22.2 — One current explanation per audience](../../specs/epics/E22-pykit-simplification/F22.2-documentation.md) | E22 | Closed |
+| [F22.3 — Behavioral tests and performance baselines](../../specs/epics/E22-pykit-simplification/F22.3-tests-and-measurements.md) | E22 | Closed |
+| [F22.4 — Commons with explicit side effects](../../specs/epics/E22-pykit-simplification/F22.4-commons.md) | E22 | Closed |
+| [F22.5 — CLI invocation state with a clear lifetime](../../specs/epics/E22-pykit-simplification/F22.5-cli.md) | E22 | Closed |
+| [F22.6 — Installer transactions with honest recovery](../../specs/epics/E22-pykit-simplification/F22.6-tooling.md) | E22 | Closed |
+| [F22.7 — HTTP policy with bounded readiness](../../specs/epics/E22-pykit-simplification/F22.7-web.md) | E22 | Closed |
+| [F22.8 — Auth policy and bounded caches](../../specs/epics/E22-pykit-simplification/F22.8-auth.md) | E22 | Closed |
+| [F22.9 — Django adapters with safe parsing and ownership](../../specs/epics/E22-pykit-simplification/F22.9-django.md) | E22 | Closed |
+| [F22.10 — FastAPI adapters with clear validation boundaries](../../specs/epics/E22-pykit-simplification/F22.10-fastapi.md) | E22 | Closed |
+| [F22.11 — SQLAlchemy bulk work with explicit bounds](../../specs/epics/E22-pykit-simplification/F22.11-sqlalchemy.md) | E22 | Closed |
+| [F22.12 — Tabular helpers without redundant copies](../../specs/epics/E22-pykit-simplification/F22.12-data.md) | E22 | Closed |
+| [F22.13 — Small release utilities with one metadata path](../../specs/epics/E22-pykit-simplification/F22.13-devops.md) | E22 | Closed |
+| [F23.1 — Help text reads as written, and a command starts quietly](../../specs/epics/E23-standalone-tool-findings/F23.1-help-text.md) | E23 | Closed |
+| [F23.2 — A Python tool installs from a branch, a tag or a commit](../../specs/epics/E23-standalone-tool-findings/F23.2-install-from-a-ref.md) | E23 | Closed |
+| [F24.1 — Django transfer at its limits](../../specs/epics/E24-release-9-follow-ups/F24.1-django-transfer-limits.md) | E24 | Closed |
+| [F24.2 — ID tokens refuse other profiles' types](../../specs/epics/E24-release-9-follow-ups/F24.2-id-token-type.md) | E24 | Closed |
+| [F24.3 — Declared CLI surfaces reject unknown keys](../../specs/epics/E24-release-9-follow-ups/F24.3-strict-cli-surface.md) | E24 | Closed |
+| [F24.4 — Specs and runbooks match the tree](../../specs/epics/E24-release-9-follow-ups/F24.4-spec-and-runbook-drift.md) | E24 | Closed |
+
+<!-- END derived scope -->
+
+## Order
+
+The order follows
+[E22's Order](../../specs/epics/E22-pykit-simplification/index.md#order): F22.3
+first, then the correctness cases and F22.4 to F22.13, with F22.2 and F22.1
+last.
+
+## Shipped
+
+Filled at the cut.

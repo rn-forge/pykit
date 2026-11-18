@@ -5,6 +5,24 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-17
+
+### Changed
+
+- File digests no longer read the whole file into memory.
+- `TaskPool.submit` counts duplicate names in one pass.
+- `DictUtils.merge` copies override values only when assigning them.
+- `AppLogger` no longer replaces the process record factory; its own records
+  format braces over any factory.
+- `ApplyResult.written` reports each write path once in plan order and no longer
+  lists unchanged, skipped, forgotten or dry-run paths.
+
+### Fixed
+
+- Configuring the logger no longer logs a `NOTICE`; it is `DEBUG` now. A
+  plain-format timestamp shows its milliseconds once.
+- `AppLogger` level methods report the caller's file, line and function.
+
 ## [0.9.0] - 2026-11-13
 
 ### Added

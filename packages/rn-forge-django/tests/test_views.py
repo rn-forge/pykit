@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 
 import pytest
 
@@ -56,11 +57,113 @@ def _ready(checks, **kwargs):
     return response.status_code, json.loads(response.content)
 
 
+def _ready_via_urlpatterns(checks, **kwargs):
+    pattern = next(
+        pattern
+        for pattern in health_urlpatterns(checks=checks, **kwargs)
+        if pattern.name == "rn-forge-readiness"
+    )
+    response = pattern.callback(RequestFactory().get("/readyz"))
+    return response.status_code, json.loads(response.content)
+
+
 def _boom():
     raise RuntimeError("db unreachable")
 
 
 class TestReadinessView:
+    def test_a_blocked_required_check_reports_503_before_release(self) -> None:
+        started = threading.Event()
+        release = threading.Event()
+        finished = threading.Event()
+        caller_errors: list[BaseException] = []
+        responses: list[tuple[int, dict]] = []
+
+        def blocked() -> bool:
+            started.set()
+            try:
+                release.wait()
+                return True
+            finally:
+                finished.set()
+
+        def call_view() -> None:
+            try:
+                responses.append(
+                    _ready_via_urlpatterns(
+                        {"db": blocked, "cache": lambda: True},
+                        required=["db"],
+                        timeout=0.05,
+                    )
+                )
+            except Exception as error:  # noqa: BLE001 - surface caller-thread errors
+                caller_errors.append(error)
+
+        caller = threading.Thread(target=call_view)
+        caller.start()
+        try:
+            assert started.wait(timeout=1)
+            caller.join(timeout=1)
+            assert not caller.is_alive(), "readiness call waited for the blocked check"
+            assert not release.is_set()
+            assert responses[0][0] == 503
+            assert responses[0][1]["checks"]["db"]["status"] == "fail"
+            assert responses[0][1]["checks"]["db"]["reason"] == (
+                "timed out after 0.05s"
+            )
+        finally:
+            release.set()
+            caller.join(timeout=5)
+            assert not caller.is_alive()
+            assert finished.wait(timeout=5)
+        assert not caller_errors, caller_errors
+
+    def test_a_blocked_optional_check_reports_200_before_release(self) -> None:
+        started = threading.Event()
+        release = threading.Event()
+        finished = threading.Event()
+        caller_errors: list[BaseException] = []
+        responses: list[tuple[int, dict]] = []
+
+        def blocked() -> bool:
+            started.set()
+            try:
+                release.wait()
+                return True
+            finally:
+                finished.set()
+
+        def call_view() -> None:
+            try:
+                responses.append(
+                    _ready_via_urlpatterns(
+                        {"db": blocked, "cache": lambda: True},
+                        required=["cache"],
+                        timeout=0.05,
+                    )
+                )
+            except Exception as error:  # noqa: BLE001 - surface caller-thread errors
+                caller_errors.append(error)
+
+        caller = threading.Thread(target=call_view)
+        caller.start()
+        try:
+            assert started.wait(timeout=1)
+            caller.join(timeout=1)
+            assert not caller.is_alive(), "readiness call waited for the blocked check"
+            assert not release.is_set()
+            assert responses[0][0] == 200
+            assert responses[0][1]["checks"]["db"]["status"] == "fail"
+            assert responses[0][1]["checks"]["db"]["reason"] == (
+                "timed out after 0.05s"
+            )
+        finally:
+            release.set()
+            caller.join(timeout=5)
+            assert not caller.is_alive()
+            assert finished.wait(timeout=5)
+        assert not caller_errors, caller_errors
+
     def test_all_pass_is_200(self) -> None:
         status, body = _ready({"db": lambda: True}, required=["db"])
         assert status == 200

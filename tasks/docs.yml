@@ -5,9 +5,6 @@ version: "3"
 # developer runs directly while writing prose, so these three verbs are the only
 # non-root public tasks the vocabulary allows (see .rn-forge/kiln/standard.md).
 
-vars:
-  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@feature/v1" kiln'
-
 tasks:
   build:
     desc: Build the MkDocs site into .docs-site/ (or $1 when given).

@@ -5,6 +5,23 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-17
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+- `write_xlsx` removes a redundant row list to reduce internal memory use;
+  output is unchanged. The usage guide clarifies that the caller's whole
+  dataset and the returned workbook bytes remain in memory.
+
+### Fixed
+
+- `PandasUtils.get_string_field` preserves present `0`, `0.0` and `False` as
+  `"0"`, `"0.0"` and `"False"`. Missing values still follow `required`;
+  `get_decimal_field` now raises `decimal.InvalidOperation` for a `False`
+  cell. Callers relying on empty strings for zero/False or decimal zero for
+  False must adjust to these corrected results.
+
 ## [0.1.3] - 2026-11-13
 
 ### Changed

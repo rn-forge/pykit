@@ -20,14 +20,9 @@ optional. Jinja2 is **not** a dependency — that lives in `rn-forge-tooling`.
 
 Raise the version range. A lockfile records the resolved version.
 
-## The boundary, as an executable rule
+## The boundary
 
-The workspace's `.importlinter` contracts state it, and `uv run lint-imports`
-proves it:
-
-- `rn_forge.commons` never imports `rn_forge.cli`, `rn_forge.tooling`, Typer or
-  Jinja.
-- `rn_forge.cli` never imports `rn_forge.tooling` or Jinja.
-- The three libraries layer strictly: tooling → cli → commons.
-- `rn_forge.django`'s runtime surface never imports any of them — only
-  `rn_forge.django.codegen` may, and only with the `codegen` extra installed.
+`rn_forge.cli` never imports `rn_forge.tooling` or Jinja, and `rn_forge.commons`
+never imports either; `task lint` proves it. The
+[workspace boundaries](https://rn-forge.github.io/pykit/architecture/workspace/)
+page explains the rest.

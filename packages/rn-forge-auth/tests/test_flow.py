@@ -228,3 +228,48 @@ def test_the_failure_reason_goes_to_the_log(
         flow.complete("a", request, transaction_id="unknown")
 
     assert_that(caplog.text).contains("transaction missing, expired or used")
+
+
+def test_transaction_cookie_name() -> None:
+    from rn_forge.auth import TRANSACTION_COOKIE
+
+    assert TRANSACTION_COOKIE == "__Host-login-tx"
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        ["__Host-login-tx=abc"],
+        ["a=1; __Host-login-tx= abc ; b=2"],
+        ["a=1", "__Host-login-tx=abc"],
+    ],
+)
+def test_transaction_cookie_value_returns_the_single_value(headers: list[str]) -> None:
+    from rn_forge.auth import transaction_cookie_value
+
+    assert transaction_cookie_value(headers) == "abc"
+
+
+@pytest.mark.parametrize("headers", [[], [""], ["a=1; b=2"], ["x__Host-login-tx=abc"]])
+def test_transaction_cookie_value_is_none_without_the_cookie(
+    headers: list[str],
+) -> None:
+    from rn_forge.auth import transaction_cookie_value
+
+    assert transaction_cookie_value(headers) is None
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        ["__Host-login-tx=a; __Host-login-tx=b"],
+        ["__Host-login-tx=a", "__Host-login-tx=b"],
+    ],
+)
+def test_two_transaction_cookies_fail(headers: list[str]) -> None:
+    from rn_forge.auth import transaction_cookie_value
+
+    with pytest.raises(LoginFailed) as caught:
+        transaction_cookie_value(headers)
+    assert caught.value.code == "login_failed"
+    assert caught.value.reason == "more than one transaction cookie"

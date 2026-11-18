@@ -31,6 +31,7 @@ import concurrent.futures
 import threading
 import time
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Callable, Iterable
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
@@ -259,7 +260,7 @@ class TaskPool[TaskType: Task]:
             )
         task_names = [task.name for task in tasks]
         duplicate_names = sorted(
-            {name for name in task_names if task_names.count(name) > 1}
+            name for name, count in Counter(task_names).items() if count > 1
         )
         if duplicate_names:
             _LOGGER.warning(  # noqa: PLE1205  # brace-style log format

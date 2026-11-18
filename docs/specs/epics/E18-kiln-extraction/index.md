@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-10-25 |
+| **Closed Date** | 2026-11-13 |
 
 <!-- BEGIN derived features -->
 

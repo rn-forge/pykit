@@ -9,6 +9,13 @@ import pytest
 from rn_forge.devops import cli
 
 
+@pytest.mark.parametrize("name", ["plan", "smoke", "releasable"])
+def test_planner_subcommands_are_not_restored(name: str) -> None:
+    with pytest.raises(SystemExit) as caught:
+        cli.main([name])
+    assert caught.value.code == 2
+
+
 def test_cli_requirements_prints_each_problem_and_exits_1(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -35,6 +42,45 @@ def _releases(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return page.parent.parent
+
+
+def test_cli_requirements_exits_0_when_clean(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    (tmp_path / "pyproject.toml").write_text("[tool.uv.workspace]\nmembers = []\n")
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["requirements"]) == 0
+    assert capsys.readouterr() == ("", "")
+
+
+def test_cli_requirements_exits_2_on_malformed_requirement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    (tmp_path / "pyproject.toml").write_text('[tool.uv.workspace]\nmembers = ["pkg"]\n')
+    path = tmp_path / "pkg/pyproject.toml"
+    path.parent.mkdir()
+    path.write_text('[project]\nname = "b"\ndependencies = ["a>=>1"]\n')
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["requirements"]) == 2
+    captured = capsys.readouterr()
+    assert str(path) in captured.err
+    assert "a>=>1" in captured.err
+    assert "Traceback" not in captured.err
+    assert captured.out == ""
+
+
+def test_cli_requirements_exits_2_without_workspace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["requirements"]) == 2
+    assert "no uv workspace" in capsys.readouterr().err
 
 
 def test_umbrella_writes_body_and_prints_outputs(

@@ -27,7 +27,7 @@ next to the adapter rather than relying on it arriving transitively. See the
 [workspace graph](../architecture/workspace.md) for direct dependencies and
 import boundaries.
 
-Consumers require pykit packages by version range from pykit's index
+Consumers require pykit packages from PyPI by version range;
+[consuming packages](consuming-packages.md) shows how
 ([ADR-0004](../adr/ADR-0004.md)). The [release pages](../releases/index.md)
-record which tags exist. A workspace source override resolves local members
-during development only.
+record which tags exist.

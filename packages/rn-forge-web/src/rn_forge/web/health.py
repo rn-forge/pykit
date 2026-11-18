@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import time
 from collections.abc import Awaitable, Callable, Collection, Mapping
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
+from threading import Lock, Semaphore
 from typing import Any, Final, Literal
 
 from pydantic import ConfigDict, Field
@@ -202,38 +204,72 @@ def _run_one_sync(check: Check) -> CheckResult:
     return _coerce(outcome)
 
 
+class _SyncCheckPool:
+    def __init__(self, cap: int) -> None:
+        self._cap = cap
+        self._slots = Semaphore(cap)
+        self._lock = Lock()
+        self._executor: ThreadPoolExecutor | None = None
+
+    def submit(self, check: Check) -> Future[CheckResult] | None:
+        if not self._slots.acquire(blocking=False):
+            return None
+        try:
+            with self._lock:
+                if self._executor is None:
+                    self._executor = ThreadPoolExecutor(max_workers=self._cap)
+                future = self._executor.submit(_run_one_sync, check)
+        except BaseException:
+            self._slots.release()
+            raise
+        future.add_done_callback(lambda _: self._slots.release())
+        return future
+
+
+_sync_pool = _SyncCheckPool(32)
+
+
 def run_checks_sync(
     checks: Mapping[str, Check],
     *,
     required: Collection[str] = (),
     timeout: float | None = None,
 ) -> HealthReport:
-    """Run *checks* concurrently in a thread pool and aggregate them.
+    """Run *checks* concurrently on a shared pool of at most 32 workers.
+
+    All checks share one deadline. A check that finds the pool full fails
+    immediately with ``not run: health check capacity exhausted``. A timed-out
+    check keeps running and holding its slot until its callable returns.
 
     Args:
         checks: Name → check. Every check must be synchronous.
         required: Names whose failure makes the service unavailable (503).
-        timeout: Seconds each check may run before it is reported as
-            ``fail``. ``None`` (the default) waits indefinitely.
+        timeout: Seconds for the shared deadline, after which unfinished
+            checks are reported as ``fail``. ``None`` waits indefinitely.
 
     Returns:
         The aggregate report, including the HTTP status to serve.
 
     Raises:
-        WebError: A check returned an awaitable. This is raised rather than
-            swallowed into a ``fail``, because it is a wiring mistake in the
-            caller's code, not a sick dependency — and reporting it as a
-            failing check would hide it behind a red dependency.
+        WebError: A check returned an awaitable. It is raised, not reported
+            as a failing check.
     """
+    deadline = None if timeout is None else time.monotonic() + timeout
     names = list(checks)
     results: dict[str, CheckResult] = {}
-    with ThreadPoolExecutor(max_workers=len(names) or 1) as executor:
-        futures = {name: executor.submit(_run_one_sync, checks[name]) for name in names}
-        for name in names:
-            try:
-                results[name] = futures[name].result(timeout=timeout)
-            except TimeoutError:
-                results[name] = CheckResult(
-                    status="fail", reason=f"timed out after {timeout:g}s"
-                )
+    futures = {name: _sync_pool.submit(checks[name]) for name in names}
+    for name in names:
+        future = futures[name]
+        if future is None:
+            results[name] = CheckResult(
+                status="fail", reason="not run: health check capacity exhausted"
+            )
+            continue
+        remaining = None if deadline is None else max(0, deadline - time.monotonic())
+        try:
+            results[name] = future.result(timeout=remaining)
+        except TimeoutError:
+            results[name] = CheckResult(
+                status="fail", reason=f"timed out after {timeout:g}s"
+            )
     return _aggregate(results, required)

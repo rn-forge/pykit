@@ -7,9 +7,22 @@ contracts, session, transaction and replay stores, the login flow and its OIDC,
 OAuth 2.0, password and development providers, and the OIDC token profiles.
 
 The base install gives the core, `rn_forge.auth`. The `oidc` extra adds
-`pyjwt[crypto]` and `authlib` for the adapter, `rn_forge.auth.oidc`, and for the
-fake provider in `rn_forge.auth.testing`; the `redis` extra adds `redis` for
-`rn_forge.auth.redis`. The core imports none of them.
+`pyjwt[crypto]`, `authlib`, `joserfc` and `requests` for the adapter,
+`rn_forge.auth.oidc`, and for the fake provider in `rn_forge.auth.testing`; the
+`redis` extra adds `redis` for `rn_forge.auth.redis`. The core imports none of
+them.
+
+## Install
+
+```toml
+dependencies = ["rn-forge-auth[oidc,redis]>=0.1,<0.2"]
+```
+
+Drop the extras you do not use. Start from the
+[minimum example](guides/contracts.md#principal-and-requirement). An
+authenticator raises `AuthenticationFailed` (401) and `ScopeAuthorizer` raises
+`PermissionDenied` (403); see
+[Authenticators and authorizers](guides/contracts.md#authenticators-and-authorizers).
 
 ## Where to start
 

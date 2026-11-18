@@ -16,6 +16,7 @@ import pytest
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 from rn_forge.auth import (
+    TRANSACTION_COOKIE,
     AccountRejected,
     AuthorizationContext,
     DevelopmentAccount,
@@ -33,7 +34,6 @@ from rn_forge.auth.oidc import BackchannelLogout, LogoutTokenVerifier, OidcProvi
 from rn_forge.auth.testing import FakeOidcProvider
 from rn_forge.fastapi import (
     SESSION_COOKIE,
-    TRANSACTION_COOKIE,
     AuthRoutesConfig,
     InMemoryCsrfStore,
     InMemoryRateLimiter,
@@ -471,6 +471,34 @@ class TestOidcLogin:
 
         assert response.headers["location"] == "/auth/error?error=access_denied"
         assert SESSION_COOKIE not in _set_cookies(response)
+
+    @pytest.mark.parametrize("inactive", [False, True])
+    def test_a_refused_login_logs_one_warning_on_the_route_logger(
+        self,
+        mount: Callable[..., _World],
+        caplog: pytest.LogCaptureFixture,
+        inactive: bool,
+    ) -> None:
+        world = mount()
+        if inactive:
+            world.contexts.inactive.add("acct-u1")
+            reason = "account is not active"
+        else:
+            world.idp.user = {"sub": "stranger"}
+            reason = "not provisioned"
+        caplog.set_level(logging.INFO)
+
+        world.sign_in_with_idp()
+
+        records = [
+            record
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+            and record.getMessage().startswith("Login with")
+        ]
+        assert len(records) == 1
+        assert records[0].name == "rn_forge.fastapi.auth.routes"
+        assert records[0].getMessage() == f"Login with acme refused: {reason}"
 
     def test_a_rejected_account_is_not_provisioned(
         self, mount: Callable[..., _World]

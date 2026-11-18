@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import replace
 from typing import cast
 
 from fastapi import Depends, Request, Security
@@ -23,15 +22,16 @@ from rn_forge.auth import (
     AccountResolver,
     AsyncAuthenticator,
     Authenticator,
-    AuthorizationContext,
     AuthorizationContextProvider,
     Authorizer,
     Principal,
+    PrincipalLinkError,
     Requirement,
     ScopeAuthorizer,
     audit,
-    effective_permissions,
+    link_bearer_principal,
     requirement_for,
+    session_principal,
 )
 from rn_forge.fastapi.auth.sessions import ActiveSession, active_session
 from rn_forge.fastapi.problem import Log
@@ -104,30 +104,15 @@ class BearerAuth:
             raise
 
     def _link(self, principal: Principal) -> Principal:
-        account_id = (
-            self._accounts.lookup(principal.issuer, principal.subject)
-            if principal.issuer
-            else None
-        )
-        if account_id is None:
-            raise AuthenticationFailed("No account is linked to the token subject")
-        context = self._contexts.resolve(account_id)
-        if not context.active:
-            raise AuthenticationFailed("The account is not active")
-        return replace(
-            principal,
-            subject=account_id,
-            external_subject=principal.subject,
-            permissions=effective_permissions(
-                context.permissions,
-                mechanism="bearer",
-                scopes=principal.scopes,
+        try:
+            return link_bearer_principal(
+                principal,
+                accounts=self._accounts,
+                contexts=self._contexts,
                 scope_map=self._scope_map,
-            ),
-            roles=context.roles,
-            tenant=_tenant(context),
-            attributes=context.attributes,
-        )
+            )
+        except PrincipalLinkError as exc:
+            raise AuthenticationFailed(str(exc)) from exc
 
     async def __call__(
         self,
@@ -224,25 +209,8 @@ def current_principal(*, bearer: BearerAuth | None = None) -> PrincipalDependenc
     return dependency
 
 
-def _tenant(context: AuthorizationContext) -> str | None:
-    tenant = context.attributes.get("tenant")
-    return tenant if isinstance(tenant, str) else None
-
-
 def _session_principal(active: ActiveSession) -> Principal:
-    info, context = active.info, active.context
-    return Principal(
-        subject=info.account_id,
-        issuer=info.issuer,
-        external_subject=info.external_subject,
-        permissions=context.permissions,
-        roles=context.roles,
-        tenant=_tenant(context),
-        attributes=context.attributes,
-        mechanism="session",
-        auth_time=info.auth_time,
-        amr=info.amr,
-    )
+    return session_principal(active.info, active.context)
 
 
 def basic_auth(

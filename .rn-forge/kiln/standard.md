@@ -36,11 +36,11 @@ The developer surface for this repo is exactly:
 | `task format` | Format Python code, TOML, YAML and Markdown prose in place. |
 | `task kiln:apply` | Re-render the generated files from .rn-forge/kiln/config.toml. Pass --dry-run, or --force \<path> to overwrite a drifted file, after `--`. |
 | `task kiln:diff` | Show every generated file that differs from a fresh render, writing nothing. Pass --artifact \<key or path> after `--` to limit it to one. |
-| `task kiln:pin` | Move kiln to another ref (tag, branch or SHA) and re-render with it. Pass the ref after `--`. |
+| `task kiln:pin` | Pin kiln to a branch's newest commit, a tag or a SHA and re-render with it. Pass it after `--`; with none, follow `track`. |
 | `task lint` | Every lint — Python, imports, Markdown, TOML and YAML formatting, kiln's checks (generated files, task layout, CI, dependencies, docs), workflow security, dependency vulnerabilities, dependency licences. |
 | `task setup` | Install the project and its dev + docs dependency groups. |
 | `task sonar:local` | Run the coverage tests and scan the checked-out branch on SonarCloud, awaiting the quality gate. Needs SONAR_TOKEN and sonar-scanner on PATH; pass --dry-run after -- to print the commands. |
-| `task test` | Run each package's pytest suite. |
+| `task test` | Run each package's pytest suite, or one package's with pytest arguments (pass -- \<package> [args]). |
 | `task test:coverage` | Run each package's tests with coverage, combined into one XML report (used by CI/Sonar). |
 | `task typecheck` | Type-check each package in pyright strict mode. |
 | `task validate` | The aggregate gate — lint, typecheck, test, docs build. Any failure fails. |
@@ -166,7 +166,7 @@ breaking release:
 
 ```toml
 dependencies = [
-  "rn-forge-commons>=0.8.1,<0.9",
+  "rn-forge-commons>=0.9.0,<0.10",
 ]
 ```
 
@@ -281,7 +281,7 @@ model.
 | Docs strict build | `task docs:build` | D: `[docs] profile = "mkdocs"` |
 | `dependency-review` | action | S |
 | Sonar | `sonar` job | C: `[ci] sonar`, default `true` |
-| Release | `release` job | C: `[ci] release`, default `tag-exists`; `pypi` for `python-lib`; `nx-dispatch` for `node-lib`; `none` |
+| Release | `release` job | C: `[ci] release`, default `tag-exists`; `pypi` for `python-lib`; `nx-dispatch` or `npm` for `node-lib`; `none` |
 | `verify-release` | `task ci:verify-release` | D: a release mode other than `none` |
 | Docs deploy | `docs` job | D: `[docs] profile = "mkdocs"` |
 | `ci-ok` | none | S |

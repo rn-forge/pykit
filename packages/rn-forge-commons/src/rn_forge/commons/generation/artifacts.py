@@ -248,8 +248,10 @@ class ApplyResult:
 
     @property
     def written(self) -> tuple[str, ...]:
-        """Repo-relative paths whose bytes changed."""
-        return tuple(change.path for change in self.changes)
+        """Repo-relative write paths, once each in plan order; empty for dry runs."""
+        if self.dry_run:
+            return ()
+        return tuple(dict.fromkeys(change.path for change in Plan(self.changes).writes))
 
 
 # Internal helpers shared by the planning and application modules.

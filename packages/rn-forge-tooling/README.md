@@ -30,8 +30,8 @@ files in it. It owns:
 A repository that only needs a command line takes `rn-forge-cli` and stops
 there. A package that ships into a deployed runtime (`rn-forge-django`,
 `rn-forge-fastapi`) must never depend on this package outside a `codegen` extra.
-Tooling may import cli and commons; neither may import tooling, and
-`uv run lint-imports` proves it.
+Tooling may import cli and commons; neither may import tooling, and `task lint`
+proves it.
 
 ## Install
 
@@ -42,27 +42,34 @@ Require the package by version range:
 dependencies = ["rn-forge-tooling>=0.3,<0.4"]
 ```
 
-`rn-forge-cli` and `rn-forge-commons` come with it, as version ranges.
+`rn-forge-cli` and `rn-forge-commons` come with it, as version ranges. The
+`testing` extra installs `assertpy` and `pytest`.
 
-## Docs
+## Minimum example
 
-Full API reference and guides are built with mkdocs:
+```toml
+# cli.toml
+[cli]
+name = "golden-tool"
+help = "A tool that manages its own install."
 
-```bash
-uv run --group docs mkdocs serve   # or `mkdocs build`
+[lifecycle]
+product = "golden_tool.product:PRODUCT"
 ```
 
-Source lives in
-[`docs/`](https://github.com/rn-forge/pykit/tree/main/packages/rn-forge-tooling/docs),
-configured via
-[`mkdocs.yml`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-tooling/mkdocs.yml).
+```python
+from pathlib import Path
 
-## Development
+from rn_forge.tooling.cli.lifecycle import build_tool_app
 
-From the repo root or this directory:
-
-```bash
-uv run pytest packages/rn-forge-tooling
-uv run ruff check packages/rn-forge-tooling
-uv run pyright
+app = build_tool_app(Path(__file__).parent / "cli.toml")
 ```
+
+## Errors
+
+`install` and `upgrade` roll back on failure and re-raise as an `AppException`
+whose message says "rolled back" only when every undo step succeeded; otherwise
+it names each failed step. An interruption is re-raised as is after recovery.
+
+Maintainer commands are in the
+[development guide](https://rn-forge.github.io/pykit/guides/development/).

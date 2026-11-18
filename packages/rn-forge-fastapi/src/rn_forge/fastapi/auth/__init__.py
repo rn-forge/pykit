@@ -24,7 +24,6 @@ from rn_forge.fastapi.auth.rate_limit import (
     RateLimiter,
 )
 from rn_forge.fastapi.auth.routes import (
-    TRANSACTION_COOKIE,
     AuthRoutesConfig,
     auth_router,
     sessions_for,
@@ -44,7 +43,6 @@ __all__ = [
     "CSRF_COOKIE",
     "CSRF_HEADER",
     "SESSION_COOKIE",
-    "TRANSACTION_COOKIE",
     "ActiveSession",
     "AuthRoutesConfig",
     "BearerAuth",

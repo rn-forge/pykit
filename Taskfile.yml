@@ -18,6 +18,13 @@ env:
   # this locally.
   UV_CACHE_DIR: .uv-cache
 
+# The kiln commands every namespace file calls, declared once so a pin changes
+# this file alone. go-task passes these to each included file; a namespace file
+# that declared its own would shadow them.
+vars:
+  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@5a865f66e2c9e3b0dd5dc2bd11f6ccffa88aa311" kiln'
+  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@5a865f66e2c9e3b0dd5dc2bd11f6ccffa88aa311" kiln-devops'
+
 includes:
   quality: tasks/quality.yml
   python: tasks/python.yml
@@ -94,7 +101,7 @@ tasks:
       - task: python:typecheck
 
   test:
-    desc: Run each package's pytest suite.
+    desc: Run each package's pytest suite, or one package's with pytest arguments (pass -- <package> [args]).
     cmds:
       - task: python:test
 

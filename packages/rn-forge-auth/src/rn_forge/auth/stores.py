@@ -3,6 +3,7 @@ revoked sessions."""
 
 from __future__ import annotations
 
+import math
 import secrets
 import threading
 import time
@@ -134,6 +135,8 @@ class InMemoryReplayStore:
         self._lock = threading.Lock()
         self._seen: dict[str, float] = {}
         self._revoked: dict[tuple[str, str], float] = {}
+        # Each store's bound never exceeds any stored expiry.
+        self._next_expiry = math.inf
 
     def record_once(self, key: str, *, ttl: timedelta) -> bool:
         """See :meth:`ReplayStore.record_once`."""
@@ -143,6 +146,7 @@ class InMemoryReplayStore:
             if key in self._seen:
                 return False
             self._seen[key] = now + ttl.total_seconds()
+            self._next_expiry = min(self._next_expiry, self._seen[key])
             return True
 
     def revoke_sid(self, issuer: str, sid: str, *, ttl: timedelta) -> None:
@@ -151,6 +155,7 @@ class InMemoryReplayStore:
             now = self._clock()
             self._purge(now)
             self._revoked[(issuer, sid)] = now + ttl.total_seconds()
+            self._next_expiry = min(self._next_expiry, self._revoked[(issuer, sid)])
 
     def is_sid_revoked(self, issuer: str, sid: str) -> bool:
         """See :meth:`ReplayStore.is_sid_revoked`."""
@@ -158,8 +163,14 @@ class InMemoryReplayStore:
             return self._revoked.get((issuer, sid), 0.0) > self._clock()
 
     def _purge(self, now: float) -> None:
+        if now < self._next_expiry:
+            return
         self._seen = {k: t for k, t in self._seen.items() if t > now}
         self._revoked = {k: t for k, t in self._revoked.items() if t > now}
+        self._next_expiry = min(
+            min(self._seen.values(), default=math.inf),
+            min(self._revoked.values(), default=math.inf),
+        )
 
 
 class InMemoryTransactionStore:
@@ -176,13 +187,15 @@ class InMemoryTransactionStore:
         self._clock = clock
         self._lock = threading.Lock()
         self._entries: dict[str, tuple[LoginTransaction, float]] = {}
+        self._next_expiry = math.inf
 
     def save(self, transaction: LoginTransaction, *, ttl: timedelta) -> None:
         """See :meth:`TransactionStore.save`."""
         with self._lock:
             now = self._clock()
-            self._entries = {k: v for k, v in self._entries.items() if v[1] > now}
+            self._purge(now)
             self._entries[transaction.id] = (transaction, now + ttl.total_seconds())
+            self._next_expiry = min(self._next_expiry, self._entries[transaction.id][1])
 
     def consume(self, transaction_id: str) -> LoginTransaction | None:
         """See :meth:`TransactionStore.consume`."""
@@ -191,6 +204,14 @@ class InMemoryTransactionStore:
             if entry is None or entry[1] <= self._clock():
                 return None
             return entry[0]
+
+    def _purge(self, now: float) -> None:
+        if now < self._next_expiry:
+            return
+        self._entries = {k: v for k, v in self._entries.items() if v[1] > now}
+        self._next_expiry = min(
+            (v[1] for v in self._entries.values()), default=math.inf
+        )
 
 
 def _utc_now() -> datetime:
@@ -211,6 +232,7 @@ class InMemorySessionStore:
         self._clock = clock
         self._lock = threading.Lock()
         self._entries: dict[str, tuple[SessionInfo, datetime]] = {}
+        self._next_expiry = datetime.max.replace(tzinfo=UTC)
 
     def create(self, session: SessionInfo, *, idle_ttl: timedelta) -> str:
         """See :meth:`SessionStore.create`."""
@@ -222,6 +244,7 @@ class InMemorySessionStore:
                 session,
                 self._idle_expiry(session, now, idle_ttl),
             )
+            self._next_expiry = min(self._next_expiry, self._entries[session_id][1])
             return session_id
 
     def get(self, session_id: str) -> SessionInfo | None:
@@ -244,6 +267,7 @@ class InMemorySessionStore:
                 session,
                 self._idle_expiry(session, now, idle_ttl),
             )
+            self._next_expiry = min(self._next_expiry, self._entries[session_id][1])
             return True
 
     def delete(self, session_id: str) -> None:
@@ -264,6 +288,7 @@ class InMemorySessionStore:
                 entry[0],
                 self._idle_expiry(entry[0], now, idle_ttl),
             )
+            self._next_expiry = min(self._next_expiry, self._entries[new_id][1])
             return new_id
 
     @staticmethod
@@ -273,4 +298,10 @@ class InMemorySessionStore:
         return min(now + idle_ttl, session.expires_at)
 
     def _purge(self, now: datetime) -> None:
+        if now < self._next_expiry:
+            return
         self._entries = {k: v for k, v in self._entries.items() if v[1] > now}
+        self._next_expiry = min(
+            (v[1] for v in self._entries.values()),
+            default=datetime.max.replace(tzinfo=UTC),
+        )

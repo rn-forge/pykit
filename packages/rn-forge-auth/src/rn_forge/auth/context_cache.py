@@ -93,6 +93,10 @@ class AuthorizationContextCache:
     made any other way applies once the entry's *ttl* has passed. The cache is
     safe to share between threads and is local to the process.
 
+    Expired entries are kept until the next miss. The number held is bounded
+    by the accounts that missed within one *ttl*. Version counters are not
+    pruned.
+
     Args:
         provider: The provider that computes contexts.
         ttl: The longest an entry is served. Must be positive.
@@ -143,6 +147,13 @@ class AuthorizationContextCache:
         # computation leaves the entry stale rather than fresh.
         context = self._provider.resolve(account_id)
         with self._lock:
+            # A dict overwrite keeps its old position; a refreshed entry belongs last.
+            self._entries.pop(account_id, None)
+            while self._entries:
+                oldest = next(iter(self._entries))
+                if now - self._entries[oldest].stored_at < self._ttl:
+                    break
+                del self._entries[oldest]
             self._entries[account_id] = _Entry(context, versions, now)
         return context
 

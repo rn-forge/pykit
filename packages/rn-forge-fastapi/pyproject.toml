@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.4.1"
+version = "0.5.0"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -19,8 +19,8 @@ classifiers = [
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 dependencies = [
-    "rn-forge-auth>=0.1.0,<0.2",
-    "rn-forge-commons>=0.8.0,<0.10",
+    "rn-forge-auth>=0.2.0,<0.3",
+    "rn-forge-commons>=0.8.0,<0.11",
     # `[security]` is a hard requirement, not an extra: `FastApiApp` installs
     # `SecurityHeadersMiddleware` by default (`AppConfig.security_headers`).
     "rn-forge-web[security]>=0.3.0,<0.4",
@@ -38,10 +38,10 @@ testing = ["assertpy>=2.35", "httpx>=0.28.1", "pytest>=9.1.1"]
 # JWKS bearer auth: `rn_forge.auth.oidc.OidcAuthenticator` passed to
 # `bearer_auth()`. Nothing in this package imports it; the extra exists so a
 # consumer asks for it by name rather than reaching into auth's extras.
-oidc = ["rn-forge-auth[oidc]>=0.1.0,<0.2"]
+oidc = ["rn-forge-auth[oidc]>=0.2.0,<0.3"]
 # Redis-backed login sessions and transactions for `rn_forge.fastapi.auth`:
 # `rn_forge.auth.redis`, and the CSRF token store `rn_forge.fastapi.auth.redis`.
-redis = ["rn-forge-auth[redis]>=0.1.0,<0.2"]
+redis = ["rn-forge-auth[redis]>=0.2.0,<0.3"]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
 transfer = ["rn-forge-data>=0.1.1,<0.2", "python-multipart>=0.0.20"]

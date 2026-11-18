@@ -38,33 +38,16 @@ the self-hosted index retires once consumers have moved.
 ## Context
 
 **What changes between pykit's packages.** Very little, because E19 already made
-every internal requirement a range (`rn-forge-commons>=0.7.0,<0.8`).
+every internal requirement a range. A range now resolves from pypi.org instead
+of the self-hosted index, a PyPI version is immutable (a bad release is fixed by
+the next patch), and pykit owns its names on PyPI, so the dependency-confusion
+caveat disappears. The rules are in [ADR-0004](../../../adr/ADR-0004.md).
 
-- **Unchanged:**
-    - the requirement lines;
-    - `[tool.uv.sources] … = { workspace = true }` for local development;
-    - the floor/ceiling and bump rules;
-    - the `internal-ranges` check;
-    - dependency-ordered release.
-- **What changes is where a range resolves outside the repo:** pypi.org instead
-  of `rn-forge.github.io/pykit/simple/`. A built wheel's metadata is
-  identical.
-- **A PyPI version is immutable.** It cannot be deleted and re-uploaded, only
-  yanked. A rerun skips a version PyPI already has, and a bad release is fixed
-  by the next patch.
-- **Partial runs stay safe.** Upload happens in dependency order, so a dependent
-  is never uploaded before the floor it names.
-- **The dependency-confusion caveat disappears.** pykit owns the names on PyPI,
-  so `first-index` and the pip warning are no longer needed.
-
-**What changes for consumers.** A consumer stops declaring
-`[[tool.uv.index]] name = "rn-forge"` and just requires
-`rn-forge-commons>=0.7.0,<0.8`. Its `uv.lock` changes each `rn-forge-*` source
-to pypi.org on the next `uv lock`. Direct git-URL pins keep working, since tags
-are still created. The self-hosted index stays up until F21.5, so a lock that
-still names it keeps resolving in the meantime. Owner decision, 2026-11-03:
-F21.5 is scheduled in Release 8 and lands before the kiln cutover, since no
-consumer lock names the index.
+**What changes for consumers.** A consumer stops declaring the pykit index and
+requires a package by name and range; the
+[consuming guide](../../../guides/consuming-packages.md) has the usage. Owner
+decision, 2026-11-03: F21.5 is scheduled in Release 8 and lands before the kiln
+cutover, since no consumer lock names the index.
 
 **Ordering with the kiln cutover.**
 

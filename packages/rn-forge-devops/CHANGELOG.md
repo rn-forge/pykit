@@ -5,6 +5,13 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
+### Changed
+
+- `requirements` returns exit 2 for invalid input, with a manifest diagnostic
+  and no traceback; incompatible requirements still return exit 1.
+
 ## [0.4.0] - 2026-11-13
 
 ### Removed

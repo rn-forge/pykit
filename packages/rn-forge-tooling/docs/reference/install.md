@@ -10,6 +10,10 @@
 
 ::: rn_forge.tooling.install.product
 
+## Python tool
+
+::: rn_forge.tooling.install.python
+
 ## Release
 
 ::: rn_forge.tooling.install.release

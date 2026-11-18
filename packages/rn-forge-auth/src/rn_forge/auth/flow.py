@@ -9,7 +9,7 @@ it puts ``LoginStart.transaction.id`` in the transaction cookie after
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -19,12 +19,41 @@ from rn_forge.auth.session_body import CallbackError
 from rn_forge.auth.stores import TransactionStore
 from rn_forge.commons import AppException
 
-__all__ = ["CompletedLogin", "LoginFailed", "LoginFlow"]
+__all__ = [
+    "TRANSACTION_COOKIE",
+    "CompletedLogin",
+    "LoginFailed",
+    "LoginFlow",
+    "transaction_cookie_value",
+]
 
 _logger = logging.getLogger(__name__)
 _LOGIN_FAILED = "Login with %s failed: %s"
 
 DEFAULT_TRANSACTION_TTL = timedelta(seconds=600)
+
+TRANSACTION_COOKIE = "__Host-login-tx"
+"""The cookie that binds a callback to the browser that began the login."""
+
+
+def transaction_cookie_value(headers: Iterable[str]) -> str | None:
+    """Return the single transaction cookie value from raw ``Cookie`` headers.
+
+    Raises:
+        LoginFailed: More than one transaction cookie is present.
+    """
+    # Starlette and Django keep one cookie value per name, so duplicates
+    # must be counted in the raw headers.
+    values = [
+        value.strip()
+        for name, _, value in (
+            part.partition("=") for header in headers for part in header.split(";")
+        )
+        if name.strip() == TRANSACTION_COOKIE
+    ]
+    if len(values) > 1:
+        raise LoginFailed("login_failed", "more than one transaction cookie")
+    return values[0] if values else None
 
 
 class LoginFailed(AppException):

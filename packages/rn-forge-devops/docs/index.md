@@ -12,7 +12,13 @@ It is built from three modules:
   release for the newest shipped release page.
 - `rn_forge.devops.cli`, the console script that wires the subcommands.
 
-The package depends on `packaging` and no other rn-forge package;
-`uv run lint-imports` proves it. The facade re-exports nothing.
+The package depends on `packaging` and no other rn-forge package; `task lint`
+proves it. The facade re-exports nothing.
+
+Run it with
+`uvx --from "rn-forge-devops>=0.4,<0.5" rn-forge-devops requirements`; the
+package has no extras. Examples: [Guides](guides/index.md). Exit codes: 0 no
+problem, 1 an incompatible requirement, 2 invalid input
+([contract](reference/subcommands.md)).
 
 Use the [reference](reference/index.md) for the subcommands and the API.

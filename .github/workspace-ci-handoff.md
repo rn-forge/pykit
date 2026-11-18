@@ -1,5 +1,10 @@
 # Handoff to kiln: discovered workspace CI
 
+The handoff is complete. kiln generates the workflow
+(`.github/workflows/ci.yml`) and the planner now lives in kiln-devops, so
+`main.yml`, `rn-forge-devops`'s planner and the steps below describe retired
+files.
+
 pykit's CI no longer names its packages. The `rn-forge-devops` package reads the
 uv workspace and plans every job, so the workflow can be copied unchanged into
 any uv monorepo whose packages are released separately. This note is for

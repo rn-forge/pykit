@@ -6,7 +6,7 @@ one by name like any other dependency:
 
 ```toml
 [project]
-dependencies = ["rn-forge-commons>=0.8,<0.9"]
+dependencies = ["rn-forge-commons>=0.9,<0.10"]
 ```
 
 Before 1.0 the ceiling is the next minor version, because a minor release may
@@ -14,10 +14,10 @@ break. From 1.0 it is the next major.
 
 ## Pin one exact version
 
-Require `==0.8.0` instead of a range:
+Require `==0.9.0` instead of a range:
 
 ```toml
-dependencies = ["rn-forge-commons==0.8.0"]
+dependencies = ["rn-forge-commons==0.9.0"]
 ```
 
 ## Fall back to a direct URL
@@ -27,7 +27,7 @@ subdirectory:
 
 ```toml
 dependencies = [
-  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.8.0#subdirectory=packages/rn-forge-commons",
+  "rn-forge-commons @ git+https://github.com/rn-forge/pykit@rn-forge-commons-v0.9.0#subdirectory=packages/rn-forge-commons",
 ]
 ```
 

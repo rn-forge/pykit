@@ -38,13 +38,13 @@ TRACE = 1
 
 # Log format strings
 _DEFAULT_FORMAT = (
-    "%(asctime)s,%(msecs)03d %(threadName)s[%(process)d] "
+    "%(asctime)s %(threadName)s[%(process)d] "
     "%(caller)s %(levelname)s "
     "[svc=%(service)s env=%(env)s] "
     "%(message)s"
 )
 _OTEL_FORMAT = (
-    "%(asctime)s,%(msecs)03d %(threadName)s[%(process)d] "
+    "%(asctime)s %(threadName)s[%(process)d] "
     "%(caller)s %(levelname)s "
     "[svc=%(service)s env=%(env)s "
     "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s] "
@@ -77,38 +77,42 @@ _RICH_LEVEL_STYLES: dict[str, str] = {
 _RICH_THEME = Theme(_RICH_LEVEL_STYLES)
 
 
-# ---------------------------------------------------------------------------
-# BraceLogRecord — process-wide {}-style support via setLogRecordFactory
-# ---------------------------------------------------------------------------
+def _brace_message(record: logging.LogRecord) -> str:
+    msg = str(record.msg)
+    if not record.args:
+        return msg
+    if "%" in msg:
+        return logging.LogRecord.getMessage(record)
+
+    # LogRecord normalizes a single dict argument to the dict itself.
+    try:
+        if isinstance(record.args, tuple):
+            return msg.format(*record.args)
+        return msg.format(record.args)
+    except Exception:  # noqa: BLE001  # formatting must never raise
+        return f"{msg} | format_args={record.args!r}"
+
+
+@functools.lru_cache(maxsize=32)
+def _brace_record_class(
+    record_class: type[logging.LogRecord],
+) -> type[logging.LogRecord]:
+    return type(
+        f"_Brace{record_class.__name__}",
+        (record_class,),
+        {"__slots__": (), "getMessage": _brace_message},
+    )
+
+
 class BraceLogRecord(logging.LogRecord):
-    """LogRecord subclass whose ``getMessage`` handles both ``%``- and ``{}``-style messages.
+    """LogRecord supporting ``%`` formatting when present, otherwise ``str.format``.
 
-    Registered globally via ``logging.setLogRecordFactory`` so every handler
-    in the process — including RichHandler, JSON formatters, and file handlers —
-    receives correctly formatted messages without any per-handler coupling.
-
-    ``%``-style is tried first so third-party libraries that rely on it are
-    completely unaffected.
+    A single dict argument is formatted as one positional argument. Brace
+    formatting errors return the message followed by the argument repr.
     """
 
     def getMessage(self) -> str:
-        msg = str(self.msg)
-        if not self.args:
-            return msg
-
-        # Dispatch on % presence — delegates to stdlib to preserve its exact contract.
-        if "%" in msg:
-            return super().getMessage()
-
-        # {}-style formatting for AppLogger callers.
-        # Note: logging normalises a single (dict,) arg to the dict itself, so
-        # we must not star-unpack a dict (that would iterate its keys).
-        try:
-            if isinstance(self.args, tuple):
-                return msg.format(*self.args)
-            return msg.format(self.args)
-        except Exception:  # noqa: BLE001  # formatting must never raise
-            return f"{msg} | format_args={self.args!r}"
+        return _brace_message(self)
 
 
 # ---------------------------------------------------------------------------
@@ -441,14 +445,12 @@ class AppLogger(VerboseLoggerBase):
     ) -> AppLogger:
         """Idempotently configure logging in a thread-safe manner.
 
-        Uses ``logging.config.dictConfig`` so it works natively with Django's
-        ``LOGGING`` setting.  Does **not** mutate the global
-        ``LogRecordFactory`` or call ``basicConfig()``.  Safe to call
-        multiple times — subsequent calls return the existing logger unless
+        Uses ``logging.config.dictConfig`` and preserves the installed record
+        factory. Subsequent calls return the existing logger unless
         *force_reconfigure* is ``True``.
 
-        All arguments are keyword-only.  Pass only what you want to override —
-        :meth:`LoggingConfig.build` fills in opinionated defaults for
+        All arguments are keyword-only. Pass only what you want to
+        override; :meth:`LoggingConfig.build` supplies the defaults for
         everything omitted or left as ``None``.
 
         Args:
@@ -471,9 +473,8 @@ class AppLogger(VerboseLoggerBase):
                 ``{"critical": "bold white on red"}``), merged over the built-in
                 theme that styles verboselogs' custom levels. Only applies to the
                 RichHandler console path.
-            rich_tracebacks: Install ``rich.traceback`` for the RichHandler console
-                path. Default ``True``. Uses ``show_locals=False`` — tracebacks
-                routinely carry credentials in locals.
+            rich_tracebacks: Install ``rich.traceback`` for the RichHandler
+                console path, without local variables. Default ``True``.
             redact: Replace secrets in messages, arguments and extra fields with
                 :data:`~rn_forge.commons.logging.redaction.REDACTED` before any
                 handler formats them. Default ``True``. Exception tracebacks are
@@ -551,7 +552,7 @@ class AppLogger(VerboseLoggerBase):
             AppLogger._configured = True
 
             logger = AppLogger.get_logger(_config.root_logger_name)
-            logger.notice(
+            logger.debug(  # noqa: PLE1205  # brace-style log format
                 "App Logger Configured -> {} | {}",
                 logging.getLevelName(_config.level),
                 file_path,
@@ -562,16 +563,33 @@ class AppLogger(VerboseLoggerBase):
     def get_logger(cls, name: str) -> AppLogger:
         """Return an :class:`AppLogger` registered under *name*.
 
-        Ensures :class:`AppLogger` is registered as the logger class before
-        creating the logger, so callers never receive a plain
-        :class:`logging.Logger` instance even when :meth:`initialize` has not
-        yet been called.
-
-        For best results call :meth:`initialize` early (``main()``,
-        ``wsgi.py``, ``AppConfig.ready()``).
+        Registers :class:`AppLogger` as the logger class for new loggers and
+        preserves the installed record factory. Existing loggers are returned
+        unchanged.
         """
         cls._register_levels_and_class()
         return cast(AppLogger, logging.getLogger(name))
+
+    def makeRecord(
+        self,
+        name: str,
+        level: int,
+        fn: str,
+        lno: int,
+        msg: Any,
+        args: Any,
+        exc_info: Any,
+        func: str | None = None,
+        extra: Any = None,
+        sinfo: str | None = None,
+    ) -> logging.LogRecord:
+        """Create a record through the installed factory with brace message support."""
+        record = super().makeRecord(
+            name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
+        )
+        if not isinstance(record, BraceLogRecord):
+            record.__class__ = _brace_record_class(type(record))
+        return record
 
     # -- level management --------------------------------------------------
 
@@ -612,51 +630,87 @@ class AppLogger(VerboseLoggerBase):
 
     def critical(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``CRITICAL`` level."""
+        if not self.isEnabledFor(logging.CRITICAL):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().critical(msg, *args, **kwargs)
 
     def fatal(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``FATAL`` level."""
+        if not self.isEnabledFor(logging.FATAL):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().fatal(msg, *args, **kwargs)
 
     def error(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``ERROR`` level."""
+        if not self.isEnabledFor(logging.ERROR):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().error(msg, *args, **kwargs)
 
     def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
         """Log a message with exception context at the ``ERROR`` level."""
+        if not self.isEnabledFor(logging.ERROR):
+            return
         kwargs.setdefault("exc_info", True)
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().exception(msg, *args, **kwargs)
 
     def success(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``SUCCESS`` level."""
+        if not self.isEnabledFor(verboselogs.SUCCESS):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 2
         super().success(msg, *args, **kwargs)
 
     def warning(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``WARNING`` level."""
+        if not self.isEnabledFor(logging.WARNING):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().warning(msg, *args, **kwargs)
 
     def notice(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``NOTICE`` level."""
+        if not self.isEnabledFor(verboselogs.NOTICE):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 2
         super().notice(msg, *args, **kwargs)
 
     def info(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``INFO`` level."""
+        if not self.isEnabledFor(logging.INFO):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().info(msg, *args, **kwargs)
 
     def verbose(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``VERBOSE`` level."""
+        if not self.isEnabledFor(verboselogs.VERBOSE):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 2
         super().verbose(msg, *args, **kwargs)
 
     def debug(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``DEBUG`` level."""
+        if not self.isEnabledFor(logging.DEBUG):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         super().debug(msg, *args, **kwargs)
 
     def spam(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``SPAM`` level."""
+        if not self.isEnabledFor(verboselogs.SPAM):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 2
         super().spam(msg, *args, **kwargs)
 
     def trace(self, msg: Any, *args: Any, **kwargs: Any) -> None:  # NOSONAR
         """Log a message at the ``TRACE`` level."""
+        if not self.isEnabledFor(TRACE):
+            return
+        kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
         self.log(TRACE, msg, *args, **kwargs)
 
     # -- audit decorators --------------------------------------------------
@@ -955,14 +1009,12 @@ class AppLogger(VerboseLoggerBase):
 
     @staticmethod
     def _register_levels_and_class() -> None:
-        """Register TRACE level, AppLogger as the logger class, and BraceLogRecord factory (idempotent)."""
+        """Register the TRACE level and AppLogger logger class idempotently."""
         if not hasattr(logging, "TRACE"):
             logging.addLevelName(TRACE, "TRACE")
             setattr(logging, "TRACE", TRACE)  # noqa: B010  # dynamic level attribute
         if logging.getLoggerClass() is not AppLogger:
             logging.setLoggerClass(AppLogger)
-        if logging.getLogRecordFactory() is not BraceLogRecord:
-            logging.setLogRecordFactory(BraceLogRecord)
 
     @staticmethod
     def _configure_logging(config: LoggingConfig, file_path: str | None) -> None:

@@ -1,5 +1,6 @@
 """The fixed-window counters."""
 
+import hashlib
 from datetime import timedelta
 
 import pytest
@@ -8,6 +9,16 @@ from rn_forge.fastapi import InMemoryRateLimiter, RateLimit, RateLimiter
 pytestmark = pytest.mark.unit
 
 RATE = RateLimit(2, timedelta(seconds=60))
+
+
+def test_window_helpers_keep_their_results():
+    from rn_forge.fastapi.auth.rate_limit import window_key, window_seconds
+
+    rate = RateLimit(2, timedelta(seconds=60.1))
+    assert window_seconds(rate) == 61
+    assert window_seconds(RateLimit(2, timedelta(seconds=0.2))) == 1
+    digest = hashlib.sha256(b"login\0alice").hexdigest()
+    assert window_key("login", "alice", rate, 125.0) == f"{digest}:2"
 
 
 def test_the_limiter_satisfies_the_protocol():

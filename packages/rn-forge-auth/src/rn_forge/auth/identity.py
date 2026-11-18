@@ -81,9 +81,9 @@ class LoginTransaction:
     provider: str
     return_to: str
     created_at: datetime
-    state: str | None = None
-    nonce: str | None = None
-    code_verifier: str | None = None
+    state: str | None = field(default=None, repr=False)
+    nonce: str | None = field(default=None, repr=False)
+    code_verifier: str | None = field(default=None, repr=False)
     extra: Mapping[str, str] = field(default_factory=dict[str, str])
 
 
@@ -129,7 +129,7 @@ class SessionInfo:
     auth_time: datetime | None = None
     amr: frozenset[str] = frozenset()
     session_ref: str | None = None
-    id_token: str | None = None
+    id_token: str | None = field(default=None, repr=False)
 
 
 class LoginRequest(Protocol):

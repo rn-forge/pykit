@@ -6,20 +6,16 @@ that implements one of the store protocols, and :func:`read_rows` validates
 without saving.
 """
 
-import csv
-import io
 from collections.abc import (
     Callable,
     Collection,
     Iterable,
-    Iterator,
     Mapping,
     Sequence,
 )
 from dataclasses import dataclass, field
-from typing import Any, Protocol, cast
+from typing import Any, Protocol
 
-import tablib
 from fastapi import (
     APIRouter,
     Body,
@@ -30,23 +26,30 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.concurrency import run_in_threadpool
-from fastapi.exceptions import RequestValidationError
 from fastapi.params import Depends as DependsParam
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model
-from rn_forge.data import write_xlsx
+from fastapi.routing import APIRoute
+from pydantic import BaseModel, Field, ValidationError, create_model
+from rn_forge.fastapi._batch import (
+    ThreadedJsonRoute,
+    checked_list,
+    error_message,
+    list_guard,
+    list_model,
+    models_guard,
+    rejection,
+)
+from rn_forge.fastapi._tabular import build_body, csv_chunks, parse_table
+from rn_forge.fastapi._tabular import columns as tabular_columns
 from rn_forge.fastapi.openapi import operation_id
 from rn_forge.fastapi.read_mask import read_mask_param
 from rn_forge.web import (
-    NULL_FIELD_DETAIL,
     PROBLEM_MEDIA_TYPE,
-    REQUIRED_FIELD_DETAIL,
     VALIDATION_ERROR,
     BatchUpdateItem,
     ETagCodec,
     ProblemResponse,
     ReadMask,
-    RowsInvalid,
     VersionETagCodec,
     check_item_precondition,
     default_registry,
@@ -55,7 +58,6 @@ from rn_forge.web import (
     render_problem,
 )
 from rn_forge.web.transfer import (
-    NON_EMPTY_LIST_DETAIL,
     TABULAR_FORMATS,
     ImportCounts,
     RowError,
@@ -69,7 +71,6 @@ from rn_forge.web.transfer import (
     parse_flag,
     row_cap_problem,
     row_errors_problem,
-    unreadable_file_detail,
     unsupported_file_detail,
 )
 
@@ -131,26 +132,6 @@ def problem_response(problem: ProblemResponse) -> JSONResponse:
     )
 
 
-def _columns(model: type[BaseModel]) -> list[str]:
-    fields = [
-        info.serialization_alias or name for name, info in model.model_fields.items()
-    ]
-    computed = [
-        info.alias or name for name, info in model.model_computed_fields.items()
-    ]
-    return [*fields, *computed]
-
-
-def _records(
-    rows: Iterable[Any], model: type[BaseModel], mode: str
-) -> Iterator[dict[str, Any]]:
-    for row in rows:
-        yield model.model_validate(row, from_attributes=True).model_dump(
-            by_alias=True,
-            mode=mode,
-        )
-
-
 async def tabular_response(
     rows: Iterable[Any], model: type[BaseModel], fmt: TabularFormat, filename: str
 ) -> Response:
@@ -160,7 +141,8 @@ async def tabular_response(
     dumped by alias, so the model's serialization aliases are the column
     headers and its computed fields are columns. Use ``serialization_alias``
     for a header that differs from the attribute name: a plain ``alias`` would
-    also rename the attribute read from an ORM object. CSV is streamed; the other
+    also rename the attribute read from an ORM object. CSV is streamed in
+    chunks of 1,000 rows; the other
     formats are built in memory in a worker thread.
 
     Args:
@@ -173,40 +155,17 @@ async def tabular_response(
         A ``StreamingResponse`` for CSV, otherwise a ``Response``.
     """
     headers = {"Content-Disposition": content_disposition(filename)}
-    columns = _columns(model)
+    columns = tabular_columns(model)
     if fmt.extension == "csv":
-
-        def lines() -> Iterator[str]:
-            buffer = io.StringIO()
-            writer = csv.writer(buffer)
-            writer.writerow(columns)
-            yield buffer.getvalue()
-            buffer.seek(0)
-            buffer.truncate()
-            for record in _records(rows, model, "json"):
-                writer.writerow([record[c] for c in columns])
-                yield buffer.getvalue()
-                buffer.seek(0)
-                buffer.truncate()
-
-        return StreamingResponse(lines(), media_type=fmt.media_type, headers=headers)
+        return StreamingResponse(
+            csv_chunks(rows, model, columns), media_type=fmt.media_type, headers=headers
+        )
 
     return Response(
-        await run_in_threadpool(_build_body, rows, model, fmt, columns),
+        await run_in_threadpool(build_body, rows, model, fmt, columns),
         media_type=fmt.media_type,
         headers=headers,
     )
-
-
-def _build_body(
-    rows: Iterable[Any], model: type[BaseModel], fmt: TabularFormat, columns: list[str]
-) -> bytes | str:
-    dataset: Any = tablib.Dataset(headers=columns)
-    for record in _records(rows, model, "python"):
-        dataset.append([record[c] for c in columns])
-    if fmt.extension == "xlsx":
-        return write_xlsx(dataset)
-    return dataset.export(fmt.tablib_name)
 
 
 @dataclass
@@ -255,41 +214,8 @@ async def read_rows[T: BaseModel](
     if not extension:
         raise ValueError(unsupported_file_detail(formats))
     raw = await upload.read()
-    return await run_in_threadpool(_parse_rows, raw, extension, model)
-
-
-def _parse_rows[T: BaseModel](
-    raw: bytes, extension: str, model: type[T]
-) -> RowsResult[T]:
-    data: bytes | str = raw if extension == "xlsx" else raw.decode("utf-8-sig")
-    try:
-        dataset: Any = tablib.Dataset()
-        dataset.load(data, format=TABULAR_FORMATS[extension].tablib_name)
-    except Exception as exc:
-        raise ValueError(unreadable_file_detail(extension)) from exc
-    adapter = TypeAdapter(model)
-    rows = _dicts(dataset)
-    result = RowsResult[T](total=len(rows))
-    for index, row in enumerate(rows):
-        try:
-            result.valid.append(adapter.validate_python(row))
-        except ValidationError as exc:
-            result.errors.extend(_row_errors(index, exc))
-    return result
-
-
-def _dicts(dataset: Any) -> list[Mapping[str, Any]]:
-    return dataset.dict
-
-
-def _row_errors(index: int, exc: ValidationError) -> Iterator[RowError]:
-    for err in exc.errors():
-        message = (
-            str(err["ctx"]["error"])
-            if err["type"] == "value_error" and "ctx" in err
-            else err["msg"]
-        )
-        yield RowError(index, str(err["loc"][0]) if err["loc"] else "", message)
+    valid, errors, total = await run_in_threadpool(parse_table, raw, extension, model)
+    return RowsResult(valid=valid, errors=errors, total=total)
 
 
 async def tabular_export(
@@ -414,88 +340,15 @@ class BatchUpdateStore[T](Protocol):
         ...
 
 
-def _router(dependencies: Sequence[DependsParam]) -> APIRouter:
+def _router(
+    dependencies: Sequence[DependsParam],
+    route_class: type[APIRoute] = APIRoute,
+) -> APIRouter:
     return APIRouter(
-        dependencies=list(dependencies), generate_unique_id_function=operation_id
+        dependencies=list(dependencies),
+        generate_unique_id_function=operation_id,
+        route_class=route_class,
     )
-
-
-def _list_model(name: str, member: str, item: Any) -> type[BaseModel]:
-    """Build ``{member: [item]}``, the schema FastAPI documents and validates."""
-    make = cast("Callable[..., type[BaseModel]]", create_model)
-    return make(name, **{member: (list[item], ...)})
-
-
-def _rejection(loc: str, kind: str, message: str) -> RequestValidationError:
-    return RequestValidationError(
-        [{"type": kind, "loc": ("body", loc), "msg": message}]
-    )
-
-
-def _error_message(err: Mapping[str, Any]) -> str:
-    if err["type"] == "missing":
-        return REQUIRED_FIELD_DETAIL
-    if "input" in err and err["input"] is None:
-        return NULL_FIELD_DETAIL
-    if err["type"] == "value_error" and "ctx" in err:
-        return str(err["ctx"]["error"])
-    return err["msg"]
-
-
-def _item_errors(index: int, exc: ValidationError) -> Iterator[RowError]:
-    for err in exc.errors():
-        yield RowError(
-            index, ".".join(str(part) for part in err["loc"]), _error_message(err)
-        )
-
-
-async def _checked_list(
-    request: Request, key: str, max_rows: int | None
-) -> list[object]:
-    """Return the raw body's *key* member, which must be a non-empty list within *max_rows*."""
-    try:
-        body: object = await request.json()
-    except ValueError:
-        body = None
-    members: Mapping[str, object] = (
-        cast("Mapping[str, object]", body) if isinstance(body, Mapping) else {}
-    )
-    if key not in members:
-        raise _rejection(key, "missing", "Field required")
-    value: object = members[key]
-    if not isinstance(value, list) or not value:
-        raise _rejection(key, "value_error", NON_EMPTY_LIST_DETAIL)
-    entries = cast("list[object]", value)
-    if max_rows is not None and len(entries) > max_rows:
-        raise ValueError(
-            row_cap_problem("batch", max_rows, instance=request.url.path).problem.detail
-        )
-    return entries
-
-
-def _list_guard(
-    key: str, max_rows: int | None, item_model: type[BaseModel] | None = None
-) -> DependsParam:
-    """Check the raw body's *key* member, and its items against *item_model*.
-
-    Runs before FastAPI validates the body, so the checks fire in the order
-    the wire contract states and item failures use the row-error wording.
-    """
-    items = TypeAdapter(item_model) if item_model is not None else None
-
-    async def guard(request: Request) -> None:
-        value = await _checked_list(request, key, max_rows)
-        if items is not None:
-            errors: list[RowError] = []
-            for index, item in enumerate(value):
-                try:
-                    items.validate_python(item)
-                except ValidationError as exc:
-                    errors.extend(_item_errors(index, exc))
-            if errors:
-                raise RowsInvalid(errors, root=key)
-
-    return Depends(guard)
 
 
 def import_router[T: BaseModel](
@@ -538,7 +391,7 @@ def import_router[T: BaseModel](
         try:
             result = await read_rows(file, model, formats=offered)
         except ValueError as exc:
-            raise _rejection("file", "value_error", str(exc)) from exc
+            raise rejection("file", "value_error", str(exc)) from exc
         path = request.url.path
         if max_rows is not None and result.total > max_rows:
             return problem_response(row_cap_problem("import", max_rows, instance=path))
@@ -642,27 +495,35 @@ def batch_create_router[T: BaseModel](
     Returns:
         The router.
     """
-    router = _router(dependencies)
-    request_model = _list_model(
-        f"{model.__name__}BatchCreateRequest", "requests", model
+    router = _router(dependencies, ThreadedJsonRoute)
+    request_model = list_model(
+        f"{model.__name__}BatchCreateRequest",
+        "requests",
+        model,
+        validate_items=False,
     )
-    result_model = _list_model(
+    result_model = list_model(
         f"{response_model.__name__}BatchCreateResponse", resource_name, response_model
     )
 
+    checked_items = models_guard("requests", max_rows, model)
+
+    def respond(created: Sequence[Any]) -> Response:
+        shown = result_model.model_validate(
+            {resource_name: created}, from_attributes=True
+        )
+        return Response(
+            shown.model_dump_json(by_alias=True), media_type="application/json"
+        )
+
     async def batch_create(
         body: Any = Body(),
+        items: list[T] = checked_items,
         target: BatchCreateStore[T] = Depends(store),
-    ) -> dict[str, Any]:
-        created = await target.create_many(body.requests)
-        return {
-            resource_name: [
-                response_model.model_validate(c, from_attributes=True).model_dump(
-                    by_alias=True, mode="json"
-                )
-                for c in created
-            ]
-        }
+    ) -> Response:
+        del body
+        created = await target.create_many(items)
+        return await run_in_threadpool(respond, created)
 
     batch_create.__annotations__["body"] = request_model
     router.add_api_route(
@@ -670,7 +531,6 @@ def batch_create_router[T: BaseModel](
         batch_create,
         methods=["POST"],
         response_model=result_model,
-        dependencies=[_list_guard("requests", max_rows, model)],
     )
     return router
 
@@ -700,7 +560,7 @@ def batch_delete_router(
         The router.
     """
     router = _router(dependencies)
-    request_model = _list_model("BatchDeleteRequest", "ids", str | int)
+    request_model = list_model("BatchDeleteRequest", "ids", str | int)
 
     async def batch_delete(
         body: Any = Body(),
@@ -721,7 +581,7 @@ def batch_delete_router(
         methods=["POST"],
         status_code=204,
         response_class=Response,
-        dependencies=[_list_guard("ids", max_rows)],
+        dependencies=[list_guard("ids", max_rows)],
     )
     return router
 
@@ -765,7 +625,7 @@ def batch_get_router(
         The router.
     """
     router = _router(dependencies)
-    result_model = _list_model(
+    result_model = list_model(
         f"{response_model.__name__}BatchGetResponse", resource_name, response_model
     )
     mask_dependency = read_mask_param(response_model) if read_mask else _no_mask
@@ -846,16 +706,16 @@ def batch_update_router[T: BaseModel](
         patch=(dict[str, Any], ...),
         if_match=(str | None, Field(default=None, alias="ifMatch")),
     )
-    request_model = _list_model(
+    request_model = list_model(
         f"{model.__name__}BatchUpdateRequest", "requests", item_model
     )
-    result_model = _list_model(
+    result_model = list_model(
         f"{response_model.__name__}BatchUpdateResponse", resource_name, response_model
     )
     etag_codec = codec or VersionETagCodec()
 
     async def parse(request: Request) -> list[BatchUpdateItem]:
-        await _checked_list(request, "requests", max_rows)
+        await checked_list(request, "requests", max_rows)
         parsed = parse_batch_update(
             await request.json(), cap=max_rows, instance=request.url.path
         )
@@ -901,7 +761,7 @@ def batch_update_router[T: BaseModel](
                 failures.extend(
                     field_error(
                         ("requests", item.index, "patch", *err["loc"]),
-                        _error_message(err),
+                        error_message(err),
                     )
                     for err in exc.errors()
                 )

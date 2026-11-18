@@ -35,9 +35,10 @@ lifecycle = false
 [kiln]
 # A kiln release tag, `v<version>`; a branch only before kiln's first
 # release. `kiln apply` pins the dev dependency and the CI install to it.
-ref = "feature/v1"
+ref = "5a865f66e2c9e3b0dd5dc2bd11f6ccffa88aa311"
 
 # The `python-lib` archetype's settings.
+track = "feature/v1"
 [archetype.python-lib]
 # Workspace member directories, one per package. `kiln apply` renders each
 # member's `pyproject.toml`, tasks and CI entries; adding one needs

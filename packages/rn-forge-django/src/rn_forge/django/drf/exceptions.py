@@ -10,7 +10,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any, Final, cast
 
-from django.core.exceptions import RequestDataTooBig
+from django.core.exceptions import (
+    RequestDataTooBig,
+    TooManyFieldsSent,
+    TooManyFilesSent,
+)
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.exceptions import APIException, ValidationError
@@ -27,6 +31,7 @@ from rn_forge.django.exceptions import (
     problem_details_response,
 )
 from rn_forge.web import (
+    BAD_REQUEST,
     CONTENT_TOO_LARGE,
     VALIDATION_ERROR,
     ProblemRegistry,
@@ -70,7 +75,9 @@ def problem_registry(*, type_base: str = "") -> ProblemRegistry:
     """Return the default problem registry with DRF validation mapped to 422.
 
     Also maps Django's own ``RequestDataTooBig`` (raised when a body exceeds
-    ``DATA_UPLOAD_MAX_MEMORY_SIZE``) to 413 — Django's default is 400.
+    ``DATA_UPLOAD_MAX_MEMORY_SIZE``) to 413 — Django's default is 400 — and
+    ``TooManyFieldsSent`` and ``TooManyFilesSent`` (raised past
+    ``DATA_UPLOAD_MAX_NUMBER_FIELDS`` and ``DATA_UPLOAD_MAX_NUMBER_FILES``) to 400.
 
     Args:
         type_base: Forwarded to :func:`rn_forge.web.default_registry`.
@@ -79,6 +86,8 @@ def problem_registry(*, type_base: str = "") -> ProblemRegistry:
         default_registry(type_base=type_base)
         .register(ValidationError, VALIDATION_ERROR)
         .register(RequestDataTooBig, CONTENT_TOO_LARGE)
+        .register(TooManyFieldsSent, BAD_REQUEST)
+        .register(TooManyFilesSent, BAD_REQUEST)
     )
 
 
@@ -121,6 +130,10 @@ def problem_details_exception_handler(
     extensions: dict[str, Any] = {}
     if isinstance(exc, RequestDataTooBig):
         detail = "Request body exceeds the configured limit"
+    elif isinstance(exc, TooManyFieldsSent):
+        detail = "Request has more fields than the configured limit"
+    elif isinstance(exc, TooManyFilesSent):
+        detail = "Request has more files than the configured limit"
     elif isinstance(exc, APIException) and row.status < 500:
         raw = cast(object, exc.detail)  # pyright: ignore[reportUnknownMemberType]  # DRF stubs type detail's nested dicts with unknown keys
         errors = _field_errors(raw)

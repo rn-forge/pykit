@@ -13,7 +13,7 @@ keep them that way. Read it before placing a shared contract or an adapter.
 | `rn-forge-web` | `rn_forge.web` | `rn-forge-commons[pydantic]` | Framework-neutral HTTP contracts and conformance cases |
 | `rn-forge-auth` | `rn_forge.auth` | `rn-forge-commons`, `rn-forge-web` | `Principal`, `Requirement`, authenticator and authorizer contracts; OIDC bearer verification behind the `oidc` extra |
 | `rn-forge-django` | `rn_forge.django` | `rn-forge-auth`, `rn-forge-commons`, `rn-forge-web`; `rn-forge-data` with the `transfer` and `fixtures` extras | Django and Django REST framework adapters |
-| `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-auth`, `rn-forge-web[security]`; `rn-forge-data` with the `transfer` extra | FastAPI adapters |
+| `rn-forge-fastapi` | `rn_forge.fastapi` | `rn-forge-auth`, `rn-forge-commons`, `rn-forge-web[security]`; `rn-forge-data` with the `transfer` extra | FastAPI adapters |
 | `rn-forge-sqlalchemy` | `rn_forge.sqlalchemy` | `rn-forge-web` | Async SQLAlchemy models, upsert and keyset pagination |
 | `rn-forge-data` | `rn_forge.data` | `rn-forge-commons` | Excel and tabular data helpers; the pandas adapter sits behind the `pandas` extra |
 | `rn-forge-devops` | `rn_forge.devops` | None (third-party `packaging` only) | Release commands: the `requirements` check and the umbrella release notes |
@@ -30,7 +30,7 @@ Optional extras add capabilities at the owning package; for example, Django's
 
 ## Executable boundaries
 
-The root `.importlinter` file defines fifteen contracts. It forbids
+The root `.importlinter` file defines the contracts. It forbids
 `rn_forge.commons` from importing the CLI and tooling layers, and forbids
 `rn_forge.cli` from importing tooling. It keeps `rn_forge.web` free of Django,
 FastAPI, Starlette and the developer-tool layers. It layers Django, FastAPI and

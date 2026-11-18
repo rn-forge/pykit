@@ -19,8 +19,8 @@ or, from the command line:
 uv add "rn-forge-django[all]>=0.6,<0.7"
 ```
 
-Base dependencies are Django, `rn-forge-commons` and `rn-forge-web`, each
-required by version range.
+Base dependencies are Django, `rn-forge-auth`, `rn-forge-commons` and
+`rn-forge-web`, each required by version range.
 
 | Extra | Adds |
 | -- | -- |
@@ -31,6 +31,9 @@ required by version range.
 | `redis` | `rn-forge-auth[redis]`, the client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for `rn_forge.django.celery` |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
+| `security` | `rn-forge-web[security]`, for `rn_forge.django.security` |
+| `cors` | `django-cors-headers`, for `rn_forge.django.cors` |
+| `otel` | `opentelemetry-instrumentation-django`, for `rn_forge.django.tracing` |
 | `all` | Everything above |
 
 There is deliberately no `messaging` extra — `rn_forge.django.messaging` is
@@ -38,10 +41,3 @@ Django ORM plus stdlib.
 
 To use the bundled auth app, add `"rn_forge.django.auth"` to `INSTALLED_APPS`.
 For the OpenAPI integration, add `"drf_spectacular"`.
-
-Docs commands:
-
-```bash
-uv run --directory packages/rn-forge-django --group docs mkdocs serve
-uv run --directory packages/rn-forge-django --group docs mkdocs build
-```

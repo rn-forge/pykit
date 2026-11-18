@@ -7,6 +7,7 @@ from assertpy import assert_that
 
 rest_framework = pytest.importorskip("rest_framework")
 
+from django.core.exceptions import TooManyFieldsSent, TooManyFilesSent
 from django.http import Http404
 from django.test import RequestFactory
 from opentelemetry import trace
@@ -42,6 +43,21 @@ def _handle(exc: Exception, **kwargs):
 
 
 class TestStatusMapping:
+    @pytest.mark.parametrize(
+        ("exc", "detail"),
+        [
+            (TooManyFieldsSent(), "Request has more fields than the configured limit"),
+            (TooManyFilesSent(), "Request has more files than the configured limit"),
+        ],
+    )
+    def test_django_upload_count_limits_are_400(
+        self, exc: Exception, detail: str
+    ) -> None:
+        response, body = _handle(exc)
+        assert response.status_code == 400
+        assert body["title"] == "Bad Request"
+        assert body["detail"] == detail
+
     def test_domain_conflict_is_409(self) -> None:
         response, body = _handle(DomainConflict("Order already dispatched"))
         assert response.status_code == 409

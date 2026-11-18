@@ -34,11 +34,14 @@ Optional extras:
 | -- | -- |
 | `drf` | Django REST Framework integration (views, serializers, exceptions, pagination, idempotency, concurrency, casing) |
 | `transfer` | `django-import-export` + `rn-forge-data` (`tablib`, `openpyxl`), for `rn_forge.django.drf.transfer`: tabular export and import, batch create and delete |
-| `openapi` | `drf-spectacular`, for `drf.openapi` |
-| `oidc` | `rn-forge-auth[oidc]` (`pyjwt[crypto]`), for `auth.drf.oidc` JWKS bearer auth |
+| `openapi` | `djangorestframework` + `drf-spectacular`, for `drf.openapi` |
+| `oidc` | `djangorestframework` + `rn-forge-auth[oidc]`, for `auth.drf.oidc` JWKS bearer auth |
 | `redis` | `rn-forge-auth[redis]`, the Redis client for Django's Redis cache backend that holds login transactions and revoked session IDs |
 | `celery` | `celery`, for the `celery` app factory |
 | `fixtures` | `rn-forge-data[pandas]`, for building Django JSON fixtures from Excel workbooks |
+| `security` | `rn-forge-web[security]`, for `rn_forge.django.security` |
+| `cors` | `django-cors-headers`, for `rn_forge.django.cors` |
+| `otel` | `opentelemetry-instrumentation-django`, for `rn_forge.django.tracing` |
 | `all` | Everything above |
 
 ## What's inside
@@ -105,6 +108,29 @@ them.
   account-state tables. `SequenceGenerator`'s counter is abstract and adds no
   table.
 
+## Minimum example
+
+```python
+from django.db import models
+
+from rn_forge.django.models import BaseModel
+
+
+class Order(BaseModel):
+    reference = models.CharField(max_length=64, unique=True)
+
+    def natural_keys(self) -> list[str]:
+        return ["reference"]
+```
+
+## Errors
+
+Set `REST_FRAMEWORK["EXCEPTION_HANDLER"]` to
+`rn_forge.django.drf.exceptions.problem_details_exception_handler` to render
+every DRF error as RFC 9457 `application/problem+json` (validation errors under
+`errors`, a request body over `DATA_UPLOAD_MAX_MEMORY_SIZE` as 413);
+`drf_exception_handler` is the older normalized JSON body.
+
 ## Configuration
 
 Settings are read from a single `RN_FORGE_DJANGO` dict in your Django settings
@@ -123,17 +149,8 @@ RN_FORGE_DJANGO = {
 
 To use the bundled auth app, add `"rn_forge.django.auth"` to `INSTALLED_APPS`.
 
-## Development
-
-From the repo root or this directory:
-
-```bash
-uv run pytest packages/rn-forge-django             # all tests
-uv run pytest packages/rn-forge-django -m unit      # fast isolated tests
-uv run pytest packages/rn-forge-django -m integration  # database-backed tests
-uv run ruff check packages/rn-forge-django
-uv run pyright
-```
+Maintainer commands are in the
+[development guide](https://rn-forge.github.io/pykit/guides/development/).
 
 Tests configure Django directly in
 [`tests/conftest.py`](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-django/tests/conftest.py)

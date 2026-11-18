@@ -2,9 +2,13 @@
 
 import asyncio
 import threading
+import time
+from concurrent.futures import Future
+from contextlib import contextmanager
 
 import pytest
 from assertpy import assert_that
+from rn_forge.web import health
 from rn_forge.web.exceptions import WebError
 from rn_forge.web.health import CheckResult, run_checks, run_checks_sync
 
@@ -34,6 +38,206 @@ def boom() -> CheckResult:
 async def aok() -> CheckResult:
     await asyncio.sleep(0)
     return CheckResult(status="pass")
+
+
+@contextmanager
+def _blocked_sync_run(count=1, timeout=0.05):
+    release = threading.Event()
+    started = threading.Semaphore(0)
+    returned = threading.Event()
+    outcome = Future()
+    elapsed = []
+    finished = threading.Semaphore(0)
+
+    def blocked():
+        started.release()
+        try:
+            release.wait()
+            return True
+        finally:
+            finished.release()
+
+    def run():
+        before = time.monotonic()
+        try:
+            outcome.set_result(
+                run_checks_sync(
+                    {str(i): blocked for i in range(count)},
+                    required=["0"],
+                    timeout=timeout,
+                )
+            )
+        except Exception as exc:  # noqa: BLE001 - surface helper-thread errors in the test
+            outcome.set_exception(exc)
+        finally:
+            elapsed.append(time.monotonic() - before)
+            returned.set()
+
+    caller = threading.Thread(target=run)
+    caller.start()
+    try:
+        for _ in range(count):
+            assert started.acquire(timeout=5)
+        yield release, returned, outcome, elapsed
+    finally:
+        release.set()
+        caller.join(timeout=5)
+        assert not caller.is_alive()
+        for _ in range(count):
+            assert finished.acquire(timeout=5)
+
+
+def test_run_checks_sync_waits_for_a_blocked_check_after_timeout():
+    with _blocked_sync_run() as (release, returned, outcome, elapsed):
+        before_release = returned.wait(timeout=0.5)
+        assert not release.is_set()
+    assert outcome.result().checks["0"].status == "fail"
+    assert before_release, f"call waited for release ({elapsed[0]:.3f}s)"
+
+
+def test_run_checks_sync_gives_each_check_a_serial_deadline(monkeypatch):
+    timeout = 0.3
+    waits_finished = threading.Event()
+    waits = []
+    original_result = Future.result
+
+    def observed_result(future, timeout=None):
+        try:
+            return original_result(future, timeout=timeout)
+        finally:
+            if timeout is not None:
+                waits.append(time.monotonic())
+                if len(waits) == 3:
+                    waits_finished.set()
+
+    monkeypatch.setattr(Future, "result", observed_result)
+    with _blocked_sync_run(count=3, timeout=timeout) as (_, _, outcome, elapsed):
+        assert waits_finished.wait(timeout=5)
+    assert len(outcome.result().checks) == 3
+    assert elapsed[0] < 2 * timeout, f"three waits took {elapsed[0]:.3f}s"
+
+
+def test_run_checks_sync_reports_timeout_as_failed_check():
+    with _blocked_sync_run() as (_, returned, outcome, elapsed):
+        returned.wait(timeout=0.5)
+    report = outcome.result()
+    assert report.checks["0"].status == "fail"
+    assert report.checks["0"].reason == "timed out after 0.05s"
+    assert report.http_status == 503
+    print(f"blocked sync call: {elapsed[0]:.3f}s (timeout=0.05s, release after 0.5s)")
+
+
+@pytest.fixture
+def fresh_pool(monkeypatch):
+    pools = []
+
+    def install(cap):
+        pool = health._SyncCheckPool(cap)
+        monkeypatch.setattr(health, "_sync_pool", pool)
+        pools.append(pool)
+        return pool
+
+    yield install
+    for pool in pools:
+        if pool._executor is not None:
+            pool._executor.shutdown(wait=True)
+
+
+def test_overlapping_blocked_calls_share_a_bounded_pool(fresh_pool):
+    fresh_pool(4)
+    release = threading.Event()
+    started = []
+    outcomes = [Future() for _ in range(6)]
+
+    def blocked():
+        started.append(threading.current_thread())
+        release.wait()
+        return True
+
+    def run(outcome):
+        try:
+            outcome.set_result(run_checks_sync({"db": blocked}, timeout=0.05))
+        except Exception as exc:  # noqa: BLE001 - surface caller-thread errors
+            outcome.set_exception(exc)
+
+    baseline = threading.active_count()
+    callers = [threading.Thread(target=run, args=(outcome,)) for outcome in outcomes]
+    try:
+        for caller in callers:
+            caller.start()
+        for caller in callers:
+            caller.join(timeout=0.5)
+        assert len(started) <= 4
+        assert threading.active_count() <= baseline + 4 + len(callers)
+        assert all(outcome.done() for outcome in outcomes)
+        assert (
+            sum(
+                outcome.result().checks["db"].reason
+                == "not run: health check capacity exhausted"
+                for outcome in outcomes
+            )
+            == 2
+        )
+        assert not release.is_set()
+    finally:
+        release.set()
+        for caller in callers:
+            caller.join(timeout=5)
+            assert not caller.is_alive()
+
+
+def test_a_full_pool_fails_the_check_without_queueing(fresh_pool):
+    fresh_pool(1)
+    ran = threading.Event()
+    with _blocked_sync_run() as (_, _, _, _):
+        before = time.monotonic()
+        report = run_checks_sync({"cache": lambda: ran.set() or True}, timeout=1)
+        assert time.monotonic() - before < 0.5
+        assert not ran.is_set()
+        assert report.checks["cache"] == CheckResult(
+            status="fail", reason="not run: health check capacity exhausted"
+        )
+
+
+def test_a_released_slot_is_reused(fresh_pool):
+    pool = fresh_pool(1)
+    with _blocked_sync_run() as (_, returned, _, _):
+        returned.wait(timeout=0.5)
+    assert pool._executor is not None
+    pool._executor.submit(lambda: None).result(timeout=5)
+    assert run_checks_sync({"cache": ok}).checks["cache"].status == "pass"
+
+
+@pytest.mark.asyncio
+async def test_run_checks_async_leaves_the_worker_running_after_timeout():
+    release = threading.Event()
+    started = threading.Event()
+    finished = threading.Event()
+    workers = []
+
+    def blocked():
+        workers.append(threading.current_thread())
+        started.set()
+        try:
+            release.wait()
+            return True
+        finally:
+            finished.set()
+
+    before = time.monotonic()
+    try:
+        report = await asyncio.wait_for(run_checks({"db": blocked}, timeout=0.05), 2)
+        elapsed = time.monotonic() - before
+        assert started.is_set()
+        assert elapsed < 1
+        assert report.checks["db"].status == "fail"
+        assert report.checks["db"].reason == "timed out after 0.05s"
+        assert not finished.is_set()
+        assert workers[0].is_alive()
+        print(f"async call: {elapsed:.3f}s; worker still running")
+    finally:
+        release.set()
+        assert finished.wait(timeout=5)
 
 
 # --- the sync runner ------------------------------------------------------

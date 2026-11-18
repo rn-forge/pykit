@@ -14,25 +14,16 @@ envelope, the idempotency contract, the readiness aggregate, the authentication
 contract, the OpenAPI naming rules, and the conformance table the framework
 packages are tested against.
 
-Fourteen flat modules, all one kind of mechanism: **inbound** HTTP wire
-semantics.
+Flat modules, all one kind of mechanism: **inbound** HTTP wire semantics.
 
 ## Where it sits
-
-```text
-commons ──► web ──► auth ──► django
-              │        └───► fastapi
-              └───► sqlalchemy
-```
 
 `rn-forge-web` depends on **`rn-forge-commons` and nothing else in the
 workspace**. It never imports `rn_forge.cli` or `rn_forge.tooling` — those are
 the command-line and file-owning layers, and a package that ships into an ASGI
 server has no business reaching either. It never imports a web framework: not
-`django`, not `fastapi`, not `starlette`, not `rest_framework`.
-
-`.importlinter` at the repo root carries the `web-is-framework-free` and
-`web-layers` contracts, and `uv run lint-imports` proves them.
+`django`, not `fastapi`, not `starlette`, not `rest_framework`. `task lint`
+proves them.
 
 ## Inbound, not outbound
 
@@ -68,9 +59,26 @@ Require the package by version range:
 dependencies = ["rn-forge-web>=0.3,<0.4"]
 ```
 
-Inside this workspace, `[tool.uv.sources]` overrides the requirement with the
-local checkout; that override is for local development only and does not survive
-into a built wheel.
+Its dependencies are `rn-forge-commons[pydantic]` and `opentelemetry-api`. The
+`security` extra adds `secure`, for `rn_forge.web.security`; the `testing` extra
+adds `assertpy` and `pytest`.
+
+## Minimum example
+
+```python
+from rn_forge.web import default_registry, render_problem
+
+registry = default_registry()
+rendered = render_problem(registry, exc, instance="/orders/1")
+# rendered.status, rendered.body, rendered.headers: application/problem+json
+```
+
+## Errors
+
+Every exception here is an `AppException` and renders as an RFC 9457
+`application/problem+json` body: `AuthenticationFailed` 401, `PermissionDenied`
+403, `VersionConflict` 412, `PreconditionRequired` 428. A 5xx carries a fixed
+generic detail, never `str(exc)`.
 
 ## Dependencies and why
 
@@ -103,8 +111,7 @@ different wire shape.
 
 ## Documentation
 
-`uv run --directory packages/rn-forge-web --group docs mkdocs build --strict`,
-or the combined site from the repo root. `docs/guides/api-conventions.md` is the
+`task docs:build` builds every site. `docs/guides/api-conventions.md` is the
 normative wire contract for an application's specification.
 `docs/guides/model-conventions.md` compares implemented ORM building blocks and
 optional application design advice.

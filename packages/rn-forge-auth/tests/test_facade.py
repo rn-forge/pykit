@@ -51,9 +51,90 @@ def test_core_modules_import_only_stdlib_and_rn_forge() -> None:
 def test_facade_imports_no_adapter_libraries() -> None:
     script = (
         "import sys, rn_forge.auth;"
-        "print([n for n in ('jwt', 'authlib', 'redis') if n in sys.modules])"
+        "print([n for n in ('jwt', 'authlib', 'joserfc', 'requests', 'cryptography', 'redis') if n in sys.modules])"
     )
     result = subprocess.run(
         [sys.executable, "-c", script], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "[]"
+
+
+def test_oidc_import_does_not_load_the_test_provider() -> None:
+    script = (
+        "import sys, rn_forge.auth.oidc; print('rn_forge.auth.testing' in sys.modules)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    assert result.stdout.strip() == "False"
+
+
+def test_facade_exports_the_policy_functions() -> None:
+    from rn_forge import auth
+    from rn_forge.auth import (
+        PrincipalLinkError,
+        fixed_window_key,
+        fixed_window_retry_after,
+        fixed_window_seconds,
+        link_bearer_principal,
+        session_from_record,
+        session_principal,
+        session_to_record,
+        transaction_from_record,
+        transaction_to_record,
+    )
+
+    assert {
+        "PrincipalLinkError",
+        "fixed_window_key",
+        "fixed_window_retry_after",
+        "fixed_window_seconds",
+        "link_bearer_principal",
+        "session_from_record",
+        "session_principal",
+        "session_to_record",
+        "transaction_from_record",
+        "transaction_to_record",
+    } <= set(auth.__all__)
+    assert all(
+        (
+            PrincipalLinkError,
+            fixed_window_key,
+            fixed_window_retry_after,
+            fixed_window_seconds,
+            link_bearer_principal,
+            session_from_record,
+            session_principal,
+            session_to_record,
+            transaction_from_record,
+            transaction_to_record,
+        )
+    )
+
+
+def test_facade_exports_the_login_admission_names() -> None:
+    from rn_forge import auth
+    from rn_forge.auth import (
+        TRANSACTION_COOKIE,
+        AdmittedLogin,
+        admit_login,
+        json_string_fields,
+        transaction_cookie_value,
+    )
+
+    assert {
+        "AdmittedLogin",
+        "admit_login",
+        "TRANSACTION_COOKIE",
+        "transaction_cookie_value",
+        "json_string_fields",
+    } <= set(auth.__all__)
+    assert all(
+        (
+            AdmittedLogin,
+            admit_login,
+            TRANSACTION_COOKIE,
+            transaction_cookie_value,
+            json_string_fields,
+        )
+    )

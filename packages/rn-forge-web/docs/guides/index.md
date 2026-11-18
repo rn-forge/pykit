@@ -6,7 +6,7 @@ error bodies, cursors and idempotency semantics in their own dialect.
 
 | Page | What it is for | Status |
 | -- | -- | -- |
-| [Installation](installation.md) | How a consumer declares the dependency, and why `uv add` is not it. | Guide |
+| [Installation](installation.md) | How a consumer declares the dependency and its extras. | Guide |
 | [Quickstart](quickstart.md) | The five things nearly every application wires. | Guide |
 | [API conventions](api-conventions.md) | The wire contract every application must follow identically. Written so it can be pasted into a specification as a normative section. | **Normative** |
 | [Deployment](deployment.md) | The operator's companion to the wire contract: how health probes and the other cross-cutting points map onto each host. | **Normative** (operators) |

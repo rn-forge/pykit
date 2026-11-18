@@ -12,6 +12,7 @@ from collections.abc import Callable
 from datetime import timedelta
 
 from redis import Redis
+from rn_forge.auth import fixed_window_retry_after
 from rn_forge.fastapi.auth.rate_limit import RateLimit, window_key, window_seconds
 
 __all__ = ["RedisCsrfStore", "RedisRateLimiter"]
@@ -85,4 +86,4 @@ class RedisRateLimiter:
         count = int(pipeline.execute()[0])
         if count <= rate.limit:
             return None
-        return max(1, math.ceil((int(now // window) + 1) * window - now))
+        return fixed_window_retry_after(window, now)

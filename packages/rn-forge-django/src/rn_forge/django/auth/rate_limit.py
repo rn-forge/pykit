@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-import hashlib
-import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 
 from django.core.cache import caches
+from rn_forge.auth import (
+    fixed_window_key,
+    fixed_window_retry_after,
+    fixed_window_seconds,
+)
 
 __all__ = ["FixedWindowLimiter", "RateLimit"]
 
@@ -61,11 +64,9 @@ class FixedWindowLimiter:
             ``None`` while within *rate*, otherwise the seconds until the
             window ends.
         """
-        window = max(1, math.ceil(rate.window.total_seconds()))
+        window = fixed_window_seconds(rate.window)
         now = self._clock()
-        bucket = int(now // window)
-        digest = hashlib.sha256(f"{scope}\0{subject}".encode()).hexdigest()
-        key = f"{self._prefix}{digest}:{bucket}"
+        key = self._prefix + fixed_window_key(scope, subject, window, now)
         cache = caches[self.alias]
         if cache.add(key, 1, window):
             count = 1
@@ -77,4 +78,4 @@ class FixedWindowLimiter:
                 count = 1
         if count <= rate.limit:
             return None
-        return max(1, math.ceil((bucket + 1) * window - now))
+        return fixed_window_retry_after(window, now)

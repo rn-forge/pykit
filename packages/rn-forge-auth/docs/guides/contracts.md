@@ -59,6 +59,12 @@ version still matches, and builds the `Principal` from the context. Revoking a
 permission, deactivating an account or bumping the session version therefore
 takes effect on the next request, with no session to edit.
 
+`link_bearer_principal` and `session_principal` project account state into a
+`Principal`; `session_to_record`/`session_from_record` and
+`transaction_to_record`/`transaction_from_record` define the persisted shapes.
+`fixed_window_seconds`, `fixed_window_key` and `fixed_window_retry_after`
+provide shared fixed-window arithmetic.
+
 ### Caching contexts
 
 `AuthorizationContextCache` wraps an `AuthorizationContextProvider` so a request

@@ -5,6 +5,30 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
+### Added
+
+- `link_bearer_principal`, `session_principal` and `PrincipalLinkError`, session
+  and transaction record functions, and fixed-window arithmetic functions in
+  `rn_forge.auth`.
+
+- `admit_login` and `AdmittedLogin`, which turn a completed login into the
+  account, session content and validated `return_to` or a `LoginFailed`;
+  `TRANSACTION_COOKIE` and `transaction_cookie_value`; and
+  `json_string_fields`, in `rn_forge.auth`.
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+- An ID token whose `typ` header is neither absent nor `JWT` is rejected.
+- The authorization-context cache drops expired entries when it next stores one,
+  bounding entries held by the accounts resolved within one TTL.
+- In-memory replay, transaction and session stores sweep expired records only
+  when one can have expired, instead of on every call.
+- Session ID tokens and login transaction state, nonce and PKCE verifier no
+  longer appear in dataclass representations.
+
 ## [0.1.1] - 2026-11-13
 
 ### Changed

@@ -5,8 +5,8 @@ and needs no third-party package. `rn_forge.auth.oidc` runs OIDC and OAuth 2.0
 logins and verifies OIDC bearer tokens (see [Login providers](login.md)), and
 `rn_forge.auth.redis` keeps sessions and single-use records in Redis; both
 import the core and the core never imports them. The `oidc` extra installs
-`pyjwt[crypto]` and `authlib`, the `redis` extra installs `redis`, and the
-`rn_forge.auth` facade re-exports neither adapter.
+`pyjwt[crypto]`, `authlib`, `joserfc` and `requests`, the `redis` extra installs
+`redis`, and the `rn_forge.auth` facade re-exports neither adapter.
 
 ## How the pieces fit
 
@@ -41,7 +41,7 @@ provider -> ExternalIdentity -> AccountResolver -> account ID
 
 ## Installing
 
-Declare the package from pykit's index, with the extras you use:
+Declare the package by version range, with the extras you use:
 
 ```toml
 dependencies = ["rn-forge-auth[oidc,redis]>=0.1.0,<0.2"]

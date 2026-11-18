@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 from typing import ClassVar
 
 import pytest
@@ -10,8 +11,9 @@ pytest.importorskip("import_export")
 
 import tablib
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import models
+from django.db import connection, models
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from import_export import fields, resources, widgets
 from rest_framework import serializers
 from rest_framework.viewsets import ModelViewSet
@@ -23,6 +25,7 @@ from rn_forge.django.drf.transfer import (
     BatchUpdateMixin,
     ResourceExportMixin,
     ResourceImportMixin,
+    _forward_relation_paths,
     _indexed_errors,
 )
 from rn_forge.django.drf.views.base import BaseModelViewSet
@@ -135,6 +138,10 @@ class Members(
         return "protected" if instance.name == "protected" else None
 
 
+class Shaped(Members):
+    queryset = Member.objects.select_related("team").order_by("id")
+
+
 class Lenient(Members):
     import_rollback_on_validation_errors = False
 
@@ -187,6 +194,7 @@ router.register("scoped-books", ScopedBooks, basename="scoped-books")
 router.register("notes", Notes, basename="notes")
 router.register("members", Members, basename="members")
 router.register("lenient", Lenient, basename="lenient")
+router.register("shaped", Shaped, basename="shaped")
 urlpatterns = router.urls
 
 
@@ -526,6 +534,20 @@ class TestBatchGet:
         assert response.status_code == 404
         assert response.json()["detail"] == f"Book {hidden.pk} not found"
 
+    def test_more_ids_than_djangos_field_limit_is_a_400(self, client) -> None:
+        (book,) = make_books("a")
+        response = client.get(
+            "/books:batchGet",
+            {"ids": [book.pk] * 1001},
+            raise_request_exception=False,
+        )
+        assert response.status_code == 400
+        assert response["Content-Type"] == "application/problem+json"
+        assert (
+            response.json()["detail"]
+            == "Request has more fields than the configured limit"
+        )
+
     def test_empty_ids_are_a_400(self, client) -> None:
         response = client.get("/books:batchGet?ids=")
         assert response.status_code == 400
@@ -711,3 +733,83 @@ def test_the_schema_names_the_batch_operations() -> None:
         op["operationId"] for item in schema["paths"].values() for op in item.values()
     }
     assert {"booksBatchGet", "booksBatchUpdate"} <= operations
+
+
+def _queries(call):
+    with CaptureQueriesContext(connection) as captured:
+        response = call()
+    assert response.status_code in (200, 204)
+    return len(captured)
+
+
+def _post(client, path, body):
+    return client.post(path, json.dumps(body), content_type="application/json")
+
+
+class TestQueryCounts:
+    """What a request costs in queries, as a function of its row count."""
+
+    @pytest.mark.parametrize("path", ["/shaped", "/members"])
+    def test_export_costs_the_same_for_any_number_of_rows(self, client, path) -> None:
+        team = Team.objects.create(code="EAST")
+
+        def seed(start, stop):
+            Member.objects.bulk_create(
+                Member(name=f"n{i}", email=f"e{i}@x.io", team=team)
+                for i in range(start, stop)
+            )
+
+        def export():
+            return client.get(path, headers={"Accept": "text/csv"})
+
+        seed(0, 3)
+        small = _queries(export)
+        seed(3, 12)
+        assert _queries(export) == small
+
+    def test_forward_relation_paths_skip_columns_and_unknown_names(self) -> None:
+        assert _forward_relation_paths(Member, MemberExport()) == ["team"]
+
+    def test_batch_get_costs_the_same_for_any_number_of_ids(self, client) -> None:
+        ids = [book.pk for book in make_books(*[f"b{i}" for i in range(12)])]
+
+        def get(chosen):
+            return client.get("/books:batchGet", {"ids": chosen})
+
+        assert _queries(lambda: get(ids)) == _queries(lambda: get(ids[:3]))
+
+    def test_batch_create_costs_two_queries_a_row(self, client) -> None:
+        def create(start, stop):
+            items = [{"name": "a", "email": f"e{i}@x.io"} for i in range(start, stop)]
+            return _post(client, "/members:batchCreate", {"requests": items})
+
+        small = _queries(lambda: create(0, 3))
+        large = _queries(lambda: create(3, 15))
+        assert large - small == 2 * (12 - 3)
+
+    def test_batch_update_costs_one_query_a_row(self, client) -> None:
+        ids = [book.pk for book in make_books(*[f"b{i}" for i in range(12)])]
+
+        def patch(chosen):
+            return update(
+                client,
+                "/books",
+                *({"id": str(i), "patch": {"name": "z"}} for i in chosen),
+            )
+
+        small = _queries(lambda: patch(ids[:3]))
+        large = _queries(lambda: patch(ids))
+        assert large - small == 12 - 3
+
+    def test_batch_delete_costs_one_query_a_row(self, client) -> None:
+        Member.objects.bulk_create(
+            Member(name=f"n{i}", email=f"e{i}@x.io") for i in range(15)
+        )
+        ids = list(Member.objects.order_by("id").values_list("id", flat=True))
+
+        def delete(chosen):
+            return _post(client, "/members:batchDelete", {"ids": chosen})
+
+        small = _queries(lambda: delete(ids[:3]))
+        large = _queries(lambda: delete(ids[3:]))
+        assert large - small == 12 - 3

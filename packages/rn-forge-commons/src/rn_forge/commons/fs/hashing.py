@@ -21,6 +21,7 @@ class ContentHash:
     def of_file(path: str | Path, *, algorithm: str = "sha256") -> str | None:
         """Return a hex digest of the file at *path*, or ``None`` if it is not a file."""
         p = Path(path)
-        return (
-            ContentHash.of(p.read_bytes(), algorithm=algorithm) if p.is_file() else None
-        )
+        if not p.is_file():
+            return None
+        with p.open("rb") as handle:
+            return hashlib.file_digest(handle, algorithm).hexdigest()

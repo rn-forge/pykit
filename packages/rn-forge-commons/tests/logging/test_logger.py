@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import builtins
 import logging
+import re
 import subprocess
 import sys
 import types
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 import rn_forge.commons.logging.logger as logging_module
@@ -27,6 +30,13 @@ from rn_forge.commons.logging.logger import (
 from rn_forge.commons.testing import raise_
 
 # -- configuration helpers -------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def restore_record_factory():
+    saved = logging.getLogRecordFactory()
+    yield
+    logging.setLogRecordFactory(saved)
 
 
 @pytest.fixture(autouse=True)
@@ -111,9 +121,39 @@ def test_initialize_no_duplicate_handlers() -> None:
     assert len(root.handlers) == 1
 
 
-def test_initialize_registers_brace_log_record() -> None:
+def test_initialize_leaves_the_record_factory_alone() -> None:
+    logging.setLogRecordFactory(logging.LogRecord)
+    factory = logging.getLogRecordFactory()
     _configure()
-    assert logging.getLogRecordFactory() is BraceLogRecord
+    assert logging.getLogRecordFactory() is factory
+
+
+def test_get_logger_preserves_a_factory_installed_after_initialize() -> None:
+    _configure()
+    current = logging.getLogRecordFactory()
+
+    def consumer_factory(*args, **kwargs):
+        record = current(*args, **kwargs)
+        record.trace_id = "t-1"
+        return record
+
+    logging.setLogRecordFactory(consumer_factory)
+    _logger("test.keep")
+    record = logging.getLogRecordFactory()("n", logging.INFO, "", 0, "m", (), None)
+    assert hasattr(record, "trace_id")
+
+
+def test_get_logger_preserves_a_factory_installed_before_first_retrieval() -> None:
+    current = logging.getLogRecordFactory()
+
+    def consumer_factory(*args, **kwargs):
+        record = current(*args, **kwargs)
+        record.trace_id = "t-1"
+        return record
+
+    logging.setLogRecordFactory(consumer_factory)
+    _logger("test.keep2")
+    assert logging.getLogRecordFactory() is consumer_factory
 
 
 # -- TRACE level -----------------------------------------------------------
@@ -156,6 +196,47 @@ def test_initialize_with_name() -> None:
 def test_initialize_force_reconfigure() -> None:
     AppLogger.initialize(root_logger_name="test")
     AppLogger.initialize(root_logger_name="test", force_reconfigure=True)
+
+
+def _configure_plain(level: int) -> None:
+    AppLogger.initialize(
+        root_logger_name="test",
+        level=level,
+        isatty=False,
+        force_reconfigure=True,
+    )
+
+
+def test_configuring_at_info_writes_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_plain(logging.INFO)
+    captured = capsys.readouterr()
+    assert "App Logger Configured" not in captured.out
+    assert "App Logger Configured" not in captured.err
+
+
+def test_configuring_at_debug_logs_the_notice(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_plain(logging.DEBUG)
+    captured = capsys.readouterr()
+    assert "App Logger Configured" in captured.out + captured.err
+
+
+def test_a_plain_timestamp_has_one_millisecond_field() -> None:
+    _configure_plain(logging.INFO)
+    handler = next(
+        h for h in logging.getLogger().handlers if type(h) is logging.StreamHandler
+    )
+    assert handler.formatter is not None
+    record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", None, None)
+    record.caller = "c"
+    record.service = "s"
+    record.env = "e"
+    text = handler.formatter.format(record)
+    assert re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} ", text)
+    assert not re.search(r",\d{3},\d{3}", text)
 
 
 # -- DEFAULT_FORMAT vs OTEL_FORMAT -----------------------------------------
@@ -283,6 +364,138 @@ class _ListHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         self.records.append(record)
+
+
+def test_brace_messages_format_under_the_stdlib_factory() -> None:
+    logger = AppLogger("test.stdlib", logging.INFO)
+    handler = _ListHandler()
+    logger.addHandler(handler)
+    logging.setLogRecordFactory(logging.LogRecord)
+    logger.info("x={}", 1)  # noqa: PLE1205  # AppLogger supports brace arguments.
+    assert handler.records[0].getMessage() == "x=1"
+
+
+def test_a_consumer_factory_field_reaches_app_logger_records() -> None:
+    def consumer_factory(*args, **kwargs):
+        record = logging.LogRecord(*args, **kwargs)
+        record.trace_id = "t-1"
+        return record
+
+    logging.setLogRecordFactory(consumer_factory)
+    logger = _logger("test.consumer")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    handler = _ListHandler()
+    logger.addHandler(handler)
+    logger.info("x={}", 1)  # noqa: PLE1205  # AppLogger supports brace arguments.
+    assert handler.records[0].trace_id == "t-1"
+    assert handler.records[0].getMessage() == "x=1"
+
+
+def test_percent_messages_on_a_plain_logger_are_unchanged() -> None:
+    logging.setLogRecordFactory(logging.LogRecord)
+    logger = logging.Logger("plain", logging.INFO)  # noqa: LOG001  # Require a plain Logger.
+    handler = _ListHandler()
+    logger.addHandler(handler)
+    logger.info("x=%s", 1)
+    assert handler.records[0].getMessage() == "x=1"
+
+
+_LEVEL_METHODS = (
+    "critical",
+    "fatal",
+    "error",
+    "exception",
+    "success",
+    "warning",
+    "notice",
+    "info",
+    "verbose",
+    "debug",
+    "spam",
+    "trace",
+)
+
+
+@pytest.mark.parametrize("method", _LEVEL_METHODS)
+def test_level_methods_report_the_callers_location(method: str) -> None:
+    logger = AppLogger("test.location", TRACE)
+    handler = _ListHandler()
+    handler.addFilter(EnrichFilter(service_name="test"))
+    logger.addHandler(handler)
+    line = sys._getframe().f_lineno + 1
+    getattr(logger, method)("message")
+    record = handler.records[0]
+    assert record.filename == Path(__file__).name
+    assert record.lineno == line
+    assert record.funcName == "test_level_methods_report_the_callers_location"
+    assert record.caller == f"{logger.name}.{record.funcName}"
+
+
+def test_a_caller_stacklevel_stays_relative_to_the_caller() -> None:
+    logger = AppLogger("test.stacklevel", logging.INFO)
+    handler = _ListHandler()
+    logger.addHandler(handler)
+
+    def helper() -> None:
+        logger.info("message", stacklevel=2)
+
+    line = sys._getframe().f_lineno + 1
+    helper()
+    record = handler.records[0]
+    assert record.filename == Path(__file__).name
+    assert record.lineno == line
+    assert record.funcName == "test_a_caller_stacklevel_stays_relative_to_the_caller"
+
+
+def test_disabled_levels_do_not_look_up_frames_or_format_args(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    logger = AppLogger("test.disabled", logging.CRITICAL)
+
+    class Unformattable:
+        def __str__(self):
+            raise AssertionError("argument converted to string")
+
+        def __format__(self, spec):
+            raise AssertionError("argument formatted")
+
+    def fail_find_caller(*args, **kwargs):
+        raise AssertionError("caller frame looked up")
+
+    monkeypatch.setattr(logger, "findCaller", fail_find_caller)
+    for method in _LEVEL_METHODS[2:]:
+        getattr(logger, method)("x={}", Unformattable())
+
+
+def test_concurrent_retrieval_keeps_a_consumer_factory() -> None:
+    barrier = Barrier(8)
+
+    def consumer_factory(*args, **kwargs):
+        return logging.LogRecord(*args, **kwargs)
+
+    def retrieve(index: int) -> AppLogger:
+        barrier.wait()
+        return _logger(f"test.thread.{index}")
+
+    logging.setLogRecordFactory(consumer_factory)
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        loggers = list(executor.map(retrieve, range(8)))
+    assert all(isinstance(logger, AppLogger) for logger in loggers)
+    assert logging.getLogRecordFactory() is consumer_factory
+
+
+def test_exception_logs_the_traceback() -> None:
+    logger = AppLogger("test.exception", logging.ERROR)
+    handler = _ListHandler()
+    logger.addHandler(handler)
+    try:
+        raise ValueError("failure")
+    except ValueError as error:
+        logger.exception("failed")
+        record = handler.records[0]
+        assert record.exc_info == (ValueError, error, error.__traceback__)
+        assert record.exc_info[2] is not None
 
 
 def test_debug_and_trace_variables() -> None:

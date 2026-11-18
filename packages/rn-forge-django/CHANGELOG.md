@@ -5,6 +5,38 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-17
+
+### Changed
+
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+
+- The `rn-forge-auth` requirement is `>=0.2.0,<0.3`; login admission and
+  principal projection come from 0.2.
+
+- Login admission, transaction-cookie parsing and JSON login fields now come
+  from `rn-forge-auth`, with no behaviour change.
+
+- Bearer/session principal projection, persisted records and fixed-window
+  arithmetic now come from `rn-forge-auth`, with no behaviour change.
+
+### Removed
+
+- `TRANSACTION_COOKIE` is no longer exported from the package; import it from
+  `rn_forge.auth`.
+
+### Fixed
+
+- A tabular export no longer issues one query per row for foreign-key columns
+  when the viewset's queryset has no `select_related`.
+- More query or form fields (or files) than Django's upload limits is a 400
+  problem instead of a 500.
+- Malformed `pageSize` values fall back to the default instead of causing a
+  server error; oversized positive values use the cap.
+- Composite model lookup keys containing separators no longer collide.
+- A competing idempotent request could execute after claim expiry without
+  acquiring its own claim. Retry the claim up to three times, then return 409.
+
 ## [0.6.1] - 2026-11-13
 
 ### Changed

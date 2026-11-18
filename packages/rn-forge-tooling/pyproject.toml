@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-tooling"
-version = "0.3.2"
+version = "0.3.3"
 description = "Developer-tool lifecycle verbs and install mechanics for the rn-forge-* CLIs"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -17,7 +17,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
-dependencies = ["rn-forge-commons>=0.8.0,<0.10", "rn-forge-cli>=0.1.1,<0.2"]
+dependencies = ["rn-forge-commons>=0.8.0,<0.11", "rn-forge-cli>=0.1.1,<0.3"]
 
 [project.optional-dependencies]
 testing = ["assertpy>=2.35", "pytest>=9.1.1"]

@@ -165,12 +165,49 @@ def discover_oidc(issuer: str, *, fetch: FetchJson = fetch_json) -> OidcConfigur
     )
 
 
+class _KeySetClient(PyJWKClient):
+    def __init__(
+        self,
+        url: str,
+        *,
+        lifespan: float,
+        cooldown_duration: float,
+        clock: Callable[[], float],
+    ) -> None:
+        super().__init__(
+            url, lifespan=lifespan, cooldown_duration=cooldown_duration, timeout=5.0
+        )
+        self._clock = clock
+        self._lifespan = lifespan
+        self._fetched_at: float | None = None
+        assert self.jwk_set_cache is not None  # noqa: S101
+        # PyJWT's expiry reads time.monotonic directly and cannot use our clock.
+        self.jwk_set_cache.lifespan = math.inf
+
+    def fetch_data(self) -> Any:
+        data = super().fetch_data()
+        self._fetched_at = self._clock()
+        return data
+
+    def get_jwk_set(self, refresh: bool = False) -> jwt.PyJWKSet:
+        if (
+            self._fetched_at is not None
+            and self._clock() > self._fetched_at + self._lifespan
+        ):
+            refresh = True
+        return super().get_jwk_set(refresh)
+
+
 def _new_jwks_client(
-    url: str, *, lifespan: float, cooldown_duration: float
+    url: str,
+    *,
+    lifespan: float,
+    cooldown_duration: float,
+    clock: Callable[[], float] = time.monotonic,
 ) -> PyJWKClient:
     _require_secure_url(url)
-    return PyJWKClient(
-        url, lifespan=lifespan, cooldown_duration=cooldown_duration, timeout=5.0
+    return _KeySetClient(
+        url, lifespan=lifespan, cooldown_duration=cooldown_duration, clock=clock
     )
 
 
@@ -394,7 +431,8 @@ class IdTokenVerifier:
 
     Authlib's ``CodeIDToken`` checks ``iss``, ``aud``, ``azp``, ``exp``,
     ``iat``, ``nonce`` and ``at_hash``. Added here: the algorithm allow-list,
-    a mandatory non-empty nonce, and ``auth_time`` within *max_age*.
+    a mandatory non-empty nonce, ``auth_time`` within *max_age*, and a ``typ``
+    header that is absent or ``JWT`` (case-insensitive).
 
     Args:
         jwks: Where signing keys come from.
@@ -521,7 +559,11 @@ class IdTokenVerifier:
         if not nonce:
             raise TokenVerificationError("An ID token needs the expected nonce")
         try:
-            _, key = _signing_key(self._jwks, token, self._algorithms)
+            header, key = _signing_key(self._jwks, token, self._algorithms)
+            if _media_type(header) not in (None, "jwt"):
+                raise TokenVerificationError(
+                    "Token typ {} is not an ID token", header.get("typ")
+                )
             # joserfc takes key material, not a cryptography key object; an
             # HMAC key has no public_bytes and fails as AttributeError below.
             pem = key.key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
