@@ -243,6 +243,10 @@ nav:
               - F24.2 — ID tokens refuse other profiles' types: specs/epics/E24-release-9-follow-ups/F24.2-id-token-type.md
               - F24.3 — Declared CLI surfaces reject unknown keys: specs/epics/E24-release-9-follow-ups/F24.3-strict-cli-surface.md
               - F24.4 — Specs and runbooks match the tree: specs/epics/E24-release-9-follow-ups/F24.4-spec-and-runbook-drift.md
+          - E25 — Typed application state and faster XLSX transfer:
+              - specs/epics/E25-typed-state-and-xlsx-speed/index.md
+              - F25.1 — Typed application state: specs/epics/E25-typed-state-and-xlsx-speed/F25.1-typed-application-state.md
+              - F25.2 — Faster XLSX transfer: specs/epics/E25-typed-state-and-xlsx-speed/F25.2-faster-xlsx-transfer.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md
