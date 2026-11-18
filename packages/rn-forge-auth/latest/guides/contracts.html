@@ -865,6 +865,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/flow.html" class="md-nav__link">
         
   
@@ -873,6 +957,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -1502,6 +1614,11 @@ the binding fetches the current context, checks <code>active</code> and that the
 version still matches, and builds the <code>Principal</code> from the context. Revoking a
 permission, deactivating an account or bumping the session version therefore
 takes effect on the next request, with no session to edit.</p>
+<p><code>link_bearer_principal</code> and <code>session_principal</code> project account state into a
+<code>Principal</code>; <code>session_to_record</code>/<code>session_from_record</code> and
+<code>transaction_to_record</code>/<code>transaction_from_record</code> define the persisted shapes.
+<code>fixed_window_seconds</code>, <code>fixed_window_key</code> and <code>fixed_window_retry_after</code>
+provide shared fixed-window arithmetic.</p>
 <h3 id="caching-contexts">Caching contexts<a class="headerlink" href="#caching-contexts" title="Permanent link">&para;</a></h3>
 <p><code>AuthorizationContextCache</code> wraps an <code>AuthorizationContextProvider</code> so a request
 does not recompute the account's permissions every time. It keeps one entry per

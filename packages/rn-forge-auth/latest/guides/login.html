@@ -859,6 +859,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/flow.html" class="md-nav__link">
         
   
@@ -867,6 +951,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -1519,6 +1631,11 @@ small wrapper:</p>
 <span class="c1"># the user. Clear the cookie, resolve the account, start the session.</span>
 </code></pre></div>
 
+<p>After <code>complete</code>, a binding calls <code>admit_login</code> to resolve the account and build
+the session content and validated <code>return_to</code>. It uses
+<code>transaction_cookie_value</code> for raw cookie headers and <code>json_string_fields</code> for
+JSON login fields. The binding keeps session start, CSRF token rotation,
+responses, form parsing, header access and rate limiting.</p>
 <p><code>begin</code> checks <code>return_to</code> with <code>validate_return_to</code>, asks the provider for the
 redirect, and saves the transaction for the TTL. <code>complete</code> consumes the
 transaction first, so a callback works once whatever its outcome, then rejects a

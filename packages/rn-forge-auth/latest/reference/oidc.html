@@ -696,6 +696,90 @@
   
   
     <li class="md-nav__item">
+      <a href="linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="flow.html" class="md-nav__link">
         
   
@@ -704,6 +788,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -2402,7 +2514,8 @@ including a replayed <code>jti</code>. The message is for logs; answer
         <p>The ID-token profile: verify an ID token at the OIDC callback.</p>
 <p>Authlib's <code>CodeIDToken</code> checks <code>iss</code>, <code>aud</code>, <code>azp</code>, <code>exp</code>,
 <code>iat</code>, <code>nonce</code> and <code>at_hash</code>. Added here: the algorithm allow-list,
-a mandatory non-empty nonce, and <code>auth_time</code> within <em>max_age</em>.</p>
+a mandatory non-empty nonce, <code>auth_time</code> within <em>max_age</em>, and a <code>typ</code>
+header that is absent or <code>JWT</code> (case-insensitive).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>

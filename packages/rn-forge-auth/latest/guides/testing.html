@@ -776,6 +776,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/flow.html" class="md-nav__link">
         
   
@@ -784,6 +868,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -1370,15 +1482,12 @@ UserInfo error belong to <code>OidcProvider</code>, not to a verifier.</p>
 in <code>tests/broker/</code> run <code>OidcProvider</code> against Keycloak: an OIDC login, a login
 federated from a SAML IdP inside Keycloak, and a client-credentials bearer call
 through <code>OidcAuthenticator</code>. They need Docker and are skipped unless
-<code>RN_FORGE_AUTH_KEYCLOAK_URL</code> is set:</p>
-<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>packages/rn-forge-auth/tests/broker/compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--wait
-<span class="nv">RN_FORGE_AUTH_KEYCLOAK_URL</span><span class="o">=</span>http://127.0.0.1:8080<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>packages/rn-forge-auth<span class="w"> </span>-m<span class="w"> </span>broker
-</code></pre></div>
-
-<p>CI runs them in the <code>integration</code> job of <code>ci.yml</code>, against the <code>keycloak</code>
-service that this package's <code>pyproject.toml</code> declares. The realms under
-<code>tests/broker/realms/</code> also serve as a working configuration for
+<code>RN_FORGE_AUTH_KEYCLOAK_URL</code> is set. Run them with
+<code>task ci:integration -- rn-forge-auth</code> (needs Docker); the
+<a href="https://rn-forge.github.io/pykit/guides/development/">development guide</a> covers
+it. CI runs them in the <code>integration</code> job against the <code>keycloak</code> service this
+package's <code>pyproject.toml</code> declares. The realms under <code>tests/broker/realms/</code>
+also serve as a working configuration for
 <a href="login.html#connecting-a-saml-idp-through-a-broker">connecting a SAML IdP through a broker</a>.</p>
 
 

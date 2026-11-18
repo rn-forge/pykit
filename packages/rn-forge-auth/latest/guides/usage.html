@@ -776,6 +776,90 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/flow.html" class="md-nav__link">
         
   
@@ -784,6 +868,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -1280,8 +1392,8 @@ and needs no third-party package. <code>rn_forge.auth.oidc</code> runs OIDC and 
 logins and verifies OIDC bearer tokens (see <a href="login.html">Login providers</a>), and
 <code>rn_forge.auth.redis</code> keeps sessions and single-use records in Redis; both
 import the core and the core never imports them. The <code>oidc</code> extra installs
-<code>pyjwt[crypto]</code> and <code>authlib</code>, the <code>redis</code> extra installs <code>redis</code>, and the
-<code>rn_forge.auth</code> facade re-exports neither adapter.</p>
+<code>pyjwt[crypto]</code>, <code>authlib</code>, <code>joserfc</code> and <code>requests</code>, the <code>redis</code> extra installs
+<code>redis</code>, and the <code>rn_forge.auth</code> facade re-exports neither adapter.</p>
 <h2 id="how-the-pieces-fit">How the pieces fit<a class="headerlink" href="#how-the-pieces-fit" title="Permanent link">&para;</a></h2>
 <p>A login and each later request pass through the same stages:</p>
 <div class="codehilite"><pre><span></span><code>provider -&gt; ExternalIdentity -&gt; AccountResolver -&gt; account ID
@@ -1331,7 +1443,7 @@ import the core and the core never imports them. The <code>oidc</code> extra ins
 </tbody>
 </table>
 <h2 id="installing">Installing<a class="headerlink" href="#installing" title="Permanent link">&para;</a></h2>
-<p>Declare the package from pykit's index, with the extras you use:</p>
+<p>Declare the package by version range, with the extras you use:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-auth[oidc,redis]&gt;=0.1.0,&lt;0.2&quot;</span><span class="p">]</span>
 </code></pre></div>
 

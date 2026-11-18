@@ -288,6 +288,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -750,6 +761,90 @@
   
   
     <li class="md-nav__item">
+      <a href="reference/linking.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/records.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persisted records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/rate_window.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate-window arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="reference/flow.html" class="md-nav__link">
         
   
@@ -758,6 +853,34 @@
     
   
     Login flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/admission.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Login admission
   
 
     
@@ -1196,6 +1319,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1233,9 +1367,19 @@ contracts, <code>Principal</code> and <code>Requirement</code>, the <code>Authen
 contracts, session, transaction and replay stores, the login flow and its OIDC,
 OAuth 2.0, password and development providers, and the OIDC token profiles.</p>
 <p>The base install gives the core, <code>rn_forge.auth</code>. The <code>oidc</code> extra adds
-<code>pyjwt[crypto]</code> and <code>authlib</code> for the adapter, <code>rn_forge.auth.oidc</code>, and for the
-fake provider in <code>rn_forge.auth.testing</code>; the <code>redis</code> extra adds <code>redis</code> for
-<code>rn_forge.auth.redis</code>. The core imports none of them.</p>
+<code>pyjwt[crypto]</code>, <code>authlib</code>, <code>joserfc</code> and <code>requests</code> for the adapter,
+<code>rn_forge.auth.oidc</code>, and for the fake provider in <code>rn_forge.auth.testing</code>; the
+<code>redis</code> extra adds <code>redis</code> for <code>rn_forge.auth.redis</code>. The core imports none of
+them.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-auth[oidc,redis]&gt;=0.1,&lt;0.2&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>Drop the extras you do not use. Start from the
+<a href="guides/contracts.html#principal-and-requirement">minimum example</a>. An
+authenticator raises <code>AuthenticationFailed</code> (401) and <code>ScopeAuthorizer</code> raises
+<code>PermissionDenied</code> (403); see
+<a href="guides/contracts.html#authenticators-and-authorizers">Authenticators and authorizers</a>.</p>
 <h2 id="where-to-start">Where to start<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="guides/usage.html">Authentication and authorization</a> shows how the pieces fit
