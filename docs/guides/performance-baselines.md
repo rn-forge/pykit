@@ -481,6 +481,10 @@ No other jobs were launched by this agent during the three sequential runs.
 Machine-wide idle status could not be verified: process inspection was denied by
 the sandbox.
 
+The harness runs under `tracemalloc`, which inflates the XLSX cases: S25.2.1
+found 100,000-row XLSX export about 5× and import about 2.5× slower than
+untraced (about 6.5 s and 8 s untraced, on 2026-11-18).
+
 Exact first command; repeated with output directories `/tmp/S22.10.3-run-2` and
 `/tmp/S22.10.3-run-3`:
 
