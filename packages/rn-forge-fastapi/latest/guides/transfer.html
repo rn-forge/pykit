@@ -1824,9 +1824,10 @@ than <code>max_rows</code>.</p>
 <p>The export model is a pydantic model. Its <code>serialization_alias</code>es are the column
 headers, and a <code>computed_field</code> is a column, which covers foreign-key traversal,
 full names and enum display names. Rows are validated with
-<code>from_attributes=True</code>, so ORM objects work directly. CSV is streamed; xlsx is
-written with <code>rn_forge.data.write_xlsx</code>. <code>tabular_response</code> is the same without
-the cap, for a route that applies its own.</p>
+<code>from_attributes=True</code>, so ORM objects work directly. CSV is streamed in chunks
+of 1,000 rows; xlsx is written with <code>rn_forge.data.write_xlsx</code>.
+<code>tabular_response</code> is the same without the cap, for a route that applies its
+own.</p>
 <h2 id="reading-a-file-yourself">Reading a file yourself<a class="headerlink" href="#reading-a-file-yourself" title="Permanent link">&para;</a></h2>
 <p><code>read_rows</code> loads an <code>UploadFile</code> (csv, tsv or xlsx) and validates each row
 against a pydantic model whose aliases are the external headers. A bad cell is

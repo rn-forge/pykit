@@ -299,6 +299,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1273,6 +1284,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1323,17 +1345,23 @@ adapters the same way.</p>
   <code>rn-forge-auth</code>'s <code>Principal</code></li>
 </ul>
 <h2 id="where-it-sits">Where it sits<a class="headerlink" href="#where-it-sits" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code>commons ──► web ──► auth ──► django
-                          └───► fastapi
-</code></pre></div>
-
 <p>It depends on <code>rn-forge-web</code>, <code>rn-forge-auth</code> and FastAPI, and never imports
-<code>rn_forge.django</code>, <code>rn_forge.cli</code> or <code>rn_forge.tooling</code>. <code>uv run lint-imports</code>
-proves it.</p>
+<code>rn_forge.django</code>, <code>rn_forge.cli</code> or <code>rn_forge.tooling</code>; <code>task lint</code> proves it.</p>
 <p><strong>Adapt, do not re-decide.</strong> A status code, a header name or an encoding decided
 here would be a divergence from the Django stack by definition, so there are
 none. This package's test suite runs the <code>rn-forge-web</code> conformance table
 through a FastAPI application built from these adapters, with no skips.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-fastapi&gt;=0.4,&lt;0.5&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-web&gt;=0.3,&lt;0.4&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<p>Extras: <code>oidc</code>, <code>redis</code>, <code>transfer</code>, <code>sse</code> and <code>testing</code>; see
+<a href="guides/installation.html">Installation</a>. Errors: <code>register_problem_handlers</code>
+(installed by <code>FastApiApp</code>) renders every error, including FastAPI's own 404,
+405 and 422, as <code>application/problem+json</code>.</p>
 <h2 id="where-to-start">Where to start<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Wiring an application?</strong> <a href="guides/wiring.html">Wiring an application</a> is about

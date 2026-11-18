@@ -415,17 +415,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#verifying-the-boundary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verifying the boundary
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1298,17 +1287,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#verifying-the-boundary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verifying the boundary
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1336,33 +1314,20 @@
 <span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-fastapi&gt;=0.4,&lt;0.5&quot;</span><span class="p">]</span>
 </code></pre></div>
 
-<p><code>rn-forge-web</code> and <code>rn-forge-commons</code> come in transitively, each as a version
-range. FastAPI comes in as an ordinary PyPI dependency, and pydantic and
-Starlette with it. The optional <code>oidc</code> extra adds JWKS bearer auth and OIDC
-login; <code>redis</code> adds the Redis stores the auth binding needs outside development
+<p><code>rn-forge-web</code> and <code>rn-forge-commons</code> come with it, each as a version range.
+FastAPI comes in as an ordinary PyPI dependency, and pydantic and Starlette with
+it. The optional <code>oidc</code> extra adds JWKS bearer auth and OIDC login; <code>redis</code> adds
+the Redis stores the auth binding needs outside development
 (<code>rn_forge.auth.redis</code> and <code>rn_forge.fastapi.auth.redis</code>); <code>transfer</code> adds
 tabular export and import (<code>rn_forge.fastapi.transfer</code>); <code>sse</code> adds server-sent
-events (<code>rn_forge.fastapi.sse</code>).</p>
+events (<code>rn_forge.fastapi.sse</code>); <code>testing</code> installs <code>assertpy</code>, <code>httpx</code> and
+<code>pytest</code>.</p>
 <h2 id="inside-this-workspace">Inside this workspace<a class="headerlink" href="#inside-this-workspace" title="Permanent link">&para;</a></h2>
-<p><code>packages/rn-forge-fastapi</code> is a <code>uv</code> workspace member, so the root
-<code>[tool.uv.sources]</code> overrides the requirement above with the local checkout:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">[tool.uv.sources]</span>
-<span class="n">rn-forge-fastapi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">workspace</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
-</code></pre></div>
-
-<p>That override is <strong>local development only</strong>. It does not survive into a built
-wheel, which is why the <code>pyproject.toml</code> still carries the version range.</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
-uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>packages/rn-forge-fastapi
-</code></pre></div>
-
-<h2 id="verifying-the-boundary">Verifying the boundary<a class="headerlink" href="#verifying-the-boundary" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>lint-imports
-</code></pre></div>
-
-<p>The <code>fastapi-runtime-has-no-tooling</code> and <code>web-layers</code> contracts in
-<code>.importlinter</code> are what CI trusts: this package imports neither
-<code>rn_forge.django</code>, <code>rn_forge.cli</code> nor <code>rn_forge.tooling</code>.</p>
+<p>The workspace resolves this package to the local checkout, for development only;
+see the
+<a href="https://rn-forge.github.io/pykit/architecture/workspace/">workspace boundaries</a>
+page. The package imports neither <code>rn_forge.django</code>, <code>rn_forge.cli</code> nor
+<code>rn_forge.tooling</code>; <code>task lint</code> proves it.</p>
 
 
 

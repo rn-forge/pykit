@@ -2616,7 +2616,7 @@ raised before anything is written.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="rn_forge.web.RowsInvalid">RowsInvalid</span></code>
+                  <code><span title="RowsInvalid">RowsInvalid</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4178,7 +4178,8 @@ yields <code>None</code> when the response should be the endpoint's JSON.</p>
 dumped by alias, so the model's serialization aliases are the column
 headers and its computed fields are columns. Use <code>serialization_alias</code>
 for a header that differs from the attribute name: a plain <code>alias</code> would
-also rename the attribute read from an ORM object. CSV is streamed; the other
+also rename the attribute read from an ORM object. CSV is streamed in
+chunks of 1,000 rows; the other
 formats are built in memory in a worker thread.</p>
 
 
