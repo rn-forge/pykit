@@ -5,7 +5,14 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
 ### Changed
+
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+
+- The `rn-forge-auth` requirement is `>=0.2.0,<0.3`; login admission and
+  principal projection come from 0.2.
 
 - Login admission, transaction-cookie parsing and JSON login fields now come
   from `rn-forge-auth`, with no behaviour change.

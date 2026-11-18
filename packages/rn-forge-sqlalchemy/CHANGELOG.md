@@ -5,6 +5,8 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-17
+
 ### Fixed
 
 - `upsert` raises `ValueError` for an empty `key`, instead of

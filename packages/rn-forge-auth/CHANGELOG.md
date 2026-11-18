@@ -5,6 +5,8 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
 ### Added
 
 - `link_bearer_principal`, `session_principal` and `PrincipalLinkError`, session
@@ -18,6 +20,7 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ### Changed
 
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
 - An ID token whose `typ` header is neither absent nor `JWT` is rejected.
 - The authorization-context cache drops expired entries when it next stores one,
   bounding entries held by the accounts resolved within one TTL.

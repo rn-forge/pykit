@@ -5,6 +5,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-17
+
 ### Changed
 
 - File digests no longer read the whole file into memory.
@@ -13,8 +15,7 @@ Notable changes to `rn-forge-commons`, newest first, in the
 - `AppLogger` no longer replaces the process record factory; its own records
   format braces over any factory.
 - `ApplyResult.written` reports each write path once in plan order and no longer
-  lists unchanged, skipped, forgotten or dry-run paths. This public behaviour
-  change warrants a minor version bump while the package is pre-1.0.
+  lists unchanged, skipped, forgotten or dry-run paths.
 
 ### Fixed
 

@@ -5,6 +5,8 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-17
+
 ### Added
 
 - `install --ref` installs a branch, tag or commit of a GitHub repository, and
@@ -15,6 +17,8 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ### Changed
 
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
+- The `rn-forge-cli` requirement admits 0.2 (`<0.3`).
 - `upgrade` follows an install's recorded ref, `status` reports it, and `doctor`
   compares the running version with the recorded package version.
 

@@ -5,6 +5,8 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-17
+
 ### Fixed
 
 - `run_checks_sync` returns at its deadline instead of waiting for stuck checks,
@@ -12,6 +14,7 @@ Notable changes to `rn-forge-web`, newest first, in the
 
 ### Changed
 
+- The `rn-forge-commons` requirement admits 0.10 (`<0.11`).
 - Sync checks run on a shared 32-worker pool; a check that finds the pool full
   fails as `not run: health check capacity exhausted`.
 
