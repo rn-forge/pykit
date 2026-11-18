@@ -10,6 +10,7 @@ import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, cast
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.findings import Finding, Severity
@@ -86,6 +87,10 @@ class InstallStatus(DataclassMixin):
         home: The product's directory.
         installed: The version ``current`` points at, or ``None``.
         versions: Every version directory present.
+        ref: What the install was asked for: a branch, tag or commit SHA, or
+            the release tag. ``None`` when nothing is recorded.
+        commit: The installed commit's SHA for a ref install, else ``None``.
+        package_version: The package version recorded at install, or ``None``.
     """
 
     product: str
@@ -93,6 +98,9 @@ class InstallStatus(DataclassMixin):
     home: str
     installed: str | None = None
     versions: list[str] = field(default_factory=list[str])
+    ref: str | None = None
+    commit: str | None = None
+    package_version: str | None = None
 
 
 def install(
@@ -156,7 +164,11 @@ def upgrade(
     source: ReleaseSource | None = None,
     home: ToolHome | None = None,
 ) -> InstallResult:
-    """Install the latest version over an existing install.
+    """Move an existing install forward.
+
+    A ref install re-resolves its recorded ref and installs that commit, or
+    returns ``already-current`` when it has not moved. Any other install moves
+    to the source's latest version.
 
     Raises:
         AppException: The product is not installed, or the install failed.
@@ -168,6 +180,10 @@ def upgrade(
             product.name,
             home.product_dir,
         )
+    recorded = _recorded(product, home)
+    ref, commit = recorded.get("ref"), recorded.get("commit")
+    if isinstance(ref, str) and ref and isinstance(commit, str) and commit:
+        return install(product, source=source, home=home, ref=ref)
     return install(product, source=source, home=home)
 
 
@@ -230,12 +246,16 @@ def cleanup(
 def status(product: ToolProduct, *, home: ToolHome | None = None) -> InstallStatus:
     """Report the running version and what is installed. Writes nothing."""
     home = home or ToolHome(product.name)
+    recorded = _recorded(product, home)
     return InstallStatus(
         product=product.name,
         version=product.version,
         home=str(home.product_dir),
         installed=home.current_version(),
         versions=home.installed_versions(),
+        ref=_text(recorded, "ref"),
+        commit=_text(recorded, "commit"),
+        package_version=_text(recorded, "version"),
     )
 
 
@@ -371,6 +391,37 @@ def _activate(
 
     undo.append(("restore current", _restore_current(home)))
     home.activate(target)
+
+
+def _text(recorded: dict[str, Any], key: str) -> str | None:
+    """*key*'s value when it is a non-empty string."""
+    value = recorded.get(key)
+    return value if isinstance(value, str) and value else None
+
+
+def _recorded(product: ToolProduct, home: ToolHome) -> dict[str, Any]:
+    """``state.json``'s object, or ``{}`` when it cannot be read.
+
+    A state with no ``ref`` was recorded as a release install: its ``ref`` is
+    the release tag and its ``commit`` is ``None``.
+    """
+    try:
+        state = json.loads(home.state_path.read_text(encoding="utf-8"))
+    except OSError, ValueError:
+        return {}
+    if not isinstance(state, dict):
+        return {}
+    recorded = cast(dict[str, Any], state)
+    if "ref" not in recorded:
+        version = _text(recorded, "version") or home.current_version()
+        if version is not None:
+            try:
+                source: ReleaseSource | None = product.source
+            except AppException:
+                source = None
+            recorded["ref"] = version if source is None else _tag(source, version)
+        recorded["commit"] = None
+    return recorded
 
 
 def _tag(source: ReleaseSource, target: str) -> str:
@@ -521,13 +572,14 @@ def _install_findings(product: ToolProduct, home: ToolHome) -> list[Finding]:
                 path=str(home.current),
             )
         )
-    if current != product.version:
+    installed = _text(_recorded(product, home), "version") or current
+    if installed != product.version:
         findings.append(
             Finding(
                 "install.version-mismatch",
                 Severity.WARNING,
-                f"running {product.version}, but {current} is installed",
-                details={"running": product.version, "installed": current},
+                f"running {product.version}, but {installed} is installed",
+                details={"running": product.version, "installed": installed},
             )
         )
     findings.extend(_state_findings(product, home))

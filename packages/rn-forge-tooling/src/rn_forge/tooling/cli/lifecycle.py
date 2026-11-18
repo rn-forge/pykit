@@ -216,7 +216,7 @@ def _add_install(app: typer.Typer, product: ToolProduct) -> None:
 def _add_upgrade(app: typer.Typer, product: ToolProduct) -> None:
     @app.command("upgrade")
     def upgrade() -> None:
-        """Install the latest release over the current install."""
+        """Install the latest release, or the recorded ref's current commit, over the current install."""
         result = lifecycle.upgrade(product)
         _emit(result, _install_text(result))
 
@@ -262,10 +262,16 @@ def _add_status(app: typer.Typer, product: ToolProduct) -> None:
     def status() -> None:
         """Show the running version and what is installed."""
         result = lifecycle.status(product)
+        installed = result.installed or "none"
+        if result.commit is not None:
+            installed = (
+                f"{result.package_version or installed} "
+                f"({result.ref} @ {result.commit[:12]})"
+            )
         _emit(
             result,
             f"{result.product} {result.version} — installed: "
-            f"{result.installed or 'none'} ({result.home})",
+            f"{installed} ({result.home})",
         )
 
 

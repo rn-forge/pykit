@@ -93,6 +93,39 @@ def test_ref_with_version_or_archive_is_a_usage_error(other):
     assert app().run(["install", "--ref", "main", *other]) == ExitCode.USAGE
 
 
+def _install_ref_state(tmp_path):
+    built = archive(tmp_path, "1.0.0")
+    assert app().run(["install", "--archive", str(built), "--version", "1.0.0"]) == 0
+    state = tmp_path / "home/golden-tool/state.json"
+    state.write_text(
+        json.dumps(
+            {
+                "version": "1.1.0.dev0",
+                "ref": "main",
+                "commit": "0123456789abcdef0123456789abcdef01234567",
+                "schema_version": 1,
+            }
+        )
+    )
+
+
+def test_status_text_names_the_ref_and_commit(tmp_path, capsys):
+    _install_ref_state(tmp_path)
+    capsys.readouterr()
+    assert app().run(["status"]) == ExitCode.OK
+    assert "installed: 1.1.0.dev0 (main @ 0123456789ab)" in capsys.readouterr().out
+
+
+def test_status_json_carries_ref_and_commit(tmp_path, capsys):
+    _install_ref_state(tmp_path)
+    capsys.readouterr()
+    assert app().run(["--json", "status"]) == ExitCode.OK
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ref"] == "main"
+    assert payload["commit"] == "0123456789abcdef0123456789abcdef01234567"
+    assert payload["package_version"] == "1.1.0.dev0"
+
+
 def test_only_the_declared_verbs_are_mounted(capsys):
     assert app(["status"]).run(["doctor"]) == ExitCode.USAGE
 

@@ -95,13 +95,16 @@ class Tool(ToolProduct):
 SHA = "0123456789abcdef0123456789abcdef01234567"
 
 
-def make_commit_archive() -> bytes:
+SHA2 = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def make_commit_archive(sha: str = SHA) -> bytes:
     """A commit tarball: one root directory with bin/tool and a pyproject.toml."""
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
         for name, payload in (
-            (f"r-{SHA}/bin/tool", b"tool main\n"),
-            (f"r-{SHA}/pyproject.toml", b'[project]\nversion = "1.1.0.dev0"\n'),
+            (f"r-{sha}/bin/tool", b"tool main\n"),
+            (f"r-{sha}/pyproject.toml", b'[project]\nversion = "1.1.0.dev0"\n'),
         ):
             info = tarfile.TarInfo(name)
             info.size = len(payload)
@@ -111,15 +114,21 @@ def make_commit_archive() -> bytes:
 
 class _GitHubHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
+        heads: dict[str, str] = self.server.heads  # type: ignore[attr-defined]
         prefix = "/repos/o/r/commits/"
-        if self.path.startswith(prefix) and self.path[len(prefix) :] in {
-            "main",
-            "v1.0.0",
-            SHA,
-        }:
-            body = json.dumps({"sha": SHA}).encode()
-        elif self.path == f"/o/r/archive/{SHA}.tar.gz":
-            body = make_commit_archive()
+        archive = "/o/r/archive/"
+        if self.path.startswith(prefix) and (
+            self.path[len(prefix) :] in heads
+            or self.path[len(prefix) :] in heads.values()
+        ):
+            ref = self.path[len(prefix) :]
+            body = json.dumps({"sha": heads.get(ref, ref)}).encode()
+        elif self.path.startswith(archive) and self.path.endswith(".tar.gz"):
+            sha = self.path[len(archive) : -len(".tar.gz")]
+            if sha not in heads.values():
+                self.send_error(404)
+                return
+            body = make_commit_archive(sha)
         else:
             self.send_error(404)
             return
@@ -133,9 +142,16 @@ class _GitHubHandler(BaseHTTPRequestHandler):
 
 
 @pytest.fixture
-def github():
+def heads():
+    """The fake GitHub's branches and tags, ref to commit."""
+    return {"main": SHA, "v1.0.0": SHA}
+
+
+@pytest.fixture
+def github(heads):
     """A GitHubReleases for ``o/r`` served by a local fake GitHub."""
     server = ThreadingHTTPServer(("127.0.0.1", 0), _GitHubHandler)
+    server.heads = heads  # type: ignore[attr-defined]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     url = f"http://127.0.0.1:{server.server_address[1]}"
@@ -625,7 +641,75 @@ class TestRefInstall:
         assert state["commit"] is None
 
 
+class TestUpgrade:
+    def test_a_branch_install_moves_to_the_new_commit(self, home, github, heads):
+        install(product(github), ref="main", home=home)
+        heads["main"] = SHA2
+        result = upgrade(product(github), home=home)
+        assert (result.outcome, result.version) == ("installed", SHA2[:12])
+        assert result.previous == SHA[:12]
+        state = json.loads(home.state_path.read_text())
+        assert (state["ref"], state["commit"]) == ("main", SHA2)
+
+    def test_an_unmoved_branch_is_already_current(self, home, github):
+        install(product(github), ref="main", home=home)
+        assert upgrade(product(github), home=home).outcome == "already-current"
+        assert home.installed_versions() == [SHA[:12]]
+
+    def test_a_release_install_still_moves_to_the_newest_release(self, home, source):
+        install(product(source), home=home)
+        home.state_path.write_text(
+            json.dumps({"version": "1.0.0", "schema_version": 1})
+        )
+        source.newest = "2.0.0"
+        assert upgrade(product(source), home=home).version == "2.0.0"
+
+
 class TestStatusAndDoctor:
+    def test_status_of_a_ref_install_carries_ref_and_commit(self, home, github):
+        install(product(github), ref="main", home=home)
+        result = status(product(github), home=home)
+        assert (result.ref, result.commit) == ("main", SHA)
+        assert result.package_version == "1.1.0.dev0"
+        assert result.installed == SHA[:12]
+
+    def test_status_of_a_release_install_has_no_commit(self, home, source):
+        install(product(source), home=home)
+        result = status(product(source), home=home)
+        assert (result.ref, result.commit) == ("1.0.0", None)
+
+    def test_status_of_a_pre_ref_state_reads_as_a_release(self, home, source):
+        install(product(source), home=home)
+        home.state_path.write_text(
+            json.dumps({"version": "1.0.0", "schema_version": 1})
+        )
+        result = status(product(source), home=home)
+        assert (result.ref, result.commit) == ("1.0.0", None)
+
+    def test_a_ref_install_with_a_matching_package_version_has_no_mismatch(
+        self, home, github
+    ):
+        install(product(github), ref="main", home=home)
+        codes = [
+            f.code for f in doctor(product(github, version="1.1.0.dev0"), home=home)
+        ]
+        assert codes == ["install.ok", "tool.ok"]
+
+    def test_the_mismatch_names_the_recorded_version(self, home, github):
+        install(product(github), ref="main", home=home)
+        findings = doctor(product(github, version="0.9.0"), home=home)
+        (found,) = [f for f in findings if f.code == "install.version-mismatch"]
+        assert found.details == {"running": "0.9.0", "installed": "1.1.0.dev0"}
+
+    def test_doctor_falls_back_to_the_directory_without_a_recorded_version(
+        self, home, source
+    ):
+        install(product(source), home=home)
+        home.state_path.write_text(json.dumps({"schema_version": 1}))
+        codes = [f.code for f in doctor(product(source), home=home)]
+        assert "install.version-mismatch" not in codes
+        assert "install.state-unreadable" not in codes
+
     def test_state_without_ref_still_reports(self, home, source):
         install(product(source), home=home)
         home.state_path.write_text(
