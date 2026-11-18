@@ -31,8 +31,8 @@ class CommandSurface(StrictDataclassMixin):
         target: Import path of the implementation, as ``module:attribute`` or
             a dotted path. A :class:`typer.Typer` becomes a namespace; a
             callable becomes a single command.
-        help: Help text. Defaults to the target's own docstring, which is
-            where it belongs when there is one.
+        help: Help text, used as written. Defaults to the target's
+            docstring up to its first section (``Args:``, ``Raises:``, ...).
     """
 
     name: str

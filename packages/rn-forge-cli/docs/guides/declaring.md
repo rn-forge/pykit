@@ -29,10 +29,20 @@ target = "golden_app.commands.db:app"
 | `default_log_level` | default value of `--log-level` (default `verbose`) |
 | `commands[].name` | the name the command is invoked by |
 | `commands[].target` | import path, as `module:attribute` or a dotted path |
-| `commands[].help` | help text; defaults to the target's docstring |
+| `commands[].help` | help text, used as written; defaults to the target's docstring, cut before its first section |
 
 A `target` that is a `typer.Typer` becomes a subcommand group; a target that is
 a function becomes a single command.
+
+## Where help text comes from
+
+An explicit `help` is used as written. Without one, a function target's
+docstring is used, cut before its first `Args:`, `Arguments:`, `Returns:`,
+`Raises:`, `Yields:`, `Examples:` or `Note:` line, so those sections stay in the
+docstring and out of `--help`. A `typer.Typer` target's own help text is used as
+it is. Square brackets that are not Rich markup, such as `[kiln]`, show
+literally. This applies to declared commands, not to commands registered with
+`@app.command()`.
 
 ## The whole of `cli.py`
 

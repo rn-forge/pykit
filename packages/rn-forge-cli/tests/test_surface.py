@@ -33,6 +33,19 @@ def bracketed() -> None:
     """Set the current repository's `[kiln] ref`, and [bold]bold[/bold] [project] name."""
 
 
+def sectioned() -> None:
+    """Sync the thing.
+
+    Longer description here.
+
+    Args:
+        name: A name.
+
+    Raises:
+        AppException: `--archetype` is missing.
+    """
+
+
 sys.modules.setdefault("rn_forge_cli_test_commands", sys.modules[__name__])
 HERE = "rn_forge_cli_test_commands"
 
@@ -208,12 +221,12 @@ class TestFromConfig:
 
 class TestHelpText:
     @staticmethod
-    def _help(tmp_path, monkeypatch, *args, entry_help=""):
+    def _help(tmp_path, monkeypatch, *args, entry_help="", target="bracketed"):
         monkeypatch.setenv("COLUMNS", "200")
         path = tmp_path / "config.toml"
         path.write_text(
             f'[cli]\nname = "demo"\n\n[[cli.commands]]\nname = "set"\n'
-            f'{entry_help}target = "{HERE}:bracketed"\n'
+            f'{entry_help}target = "{HERE}:{target}"\n'
         )
         result = CliRunner().invoke(CliApp.from_config(path), [*args, "--help"])
         return result.output
@@ -236,6 +249,30 @@ class TestHelpText:
             tmp_path, monkeypatch, "set", entry_help='help = "Reads [project] name."\n'
         )
         assert "Reads [project] name." in out
+
+    def test_help_ends_before_the_first_section(self, tmp_path, monkeypatch):
+        out = self._help(tmp_path, monkeypatch, "set", target="sectioned")
+        assert "Sync the thing." in out
+        assert "Longer description here." in out
+        assert "Args:" not in out
+        assert "name: A name." not in out
+        assert "Raises:" not in out
+
+    def test_a_raises_section_shows_no_exception_name(self, tmp_path, monkeypatch):
+        out = self._help(tmp_path, monkeypatch, "set", target="sectioned")
+        assert "Raises:" not in out
+        assert "AppException" not in out
+        assert "--archetype" not in out
+
+    def test_an_explicit_help_is_not_cut(self, tmp_path, monkeypatch):
+        out = self._help(
+            tmp_path,
+            monkeypatch,
+            "set",
+            entry_help='help = "Kept.\\n\\nArgs:\\n    x: y."\n',
+            target="sectioned",
+        )
+        assert "Args:" in out
 
 
 def _commands():

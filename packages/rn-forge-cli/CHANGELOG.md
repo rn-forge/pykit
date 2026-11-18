@@ -7,6 +7,8 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ### Changed
 
+- A declared command's default `--help` ends before the first docstring section
+  (`Args:`, `Returns:`, `Raises:` and the like).
 - Malformed `commands` values in a declared CLI surface name the table and key
   in errors, including the index of a non-table entry.
 - A `[cli]` table with a key that names no field fails to load.

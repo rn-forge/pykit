@@ -59,6 +59,21 @@ def _escape_markup(text: str) -> str:
     return _BRACKET_GROUP.sub(escape, text)
 
 
+_SECTION_HEADER = re.compile(
+    r"^(?:Args|Arguments|Returns|Raises|Yields|Examples|Note):$", re.MULTILINE
+)
+
+
+def _strip_sections(doc: str) -> str:
+    """Return *doc* up to its first Google-style section header.
+
+    A header is a line that is, in full, ``Args:``, ``Arguments:``,
+    ``Returns:``, ``Raises:``, ``Yields:``, ``Examples:`` or ``Note:``.
+    """
+    header = _SECTION_HEADER.search(doc)
+    return (doc[: header.start()] if header else doc).rstrip()
+
+
 class ExitCode(IntEnum):
     """Exit codes returned by an ``rn-forge`` CLI."""
 
@@ -265,7 +280,7 @@ class CliApp(typer.Typer):
             if isinstance(target, typer.Typer):
                 text = target.info.help if isinstance(target.info.help, str) else None
             elif callable(target):
-                text = inspect.getdoc(target)
+                text = _strip_sections(inspect.getdoc(target) or "")
         help_text = _escape_markup(text) if text else None
         if isinstance(target, typer.Typer):
             self.add_typer(target, name=command.name, help=help_text)
