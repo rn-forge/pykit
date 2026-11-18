@@ -555,8 +555,13 @@ planner is kiln's <code>kiln-devops</code>.</p>
   release for the newest shipped release page.</li>
 <li><code>rn_forge.devops.cli</code>, the console script that wires the subcommands.</li>
 </ul>
-<p>The package depends on <code>packaging</code> and no other rn-forge package;
-<code>uv run lint-imports</code> proves it. The facade re-exports nothing.</p>
+<p>The package depends on <code>packaging</code> and no other rn-forge package; <code>task lint</code>
+proves it. The facade re-exports nothing.</p>
+<p>Run it with
+<code>uvx --from "rn-forge-devops&gt;=0.4,&lt;0.5" rn-forge-devops requirements</code>; the
+package has no extras. Examples: <a href="guides/index.html">Guides</a>. Exit codes: 0 no
+problem, 1 an incompatible requirement, 2 invalid input
+(<a href="reference/subcommands.html">contract</a>).</p>
 <p>Use the <a href="reference/index.html">reference</a> for the subcommands and the API.</p>
 
 
