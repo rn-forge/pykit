@@ -2261,6 +2261,32 @@ is on disk, and what was recorded the last time it was applied:</p>
 </tr>
 </tbody>
 </table>
+<p><code>ApplyResult.written</code> reports paths according to <code>Plan.writes</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Reported in <code>written</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CREATE</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>REMOVE</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>UNCHANGED</code>, <code>SKIP</code>, <code>FORGET</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>approved <code>DRIFT</code>, <code>CONFLICT</code>, <code>MISSING</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>Each path appears once, at its first position in plan order. Dry runs report
+<code>written == ()</code> while <code>changes</code> retains the whole plan. An approved <code>MISSING</code>
+that intends <code>DELETE</code> is still reported even though the file is already absent.</p>
 <p><code>DRIFT</code>, <code>CONFLICT</code> and <code>MISSING</code> are <strong>blocking</strong>: they abort the whole plan
 before anything is written unless the caller passed that exact path in <code>force</code>.
 There is no "force everything" value — approving a path approves that path.</p>

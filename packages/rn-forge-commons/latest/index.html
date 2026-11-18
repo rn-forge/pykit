@@ -237,6 +237,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
@@ -253,6 +271,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1947,6 +1995,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1980,6 +2047,15 @@ packages.</p>
 </ul>
 <p>The developer-tooling surface — console, Typer wiring, local state and installer
 mechanics — lives in <code>rn-forge-tooling</code>, which depends on this package.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-commons&gt;=0.9,&lt;0.10&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>Extras: <code>json</code>, <code>structlog</code>, <code>resilience</code>, <code>otel</code>, <code>pydantic</code>, <code>markdown</code>,
+<code>templates</code>, <code>testing</code> and <code>all</code>; see <a href="guides/installation.html">Installation</a>.
+Minimum example: <a href="guides/quickstart.html">Quickstart</a>. Failures a caller handles
+are <code>AppException</code>s carrying a message, an integer <code>error_code</code> and
+<code>error_data</code>.</p>
 <p>Use the guides for common workflows and the API reference for module details.</p>
 
 

@@ -1971,11 +1971,11 @@
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
 <p>Base package:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-commons&gt;=0.8,&lt;0.9&quot;</span>
+<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-commons&gt;=0.9,&lt;0.10&quot;</span>
 </code></pre></div>
 
 <p>All optional integrations:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-commons[all]&gt;=0.8,&lt;0.9&quot;</span>
+<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-commons[all]&gt;=0.9,&lt;0.10&quot;</span>
 </code></pre></div>
 
 <p>Targeted extras:</p>
@@ -1984,13 +1984,12 @@
 <li><code>markdown</code> for Markdown structure (<code>rn_forge.commons.text.markdown</code>)</li>
 <li><code>otel</code> for OpenTelemetry log correlation</li>
 <li><code>pydantic</code> for strict configuration models (<code>rn_forge.commons.lang.models</code>)</li>
+<li><code>resilience</code> for async circuit breakers and HTTP retries</li>
+<li><code>structlog</code> for structured logging over the stdlib handlers</li>
 <li><code>templates</code> for the Jinja template engine (<code>rn_forge.commons.text.templates</code>)</li>
 <li><code>testing</code> for <code>assertpy</code> test helpers</li>
+<li><code>all</code> for every extra above</li>
 </ul>
-<p>Docs commands:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--directory<span class="w"> </span>packages/rn-forge-commons<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>mkdocs<span class="w"> </span>serve
-uv<span class="w"> </span>run<span class="w"> </span>--directory<span class="w"> </span>packages/rn-forge-commons<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>mkdocs<span class="w"> </span>build
-</code></pre></div>
 
 
 

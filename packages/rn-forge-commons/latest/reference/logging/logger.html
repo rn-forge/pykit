@@ -1536,6 +1536,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.AppLogger.makeRecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;makeRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.logging.logger.AppLogger.notice" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2502,6 +2513,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rn_forge.commons.logging.logger.AppLogger.makeRecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;makeRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rn_forge.commons.logging.logger.AppLogger.notice" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3193,12 +3215,9 @@ e.g. <code>"request, user_id"</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Return an :class:<code>AppLogger</code> registered under <em>name</em>.</p>
-<p>Ensures :class:<code>AppLogger</code> is registered as the logger class before
-creating the logger, so callers never receive a plain
-:class:<code>logging.Logger</code> instance even when :meth:<code>initialize</code> has not
-yet been called.</p>
-<p>For best results call :meth:<code>initialize</code> early (<code>main()</code>,
-<code>wsgi.py</code>, <code>AppConfig.ready()</code>).</p>
+<p>Registers :class:<code>AppLogger</code> as the logger class for new loggers and
+preserves the installed record factory. Existing loggers are returned
+unchanged.</p>
 
 
     </div>
@@ -3239,13 +3258,11 @@ yet been called.</p>
     <div class="doc doc-contents ">
 
         <p>Idempotently configure logging in a thread-safe manner.</p>
-<p>Uses <code>logging.config.dictConfig</code> so it works natively with Django's
-<code>LOGGING</code> setting.  Does <strong>not</strong> mutate the global
-<code>LogRecordFactory</code> or call <code>basicConfig()</code>.  Safe to call
-multiple times — subsequent calls return the existing logger unless
+<p>Uses <code>logging.config.dictConfig</code> and preserves the installed record
+factory. Subsequent calls return the existing logger unless
 <em>force_reconfigure</em> is <code>True</code>.</p>
-<p>All arguments are keyword-only.  Pass only what you want to override —
-:meth:<code>LoggingConfig.build</code> fills in opinionated defaults for
+<p>All arguments are keyword-only. Pass only what you want to
+override; :meth:<code>LoggingConfig.build</code> supplies the defaults for
 everything omitted or left as <code>None</code>.</p>
 
 
@@ -3468,9 +3485,8 @@ RichHandler console path.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Install <code>rich.traceback</code> for the RichHandler console
-path. Default <code>True</code>. Uses <code>show_locals=False</code> — tracebacks
-routinely carry credentials in locals.</p>
+                <p>Install <code>rich.traceback</code> for the RichHandler
+console path, without local variables. Default <code>True</code>.</p>
               </div>
             </td>
             <td>
@@ -3546,6 +3562,24 @@ Default <code>False</code>.</p>
     enable_color=True,
 )
 </code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="rn_forge.commons.logging.logger.AppLogger.makeRecord" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class=" language-python"><span class="n">makeRecord</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">lno</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">exc_info</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sinfo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#rn_forge.commons.logging.logger.AppLogger.makeRecord" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create a record through the installed factory with brace message support.</p>
 
 
     </div>
@@ -3825,12 +3859,9 @@ e.g. <code>"payload, headers"</code>.</p>
 
 
 
-        <p>LogRecord subclass whose <code>getMessage</code> handles both <code>%</code>- and <code>{}</code>-style messages.</p>
-<p>Registered globally via <code>logging.setLogRecordFactory</code> so every handler
-in the process — including RichHandler, JSON formatters, and file handlers —
-receives correctly formatted messages without any per-handler coupling.</p>
-<p><code>%</code>-style is tried first so third-party libraries that rely on it are
-completely unaffected.</p>
+        <p>LogRecord supporting <code>%</code> formatting when present, otherwise <code>str.format</code>.</p>
+<p>A single dict argument is formatted as one positional argument. Brace
+formatting errors return the message followed by the argument repr.</p>
 
 
 
