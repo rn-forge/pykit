@@ -1811,6 +1811,9 @@ transfer section of the <code>rn-forge-web</code> API conventions.</p>
 </tr>
 </tbody>
 </table>
+<p>In <code>:batchGet</code>, <code>:batchUpdate</code> and <code>:batchDelete</code>, an id the primary key cannot
+hold, such as <code>abc</code> for an integer key, is a 404 naming it, like any other id
+outside the queryset.</p>
 <p>Row numbers in pointers count from 0. A pointer names the column as it appears
 in the file when the failing field is an import field. An error <code>import-export</code>
 raises outside field validation (a <code>ForeignKeyWidget</code> that finds no row, or an

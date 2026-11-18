@@ -1595,8 +1595,8 @@
 <div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;rn-forge-django[all]&gt;=0.6,&lt;0.7&quot;</span>
 </code></pre></div>
 
-<p>Base dependencies are Django, <code>rn-forge-commons</code> and <code>rn-forge-web</code>, each
-required by version range.</p>
+<p>Base dependencies are Django, <code>rn-forge-auth</code>, <code>rn-forge-commons</code> and
+<code>rn-forge-web</code>, each required by version range.</p>
 <table>
 <thead>
 <tr>
@@ -1634,6 +1634,18 @@ required by version range.</p>
 <td><code>rn-forge-data[pandas]</code>, for building Django JSON fixtures from Excel workbooks</td>
 </tr>
 <tr>
+<td><code>security</code></td>
+<td><code>rn-forge-web[security]</code>, for <code>rn_forge.django.security</code></td>
+</tr>
+<tr>
+<td><code>cors</code></td>
+<td><code>django-cors-headers</code>, for <code>rn_forge.django.cors</code></td>
+</tr>
+<tr>
+<td><code>otel</code></td>
+<td><code>opentelemetry-instrumentation-django</code>, for <code>rn_forge.django.tracing</code></td>
+</tr>
+<tr>
 <td><code>all</code></td>
 <td>Everything above</td>
 </tr>
@@ -1643,10 +1655,6 @@ required by version range.</p>
 Django ORM plus stdlib.</p>
 <p>To use the bundled auth app, add <code>"rn_forge.django.auth"</code> to <code>INSTALLED_APPS</code>.
 For the OpenAPI integration, add <code>"drf_spectacular"</code>.</p>
-<p>Docs commands:</p>
-<div class="codehilite"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--directory<span class="w"> </span>packages/rn-forge-django<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>mkdocs<span class="w"> </span>serve
-uv<span class="w"> </span>run<span class="w"> </span>--directory<span class="w"> </span>packages/rn-forge-django<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>mkdocs<span class="w"> </span>build
-</code></pre></div>
 
 
 

@@ -1978,6 +1978,12 @@ is a 400.</p>
 <p><code>ExceptionContextViewMixin</code> (included in the base views) supplies friendlier
 per-action error messages (e.g. "Error creating records.") consumed by that
 handler.</p>
+<p>To return RFC 9457 <code>application/problem+json</code> instead, register
+<code>rn_forge.django.drf.exceptions.problem_details_exception_handler</code>. It takes an
+optional <code>registry</code> (default <code>problem_registry()</code>, with the
+<code>RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]</code> setting applied when set), maps
+DRF validation errors to 422 and an oversized body to 413, and sends no
+<code>WWW-Authenticate</code> for a <code>NO_CHALLENGE</code> value.</p>
 
 
 

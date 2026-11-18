@@ -1967,7 +1967,9 @@ with <code>RN_FORGE_DJANGO["AUTH"]["PROBLEM_TYPE_BASE"]</code> when set.</p>
 
         <p>Return the default problem registry with DRF validation mapped to 422.</p>
 <p>Also maps Django's own <code>RequestDataTooBig</code> (raised when a body exceeds
-<code>DATA_UPLOAD_MAX_MEMORY_SIZE</code>) to 413 — Django's default is 400.</p>
+<code>DATA_UPLOAD_MAX_MEMORY_SIZE</code>) to 413 — Django's default is 400 — and
+<code>TooManyFieldsSent</code> and <code>TooManyFilesSent</code> (raised past
+<code>DATA_UPLOAD_MAX_NUMBER_FIELDS</code> and <code>DATA_UPLOAD_MAX_NUMBER_FILES</code>) to 400.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>

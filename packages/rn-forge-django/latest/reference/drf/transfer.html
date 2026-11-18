@@ -2234,7 +2234,9 @@ Each instance is deleted through the view's <code>perform_destroy</code>.</p>
 with the view's serializer. The response is <code>200</code> with the resources
 under the plural resource name, one per requested id in request order. A
 missing <code>ids</code> parameter, or more ids than <code>transfer.max_rows</code>, is a 400
-problem; an id outside the view's scope is a 404 problem naming the id.</p>
+problem; an id outside the view's scope is a 404 problem naming the id.
+Django's <code>DATA_UPLOAD_MAX_NUMBER_FIELDS</code> (1,000 by default) also bounds
+<code>ids</code>, and more is a 400 problem.</p>
 
 
 <p><span class="doc-section-title">Attributes:</span></p>
@@ -2488,7 +2490,9 @@ without <code>ifMatch</code> is a 428.</p>
 <p><code>Accept: text/csv</code>, or <code>?format=csv</code>, runs
 <code>filter_queryset()</code> then <code>export_resource_class().export()</code>. The result
 is not paginated. More rows than <code>transfer.max_rows</code> is a 422 problem
-naming the cap. Without a tabular <code>Accept</code> the JSON list is unchanged.</p>
+naming the cap. Without a tabular <code>Accept</code> the JSON list is unchanged.
+Forward foreign-key and one-to-one paths the resource reads are joined with
+<code>select_related</code>.</p>
 
 
 <p><span class="doc-section-title">Attributes:</span></p>

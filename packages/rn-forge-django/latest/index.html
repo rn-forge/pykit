@@ -237,6 +237,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
@@ -253,6 +271,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1559,6 +1607,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1592,6 +1659,17 @@ of <code>rn-forge-commons</code>.</p>
   (<code>transfer</code> extra), audit-field population, auth-aware permissions</li>
 <li>Excel-to-fixture generation for Django <code>loaddata</code></li>
 </ul>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-django&gt;=0.6,&lt;0.7&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>Extras: <code>drf</code>, <code>transfer</code>, <code>openapi</code>, <code>oidc</code>, <code>redis</code>, <code>celery</code>, <code>fixtures</code>,
+<code>security</code>, <code>cors</code>, <code>otel</code> and <code>all</code>; see
+<a href="guides/installation.html">Installation</a>. Minimum example:
+<a href="guides/quickstart.html">Quickstart</a>. Set
+<code>rn_forge.django.drf.exceptions.problem_details_exception_handler</code> as the DRF
+exception handler to render every error as RFC 9457 <code>application/problem+json</code>;
+see <a href="guides/drf-views.html#exceptions">DRF Views</a>.</p>
 <p>Use the guides for common workflows and the API reference for module details.</p>
 
 
