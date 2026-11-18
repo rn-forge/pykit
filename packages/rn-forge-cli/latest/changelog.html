@@ -658,6 +658,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#020-2026-11-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.0] - 2026-11-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.0] - 2026-11-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#013-2026-11-13" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -670,7 +709,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -698,7 +737,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -726,7 +765,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -798,6 +837,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#020-2026-11-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.0] - 2026-11-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.0] - 2026-11-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#013-2026-11-13" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -810,7 +888,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -838,7 +916,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -866,7 +944,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -916,18 +994,37 @@
 <p>Notable changes to <code>rn-forge-cli</code>, newest first, in the
 <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> format.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
-<h2 id="013-2026-11-13">[0.1.3] - 2026-11-13<a class="headerlink" href="#013-2026-11-13" title="Permanent link">&para;</a></h2>
+<h2 id="020-2026-11-17">[0.2.0] - 2026-11-17<a class="headerlink" href="#020-2026-11-17" title="Permanent link">&para;</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>rn-forge-commons</code> requirement admits 0.10 (<code>&lt;0.11</code>).</li>
+<li>A declared command's default <code>--help</code> ends before the first docstring section
+  (<code>Args:</code>, <code>Returns:</code>, <code>Raises:</code> and the like).</li>
+<li>Malformed <code>commands</code> values in a declared CLI surface name the table and key
+  in errors, including the index of a non-table entry.</li>
+<li>A <code>[cli]</code> table with a key that names no field fails to load.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Square brackets that are not Rich markup, such as <code>[kiln]</code>, show in a declared
+  command's <code>--help</code> instead of being dropped.</li>
+<li>Restore the console mode after each invocation, including failed and nested
+  commands.</li>
+<li>Honor explicit logging level and file options on each invocation, preserving
+  existing logging when neither option is passed.</li>
+</ul>
+<h2 id="013-2026-11-13">[0.1.3] - 2026-11-13<a class="headerlink" href="#013-2026-11-13" title="Permanent link">&para;</a></h2>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The <code>rn-forge-commons</code> requirement admits 0.9 (<code>&gt;=0.8.0,&lt;0.10</code>).</li>
 </ul>
 <h2 id="012-2026-10-29">[0.1.2] - 2026-10-29<a class="headerlink" href="#012-2026-10-29" title="Permanent link">&para;</a></h2>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The package declares the MIT licence and is published to PyPI.</li>
 </ul>
 <h2 id="011-2026-10-25">[0.1.1] - 2026-10-25<a class="headerlink" href="#011-2026-10-25" title="Permanent link">&para;</a></h2>
-<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Requires its rn-forge dependencies by version range from pykit's index
   (ADR-0004), not by git URL.</li>

@@ -461,6 +461,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#where-help-text-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where help text comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-whole-of-clipy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -751,6 +762,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#where-help-text-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where help text comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-whole-of-clipy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -864,12 +886,20 @@ and <code>CliApp</code> supplies the app, the standard options and exit-code han
 </tr>
 <tr>
 <td><code>commands[].help</code></td>
-<td>help text; defaults to the target's docstring</td>
+<td>help text, used as written; defaults to the target's docstring, cut before its first section</td>
 </tr>
 </tbody>
 </table>
 <p>A <code>target</code> that is a <code>typer.Typer</code> becomes a subcommand group; a target that is
 a function becomes a single command.</p>
+<h2 id="where-help-text-comes-from">Where help text comes from<a class="headerlink" href="#where-help-text-comes-from" title="Permanent link">&para;</a></h2>
+<p>An explicit <code>help</code> is used as written. Without one, a function target's
+docstring is used, cut before its first <code>Args:</code>, <code>Arguments:</code>, <code>Returns:</code>,
+<code>Raises:</code>, <code>Yields:</code>, <code>Examples:</code> or <code>Note:</code> line, so those sections stay in the
+docstring and out of <code>--help</code>. A <code>typer.Typer</code> target's own help text is used as
+it is. Square brackets that are not Rich markup, such as <code>[kiln]</code>, show
+literally. This applies to declared commands, not to commands registered with
+<code>@app.command()</code>.</p>
 <h2 id="the-whole-of-clipy">The whole of <code>cli.py</code><a class="headerlink" href="#the-whole-of-clipy" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 

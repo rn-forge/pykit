@@ -1276,7 +1276,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="rn_forge.commons.lang.dataclasses.DataclassMixin">DataclassMixin</span></code></p>
+              Bases: <code><span title="rn_forge.commons.lang.dataclasses.StrictDataclassMixin">StrictDataclassMixin</span></code></p>
 
 
 
@@ -2029,8 +2029,10 @@ already the surface table.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The document has no <em>key</em> table, or a declared value
-does not match its field's type.</p>
+                <p>The document has no <em>key</em> table, <code>commands</code> is not
+an array of tables, an entry in <code>commands</code> is not a table,
+a declared value does not match its field's type, or a key names no
+field.</p>
               </div>
             </td>
           </tr>
@@ -2232,7 +2234,7 @@ produces compact output.</p>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="rn_forge.commons.lang.dataclasses.DataclassMixin">DataclassMixin</span></code></p>
+              Bases: <code><span title="rn_forge.commons.lang.dataclasses.StrictDataclassMixin">StrictDataclassMixin</span></code></p>
 
 
 
@@ -2293,8 +2295,8 @@ callable becomes a single command.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Help text. Defaults to the target's own docstring, which is
-where it belongs when there is one.</p>
+                <p>Help text, used as written. Defaults to the target's
+docstring up to its first section (<code>Args:</code>, <code>Raises:</code>, ...).</p>
               </div>
             </td>
             <td>

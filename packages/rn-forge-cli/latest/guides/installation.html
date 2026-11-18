@@ -405,10 +405,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-boundary-as-an-executable-rule" class="md-nav__link">
+  <a href="#the-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The boundary, as an executable rule
+        The boundary
       
     </span>
   </a>
@@ -718,10 +718,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-boundary-as-an-executable-rule" class="md-nav__link">
+  <a href="#the-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The boundary, as an executable rule
+        The boundary
       
     </span>
   </a>
@@ -763,17 +763,11 @@ parses arguments on every run, so there is nothing to gain from making either
 optional. Jinja2 is <strong>not</strong> a dependency — that lives in <code>rn-forge-tooling</code>.</p>
 <h2 id="upgrading">Upgrading<a class="headerlink" href="#upgrading" title="Permanent link">&para;</a></h2>
 <p>Raise the version range. A lockfile records the resolved version.</p>
-<h2 id="the-boundary-as-an-executable-rule">The boundary, as an executable rule<a class="headerlink" href="#the-boundary-as-an-executable-rule" title="Permanent link">&para;</a></h2>
-<p>The workspace's <code>.importlinter</code> contracts state it, and <code>uv run lint-imports</code>
-proves it:</p>
-<ul>
-<li><code>rn_forge.commons</code> never imports <code>rn_forge.cli</code>, <code>rn_forge.tooling</code>, Typer or
-  Jinja.</li>
-<li><code>rn_forge.cli</code> never imports <code>rn_forge.tooling</code> or Jinja.</li>
-<li>The three libraries layer strictly: tooling → cli → commons.</li>
-<li><code>rn_forge.django</code>'s runtime surface never imports any of them — only
-  <code>rn_forge.django.codegen</code> may, and only with the <code>codegen</code> extra installed.</li>
-</ul>
+<h2 id="the-boundary">The boundary<a class="headerlink" href="#the-boundary" title="Permanent link">&para;</a></h2>
+<p><code>rn_forge.cli</code> never imports <code>rn_forge.tooling</code> or Jinja, and <code>rn_forge.commons</code>
+never imports either; <code>task lint</code> proves it. The
+<a href="https://rn-forge.github.io/pykit/architecture/workspace/">workspace boundaries</a>
+page explains the rest.</p>
 
 
 
