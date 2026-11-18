@@ -237,6 +237,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
@@ -253,6 +271,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -609,6 +657,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -634,12 +701,23 @@ what <code>rn-forge-web</code> puts on the wire. It is async only and runs on Po
 and SQLite.</p>
 <p>It provides:</p>
 <ul>
-<li><strong><code>models</code></strong> — <code>Base</code>, <code>UTCDateTime</code>, <code>AuditMixin</code> and <code>VersionMixin</code></li>
+<li><strong><code>models</code></strong> — <code>Base</code>, <code>UTCDateTime</code>, <code>AuditMixin</code>, <code>VersionMixin</code>,
+  <code>SoftDeleteMixin</code>, <code>live</code>, <code>soft_delete</code> and <code>undelete</code></li>
 <li><strong><code>concurrency</code></strong> — <code>update_versioned</code></li>
 <li><strong><code>upsert</code></strong> — <code>upsert</code> and <code>UpsertCounts</code></li>
 <li><strong><code>pagination</code></strong> — <code>keyset</code> and <code>next_page_token</code></li>
 </ul>
 <p>It imports no web framework. See <a href="guides/usage.html">Using the package</a>.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-sqlalchemy&gt;=0.2,&lt;0.3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;rn-forge-web&gt;=0.3,&lt;0.4&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<p><code>[migrations]</code> adds <code>alembic</code>. Minimum example:
+<a href="guides/usage.html#models">Models</a>. <code>update_versioned</code> raises <code>VersionConflict</code>
+(412); see <a href="guides/usage.html#optimistic-concurrency">Optimistic concurrency</a>.</p>
 
 
 
