@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import openpyxl
 from openpyxl.cell import WriteOnlyCell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection
+from openpyxl.utils import get_column_letter
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from rn_forge.commons.lang.dataclasses import DataclassMixin
@@ -388,16 +389,25 @@ def write_xlsx(
 
     workbook = openpyxl.Workbook(write_only=True)
     sheet = workbook.create_sheet(sheet_title)
+    width = len(headers) or dataset.width
+    dimension = (
+        f"A1:{get_column_letter(max(width, 1))}{max(len(dataset) + bool(headers), 1)}"
+    )
+    # A write-only sheet has no dimension, so a read-only loader scans the sheet
+    # twice to find one; declaring it up front avoids the second scan.
+    sheet.calculate_dimension = lambda: dimension  # openpyxl reads this hook by name
     if headers:
         sheet.append(headers)
     for row in cast("Any", dataset):  # tablib is untyped
-        cells: list[Any] = []
-        for index, value in enumerate(row):
-            cell = WriteOnlyCell(sheet, value=value)
-            if index in by_index:
-                cell.number_format = by_index[index]
-            cells.append(cell)
-        sheet.append(cells)
+        if by_index:
+            cells: list[Any] = list(row)
+            for index, fmt in by_index.items():
+                cell = WriteOnlyCell(sheet, value=cells[index])
+                cell.number_format = fmt
+                cells[index] = cell
+            sheet.append(cells)
+        else:
+            sheet.append(row)
     return ExcelUtils.write_workbook_bytes(workbook).getvalue()
 
 

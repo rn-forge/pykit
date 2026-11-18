@@ -574,3 +574,39 @@ Every case met its bound. The batch create lag of 0.5045 s at 100,000 rows is
 the thread parse of the 15,977,794-byte body. The CSV import lag at 10,000 rows
 (0.0225 s against 0.0236 s) is the closest to a bound among the cases judged at
 1.25 x baseline.
+
+### b1949212 S25.2.2 faster XLSX path
+
+Collected on 2026-11-18 at commit `b1949212`, with the S25.2.2 change
+uncommitted. Environment: Mac mini (Mac14,12), Apple M2 Pro, 10 cores, 16 GB
+RAM; macOS 27.2.1, arm64; Python 3.14.2. Other processes were running (an editor
+and a macOS background scan were among the top CPU users), and machine-wide idle
+status could not be verified.
+
+Method, untraced: one temporary `task test` runner built 100,000 rows × 10
+columns of the S22.10.3 row shape, then in one process ran, back to back and
+three times each, the unchanged `write_xlsx` (copied from `b1949212`) and the
+new one, each followed by `tablib.Dataset().load(bytes, format="xlsx")` of its
+output. The runner was deleted afterwards. Harness cases ran as in the procedure
+above, with `PYKIT_MEASURE_OUT` set, once before and once after the change,
+under `tracemalloc`.
+
+| Operation (100,000 × 10, untraced) | Before median (range) s | After median (range) s | Output bytes |
+| -- | -: | -: | -: |
+| `write_xlsx` | 6.019 (6.013–6.030) | 4.398 (4.379–4.423) | 3,742,582 / 3,742,603 |
+| `tablib` xlsx load | 7.055 (7.034–7.075) | 4.752 (4.746–4.814) | — |
+
+| Harness case | Wall before / after (s) | Peak before / after (bytes) |
+| -- | -: | -: |
+| `excel_write` (50,000 rows) | 15.258 / 11.493 | 2,134,607 / 2,133,747 |
+| `excel_roundtrip` (50,000 rows) | 23.119 / 18.803 | 225,329,169 / 225,329,638 |
+| `fastapi_export` xlsx 10,000 | 3.211 / 2.933 | 3,504,436 / 3,522,166 |
+| `fastapi_export` xlsx 100,000 | 31.534 / 25.253 | 29,354,558 / 29,370,898 |
+| `fastapi_import` xlsx 10,000 | 1.831 / 1.783 | 20,995,131 / 20,996,764 |
+| `fastapi_import` xlsx 100,000 | 18.532 / 18.407 | 204,120,189 / 204,120,455 |
+
+Harness wall times are single runs under `tracemalloc` and are inflated. Peak
+allocation did not fall in four cases; the largest rise is 17,730 bytes (0.5%)
+on the 10,000-row export. The `fastapi_import` cases build their upload with
+tablib's own XLSX export, not `write_xlsx`, so they carry no `<dimension>` and
+show no import gain; only files `write_xlsx` writes load faster.

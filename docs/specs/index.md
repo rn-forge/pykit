@@ -11,7 +11,7 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 10 — Typed application state and faster XLSX transfer](../releases/release-10/index.md) | planned | 1 Active · 1 Closed |
+| [Release 10 — Typed application state and faster XLSX transfer](../releases/release-10/index.md) | planned | 2 Closed |
 | [Release 9 — pykit simplification](../releases/release-9/index.md) | shipped (2026-11-18) | 19 Closed |
 | [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | shipped (2026-11-14) | 12 Closed |
 | [Release 7 — authentication and PyPI distribution](../releases/release-7/index.md) | shipped (2026-10-30) | 16 Closed |

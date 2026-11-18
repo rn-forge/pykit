@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -420,3 +421,60 @@ class TestWriteXlsx:
         dataset = tablib.Dataset(headers=["a"])
         with pytest.raises(KeyError):
             excel_module.write_xlsx(dataset, column_formats={"b": "0"})
+
+    def test_the_sheet_declares_its_dimension(self):
+        from zipfile import ZipFile
+
+        tablib = pytest.importorskip("tablib")
+
+        def sheet_xml(dataset: Any) -> str:
+            with ZipFile(BytesIO(excel_module.write_xlsx(dataset))) as archive:
+                return archive.read("xl/worksheets/sheet1.xml").decode()
+
+        with_headers = tablib.Dataset(headers=["a", "b"])
+        without_headers = tablib.Dataset()
+        for row in ([1, 2], [3, 4], [5, 6]):
+            with_headers.append(row)
+            without_headers.append(row)
+
+        assert '<dimension ref="A1:B4" />' in sheet_xml(with_headers)
+        assert '<dimension ref="A1:B3" />' in sheet_xml(without_headers)
+
+    def test_round_trip_keeps_values_and_formats(self):
+        import datetime
+
+        tablib = pytest.importorskip("tablib")
+        dataset = tablib.Dataset(headers=["n", "s", "x", "f", "d", "b"])
+        dataset.append([7, "text", None, 2.5, datetime.date(2026, 3, 4), True])
+
+        payload = excel_module.write_xlsx(dataset, column_formats={"f": "0.00"})
+
+        workbook = ExcelUtils.load_workbook(BytesIO(payload), read_only=True)
+        try:
+            sheet = workbook.active
+            assert sheet is not None
+            rows = list(sheet.iter_rows(min_row=2))
+            assert [cell.value for cell in rows[0]] == [
+                7,
+                "text",
+                None,
+                2.5,
+                datetime.datetime(2026, 3, 4),
+                True,
+            ]
+            assert rows[0][3].number_format == "0.00"
+            assert rows[0][1].number_format == "General"
+            assert rows[0][0].number_format == "General"
+        finally:
+            workbook.close()
+
+    def test_an_empty_dataset_writes_a_valid_file(self):
+        tablib = pytest.importorskip("tablib")
+
+        payload = excel_module.write_xlsx(tablib.Dataset())
+
+        workbook = ExcelUtils.load_workbook(BytesIO(payload))
+        try:
+            assert workbook.active is not None
+        finally:
+            workbook.close()
