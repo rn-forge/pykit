@@ -93,6 +93,13 @@ class ToolProduct:
         """Product-specific ``doctor`` checks. Default: none."""
         return ()
 
+    def preflight(self) -> None:
+        """Called by ``install`` before anything is written. Default: nothing.
+
+        Raises:
+            AppException: To refuse the install.
+        """
+
     def build(self, release_root: Path, version_dir: Path) -> None:
         """Turn an extracted release into an installed version directory.
 

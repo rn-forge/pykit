@@ -757,6 +757,10 @@ def test_a_product_without_a_source_says_so():
         _ = ToolProduct(name="bare", version="1").source
 
 
+def test_a_default_product_has_nothing_to_preflight():
+    assert ToolProduct(name="bare", version="1").preflight() is None
+
+
 def test_a_link_cannot_escape_the_home():
     with pytest.raises(AppException):
         Link("../outside", "bin/tool")

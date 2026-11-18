@@ -9,6 +9,9 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 - `install --ref` installs a branch, tag or commit of a GitHub repository, and
   `state.json` records `ref` and `commit`.
+- `PythonTool` builds a Python tool's runnable command with `uv`, and
+  `ToolProduct.preflight` lets a product refuse an install before anything is
+  written.
 
 ### Changed
 

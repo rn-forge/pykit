@@ -2,15 +2,16 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-17 |
+| **Closed Date** | 2026-11-17 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
 | [F23.1 — Help text reads as written, and a command starts quietly](F23.1-help-text.md) | Closed | release-9 | 3 Closed |
-| [F23.2 — A Python tool installs from a branch, a tag or a commit](F23.2-install-from-a-ref.md) | Active | release-9 | 1 New · 2 Closed |
+| [F23.2 — A Python tool installs from a branch, a tag or a commit](F23.2-install-from-a-ref.md) | Closed | release-9 | 3 Closed |
 
 <!-- END derived features -->
 

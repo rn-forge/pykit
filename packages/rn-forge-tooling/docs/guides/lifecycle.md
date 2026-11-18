@@ -12,7 +12,7 @@ $RNF_HOME/                      default ~/.rn-forge
   golden-tool/
     versions/1.0.0/             one directory per installed version
     current -> versions/1.0.0   swapped atomically
-    state.json                  installed version and state schema
+    state.json                  version, ref, commit, schema_version
     .lock/                      held by every verb that writes
 ```
 
@@ -59,11 +59,58 @@ PRODUCT = GoldenTool(name="golden-tool", version=__version__, repo="rn-forge/gol
 | `state_schema_version` | `1` | have `doctor` report an install recorded under an older schema |
 | `artifacts()` | nothing | put links on `PATH` |
 | `checks()` | none | add product rows to `doctor` |
+| `preflight()` | nothing | refuse an install before it writes anything |
 | `build(release_root, version_dir)` | copy the tree | build an environment in place |
 | `migrate(frm, to)` | nothing | move state between versions |
 
 Return an `info` finding from a passing check rather than nothing, so `doctor`
 shows that the check ran.
+
+## Installing a branch, tag or commit
+
+`install --ref <ref>` installs the commit a branch, tag or commit SHA of the
+product's GitHub repository names, with no release needed. It is exclusive with
+`--version` and `--archive`, and the product's source must be a
+`GitHubReleases`. The version directory is named for the commit's first 12
+characters.
+
+`state.json` records what was asked for and what was installed:
+
+| Key | Holds |
+| -- | -- |
+| `version` | the package version the build reports, from the built tree's `pyproject.toml`; the target when absent |
+| `ref` | the ref as given, or the release tag for a release install |
+| `commit` | the 40-character SHA for a ref install, `null` for a release install |
+| `schema_version` | the product's state schema version |
+
+A state recorded before `ref` existed reads as a release install whose `ref` is
+the release tag.
+
+- `upgrade` re-resolves a ref install's `ref`, and returns `already-current`
+  when the commit has not moved. A release install moves to the newest
+  release.
+- `status` prints `installed: <version> (<ref> @ <commit 12>)` for a ref
+  install; its `--json` carries `ref`, `commit` and `package_version`.
+- `doctor`'s `install.version-mismatch` compares the running version with
+  `state.json`'s `version`, not the directory name.
+
+## Python tools
+
+`PythonTool` is a `ToolProduct` for a tool released as a Python package:
+
+```python
+from rn_forge.tooling.install import PythonTool
+
+PRODUCT = PythonTool(name="golden-tool", version=__version__, repo="rn-forge/golden-tool")
+```
+
+Its `build` runs `uv tool install` on the release tree with `UV_TOOL_DIR` and
+`UV_TOOL_BIN_DIR` inside the version directory, so the console script lands in
+`<version>/bin/<name>` and the default `artifacts()` link `bin/<name>` runs it
+through `current`. The package must declare a console script named like the
+product. `uv` must be on `PATH`; without it the install is refused before
+anything is written. `uninstall` removes the uv environment with the version
+directory.
 
 ## What `install` guarantees
 

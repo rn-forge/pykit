@@ -14,6 +14,7 @@ from rn_forge.tooling.install.lifecycle import (
     upgrade,
 )
 from rn_forge.tooling.install.product import Check, Link, ToolProduct
+from rn_forge.tooling.install.python import PythonTool
 from rn_forge.tooling.install.release import (
     GitHubReleases,
     LocalArchive,
@@ -29,6 +30,7 @@ __all__ = [
     "InstallStatus",
     "Link",
     "LocalArchive",
+    "PythonTool",
     "ReleaseSource",
     "ToolHome",
     "ToolProduct",

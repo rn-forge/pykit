@@ -127,13 +127,15 @@ def install(
 
     Raises:
         AppException: Both *version* and *ref* were given, *ref* was given
-            for a source that is not a :class:`GitHubReleases`, or a step
-            failed; all undo steps were attempted, with any recovery failures
-            and retained displaced version's path reported.
+            for a source that is not a :class:`GitHubReleases`, the product's
+            ``preflight`` refused, or a step failed; all undo steps were
+            attempted, with any recovery failures and retained displaced
+            version's path reported.
         BaseException: An interruption, re-raised after recovery with any
             recovery failures and retained path logged at error level.
     """
     home = home or ToolHome(product.name)
+    product.preflight()
     source = source or product.source
     sha: str | None = None
     if ref is not None:
