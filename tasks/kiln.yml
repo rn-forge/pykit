@@ -6,6 +6,8 @@ version: "3"
 # `diff` and `apply` are public, reached as `kiln:diff` and `kiln:apply`, and
 # pass their arguments through (`task kiln:diff -- --artifact Taskfile.yml`).
 # `pin` pins a branch's newest commit, a tag or a SHA (`task kiln:pin -- <ref>`); with no argument it follows `track`.
+# `upgrade` pins, applies the new kiln's standard and pykit floors, and validates
+# (`task kiln:upgrade -- <ref>`, `FORCE=1` to keep a failing upgrade).
 
 tasks:
   doctor:
@@ -32,3 +34,8 @@ tasks:
     cmds:
       - '{{.KILN}} pin{{if .CLI_ARGS}} --ref {{.CLI_ARGS}}{{end}}'
       - 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@$({{.KILN}} pin --show)" kiln apply'
+
+  upgrade:
+    desc: Pin kiln to a ref after `--` (or follow `track`), apply the new kiln's standard, move the rn-forge ranges to its pin table and run `task validate`. A failure restores the previous pin, files and locks unless FORCE=1.
+    cmds:
+      - '{{.KILN}} repo-upgrade{{if .CLI_ARGS}} --ref {{.CLI_ARGS}}{{end}}{{if .FORCE}} --force{{end}}'

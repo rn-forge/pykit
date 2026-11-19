@@ -93,7 +93,7 @@
     },
     ".rn-forge/kiln/standard.md": {
       "begin_marker": null,
-      "content_hash": "3e82104ab4c29a11c6d2b2780d1a2d7618dbb258c3236df28ec2bc2540c7579d",
+      "content_hash": "db7480c3d4d901570b042d03501a67afd9a83c2da5d0e88068f658a0493c569a",
       "end_marker": null,
       "kind": "managed",
       "path": ".rn-forge/kiln/standard.md"
@@ -121,7 +121,7 @@
     },
     "Taskfile.yml": {
       "begin_marker": null,
-      "content_hash": "3ec7d723f04b0eb05ae2e4b74dd4d7aae29873214ea5defe386cb63e28b9faca",
+      "content_hash": "bed45edd457cee483744152567e13caa57a159713c73794e650669f28bc36185",
       "end_marker": null,
       "kind": "managed",
       "path": "Taskfile.yml"
@@ -303,7 +303,7 @@
     },
     "tasks/kiln.yml": {
       "begin_marker": null,
-      "content_hash": "2da93e257ee979a41c653a4cba834cd987e7e0deae21fe3e8292201513adcf3c",
+      "content_hash": "0bcba660fb40a81139b1c912b8d44d9e618cba1da2e0cfc9dca30a64df10cebd",
       "end_marker": null,
       "kind": "managed",
       "path": "tasks/kiln.yml"
@@ -338,7 +338,7 @@
     }
   },
   "metadata": {
-    "config_hash": "fec57e3f4c794e5564cf99d239676f130ee0418f32dc44605bea569cfb581af6",
+    "config_hash": "d277c8dce44be6e93fabaad78728c00d5c7a9254cb1635801c415a40b0d4163b",
     "config_provenance": {
       "archetype.python-lib.import_contracts": {
         "layer": "source",
