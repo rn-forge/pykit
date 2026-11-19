@@ -5,7 +5,7 @@ and tag; a release maps to an Azure DevOps Iteration Path. The
 [release runbook](../runbooks/releasing-packages.md) describes how to run one.
 
 - [Release 10 — Typed application state and faster XLSX transfer](release-10/index.md)
-  — planned
+  — shipped
 - [Release 9 — pykit simplification](release-9/index.md) — shipped
 - [Release 8 — kiln adoption and local-first extraction](release-8/index.md) —
   shipped
