@@ -150,7 +150,7 @@ dev = [
     "rn-forge-data[pandas]",
     "ruff>=0.17.1",
     "taplo>=0.9",
-    "types-authlib>=1.8.0",
+    "types-authlib>=1.8.0.20261106",
     "zizmor>=1.31",
 ]
 docs = [
