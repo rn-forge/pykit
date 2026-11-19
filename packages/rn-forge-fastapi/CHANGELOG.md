@@ -5,6 +5,8 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-19
+
 ### Added
 
 - Typed application state: `app_state` and `state_lifespan` declare an

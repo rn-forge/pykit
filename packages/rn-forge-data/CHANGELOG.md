@@ -5,6 +5,8 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-19
+
 ### Changed
 
 - `write_xlsx` writes large tables faster, and its files declare their
