@@ -33,6 +33,23 @@ def find_root(start: Path) -> Path:
     raise FileNotFoundError(f"no uv workspace at or above {start}")
 
 
+def _read_member(path: Path) -> tuple[str, str, dict[str, Any]]:
+    manifest: dict[str, Any] = tomllib.loads(path.read_text())
+    if "project" not in manifest:
+        raise InvalidManifest(f"{path}: missing [project]")
+    project: dict[str, Any] = manifest["project"]
+    if "name" not in project:
+        raise InvalidManifest(f"{path}: missing [project].name")
+    name: str = project["name"]
+    version: str = project.get("version", "")
+    if "version" in project:
+        try:
+            Version(version)
+        except InvalidVersion as error:
+            raise InvalidManifest(f"{path}: {error}") from error
+    return name, version, manifest
+
+
 def _members(root: Path) -> dict[str, tuple[str, str, dict[str, Any], Path]]:
     """Map each canonical name to its name, version, manifest and path."""
     workspace: dict[str, Any] = tomllib.loads((root / MANIFEST).read_text())["tool"][
@@ -50,19 +67,7 @@ def _members(root: Path) -> dict[str, tuple[str, str, dict[str, Any], Path]]:
         for path in sorted(root.glob(f"{pattern}/{MANIFEST}")):
             if path in excluded:
                 continue
-            manifest: dict[str, Any] = tomllib.loads(path.read_text())
-            if "project" not in manifest:
-                raise InvalidManifest(f"{path}: missing [project]")
-            project: dict[str, Any] = manifest["project"]
-            if "name" not in project:
-                raise InvalidManifest(f"{path}: missing [project].name")
-            name: str = project["name"]
-            version: str = project.get("version", "")
-            if "version" in project:
-                try:
-                    Version(version)
-                except InvalidVersion as error:
-                    raise InvalidManifest(f"{path}: {error}") from error
+            name, version, manifest = _read_member(path)
             members[canonicalize_name(name)] = (
                 name,
                 version,

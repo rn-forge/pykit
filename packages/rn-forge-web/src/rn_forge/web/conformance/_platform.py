@@ -28,6 +28,7 @@ _TRACEPARENT: Final = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 _READYZ_PATH: Final = "/conformance/readyz"
 
 _ECHO_PATH: Final = "/conformance/echo"
+_ORIGIN: Final = "https://example.com"
 
 PLATFORM_CASES: Final[tuple[ConformanceCase, ...]] = (
     ConformanceCase(
@@ -263,13 +264,11 @@ PLATFORM_CASES: Final[tuple[ConformanceCase, ...]] = (
             "configured order. traceresponse is exposed by the OpenTelemetry "
             "response propagator itself, not by this list."
         ),
-        request=RequestSpec(
-            "GET", _ECHO_PATH, headers={"Origin": "https://example.com"}
-        ),
+        request=RequestSpec("GET", _ECHO_PATH, headers={"Origin": _ORIGIN}),
         expect_status=200,
         expect_headers={
             **_JSON,
-            "Access-Control-Allow-Origin": "https://example.com",
+            "Access-Control-Allow-Origin": _ORIGIN,
             "Access-Control-Expose-Headers": ", ".join(
                 (*EXPOSED_HEADERS, "traceresponse")
             ),
@@ -286,10 +285,10 @@ PLATFORM_CASES: Final[tuple[ConformanceCase, ...]] = (
         request=RequestSpec(
             "GET",
             "/conformance/orders",
-            headers={"Accept": _CSV_TYPE, "Origin": "https://example.com"},
+            headers={"Accept": _CSV_TYPE, "Origin": _ORIGIN},
         ),
         expect_status=200,
-        expect_headers={"Access-Control-Allow-Origin": "https://example.com"},
+        expect_headers={"Access-Control-Allow-Origin": _ORIGIN},
         expect_header_patterns={
             "Content-Type": _CSV_TYPE_PATTERN,
             "Access-Control-Expose-Headers": r"(.+, )?Content-Disposition(, .+)?",

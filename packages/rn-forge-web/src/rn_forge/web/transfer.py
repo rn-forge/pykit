@@ -51,6 +51,7 @@ DUPLICATE_ID_DETAIL: Final = "Duplicate id in batch."
 """The detail for a repeated id in a ``:batchUpdate`` request."""
 
 _PATCH_DETAIL: Final = "A merge patch must be a JSON object."
+_VALIDATION_ERROR: Final = "Validation Error"
 _IF_MATCH_DETAIL: Final = "Not a valid string."
 
 
@@ -207,7 +208,7 @@ def row_errors_problem(
     ]
     return render_problem(
         registry or default_registry(),
-        ValueError("Validation Error"),
+        ValueError(_VALIDATION_ERROR),
         instance=instance,
         problem=VALIDATION_ERROR,
         detail="One or more rows are invalid.",
@@ -221,7 +222,7 @@ def export_cap_problem(
     """Render "the export exceeds *cap* rows" as a 422 problem naming the cap."""
     return render_problem(
         registry or default_registry(),
-        ValueError("Validation Error"),
+        ValueError(_VALIDATION_ERROR),
         instance=instance,
         problem=VALIDATION_ERROR,
         detail=f"The export exceeds the limit of {cap} rows; narrow the filter.",
@@ -245,7 +246,7 @@ def row_cap_problem(
     """
     return render_problem(
         registry or default_registry(),
-        ValueError("Validation Error"),
+        ValueError(_VALIDATION_ERROR),
         instance=instance,
         problem=VALIDATION_ERROR,
         detail=_cap_detail(kind, cap),
@@ -291,6 +292,33 @@ class BatchUpdateItem:
     if_match: str | None
 
 
+def _parse_batch_item(
+    index: int, entry: object, errors: list[RowError]
+) -> BatchUpdateItem | None:
+    fields = cast("dict[str, object]", entry) if isinstance(entry, dict) else {}
+    item_id = fields.get("id")
+    patch = fields.get("patch")
+    if_match = fields.get("ifMatch")
+    failed = False
+    if isinstance(item_id, bool) or not isinstance(item_id, (str, int)):
+        errors.append(RowError(index, "id", REQUIRED_FIELD_DETAIL))
+        failed = True
+    if not isinstance(patch, dict):
+        errors.append(RowError(index, "patch", _PATCH_DETAIL))
+        failed = True
+    if if_match is not None and not isinstance(if_match, str):
+        errors.append(RowError(index, "ifMatch", _IF_MATCH_DETAIL))
+        failed = True
+    if failed:
+        return None
+    return BatchUpdateItem(
+        index,
+        str(item_id),
+        cast("dict[str, JsonValue]", patch),
+        cast("str | None", if_match),
+    )
+
+
 def parse_batch_update(
     body: object,
     *,
@@ -325,10 +353,10 @@ def parse_batch_update(
         )
         return render_problem(
             registry or default_registry(),
-            ValueError("Validation Error"),
+            ValueError(_VALIDATION_ERROR),
             instance=instance,
             problem=VALIDATION_ERROR,
-            detail="Validation Error",
+            detail=_VALIDATION_ERROR,
             extensions={"errors": [field_error(("requests",), detail)]},
         )
     entries = cast("list[object]", raw)
@@ -338,29 +366,9 @@ def parse_batch_update(
     items: list[BatchUpdateItem] = []
     errors: list[RowError] = []
     for index, entry in enumerate(entries):
-        fields = cast("dict[str, object]", entry) if isinstance(entry, dict) else {}
-        item_id = fields.get("id")
-        patch = fields.get("patch")
-        if_match = fields.get("ifMatch")
-        failed = False
-        if isinstance(item_id, bool) or not isinstance(item_id, (str, int)):
-            errors.append(RowError(index, "id", REQUIRED_FIELD_DETAIL))
-            failed = True
-        if not isinstance(patch, dict):
-            errors.append(RowError(index, "patch", _PATCH_DETAIL))
-            failed = True
-        if if_match is not None and not isinstance(if_match, str):
-            errors.append(RowError(index, "ifMatch", _IF_MATCH_DETAIL))
-            failed = True
-        if not failed:
-            items.append(
-                BatchUpdateItem(
-                    index,
-                    str(item_id),
-                    cast("dict[str, JsonValue]", patch),
-                    cast("str | None", if_match),
-                )
-            )
+        item = _parse_batch_item(index, entry, errors)
+        if item is not None:
+            items.append(item)
     if errors:
         raise RowsInvalid(errors, root="requests")
 

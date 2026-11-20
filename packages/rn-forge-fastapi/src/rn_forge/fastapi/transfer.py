@@ -730,41 +730,15 @@ def batch_update_router[T: BaseModel](
     ) -> Response | dict[str, Any]:
         del body
         found = await target.current([item.id for item in items])
-        for item in items:
-            if item.id not in found:
-                raise LookupError(f"{resource_label} {item.id} not found")
-        for item in items:
-            version = found[item.id].version
-            if version is not None:
-                check_item_precondition(
-                    item,
-                    current_version=version,
-                    entity_id=item.id,
-                    codec=etag_codec,
-                    required=require_if_match,
-                )
+        _check_batch_update(
+            items,
+            found,
+            resource_label=resource_label,
+            codec=etag_codec,
+            required=require_if_match,
+        )
 
-        documents: list[tuple[str, T]] = []
-        failures: list[dict[str, str]] = []
-        for item in items:
-            current = model.model_validate(
-                found[item.id].row, from_attributes=True
-            ).model_dump(by_alias=True, mode="json")
-            try:
-                documents.append(
-                    (
-                        item.id,
-                        model.model_validate(merge_representation(current, item.patch)),
-                    )
-                )
-            except ValidationError as exc:
-                failures.extend(
-                    field_error(
-                        ("requests", item.index, "patch", *err["loc"]),
-                        error_message(err),
-                    )
-                    for err in exc.errors()
-                )
+        documents, failures = _merge_batch_documents(model, items, found)
         if failures:
             return problem_response(
                 render_problem(
@@ -788,6 +762,56 @@ def batch_update_router[T: BaseModel](
         response_model=result_model,
     )
     return router
+
+
+def _check_batch_update(
+    items: Sequence[BatchUpdateItem],
+    found: Mapping[str, Current],
+    *,
+    resource_label: str,
+    codec: ETagCodec,
+    required: bool,
+) -> None:
+    for item in items:
+        if item.id not in found:
+            raise LookupError(f"{resource_label} {item.id} not found")
+    for item in items:
+        version = found[item.id].version
+        if version is not None:
+            check_item_precondition(
+                item,
+                current_version=version,
+                entity_id=item.id,
+                codec=codec,
+                required=required,
+            )
+
+
+def _merge_batch_documents[T: BaseModel](
+    model: type[T], items: Sequence[BatchUpdateItem], found: Mapping[str, Current]
+) -> tuple[list[tuple[str, T]], list[dict[str, str]]]:
+    documents: list[tuple[str, T]] = []
+    failures: list[dict[str, str]] = []
+    for item in items:
+        current = model.model_validate(
+            found[item.id].row, from_attributes=True
+        ).model_dump(by_alias=True, mode="json")
+        try:
+            documents.append(
+                (
+                    item.id,
+                    model.model_validate(merge_representation(current, item.patch)),
+                )
+            )
+        except ValidationError as exc:
+            failures.extend(
+                field_error(
+                    ("requests", item.index, "patch", *err["loc"]),
+                    error_message(err),
+                )
+                for err in exc.errors()
+            )
+    return documents, failures
 
 
 def _dump(model: type[BaseModel], row: object) -> dict[str, Any]:

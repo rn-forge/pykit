@@ -34,6 +34,7 @@ from rn_forge.web import (
     REQUIRED_FIELD_DETAIL,
     TABULAR_FORMATS,
     VALIDATION_ERROR,
+    BatchUpdateItem,
     ETagCodec,
     ProblemResponse,
     RowError,
@@ -133,6 +134,25 @@ def _tabular_response(
     )
 
 
+def _forward_relation_path(model: Any, attribute: str) -> str:
+    current: Any = model
+    walked: list[str] = []
+    for segment in attribute.split("__"):
+        try:
+            relation: Any = current._meta.get_field(segment)
+        except FieldDoesNotExist:
+            break
+        if not (
+            relation.concrete
+            and relation.is_relation
+            and (relation.many_to_one or relation.one_to_one)
+        ):
+            break
+        walked.append(segment)
+        current = relation.related_model
+    return "__".join(walked)
+
+
 def _forward_relation_paths(model: Any, resource: Any) -> list[str]:
     """Return the ``select_related`` paths for the forward relations *resource* reads."""
     paths: list[str] = []
@@ -140,22 +160,7 @@ def _forward_relation_paths(model: Any, resource: Any) -> list[str]:
         attribute = getattr(field, "attribute", None)
         if not isinstance(attribute, str) or not attribute:
             continue
-        current: Any = model
-        walked: list[str] = []
-        for segment in attribute.split("__"):
-            try:
-                relation: Any = current._meta.get_field(segment)
-            except FieldDoesNotExist:
-                break
-            if not (
-                relation.concrete
-                and relation.is_relation
-                and (relation.many_to_one or relation.one_to_one)
-            ):
-                break
-            walked.append(segment)
-            current = relation.related_model
-        path = "__".join(walked)
+        path = _forward_relation_path(model, attribute)
         if path and path not in paths:
             paths.append(path)
     return paths
@@ -566,27 +571,7 @@ class BatchUpdateMixin(_BatchResourceMixin):
                     required=self.batch_update_requires_if_match,
                 )
 
-        serializers: list[Any] = []
-        failures: list[dict[str, str]] = []
-        for item in parsed:
-            instance = found[item.id]
-            current = cast(
-                "Mapping[str, Any]", cast(Any, self).get_serializer(instance).data
-            )
-            serializer: Any = cast(Any, self).get_serializer(
-                instance, data=merge_representation(current, item.patch)
-            )
-            if not serializer.is_valid():
-                failures.extend(
-                    field_error(
-                        ("requests", item.index, "patch", *e.field.split(".")),
-                        e.message,
-                    )
-                    if e.field
-                    else field_error(("requests", item.index, "patch"), e.message)
-                    for e in _flatten(item.index, serializer.errors)
-                )
-            serializers.append(serializer)
+        serializers, failures = _batch_update_serializers(self, parsed, found)
         if failures:
             return _problem_response(
                 render_problem(
@@ -599,28 +584,11 @@ class BatchUpdateMixin(_BatchResourceMixin):
                 )
             )
 
-        denied: dict[str, list[str]] = {}
-        for item, serializer in zip(parsed, serializers, strict=True):
-            data = cast("dict[str, Any]", serializer.validated_data)
-            if isinstance(self, AuditFieldsViewMixin):
-                self.prepare_update_data(data)
-            message = self.validate_batch_update_item(found[item.id], data)
-            if message is not None:
-                denied[str(item.index)] = [message]
+        denied = _batch_update_denials(self, parsed, serializers, found)
         if denied:
             raise PermissionDenied({"requests": denied})
 
-        with transaction.atomic():
-            for item, serializer in zip(parsed, serializers, strict=True):
-                try:
-                    serializer.save()
-                except VersionConflict as exc:
-                    pointed = [
-                        field_error(("requests", item.index, "ifMatch"), exc.message)
-                    ]
-                    raise VersionConflict(
-                        "{}", exc.message, error_code=exc.error_code, errors=pointed
-                    ) from exc
+        _save_batch_update(parsed, serializers)
         return Response({self._resource_name(): [s.data for s in serializers]})
 
 
@@ -662,6 +630,65 @@ class BatchDeleteMixin(GenericAPIView):
             for instance in found.values():
                 cast(Any, self).perform_destroy(instance)
         return Response(status=204)
+
+
+def _batch_update_serializers(
+    view: Any, parsed: Sequence[BatchUpdateItem], found: Mapping[str, Any]
+) -> tuple[list[Any], list[dict[str, str]]]:
+    serializers: list[Any] = []
+    failures: list[dict[str, str]] = []
+    for item in parsed:
+        instance = found[item.id]
+        current = cast("Mapping[str, Any]", view.get_serializer(instance).data)
+        serializer: Any = view.get_serializer(
+            instance, data=merge_representation(current, item.patch)
+        )
+        if not serializer.is_valid():
+            failures.extend(
+                field_error(
+                    ("requests", item.index, "patch", *e.field.split(".")),
+                    e.message,
+                )
+                if e.field
+                else field_error(("requests", item.index, "patch"), e.message)
+                for e in _flatten(item.index, serializer.errors)
+            )
+        serializers.append(serializer)
+    return serializers, failures
+
+
+def _batch_update_denials(
+    view: Any,
+    parsed: Sequence[BatchUpdateItem],
+    serializers: Sequence[Any],
+    found: Mapping[str, Any],
+) -> dict[str, list[str]]:
+    denied: dict[str, list[str]] = {}
+    audited = isinstance(view, AuditFieldsViewMixin)
+    for item, serializer in zip(parsed, serializers, strict=True):
+        data = cast("dict[str, Any]", serializer.validated_data)
+        if audited:
+            view.prepare_update_data(data)
+        message = view.validate_batch_update_item(found[item.id], data)
+        if message is not None:
+            denied[str(item.index)] = [message]
+    return denied
+
+
+def _save_batch_update(
+    parsed: Sequence[BatchUpdateItem], serializers: Sequence[Any]
+) -> None:
+    with transaction.atomic():
+        for item, serializer in zip(parsed, serializers, strict=True):
+            try:
+                serializer.save()
+            except VersionConflict as exc:
+                pointed = [
+                    field_error(("requests", item.index, "ifMatch"), exc.message)
+                ]
+                raise VersionConflict(
+                    "{}", exc.message, error_code=exc.error_code, errors=pointed
+                ) from exc
 
 
 def _find_all(view: Any, ids: Sequence[str]) -> dict[str, Any]:

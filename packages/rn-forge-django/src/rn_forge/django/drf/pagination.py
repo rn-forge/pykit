@@ -34,7 +34,7 @@ from rn_forge.web import (
 
 __all__ = ["CursorPagination", "LegacyPageNumberPagination", "OrderByFilter"]
 
-_PAGE_SIZE_PATTERN = re.compile(r"-?[0-9]+", re.ASCII)
+_PAGE_SIZE_PATTERN = re.compile(r"-?\d+", re.ASCII)
 
 
 def _page_size(
@@ -147,6 +147,18 @@ def _row_value(row: object, path: str) -> object:
     return value
 
 
+def _arm(
+    keys: Sequence[tuple[str, bool, bool]], values: Sequence[SortValue], i: int
+) -> Q:
+    path, descending, is_pk = keys[i]
+    beyond = Q(**{f"{path}__{'lt' if descending else 'gt'}": values[i]})
+    if not is_pk:
+        beyond |= Q(**{f"{path}__isnull": True})
+    for (earlier, _, _), v in zip(keys[:i], values[:i]):
+        beyond &= Q(**{f"{earlier}__isnull": True} if v is None else {earlier: v})
+    return beyond
+
+
 def _after(keys: Sequence[tuple[str, bool, bool]], values: Sequence[SortValue]) -> Q:
     """The rows past *values*: for some key, every earlier one equal and it beyond.
 
@@ -154,17 +166,12 @@ def _after(keys: Sequence[tuple[str, bool, bool]], values: Sequence[SortValue]) 
     value is followed by ``NULL`` rows, and nothing follows a ``NULL``.
     """
     arms: list[Q] = []
-    for i, ((path, descending, is_pk), value) in enumerate(zip(keys, values)):
+    for i, ((_, _, is_pk), value) in enumerate(zip(keys, values)):
         if value is None:
             if is_pk:
                 raise InvalidCursor("Malformed page token", error_code=400)
             continue
-        beyond = Q(**{f"{path}__{'lt' if descending else 'gt'}": value})
-        if not is_pk:
-            beyond |= Q(**{f"{path}__isnull": True})
-        for (earlier, _, _), v in zip(keys[:i], values[:i]):
-            beyond &= Q(**{f"{earlier}__isnull": True} if v is None else {earlier: v})
-        arms.append(beyond)
+        arms.append(_arm(keys, values, i))
     after = arms[0]
     for arm in arms[1:]:
         after |= arm

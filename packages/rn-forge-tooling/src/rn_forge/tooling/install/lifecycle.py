@@ -307,7 +307,7 @@ def _install(
         _activate(product, home, source, prepared, target, previous, ref, sha, undo)
     except BaseException as exc:
         failures = _recover(undo)
-        retained = (prepared.work / "displaced").exists()
+        retained = prepared.work.joinpath("displaced").exists()
         _failure(product, target, exc, failures, prepared.work, retained)
         raise
     finally:

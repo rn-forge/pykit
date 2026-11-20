@@ -22,7 +22,7 @@ The workspace takes the open Dependabot updates, and the open Sonar issues on
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F26.1 — Dependency updates](../../specs/epics/E26-release-11-maintenance/F26.1-dependency-updates.md) | E26 | Closed |
-| [F26.2 — Sonar debt](../../specs/epics/E26-release-11-maintenance/F26.2-sonar-debt.md) | E26 | Active |
+| [F26.2 — Sonar debt](../../specs/epics/E26-release-11-maintenance/F26.2-sonar-debt.md) | E26 | Closed |
 
 <!-- END derived scope -->
 
