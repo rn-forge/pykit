@@ -20,7 +20,7 @@ requires-python = ">=3.14"
 dependencies = [
     "rn-forge-commons>=0.8.0,<0.11",
     "openpyxl>=3.1.5",
-    "tablib[xlsx]>=3.8",
+    "tablib[xlsx]>=3.10.0",
 ]
 
 [project.optional-dependencies]
@@ -65,18 +65,18 @@ addopts = "-ra --import-mode=importlib"
 
 [dependency-groups]
 dev = [
-    "assertpy>=2.35",
-    "pandas-stubs>=3.0.5",
+    "assertpy>=2.36.0",
+    "pandas-stubs>=3.1.0.261029",
     "pyright>=1.1.411",
-    "pytest>=9.1.1",
+    "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
     "pytest-randomly>=4.1.0",
     "rn-forge-data[pandas]",
-    "ruff>=0.15.21",
+    "ruff>=0.17.4",
 ]
 docs = [
     "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.6",
-    "mkdocstrings[python]>=1.0.6",
+    "mkdocs-material>=9.8.1",
+    "mkdocstrings[python]>=1.0.8",
     "rn-forge-data[pandas]",
 ]

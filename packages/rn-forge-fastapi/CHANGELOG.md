@@ -5,6 +5,10 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The `testing` extra requires `assertpy>=2.36.0`.
+
 ## [0.5.1] - 2026-11-19
 
 ### Added

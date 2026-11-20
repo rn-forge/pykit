@@ -60,14 +60,14 @@ def output_path(request: pytest.FixtureRequest) -> Path:
         from rn_forge.commons.testing import output_path  # noqa: F401
     """
     root = Path(str(request.config.rootpath))
-    node_path = Path(cast(str, request.node.nodeid).split("::", maxsplit=1)[0])  # pyright: ignore[reportUnknownMemberType]  # pytest stubs gap
+    node_path = Path(cast(str, request.node.nodeid).split("::", maxsplit=1)[0])
     if len(node_path.parts) >= 2 and node_path.parts[0] == "packages":
         scope = node_path.parts[1]
     else:
         scope = "workspace"
     base = root / ".tmp" / scope / "tests" / "output"
     safe = (
-        cast(str, request.node.nodeid)  # pyright: ignore[reportUnknownMemberType]  # pytest stubs gap
+        cast(str, request.node.nodeid)
         .replace("/", "_")
         .replace("::", "_")
         .replace("[", "_")

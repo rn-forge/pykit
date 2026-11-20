@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-testing = ["assertpy>=2.35", "pytest>=9.1.1"]
+testing = ["assertpy>=2.36.0", "pytest>=9.1.1"]
 # `rn_forge.web.security` only. `secure` is framework-agnostic (no dependencies
 # of its own) and emits the OWASP header preset directly, so it is wrapped
 # rather than hand-rolled.
@@ -66,23 +66,23 @@ markers = ["unit: fast isolated tests"]
 
 [dependency-groups]
 dev = [
-    "assertpy>=2.35",
+    "assertpy>=2.36.0",
     "opentelemetry-instrumentation-asgi>=0.65b0",
     "opentelemetry-sdk>=1.44",
     "pyright>=1.1.411",
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.3.0",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
     "pytest-cov>=7.1.0",
     "pytest-randomly>=4.1.0",
     # The guide examples, which the tests run, import rn-forge-auth.
     "rn-forge-auth>=0.1.0,<0.3",
     "rn-forge-web[security]",
-    "ruff>=0.15.21",
+    "ruff>=0.17.4",
 ]
 docs = [
     "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.6",
-    "mkdocstrings[python]>=1.0.6",
+    "mkdocs-material>=9.8.1",
+    "mkdocstrings[python]>=1.0.8",
     "opentelemetry-instrumentation-asgi>=0.65b0",
     "rn-forge-auth>=0.1.0,<0.3",
     "rn-forge-web[security]",

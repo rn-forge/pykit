@@ -5,6 +5,10 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Changed
+
+- The `testing` extra requires `assertpy>=2.36.0`.
+
 ## [0.10.0] - 2026-11-17
 
 ### Changed

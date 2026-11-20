@@ -2,13 +2,14 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-11-19 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F26.1 — Dependency updates](F26.1-dependency-updates.md) | New | release-11 | 1 New |
+| [F26.1 — Dependency updates](F26.1-dependency-updates.md) | Closed | release-11 | 1 Closed |
 | [F26.2 — Sonar debt](F26.2-sonar-debt.md) | New | release-11 | 2 New |
 
 <!-- END derived features -->
