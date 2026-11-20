@@ -26,7 +26,7 @@ paths in a JSON or TOML file another program also writes
 | -- | -- | -- |
 | [F26.1 — Dependency updates](../../specs/epics/E26-release-11-maintenance/F26.1-dependency-updates.md) | E26 | Closed |
 | [F26.2 — Sonar debt](../../specs/epics/E26-release-11-maintenance/F26.2-sonar-debt.md) | E26 | Closed |
-| [F27.1 — A `keys` artifact kind](../../specs/epics/E27-key-path-artifacts/F27.1-keys-artifact-kind.md) | E27 | Active |
+| [F27.1 — A `keys` artifact kind](../../specs/epics/E27-key-path-artifacts/F27.1-keys-artifact-kind.md) | E27 | Closed |
 
 <!-- END derived scope -->
 

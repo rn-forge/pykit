@@ -2,13 +2,15 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
+| **Start Date** | 2026-11-20 |
+| **Closed Date** | 2026-11-20 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F27.1 — A `keys` artifact kind](F27.1-keys-artifact-kind.md) | Active | release-11 | 1 New · 1 Closed |
+| [F27.1 — A `keys` artifact kind](F27.1-keys-artifact-kind.md) | Closed | release-11 | 2 Closed |
 
 <!-- END derived features -->
 

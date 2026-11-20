@@ -5,6 +5,8 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-20
+
 ### Added
 
 - `ArtifactKind.KEYS`, with `Artifact.keys` and `StateEntry.key_paths`: the
