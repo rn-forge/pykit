@@ -133,8 +133,9 @@ class TestGetDecimalField:
         assert result.as_tuple().exponent == -2
 
     def test_false_cell_raises(self):
+        row = _row(flag=False)
         with pytest.raises(decimal.InvalidOperation):
-            PandasUtils.get_decimal_field(_row(flag=False), "flag")
+            PandasUtils.get_decimal_field(row, "flag")
 
     def test_basic_conversion(self):
         row = _row(amount="12.50")

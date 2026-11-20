@@ -120,13 +120,9 @@ class TestCacheIdempotencyStore:
                 return self.entries.get(key)
 
         fake = FakeCache()
-        with (
-            patch("rn_forge.django.drf.idempotency.caches", {"default": fake}),
-            pytest.raises(IdempotencyKeyInFlight),
-        ):
-            results.append(
-                store.record_or_replay(scope="s", key="k", request_body={"a": 1})
-            )
+        patched = patch("rn_forge.django.drf.idempotency.caches", {"default": fake})
+        with patched, pytest.raises(IdempotencyKeyInFlight):
+            store.record_or_replay(scope="s", key="k", request_body={"a": 1})
         assert results == [None]
         assert sum(result is None for result in results) == 1
 

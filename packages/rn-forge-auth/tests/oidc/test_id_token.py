@@ -162,8 +162,9 @@ def test_from_issuer_uses_discovery(idp):
 )
 def test_a_typ_other_than_jwt_is_refused(idp, typ):
     token = idp.sign(_claims(idp), typ=typ)
+    verifier = _verifier(idp)
     with pytest.raises(TokenVerificationError, match="is not an ID token"):
-        _verifier(idp).verify(token, nonce=NONCE)
+        verifier.verify(token, nonce=NONCE)
 
 
 @pytest.mark.parametrize("typ", [None, "JWT", "jwt"])

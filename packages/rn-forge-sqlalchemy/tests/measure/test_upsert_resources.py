@@ -149,8 +149,9 @@ async def test_upsert_resource_baselines(
         if shape == "mixed-3":
             return await call([rows(1, "changed")[0], *rows(3)[1:]], actor="bob")
         if shape == "duplicate-2":
+            duplicated = rows(1) * 2
             with pytest.raises(ValueError, match="duplicate key"):
-                await call(rows(1) * 2)
+                await call(duplicated)
             return None
         if shape == "rollback-3":
             return await call(rows(3, "rollback"))
@@ -196,7 +197,8 @@ async def test_upsert_resource_baselines(
         await session.commit()
         after = await load()
         assert len(after) == 3
-        assert (after[0].create_time, after[0].created_by) == before[0][:2]
+        created = (after[0].create_time, after[0].created_by)
+        assert created == before[0][:2]
         assert after[0].updated_by == "bob"
         assert after[1].update_time == before[1][2]
     elif shape == "duplicate-2":

@@ -10,7 +10,7 @@
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
 | [F26.1 — Dependency updates](F26.1-dependency-updates.md) | Closed | release-11 | 1 Closed |
-| [F26.2 — Sonar debt](F26.2-sonar-debt.md) | New | release-11 | 2 New |
+| [F26.2 — Sonar debt](F26.2-sonar-debt.md) | Active | release-11 | 1 New · 1 Closed |
 
 <!-- END derived features -->
 

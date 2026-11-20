@@ -168,8 +168,10 @@ class TestMergeInto:
     def test_invalid_document_raises_request_validation_error_with_body_loc(self):
         from fastapi.exceptions import RequestValidationError
 
+        current = initial()
+        patch_document = j({"tags": "x"})
         with pytest.raises(RequestValidationError) as caught:
-            merge_into(Doc, initial(), j({"tags": "x"}))
+            merge_into(Doc, current, patch_document)
         assert_that(caught.value.errors()[0]["loc"]).is_equal_to(("body", "tags"))
 
     def test_route_renders_pointers(self, client):

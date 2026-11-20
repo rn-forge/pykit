@@ -398,24 +398,27 @@ class TestSeveralTerms:
     def test_token_with_the_wrong_number_of_values_is_rejected(self, people):
         token = encode_cursor(("a",), "1", "team,score desc")
         request = _request(orderBy="team,score desc", pageToken=token)
+        paginator = CursorPagination()
+        queryset = _Person.objects.all()
+        view = _PeopleView()
         with pytest.raises(InvalidCursor):
-            CursorPagination().paginate_queryset(
-                _Person.objects.all(), request, view=_PeopleView()
-            )
+            paginator.paginate_queryset(queryset, request, view=view)
 
     @pytest.mark.parametrize("keys", [("x",), (None,)], ids=["str", "null-key"])
     def test_value_that_does_not_fit_the_field_is_rejected(self, people, keys):
         field = "id" if keys == (None,) else "score"
         token = encode_cursor(keys, "1", field)
         request = _request(orderBy=field, pageToken=token)
+        paginator = CursorPagination()
+        queryset = _Person.objects.all()
+        view = _PeopleView()
         with pytest.raises(InvalidCursor):
-            CursorPagination().paginate_queryset(
-                _Person.objects.all(), request, view=_PeopleView()
-            )
+            paginator.paginate_queryset(queryset, request, view=view)
 
     def test_repeated_field_is_rejected(self, people):
+        view = _PeopleView()
         with pytest.raises(InvalidOrderBy):
-            _unpaged(_Person, _PeopleView(), "team,team desc")
+            _unpaged(_Person, view, "team,team desc")
 
     @pytest.mark.parametrize("page_size", [1, 2, 3])
     def test_a_non_pk_default_ordering_is_honoured_without_order_by(

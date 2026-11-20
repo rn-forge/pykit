@@ -200,7 +200,8 @@ class TestRedactFilter:
         flt.filter(record)
         snapshot = (record.msg, record.args, record.ctx)  # pyright: ignore[reportAttributeAccessIssue]
         flt.filter(record)
-        assert (record.msg, record.args, record.ctx) == snapshot  # pyright: ignore[reportAttributeAccessIssue]
+        current = (record.msg, record.args, record.ctx)  # pyright: ignore[reportAttributeAccessIssue]
+        assert current == snapshot
 
     def test_non_string_message_is_left_alone(self) -> None:
         record = _record("x")

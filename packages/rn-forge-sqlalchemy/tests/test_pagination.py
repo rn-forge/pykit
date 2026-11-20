@@ -258,11 +258,13 @@ async def test_a_token_after_a_null_value_resumes_among_the_nulls(session):
 def test_a_token_value_of_the_wrong_type_is_invalid_cursor(keys):
     cursor = Cursor(keys, "1", "score")  # type: ignore[arg-type]
 
+    query = select(Person)
+    terms = (OrderField("score"),)
     with pytest.raises(InvalidCursor):
         keyset(
-            select(Person),
+            query,
             columns=PEOPLE_COLUMNS,
-            terms=(OrderField("score"),),
+            terms=terms,
             cursor=cursor,
             id_column=Person.id,
         )
@@ -271,11 +273,13 @@ def test_a_token_value_of_the_wrong_type_is_invalid_cursor(keys):
 def test_a_null_for_the_id_term_is_invalid_cursor():
     cursor = Cursor((None,), "1", "id")
 
+    query = select(Person)
+    terms = (OrderField("id"),)
     with pytest.raises(InvalidCursor):
         keyset(
-            select(Person),
+            query,
             columns=PEOPLE_COLUMNS,
-            terms=(OrderField("id"),),
+            terms=terms,
             cursor=cursor,
             id_column=Person.id,
         )
@@ -284,11 +288,13 @@ def test_a_null_for_the_id_term_is_invalid_cursor():
 def test_a_token_with_the_wrong_number_of_values_is_invalid_cursor():
     cursor = Cursor(("a",), "1", "team,score")
 
+    query = select(Person)
+    terms = (OrderField("team"), OrderField("score"))
     with pytest.raises(InvalidCursor):
         keyset(
-            select(Person),
+            query,
             columns=PEOPLE_COLUMNS,
-            terms=(OrderField("team"), OrderField("score")),
+            terms=terms,
             cursor=cursor,
             id_column=Person.id,
         )

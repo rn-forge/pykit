@@ -324,8 +324,9 @@ class TestPreparation:
     ):
         TestRollback()._installed_at_one(home, source)
         bad = LocalArchive(make_archive(tmp_path, "2.0.0"), "2.0.0", "0" * 64)
+        target = product(source, fail_build=True)
         with pytest.raises(AppException, match="Checksum mismatch"):
-            install(product(source, fail_build=True), home=home, source=bad)
+            install(target, home=home, source=bad)
         TestRollback()._assert_still_one(home)
         assert not home.version_dir("2.0.0").exists()
 
@@ -339,8 +340,10 @@ class TestPreparation:
                 info = tarfile.TarInfo(f"{root}/bin/tool")
                 info.size = 1
                 tar.addfile(info, io.BytesIO(b"x"))
+        target = product(source)
+        local = LocalArchive(archive, "2.0.0")
         with pytest.raises(AppException, match="exactly one root directory"):
-            install(product(source), home=home, source=LocalArchive(archive, "2.0.0"))
+            install(target, home=home, source=local)
         TestRollback()._assert_still_one(home)
 
     def test_an_interrupted_download_restores_nothing_and_reraises(
@@ -357,8 +360,9 @@ class TestPreparation:
         monkeypatch.setattr(source, "download", interrupted)
         monkeypatch.setattr(lifecycle_module, "_restore_file", unexpected_recovery)
         monkeypatch.setattr(lifecycle_module, "_restore_current", unexpected_recovery)
+        target = product(source)
         with pytest.raises(KeyboardInterrupt):
-            install(product(source), home=home)
+            install(target, home=home)
         TestRollback()._assert_still_one(home)
         assert not any(home.work_dir.iterdir())
 
@@ -404,8 +408,9 @@ class TestPreparation:
     def test_a_failed_preparation_never_builds_or_migrates(self, home, source):
         TestRollback()._installed_at_one(home, source)
         source.fail_download = True
+        target = product(source, fail_migration=True, fail_build=True)
         with pytest.raises(AppException, match="network down"):
-            install(product(source, fail_migration=True, fail_build=True), home=home)
+            install(target, home=home)
         TestRollback()._assert_still_one(home)
 
 
@@ -454,8 +459,9 @@ class TestRecoveryFailure:
             return rename(path, target)
 
         monkeypatch.setattr(Path, "rename", fail_restore)
+        target = product(source, fail_build=True)
         with pytest.raises(AppException, match="recovery is incomplete") as excinfo:
-            install(product(source, fail_build=True), home=home, force=True)
+            install(target, home=home, force=True)
         binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
         assert len(binaries) == 1
         assert binaries[0].read_text() == "tool 1.0.0\n"
@@ -478,8 +484,9 @@ class TestRecoveryFailure:
 
         monkeypatch.setattr(Path, "rename", fail_restore)
         monkeypatch.setattr(ToolHome, "activate", interrupt)
+        target = product(source)
         with pytest.raises(KeyboardInterrupt):
-            install(product(source), home=home, force=True)
+            install(target, home=home, force=True)
         binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
         assert len(binaries) == 1
         assert binaries[0].read_text() == "tool 1.0.0\n"
@@ -527,8 +534,9 @@ class TestRecoveryFailure:
                 return original(self, version)
 
             monkeypatch.setattr(ToolHome, "activate", fail_once)
+        target = product(source)
         with pytest.raises(AppException, match="rolled back"):
-            upgrade(product(source), home=home)
+            upgrade(target, home=home)
         TestRollback()._assert_still_one(home)
 
 
@@ -620,18 +628,21 @@ class TestRefInstall:
         }
 
     def test_an_unknown_ref_leaves_the_home_untouched(self, home, github):
+        target = product(github)
         with pytest.raises(AppException):
-            install(product(github), ref="nope", home=home)
+            install(target, ref="nope", home=home)
         assert not (home.product_dir / "versions").exists()
         assert not home.state_path.exists()
 
     def test_version_and_ref_together_are_rejected(self, home, github):
+        target = product(github)
         with pytest.raises(AppException):
-            install(product(github), version="1.0.0", ref="main", home=home)
+            install(target, version="1.0.0", ref="main", home=home)
 
     def test_a_ref_needs_a_github_source(self, home, source):
+        target = product(source)
         with pytest.raises(AppException, match="cannot install a ref"):
-            install(product(source), ref="main", home=home)
+            install(target, ref="main", home=home)
         assert not home.state_path.exists()
 
     def test_a_release_install_records_its_tag(self, home, source):
