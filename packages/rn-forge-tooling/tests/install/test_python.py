@@ -119,4 +119,6 @@ def test_uninstall_leaves_no_file_under_the_home(tool, home):
     uninstall(tool, home=home)
     # bin/ is shared by every installed product, so uninstall leaves the directory.
     assert not home.product_dir.exists()
-    assert not [p for p in home.root.rglob("*") if not p.is_dir() or p.is_symlink()]
+    # env.sh belongs to the home, so uninstall leaves it.
+    leftover = [p for p in home.root.rglob("*") if not p.is_dir() or p.is_symlink()]
+    assert leftover == [home.env_path]

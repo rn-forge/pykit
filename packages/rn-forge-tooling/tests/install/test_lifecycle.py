@@ -32,6 +32,7 @@ from rn_forge.tooling.install import (
 )
 from rn_forge.tooling.install import home as home_module
 from rn_forge.tooling.install import lifecycle as lifecycle_module
+from rn_forge.tooling.install.home import render_env
 
 
 def make_archive(directory: Path, version: str) -> Path:
@@ -199,6 +200,11 @@ class TestHome:
 
 
 class TestInstall:
+    def test_install_writes_env_sh(self, home, source):
+        result = install(product(source), home=home)
+        assert home.env_path.read_text() == render_env(home.root)
+        assert result.env == "written"
+
     def test_installs_links_and_activates(self, home, source):
         result = install(product(source), home=home)
         assert result.outcome == "installed"
@@ -253,6 +259,29 @@ class TestInstall:
 
 
 class TestRollback:
+    def _fail_activation(self, home, source, monkeypatch):
+        def boom(self, version):
+            raise RuntimeError("activation exploded")
+
+        monkeypatch.setattr(ToolHome, "activate", boom)
+        with pytest.raises(AppException, match="activation exploded"):
+            install(product(source), home=home)
+
+    def test_a_failed_install_removes_the_env_sh_it_created(
+        self, home, source, monkeypatch
+    ):
+        self._fail_activation(home, source, monkeypatch)
+        assert not home.env_path.exists()
+
+    def test_a_failed_install_restores_the_previous_env_sh(
+        self, home, source, monkeypatch
+    ):
+        home.root.mkdir(parents=True)
+        old = "# rn-forge home environment, schema 0. Old.\n"
+        home.env_path.write_text(old)
+        self._fail_activation(home, source, monkeypatch)
+        assert home.env_path.read_text() == old
+
     def _installed_at_one(self, home, source):
         install(product(source), home=home)
         source.newest = "2.0.0"
@@ -565,6 +594,14 @@ class TestUninstallAndCleanup:
         assert (result.outcome, result.previous) == ("removed", "1.0.0")
         assert not home.product_dir.exists()
         assert not (home.root / "bin/tool").is_symlink()
+
+    def test_uninstall_leaves_the_home_files(self, home, source):
+        install(product(source), home=home)
+        home.completions_dir.mkdir()
+        uninstall(product(source), home=home)
+        assert home.env_path.is_file()
+        assert (home.root / "bin").is_dir()
+        assert home.completions_dir.is_dir()
 
     def test_uninstall_over_an_install_that_never_completed(self, home, source):
         (home.version_dir("1.0.0") / "bin").mkdir(parents=True)

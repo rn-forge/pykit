@@ -5,6 +5,11 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `install` and `upgrade` write `$RNF_HOME/env.sh` and print how to source it
+  when `$RNF_HOME/bin` is not on `PATH`; the home contract is a guide page.
+
 ### Changed
 
 - The `testing` extra requires `assertpy>=2.36.0`.

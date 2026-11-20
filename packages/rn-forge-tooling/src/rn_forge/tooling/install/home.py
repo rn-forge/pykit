@@ -4,18 +4,50 @@ from __future__ import annotations
 
 import os
 import re
+from enum import StrEnum
 from pathlib import Path
 
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.locks import DirectoryLock, atomic_symlink
+from rn_forge.commons.fs.paths import PathUtils
 
-__all__ = ["DEFAULT_RNF_HOME", "RNF_HOME_ENV", "ToolHome", "rnf_home"]
+__all__ = [
+    "DEFAULT_RNF_HOME",
+    "ENV_SCHEMA",
+    "ENV_TEMPLATE",
+    "RNF_HOME_ENV",
+    "EnvWrite",
+    "ToolHome",
+    "env_hint",
+    "render_env",
+    "rnf_home",
+    "write_env",
+]
 
 RNF_HOME_ENV = "RNF_HOME"
 """The environment variable that relocates every installed tool."""
 
 DEFAULT_RNF_HOME = "~/.rn-forge"
 """The home used when :data:`RNF_HOME_ENV` is unset or empty."""
+
+ENV_SCHEMA = 1
+"""The schema number of the ``env.sh`` this package writes."""
+
+ENV_TEMPLATE = """\
+# rn-forge home environment, schema 1. Written by rn-forge installers; do not edit.
+# Source it from your shell's rc file, before compinit: source "<home>/env.sh"
+export RNF_HOME="<home>"
+case ":${PATH}:" in
+  *":${RNF_HOME}/bin:"*) ;;
+  *) export PATH="${RNF_HOME}/bin:${PATH}" ;;
+esac
+if [ -n "${ZSH_VERSION:-}" ]; then
+  fpath=("${RNF_HOME}/completions" "${fpath[@]}")
+fi
+"""
+"""The ``env.sh`` text, with ``<home>`` standing for the home's absolute path."""
+
+_SCHEMA_LINE = re.compile(r"^# rn-forge home environment, schema (\d+)\.")
 
 _SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
 """A product name or version: one path segment that cannot climb out of its parent."""
@@ -24,6 +56,61 @@ _SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
 def rnf_home() -> Path:
     """Return ``$RNF_HOME``, or ``~/.rn-forge`` when it is unset or empty."""
     return Path(os.environ.get(RNF_HOME_ENV) or DEFAULT_RNF_HOME).expanduser()
+
+
+class EnvWrite(StrEnum):
+    """What :func:`write_env` did."""
+
+    WRITTEN = "written"
+    """The file was missing or older, and was written."""
+
+    CURRENT = "current"
+    """The file has the same or a newer schema, and was left alone."""
+
+    FOREIGN = "foreign"
+    """The file has no schema line, so it is not ours, and was left alone."""
+
+
+def render_env(root: Path) -> str:
+    """Return :data:`ENV_TEMPLATE` for the home at *root*, as an absolute path."""
+    return ENV_TEMPLATE.replace("<home>", str(Path(root).expanduser().absolute()))
+
+
+def write_env(root: Path) -> EnvWrite:
+    """Write ``<root>/env.sh`` when it is missing or names a lower schema.
+
+    Args:
+        root: The home directory; created when absent.
+
+    Returns:
+        Which case applied. A file with the same or a higher schema, or with no
+        schema line, is left unchanged.
+    """
+    path = Path(root) / "env.sh"
+    if path.is_file():
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        found = _SCHEMA_LINE.match(lines[0]) if lines else None
+        if found is None:
+            return EnvWrite.FOREIGN
+        if int(found.group(1)) >= ENV_SCHEMA:
+            return EnvWrite.CURRENT
+    path.parent.mkdir(parents=True, exist_ok=True)
+    PathUtils.atomic_write(render_env(root), path)
+    return EnvWrite.WRITTEN
+
+
+def env_hint(root: Path) -> str | None:
+    """Return how to source ``env.sh``, or ``None`` when ``<root>/bin`` is on ``PATH``."""
+    bin_dir = os.path.abspath(Path(root) / "bin")
+    entries = os.environ.get("PATH", "").split(os.pathsep)
+    if any(os.path.abspath(entry) == bin_dir for entry in entries):
+        return None
+    home = Path(root).expanduser().absolute()
+    return (
+        f"{home}/bin is not on PATH. To use it in this shell, run:\n"
+        f'  source "{home}/env.sh"\n'
+        "and add that line to your shell's rc file, before compinit."
+    )
 
 
 def _segment(value: str, what: str) -> str:
@@ -67,6 +154,16 @@ class ToolHome:
     def current(self) -> Path:
         """The ``current`` symlink. May not exist."""
         return self.product_dir / "current"
+
+    @property
+    def env_path(self) -> Path:
+        """``<home>/env.sh``, owned by the home rather than the product."""
+        return self.root / "env.sh"
+
+    @property
+    def completions_dir(self) -> Path:
+        """``<home>/completions/``."""
+        return self.root / "completions"
 
     @property
     def state_path(self) -> Path:

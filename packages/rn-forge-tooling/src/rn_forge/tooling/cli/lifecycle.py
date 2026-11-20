@@ -15,6 +15,7 @@ from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.lang.utils import AppUtils
 from rn_forge.commons.runtime.console import OutputMode, console
 from rn_forge.tooling.install import lifecycle
+from rn_forge.tooling.install.home import ToolHome
 from rn_forge.tooling.install.product import ToolProduct
 from rn_forge.tooling.install.release import LocalArchive
 
@@ -175,6 +176,20 @@ def _emit(record: DataclassMixin, text: str) -> None:
         console.success("{}", text)
 
 
+def _emit_install(result: lifecycle.InstallResult, product: ToolProduct) -> None:
+    """Emit an install's result, then any ``env.sh`` warning and the source hint."""
+    _emit(result, _install_text(result))
+    if console.mode is OutputMode.JSON:
+        return
+    if result.env == "foreign":
+        console.warning(
+            "{} has no rn-forge schema line; left it alone",
+            ToolHome(product.name).env_path,
+        )
+    if result.hint:
+        console.info("{}", result.hint)
+
+
 def _add_install(app: typer.Typer, product: ToolProduct) -> None:
     @app.command("install")
     def install(
@@ -210,7 +225,7 @@ def _add_install(app: typer.Typer, product: ToolProduct) -> None:
         result = lifecycle.install(
             product, version=version, source=source, force=force, ref=ref
         )
-        _emit(result, _install_text(result))
+        _emit_install(result, product)
 
 
 def _add_upgrade(app: typer.Typer, product: ToolProduct) -> None:
@@ -218,7 +233,7 @@ def _add_upgrade(app: typer.Typer, product: ToolProduct) -> None:
     def upgrade() -> None:
         """Install the latest release, or the recorded ref's current commit, over the current install."""
         result = lifecycle.upgrade(product)
-        _emit(result, _install_text(result))
+        _emit_install(result, product)
 
 
 def _add_uninstall(app: typer.Typer, product: ToolProduct) -> None:

@@ -6,9 +6,12 @@ with a `ToolProduct`; this package owns every algorithm around that description.
 
 ## The layout under `$RNF_HOME`
 
+The shared layout (`env.sh`, `bin/`, `completions/` and who owns what) is the
+contract in [the rn-forge home](home.md). What this package keeps under
+`<product>/`:
+
 ```text
-$RNF_HOME/                      default ~/.rn-forge
-  bin/golden-tool -> ../golden-tool/current/bin/golden-tool
+$RNF_HOME/
   golden-tool/
     versions/1.0.0/             one directory per installed version
     current -> versions/1.0.0   swapped atomically
@@ -119,7 +122,8 @@ directory.
 1. fetch into scratch space and verify the checksum, if the source publishes
    one;
 1. set aside an existing directory for the same version, then build the new one;
-1. put the links in place, backing up any link already there;
+1. put the links in place, backing up any link already there, and write `env.sh`
+   (see [the home](home.md));
 1. migrate from the active version, then write `state.json`;
 1. swap `current` **last**.
 
@@ -139,6 +143,7 @@ versions. For interruptions, the retained path is logged at error level.
 
 Other verbs:
 
+- `uninstall` and `cleanup` never touch `env.sh`.
 - `uninstall` does not assume the install ever completed.
 - `uninstall` removes a link only if it still points where the install put it.
 - A regular file standing where a link should go aborts the install instead of
