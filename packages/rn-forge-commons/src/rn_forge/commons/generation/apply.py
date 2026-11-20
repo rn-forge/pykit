@@ -19,6 +19,7 @@ from rn_forge.commons.generation.artifacts import (
     StateEntry,
     block_from_entry,
     read_text,
+    render_keys,
     resolve_within,
 )
 from rn_forge.commons.logging import AppLogger
@@ -43,6 +44,16 @@ def _compose(
 
     rendered: dict[str, str | None] = {}
     for path, changes in grouped.items():
+        owned = [change for change in changes if change.kind is ArtifactKind.KEYS]
+        if owned:
+            if len(owned) != len(changes):
+                raise AppException(
+                    "{}: claimed both as owned keys and by another change; "
+                    "one generator must own it",
+                    path,
+                )
+            rendered[path] = render_keys(root, owned[0], previous)
+            continue
         blocks = [change for change in changes if change.kind is ArtifactKind.BLOCK]
         whole = [change for change in changes if change.kind is not ArtifactKind.BLOCK]
         if whole and blocks:

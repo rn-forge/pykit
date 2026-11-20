@@ -5,6 +5,13 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- `ArtifactKind.KEYS`, with `Artifact.keys` and `StateEntry.key_paths`: the
+  generator owns named key paths in a JSON or TOML file. `diff` takes an
+  optional `entries` keyword.
+- `DocumentUtils.serialize_document`, the text `write_document` would write.
+
 ### Changed
 
 - The `testing` extra requires `assertpy>=2.36.0`.

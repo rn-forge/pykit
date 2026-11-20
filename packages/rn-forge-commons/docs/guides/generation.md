@@ -19,6 +19,7 @@ Every artifact declares who owns its bytes:
 | `MANAGED` | the generator owns the whole file | drift |
 | `SEEDED` | written once if absent, then the repository's | expected — never inspected |
 | `BLOCK` | the generator owns one fenced block inside a repo-owned file | drift, inside the block only |
+| `KEYS` | the generator owns named key paths inside a JSON or TOML file | drift, at the owned paths only |
 
 ```python
 from rn_forge.commons.fs.blocks import ManagedBlock
@@ -35,6 +36,34 @@ ignore = Artifact(
 
 A block artifact's `content` is the block *body*, not the whole file: everything
 outside the markers is preserved byte for byte.
+
+## Key paths in a shared file
+
+A file such as an application's `settings.json` is written by the application
+too, so neither `MANAGED` (every added key is drift) nor `BLOCK` (JSON has no
+comments) fits it. A `KEYS` artifact owns only the dotted key paths it names:
+
+```python
+settings = Artifact(
+    path="settings.json",
+    kind=ArtifactKind.KEYS,
+    content="",
+    keys={"editor.theme": "dark", "formatter.args": ["--strict"]},
+)
+```
+
+- Paths use the `DictUtils` dotted form, and `\.` escapes a literal dot.
+- A value is owned whole: a list or table is compared and written as a unit.
+- Only the owned paths are hashed, so a key the application adds elsewhere is
+  not drift, while a hand edit to an owned value is.
+- Applying sets the owned paths and leaves every other key. Dropping a path from
+  the render removes it and prunes any table left empty. Removing the artifact
+  removes every owned key but never deletes the file.
+- JSON is written with sorted keys, so key order is not preserved; TOML keeps
+  its comments and order. YAML is not supported.
+- A keys artifact cannot share a path with a block or a whole-file artifact.
+- `diff(root, change, entries=entries)` previews the whole file; pass the
+  previous state so a dropped path shows as removed.
 
 ## Rendering artifacts from templates
 

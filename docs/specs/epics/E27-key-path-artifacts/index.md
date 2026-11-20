@@ -2,13 +2,13 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F27.1 — A `keys` artifact kind](F27.1-keys-artifact-kind.md) | New | release-11 | 2 New |
+| [F27.1 — A `keys` artifact kind](F27.1-keys-artifact-kind.md) | Active | release-11 | 1 New · 1 Closed |
 
 <!-- END derived features -->
 

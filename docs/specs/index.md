@@ -11,7 +11,7 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 11 — Dependency updates, Sonar debt and key-path artifacts](../releases/release-11/index.md) | planned | 1 New · 2 Closed |
+| [Release 11 — Dependency updates, Sonar debt and key-path artifacts](../releases/release-11/index.md) | planned | 1 Active · 2 Closed |
 | [Release 10 — Typed application state and faster XLSX transfer](../releases/release-10/index.md) | shipped (2026-11-19) | 2 Closed |
 | [Release 9 — pykit simplification](../releases/release-9/index.md) | shipped (2026-11-18) | 19 Closed |
 | [Release 8 — kiln adoption and local-first extraction](../releases/release-8/index.md) | shipped (2026-11-14) | 12 Closed |
