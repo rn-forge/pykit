@@ -32,7 +32,7 @@ from rn_forge.tooling.install import (
 )
 from rn_forge.tooling.install import home as home_module
 from rn_forge.tooling.install import lifecycle as lifecycle_module
-from rn_forge.tooling.install.home import render_env
+from rn_forge.tooling.install.home import env_hint, render_env
 
 
 def make_archive(directory: Path, version: str) -> Path:
@@ -713,6 +713,11 @@ class TestUpgrade:
         assert upgrade(product(source), home=home).version == "2.0.0"
 
 
+def _without_home(findings):
+    """The codes of *findings*, minus the home rows."""
+    return [f.code for f in findings if not f.code.startswith("home.")]
+
+
 class TestStatusAndDoctor:
     def test_status_of_a_ref_install_carries_ref_and_commit(self, home, github):
         install(product(github), ref="main", home=home)
@@ -738,9 +743,7 @@ class TestStatusAndDoctor:
         self, home, github
     ):
         install(product(github), ref="main", home=home)
-        codes = [
-            f.code for f in doctor(product(github, version="1.1.0.dev0"), home=home)
-        ]
+        codes = _without_home(doctor(product(github, version="1.1.0.dev0"), home=home))
         assert codes == ["install.ok", "tool.ok"]
 
     def test_the_mismatch_names_the_recorded_version(self, home, github):
@@ -776,14 +779,60 @@ class TestStatusAndDoctor:
 
     def test_doctor_on_a_dev_checkout_warns_and_runs_product_checks(self, home, source):
         findings = doctor(product(source), home=home)
-        codes = [f.code for f in findings]
-        assert codes == ["install.not-installed", "tool.ok"]
+        assert _without_home(findings) == ["install.not-installed", "tool.ok"]
         assert not any(f.is_error for f in findings)
 
     def test_doctor_on_a_healthy_install(self, home, source):
         install(product(source), home=home)
+        assert _without_home(doctor(product(source), home=home)) == [
+            "install.ok",
+            "tool.ok",
+        ]
+
+    def test_doctor_reports_a_missing_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        (found,) = [
+            f
+            for f in doctor(product(source), home=home)
+            if f.code == "home.env-missing"
+        ]
+        assert found.severity is Severity.WARNING
+        assert found.path == str(home.env_path)
+
+    def test_doctor_reports_a_stale_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        home.root.mkdir(parents=True)
+        home.env_path.write_text("# rn-forge home environment, schema 0. Old.\n")
+        findings = doctor(product(source), home=home)
+        (found,) = [f for f in findings if f.code == "home.env-stale"]
+        assert found.severity is Severity.WARNING
+        assert found.details == {"recorded": 0, "expected": 1}
+        assert "home.env-missing" not in [f.code for f in findings]
+
+    def test_doctor_reports_bin_off_path(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", os.defpath)
+        (found,) = [
+            f
+            for f in doctor(product(source), home=home)
+            if f.code == "home.not-on-path"
+        ]
+        assert found.severity is Severity.WARNING
+        assert found.message == env_hint(home.root)
+
+    def test_doctor_reports_nothing_for_a_hooked_up_home(
+        self, home, source, monkeypatch
+    ):
+        install(product(source), home=home)
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
         codes = [f.code for f in doctor(product(source), home=home)]
-        assert codes == ["install.ok", "tool.ok"]
+        assert not [c for c in codes if c.startswith("home.")]
+
+    def test_doctor_ignores_a_foreign_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        home.root.mkdir(parents=True)
+        home.env_path.write_text("export FOO=1\n")
+        codes = [f.code for f in doctor(product(source), home=home)]
+        assert not [c for c in codes if c.startswith("home.")]
 
     def test_doctor_reports_a_missing_link_and_a_schema_change(self, home, source):
         install(product(source), home=home)

@@ -9,6 +9,7 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 - `install` and `upgrade` write `$RNF_HOME/env.sh` and print how to source it
   when `$RNF_HOME/bin` is not on `PATH`; the home contract is a guide page.
+- `doctor` reports `home.env-missing`, `home.env-stale` and `home.not-on-path`.
 
 ### Changed
 

@@ -19,6 +19,7 @@ __all__ = [
     "EnvWrite",
     "ToolHome",
     "env_hint",
+    "env_schema",
     "render_env",
     "rnf_home",
     "write_env",
@@ -76,6 +77,21 @@ def render_env(root: Path) -> str:
     return ENV_TEMPLATE.replace("<home>", str(Path(root).expanduser().absolute()))
 
 
+def env_schema(root: Path) -> int | None:
+    """Return the schema number on the first line of ``<root>/env.sh``.
+
+    Returns:
+        The number, or ``None`` when the file is missing or empty, or its first
+        line is not the schema line, so the file is not ours.
+    """
+    path = Path(root) / "env.sh"
+    if not path.is_file():
+        return None
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    found = _SCHEMA_LINE.match(lines[0]) if lines else None
+    return int(found.group(1)) if found else None
+
+
 def write_env(root: Path) -> EnvWrite:
     """Write ``<root>/env.sh`` when it is missing or names a lower schema.
 
@@ -88,11 +104,10 @@ def write_env(root: Path) -> EnvWrite:
     """
     path = Path(root) / "env.sh"
     if path.is_file():
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        found = _SCHEMA_LINE.match(lines[0]) if lines else None
-        if found is None:
+        recorded = env_schema(root)
+        if recorded is None:
             return EnvWrite.FOREIGN
-        if int(found.group(1)) >= ENV_SCHEMA:
+        if recorded >= ENV_SCHEMA:
             return EnvWrite.CURRENT
     path.parent.mkdir(parents=True, exist_ok=True)
     PathUtils.atomic_write(render_env(root), path)

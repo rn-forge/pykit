@@ -19,7 +19,14 @@ from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.logging import AppLogger
 from rn_forge.tooling.install.archive import extract_archive
-from rn_forge.tooling.install.home import EnvWrite, ToolHome, env_hint, write_env
+from rn_forge.tooling.install.home import (
+    ENV_SCHEMA,
+    EnvWrite,
+    ToolHome,
+    env_hint,
+    env_schema,
+    write_env,
+)
 from rn_forge.tooling.install.product import Link, ToolProduct
 from rn_forge.tooling.install.release import (
     GitHubReleases,
@@ -285,14 +292,16 @@ def doctor(product: ToolProduct, *, home: ToolHome | None = None) -> list[Findin
 
     A product that is not installed is a **warning**, not an error: the same
     command runs from a development checkout, where there is nothing under
-    ``$RNF_HOME`` and nothing wrong. The product's checks run either way.
+    ``$RNF_HOME`` and nothing wrong. The ``home.*`` rows are warnings for the
+    same reason: a development checkout has no hooked-up home. Both they and
+    the product's checks run either way.
 
     Returns:
         Every finding, product checks last. Only an ``error`` should fail the
         command.
     """
     home = home or ToolHome(product.name)
-    findings = _install_findings(product, home)
+    findings = _install_findings(product, home) + _home_findings(home)
     for check in product.checks():
         findings.extend(check(home))
     return findings
@@ -578,6 +587,44 @@ def _restore_current(home: ToolHome) -> Callable[[], None]:
 
 
 # -- doctor -------------------------------------------------------------------
+
+
+def _home_findings(home: ToolHome) -> list[Finding]:
+    """What is true of the shell's hookup to the home: ``env.sh`` and ``PATH``."""
+    findings: list[Finding] = []
+    if not home.env_path.is_file():
+        findings.append(
+            Finding(
+                "home.env-missing",
+                Severity.WARNING,
+                f"{home.env_path} does not exist; any install writes it",
+                path=str(home.env_path),
+            )
+        )
+    else:
+        recorded = env_schema(home.root)
+        if recorded is not None and recorded < ENV_SCHEMA:
+            findings.append(
+                Finding(
+                    "home.env-stale",
+                    Severity.WARNING,
+                    f"{home.env_path} is at schema {recorded}, this version "
+                    f"writes {ENV_SCHEMA}; any install rewrites it",
+                    path=str(home.env_path),
+                    details={"recorded": recorded, "expected": ENV_SCHEMA},
+                )
+            )
+    hint = env_hint(home.root)
+    if hint is not None:
+        findings.append(
+            Finding(
+                "home.not-on-path",
+                Severity.WARNING,
+                hint,
+                path=str(home.root / "bin"),
+            )
+        )
+    return findings
 
 
 def _install_findings(product: ToolProduct, home: ToolHome) -> list[Finding]:

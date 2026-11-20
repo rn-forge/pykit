@@ -9,7 +9,7 @@
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F28.1 — The home contract, `env.sh` and zsh completions](F28.1-home-contract-and-completions.md) | Active | release-11 | 2 New · 1 Closed |
+| [F28.1 — The home contract, `env.sh` and zsh completions](F28.1-home-contract-and-completions.md) | Active | release-11 | 1 New · 2 Closed |
 
 <!-- END derived features -->
 

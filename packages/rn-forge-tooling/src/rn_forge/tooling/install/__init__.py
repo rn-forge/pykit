@@ -5,6 +5,7 @@ from rn_forge.tooling.install.home import (
     EnvWrite,
     ToolHome,
     env_hint,
+    env_schema,
     rnf_home,
     write_env,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "cleanup",
     "doctor",
     "env_hint",
+    "env_schema",
     "extract_archive",
     "fetch_release",
     "install",

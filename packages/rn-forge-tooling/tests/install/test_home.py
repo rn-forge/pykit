@@ -16,6 +16,7 @@ from rn_forge.tooling.install.home import (
     EnvWrite,
     ToolHome,
     env_hint,
+    env_schema,
     render_env,
     write_env,
 )
@@ -110,3 +111,20 @@ def test_sourcing_env_sh_in_bash(tmp_path):
     )
     assert result.returncode == 0
     assert f"{tmp_path}/bin" in result.stdout.strip().split(":")
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        (None, None),
+        ("", None),
+        ("export FOO=1\n", None),
+        (render_env(Path("/h")), 1),
+        (OLD.format(2), 2),
+    ],
+    ids=["missing", "empty", "foreign", "rendered", "schema-2"],
+)
+def test_env_schema_reads_the_first_line(tmp_path, content, expected):
+    if content is not None:
+        (tmp_path / "env.sh").write_text(content)
+    assert env_schema(tmp_path) == expected

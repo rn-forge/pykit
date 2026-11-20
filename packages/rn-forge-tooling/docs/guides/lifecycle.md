@@ -164,6 +164,13 @@ and nothing is wrong. The product's own checks run either way.
 | `install.state-unreadable` | warning | `state.json` is missing or malformed |
 | `install.state-schema` | error | state was recorded under another schema version |
 | `install.link-missing` / `install.link-broken` | error | an artifact link is absent, foreign or dangling |
+| `home.env-missing` | warning | `$RNF_HOME/env.sh` does not exist; any install writes it |
+| `home.env-stale` | warning | `env.sh` is at an older schema than this version writes; any install rewrites it |
+| `home.not-on-path` | warning | `$RNF_HOME/bin` is not on `PATH`; the message says how to source `env.sh` |
+
+The `home.*` rows are warnings because a development checkout has no hooked-up
+home. A foreign `env.sh`, with no schema line, is the user's file and gets no
+row. See [the home](home.md).
 
 ## Exposing the verbs on a command line
 
