@@ -247,6 +247,10 @@ nav:
               - specs/epics/E25-typed-state-and-xlsx-speed/index.md
               - F25.1 — Typed application state: specs/epics/E25-typed-state-and-xlsx-speed/F25.1-typed-application-state.md
               - F25.2 — Faster XLSX transfer: specs/epics/E25-typed-state-and-xlsx-speed/F25.2-faster-xlsx-transfer.md
+          - E26 — Dependency updates and Sonar debt:
+              - specs/epics/E26-release-11-maintenance/index.md
+              - F26.1 — Dependency updates: specs/epics/E26-release-11-maintenance/F26.1-dependency-updates.md
+              - F26.2 — Sonar debt: specs/epics/E26-release-11-maintenance/F26.2-sonar-debt.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md
