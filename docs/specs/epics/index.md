@@ -47,5 +47,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | [E24 — Release 9 follow-ups](E24-release-9-follow-ups/index.md) | Closed | 4 Closed | release-9 |
 | [E25 — Typed application state and faster XLSX transfer](E25-typed-state-and-xlsx-speed/index.md) | Closed | 2 Closed | release-10 |
 | [E26 — Dependency updates and Sonar debt](E26-release-11-maintenance/index.md) | Closed | 2 Closed | release-11 |
+| [E27 — Key-path artifacts](E27-key-path-artifacts/index.md) | New | 1 New | release-11 |
 
 <!-- END derived epics -->
