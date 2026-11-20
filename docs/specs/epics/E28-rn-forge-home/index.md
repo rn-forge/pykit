@@ -2,14 +2,15 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-20 |
+| **Closed Date** | 2026-11-20 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F28.1 — The home contract, `env.sh` and zsh completions](F28.1-home-contract-and-completions.md) | Active | release-11 | 1 New · 2 Closed |
+| [F28.1 — The home contract, `env.sh` and zsh completions](F28.1-home-contract-and-completions.md) | Closed | release-11 | 3 Closed |
 
 <!-- END derived features -->
 

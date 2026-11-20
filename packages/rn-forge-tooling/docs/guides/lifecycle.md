@@ -111,9 +111,15 @@ Its `build` runs `uv tool install` on the release tree with `UV_TOOL_DIR` and
 `UV_TOOL_BIN_DIR` inside the version directory, so the console script lands in
 `<version>/bin/<name>` and the default `artifacts()` link `bin/<name>` runs it
 through `current`. The package must declare a console script named like the
-product. `uv` must be on `PATH`; without it the install is refused before
-anything is written. `uninstall` removes the uv environment with the version
-directory.
+product, and it must be a Typer or Click command. After the install, the build
+asks the command for its zsh completion script (`_<NAME>_COMPLETE=source_zsh`,
+Click's naming), strips leading blank lines and appends a call to the script's
+function so the first `<TAB>` completes. The default `artifacts()` link
+`completions/_<name>` beside `bin/<name>`, which puts the script where
+[the home](home.md) expects it. A tool that ships its own script declares a
+`completions/_<name>` link itself. `uv` must be on `PATH`; without it the
+install is refused before anything is written. `uninstall` removes the uv
+environment with the version directory.
 
 ## What `install` guarantees
 

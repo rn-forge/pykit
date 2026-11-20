@@ -2860,7 +2860,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-tooling"
-version = "0.3.3"
+version = "0.4.0"
 source = { editable = "packages/rn-forge-tooling" }
 dependencies = [
     { name = "rn-forge-cli" },

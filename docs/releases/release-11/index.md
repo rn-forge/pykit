@@ -29,7 +29,7 @@ completion script ([E28](../../specs/epics/E28-rn-forge-home/index.md)).
 | [F26.1 — Dependency updates](../../specs/epics/E26-release-11-maintenance/F26.1-dependency-updates.md) | E26 | Closed |
 | [F26.2 — Sonar debt](../../specs/epics/E26-release-11-maintenance/F26.2-sonar-debt.md) | E26 | Closed |
 | [F27.1 — A `keys` artifact kind](../../specs/epics/E27-key-path-artifacts/F27.1-keys-artifact-kind.md) | E27 | Closed |
-| [F28.1 — The home contract, `env.sh` and zsh completions](../../specs/epics/E28-rn-forge-home/F28.1-home-contract-and-completions.md) | E28 | Active |
+| [F28.1 — The home contract, `env.sh` and zsh completions](../../specs/epics/E28-rn-forge-home/F28.1-home-contract-and-completions.md) | E28 | Closed |
 
 <!-- END derived scope -->
 
