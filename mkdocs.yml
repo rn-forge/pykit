@@ -254,6 +254,9 @@ nav:
           - E27 — Key-path artifacts:
               - specs/epics/E27-key-path-artifacts/index.md
               - F27.1 — A `keys` artifact kind: specs/epics/E27-key-path-artifacts/F27.1-keys-artifact-kind.md
+          - E28 — The rn-forge home:
+              - specs/epics/E28-rn-forge-home/index.md
+              - F28.1 — The home contract, `env.sh` and zsh completions: specs/epics/E28-rn-forge-home/F28.1-home-contract-and-completions.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md

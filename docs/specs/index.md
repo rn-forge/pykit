@@ -27,6 +27,12 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 Features with no Iteration, by State and epic.
 
+### New
+
+| Epic | Features |
+| -- | -- |
+| [E28 — The rn-forge home](epics/E28-rn-forge-home/index.md) | [F28.1](epics/E28-rn-forge-home/F28.1-home-contract-and-completions.md) |
+
 ### Deferred
 
 | Epic | Features | Entry criteria |
