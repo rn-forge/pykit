@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rn-forge.github.io/pykit/packages/rn-forge-tooling/latest/guides/lifecycle.html">
       
       
-        <link rel="prev" href="installation.html">
+        <link rel="prev" href="home.html">
       
       
         <link rel="next" href="../reference/index.html">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -342,6 +342,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="home.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The rn-forge home
   
 
     
@@ -807,8 +835,10 @@
 <code>uninstall</code>, <code>cleanup</code>, <code>status</code> and <code>doctor</code> verbs. The tool describes itself
 with a <code>ToolProduct</code>; this package owns every algorithm around that description.</p>
 <h2 id="the-layout-under-rnf_home">The layout under <code>$RNF_HOME</code><a class="headerlink" href="#the-layout-under-rnf_home" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code>$RNF_HOME/                      default ~/.rn-forge
-  bin/golden-tool -&gt; ../golden-tool/current/bin/golden-tool
+<p>The shared layout (<code>env.sh</code>, <code>bin/</code>, <code>completions/</code> and who owns what) is the
+contract in <a href="home.html">the rn-forge home</a>. What this package keeps under
+<code>&lt;product&gt;/</code>:</p>
+<div class="codehilite"><pre><span></span><code>$RNF_HOME/
   golden-tool/
     versions/1.0.0/             one directory per installed version
     current -&gt; versions/1.0.0   swapped atomically
@@ -950,16 +980,23 @@ the release tag.</p>
 <code>UV_TOOL_BIN_DIR</code> inside the version directory, so the console script lands in
 <code>&lt;version&gt;/bin/&lt;name&gt;</code> and the default <code>artifacts()</code> link <code>bin/&lt;name&gt;</code> runs it
 through <code>current</code>. The package must declare a console script named like the
-product. <code>uv</code> must be on <code>PATH</code>; without it the install is refused before
-anything is written. <code>uninstall</code> removes the uv environment with the version
-directory.</p>
+product, and it must be a Typer or Click command. After the install, the build
+asks the command for its zsh completion script (<code>_&lt;NAME&gt;_COMPLETE=source_zsh</code>,
+Click's naming), strips leading blank lines and appends a call to the script's
+function so the first <code>&lt;TAB&gt;</code> completes. The default <code>artifacts()</code> link
+<code>completions/_&lt;name&gt;</code> beside <code>bin/&lt;name&gt;</code>, which puts the script where
+<a href="home.html">the home</a> expects it. A tool that ships its own script declares a
+<code>completions/_&lt;name&gt;</code> link itself. <code>uv</code> must be on <code>PATH</code>; without it the
+install is refused before anything is written. <code>uninstall</code> removes the uv
+environment with the version directory.</p>
 <h2 id="what-install-guarantees">What <code>install</code> guarantees<a class="headerlink" href="#what-install-guarantees" title="Permanent link">&para;</a></h2>
 <p><code>install</code> runs in the same shape as <code>rn_forge.commons.generation.apply</code>:</p>
 <ol>
 <li>fetch into scratch space and verify the checksum, if the source publishes
    one;</li>
 <li>set aside an existing directory for the same version, then build the new one;</li>
-<li>put the links in place, backing up any link already there;</li>
+<li>put the links in place, backing up any link already there, and write <code>env.sh</code>
+   (see <a href="home.html">the home</a>);</li>
 <li>migrate from the active version, then write <code>state.json</code>;</li>
 <li>swap <code>current</code> <strong>last</strong>.</li>
 </ol>
@@ -977,6 +1014,7 @@ Recover the previous version by hand, then remove the retained directory.
 versions. For interruptions, the retained path is logged at error level.</p>
 <p>Other verbs:</p>
 <ul>
+<li><code>uninstall</code> and <code>cleanup</code> never touch <code>env.sh</code>.</li>
 <li><code>uninstall</code> does not assume the install ever completed.</li>
 <li><code>uninstall</code> removes a link only if it still points where the install put it.</li>
 <li>A regular file standing where a link should go aborts the install instead of
@@ -1030,8 +1068,26 @@ and nothing is wrong. The product's own checks run either way.</p>
 <td>error</td>
 <td>an artifact link is absent, foreign or dangling</td>
 </tr>
+<tr>
+<td><code>home.env-missing</code></td>
+<td>warning</td>
+<td><code>$RNF_HOME/env.sh</code> does not exist; any install writes it</td>
+</tr>
+<tr>
+<td><code>home.env-stale</code></td>
+<td>warning</td>
+<td><code>env.sh</code> is at an older schema than this version writes; any install rewrites it</td>
+</tr>
+<tr>
+<td><code>home.not-on-path</code></td>
+<td>warning</td>
+<td><code>$RNF_HOME/bin</code> is not on <code>PATH</code>; the message says how to source <code>env.sh</code></td>
+</tr>
 </tbody>
 </table>
+<p>The <code>home.*</code> rows are warnings because a development checkout has no hooked-up
+home. A foreign <code>env.sh</code>, with no schema line, is the user's file and gets no
+row. See <a href="home.html">the home</a>.</p>
 <h2 id="exposing-the-verbs-on-a-command-line">Exposing the verbs on a command line<a class="headerlink" href="#exposing-the-verbs-on-a-command-line" title="Permanent link">&para;</a></h2>
 <p>The verbs are declared, not written. Add a <code>[lifecycle]</code> table beside the
 repository's <code>[cli]</code> table, and build the application with <code>build_tool_app</code>
@@ -1141,7 +1197,7 @@ that declares <code>[lifecycle]</code> depends on <code>rn-forge-tooling</code>;
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
