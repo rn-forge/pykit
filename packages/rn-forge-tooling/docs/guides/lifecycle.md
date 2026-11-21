@@ -6,9 +6,12 @@ with a `ToolProduct`; this package owns every algorithm around that description.
 
 ## The layout under `$RNF_HOME`
 
+The shared layout (`env.sh`, `bin/`, `completions/` and who owns what) is the
+contract in [the rn-forge home](home.md). What this package keeps under
+`<product>/`:
+
 ```text
-$RNF_HOME/                      default ~/.rn-forge
-  bin/golden-tool -> ../golden-tool/current/bin/golden-tool
+$RNF_HOME/
   golden-tool/
     versions/1.0.0/             one directory per installed version
     current -> versions/1.0.0   swapped atomically
@@ -108,9 +111,15 @@ Its `build` runs `uv tool install` on the release tree with `UV_TOOL_DIR` and
 `UV_TOOL_BIN_DIR` inside the version directory, so the console script lands in
 `<version>/bin/<name>` and the default `artifacts()` link `bin/<name>` runs it
 through `current`. The package must declare a console script named like the
-product. `uv` must be on `PATH`; without it the install is refused before
-anything is written. `uninstall` removes the uv environment with the version
-directory.
+product, and it must be a Typer or Click command. After the install, the build
+asks the command for its zsh completion script (`_<NAME>_COMPLETE=source_zsh`,
+Click's naming), strips leading blank lines and appends a call to the script's
+function so the first `<TAB>` completes. The default `artifacts()` link
+`completions/_<name>` beside `bin/<name>`, which puts the script where
+[the home](home.md) expects it. A tool that ships its own script declares a
+`completions/_<name>` link itself. `uv` must be on `PATH`; without it the
+install is refused before anything is written. `uninstall` removes the uv
+environment with the version directory.
 
 ## What `install` guarantees
 
@@ -119,7 +128,8 @@ directory.
 1. fetch into scratch space and verify the checksum, if the source publishes
    one;
 1. set aside an existing directory for the same version, then build the new one;
-1. put the links in place, backing up any link already there;
+1. put the links in place, backing up any link already there, and write `env.sh`
+   (see [the home](home.md));
 1. migrate from the active version, then write `state.json`;
 1. swap `current` **last**.
 
@@ -139,6 +149,7 @@ versions. For interruptions, the retained path is logged at error level.
 
 Other verbs:
 
+- `uninstall` and `cleanup` never touch `env.sh`.
 - `uninstall` does not assume the install ever completed.
 - `uninstall` removes a link only if it still points where the install put it.
 - A regular file standing where a link should go aborts the install instead of
@@ -159,6 +170,13 @@ and nothing is wrong. The product's own checks run either way.
 | `install.state-unreadable` | warning | `state.json` is missing or malformed |
 | `install.state-schema` | error | state was recorded under another schema version |
 | `install.link-missing` / `install.link-broken` | error | an artifact link is absent, foreign or dangling |
+| `home.env-missing` | warning | `$RNF_HOME/env.sh` does not exist; any install writes it |
+| `home.env-stale` | warning | `env.sh` is at an older schema than this version writes; any install rewrites it |
+| `home.not-on-path` | warning | `$RNF_HOME/bin` is not on `PATH`; the message says how to source `env.sh` |
+
+The `home.*` rows are warnings because a development checkout has no hooked-up
+home. A foreign `env.sh`, with no schema line, is the user's file and gets no
+row. See [the home](home.md).
 
 ## Exposing the verbs on a command line
 

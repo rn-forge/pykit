@@ -5,6 +5,23 @@ Notable changes to `rn-forge-tooling`, newest first, in the
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-20
+
+### Added
+
+- `PythonTool` writes and links a zsh completion script.
+- `install` and `upgrade` write `$RNF_HOME/env.sh` and print how to source it
+  when `$RNF_HOME/bin` is not on `PATH`; the home contract is a guide page.
+- `doctor` reports `home.env-missing`, `home.env-stale` and `home.not-on-path`.
+
+### Changed
+
+- The `testing` extra requires `assertpy>=2.36.0`.
+- `PythonTool.artifacts()` also links `completions/_<name>`; a product that
+  asserts its exact links sees a second one.
+- A `PythonTool`'s console script must answer Typer's completion variable, or
+  the install rolls back.
+
 ## [0.3.3] - 2026-11-17
 
 ### Added

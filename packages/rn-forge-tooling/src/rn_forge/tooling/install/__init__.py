@@ -1,7 +1,14 @@
 """Release sources, workstation installation, and lifecycle operations."""
 
 from rn_forge.tooling.install.archive import extract_archive
-from rn_forge.tooling.install.home import ToolHome, rnf_home
+from rn_forge.tooling.install.home import (
+    EnvWrite,
+    ToolHome,
+    env_hint,
+    env_schema,
+    rnf_home,
+    write_env,
+)
 from rn_forge.tooling.install.lifecycle import (
     CleanupResult,
     InstallResult,
@@ -25,6 +32,7 @@ from rn_forge.tooling.install.release import (
 __all__ = [
     "Check",
     "CleanupResult",
+    "EnvWrite",
     "GitHubReleases",
     "InstallResult",
     "InstallStatus",
@@ -36,6 +44,8 @@ __all__ = [
     "ToolProduct",
     "cleanup",
     "doctor",
+    "env_hint",
+    "env_schema",
     "extract_archive",
     "fetch_release",
     "install",
@@ -43,4 +53,5 @@ __all__ = [
     "status",
     "uninstall",
     "upgrade",
+    "write_env",
 ]

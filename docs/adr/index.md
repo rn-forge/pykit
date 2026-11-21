@@ -22,3 +22,4 @@ the [spec board](../specs/index.md) tracks work.
 | [ADR-0014: Django and FastAPI expose the same auth HTTP surface and security defaults, over whichever library fits each framework](ADR-0014.md) | Auth framework parity | accepted |
 | [ADR-0015: The security baseline is nine named controls, each either failing the build or only reporting, with evidence per release](ADR-0015.md) | Security baseline | accepted |
 | [ADR-0016: AppLogger formats braces on its own records and never replaces the process record factory](ADR-0016.md) | Logging record factories | accepted |
+| [ADR-0017: The rn-forge home is a written contract that every installer implements, and the home owns the shell hookup](ADR-0017.md) | Tool install home | accepted |

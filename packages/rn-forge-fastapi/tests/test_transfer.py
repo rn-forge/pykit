@@ -165,13 +165,15 @@ async def test_read_rows_rejects_an_unknown_type():
 async def test_read_rows_counts_every_data_row_and_names_the_unsupported_types():
     result = await read_rows(upload("r.csv", b"name,Quantity\nok,1\nbad,x\n"), Row)
     assert_that(result.total).is_equal_to(2)
+    pdf = upload("r.pdf", b"")
     with pytest.raises(ValueError) as unsupported:
-        await read_rows(upload("r.pdf", b""), Row)
+        await read_rows(pdf, Row)
     assert_that(str(unsupported.value)).is_equal_to(
         "Unsupported file type; use one of: csv, tsv, xlsx."
     )
+    tsv = upload("r.tsv", b"")
     with pytest.raises(ValueError) as restricted:
-        await read_rows(upload("r.tsv", b""), Row, formats=("csv",))
+        await read_rows(tsv, Row, formats=("csv",))
     assert_that(str(restricted.value)).is_equal_to(
         "Unsupported file type; use one of: csv."
     )
@@ -179,8 +181,9 @@ async def test_read_rows_counts_every_data_row_and_names_the_unsupported_types()
 
 @pytest.mark.asyncio
 async def test_read_rows_names_the_extension_it_could_not_read():
+    workbook = upload("r.xlsx", b"not a workbook")
     with pytest.raises(ValueError) as unreadable:
-        await read_rows(upload("r.xlsx", b"not a workbook"), Row)
+        await read_rows(workbook, Row)
     assert_that(str(unreadable.value)).is_equal_to(
         "The file could not be read as xlsx."
     )

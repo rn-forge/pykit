@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.blocks import ManagedBlock
+from rn_forge.commons.fs.documents import DocumentUtils
 from rn_forge.commons.fs.state import StateStore
 from rn_forge.commons.generation import (
     Action,
@@ -32,6 +35,15 @@ def seeded(path="docs/index.md", content="# Docs\n"):
 def block(path=".gitignore", content=".out/\n"):
     return Artifact(
         path=path, kind=ArtifactKind.BLOCK, content=content, block=KILN_BLOCK
+    )
+
+
+def keys(path="settings.json", values=None):
+    return Artifact(
+        path=path,
+        kind=ArtifactKind.KEYS,
+        content="",
+        keys={"editor.theme": "dark"} if values is None else values,
     )
 
 
@@ -445,6 +457,159 @@ class TestSeveralBlocksInOneFile:
             run(tmp_path, artifacts)
 
 
+class TestKeys:
+    @pytest.mark.parametrize("name", ["settings.json", "config.toml"])
+    def test_s27_1_1_1_create_from_absent_file(self, tmp_path, name):
+        values = {"editor.theme": "dark", "a.b.c": [1, 2]}
+        result, _ = run(tmp_path, [keys(name, values)])
+        assert actions(result) == {name: Action.CREATE}
+        assert DocumentUtils.read(tmp_path / name) == {
+            "editor": {"theme": "dark"},
+            "a": {"b": {"c": [1, 2]}},
+        }
+        again, _ = run(tmp_path, [keys(name, values)])
+        assert actions(again) == {name: Action.UNCHANGED}
+
+    def test_s27_1_1_2_insert_keeps_unowned_json_keys(self, tmp_path):
+        (tmp_path / "settings.json").write_text('{"editor": {"font": 12}, "x": 1}')
+        result, _ = run(tmp_path, [keys()])
+        assert actions(result) == {"settings.json": Action.INSERT}
+        assert DocumentUtils.read(tmp_path / "settings.json") == {
+            "editor": {"font": 12, "theme": "dark"},
+            "x": 1,
+        }
+
+    def test_s27_1_1_2_insert_keeps_toml_comments_byte_for_byte(self, tmp_path):
+        original = '# top comment\n[tool]\nname = "x"  # note\n'
+        (tmp_path / "config.toml").write_text(original)
+        result, _ = run(tmp_path, [keys("config.toml")])
+        assert actions(result) == {"config.toml": Action.INSERT}
+        text = (tmp_path / "config.toml").read_text()
+        assert text.startswith(original)
+        assert DocumentUtils.read(tmp_path / "config.toml")["editor"] == {
+            "theme": "dark"
+        }
+
+    def test_s27_1_1_3_unowned_key_added_by_hand_is_unchanged(self, tmp_path):
+        run(tmp_path, [keys()])
+        path = tmp_path / "settings.json"
+        data = json.loads(path.read_text())
+        data["mine"] = True
+        path.write_text(json.dumps(data))
+        result, _ = run(tmp_path, [keys()])
+        assert actions(result) == {"settings.json": Action.UNCHANGED}
+
+    def test_s27_1_1_4_owned_value_changed_by_hand_is_drift(self, tmp_path):
+        run(tmp_path, [keys()])
+        path = tmp_path / "settings.json"
+        path.write_text('{"editor": {"theme": "light"}}')
+        with pytest.raises(AppException):
+            run(tmp_path, [keys()])
+        assert json.loads(path.read_text())["editor"]["theme"] == "light"
+        result, _ = run(tmp_path, [keys()], force=["settings.json"])
+        assert actions(result) == {"settings.json": Action.DRIFT}
+        assert json.loads(path.read_text())["editor"]["theme"] == "dark"
+        assert list((tmp_path / ".rn-forge/backups").glob("*/settings.json"))
+
+    def test_s27_1_1_5_list_appended_by_hand_is_drift(self, tmp_path):
+        artifact = keys(values={"a.list": [1, 2]})
+        run(tmp_path, [artifact])
+        path = tmp_path / "settings.json"
+        path.write_text('{"a": {"list": [1, 2, 3]}}')
+        planned = plan(tmp_path, [artifact], store(tmp_path).load())
+        assert [c.action for c in planned.changes] == [Action.DRIFT]
+
+    def test_s27_1_1_6_dropped_path_is_removed_and_pruned(self, tmp_path):
+        run(tmp_path, [keys(values={"editor.theme": "dark", "a.b": 1})])
+        result, state = run(tmp_path, [keys()])
+        assert actions(result) == {"settings.json": Action.UPDATE}
+        assert DocumentUtils.read(tmp_path / "settings.json") == {
+            "editor": {"theme": "dark"}
+        }
+        assert state.load()["settings.json"].key_paths == ("editor.theme",)
+
+    def test_s27_1_1_7_no_keys_artifact_plans_remove(self, tmp_path):
+        (tmp_path / "settings.json").write_text('{"x": 1}')
+        run(tmp_path, [keys()])
+        result, state = run(tmp_path, [])
+        assert actions(result) == {"settings.json": Action.REMOVE}
+        assert DocumentUtils.read(tmp_path / "settings.json") == {"x": 1}
+        assert state.load() == {}
+
+    def test_s27_1_1_7_removing_every_key_keeps_the_file(self, tmp_path):
+        run(tmp_path, [keys()])
+        run(tmp_path, [])
+        assert DocumentUtils.read(tmp_path / "settings.json") == {}
+
+    def test_s27_1_1_8_deleted_file_is_missing(self, tmp_path):
+        run(tmp_path, [keys()])
+        (tmp_path / "settings.json").unlink()
+        planned = plan(tmp_path, [keys()], store(tmp_path).load())
+        assert [c.action for c in planned.changes] == [Action.MISSING]
+
+    def test_s27_1_1_9_validation(self):
+        with pytest.raises(ValueError, match="settings.json"):
+            Artifact(path="settings.json", kind=ArtifactKind.KEYS, content="")
+        with pytest.raises(ValueError, match="settings.json"):
+            Artifact(path="settings.json", kind=ArtifactKind.KEYS, content="", keys={})
+        with pytest.raises(ValueError, match="settings.json"):
+            Artifact(
+                path="settings.json",
+                kind=ArtifactKind.KEYS,
+                content="x",
+                keys={"a": 1},
+            )
+        with pytest.raises(ValueError, match="settings.json"):
+            Artifact(
+                path="settings.json",
+                kind=ArtifactKind.MANAGED,
+                content="x",
+                keys={"a": 1},
+            )
+        with pytest.raises(ValueError, match="settings.yaml"):
+            keys("settings.yaml")
+
+    def test_s27_1_1_10_keys_and_block_on_one_path_is_rejected(self, tmp_path):
+        with pytest.raises(AppException, match="settings.json"):
+            run(tmp_path, [keys(), block(path="settings.json")])
+
+    def test_s27_1_1_10_keys_and_managed_on_one_path_is_rejected(self, tmp_path):
+        with pytest.raises(AppException, match="Duplicate"):
+            run(tmp_path, [keys(), managed(path="settings.json")])
+
+    def test_s27_1_1_11_managed_entry_at_a_keys_path_conflicts(self, tmp_path):
+        run(tmp_path, [managed(path="settings.json", content='{"other": 1}\n')])
+        with pytest.raises(AppException):
+            run(tmp_path, [keys()])
+        result, _ = run(tmp_path, [keys()], force=["settings.json"])
+        assert actions(result) == {"settings.json": Action.CONFLICT}
+        assert DocumentUtils.read(tmp_path / "settings.json") == {
+            "other": 1,
+            "editor": {"theme": "dark"},
+        }
+
+    def test_s27_1_1_12_path_through_a_non_table_rolls_back(self, tmp_path):
+        path = tmp_path / "settings.json"
+        path.write_text('{"editor": 5}')
+        with pytest.raises(AppException, match="editor.theme"):
+            run(tmp_path, [keys()])
+        assert path.read_text() == '{"editor": 5}'
+        assert store(tmp_path).load() == {}
+
+    def test_s27_1_1_14_diff_shows_changes_with_entries(self, tmp_path):
+        old = keys(values={"editor.theme": "dark", "a.b": 1, "z": 0})
+        run(tmp_path, [old])
+        new = keys(values={"editor.theme": "light", "z": 0})
+        entries = store(tmp_path).load()
+        change = plan(tmp_path, [new], entries).changes[0]
+        assert change.action is Action.UPDATE
+        text = diff(tmp_path, change, entries=entries)
+        assert '-    "theme": "dark"' in text
+        assert '+    "theme": "light"' in text
+        assert '-  "a": {' in text
+        assert '   "z": 0' in text
+
+
 class TestBytePreservingWrites:
     def test_crlf_file_is_not_reformatted(self, tmp_path):
         (tmp_path / ".gitignore").write_bytes(b"repo line\r\nsecond\r\n")
@@ -569,3 +734,23 @@ class TestStateEntryParsing:
     def test_a_missing_required_field_is_rejected(self):
         with pytest.raises(AppException, match="Invalid StateEntry"):
             StateEntry.from_dict({"path": "p"})
+
+    def test_s27_1_1_13_state_without_key_paths_loads_and_plans_as_before(
+        self, tmp_path
+    ):
+        artifact = managed()
+        (tmp_path / "Taskfile.yml").write_text(artifact.content)
+        entry = StateEntry.from_dict(
+            {
+                "path": "Taskfile.yml",
+                "kind": "managed",
+                "content_hash": artifact.content_hash,
+            }
+        )
+        assert classify(tmp_path, artifact, entry) is Action.UNCHANGED
+
+    def test_key_paths_round_trip_through_json(self):
+        entry = keys().to_entry()
+        loaded = StateEntry.from_dict(json.loads(json.dumps(entry.as_dict())))
+        assert loaded == entry
+        assert loaded.key_paths == ("editor.theme",)

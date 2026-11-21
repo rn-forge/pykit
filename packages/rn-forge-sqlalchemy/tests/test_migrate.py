@@ -162,8 +162,9 @@ async def test_specific_revision(tmp_path: Path) -> None:
 async def test_failing_revision_raises_unchanged(tmp_path: Path) -> None:
     scripts = _scripts(tmp_path, "boom", second='raise RuntimeError("boom")')
 
+    url = _url(tmp_path / "app.db")
     with pytest.raises(RuntimeError, match="boom"):
-        await asyncio.to_thread(run_migrations, scripts, _url(tmp_path / "app.db"))
+        await asyncio.to_thread(run_migrations, scripts, url)
 
 
 @pytest.mark.asyncio

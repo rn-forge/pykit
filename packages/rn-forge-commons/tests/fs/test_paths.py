@@ -107,9 +107,11 @@ class TestAtomicReplace:
     def test_exception_leaves_original_and_no_temporary(self, tmp_path):
         target = tmp_path / "f.txt"
         target.write_text("old")
-        with pytest.raises(RuntimeError), PathUtils.atomic_replace(target) as tmp:
+        replacing = PathUtils.atomic_replace(target)
+        boom = RuntimeError("boom")
+        with pytest.raises(RuntimeError), replacing as tmp:
             tmp.write_text("partial")
-            raise RuntimeError("boom")
+            raise boom
         assert target.read_text() == "old"
         assert list(tmp_path.iterdir()) == [target]
 
@@ -124,9 +126,11 @@ class TestAtomicReplace:
     def test_cleanup_tolerates_temporary_moved_away(self, tmp_path):
         target = tmp_path / "f.txt"
         target.write_text("old")
-        with pytest.raises(RuntimeError), PathUtils.atomic_replace(target) as tmp:
+        replacing = PathUtils.atomic_replace(target)
+        boom = RuntimeError("boom")
+        with pytest.raises(RuntimeError), replacing as tmp:
             tmp.unlink()
-            raise RuntimeError("boom")
+            raise boom
         assert list(tmp_path.iterdir()) == [target]
 
     def test_keeps_original_mode(self, tmp_path):

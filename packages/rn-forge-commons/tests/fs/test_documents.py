@@ -104,6 +104,20 @@ class TestRoundTripDocuments:
             data, ConfigFormat.JSON
         )
 
+    @pytest.mark.parametrize("suffix", ["toml", "yaml", "json"])
+    def test_serialize_document_matches_write_document(self, tmp_path, suffix):
+        path = tmp_path / f"config.{suffix}"
+        original = {
+            "toml": "# c\nb = 2\n[t]\na = 1\n",
+            "yaml": "# c\nb: 2\nt:\n  a: 1\n",
+            "json": '{"b": 2, "t": {"a": 1}}',
+        }[suffix]
+        path.write_text(original)
+        document = DocumentUtils.read_document(path)
+        text = DocumentUtils.serialize_document(path, document)
+        DocumentUtils.write_document(path, document)
+        assert path.read_text() == text
+
     def test_toml_comments_and_key_order_survive(self, tmp_path):
         path = tmp_path / "config.toml"
         original = "# leading comment\na = 1\nb = 2  # trailing comment\n"

@@ -27,6 +27,11 @@ from rn_forge.web.problem import (
 __all__ = ["TRANSFER_CASES"]
 
 _BOOKS_UPDATE: Final = "/conformance/books:batchUpdate"
+_ORDERS_IMPORT: Final = "/conformance/orders:import"
+_MULTIPART: Final = "multipart/form-data"
+_ROWS_INVALID: Final = "One or more rows are invalid."
+_ORDERS_BATCH_CREATE: Final = "/conformance/orders:batchCreate"
+_VALIDATION_ERROR: Final = "Validation Error"
 
 _STALE_BOOK: Final = "Precondition failed: expected version 1, got 9"
 
@@ -107,8 +112,8 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "POST",
-            "/conformance/orders:import",
-            headers={"Content-Type": "multipart/form-data"},
+            _ORDERS_IMPORT,
+            headers={"Content-Type": _MULTIPART},
             query={"validateOnly": "true"},
             body={"file": "id,name,Quantity\n2,gadget,3\n"},
         ),
@@ -125,15 +130,15 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "POST",
-            "/conformance/orders:import",
-            headers={"Content-Type": "multipart/form-data"},
+            _ORDERS_IMPORT,
+            headers={"Content-Type": _MULTIPART},
             body={"file": "id,name,Quantity\n2,gadget,three\n"},
         ),
         expect_status=422,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "One or more rows are invalid.",
+            _ROWS_INVALID,
             errors=[{"pointer": "/rows/0/Quantity", "detail": "Enter a whole number."}],
         ),
     ),
@@ -146,7 +151,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "POST",
-            "/conformance/orders:batchCreate",
+            _ORDERS_BATCH_CREATE,
             headers=_JSON,
             body={"requests": [{"name": "ok"}, {}]},
         ),
@@ -154,7 +159,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "One or more rows are invalid.",
+            _ROWS_INVALID,
             errors=[
                 {"pointer": "/requests/1/name", "detail": "This field is required."}
             ],
@@ -176,7 +181,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         description="AIP-233: a successful batch is 200 with the created resources under the plural name.",
         request=RequestSpec(
             "POST",
-            "/conformance/orders:batchCreate",
+            _ORDERS_BATCH_CREATE,
             headers=_JSON,
             body={"requests": [{"name": "gadget"}]},
         ),
@@ -261,15 +266,15 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         description="A multipart import with no file part is a 422 naming /file.",
         request=RequestSpec(
             "POST",
-            "/conformance/orders:import",
-            headers={"Content-Type": "multipart/form-data"},
+            _ORDERS_IMPORT,
+            headers={"Content-Type": _MULTIPART},
             body={},
         ),
         expect_status=422,
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "Validation Error",
+            _VALIDATION_ERROR,
             errors=[{"pointer": "/file", "detail": "This field is required."}],
         ),
     ),
@@ -280,7 +285,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         request=RequestSpec(
             "POST",
             "/conformance/capped:import",
-            headers={"Content-Type": "multipart/form-data"},
+            headers={"Content-Type": _MULTIPART},
             body={"file": "id,name,Quantity\n2,a,3\n3,b,4\n"},
         ),
         expect_status=422,
@@ -295,7 +300,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         description="AIP-233: an empty requests list is a 422 naming /requests.",
         request=RequestSpec(
             "POST",
-            "/conformance/orders:batchCreate",
+            _ORDERS_BATCH_CREATE,
             headers=_JSON,
             body={"requests": []},
         ),
@@ -303,7 +308,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "Validation Error",
+            _VALIDATION_ERROR,
             errors=[
                 {"pointer": "/requests", "detail": "A non-empty list is required."}
             ],
@@ -334,7 +339,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         ),
         request=RequestSpec(
             "POST",
-            "/conformance/orders:batchCreate",
+            _ORDERS_BATCH_CREATE,
             headers=_JSON,
             body={"requests": [{"name": "ok"}, {"name": "forbidden"}]},
         ),
@@ -469,7 +474,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "One or more rows are invalid.",
+            _ROWS_INVALID,
             errors=[{"pointer": "/requests/0/patch/name", "detail": NULL_FIELD_DETAIL}],
         ),
     ),
@@ -501,7 +506,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "One or more rows are invalid.",
+            _ROWS_INVALID,
             errors=[{"pointer": "/requests/1/id", "detail": "Duplicate id in batch."}],
         ),
     ),
@@ -516,7 +521,7 @@ TRANSFER_CASES: Final[tuple[ConformanceCase, ...]] = (
         expect_headers=_PROBLEM,
         expect_body=_problem_body(
             VALIDATION_ERROR,
-            "Validation Error",
+            _VALIDATION_ERROR,
             errors=[
                 {"pointer": "/requests", "detail": "A non-empty list is required."}
             ],

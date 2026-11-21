@@ -168,10 +168,9 @@ class TestTaskPoolSubmit:
     def test_duplicate_rejection_names_each_duplicate_once_sorted(self):
         pool = TaskPool(max_workers=1)
         try:
+            tasks = [SimpleTask(name) for name in ("c", "a", "b", "a", "c", "a")]
             with pytest.raises(AppException) as exc_info:
-                pool.submit(
-                    *(SimpleTask(name) for name in ("c", "a", "b", "a", "c", "a"))
-                )
+                pool.submit(*tasks)
             assert "['a', 'c']" in str(exc_info.value)
         finally:
             pool.shutdown(fail_on_error=False)
@@ -453,8 +452,10 @@ class TestTaskPoolMapSettled:
             yield 1
             raise RuntimeError("bad iterable")
 
-        with TaskPool() as pool, pytest.raises(RuntimeError, match="bad iterable"):
-            pool.map_settled(ran.append, items())
+        bad_items = items()
+        pool = TaskPool()
+        with pool, pytest.raises(RuntimeError, match="bad iterable"):
+            pool.map_settled(ran.append, bad_items)
         assert ran == []
 
     def test_base_exception_propagates(self):

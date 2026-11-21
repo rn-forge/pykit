@@ -109,9 +109,11 @@ async def test_foreign_key_violation_raises(make_engine, tmp_path: Path) -> None
             )
         )
 
+    statement = text("INSERT INTO child VALUES (1, 99)")
+    transaction = engine.begin()
     with pytest.raises(IntegrityError):
-        async with engine.begin() as connection:
-            await connection.execute(text("INSERT INTO child VALUES (1, 99)"))
+        async with transaction as connection:
+            await connection.execute(statement)
 
 
 @pytest.mark.asyncio

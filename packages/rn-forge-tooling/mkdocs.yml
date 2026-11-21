@@ -45,6 +45,7 @@ nav:
   - Guides:
       - guides/index.md
       - Installation: guides/installation.md
+      - The rn-forge home: guides/home.md
       - Tool lifecycle: guides/lifecycle.md
   - Reference:
       - reference/index.md

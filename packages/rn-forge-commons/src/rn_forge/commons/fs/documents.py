@@ -630,20 +630,24 @@ class DocumentUtils:
         return cast(Mapping[str, Any], document)
 
     @staticmethod
-    def write_document(path: str | Path, document: Any) -> None:
-        """Atomically write a round-trip *document* without flattening it."""
-        p = Path(path)
-        fmt = ConfigFormat.of(p)
+    def serialize_document(path: str | Path, document: Any) -> str:
+        """The text :meth:`write_document` would write for a round-trip *document*."""
+        fmt = ConfigFormat.of(Path(path))
         match fmt:
             case ConfigFormat.TOML:
-                content = tomlkit.dumps(document)
+                return tomlkit.dumps(document)
             case ConfigFormat.YAML:
                 stream = StringIO()
                 _yaml_dump(_round_trip_yaml(), document, stream)
-                content = stream.getvalue()
+                return stream.getvalue()
             case ConfigFormat.JSON:
-                content = _json_document(document)
-        PathUtils.atomic_write(content, p)
+                return _json_document(document)
+
+    @staticmethod
+    def write_document(path: str | Path, document: Any) -> None:
+        """Atomically write a round-trip *document* without flattening it."""
+        p = Path(path)
+        PathUtils.atomic_write(DocumentUtils.serialize_document(p, document), p)
 
     @staticmethod
     def update(path: str | Path, updates: Mapping[str, Any]) -> None:

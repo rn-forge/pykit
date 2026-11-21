@@ -197,8 +197,9 @@ def test_item_precondition_passes_on_a_match_an_absent_value_and_a_star():
 def test_item_precondition_failures_point_at_the_item(
     if_match, required, version, exc_type, status
 ):
+    item = _item(if_match)
     with pytest.raises(exc_type) as raised:
-        _check(_item(if_match), version=version, required=required)
+        _check(item, version=version, required=required)
 
     with pytest.raises(exc_type) as plain:
         check_precondition(
@@ -217,8 +218,9 @@ def test_item_precondition_failures_point_at_the_item(
 
 
 def test_item_precondition_keeps_braces_in_the_validator_literal():
+    item = _item("{}")
     with pytest.raises(MalformedPrecondition) as raised:
-        _check(_item("{}"))
+        _check(item)
 
     assert_that(raised.value.message).contains("{}")
 

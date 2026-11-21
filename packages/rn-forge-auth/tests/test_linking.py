@@ -89,14 +89,14 @@ def test_unmapped_scope_allows_nothing(context: AuthorizationContext) -> None:
 def test_unlinked_subject_raises(account_id: str | None) -> None:
     from rn_forge.auth.linking import PrincipalLinkError, link_bearer_principal
 
+    principal = _principal()
+    accounts = Accounts(account_id)
+    contexts = Contexts(AuthorizationContext(active=True, session_version=1))
     with pytest.raises(
         PrincipalLinkError, match="^No account is linked to the token subject$"
     ):
         link_bearer_principal(
-            _principal(),
-            accounts=Accounts(account_id),
-            contexts=Contexts(AuthorizationContext(active=True, session_version=1)),
-            scope_map={},
+            principal, accounts=accounts, contexts=contexts, scope_map={}
         )
 
 
@@ -104,14 +104,13 @@ def test_missing_issuer_raises_without_lookup() -> None:
     from rn_forge.auth.linking import PrincipalLinkError, link_bearer_principal
 
     accounts = Accounts("unused")
+    principal = Principal(subject="sub")
+    contexts = Contexts(AuthorizationContext(active=True, session_version=1))
     with pytest.raises(
         PrincipalLinkError, match="^No account is linked to the token subject$"
     ):
         link_bearer_principal(
-            Principal(subject="sub"),
-            accounts=accounts,
-            contexts=Contexts(AuthorizationContext(active=True, session_version=1)),
-            scope_map={},
+            principal, accounts=accounts, contexts=contexts, scope_map={}
         )
     assert accounts.lookups == []
 
@@ -119,12 +118,12 @@ def test_missing_issuer_raises_without_lookup() -> None:
 def test_inactive_account_raises() -> None:
     from rn_forge.auth.linking import PrincipalLinkError, link_bearer_principal
 
+    principal = _principal()
+    accounts = Accounts("a")
+    contexts = Contexts(AuthorizationContext(active=False, session_version=1))
     with pytest.raises(PrincipalLinkError, match="^The account is not active$"):
         link_bearer_principal(
-            _principal(),
-            accounts=Accounts("a"),
-            contexts=Contexts(AuthorizationContext(active=False, session_version=1)),
-            scope_map={},
+            principal, accounts=accounts, contexts=contexts, scope_map={}
         )
 
 

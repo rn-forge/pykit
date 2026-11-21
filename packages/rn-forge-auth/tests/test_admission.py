@@ -114,10 +114,9 @@ def test_a_rejected_identity_is_not_provisioned(
     accounts.reject_reason = "not provisioned"
     contexts = _Contexts(AuthorizationContext(active=True, session_version=4))
     caplog.set_level(logging.INFO)
+    login = CompletedLogin(_identity(), "/app")
     with pytest.raises(LoginFailed) as caught:
-        _admit(
-            CompletedLogin(_identity(), "/app"), accounts=accounts, contexts=contexts
-        )
+        _admit(login, accounts=accounts, contexts=contexts)
     assert caught.value.code == "account_not_provisioned"
     assert caught.value.reason == "not provisioned"
     assert contexts.accounts == []
@@ -130,11 +129,10 @@ def test_a_rejected_identity_is_not_provisioned(
 
 def test_an_inactive_account_is_access_denied(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO)
+    login = CompletedLogin(_identity(), "/app")
+    contexts = _Contexts(AuthorizationContext(active=False, session_version=4))
     with pytest.raises(LoginFailed) as caught:
-        _admit(
-            CompletedLogin(_identity(), "/app"),
-            contexts=_Contexts(AuthorizationContext(active=False, session_version=4)),
-        )
+        _admit(login, contexts=contexts)
     assert caught.value.code == "access_denied"
     assert caught.value.reason == "account is not active"
     assert [
@@ -155,12 +153,9 @@ def test_admission_emits_neither_login_success_nor_a_warning(
         (rejected, _Contexts(AuthorizationContext(active=True, session_version=4))),
         (_Accounts(), _Contexts(AuthorizationContext(active=False, session_version=4))),
     ):
+        login = CompletedLogin(_identity(), "/app")
         with pytest.raises(LoginFailed):
-            _admit(
-                CompletedLogin(_identity(), "/app"),
-                accounts=accounts,
-                contexts=contexts,
-            )
+            _admit(login, accounts=accounts, contexts=contexts)
     events = [
         r.getMessage()
         for r in caplog.records
@@ -180,8 +175,9 @@ def test_the_audit_provider_is_the_provider_id_argument(
     assert admitted.session.provider == "other"
     accounts = _Accounts()
     accounts.reject_reason = "not provisioned"
+    login = CompletedLogin(_identity(), "/app")
     with pytest.raises(LoginFailed):
-        _admit(CompletedLogin(_identity(), "/app"), accounts=accounts)
+        _admit(login, accounts=accounts)
     assert any("provider='acme'" in record.getMessage() for record in caplog.records)
 
 

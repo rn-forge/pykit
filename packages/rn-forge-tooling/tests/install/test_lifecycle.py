@@ -32,6 +32,7 @@ from rn_forge.tooling.install import (
 )
 from rn_forge.tooling.install import home as home_module
 from rn_forge.tooling.install import lifecycle as lifecycle_module
+from rn_forge.tooling.install.home import env_hint, render_env
 
 
 def make_archive(directory: Path, version: str) -> Path:
@@ -199,6 +200,11 @@ class TestHome:
 
 
 class TestInstall:
+    def test_install_writes_env_sh(self, home, source):
+        result = install(product(source), home=home)
+        assert home.env_path.read_text() == render_env(home.root)
+        assert result.env == "written"
+
     def test_installs_links_and_activates(self, home, source):
         result = install(product(source), home=home)
         assert result.outcome == "installed"
@@ -253,6 +259,29 @@ class TestInstall:
 
 
 class TestRollback:
+    def _fail_activation(self, home, source, monkeypatch):
+        def boom(self, version):
+            raise RuntimeError("activation exploded")
+
+        monkeypatch.setattr(ToolHome, "activate", boom)
+        with pytest.raises(AppException, match="activation exploded"):
+            install(product(source), home=home)
+
+    def test_a_failed_install_removes_the_env_sh_it_created(
+        self, home, source, monkeypatch
+    ):
+        self._fail_activation(home, source, monkeypatch)
+        assert not home.env_path.exists()
+
+    def test_a_failed_install_restores_the_previous_env_sh(
+        self, home, source, monkeypatch
+    ):
+        home.root.mkdir(parents=True)
+        old = "# rn-forge home environment, schema 0. Old.\n"
+        home.env_path.write_text(old)
+        self._fail_activation(home, source, monkeypatch)
+        assert home.env_path.read_text() == old
+
     def _installed_at_one(self, home, source):
         install(product(source), home=home)
         source.newest = "2.0.0"
@@ -324,8 +353,9 @@ class TestPreparation:
     ):
         TestRollback()._installed_at_one(home, source)
         bad = LocalArchive(make_archive(tmp_path, "2.0.0"), "2.0.0", "0" * 64)
+        target = product(source, fail_build=True)
         with pytest.raises(AppException, match="Checksum mismatch"):
-            install(product(source, fail_build=True), home=home, source=bad)
+            install(target, home=home, source=bad)
         TestRollback()._assert_still_one(home)
         assert not home.version_dir("2.0.0").exists()
 
@@ -339,8 +369,10 @@ class TestPreparation:
                 info = tarfile.TarInfo(f"{root}/bin/tool")
                 info.size = 1
                 tar.addfile(info, io.BytesIO(b"x"))
+        target = product(source)
+        local = LocalArchive(archive, "2.0.0")
         with pytest.raises(AppException, match="exactly one root directory"):
-            install(product(source), home=home, source=LocalArchive(archive, "2.0.0"))
+            install(target, home=home, source=local)
         TestRollback()._assert_still_one(home)
 
     def test_an_interrupted_download_restores_nothing_and_reraises(
@@ -357,8 +389,9 @@ class TestPreparation:
         monkeypatch.setattr(source, "download", interrupted)
         monkeypatch.setattr(lifecycle_module, "_restore_file", unexpected_recovery)
         monkeypatch.setattr(lifecycle_module, "_restore_current", unexpected_recovery)
+        target = product(source)
         with pytest.raises(KeyboardInterrupt):
-            install(product(source), home=home)
+            install(target, home=home)
         TestRollback()._assert_still_one(home)
         assert not any(home.work_dir.iterdir())
 
@@ -404,8 +437,9 @@ class TestPreparation:
     def test_a_failed_preparation_never_builds_or_migrates(self, home, source):
         TestRollback()._installed_at_one(home, source)
         source.fail_download = True
+        target = product(source, fail_migration=True, fail_build=True)
         with pytest.raises(AppException, match="network down"):
-            install(product(source, fail_migration=True, fail_build=True), home=home)
+            install(target, home=home)
         TestRollback()._assert_still_one(home)
 
 
@@ -454,8 +488,9 @@ class TestRecoveryFailure:
             return rename(path, target)
 
         monkeypatch.setattr(Path, "rename", fail_restore)
+        target = product(source, fail_build=True)
         with pytest.raises(AppException, match="recovery is incomplete") as excinfo:
-            install(product(source, fail_build=True), home=home, force=True)
+            install(target, home=home, force=True)
         binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
         assert len(binaries) == 1
         assert binaries[0].read_text() == "tool 1.0.0\n"
@@ -478,8 +513,9 @@ class TestRecoveryFailure:
 
         monkeypatch.setattr(Path, "rename", fail_restore)
         monkeypatch.setattr(ToolHome, "activate", interrupt)
+        target = product(source)
         with pytest.raises(KeyboardInterrupt):
-            install(product(source), home=home, force=True)
+            install(target, home=home, force=True)
         binaries = list(home.work_dir.glob("*/displaced/bin/tool"))
         assert len(binaries) == 1
         assert binaries[0].read_text() == "tool 1.0.0\n"
@@ -527,8 +563,9 @@ class TestRecoveryFailure:
                 return original(self, version)
 
             monkeypatch.setattr(ToolHome, "activate", fail_once)
+        target = product(source)
         with pytest.raises(AppException, match="rolled back"):
-            upgrade(product(source), home=home)
+            upgrade(target, home=home)
         TestRollback()._assert_still_one(home)
 
 
@@ -557,6 +594,14 @@ class TestUninstallAndCleanup:
         assert (result.outcome, result.previous) == ("removed", "1.0.0")
         assert not home.product_dir.exists()
         assert not (home.root / "bin/tool").is_symlink()
+
+    def test_uninstall_leaves_the_home_files(self, home, source):
+        install(product(source), home=home)
+        home.completions_dir.mkdir()
+        uninstall(product(source), home=home)
+        assert home.env_path.is_file()
+        assert (home.root / "bin").is_dir()
+        assert home.completions_dir.is_dir()
 
     def test_uninstall_over_an_install_that_never_completed(self, home, source):
         (home.version_dir("1.0.0") / "bin").mkdir(parents=True)
@@ -620,18 +665,21 @@ class TestRefInstall:
         }
 
     def test_an_unknown_ref_leaves_the_home_untouched(self, home, github):
+        target = product(github)
         with pytest.raises(AppException):
-            install(product(github), ref="nope", home=home)
+            install(target, ref="nope", home=home)
         assert not (home.product_dir / "versions").exists()
         assert not home.state_path.exists()
 
     def test_version_and_ref_together_are_rejected(self, home, github):
+        target = product(github)
         with pytest.raises(AppException):
-            install(product(github), version="1.0.0", ref="main", home=home)
+            install(target, version="1.0.0", ref="main", home=home)
 
     def test_a_ref_needs_a_github_source(self, home, source):
+        target = product(source)
         with pytest.raises(AppException, match="cannot install a ref"):
-            install(product(source), ref="main", home=home)
+            install(target, ref="main", home=home)
         assert not home.state_path.exists()
 
     def test_a_release_install_records_its_tag(self, home, source):
@@ -665,6 +713,11 @@ class TestUpgrade:
         assert upgrade(product(source), home=home).version == "2.0.0"
 
 
+def _without_home(findings):
+    """The codes of *findings*, minus the home rows."""
+    return [f.code for f in findings if not f.code.startswith("home.")]
+
+
 class TestStatusAndDoctor:
     def test_status_of_a_ref_install_carries_ref_and_commit(self, home, github):
         install(product(github), ref="main", home=home)
@@ -690,9 +743,7 @@ class TestStatusAndDoctor:
         self, home, github
     ):
         install(product(github), ref="main", home=home)
-        codes = [
-            f.code for f in doctor(product(github, version="1.1.0.dev0"), home=home)
-        ]
+        codes = _without_home(doctor(product(github, version="1.1.0.dev0"), home=home))
         assert codes == ["install.ok", "tool.ok"]
 
     def test_the_mismatch_names_the_recorded_version(self, home, github):
@@ -728,14 +779,60 @@ class TestStatusAndDoctor:
 
     def test_doctor_on_a_dev_checkout_warns_and_runs_product_checks(self, home, source):
         findings = doctor(product(source), home=home)
-        codes = [f.code for f in findings]
-        assert codes == ["install.not-installed", "tool.ok"]
+        assert _without_home(findings) == ["install.not-installed", "tool.ok"]
         assert not any(f.is_error for f in findings)
 
     def test_doctor_on_a_healthy_install(self, home, source):
         install(product(source), home=home)
+        assert _without_home(doctor(product(source), home=home)) == [
+            "install.ok",
+            "tool.ok",
+        ]
+
+    def test_doctor_reports_a_missing_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        (found,) = [
+            f
+            for f in doctor(product(source), home=home)
+            if f.code == "home.env-missing"
+        ]
+        assert found.severity is Severity.WARNING
+        assert found.path == str(home.env_path)
+
+    def test_doctor_reports_a_stale_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        home.root.mkdir(parents=True)
+        home.env_path.write_text("# rn-forge home environment, schema 0. Old.\n")
+        findings = doctor(product(source), home=home)
+        (found,) = [f for f in findings if f.code == "home.env-stale"]
+        assert found.severity is Severity.WARNING
+        assert found.details == {"recorded": 0, "expected": 1}
+        assert "home.env-missing" not in [f.code for f in findings]
+
+    def test_doctor_reports_bin_off_path(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", os.defpath)
+        (found,) = [
+            f
+            for f in doctor(product(source), home=home)
+            if f.code == "home.not-on-path"
+        ]
+        assert found.severity is Severity.WARNING
+        assert found.message == env_hint(home.root)
+
+    def test_doctor_reports_nothing_for_a_hooked_up_home(
+        self, home, source, monkeypatch
+    ):
+        install(product(source), home=home)
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
         codes = [f.code for f in doctor(product(source), home=home)]
-        assert codes == ["install.ok", "tool.ok"]
+        assert not [c for c in codes if c.startswith("home.")]
+
+    def test_doctor_ignores_a_foreign_env_sh(self, home, source, monkeypatch):
+        monkeypatch.setenv("PATH", str(home.root / "bin"))
+        home.root.mkdir(parents=True)
+        home.env_path.write_text("export FOO=1\n")
+        codes = [f.code for f in doctor(product(source), home=home)]
+        assert not [c for c in codes if c.startswith("home.")]
 
     def test_doctor_reports_a_missing_link_and_a_schema_change(self, home, source):
         install(product(source), home=home)

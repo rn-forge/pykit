@@ -43,7 +43,7 @@ _DEFAULT_FIELD_PATTERN: Final = re.compile(
 # A credential must hold a digit, a symbol or an inner capital; a plain word after
 # the scheme is prose ("bearer token expired", "basic authentication failed").
 _CREDENTIAL: Final = re.compile(
-    r"\b((?:Bearer|Basic)\s+)(?=\S*(?:[0-9+/_=~-]|(?-i:[a-z][A-Z])))\S+",
+    r"\b((?:Bearer|Basic)\s+)(?=\S*(?-i:[0-9+/_=~-]|[a-z][A-Z]))\S+",
     re.IGNORECASE,
 )
 _URL_PASSWORD: Final = re.compile(

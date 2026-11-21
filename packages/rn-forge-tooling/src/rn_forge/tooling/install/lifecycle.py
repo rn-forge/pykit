@@ -19,7 +19,14 @@ from rn_forge.commons.fs.paths import PathUtils
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 from rn_forge.commons.logging import AppLogger
 from rn_forge.tooling.install.archive import extract_archive
-from rn_forge.tooling.install.home import ToolHome
+from rn_forge.tooling.install.home import (
+    ENV_SCHEMA,
+    EnvWrite,
+    ToolHome,
+    env_hint,
+    env_schema,
+    write_env,
+)
 from rn_forge.tooling.install.product import Link, ToolProduct
 from rn_forge.tooling.install.release import (
     GitHubReleases,
@@ -52,12 +59,18 @@ class InstallResult(DataclassMixin):
             ``not-installed``.
         version: The version now active, when there is one.
         previous: The version that was active before, when there was one.
+        env: What the install did to ``env.sh`` (an :class:`EnvWrite` value),
+            or ``None`` when nothing was installed.
+        hint: How to source ``env.sh``, when ``bin/`` is not on ``PATH`` after
+            an install; ``None`` otherwise.
     """
 
     product: str
     outcome: str
     version: str | None = None
     previous: str | None = None
+    env: str | None = None
+    hint: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,10 +167,23 @@ def install(
     with home.lock():
         previous = home.current_version()
         if previous == target and not force:
-            return InstallResult(product.name, "already-current", target, previous)
-        _install(product, home, source, target, previous, ref, sha)
+            return InstallResult(
+                product.name,
+                "already-current",
+                target,
+                previous,
+                hint=env_hint(home.root),
+            )
+        env = _install(product, home, source, target, previous, ref, sha)
     _LOGGER.verbose("install: {} {} active (was {})", product.name, target, previous)
-    return InstallResult(product.name, "installed", target, previous)
+    return InstallResult(
+        product.name,
+        "installed",
+        target,
+        previous,
+        env=env.value,
+        hint=env_hint(home.root),
+    )
 
 
 def upgrade(
@@ -266,14 +292,16 @@ def doctor(product: ToolProduct, *, home: ToolHome | None = None) -> list[Findin
 
     A product that is not installed is a **warning**, not an error: the same
     command runs from a development checkout, where there is nothing under
-    ``$RNF_HOME`` and nothing wrong. The product's checks run either way.
+    ``$RNF_HOME`` and nothing wrong. The ``home.*`` rows are warnings for the
+    same reason: a development checkout has no hooked-up home. Both they and
+    the product's checks run either way.
 
     Returns:
         Every finding, product checks last. Only an ``error`` should fail the
         command.
     """
     home = home or ToolHome(product.name)
-    findings = _install_findings(product, home)
+    findings = _install_findings(product, home) + _home_findings(home)
     for check in product.checks():
         findings.extend(check(home))
     return findings
@@ -298,16 +326,18 @@ def _install(
     previous: str | None,
     ref: str | None,
     sha: str | None,
-) -> None:
+) -> EnvWrite:
     """Prepare and activate a release or commit. The caller holds the lock."""
     prepared = _prepare(product, home, source, target, sha)
     undo: list[tuple[str, Callable[[], object]]] = []
     retained = False
     try:
-        _activate(product, home, source, prepared, target, previous, ref, sha, undo)
+        return _activate(
+            product, home, source, prepared, target, previous, ref, sha, undo
+        )
     except BaseException as exc:
         failures = _recover(undo)
-        retained = (prepared.work / "displaced").exists()
+        retained = prepared.work.joinpath("displaced").exists()
         _failure(product, target, exc, failures, prepared.work, retained)
         raise
     finally:
@@ -352,8 +382,12 @@ def _activate(
     ref: str | None,
     sha: str | None,
     undo: list[tuple[str, Callable[[], object]]],
-) -> None:
-    """Build and activate a release, appending recovery steps to *undo*."""
+) -> EnvWrite:
+    """Build and activate a release, appending recovery steps to *undo*.
+
+    Returns:
+        What was done to ``env.sh``.
+    """
     version_dir = home.version_dir(target)
     displaced = prepared.work / "displaced"
     if version_dir.exists():
@@ -374,6 +408,9 @@ def _activate(
     for link in product.artifacts():
         undo.append((f"restore link {link.path}", _place_link(home, link)))
 
+    undo.append(("restore env.sh", _restore_file(home.env_path)))
+    env = write_env(home.root)
+
     undo.append(("restore state.json", _restore_file(home.state_path)))
     if previous is not None and previous != target:
         product.migrate(previous, target)
@@ -393,6 +430,7 @@ def _activate(
 
     undo.append(("restore current", _restore_current(home)))
     home.activate(target)
+    return env
 
 
 def _text(recorded: dict[str, Any], key: str) -> str | None:
@@ -549,6 +587,44 @@ def _restore_current(home: ToolHome) -> Callable[[], None]:
 
 
 # -- doctor -------------------------------------------------------------------
+
+
+def _home_findings(home: ToolHome) -> list[Finding]:
+    """What is true of the shell's hookup to the home: ``env.sh`` and ``PATH``."""
+    findings: list[Finding] = []
+    if not home.env_path.is_file():
+        findings.append(
+            Finding(
+                "home.env-missing",
+                Severity.WARNING,
+                f"{home.env_path} does not exist; any install writes it",
+                path=str(home.env_path),
+            )
+        )
+    else:
+        recorded = env_schema(home.root)
+        if recorded is not None and recorded < ENV_SCHEMA:
+            findings.append(
+                Finding(
+                    "home.env-stale",
+                    Severity.WARNING,
+                    f"{home.env_path} is at schema {recorded}, this version "
+                    f"writes {ENV_SCHEMA}; any install rewrites it",
+                    path=str(home.env_path),
+                    details={"recorded": recorded, "expected": ENV_SCHEMA},
+                )
+            )
+    hint = env_hint(home.root)
+    if hint is not None:
+        findings.append(
+            Finding(
+                "home.not-on-path",
+                Severity.WARNING,
+                hint,
+                path=str(home.root / "bin"),
+            )
+        )
+    return findings
 
 
 def _install_findings(product: ToolProduct, home: ToolHome) -> list[Finding]:

@@ -77,8 +77,9 @@ def test_a_bad_retry_raises_value_error_at_call_time(retry):
         return
         yield
 
+    events = nothing()
     with pytest.raises(ValueError, match="retry"):
-        sse_response(nothing(), retry=retry)
+        sse_response(events, retry=retry)
 
 
 @pytest.mark.parametrize(

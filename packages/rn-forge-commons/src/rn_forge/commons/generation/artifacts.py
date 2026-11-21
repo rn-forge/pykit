@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import json
+from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
+import tomlkit
 from rn_forge.commons.exceptions import AppException
 from rn_forge.commons.fs.blocks import ManagedBlock
+from rn_forge.commons.fs.documents import ConfigFormat, DocumentError, DocumentUtils
 from rn_forge.commons.fs.hashing import ContentHash
 from rn_forge.commons.fs.paths import PathUtils
+from rn_forge.commons.lang.collections import (
+    _split_key_path,  # pyright: ignore[reportPrivateUsage]
+)
 from rn_forge.commons.lang.dataclasses import DataclassMixin
 
 __all__ = [
@@ -37,6 +43,8 @@ class ArtifactKind(StrEnum):
     """Written once if absent, then owned by the repository."""
     BLOCK = "block"
     """The generator owns one fenced block inside a repository-owned file."""
+    KEYS = "keys"
+    """The generator owns named key paths inside a JSON or TOML document another program also writes."""
 
 
 class Action(StrEnum):
@@ -45,7 +53,7 @@ class Action(StrEnum):
     CREATE = "create"
     """The file does not exist and will be written."""
     INSERT = "insert"
-    """The block is absent and will be inserted; the file body is untouched."""
+    """The block or owned keys are absent and will be inserted; the rest of the file is untouched."""
     UPDATE = "update"
     """The rendered content differs from what was last applied."""
     UNCHANGED = "unchanged"
@@ -61,7 +69,7 @@ class Action(StrEnum):
     DELETE = "delete"
     """No longer rendered; the file will be backed up and removed."""
     REMOVE = "remove"
-    """No longer rendered; the block will be removed, the file body untouched."""
+    """No longer rendered; the block or owned keys will be removed, the rest of the file untouched."""
     FORGET = "forget"
     """No longer rendered and nothing to remove; only the state entry goes."""
 
@@ -78,7 +86,9 @@ class StateEntry(DataclassMixin):
     """One artifact as it was last applied, as recorded in the state file.
 
     A seeded entry records presence only: hashing content the repository is
-    supposed to edit would turn every legitimate edit into drift.
+    supposed to edit would turn every legitimate edit into drift. A keys entry
+    records :attr:`key_paths`, the sorted dotted paths the generator owned, so a
+    later render that drops one can remove it.
 
     """
 
@@ -87,6 +97,7 @@ class StateEntry(DataclassMixin):
     content_hash: str | None = None
     begin_marker: str | None = None
     end_marker: str | None = None
+    key_paths: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,12 +111,15 @@ class Artifact:
             *body* — what goes between the markers — not the whole file.
         block: The fenced block, required for (and only valid on) a
             :attr:`ArtifactKind.BLOCK` artifact.
+        keys: Dotted key path to value, required for (and only valid on) a
+            :attr:`ArtifactKind.KEYS` artifact. A value is owned whole.
     """
 
     path: str
     kind: ArtifactKind
     content: str
     block: ManagedBlock | None = None
+    keys: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if (self.kind is ArtifactKind.BLOCK) != (self.block is not None):
@@ -113,6 +127,20 @@ class Artifact:
                 f"{self.path}: a block artifact needs a ManagedBlock, "
                 "and only a block artifact may have one"
             )
+        if (self.kind is ArtifactKind.KEYS) != bool(self.keys):
+            raise ValueError(
+                f"{self.path}: a keys artifact needs non-empty keys, "
+                "and only a keys artifact may have them"
+            )
+        if self.kind is ArtifactKind.KEYS:
+            if self.content:
+                raise ValueError(f"{self.path}: a keys artifact has no content")
+            try:
+                fmt = ConfigFormat.of(Path(self.path))
+            except DocumentError:
+                fmt = None
+            if fmt not in (ConfigFormat.JSON, ConfigFormat.TOML):
+                raise ValueError(f"{self.path}: keys need a JSON or TOML file")
 
     @property
     def key(self) -> str:
@@ -127,6 +155,8 @@ class Artifact:
         ``"value\\n"``), so the hash is taken of what :meth:`ManagedBlock.extract`
         will read back; otherwise an untouched block would plan as drift.
         """
+        if self.keys is not None:
+            return ContentHash.of(canonical_values(self.keys))
         if self.block is None:
             return ContentHash.of(self.content)
         return ContentHash.of(
@@ -137,6 +167,13 @@ class Artifact:
         """The state entry recording this artifact as applied."""
         if self.kind is ArtifactKind.SEEDED:
             return StateEntry(path=self.path, kind=self.kind)
+        if self.keys is not None:
+            return StateEntry(
+                path=self.path,
+                kind=self.kind,
+                content_hash=self.content_hash,
+                key_paths=tuple(sorted(self.keys)),
+            )
         if self.block is not None:
             return StateEntry(
                 path=self.path,
@@ -296,3 +333,95 @@ def block_from_entry(entry: StateEntry) -> ManagedBlock:
         return ManagedBlock(name, comment="<!--", indent=indent)
     name = stripped.removeprefix("#").strip().removeprefix("BEGIN").strip()
     return ManagedBlock(name, indent=indent)
+
+
+def canonical_values(values: Mapping[str, Any]) -> str:
+    """The canonical JSON form of a ``{key path: value}`` mapping, for hashing."""
+    return json.dumps(
+        values, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
+    )
+
+
+def disk_key_values(
+    root: Path, relative: str, key_paths: Sequence[str]
+) -> dict[str, Any]:
+    """The values *relative* holds at *key_paths*; an absent path is left out."""
+    data = DocumentUtils.read(root / relative)
+    found: dict[str, Any] = {}
+    for key_path in key_paths:
+        current: Any = data
+        for segment in _split_key_path(key_path):
+            if not isinstance(current, Mapping) or segment not in current:
+                break
+            current = cast(Any, current[segment])
+        else:
+            found[key_path] = current
+    return found
+
+
+def render_keys(root: Path, change: Change, previous: Mapping[str, StateEntry]) -> str:
+    """The text of a keys file with *change* applied, leaving other keys alone.
+
+    Sets every owned path unless the change removes them, and deletes the
+    paths a previous keys entry recorded that the artifact no longer owns.
+
+    Raises:
+        AppException: An owned path runs through a non-table on disk.
+    """
+    path = change.path
+    target = root / path
+    fmt = ConfigFormat.of(Path(path))
+    if target.is_file():
+        document: Any = DocumentUtils.read_document(target)
+    else:
+        document = tomlkit.document() if fmt is ConfigFormat.TOML else {}
+    entry = previous.get(change.key)
+    recorded = (
+        entry.key_paths or ()
+        if entry is not None and entry.kind is ArtifactKind.KEYS
+        else ()
+    )
+    artifact = change.artifact
+    owned: Mapping[str, Any] = artifact.keys or {} if artifact is not None else {}
+    removing = change.effective_action is Action.REMOVE
+    for key_path in recorded:
+        if removing or key_path not in owned:
+            _delete_key(document, key_path)
+    if not removing:
+        for key_path, value in owned.items():
+            _set_key(document, path, key_path, value, fmt)
+    return DocumentUtils.serialize_document(path, document)
+
+
+def _set_key(
+    document: Any, path: str, key_path: str, value: Any, fmt: ConfigFormat
+) -> None:
+    *parents, last = _split_key_path(key_path)
+    current: Any = document
+    for segment in parents:
+        if segment not in current:
+            current[segment] = tomlkit.table() if fmt is ConfigFormat.TOML else {}
+        current = current[segment]
+        if not isinstance(current, MutableMapping):
+            raise AppException(
+                "{}: key path {!r} runs through a non-table", path, key_path
+            )
+        current = cast(MutableMapping[str, Any], current)
+    current[last] = value
+
+
+def _delete_key(document: Any, key_path: str) -> None:
+    *parents, last = _split_key_path(key_path)
+    chain: list[MutableMapping[str, Any]] = [document]
+    for segment in parents:
+        node = chain[-1]
+        if segment not in node or not isinstance(node[segment], MutableMapping):
+            return
+        chain.append(cast(MutableMapping[str, Any], node[segment]))
+    if last not in chain[-1]:
+        return
+    del chain[-1][last]
+    names = [*parents]
+    while names and not chain[-1]:
+        chain.pop()
+        del chain[-1][names.pop()]

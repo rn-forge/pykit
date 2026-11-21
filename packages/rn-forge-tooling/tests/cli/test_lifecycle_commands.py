@@ -84,6 +84,35 @@ def test_install_from_an_archive_then_doctor_and_uninstall(tmp_path, capsys):
     assert not (tmp_path / "home/golden-tool").exists()
 
 
+def _install_output(tmp_path, capsys):
+    built = archive(tmp_path, "1.0.0")
+    code = app().run(["install", "--archive", str(built), "--version", "1.0.0"])
+    assert code == ExitCode.OK
+    return capsys.readouterr().out
+
+
+def test_install_ends_with_the_hint_when_bin_is_off_path(tmp_path, capsys, monkeypatch):
+    monkeypatch.setenv("PATH", "/usr/bin")
+    home = tmp_path / "home"
+    out = _install_output(tmp_path, capsys)
+    # The console wraps at terminal width, so compare without whitespace.
+    squeeze = "".join
+    assert squeeze(out.split()).endswith(
+        squeeze(
+            (
+                f"{home}/bin is not on PATH. To use it in this shell, run:\n"
+                f'  source "{home}/env.sh"\n'
+                "and add that line to your shell's rc file, before compinit."
+            ).split()
+        )
+    )
+
+
+def test_install_prints_no_hint_when_bin_is_on_path(tmp_path, capsys, monkeypatch):
+    monkeypatch.setenv("PATH", f"/usr/bin:{tmp_path}/home/bin")
+    assert "env.sh" not in _install_output(tmp_path, capsys)
+
+
 def test_archive_without_version_is_a_usage_error(tmp_path):
     assert app().run(["install", "--archive", str(tmp_path / "x")]) == ExitCode.USAGE
 

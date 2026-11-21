@@ -16,7 +16,10 @@ from rn_forge.commons.generation.artifacts import (
     Plan,
     StateEntry,
     block_from_entry,
+    canonical_values,
+    disk_key_values,
     read_text,
+    render_keys,
     resolve_within,
 )
 
@@ -34,20 +37,32 @@ def disk_content(root: Path, artifact: Artifact) -> str | None:
     return artifact.block.extract(text)
 
 
-def diff(root: Path, change: Change) -> str:
+def diff(
+    root: Path,
+    change: Change,
+    *,
+    entries: Mapping[str, StateEntry] | None = None,
+) -> str:
     """A unified diff from *change*'s content on disk to its rendered content.
 
-    A block diffs its body; a missing file diffs from empty. Returns ``""``
-    when the change has no artifact or nothing differs.
+    A block diffs its body; a missing file diffs from empty; a keys change
+    diffs the whole file, with *entries* (the previous state) showing dropped
+    paths as removed. Returns ``""`` when the change has no artifact or
+    nothing differs.
     """
     artifact = change.artifact
     if artifact is None:
         return ""
-    disk = disk_content(root, artifact) or ""
+    if artifact.kind is ArtifactKind.KEYS:
+        disk = read_text(root / artifact.path)
+        after = render_keys(root, change, entries or {})
+    else:
+        disk = disk_content(root, artifact) or ""
+        after = artifact.content
     return "".join(
         difflib.unified_diff(
             disk.splitlines(keepends=True),
-            artifact.content.splitlines(keepends=True),
+            after.splitlines(keepends=True),
             fromfile=artifact.path,
             tofile=artifact.path,
         )
@@ -66,6 +81,9 @@ def classify(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action
     if artifact.kind is ArtifactKind.SEEDED:
         return Action.SKIP if (root / artifact.path).exists() else Action.CREATE
 
+    if artifact.kind is ArtifactKind.KEYS:
+        return _classify_keys(root, artifact, entry)
+
     disk = disk_content(root, artifact)
     if disk is None:
         if entry is None:
@@ -82,6 +100,27 @@ def classify(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action
     )
 
 
+def _classify_keys(root: Path, artifact: Artifact, entry: StateEntry | None) -> Action:
+    """Classify a keys artifact against the values on disk at its recorded paths."""
+    if not (root / artifact.path).is_file():
+        return Action.CREATE if entry is None else Action.MISSING
+    if entry is None:
+        return Action.INSERT
+    if entry.kind is not ArtifactKind.KEYS:
+        return Action.CONFLICT
+    recorded = entry.key_paths or ()
+    disk = ContentHash.of(
+        canonical_values(disk_key_values(root, artifact.path, recorded))
+    )
+    if disk != entry.content_hash:
+        return Action.DRIFT
+    same = (
+        entry.content_hash == artifact.content_hash
+        and entry.key_paths == artifact.to_entry().key_paths
+    )
+    return Action.UNCHANGED if same else Action.UPDATE
+
+
 def _stale_action(root: Path, entry: StateEntry) -> tuple[Action, Action]:
     """Classify a state entry the current render no longer produces.
 
@@ -94,6 +133,10 @@ def _stale_action(root: Path, entry: StateEntry) -> tuple[Action, Action]:
     path = root / entry.path
     if entry.kind is ArtifactKind.SEEDED or not path.is_file():
         return Action.FORGET, Action.FORGET
+    if entry.kind is ArtifactKind.KEYS:
+        values = disk_key_values(root, entry.path, entry.key_paths or ())
+        clean = ContentHash.of(canonical_values(values)) == entry.content_hash
+        return (Action.REMOVE if clean else Action.DRIFT), Action.REMOVE
     if entry.kind is ArtifactKind.BLOCK:
         if entry.begin_marker is None or entry.end_marker is None:
             return Action.FORGET, Action.FORGET

@@ -3,6 +3,7 @@
 Start here for the main usage flows:
 
 - [installation](installation.md) and what this package is for
+- [the rn-forge home](home.md): the contract every installer implements
 - [tool lifecycle](lifecycle.md): `ToolProduct`, `$RNF_HOME` and the
   install/upgrade/uninstall/cleanup/status/doctor verbs
 

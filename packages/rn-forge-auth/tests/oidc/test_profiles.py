@@ -185,25 +185,30 @@ class TestEveryProfile:
         verify = _build(kind, idp, cooldown_duration=3600.0)
         verify(_token(kind, idp))
         idp.publish("k2")
+        unknown = _token(kind, idp, kid="k2")
         with pytest.raises(TokenVerificationError):
-            verify(_token(kind, idp, kid="k2"))
+            verify(unknown)
         assert idp.fetches(KEYS) == 1
 
     def test_refuses_unknown_key_during_cooldown(self, kind, idp):
         verify = _build(kind, idp, cooldown_duration=3600.0)
         verify(_token(kind, idp))
+        forged = _token(kind, idp, kid="unknown", key=idp.forged_key)
         for _ in range(5):
             with pytest.raises(TokenVerificationError):
-                verify(_token(kind, idp, kid="unknown", key=idp.forged_key))
+                verify(forged)
         assert idp.fetches(KEYS) == 1
 
     def test_refuses_missing_kid(self, kind, idp):
         token = jwt.encode(
             {"iss": idp.issuer}, idp.private_keys["k1"], algorithm="RS256"
         )
+        verify = _build(kind, idp)
         with pytest.raises(TokenVerificationError, match="kid"):
-            _build(kind, idp)(token)
+            verify(token)
 
     def test_refuses_unsigned_token(self, kind, idp):
+        verify = _build(kind, idp)
+        unsigned = _token(kind, idp, alg="none")
         with pytest.raises(TokenVerificationError, match="not accepted"):
-            _build(kind, idp)(_token(kind, idp, alg="none"))
+            verify(unsigned)
