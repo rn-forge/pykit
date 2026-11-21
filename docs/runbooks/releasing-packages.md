@@ -138,6 +138,16 @@ fixed forward:
    dependency version this release tags. A breaking release of a dependency
    needs each dependent to widen its ceiling, after its tests pass on the new
    version, and to be released with it.
+1. List the open Dependabot pull requests
+   (`gh pr list --author app/dependabot`). Take each update on the release
+   branch: apply its requirement floors and its `uv.lock` change there,
+   through the task verbs where they apply, and do not merge the pull request
+   into `main`, because a merge into `main` releases every package whose
+   manifest changed. Each package whose runtime or extra requirement changed
+   gets a patch bump and a changelog entry. Record the pull request numbers on
+   the release page. Dependabot closes each pull request once `main` carries
+   its update. An update that opens after the cut waits for the next release;
+   a security update is the exception and is released as an urgent patch.
 1. Run the workspace validation from the
    [development guide](../guides/development.md), and get the owner's approval
    to release.

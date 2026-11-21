@@ -257,6 +257,9 @@ nav:
           - E28 — The rn-forge home:
               - specs/epics/E28-rn-forge-home/index.md
               - F28.1 — The home contract, `env.sh` and zsh completions: specs/epics/E28-rn-forge-home/F28.1-home-contract-and-completions.md
+          - E29 — Dependency updates in the release cut:
+              - specs/epics/E29-release-12-dependency-updates/index.md
+              - F29.1 — Dependency updates: specs/epics/E29-release-12-dependency-updates/F29.1-dependency-updates.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md
