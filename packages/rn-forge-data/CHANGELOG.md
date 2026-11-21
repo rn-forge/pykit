@@ -5,6 +5,8 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-20
+
 ### Changed
 
 - Requires `tablib[xlsx]>=3.10.0`.

@@ -5,6 +5,8 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-20
+
 ### Changed
 
 - The `oidc` extra requires `pyjwt[crypto]>=2.15.1`.

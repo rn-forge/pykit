@@ -5,6 +5,8 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-20
+
 ### Changed
 
 - The `testing` extra requires `assertpy>=2.36.0`.
