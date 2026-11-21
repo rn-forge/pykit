@@ -16,7 +16,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">=3.14"
-dependencies = ["packaging>=24"]
+dependencies = ["packaging>=26.3"]
 
 [project.scripts]
 rn-forge-devops = "rn_forge.devops.cli:main"
