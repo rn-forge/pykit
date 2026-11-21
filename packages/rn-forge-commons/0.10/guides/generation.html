@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -594,6 +594,17 @@
     <span class="md-ellipsis">
       
         Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-paths-in-a-shared-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key paths in a shared file
       
     </span>
   </a>
@@ -2061,6 +2072,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#key-paths-in-a-shared-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key paths in a shared file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rendering-artifacts-from-templates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2159,6 +2181,11 @@ all-or-nothing.</p>
 <td>the generator owns one fenced block inside a repo-owned file</td>
 <td>drift, inside the block only</td>
 </tr>
+<tr>
+<td><code>KEYS</code></td>
+<td>the generator owns named key paths inside a JSON or TOML file</td>
+<td>drift, at the owned paths only</td>
+</tr>
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.fs.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManagedBlock</span>
@@ -2175,6 +2202,32 @@ all-or-nothing.</p>
 
 <p>A block artifact's <code>content</code> is the block <em>body</em>, not the whole file: everything
 outside the markers is preserved byte for byte.</p>
+<h2 id="key-paths-in-a-shared-file">Key paths in a shared file<a class="headerlink" href="#key-paths-in-a-shared-file" title="Permanent link">&para;</a></h2>
+<p>A file such as an application's <code>settings.json</code> is written by the application
+too, so neither <code>MANAGED</code> (every added key is drift) nor <code>BLOCK</code> (JSON has no
+comments) fits it. A <code>KEYS</code> artifact owns only the dotted key paths it names:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">settings</span> <span class="o">=</span> <span class="n">Artifact</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;settings.json&quot;</span><span class="p">,</span>
+    <span class="n">kind</span><span class="o">=</span><span class="n">ArtifactKind</span><span class="o">.</span><span class="n">KEYS</span><span class="p">,</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">keys</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;editor.theme&quot;</span><span class="p">:</span> <span class="s2">&quot;dark&quot;</span><span class="p">,</span> <span class="s2">&quot;formatter.args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;--strict&quot;</span><span class="p">]},</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<ul>
+<li>Paths use the <code>DictUtils</code> dotted form, and <code>\.</code> escapes a literal dot.</li>
+<li>A value is owned whole: a list or table is compared and written as a unit.</li>
+<li>Only the owned paths are hashed, so a key the application adds elsewhere is
+  not drift, while a hand edit to an owned value is.</li>
+<li>Applying sets the owned paths and leaves every other key. Dropping a path from
+  the render removes it and prunes any table left empty. Removing the artifact
+  removes every owned key but never deletes the file.</li>
+<li>JSON is written with sorted keys, so key order is not preserved; TOML keeps
+  its comments and order. YAML is not supported.</li>
+<li>A keys artifact cannot share a path with a block or a whole-file artifact.</li>
+<li><code>diff(root, change, entries=entries)</code> previews the whole file; pass the
+  previous state so a dropped path shows as removed.</li>
+</ul>
 <h2 id="rendering-artifacts-from-templates">Rendering artifacts from templates<a class="headerlink" href="#rendering-artifacts-from-templates" title="Permanent link">&para;</a></h2>
 <p>With the <code>templates</code> extra, <code>TemplateArtifact</code> describes an artifact as a row
 and <code>render_artifacts</code> renders the enabled rows, in order. <code>templated</code> is
@@ -2387,7 +2440,7 @@ script, or another tool.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
