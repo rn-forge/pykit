@@ -20,6 +20,8 @@ deleted. A dropped idea is deleted too.
 | [release-recovery-drill](#release-recovery-drill) | A live drill of tag-only release recovery. | S14.2.5, amended 2026-10-03 |
 | [sonar-branch-analysis-plan](#sonar-branch-analysis-plan) | Decide whether to change the Sonar plan so branch dispatch can read its quality gate. | S14.4.2, amended 2026-10-03 |
 | auth-version-counter-retention | `InMemoryAuthorizationVersions` keeps one counter per account ever invalidated (16,000 after 16,000 invalidations, measured in S22.8.4). Deleting a counter can make an old context current, so a bound needs a protocol that keeps invalidation across caches sharing versions. | S22.8.4, owner 2026-11-16 |
+| money-minor-units | Integer minor-unit money helpers: `to_minor` and `from_minor` over `Decimal`, refusing `float` and excess precision, with ISO 4217 exponents from a maintained source such as Babel. Waits for a second application that stores money. | E32 review, owner 2026-11-22 |
+| tenant-scoped-queries | A repository or `with_loader_criteria` helper in `rn-forge-sqlalchemy` that adds a tenant-column filter to every query and returns `None` for another tenant's id. Waits for a second multi-tenant SQLAlchemy application. | E32 review, owner 2026-11-22 |
 
 ## model-vocabulary
 

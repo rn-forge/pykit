@@ -57,5 +57,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30) · [
 | Epic | State | Features | Iterations |
 | -- | -- | -- | -- |
 | [E31 — Tool version flag and install route](E31-tool-version-and-install-route/index.md) | Closed | 1 Closed | release-12 |
+| [E32 — Database application foundations](E32-database-app-foundations/index.md) | New | 3 New | — |
 
 <!-- END derived epics -->

@@ -28,6 +28,12 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 Features with no Iteration, by State and epic.
 
+### New
+
+| Epic | Features |
+| -- | -- |
+| [E32 — Database application foundations](epics/E32-database-app-foundations/index.md) | [F32.1](epics/E32-database-app-foundations/F32.1-postgres-test-schema.md), [F32.2](epics/E32-database-app-foundations/F32.2-alembic-env-helper.md), [F32.3](epics/E32-database-app-foundations/F32.3-typed-env-settings.md) |
+
 ### Deferred
 
 | Epic | Features | Entry criteria |

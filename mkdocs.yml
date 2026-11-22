@@ -267,6 +267,11 @@ nav:
           - E31 — Tool version flag and install route:
               - specs/epics/E31-tool-version-and-install-route/index.md
               - F31.1 — Version flag and install route: specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md
+          - E32 — Database application foundations:
+              - specs/epics/E32-database-app-foundations/index.md
+              - F32.1 — A PostgreSQL schema per test: specs/epics/E32-database-app-foundations/F32.1-postgres-test-schema.md
+              - F32.2 — Alembic `env.py` helper and migrations into a schema: specs/epics/E32-database-app-foundations/F32.2-alembic-env-helper.md
+              - F32.3 — Typed settings from environment variables: specs/epics/E32-database-app-foundations/F32.3-typed-env-settings.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md
