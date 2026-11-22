@@ -69,6 +69,32 @@ PRODUCT = GoldenTool(name="golden-tool", version=__version__, repo="rn-forge/gol
 Return an `info` finding from a passing check rather than nothing, so `doctor`
 shows that the check ran.
 
+## Installing on a new machine
+
+You need `uv` on `PATH`. For a tool whose lifecycle verbs live under `self`
+(`namespace = "self"`, see
+[Exposing the verbs on a command line](#exposing-the-verbs-on-a-command-line)),
+bootstrap it with:
+
+```sh
+uvx --from "git+https://github.com/<org>/<tool>@<ref>" <tool> self install --ref <ref>
+source "$RNF_HOME/env.sh"
+```
+
+`uvx` runs the tool once from its repository, and the tool's own `install`
+builds the tool home. `--ref` is described in
+[Installing a branch, tag or commit](#installing-a-branch-tag-or-commit).
+
+After that, `<tool> self upgrade`, `self status` and `self doctor` manage the
+install.
+
+`uv tool install` and `uv add` are not supported routes. `uv tool install`
+installs a wheel and writes console-script shims but runs none of the package's
+code, because a wheel has no post-install hook. So there is no tool home, no
+`state.json`, no `current` link for version switching, no completions and
+nothing for `doctor` to check. `uv add` makes the tool a dependency of another
+project, which is the route for libraries.
+
 ## Installing a branch, tag or commit
 
 `install --ref <ref>` installs the commit a branch, tag or commit SHA of the

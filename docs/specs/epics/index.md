@@ -56,6 +56,6 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30) · [
 
 | Epic | State | Features | Iterations |
 | -- | -- | -- | -- |
-| [E31 — Tool version flag and install route](E31-tool-version-and-install-route/index.md) | New | 1 New | release-12 |
+| [E31 — Tool version flag and install route](E31-tool-version-and-install-route/index.md) | Active | 1 Active | release-12 |
 
 <!-- END derived epics -->
