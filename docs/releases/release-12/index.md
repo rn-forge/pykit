@@ -24,6 +24,7 @@ releases of the packages whose requirements changed carry the floors.
 | Feature | Epic | State |
 | -- | -- | -- |
 | [F29.1 — Dependency updates](../../specs/epics/E29-release-12-dependency-updates/F29.1-dependency-updates.md) | E29 | Active |
+| [F30.1 — PostgreSQL engine and driver extras](../../specs/epics/E30-postgresql-support-in-rn-forge-sqlalchemy/F30.1-postgresql-engine-and-driver-extras.md) | E30 | New |
 
 <!-- END derived scope -->
 
