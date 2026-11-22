@@ -11,7 +11,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tests.conftest import POSTGRES_DSN
 
-pytest_plugins = ["pytester", "rn_forge.sqlalchemy.testing"]
+pytest_plugins = ["pytester"]
 
 _CONFTEST = 'pytest_plugins = ["rn_forge.sqlalchemy.testing"]\n'
 _SKIPPING_TEST = """

@@ -59,7 +59,6 @@ rn-forge-sqlalchemy = { workspace = true }
 addopts = "-ra --import-mode=importlib"
 markers = [
     "unit: fast isolated tests",
-    "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
 [tool.workspace-ci.integration.postgres]
