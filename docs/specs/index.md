@@ -11,7 +11,7 @@ Backlog sections below are derived from the epic, feature and release pages by
 
 | Release | Status | Features |
 | -- | -- | -- |
-| [Release 12 — Dependency updates in the release cut](../releases/release-12/index.md) | in progress | 3 Closed |
+| [Release 12 — Dependency updates in the release cut](../releases/release-12/index.md) | in progress | 2 Active · 1 New · 3 Closed |
 | [Release 11 — Dependency updates, Sonar debt and key-path artifacts](../releases/release-11/index.md) | shipped (2026-11-21) | 4 Closed |
 | [Release 10 — Typed application state and faster XLSX transfer](../releases/release-10/index.md) | shipped (2026-11-19) | 2 Closed |
 | [Release 9 — pykit simplification](../releases/release-9/index.md) | shipped (2026-11-18) | 19 Closed |
@@ -27,12 +27,6 @@ Backlog sections below are derived from the epic, feature and release pages by
 ## Backlog
 
 Features with no Iteration, by State and epic.
-
-### New
-
-| Epic | Features |
-| -- | -- |
-| [E32 — Database application foundations](epics/E32-database-app-foundations/index.md) | [F32.1](epics/E32-database-app-foundations/F32.1-postgres-test-schema.md), [F32.2](epics/E32-database-app-foundations/F32.2-alembic-env-helper.md), [F32.3](epics/E32-database-app-foundations/F32.3-typed-env-settings.md) |
 
 ### Deferred
 

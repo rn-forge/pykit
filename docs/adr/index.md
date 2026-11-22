@@ -23,3 +23,4 @@ the [spec board](../specs/index.md) tracks work.
 | [ADR-0015: The security baseline is nine named controls, each either failing the build or only reporting, with evidence per release](ADR-0015.md) | Security baseline | accepted |
 | [ADR-0016: AppLogger formats braces on its own records and never replaces the process record factory](ADR-0016.md) | Logging record factories | accepted |
 | [ADR-0017: The rn-forge home is a written contract that every installer implements, and the home owns the shell hookup](ADR-0017.md) | Tool install home | accepted |
+| [ADR-0018: Typed settings wrap pydantic-settings behind a commons extra](ADR-0018.md) | Typed settings | accepted |
