@@ -17,6 +17,7 @@ opaque page token.
 | `concurrency` | `update_versioned` — optimistic concurrency, raising `rn_forge.web.VersionConflict` (412) |
 | `upsert` | `upsert` — create or update rows by natural key, counting created, updated and skipped |
 | `postgres` | `create_postgres_engine` — an async PostgreSQL engine (asyncpg) with UTC sessions, pool settings and an optional statement timeout and application name |
+| `testing` | `postgres_schema` — a pytest plugin whose fixture gives each test its own PostgreSQL schema; needs the `testing` and `postgres` extras and is loaded with `pytest_plugins`, not imported from the facade |
 | `sqlite` | `create_sqlite_engine` — an async SQLite engine with WAL, foreign keys, busy timeout and `synchronous` set on every connection |
 | `migrate` | `run_migrations` — Alembic `upgrade` from inside the process; needs the `migrations` extra and is imported directly, not from the facade |
 | `pagination` | `keyset`, `next_page_token` — AIP-132 `orderBy` and AIP-158 tokens over a `Select` |

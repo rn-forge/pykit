@@ -2858,6 +2858,10 @@ postgres = [
 sqlite = [
     { name = "aiosqlite" },
 ]
+testing = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -2886,10 +2890,12 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.22.1" },
     { name = "alembic", marker = "extra == 'migrations'", specifier = ">=1.20.1" },
     { name = "asyncpg", marker = "extra == 'postgres'", specifier = ">=0.32.0" },
+    { name = "pytest", marker = "extra == 'testing'", specifier = ">=9.1.1" },
+    { name = "pytest-asyncio", marker = "extra == 'testing'", specifier = ">=1.4.1.post1" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
 ]
-provides-extras = ["migrations", "postgres", "sqlite"]
+provides-extras = ["migrations", "postgres", "sqlite", "testing"]
 
 [package.metadata.requires-dev]
 dev = [

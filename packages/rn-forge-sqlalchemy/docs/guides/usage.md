@@ -164,6 +164,55 @@ scheme is `postgresql://`, `postgres://` or `postgresql+asyncpg://`, and the
 driver is rewritten to `postgresql+asyncpg`. The engine does not connect and
 creates no tables.
 
+## Testing against PostgreSQL
+
+Install `rn-forge-sqlalchemy[postgres,testing]`, then load the plugin in the
+root `conftest.py`. The plugin is never loaded by installing the extra.
+
+```python
+pytest_plugins = ["rn_forge.sqlalchemy.testing"]
+```
+
+The `postgres_schema` fixture gives each test a fresh schema and a
+`PostgresSchema` with its `name`, `url` and `engine`. The engine's connections
+use the schema as their `search_path`. The fixture drops the schema with
+`CASCADE` after the test, whether it passed or failed, and skips the test when
+the DSN variable is unset or empty.
+
+```python
+import pytest
+from sqlalchemy import text
+
+
+@pytest.mark.postgres
+@pytest.mark.asyncio
+async def test_creates_a_table(postgres_schema):
+    async with postgres_schema.engine.begin() as connection:
+        await connection.execute(text("CREATE TABLE probe (id int)"))
+```
+
+The `rn_forge_postgres_dsn_env` ini option names the environment variable that
+holds the DSN; the default is `RN_FORGE_TEST_POSTGRES_DSN`. The plugin registers
+the `postgres` marker.
+
+In CI, a `[tool.workspace-ci.integration.postgres]` table starts the server and
+exports the DSN:
+
+```toml
+[tool.workspace-ci.integration.postgres]
+image = "postgres:17"
+ports = ["5432:5432"]
+health-cmd = "pg_isready -U ci"
+
+[tool.workspace-ci.integration.postgres.env]
+POSTGRES_USER = "ci"
+POSTGRES_PASSWORD = "ci"
+POSTGRES_DB = "ci"
+
+[tool.workspace-ci.integration.postgres.expose]
+RN_FORGE_TEST_POSTGRES_DSN = "postgresql://ci:ci@localhost:5432/ci"
+```
+
 ## Embedded migrations
 
 Install the extra, which adds `alembic`:

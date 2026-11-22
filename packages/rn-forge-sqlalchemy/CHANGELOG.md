@@ -13,6 +13,8 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
   sessions, pool settings and an optional statement timeout and application
   name.
 - `create_postgres_engine` takes `search_path`.
+- `rn_forge.sqlalchemy.testing`, a pytest plugin whose `postgres_schema` fixture
+  gives each test its own PostgreSQL schema; needs the new `testing` extra.
 - The `postgres` and `sqlite` extras install `asyncpg` and `aiosqlite`.
 
 ### Changed
