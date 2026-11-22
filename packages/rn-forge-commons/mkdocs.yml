@@ -65,6 +65,7 @@ nav:
           - Collections: reference/lang/collections.md
           - Dataclasses: reference/lang/dataclasses.md
           - Models: reference/lang/models.md
+          - Settings: reference/lang/settings.md
           - Reflection: reference/lang/reflection.md
           - Types: reference/lang/types.md
           - Utils: reference/lang/utils.md

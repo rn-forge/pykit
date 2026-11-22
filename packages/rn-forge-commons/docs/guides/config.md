@@ -76,3 +76,57 @@ Choose it over `DataclassMixin.from_dict` when the author of the document needs
 every mistake at once, or when the schema needs pydantic's validators. The extra
 is opt-in, and `rn_forge.commons` never imports it, so a program that does not
 use it pays nothing at import time.
+
+## Settings
+
+`EnvSettings` loads typed, frozen settings from prefixed environment variables.
+It needs the `settings` extra (`pip install rn-forge-commons[settings]`).
+
+```python
+from decimal import Decimal
+from pathlib import Path
+
+from pydantic_settings import SettingsConfigDict
+from rn_forge.commons.lang.settings import EnvSettings
+
+
+class AppSettings(EnvSettings):
+    model_config = SettingsConfigDict(env_prefix="APP_")
+
+    name: str = "app"
+    data_dir: Path = Path("data")
+    enabled: bool = False
+    workers: int = 1
+    cap: Decimal = Decimal("1.00")
+
+
+settings = AppSettings.load()
+```
+
+`load()` reads `os.environ`. `load({...})` reads the mapping you pass instead
+and never touches `os.environ`, which is what a test wants:
+
+```python
+def test_workers() -> None:
+    settings = AppSettings.load({"APP_WORKERS": "4", "app_enabled": "yes"})
+    assert settings.workers == 4
+    assert settings.enabled is True
+```
+
+Variable names are matched without regard to case. Every invalid or missing
+variable is reported in one `SettingsError`, named by its environment variable:
+
+```python
+AppSettings.load({"APP_WORKERS": "x", "APP_ENABLED": "maybe"})
+# SettingsError: Invalid settings: APP_ENABLED: Value error, ...; APP_WORKERS: Input should be a valid integer, ...
+```
+
+`SettingsError.variables` holds the sorted names
+(`("APP_ENABLED", "APP_WORKERS")`).
+
+A `bool` field takes the tokens `AppUtils.parse_bool` takes, case-insensitively:
+`true`, `yes`, `y`, `on`, `1`, `enabled` and `false`, `no`, `n`, `off`, `0`,
+`disabled`, `none`. Any other string is an error.
+
+No `.env` file or secrets directory is read unless a subclass sets `env_file` or
+`secrets_dir` in its `model_config`.

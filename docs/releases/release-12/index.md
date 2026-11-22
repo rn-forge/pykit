@@ -31,7 +31,7 @@ schema per test, an Alembic `env.py` helper, and typed settings.
 | [F31.1 — Version flag and install route](../../specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md) | E31 | Closed |
 | [F32.1 — A PostgreSQL schema per test](../../specs/epics/E32-database-app-foundations/F32.1-postgres-test-schema.md) | E32 | Active |
 | [F32.2 — Alembic `env.py` helper and migrations into a schema](../../specs/epics/E32-database-app-foundations/F32.2-alembic-env-helper.md) | E32 | New |
-| [F32.3 — Typed settings from environment variables](../../specs/epics/E32-database-app-foundations/F32.3-typed-env-settings.md) | E32 | Active |
+| [F32.3 — Typed settings from environment variables](../../specs/epics/E32-database-app-foundations/F32.3-typed-env-settings.md) | E32 | Closed |
 
 <!-- END derived scope -->
 

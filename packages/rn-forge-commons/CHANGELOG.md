@@ -5,7 +5,13 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
-## [0.10.2] - 2026-11-21
+## [0.10.2] - 2026-11-22
+
+### Added
+
+- `rn_forge.commons.lang.settings`: `EnvSettings` loads typed settings from
+  prefixed environment variables, raising one `SettingsError` that names every
+  invalid variable. Needs the new `settings` extra.
 
 ### Changed
 
