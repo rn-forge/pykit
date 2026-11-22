@@ -263,6 +263,10 @@ nav:
           - E30 — PostgreSQL support in rn-forge-sqlalchemy:
               - specs/epics/E30-postgresql-support-in-rn-forge-sqlalchemy/index.md
               - F30.1 — PostgreSQL engine and driver extras: specs/epics/E30-postgresql-support-in-rn-forge-sqlalchemy/F30.1-postgresql-engine-and-driver-extras.md
+      - E31–E40:
+          - E31 — Tool version flag and install route:
+              - specs/epics/E31-tool-version-and-install-route/index.md
+              - F31.1 — Version flag and install route: specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md
       - Ideas:
           - specs/ideas/index.md
   - Decisions: adr/index.md

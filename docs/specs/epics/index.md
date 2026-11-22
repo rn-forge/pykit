@@ -6,7 +6,7 @@ ships when is on [the board](../index.md).
 
 <!-- BEGIN derived epics -->
 
-Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
+Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30) · [E31–E40](#e31e40)
 
 ## E1–E10
 
@@ -51,5 +51,11 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30)
 | [E28 — The rn-forge home](E28-rn-forge-home/index.md) | Closed | 1 Closed | release-11 |
 | [E29 — Dependency updates in the release cut](E29-release-12-dependency-updates/index.md) | Active | 1 Active | release-12 |
 | [E30 — PostgreSQL support in rn-forge-sqlalchemy](E30-postgresql-support-in-rn-forge-sqlalchemy/index.md) | New | 1 New | release-12 |
+
+## E31–E40
+
+| Epic | State | Features | Iterations |
+| -- | -- | -- | -- |
+| [E31 — Tool version flag and install route](E31-tool-version-and-install-route/index.md) | New | 1 New | release-12 |
 
 <!-- END derived epics -->
