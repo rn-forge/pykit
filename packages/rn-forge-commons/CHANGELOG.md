@@ -5,6 +5,12 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-21
+
+### Changed
+
+- Requires `tomlkit>=0.15.2`.
+
 ## [0.10.1] - 2026-11-20
 
 ### Added

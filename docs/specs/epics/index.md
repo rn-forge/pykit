@@ -49,7 +49,7 @@ Jump to: [E1–E10](#e1e10) · [E11–E20](#e11e20) · [E21–E30](#e21e30) · [
 | [E26 — Dependency updates and Sonar debt](E26-release-11-maintenance/index.md) | Closed | 2 Closed | release-11 |
 | [E27 — Key-path artifacts](E27-key-path-artifacts/index.md) | Closed | 1 Closed | release-11 |
 | [E28 — The rn-forge home](E28-rn-forge-home/index.md) | Closed | 1 Closed | release-11 |
-| [E29 — Dependency updates in the release cut](E29-release-12-dependency-updates/index.md) | Active | 1 Active | release-12 |
+| [E29 — Dependency updates in the release cut](E29-release-12-dependency-updates/index.md) | Closed | 1 Closed | release-12 |
 | [E30 — PostgreSQL support in rn-forge-sqlalchemy](E30-postgresql-support-in-rn-forge-sqlalchemy/index.md) | New | 1 New | release-12 |
 
 ## E31–E40

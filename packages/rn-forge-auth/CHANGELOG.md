@@ -5,6 +5,12 @@ Notable changes to `rn-forge-auth`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-21
+
+### Changed
+
+- Requires `authlib>=1.9.5`.
+
 ## [0.2.1] - 2026-11-20
 
 ### Changed

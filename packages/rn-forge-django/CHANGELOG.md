@@ -5,6 +5,12 @@ Notable changes to `rn-forge-django`, newest first, in the
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-21
+
+### Changed
+
+- Requires `django>=6.1.3`.
+
 ## [0.7.0] - 2026-11-17
 
 ### Changed

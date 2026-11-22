@@ -2,14 +2,15 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-21 |
+| **Closed Date** | 2026-11-21 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F29.1 — Dependency updates](F29.1-dependency-updates.md) | Active | release-12 | 1 New · 1 Closed |
+| [F29.1 — Dependency updates](F29.1-dependency-updates.md) | Closed | release-12 | 2 Closed |
 
 <!-- END derived features -->
 

@@ -5,6 +5,12 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-11-21
+
+### Changed
+
+- Requires `fastapi>=0.162.7`.
+
 ## [0.5.2] - 2026-11-20
 
 ### Changed

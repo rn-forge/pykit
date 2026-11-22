@@ -5,6 +5,12 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-11-21
+
+### Changed
+
+- The `pandas` extra requires `pandas>=3.1.1`.
+
 ## [0.1.6] - 2026-11-20
 
 ### Changed
