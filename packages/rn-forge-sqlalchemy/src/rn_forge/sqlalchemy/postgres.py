@@ -22,13 +22,14 @@ def create_postgres_engine(
     pool_recycle_s: int = 1800,
     statement_timeout_ms: int | None = None,
     application_name: str | None = None,
+    search_path: str | None = None,
     prepared_statement_cache_size: int = 100,
 ) -> AsyncEngine:
     """Create an ``AsyncEngine`` on PostgreSQL through ``asyncpg``.
 
     Every connection sets the session time zone to UTC, plus
-    ``application_name`` and ``statement_timeout`` when given. The engine does
-    not connect and creates no tables.
+    ``application_name``, ``statement_timeout`` and ``search_path`` when given.
+    The engine does not connect and creates no tables.
 
     Args:
         url: A ``postgresql://``, ``postgres://`` or ``postgresql+asyncpg://``
@@ -42,6 +43,9 @@ def create_postgres_engine(
             statement; ``None`` leaves the server default.
         application_name: The ``application_name`` the server reports;
             ``None`` leaves the driver default.
+        search_path: The schema search path every connection sets, as
+            PostgreSQL's comma-separated list; ``None`` leaves the server
+            default.
         prepared_statement_cache_size: Size of both the SQLAlchemy and asyncpg
             prepared-statement caches; ``0`` turns them off.
 
@@ -53,6 +57,7 @@ def create_postgres_engine(
         ValueError: *pool_size*, *max_overflow*, *pool_recycle_s*,
             *prepared_statement_cache_size* or *statement_timeout_ms* is
             negative.
+        ValueError: *search_path* is empty.
         ImportError: ``asyncpg`` is not installed.
     """
     parsed = make_url(url)
@@ -72,6 +77,8 @@ def create_postgres_engine(
     for name, value in numbers.items():
         if value < 0:
             raise ValueError(f"{name} must be >= 0, got {value}")
+    if search_path == "":
+        raise ValueError("search_path must not be empty")
     try:
         importlib.import_module("asyncpg")
     except ImportError as error:
@@ -85,6 +92,8 @@ def create_postgres_engine(
         settings["application_name"] = application_name
     if statement_timeout_ms is not None:
         settings["statement_timeout"] = str(statement_timeout_ms)
+    if search_path is not None:
+        settings["search_path"] = search_path
     # SQLAlchemy's dialect reads prepared_statement_cache_size as a connect
     # argument; statement_cache_size is asyncpg's own cache.
     connect_args: dict[str, Any] = {

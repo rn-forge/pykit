@@ -135,6 +135,35 @@ the directory step and WAL, and uses a single shared connection, so every
 session sees the same database. The helper never creates tables: schema is the
 migrations' job.
 
+## PostgreSQL engine
+
+```python
+from rn_forge.sqlalchemy import create_postgres_engine
+
+engine = create_postgres_engine(
+    "postgresql://user:pass@localhost/app",
+    application_name="svc",
+    statement_timeout_ms=5000,
+    search_path="app,public",
+)
+```
+
+The helper returns an `AsyncEngine` on `asyncpg` that sets these on every new
+connection:
+
+| Argument | Setting | Effect |
+| -- | -- | -- |
+| always | `timezone` | The session time zone is `UTC` |
+| `application_name` | `application_name` | The name the server reports |
+| `statement_timeout_ms` | `statement_timeout` | Milliseconds before the server cancels a statement |
+| `search_path` | `search_path` | The schema search path, as PostgreSQL's comma-separated list |
+
+A setting left as `None` stays at the server default. Install the `postgres`
+extra, which adds `asyncpg`; without it the helper raises `ImportError`. The URL
+scheme is `postgresql://`, `postgres://` or `postgresql+asyncpg://`, and the
+driver is rewritten to `postgresql+asyncpg`. The engine does not connect and
+creates no tables.
+
 ## Embedded migrations
 
 Install the extra, which adds `alembic`:

@@ -156,3 +156,34 @@ async def test_create_postgres_engine_connection_reports_utc(make_engine) -> Non
 
     assert_that(tz).is_equal_to("UTC")
     assert_that(app).is_equal_to("rn-forge-test")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_postgres_engine_search_path_in_server_settings(make_engine) -> None:
+    with_path = await _cparams(make_engine(search_path="s1"))
+    without = await _cparams(make_engine())
+
+    assert_that(with_path["server_settings"]["search_path"]).is_equal_to("s1")
+    assert_that(without["server_settings"]).does_not_contain_key("search_path")
+
+
+@pytest.mark.unit
+def test_postgres_engine_rejects_empty_search_path(make_engine) -> None:
+    assert_that(make_engine).raises(ValueError).when_called_with(
+        _URL, search_path=""
+    ).matches("search_path")
+
+
+@pytest.mark.asyncio
+@pytest.mark.postgres
+async def test_postgres_engine_connection_uses_search_path(make_engine) -> None:
+    dsn = os.environ.get(POSTGRES_DSN)
+    if not dsn:
+        pytest.skip(f"{POSTGRES_DSN} is not set")
+    engine = make_engine(dsn, search_path="rn_forge_probe")
+
+    async with engine.connect() as connection:
+        path = (await connection.execute(text("SHOW search_path"))).scalar_one()
+
+    assert_that(path).is_equal_to("rn_forge_probe")
