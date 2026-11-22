@@ -7,6 +7,13 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [0.2.2] - 2026-11-21
 
+### Added
+
+- `CliApp(version=...)` adds an eager `--version` that prints
+  `<name> <version>`.
+- The `[cli]` table's `distribution` key supplies that version from the
+  installed distribution.
+
 ### Changed
 
 - Requires `typer>=0.29.1`.

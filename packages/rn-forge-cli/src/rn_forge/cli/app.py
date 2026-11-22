@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import inspect
 import re
 from collections.abc import Mapping, Sequence
@@ -176,6 +177,7 @@ class CliApp(typer.Typer):
         help: str | None = None,
         *,
         default_log_level: LogLevel = LogLevel.VERBOSE,
+        version: str | None = None,
         **typer_kwargs: Any,
     ) -> None:
         """Initialize the application and register its root callback.
@@ -188,6 +190,8 @@ class CliApp(typer.Typer):
                 ``_``) as the root logger name.
             help: The app's ``--help`` description.
             default_log_level: Default value for ``--log-level``.
+            version: The version ``--version`` prints as ``<name> <version>``.
+                Without one the app has no ``--version`` option.
             **typer_kwargs: Forwarded to the :class:`typer.Typer` constructor.
         """
         typer_kwargs.setdefault("no_args_is_help", True)
@@ -195,7 +199,6 @@ class CliApp(typer.Typer):
         super().__init__(name=name, help=help, **typer_kwargs)
         self._logger_name = name.replace(" ", "_").lower()
 
-        @self.callback()
         def _root(
             ctx: typer.Context,
             log_level: LogLevelOption = default_log_level,
@@ -218,6 +221,35 @@ class CliApp(typer.Typer):
                 file=str(log_file) if log_file else None,
                 force_reconfigure=explicit,
             )
+
+        if version is None:
+            self.callback()(_root)
+            return
+
+        def _show_version(requested: bool) -> None:
+            if requested:
+                typer.echo(f"{name} {version}")
+                raise typer.Exit(ExitCode.OK)
+
+        # A default-value Option, not Annotated: with postponed annotations the
+        # local `_show_version` would not resolve. Eager, so it runs before the
+        # command is resolved and before `_root`.
+        @self.callback()
+        def _root_with_version(
+            ctx: typer.Context,
+            log_level: LogLevelOption = default_log_level,
+            log_file: LogFileOption = None,
+            quiet: QuietOption = False,
+            json_output: JsonOption = False,
+            show_version: bool = typer.Option(
+                False,
+                "--version",
+                callback=_show_version,
+                is_eager=True,
+                help="Show the version and exit.",
+            ),
+        ) -> None:
+            _root(ctx, log_level, log_file, quiet, json_output)
 
     @classmethod
     def from_config(
@@ -243,7 +275,21 @@ class CliApp(typer.Typer):
 
     @classmethod
     def from_surface(cls, surface: CliSurface, **typer_kwargs: Any) -> Self:
-        """Build the application an already-parsed *surface* describes."""
+        """Build the application an already-parsed *surface* describes.
+
+        Raises:
+            AppException: ``surface.distribution`` is not an installed
+                distribution, or a command's target cannot be imported.
+        """
+        if surface.distribution is not None:
+            try:
+                typer_kwargs["version"] = importlib.metadata.version(
+                    surface.distribution
+                )
+            except importlib.metadata.PackageNotFoundError as error:
+                raise AppException(
+                    "Distribution {!r} is not installed", surface.distribution
+                ) from error
         app = cls(
             surface.name,
             _escape_markup(surface.help) if surface.help else surface.help,

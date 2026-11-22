@@ -27,6 +27,7 @@ target = "golden_app.commands.db:app"
 | `name` | application name, also the root logger name |
 | `help` | the application's `--help` text |
 | `default_log_level` | default value of `--log-level` (default `verbose`) |
+| `distribution` | the installed distribution whose version `--version` prints; without it, no `--version` |
 | `commands[].name` | the name the command is invoked by |
 | `commands[].target` | import path, as `module:attribute` or a dotted path |
 | `commands[].help` | help text, used as written; defaults to the target's docstring, cut before its first section |

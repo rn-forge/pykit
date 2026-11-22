@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import io
 import json
 import sys
@@ -268,3 +269,15 @@ def test_an_unimportable_product_is_reported():
 def greet(name: str = "world") -> None:
     """Greet someone, for a root command sharing a verb's name."""
     print(f"hello {name}")
+
+
+def test_build_tool_app_answers_version(capsys):
+    versioned = build_tool_app(
+        {
+            "cli": {"name": "golden-tool", "distribution": "rn-forge-tooling"},
+            "lifecycle": {"product": f"{HERE}:PRODUCT"},
+        }
+    )
+    assert versioned.run(["--version"]) == ExitCode.OK
+    expected = importlib.metadata.version("rn-forge-tooling")
+    assert capsys.readouterr().out == f"golden-tool {expected}\n"

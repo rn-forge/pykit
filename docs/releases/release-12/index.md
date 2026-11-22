@@ -25,7 +25,7 @@ releases of the packages whose requirements changed carry the floors.
 | -- | -- | -- |
 | [F29.1 — Dependency updates](../../specs/epics/E29-release-12-dependency-updates/F29.1-dependency-updates.md) | E29 | Closed |
 | [F30.1 — PostgreSQL engine and driver extras](../../specs/epics/E30-postgresql-support-in-rn-forge-sqlalchemy/F30.1-postgresql-engine-and-driver-extras.md) | E30 | New |
-| [F31.1 — Version flag and install route](../../specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md) | E31 | Active |
+| [F31.1 — Version flag and install route](../../specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md) | E31 | Closed |
 
 <!-- END derived scope -->
 
@@ -40,7 +40,8 @@ None.
 ## Progress
 
 F29.1 is closed: the updates of Dependabot pull request #42 are on the release
-branch, with patch versions for the seven packages they touch.
+branch, with patch versions for the seven packages they touch. F31.1 is closed:
+`CliApp` answers `--version`, and the tool install route is documented.
 
 ## Commits
 

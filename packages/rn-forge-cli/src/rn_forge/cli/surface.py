@@ -49,6 +49,8 @@ class CliSurface(StrictDataclassMixin):
         help: The application's ``--help`` description.
         default_log_level: The default value of ``--log-level``.
         commands: The commands and namespaces the app exposes.
+        distribution: The installed distribution whose version ``--version``
+            prints. Without one the app has no ``--version``.
     """
 
     name: str
@@ -57,10 +59,13 @@ class CliSurface(StrictDataclassMixin):
     commands: tuple[CommandSurface, ...] = field(
         default_factory=tuple[CommandSurface, ...]
     )
+    distribution: str | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise AppException("A declared CLI needs a name")
+        if self.distribution is not None and not self.distribution.strip():
+            raise AppException("A declared CLI's distribution cannot be blank")
         duplicates = _duplicates(command.name for command in self.commands)
         if duplicates:
             raise AppException("Duplicate command name(s): {}", ", ".join(duplicates))
