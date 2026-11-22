@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from typing import Any
 
 from sqlalchemy.engine import URL, make_url
@@ -52,6 +53,7 @@ def create_postgres_engine(
         ValueError: *pool_size*, *max_overflow*, *pool_recycle_s*,
             *prepared_statement_cache_size* or *statement_timeout_ms* is
             negative.
+        ImportError: ``asyncpg`` is not installed.
     """
     parsed = make_url(url)
     if parsed.drivername not in _DRIVERNAMES:
@@ -70,6 +72,12 @@ def create_postgres_engine(
     for name, value in numbers.items():
         if value < 0:
             raise ValueError(f"{name} must be >= 0, got {value}")
+    try:
+        importlib.import_module("asyncpg")
+    except ImportError as error:
+        raise ImportError(
+            "create_postgres_engine needs asyncpg; install rn-forge-sqlalchemy[postgres]"
+        ) from error
 
     # asyncpg needs string values for server settings.
     settings = {"timezone": "UTC"}

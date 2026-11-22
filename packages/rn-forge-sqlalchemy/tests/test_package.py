@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from importlib.metadata import metadata
 
 import pytest
@@ -17,3 +19,19 @@ def test_package_metadata_lists_postgres_and_sqlite_extras() -> None:
     assert_that(
         [r for r in requires if r.startswith("aiosqlite") and 'extra == "sqlite"' in r]
     ).is_not_empty()
+
+
+def test_import_without_drivers_succeeds() -> None:
+    script = (
+        "import sys\n"
+        "sys.modules['asyncpg'] = None\n"
+        "sys.modules['aiosqlite'] = None\n"
+        "from rn_forge.sqlalchemy import create_postgres_engine, create_sqlite_engine\n"
+        "create_postgres_engine, create_sqlite_engine\n"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=False
+    )
+
+    assert_that(result.returncode).described_as(result.stderr).is_equal_to(0)

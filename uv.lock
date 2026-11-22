@@ -2811,7 +2811,7 @@ docs = [
 
 [[package]]
 name = "rn-forge-sqlalchemy"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "packages/rn-forge-sqlalchemy" }
 dependencies = [
     { name = "rn-forge-web" },

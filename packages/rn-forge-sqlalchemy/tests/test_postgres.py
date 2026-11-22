@@ -1,4 +1,5 @@
 import os
+import sys
 from collections.abc import AsyncIterator, Callable
 from typing import Any
 
@@ -128,6 +129,15 @@ def test_create_postgres_engine_rejects_negative_arguments(make_engine, name) ->
     assert_that(make_engine).raises(ValueError).when_called_with(
         _URL, **{name: -1}
     ).contains(name)
+
+
+@pytest.mark.unit
+def test_create_postgres_engine_without_asyncpg_names_the_extra(monkeypatch) -> None:
+    monkeypatch.setitem(sys.modules, "asyncpg", None)
+
+    assert_that(create_postgres_engine).raises(ImportError).when_called_with(
+        "postgresql://u@h/d"
+    ).contains("rn-forge-sqlalchemy[postgres]")
 
 
 @pytest.mark.asyncio

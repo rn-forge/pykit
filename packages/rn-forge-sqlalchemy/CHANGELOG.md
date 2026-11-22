@@ -5,12 +5,18 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-21
+
 ### Added
 
 - `create_postgres_engine`, an async PostgreSQL engine on `asyncpg` with UTC
   sessions, pool settings and an optional statement timeout and application
   name.
 - The `postgres` and `sqlite` extras install `asyncpg` and `aiosqlite`.
+
+### Changed
+
+- A missing driver raises `ImportError` naming the `postgres` or `sqlite` extra.
 
 ## [0.2.4] - 2026-11-17
 

@@ -1,3 +1,4 @@
+import sys
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
@@ -145,3 +146,11 @@ async def test_memory_sessions_share_one_database(make_engine) -> None:
     assert_that(rows).is_equal_to(0)
     assert_that(await _pragma(engine, "journal_mode")).is_equal_to("memory")
     assert_that(await _pragma(engine, "foreign_keys")).is_equal_to(1)
+
+
+def test_create_sqlite_engine_without_aiosqlite_names_the_extra(monkeypatch) -> None:
+    monkeypatch.setitem(sys.modules, "aiosqlite", None)
+
+    assert_that(create_sqlite_engine).raises(ImportError).when_called_with(
+        ":memory:"
+    ).contains("rn-forge-sqlalchemy[sqlite]")
