@@ -279,6 +279,27 @@ the config.
   `run_migrations` sets to `False`, so the application's logging is not
   reconfigured.
 
+### Migrating into a schema
+
+`run_migrations(..., schema="name")` upgrades a PostgreSQL database inside that
+schema, and `alembic_version` lives there too.
+
+- PostgreSQL only; any other URL raises `ValueError` before a connection is
+  made.
+- The schema must already exist; `run_migrations` does not create it.
+- Unqualified tables land in the schema, because `run_env` sets the connection's
+  `search_path` to it.
+
+To test migrations per test on `postgres_schema`:
+
+```python
+def test_migrations_reach_head(postgres_schema):
+    run_migrations("myapp:migrations", postgres_schema.url, schema=postgres_schema.name)
+```
+
+`run_migrations` blocks, so the test is sync, or an async test calls it through
+`asyncio.to_thread`.
+
 ### Script location
 
 `script_location` is a directory, or a package resource such as

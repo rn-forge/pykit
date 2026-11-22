@@ -11,6 +11,8 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 - `rn_forge.sqlalchemy.migrate.run_env`, a whole Alembic `env.py` in one call,
   with `target_metadata` for autogenerate.
+- `run_migrations` takes `schema`, to upgrade a PostgreSQL database inside a
+  named schema.
 - `create_postgres_engine`, an async PostgreSQL engine on `asyncpg` with UTC
   sessions, pool settings and an optional statement timeout and application
   name.

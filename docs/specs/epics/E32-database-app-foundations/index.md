@@ -2,15 +2,16 @@
 
 |  |  |
 | -- | -- |
-| **State** | Active |
+| **State** | Closed |
 | **Start Date** | 2026-11-22 |
+| **Closed Date** | 2026-11-22 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
 | [F32.1 — A PostgreSQL schema per test](F32.1-postgres-test-schema.md) | Closed | release-12 | 3 Closed |
-| [F32.2 — Alembic `env.py` helper and migrations into a schema](F32.2-alembic-env-helper.md) | Active | release-12 | 1 New · 1 Closed |
+| [F32.2 — Alembic `env.py` helper and migrations into a schema](F32.2-alembic-env-helper.md) | Closed | release-12 | 2 Closed |
 | [F32.3 — Typed settings from environment variables](F32.3-typed-env-settings.md) | Closed | release-12 | 2 Closed |
 
 <!-- END derived features -->

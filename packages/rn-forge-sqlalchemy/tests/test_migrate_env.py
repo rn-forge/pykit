@@ -10,6 +10,7 @@ from alembic.runtime.environment import EnvironmentContext
 from assertpy import assert_that
 from rn_forge.sqlalchemy import create_sqlite_engine
 from rn_forge.sqlalchemy.migrate import run_migrations
+from rn_forge.sqlalchemy.testing import PostgresSchema
 from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -204,3 +205,75 @@ async def test_run_env_configure_overrides_default(
     await asyncio.to_thread(run_migrations, default, _url(tmp_path / "b.db"))
 
     assert_that([r["render_as_batch"] for r in recorded]).is_equal_to([False, True])
+
+
+async def _schema_tables(schema: PostgresSchema) -> dict[str, set[str]]:
+    async with schema.engine.connect() as connection:
+        rows = await connection.execute(
+            text(
+                "SELECT table_name, table_schema FROM information_schema.tables "
+                "WHERE table_name IN ('one', 'two', 'alembic_version')"
+            )
+        )
+        found: dict[str, set[str]] = {}
+        for name, table_schema in rows:
+            found.setdefault(table_schema, set()).add(name)
+    return found
+
+
+@pytest.mark.postgres
+@pytest.mark.asyncio
+async def test_run_migrations_into_schema(
+    tmp_path: Path, postgres_schema: PostgresSchema
+) -> None:
+    scripts = _scripts(tmp_path, "pgs")
+
+    await asyncio.to_thread(
+        run_migrations, scripts, postgres_schema.url, schema=postgres_schema.name
+    )
+
+    found = await _schema_tables(postgres_schema)
+    assert_that(found).is_equal_to(
+        {postgres_schema.name: {"one", "two", "alembic_version"}}
+    )
+
+
+@pytest.mark.postgres
+@pytest.mark.asyncio
+async def test_run_migrations_into_schema_twice_changes_nothing(
+    tmp_path: Path, postgres_schema: PostgresSchema
+) -> None:
+    scripts = _scripts(tmp_path, "pgtwice")
+
+    for _ in range(2):
+        await asyncio.to_thread(
+            run_migrations, scripts, postgres_schema.url, schema=postgres_schema.name
+        )
+
+    async with postgres_schema.engine.connect() as connection:
+        rows = await connection.execute(
+            text(f'SELECT version_num FROM "{postgres_schema.name}".alembic_version')  # noqa: S608
+        )
+        versions = [row[0] for row in rows]
+    assert_that(versions).is_equal_to(["pgtwice_r2"])
+
+
+@pytest.mark.asyncio
+async def test_run_migrations_schema_rejects_sqlite(tmp_path: Path) -> None:
+    scripts = _scripts(tmp_path, "pgsqlite")
+    db = tmp_path / "app.db"
+
+    with pytest.raises(ValueError, match="sqlite"):
+        await asyncio.to_thread(run_migrations, scripts, _url(db), schema="x")
+
+    assert_that(db.exists()).is_false()
+
+
+@pytest.mark.asyncio
+async def test_run_migrations_rejects_empty_schema(tmp_path: Path) -> None:
+    scripts = _scripts(tmp_path, "pgempty")
+
+    with pytest.raises(ValueError, match="empty"):
+        await asyncio.to_thread(
+            run_migrations, scripts, _url(tmp_path / "app.db"), schema=""
+        )

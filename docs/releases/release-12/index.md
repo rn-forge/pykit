@@ -30,7 +30,7 @@ schema per test, an Alembic `env.py` helper, and typed settings.
 | [F30.1 — PostgreSQL engine and driver extras](../../specs/epics/E30-postgresql-support-in-rn-forge-sqlalchemy/F30.1-postgresql-engine-and-driver-extras.md) | E30 | Closed |
 | [F31.1 — Version flag and install route](../../specs/epics/E31-tool-version-and-install-route/F31.1-version-flag-and-install-route.md) | E31 | Closed |
 | [F32.1 — A PostgreSQL schema per test](../../specs/epics/E32-database-app-foundations/F32.1-postgres-test-schema.md) | E32 | Closed |
-| [F32.2 — Alembic `env.py` helper and migrations into a schema](../../specs/epics/E32-database-app-foundations/F32.2-alembic-env-helper.md) | E32 | Active |
+| [F32.2 — Alembic `env.py` helper and migrations into a schema](../../specs/epics/E32-database-app-foundations/F32.2-alembic-env-helper.md) | E32 | Closed |
 | [F32.3 — Typed settings from environment variables](../../specs/epics/E32-database-app-foundations/F32.3-typed-env-settings.md) | E32 | Closed |
 
 <!-- END derived scope -->
@@ -50,8 +50,12 @@ F29.1 is closed: the updates of Dependabot pull request #42 are on the release
 branch, with patch versions for the seven packages they touch. F31.1 is closed:
 `CliApp` answers `--version`, and the tool install route is documented. F30.1 is
 closed: `rn-forge-sqlalchemy` 0.2.5 has `create_postgres_engine` and the
-`postgres` and `sqlite` driver extras. E32 was added to the scope on 2026-11-22;
-S32.3.1 is closed by [ADR-0018](../../adr/ADR-0018.md).
+`postgres` and `sqlite` driver extras. E32 joined the scope on 2026-11-22 and is
+closed: `rn-forge-sqlalchemy` 0.2.5 also gains `search_path`, the
+`postgres_schema` test plugin, `run_env` and `run_migrations(schema=...)`, and
+`rn-forge-commons` 0.10.2 gains typed settings
+([ADR-0018](../../adr/ADR-0018.md)). Every feature in scope is closed; the
+release cut is next.
 
 ## Commits
 
