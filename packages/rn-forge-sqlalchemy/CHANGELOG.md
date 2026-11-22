@@ -5,6 +5,10 @@ Notable changes to `rn-forge-sqlalchemy`, newest first, in the
 
 ## [Unreleased]
 
+### Added
+
+- The `postgres` and `sqlite` extras install `asyncpg` and `aiosqlite`.
+
 ## [0.2.4] - 2026-11-17
 
 ### Fixed

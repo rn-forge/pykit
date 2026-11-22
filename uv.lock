@@ -2822,6 +2822,12 @@ dependencies = [
 migrations = [
     { name = "alembic" },
 ]
+postgres = [
+    { name = "asyncpg" },
+]
+sqlite = [
+    { name = "aiosqlite" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -2847,11 +2853,13 @@ docs = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.22.1" },
     { name = "alembic", marker = "extra == 'migrations'", specifier = ">=1.20.1" },
+    { name = "asyncpg", marker = "extra == 'postgres'", specifier = ">=0.32.0" },
     { name = "rn-forge-web", editable = "packages/rn-forge-web" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
 ]
-provides-extras = ["migrations"]
+provides-extras = ["migrations", "postgres", "sqlite"]
 
 [package.metadata.requires-dev]
 dev = [

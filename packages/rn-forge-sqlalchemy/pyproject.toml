@@ -18,12 +18,14 @@ classifiers = [
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 #
-# No database driver is declared: the application picks one (`asyncpg`,
-# `aiosqlite`). `rn-forge-commons` arrives through `rn-forge-web`.
+# The drivers come from the `postgres` and `sqlite` extras, so the core install
+# carries none. `rn-forge-commons` arrives through `rn-forge-web`.
 dependencies = ["rn-forge-web>=0.3.0,<0.4", "sqlalchemy[asyncio]>=2.0"]
 
 [project.optional-dependencies]
 migrations = ["alembic>=1.20.1"]
+postgres = ["asyncpg>=0.32.0"]
+sqlite = ["aiosqlite>=0.22.1"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/"

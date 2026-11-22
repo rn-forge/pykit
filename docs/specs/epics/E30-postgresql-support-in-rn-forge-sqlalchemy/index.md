@@ -2,13 +2,14 @@
 
 |  |  |
 | -- | -- |
-| **State** | New |
+| **State** | Active |
+| **Start Date** | 2026-11-21 |
 
 <!-- BEGIN derived features -->
 
 | Feature | State | Iteration | Stories |
 | -- | -- | -- | -- |
-| [F30.1 — PostgreSQL engine and driver extras](F30.1-postgresql-engine-and-driver-extras.md) | New | release-12 | 3 New |
+| [F30.1 — PostgreSQL engine and driver extras](F30.1-postgresql-engine-and-driver-extras.md) | Active | release-12 | 2 New · 1 Closed |
 
 <!-- END derived features -->
 

@@ -42,8 +42,9 @@ dependencies = [
 Application code catches `rn_forge.web.VersionConflict` and passes
 `rn_forge.web` pagination terms, so declare `rn-forge-web` as well.
 
-No database driver is declared. Add `asyncpg` for PostgreSQL or `aiosqlite` for
-SQLite.
+The core install carries no database driver.
+`rn-forge-sqlalchemy[postgres]>=0.2.5,<0.3` installs `asyncpg` and
+`rn-forge-sqlalchemy[sqlite]>=0.2.5,<0.3` installs `aiosqlite`.
 
 `run_migrations` needs the `migrations` extra:
 `rn-forge-sqlalchemy[migrations]>=0.2.3,<0.3`.
