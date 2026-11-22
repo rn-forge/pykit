@@ -13,6 +13,7 @@ from rn_forge.sqlalchemy.models import (
     undelete,
 )
 from rn_forge.sqlalchemy.pagination import keyset, next_page_token
+from rn_forge.sqlalchemy.postgres import create_postgres_engine
 from rn_forge.sqlalchemy.sqlite import create_sqlite_engine
 from rn_forge.sqlalchemy.upsert import UpsertCounts, upsert
 
@@ -24,6 +25,7 @@ __all__ = [
     "UTCDateTime",
     "UpsertCounts",
     "VersionMixin",
+    "create_postgres_engine",
     "create_sqlite_engine",
     "keyset",
     "live",
