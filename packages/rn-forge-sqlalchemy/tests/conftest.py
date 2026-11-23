@@ -9,10 +9,6 @@ from rn_forge.sqlalchemy import Base
 from rn_forge.sqlalchemy.testing import PostgresSchema
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-pytest_plugins = ["rn_forge.sqlalchemy.testing"]
-
-POSTGRES_DSN = "RN_FORGE_TEST_POSTGRES_DSN"
-
 
 @pytest_asyncio.fixture
 async def sqlite_engine(tmp_path: Path) -> AsyncIterator[AsyncEngine]:

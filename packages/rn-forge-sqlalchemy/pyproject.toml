@@ -56,7 +56,7 @@ rn-forge-fastapi = { workspace = true }
 rn-forge-sqlalchemy = { workspace = true }
 
 [tool.pytest.ini_options]
-addopts = "-ra --import-mode=importlib"
+addopts = "-ra --import-mode=importlib -p rn_forge.sqlalchemy.testing"
 markers = [
     "unit: fast isolated tests",
 ]

@@ -9,9 +9,10 @@ from rn_forge.sqlalchemy import create_postgres_engine
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tests.conftest import POSTGRES_DSN
 
 pytest_plugins = ["pytester"]
+
+POSTGRES_DSN = "RN_FORGE_TEST_POSTGRES_DSN"
 
 _CONFTEST = 'pytest_plugins = ["rn_forge.sqlalchemy.testing"]\n'
 _SKIPPING_TEST = """

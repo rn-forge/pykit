@@ -9,7 +9,8 @@ from assertpy import assert_that
 from rn_forge.sqlalchemy import create_postgres_engine
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tests.conftest import POSTGRES_DSN
+
+POSTGRES_DSN = "RN_FORGE_TEST_POSTGRES_DSN"
 
 _URL = "postgresql://u:p@localhost/db"
 
