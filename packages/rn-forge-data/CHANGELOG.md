@@ -5,7 +5,7 @@ Notable changes to `rn-forge-data`, newest first, in the
 
 ## [Unreleased]
 
-## [0.1.7] - 2026-11-21
+## [0.1.7] - 2026-11-22
 
 ### Changed
 

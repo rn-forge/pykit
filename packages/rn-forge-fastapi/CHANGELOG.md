@@ -5,7 +5,7 @@ Notable changes to `rn-forge-fastapi`, newest first, in the
 
 ## [Unreleased]
 
-## [0.5.3] - 2026-11-21
+## [0.5.3] - 2026-11-22
 
 ### Changed
 

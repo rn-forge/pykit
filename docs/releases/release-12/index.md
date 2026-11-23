@@ -54,8 +54,8 @@ closed: `rn-forge-sqlalchemy` 0.2.5 has `create_postgres_engine` and the
 closed: `rn-forge-sqlalchemy` 0.2.5 also gains `search_path`, the
 `postgres_schema` test plugin, `run_env` and `run_migrations(schema=...)`, and
 `rn-forge-commons` 0.10.2 gains typed settings
-([ADR-0018](../../adr/ADR-0018.md)). Every feature in scope is closed; the
-release cut is next.
+([ADR-0018](../../adr/ADR-0018.md)). All scope is closed. The cut PR merges to
+main, then a follow-up PR records the shipped evidence.
 
 ## Commits
 
@@ -63,6 +63,28 @@ Commits whose subject names a scope ID, newest first:
 
 ```bash
 git log --format='%h %ad %s' --date=short -E --grep='[FS](29|30|31|32)\.'
+```
+
+```text
+d0d451a2 2026-11-22 S32.2.2, F32.2, E32 close
+93720fc9 2026-11-22 Briefs: S32.2.2
+f80c0385 2026-11-22 S32.1.3, F32.1 close
+c766528b 2026-11-22 S32.2.1
+8c2f72ec 2026-11-22 Briefs: S32.2.1
+dc47bb55 2026-11-22 Briefs: S32.1.3
+5b520825 2026-11-22 S32.1.2
+de2909e6 2026-11-22 S32.3.2, F32.3 close
+4932e7b6 2026-11-22 Briefs: S32.1.2
+7f521b46 2026-11-22 S32.1.1
+b6023a9b 2026-11-22 E32 into Release 12; S32.3.1 close (ADR-0018); Briefs: S32.1.1, S32.3.2
+9ac2e018 2026-11-21 S30.1.3, F30.1, E30 close
+da23ca59 2026-11-21 S30.1.2
+4a62dabb 2026-11-21 S30.1.1
+b4f20b7f 2026-11-21 S31.1.1, F31.1, E31 close
+6e6ca854 2026-11-21 S31.1.2
+0689049e 2026-11-21 S29.1.2, F29.1, E29 close
+9e5d0058 2026-11-21 Briefs: S30.1.2, S30.1.3
+77a5b86d 2026-11-21 Briefs: S29.1.2, S30.1.1, S31.1.1, S31.1.2
 ```
 
 ## Exit criteria

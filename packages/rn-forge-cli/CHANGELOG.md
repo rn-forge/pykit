@@ -5,7 +5,7 @@ Notable changes to `rn-forge-cli`, newest first, in the
 
 ## [Unreleased]
 
-## [0.2.2] - 2026-11-21
+## [0.2.2] - 2026-11-22
 
 ### Added
 
