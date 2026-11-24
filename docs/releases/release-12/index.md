@@ -15,7 +15,8 @@ release also takes the database application foundations
 schema per test, an Alembic `env.py` helper, and typed settings.
 
 [Back to releases](../index.md) ·
-[Release runbook](../../runbooks/releasing-packages.md)
+[Release runbook](../../runbooks/releasing-packages.md) ·
+[Security evidence](security.md)
 
 ## Entry criteria
 
@@ -105,7 +106,8 @@ Shipped 2026-11-24. Every feature in scope is closed. The pull request
 `9e15ed95`, and
 [run 45407929434](https://github.com/rn-forge/pykit/actions/runs/45407929434) at
 `9e15ed95` passed every job on its third attempt, including `release`,
-`verify-release`, `umbrella`, `sonar` and `docs`.
+`verify-release`, `umbrella`, `sonar` and `docs`. The
+[security evidence](security.md) records each baseline control's result.
 
 PyPI serves these versions (200), each with an `rn-forge-<package>-v<version>`
 tag at `9e15ed95` and a published GitHub release:
