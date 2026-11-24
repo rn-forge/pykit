@@ -25,7 +25,7 @@ dependencies = ["rn-forge-commons>=0.8.0,<0.11", "rn-forge-web>=0.3.0,<0.4"]
 # requests, which Authlib does not declare.
 oidc = [
     "authlib>=1.9.5",
-    "joserfc>=1.7.7",
+    "joserfc>=1.8.0",
     "pyjwt[crypto]>=2.15.1",
     "requests>=2.34.2",
 ]
