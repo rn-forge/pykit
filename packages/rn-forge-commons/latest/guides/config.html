@@ -544,6 +544,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1005,6 +1016,34 @@
     
   
     Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/lang/settings.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
   
 
     
@@ -2016,6 +2055,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2104,6 +2154,50 @@ the same reporting for a <code>BaseModel</code> that does not subclass <code>Str
 every mistake at once, or when the schema needs pydantic's validators. The extra
 is opt-in, and <code>rn_forge.commons</code> never imports it, so a program that does not
 use it pays nothing at import time.</p>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
+<p><code>EnvSettings</code> loads typed, frozen settings from prefixed environment variables.
+It needs the <code>settings</code> extra (<code>pip install rn-forge-commons[settings]</code>).</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SettingsConfigDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.commons.lang.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnvSettings</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AppSettings</span><span class="p">(</span><span class="n">EnvSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s2">&quot;APP_&quot;</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;app&quot;</span>
+    <span class="n">data_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+    <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">cap</span><span class="p">:</span> <span class="n">Decimal</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1.00&quot;</span><span class="p">)</span>
+
+
+<span class="n">settings</span> <span class="o">=</span> <span class="n">AppSettings</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+</code></pre></div>
+
+<p><code>load()</code> reads <code>os.environ</code>. <code>load({...})</code> reads the mapping you pass instead
+and never touches <code>os.environ</code>, which is what a test wants:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_workers</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">AppSettings</span><span class="o">.</span><span class="n">load</span><span class="p">({</span><span class="s2">&quot;APP_WORKERS&quot;</span><span class="p">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;app_enabled&quot;</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="n">settings</span><span class="o">.</span><span class="n">workers</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="k">assert</span> <span class="n">settings</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">is</span> <span class="kc">True</span>
+</code></pre></div>
+
+<p>Variable names are matched without regard to case. Every invalid or missing
+variable is reported in one <code>SettingsError</code>, named by its environment variable:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">AppSettings</span><span class="o">.</span><span class="n">load</span><span class="p">({</span><span class="s2">&quot;APP_WORKERS&quot;</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;APP_ENABLED&quot;</span><span class="p">:</span> <span class="s2">&quot;maybe&quot;</span><span class="p">})</span>
+<span class="c1"># SettingsError: Invalid settings: APP_ENABLED: Value error, ...; APP_WORKERS: Input should be a valid integer, ...</span>
+</code></pre></div>
+
+<p><code>SettingsError.variables</code> holds the sorted names
+(<code>("APP_ENABLED", "APP_WORKERS")</code>).</p>
+<p>A <code>bool</code> field takes the tokens <code>AppUtils.parse_bool</code> takes, case-insensitively:
+<code>true</code>, <code>yes</code>, <code>y</code>, <code>on</code>, <code>1</code>, <code>enabled</code> and <code>false</code>, <code>no</code>, <code>n</code>, <code>off</code>, <code>0</code>,
+<code>disabled</code>, <code>none</code>. Any other string is an error.</p>
+<p>No <code>.env</code> file or secrets directory is read unless a subclass sets <code>env_file</code> or
+<code>secrets_dir</code> in its <code>model_config</code>.</p>
 
 
 
