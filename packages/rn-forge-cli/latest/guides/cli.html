@@ -792,7 +792,9 @@ options into <code>AppLogger</code> and the <code>console</code> singleton from 
 <code>main()</code> and no exit-code handling.</p>
 <p><code>my-tool</code> gets four options for free: <code>--log-level</code>/<code>--log-file</code> (feeding
 <code>AppLogger.initialize</code>) and <code>--quiet</code>/<code>--json</code> (feeding <code>console</code>, whose modes
-are described in the console guide in <code>rn-forge-commons</code>).</p>
+are described in the console guide in <code>rn-forge-commons</code>). An app built with a
+version also gets <code>--version</code>, which prints <code>&lt;name&gt; &lt;version&gt;</code> and exits; an app
+without one has no such option.</p>
 <p>Because <code>CliApp</code> <em>is</em> a <code>typer.Typer</code>, every Typer facility works unchanged —
 <code>@app.command()</code>, <code>app.add_typer(...)</code>, and the constructor's full keyword set
 via <code>**typer_kwargs</code>.</p>

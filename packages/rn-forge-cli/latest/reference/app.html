@@ -1089,7 +1089,7 @@
 
 
 <h3 id="rn_forge.cli.app.CliApp" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">CliApp</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_log_level</span><span class="o">=</span><span class="n">LogLevel</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">,</span> <span class="o">**</span><span class="n">typer_kwargs</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class=" language-python"><span class="n">CliApp</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_log_level</span><span class="o">=</span><span class="n">LogLevel</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">typer_kwargs</span><span class="p">)</span></code>
 
 <a href="#rn_forge.cli.app.CliApp" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1177,6 +1177,23 @@ are set by default and may be overridden through <em>typer_kwargs</em>.</p>
             </td>
             <td>
                   <code><span title="rn_forge.cli.options.LogLevel.VERBOSE">VERBOSE</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>version</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The version <code>--version</code> prints as <code>&lt;name&gt; &lt;version&gt;</code>.
+Without one the app has no <code>--version</code> option.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -1413,6 +1430,30 @@ has the wrong type, or a command's target cannot be imported.</p>
     <div class="doc doc-contents ">
 
         <p>Build the application an already-parsed <em>surface</em> describes.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="rn_forge.commons.exceptions.AppException">AppException</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>surface.distribution</code> is not an installed
+distribution, or a command's target cannot be imported.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
