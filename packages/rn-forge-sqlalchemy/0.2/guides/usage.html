@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -460,6 +460,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#postgresql-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-against-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing against PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#embedded-migrations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -476,6 +498,17 @@
     <span class="md-ellipsis">
       
         env.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migrating-into-a-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating into a schema
       
     </span>
   </a>
@@ -828,6 +861,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#postgresql-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-against-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing against PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#embedded-migrations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -844,6 +899,17 @@
     <span class="md-ellipsis">
       
         env.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migrating-into-a-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating into a schema
       
     </span>
   </a>
@@ -1025,6 +1091,96 @@ these pragmas on every new connection:</p>
 the directory step and WAL, and uses a single shared connection, so every
 session sees the same database. The helper never creates tables: schema is the
 migrations' job.</p>
+<h2 id="postgresql-engine">PostgreSQL engine<a class="headerlink" href="#postgresql-engine" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_postgres_engine</span>
+
+<span class="n">engine</span> <span class="o">=</span> <span class="n">create_postgres_engine</span><span class="p">(</span>
+    <span class="s2">&quot;postgresql://user:pass@localhost/app&quot;</span><span class="p">,</span>
+    <span class="n">application_name</span><span class="o">=</span><span class="s2">&quot;svc&quot;</span><span class="p">,</span>
+    <span class="n">statement_timeout_ms</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+    <span class="n">search_path</span><span class="o">=</span><span class="s2">&quot;app,public&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>The helper returns an <code>AsyncEngine</code> on <code>asyncpg</code> that sets these on every new
+connection:</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Setting</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>always</td>
+<td><code>timezone</code></td>
+<td>The session time zone is <code>UTC</code></td>
+</tr>
+<tr>
+<td><code>application_name</code></td>
+<td><code>application_name</code></td>
+<td>The name the server reports</td>
+</tr>
+<tr>
+<td><code>statement_timeout_ms</code></td>
+<td><code>statement_timeout</code></td>
+<td>Milliseconds before the server cancels a statement</td>
+</tr>
+<tr>
+<td><code>search_path</code></td>
+<td><code>search_path</code></td>
+<td>The schema search path, as PostgreSQL's comma-separated list</td>
+</tr>
+</tbody>
+</table>
+<p>A setting left as <code>None</code> stays at the server default. Install the <code>postgres</code>
+extra, which adds <code>asyncpg</code>; without it the helper raises <code>ImportError</code>. The URL
+scheme is <code>postgresql://</code>, <code>postgres://</code> or <code>postgresql+asyncpg://</code>, and the
+driver is rewritten to <code>postgresql+asyncpg</code>. The engine does not connect and
+creates no tables.</p>
+<h2 id="testing-against-postgresql">Testing against PostgreSQL<a class="headerlink" href="#testing-against-postgresql" title="Permanent link">&para;</a></h2>
+<p>Install <code>rn-forge-sqlalchemy[postgres,testing]</code>, then load the plugin in the
+root <code>conftest.py</code>. The plugin is never loaded by installing the extra.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">pytest_plugins</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rn_forge.sqlalchemy.testing&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The <code>postgres_schema</code> fixture gives each test a fresh schema and a
+<code>PostgresSchema</code> with its <code>name</code>, <code>url</code> and <code>engine</code>. The engine's connections
+use the schema as their <code>search_path</code>. The fixture drops the schema with
+<code>CASCADE</code> after the test, whether it passed or failed, and skips the test when
+the DSN variable is unset or empty.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">text</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">postgres</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_creates_a_table</span><span class="p">(</span><span class="n">postgres_schema</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">postgres_schema</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE probe (id int)&quot;</span><span class="p">))</span>
+</code></pre></div>
+
+<p>The <code>rn_forge_postgres_dsn_env</code> ini option names the environment variable that
+holds the DSN; the default is <code>RN_FORGE_TEST_POSTGRES_DSN</code>. The plugin registers
+the <code>postgres</code> marker.</p>
+<p>In CI, a <code>[tool.workspace-ci.integration.postgres]</code> table starts the server and
+exports the DSN:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">[tool.workspace-ci.integration.postgres]</span>
+<span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgres:17&quot;</span>
+<span class="n">ports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;5432:5432&quot;</span><span class="p">]</span>
+<span class="n">health-cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pg_isready -U ci&quot;</span>
+
+<span class="k">[tool.workspace-ci.integration.postgres.env]</span>
+<span class="n">POSTGRES_USER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ci&quot;</span>
+<span class="n">POSTGRES_PASSWORD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ci&quot;</span>
+<span class="n">POSTGRES_DB</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ci&quot;</span>
+
+<span class="k">[tool.workspace-ci.integration.postgres.expose]</span>
+<span class="n">RN_FORGE_TEST_POSTGRES_DSN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;postgresql://ci:ci@localhost:5432/ci&quot;</span>
+</code></pre></div>
+
 <h2 id="embedded-migrations">Embedded migrations<a class="headerlink" href="#embedded-migrations" title="Permanent link">&para;</a></h2>
 <p>Install the extra, which adds <code>alembic</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rn-forge-sqlalchemy[migrations]&gt;=0.2.3,&lt;0.3&quot;</span><span class="p">]</span>
@@ -1055,55 +1211,50 @@ migrations' job.</p>
 <p><code>run_migrations</code> is not re-exported from <code>rn_forge.sqlalchemy</code>; importing it
 without the extra raises <code>ImportError</code>, and the rest of the package works
 without it. Run it from application startup, not from the engine helper.</p>
-<p>It blocks, and the async <code>env.py</code> below calls <code>asyncio.run()</code>, which cannot run
-inside a running event loop. <code>asyncio.to_thread</code> gives it a thread with no loop.
-A failing migration propagates unchanged.</p>
+<p>It blocks, and <code>run_env</code> calls <code>asyncio.run()</code>, which cannot run inside a
+running event loop. <code>asyncio.to_thread</code> gives it a thread with no loop. A
+failing migration propagates unchanged.</p>
 <p>If the path holds characters that are special in a URL, build <code>db_url</code> with
 <code>sqlalchemy.engine.URL.create("sqlite+aiosqlite", database=path)</code> and
 <code>.render_as_string(hide_password=False)</code>.</p>
 <h3 id="envpy"><code>env.py</code><a class="headerlink" href="#envpy" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">logging.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">fileConfig</span>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">rn_forge.sqlalchemy.migrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_env</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">alembic</span><span class="w"> </span><span class="kn">import</span> <span class="n">context</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">pool</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_engine_from_config</span>
-
-<span class="n">config</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">config</span>
-<span class="c1"># run_migrations sets this to False; without the check, fileConfig runs</span>
-<span class="c1"># whenever an alembic.ini is passed.</span>
-<span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">config_file_name</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;configure_logger&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
-    <span class="n">fileConfig</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">config_file_name</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="n">connection</span><span class="p">):</span>
-    <span class="n">context</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span> <span class="n">render_as_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">context</span><span class="o">.</span><span class="n">begin_transaction</span><span class="p">():</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">run_migrations</span><span class="p">()</span>
-
-
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_online</span><span class="p">():</span>
-    <span class="n">engine</span> <span class="o">=</span> <span class="n">async_engine_from_config</span><span class="p">(</span>
-        <span class="n">config</span><span class="o">.</span><span class="n">get_section</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">config_ini_section</span><span class="p">,</span> <span class="p">{}),</span>
-        <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;sqlalchemy.&quot;</span><span class="p">,</span>
-        <span class="n">poolclass</span><span class="o">=</span><span class="n">pool</span><span class="o">.</span><span class="n">NullPool</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="k">async</span> <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
-        <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="n">_run</span><span class="p">)</span>
-    <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
-
-
-<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">_online</span><span class="p">())</span>
+<span class="n">run_env</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
 </code></pre></div>
 
+<p><code>run_env</code> replaces Alembic's stock <code>env.py</code> template; it does not extend it. It
+runs the migrations on an async engine built from the <code>sqlalchemy.</code> options of
+the config.</p>
 <ul>
-<li><code>render_as_batch=True</code> makes autogenerated migrations rebuild a table, because
-  SQLite cannot <code>ALTER</code> most columns in place.</li>
-<li><code>run_migrations</code> sets <code>config.attributes["configure_logger"] = False</code> so the
-  application's logging is not reconfigured. Only your <code>env.py</code> can honor it:
-  one without the <code>configure_logger</code> check reconfigures logging whenever an
-  <code>alembic_ini</code> is passed. Alembic's stock template does not have the check.</li>
+<li>Offline mode (<code>alembic upgrade --sql</code>) is not supported and raises
+  <code>NotImplementedError</code>.</li>
+<li><code>render_as_batch</code> is on only for SQLite, where <code>ALTER</code> cannot change most
+  columns in place.</li>
+<li>Keyword arguments override <code>context.configure</code>'s defaults, for example
+  <code>run_env(Base.metadata, compare_type=True)</code>.</li>
+<li><code>run_env</code> honours <code>config.attributes["configure_logger"]</code>, which
+  <code>run_migrations</code> sets to <code>False</code>, so the application's logging is not
+  reconfigured.</li>
 </ul>
+<h3 id="migrating-into-a-schema">Migrating into a schema<a class="headerlink" href="#migrating-into-a-schema" title="Permanent link">&para;</a></h3>
+<p><code>run_migrations(..., schema="name")</code> upgrades a PostgreSQL database inside that
+schema, and <code>alembic_version</code> lives there too.</p>
+<ul>
+<li>PostgreSQL only; any other URL raises <code>ValueError</code> before a connection is
+  made.</li>
+<li>The schema must already exist; <code>run_migrations</code> does not create it.</li>
+<li>Unqualified tables land in the schema, because <code>run_env</code> sets the connection's
+  <code>search_path</code> to it.</li>
+</ul>
+<p>To test migrations per test on <code>postgres_schema</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_migrations_reach_head</span><span class="p">(</span><span class="n">postgres_schema</span><span class="p">):</span>
+    <span class="n">run_migrations</span><span class="p">(</span><span class="s2">&quot;myapp:migrations&quot;</span><span class="p">,</span> <span class="n">postgres_schema</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">postgres_schema</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>run_migrations</code> blocks, so the test is sync, or an async test calls it through
+<code>asyncio.to_thread</code>.</p>
 <h3 id="script-location">Script location<a class="headerlink" href="#script-location" title="Permanent link">&para;</a></h3>
 <p><code>script_location</code> is a directory, or a package resource such as
 <code>"myapp:migrations"</code>, meaning the <code>migrations</code> directory inside the <code>myapp</code>
@@ -1161,7 +1312,7 @@ wheel, where a filesystem path relative to the source tree no longer exists.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
