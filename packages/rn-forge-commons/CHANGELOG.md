@@ -5,6 +5,18 @@ Notable changes to `rn-forge-commons`, newest first, in the
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-22
+
+### Added
+
+- `rn_forge.commons.lang.settings`: `EnvSettings` loads typed settings from
+  prefixed environment variables, raising one `SettingsError` that names every
+  invalid variable. Needs the new `settings` extra.
+
+### Changed
+
+- Requires `tomlkit>=0.15.2`.
+
 ## [0.10.1] - 2026-11-20
 
 ### Added

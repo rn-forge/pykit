@@ -118,6 +118,10 @@ class TestSurfaceValidation:
         with pytest.raises(AppException):
             CliSurface(name="  ")
 
+    def test_blank_distribution_rejected(self):
+        with pytest.raises(AppException):
+            CliSurface(name="demo", distribution="  ")
+
     def test_duplicate_command_names_are_rejected(self):
         commands = (
             CommandSurface(name="a", target=f"{HERE}:greet"),

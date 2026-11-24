@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-fastapi"
-version = "0.5.2"
+version = "0.5.3"
 description = "FastAPI adapters over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -26,7 +26,7 @@ dependencies = [
     "rn-forge-web[security]>=0.3.0,<0.4",
     # A hard dependency, not an extra: every module in this package is a FastAPI
     # adapter. The floor is what resolved on 2026-09-12. pydantic arrives with it.
-    "fastapi>=0.141.1",
+    "fastapi>=0.162.7",
     # `FastApiApp` instruments itself by default (`AppConfig.tracing`). Brings
     # `opentelemetry-instrumentation`, which holds `TraceResponsePropagator`.
     "opentelemetry-instrumentation-fastapi>=0.65b0",

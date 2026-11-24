@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.metadata
+
 import pytest
 import typer
-from rn_forge.cli import CliApp, ExitCode, run
+from rn_forge.cli import CliApp, CliSurface, ExitCode, run
 from rn_forge.commons.exceptions import AppException
 from typer._click.exceptions import UsageError
 
@@ -105,3 +107,43 @@ class TestCallReturnsAnExitCode:
 
         assert run(plain, ["boom"]) == ExitCode.FAILURE
         assert run(plain, ["fine"]) == ExitCode.OK
+
+
+def _versioned(version: str | None) -> CliApp:
+    application = CliApp("t", version=version)
+
+    @application.command()
+    def ok() -> None:
+        pass
+
+    return application
+
+
+class TestVersionFlag:
+    def test_version_flag_prints_name_and_version(self, capsys):
+        assert run(_versioned("1.2.3"), ["--version"]) == ExitCode.OK
+        assert capsys.readouterr().out == "t 1.2.3\n"
+
+    def test_no_version_flag_without_version(self, capsys):
+        application = CliApp("t")
+
+        @application.command()
+        def ok() -> None:
+            pass
+
+        assert run(application, ["--version"]) == ExitCode.USAGE
+        capsys.readouterr()
+        assert run(application, ["--help"]) == ExitCode.OK
+        assert "--version" not in capsys.readouterr().out
+
+    def test_from_surface_distribution_sets_version(self, capsys):
+        surface = CliSurface(name="t", distribution="rn-forge-cli")
+        application = CliApp.from_surface(surface)
+        assert run(application, ["--version"]) == ExitCode.OK
+        expected = importlib.metadata.version("rn-forge-cli")
+        assert capsys.readouterr().out == f"t {expected}\n"
+
+    def test_from_surface_unknown_distribution_raises(self):
+        surface = CliSurface(name="t", distribution="no-such-distribution-xyz")
+        with pytest.raises(AppException, match="no-such-distribution-xyz"):
+            CliApp.from_surface(surface)

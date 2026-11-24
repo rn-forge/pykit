@@ -8,6 +8,10 @@
 # `.gitignore` ignores — so tool caches, build output and virtualenvs are never
 # seen. `exclude` is for files git does list but this repo does not format.
 wrap = 80
+# kiln's derived epic list writes its "Jump to" line unwrapped, and from E31 on
+# it is over 80 columns, so formatting it makes `kiln doctor` call it stale.
+# Drop this once kiln wraps that line.
+exclude = ["docs/specs/epics/index.md"]
 
 [plugin.tables]
 compact_tables = true

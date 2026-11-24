@@ -26,7 +26,9 @@ That is the whole wiring. A generated console script is `sys.exit(app())`, and
 
 `my-tool` gets four options for free: `--log-level`/`--log-file` (feeding
 `AppLogger.initialize`) and `--quiet`/`--json` (feeding `console`, whose modes
-are described in the console guide in `rn-forge-commons`).
+are described in the console guide in `rn-forge-commons`). An app built with a
+version also gets `--version`, which prints `<name> <version>` and exits; an app
+without one has no such option.
 
 Because `CliApp` *is* a `typer.Typer`, every Typer facility works unchanged —
 `@app.command()`, `app.add_typer(...)`, and the constructor's full keyword set

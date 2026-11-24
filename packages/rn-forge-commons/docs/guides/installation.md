@@ -18,6 +18,7 @@ Targeted extras:
 - `markdown` for Markdown structure (`rn_forge.commons.text.markdown`)
 - `otel` for OpenTelemetry log correlation
 - `pydantic` for strict configuration models (`rn_forge.commons.lang.models`)
+- `settings` for typed environment settings (`rn_forge.commons.lang.settings`)
 - `resilience` for async circuit breakers and HTTP retries
 - `structlog` for structured logging over the stdlib handlers
 - `templates` for the Jinja template engine (`rn_forge.commons.text.templates`)

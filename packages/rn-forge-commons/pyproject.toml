@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-commons"
-version = "0.10.1"
+version = "0.10.2"
 description = "Shared, framework-agnostic utilities for Python programming"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -18,7 +18,7 @@ classifiers = [
 requires-python = ">=3.14"
 dependencies = [
     "ruamel.yaml[oldlibyaml]>=0.19.1",
-    "tomlkit>=0.15.0",
+    "tomlkit>=0.15.2",
     "verboselogs>=1.7",
     "rich>=15.0.0",
     "dacite>=1.9.2",
@@ -30,6 +30,7 @@ structlog = ["structlog>=25.1.0"]
 resilience = ["purgatory>=3.0.1", "stamina>=25.2.0", "httpx>=0.28"]
 otel = ["opentelemetry-instrumentation-logging>=0.64b0"]
 pydantic = ["pydantic>=2.12"]
+settings = ["pydantic-settings>=2.16.3"]
 markdown = ["markdown>=3.7", "markdown-it-py>=3.0"]
 templates = ["jinja2>=3.1.6"]
 testing = ["assertpy>=2.36.0", "pytest>=9.1.1"]
@@ -41,6 +42,7 @@ all = [
     "opentelemetry-instrumentation-logging>=0.64b0",
     "purgatory>=3.0.1",
     "pydantic>=2.12",
+    "pydantic-settings>=2.16.3",
     "python-json-logger>=4.0.0",
     "stamina>=25.2.0",
     "structlog>=25.1.0",

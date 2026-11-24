@@ -5,6 +5,12 @@ Notable changes to `rn-forge-devops`, newest first, in the
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-22
+
+### Changed
+
+- Requires `packaging>=26.3`.
+
 ## [0.5.0] - 2026-11-17
 
 ### Changed

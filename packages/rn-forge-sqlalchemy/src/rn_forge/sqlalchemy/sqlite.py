@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import Any
 
@@ -48,12 +49,19 @@ def create_sqlite_engine(
     Raises:
         ValueError: *synchronous* is not one of the allowed values.
         ValueError: *busy_timeout_ms* cannot be converted to an integer.
+        ImportError: ``aiosqlite`` is not installed.
     """
     level = synchronous.upper()
     if level not in _SYNCHRONOUS:
         allowed = ", ".join(sorted(_SYNCHRONOUS))
         raise ValueError(f"synchronous must be one of {allowed}, got {synchronous!r}")
     timeout = int(busy_timeout_ms)
+    try:
+        importlib.import_module("aiosqlite")
+    except ImportError as error:
+        raise ImportError(
+            "create_sqlite_engine needs aiosqlite; install rn-forge-sqlalchemy[sqlite]"
+        ) from error
 
     in_memory = isinstance(path, str) and path == _MEMORY
     # PRAGMA values cannot be bound parameters, so they are validated above.

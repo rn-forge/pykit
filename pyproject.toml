@@ -73,7 +73,7 @@ venv = ".venv"
 venvPath = "."
 
 [tool.pytest.ini_options]
-addopts = "-ra --import-mode=importlib"
+addopts = "-ra --import-mode=importlib -p rn_forge.sqlalchemy.testing"
 testpaths = ["packages"]
 markers = [
     "unit: fast isolated tests",

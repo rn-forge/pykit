@@ -75,6 +75,10 @@ holds it.
   unknown keys, raising one `AppException` that names every failing key by its
   dotted path. Not on the facade, so `import rn_forge.commons` never loads
   pydantic.
+- **`settings`** (`settings` extra) — `EnvSettings`, `SettingsError`: frozen
+  typed settings loaded from prefixed environment variables, raising one
+  `AppException` that names every invalid or missing variable. Not on the
+  facade.
 - **`reflection`** — `ReflectUtils`: fully-qualified name resolution,
   error-message formatting, and stack-frame variable inspection.
 - **`types`** — the recursive `JsonValue` alias.

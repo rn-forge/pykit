@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-cli"
-version = "0.2.1"
+version = "0.2.2"
 description = "The shared command-line layer for rn-forge applications: Typer app factory, standard options, console and exit codes"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -20,7 +20,7 @@ requires-python = ">=3.14"
 dependencies = [
     "rn-forge-commons>=0.8.0,<0.11",
     "rich>=15.0.0",
-    "typer>=0.26.8",
+    "typer>=0.29.1",
 ]
 
 [project.optional-dependencies]

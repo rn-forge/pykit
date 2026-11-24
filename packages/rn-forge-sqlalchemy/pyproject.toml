@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-sqlalchemy"
-version = "0.2.4"
+version = "0.2.5"
 description = "Async SQLAlchemy models, upsert and keyset pagination over rn-forge-web"
 readme = "README.md"
 authors = [{ name = "Rohit Narayanan", email = "rohit.nn@gmail.com" }]
@@ -18,12 +18,15 @@ classifiers = [
 requires-python = ">=3.14"
 # Internal requirements are version ranges (ADR-0004).
 #
-# No database driver is declared: the application picks one (`asyncpg`,
-# `aiosqlite`). `rn-forge-commons` arrives through `rn-forge-web`.
+# The drivers come from the `postgres` and `sqlite` extras, so the core install
+# carries none. `rn-forge-commons` arrives through `rn-forge-web`.
 dependencies = ["rn-forge-web>=0.3.0,<0.4", "sqlalchemy[asyncio]>=2.0"]
 
 [project.optional-dependencies]
 migrations = ["alembic>=1.20.1"]
+postgres = ["asyncpg>=0.32.0"]
+sqlite = ["aiosqlite>=0.22.1"]
+testing = ["pytest>=9.1.1", "pytest-asyncio>=1.4.1.post1"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-sqlalchemy/latest/"
@@ -53,10 +56,9 @@ rn-forge-fastapi = { workspace = true }
 rn-forge-sqlalchemy = { workspace = true }
 
 [tool.pytest.ini_options]
-addopts = "-ra --import-mode=importlib"
+addopts = "-ra --import-mode=importlib -p rn_forge.sqlalchemy.testing"
 markers = [
     "unit: fast isolated tests",
-    "postgres: needs a PostgreSQL DSN in RN_FORGE_TEST_POSTGRES_DSN",
 ]
 
 [tool.workspace-ci.integration.postgres]
