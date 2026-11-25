@@ -2,8 +2,9 @@
 
 |  |  |
 | -- | -- |
-| **Status** | in progress |
+| **Status** | shipped |
 | **Start Date** | 2026-11-21 |
+| **Finish Date** | 2026-11-24 |
 
 The release cut absorbs the open Dependabot updates: the runbook gains the step,
 and the update that opened after Release 11 is taken on the release branch
@@ -14,7 +15,8 @@ release also takes the database application foundations
 schema per test, an Alembic `env.py` helper, and typed settings.
 
 [Back to releases](../index.md) ·
-[Release runbook](../../runbooks/releasing-packages.md)
+[Release runbook](../../runbooks/releasing-packages.md) ·
+[Security evidence](security.md)
 
 ## Entry criteria
 
@@ -54,8 +56,8 @@ closed: `rn-forge-sqlalchemy` 0.2.5 has `create_postgres_engine` and the
 closed: `rn-forge-sqlalchemy` 0.2.5 also gains `search_path`, the
 `postgres_schema` test plugin, `run_env` and `run_migrations(schema=...)`, and
 `rn-forge-commons` 0.10.2 gains typed settings
-([ADR-0018](../../adr/ADR-0018.md)). All scope is closed. The cut PR merges to
-main, then a follow-up PR records the shipped evidence.
+([ADR-0018](../../adr/ADR-0018.md)). All scope is closed and the release is
+shipped.
 
 ## Commits
 
@@ -66,6 +68,7 @@ git log --format='%h %ad %s' --date=short -E --grep='[FS](29|30|31|32)\.'
 ```
 
 ```text
+00781f81 2026-11-23 S32.1.3 fix: scaffold suite collection
 d0d451a2 2026-11-22 S32.2.2, F32.2, E32 close
 93720fc9 2026-11-22 Briefs: S32.2.2
 f80c0385 2026-11-22 S32.1.3, F32.1 close
@@ -95,3 +98,37 @@ b4f20b7f 2026-11-21 S31.1.1, F31.1, E31 close
 - Each patched package is tagged on the remote and installs from PyPI.
 - No Dependabot pull request is open against `main`, or each open one is listed
   on this page as deferred with its reason.
+
+## Shipped
+
+Shipped 2026-11-24. Every feature in scope is closed. The pull request
+[#44](https://github.com/rn-forge/pykit/pull/44) merged into `main` as
+`9e15ed95`, and
+[run 45407929434](https://github.com/rn-forge/pykit/actions/runs/45407929434) at
+`9e15ed95` passed every job on its third attempt, including `release`,
+`verify-release`, `umbrella`, `sonar` and `docs`. The
+[security evidence](security.md) records each baseline control's result.
+
+PyPI serves these versions (200), each with an `rn-forge-<package>-v<version>`
+tag at `9e15ed95` and a published GitHub release:
+
+| Package | Version |
+| -- | -- |
+| `rn-forge-auth` | `0.2.2` |
+| `rn-forge-cli` | `0.2.2` |
+| `rn-forge-commons` | `0.10.2` |
+| `rn-forge-data` | `0.1.7` |
+| `rn-forge-devops` | `0.5.1` |
+| `rn-forge-django` | `0.7.1` |
+| `rn-forge-fastapi` | `0.5.3` |
+| `rn-forge-sqlalchemy` | `0.2.5` |
+
+`rn-forge-tooling` and `rn-forge-web` did not change and keep their earlier
+versions. Each released package's docs at
+`https://rn-forge.github.io/pykit/packages/rn-forge-<package>/latest/` are
+deployed from `9e15ed95`. Dependabot pull request #42 closed once `main` carried
+its updates. Dependabot pull request
+[#45](https://github.com/rn-forge/pykit/pull/45) opened on 2026-11-24, after the
+cut, and is deferred to the next release; it is not a security update. The
+`release-12` umbrella tag is created by the first `main` run after this page
+says `shipped`.
