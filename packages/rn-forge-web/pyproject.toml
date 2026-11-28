@@ -31,7 +31,7 @@ testing = ["assertpy>=2.36.0", "pytest>=9.1.1"]
 # `rn_forge.web.security` only. `secure` is framework-agnostic (no dependencies
 # of its own) and emits the OWASP header preset directly, so it is wrapped
 # rather than hand-rolled.
-security = ["secure>=2.0.1"]
+security = ["secure>=2.0.2"]
 
 [project.urls]
 Documentation = "https://rn-forge.github.io/pykit/packages/rn-forge-web/latest/"

@@ -44,7 +44,7 @@ oidc = ["rn-forge-auth[oidc]>=0.2.0,<0.3"]
 redis = ["rn-forge-auth[redis]>=0.2.0,<0.3"]
 # Tabular export and import: `rn_forge.fastapi.transfer`. Not imported by the
 # package facade. `python-multipart` is what FastAPI's `UploadFile` needs.
-transfer = ["rn-forge-data>=0.1.1,<0.2", "python-multipart>=0.0.20"]
+transfer = ["rn-forge-data>=0.1.1,<0.2", "python-multipart>=0.0.34"]
 # Server-sent events: `rn_forge.fastapi.sse`. Not imported by the package facade.
 sse = ["sse-starlette>=3.4.11"]
 
