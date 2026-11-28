@@ -31,7 +31,7 @@ drf = ["djangorestframework>=3.17.1"]
 # and delete. `write_xlsx` comes from rn-forge-data, which brings openpyxl.
 transfer = [
     "djangorestframework>=3.17.1",
-    "django-import-export>=4.4.1",
+    "django-import-export>=4.4.6",
     "rn-forge-data>=0.1.1,<0.2",
 ]
 # `fixtures.py` reads workbooks through `ExcelAdapter`, which needs pandas.
@@ -60,7 +60,7 @@ otel = ["opentelemetry-instrumentation-django>=0.65b0"]
 all = [
     "celery>=5.6.3",
     "django-cors-headers>=4.9.0",
-    "django-import-export>=4.4.1",
+    "django-import-export>=4.4.6",
     "djangorestframework>=3.17.1",
     "drf-spectacular>=0.30.0",
     "opentelemetry-instrumentation-django>=0.65b0",
